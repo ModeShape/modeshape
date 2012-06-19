@@ -1,23 +1,27 @@
 {
-    "name" : "My Repository",
-    "jndiName" : "jcr/local/MyRepository",
-    "rootNodeId" : "cafebabe-cafe-babe-cafe-babecafebabe",
-    "largeValueSizeInBytes" : 10240,
-    "storage" : {
-        "cacheName" : "some-cache",
-        "cacheConfiguration" : "infinispan.xml"
+    "name" : "Thorough",
+    "transactionMode" : "auto",
+    "monitoring" : {
+        "enabled" : true,
     },
     "workspaces" : {
-        "system" : "system",
-        "predefined" : ["ws1","ws2"],
+        "predefined" : ["otherWorkspace"],
         "default" : "default",
-        "allowCreation" : true
+        "allowCreation" : true,
+    },
+    "storage" : {
+        "cacheName" : "Thorough",
+        "cacheConfiguration" : "infinispan_configuration.xml",
+        "transactionManagerLookup" = "org.infinispan.transaction.lookup.GenericTransactionManagerLookup",
+        "binaryStorage" : {
+            "type" : "file",
+            "directory" : "Thorough/binaries",
+            "minimumBinarySizeInBytes" : 4096
+        }
     },
     "security" : {
-        "jaas" : {
-            "policyName" : "modeshape-jcr"
-        },
         "anonymous" : {
+            "username" : "<anonymous>",
             "roles" : ["readonly","readwrite","admin"],
             "useOnFailedLogin" : false
         },
@@ -25,39 +29,66 @@
             {
                 "name" : "My Custom Security Provider",
                 "classname" : "com.example.MyAuthenticationProvider",
-                "description" : "A custom security provider used for authentication and authorization."
+            },
+            {
+                "classname" : "jaas",
+                "policyName" : "modeshape-jcr",
             }
         ]
     },
     "query" : {
         "enabled" : true,
-        "indexDirectory" : "/some/path",
-        "rebuildUponStartup" : "ifMissing",
-        "tablesIncludeInheritedColumns" : true,
+        "rebuildUponStartup" : "if_missing",
         "extractors" : [
             {
-                "name" : "General Extractor",
-                "extractor" : "Tika"
+                "name" : "MyFileType extractor",
+                "classname" : "com.example.myfile.MyExtractor",
+            },
+            {
+                "name" : "General content-based extractor",
+                "classname" : "tika",
             }
-        ]
+        ],
+        "indexStorage" : {
+            "type" : "filesystem",
+            "location" : "Thorough/indexes",
+            "lockingStrategy" : "native",
+            "fileSystemAccessType" : "auto"
+        },
+        "indexing" : {
+            "threadPool" : "modeshape-workers",
+            "analyzer" : "org.apache.lucene.analysis.standard.StandardAnalyzer",
+            "similarity" : "org.apache.lucene.search.DefaultSimilarity",
+            "batchSize" : -1,
+            "indexFormat" : "LUCENE_35",
+            "readerStrategy" : "shared",
+            "mode" : "sync",
+            "asyncThreadPoolSize" : 1,
+            "asyncMaxQueueSize" : 0,
+            "backend" : {
+                "type" : "lucene",
+                
+            },
+            "hibernate.search.custom.overridden.property" : "value",
+        }
     },
     "sequencing" : {
         "removeDerivedContentWithOriginal" : true,
-        "sequencers" : [
-            {
-                "name" : "ZIP Files",
-                "sequencer" : "ZipSequencer",
-                "pathExpression" : "default:/files(//)(*.zip[*])/jcr:content[@jcr:data] => default:/sequenced/zip/$1",
-                "description" : "Sequences ZIP files loaded under '/files' and extracting into '/sequenced/zip/$1'",
+        "threadPool" : "modeshape-workers",
+        "sequencers" : {
+            "zipSequencer" : {
+                "classname" : "ZipSequencer",
+                "pathExpressions" : ["default:/files(//)(*.zip[*])/jcr:content[@jcr:data] => default:/sequenced/zip/$1"],
             },
-            {
-                "name" : "Delimited Text File Sequencer",
+            "delimitedTextSequencer" : {
                 "classname" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
                 "pathExpressions" : [ 
                     "default:/files//(*.csv[*])/jcr:content[@jcr:data] => default:/sequenced/text/delimited/$1"
                 ],
                 "splitPattern" : ","
             }
-        ]
+        }
+    },
+    "clustering" : {
     }
 }

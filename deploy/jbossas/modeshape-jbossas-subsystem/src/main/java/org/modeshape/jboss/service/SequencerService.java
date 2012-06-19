@@ -26,7 +26,6 @@ import java.util.Properties;
 import javax.jcr.RepositoryException;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Changes;
-import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Editor;
 import org.jboss.msc.service.Service;
@@ -41,6 +40,7 @@ import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
+import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
 public class SequencerService implements Service<JcrRepository> {
 
@@ -80,12 +80,13 @@ public class SequencerService implements Service<JcrRepository> {
 
         Editor editor = repositoryConfig.edit();
         EditableDocument sequencing = editor.getOrCreateDocument("sequencing");
-        EditableArray sequencers = sequencing.setArray("sequencers");
+        EditableDocument sequencers = sequencing.getOrCreateDocument("sequencers");
 
         EditableDocument seq = Schematic.newDocument();
-
+        String sequencerName = sequencerProperties.getProperty(FieldName.NAME);
         for (Object key : sequencerProperties.keySet()) {
             String keyStr = (String)key;
+            if (FieldName.NAME.equals(keyStr)) continue;
             Object value = sequencerProperties.get(keyStr);
             if (value instanceof List<?>) {
                 for (Object val : (List<?>)value) {
@@ -97,7 +98,7 @@ public class SequencerService implements Service<JcrRepository> {
             }
         }
 
-        sequencers.addValue(seq);
+        sequencers.set(sequencerName, seq);
 
         // Get the changes and validate them ...
         Changes changes = editor.getChanges();

@@ -1500,19 +1500,21 @@ public class RepositoryConfiguration {
     }
 
     protected List<Component> readComponents( Document doc,
-                                              String arrayFieldName,
+                                              String fieldName,
                                               String aliasFieldName,
                                               Map<String, String> classnamesByAlias,
                                               Problems problems ) {
         List<Component> results = new ArrayList<Component>();
-        List<?> components = doc.getArray(arrayFieldName);
+        Document components = doc.getDocument(fieldName);
         if (components != null) {
-            for (Object value : components) {
+            boolean isArray = components instanceof List;
+            for (Field field : components.fields()) {
+                Object value = field.getValue();
                 if (value instanceof Document) {
                     Document component = (Document)value;
                     String classname = component.getString(FieldName.CLASSNAME);
                     String classpath = component.getString(FieldName.CLASSLOADER); // optional
-                    String name = component.getString(FieldName.NAME); // optional
+                    String name = isArray ? component.getString(FieldName.NAME) : field.getName();
                     if (classname != null) {
                         String resolvedClassname = classnamesByAlias.get(classname.toLowerCase());
                         if (resolvedClassname != null) classname = resolvedClassname;

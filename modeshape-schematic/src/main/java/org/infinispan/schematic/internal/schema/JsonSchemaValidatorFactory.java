@@ -474,15 +474,20 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                               Path pathToDocument,
                               Problems problems,
                               SchemaDocumentResolver resolver ) {
-            if (fieldValue == null && fieldName != null) {
-                fieldValue = document.get(fieldName);
+            if (fieldValue == null) {
+                if (fieldName != null) {
+                    fieldValue = document.get(fieldName);
+                } else {
+                    // We're supposed to check the whole document is the correct type ...
+                    fieldValue = document;
+                }
             }
             if (fieldValue != null) {
                 Type actual = Type.typeFor(fieldValue);
                 if (!type.isEquivalent(actual)) {
                     // See if the value is convertable ...
                     Object converted = type.convertValueFrom(fieldValue, actual);
-                    Path pathToField = pathToDocument.with(fieldName);
+                    Path pathToField = fieldName != null ? pathToDocument.with(fieldName) : pathToDocument;
                     String reason = "Field value for '" + pathToField + "' expected to be of type " + type + " but was of type "
                                     + actual;
                     if (converted != null) {
@@ -491,8 +496,9 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                     } else {
                         problems.recordError(pathToField, reason);
                     }
+                } else {
+                    problems.recordSuccess();
                 }
-                problems.recordSuccess();
             }
         }
 
@@ -1413,8 +1419,7 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                               Path pathToParent,
                               Problems problems,
                               SchemaDocumentResolver resolver ) {
-            if (fieldValue == null) return;
-            if (!allowedPropertyNames.contains(fieldName)) {
+            if (fieldName != null && !allowedPropertyNames.contains(fieldName)) {
                 // Then the field is not handled by an explicit schema, so we need to check it here
                 validator.validate(fieldValue, fieldName, parent, pathToParent, problems, resolver);
             }

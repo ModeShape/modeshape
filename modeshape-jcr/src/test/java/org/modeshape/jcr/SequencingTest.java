@@ -33,7 +33,6 @@ import java.io.InputStream;
 import javax.jcr.Node;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Json;
 import org.junit.Test;
@@ -78,13 +77,15 @@ public class SequencingTest extends AbstractSequencerTest {
                                  String type,
                                  String... pathExpressions ) {
         EditableDocument sequencing = doc.getOrCreateDocument(FieldName.SEQUENCING);
-        EditableArray sequencers = sequencing.getOrCreateArray(FieldName.SEQUENCERS);
+        EditableDocument sequencers = sequencing.getOrCreateDocument(FieldName.SEQUENCERS);
         // Create the sequencer doc ...
+        String name = desc;
         EditableDocument sequencer = Schematic.newDocument();
-        sequencer.set(FieldName.NAME, desc);
+        sequencer.set(FieldName.NAME, name);
         sequencer.set(FieldName.CLASSNAME, type);
         sequencer.setArray(FieldName.PATH_EXPRESSIONS, (Object[])pathExpressions);
-        sequencers.add(sequencer);
+        // Set it on the 'sequencers' doc ...
+        sequencers.set(name, sequencer);
     }
 
     @Test

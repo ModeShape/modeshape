@@ -31,6 +31,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.jcr.RepositoryConfiguration.AnonymousSecurity;
@@ -39,6 +40,12 @@ import org.modeshape.jcr.RepositoryConfiguration.Security;
 import org.modeshape.jcr.RepositoryConfiguration.TransactionMode;
 
 public class RepositoryConfigurationTest {
+    private boolean print = false;
+
+    @Before
+    public void beforeEach() {
+        print = false;
+    }
 
     @Test
     public void shouldSuccessfullyValidateDefaultConfiguration() {
@@ -77,7 +84,7 @@ public class RepositoryConfigurationTest {
 
     @Test
     public void shouldReportErrorWithExtraSequencingProperties() {
-        assertNotValid(1, "{ 'name' = 'nm', \"sequencing\" : { \"notValid\" : false, 'sequencers' : [] } }");
+        assertNotValid(1, "{ 'name' = 'nm', \"sequencing\" : { \"notValid\" : false, 'sequencers' : {} } }");
     }
 
     @Test
@@ -130,6 +137,11 @@ public class RepositoryConfigurationTest {
     @Test
     public void shouldNotSuccessfullyValidateSampleRepositoryConfigurationWithIndexStorageOnFilesystemAndExtraProperties() {
         assertNotValid(1, "config/invalid-index-storage-config-filesystem.json");
+    }
+
+    @Test
+    public void shouldNotSuccessfullyValidateRepositoryConfigurationWithOldStyleSequencersArray() {
+        assertNotValid(1, "config/invalid-old-style-sequencers-config.json");
     }
 
     @Test
@@ -265,6 +277,9 @@ public class RepositoryConfigurationTest {
         assertThat(results.toString(), results.hasProblems(), is(true));
         assertThat(results.toString(), results.hasErrors(), is(true));
         assertThat(results.toString(), results.errorCount(), is(numberOfErrors));
+        if (print) {
+            System.out.println(results);
+        }
     }
 
     protected void assertNotValid( int numberOfErrors,

@@ -59,21 +59,19 @@
     },
     "sequencing" : {
         "removeDerivedContentWithOriginal" : true,
-        "sequencers" : [
-            {
-                "name" : "ZIP Files loaded under '/files' and extracted into '/sequenced/zip/$1'",
+        "sequencers" : {
+            "ZIP Sequencer" : {
                 "classname" : "ZipSequencer",
                 "pathExpressions" : ["default:/files(//)(*.zip[*])/jcr:content[@jcr:data] => default:/sequenced/zip/$1"],
             },
-            {
-                "name" : "Delimited Text File Sequencer",
+            "Delimited Text File Sequencer" : {
                 "classname" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
                 "pathExpressions" : [ 
                     "default:/files//(*.csv[*])/jcr:content[@jcr:data] => default:/sequenced/text/delimited/$1"
                 ],
                 "splitPattern" : ","
             }
-        ]
+        }
     },
     "clustering" : {
     }

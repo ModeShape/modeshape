@@ -2,12 +2,11 @@
     "name" : "DdlSequencer Test Repository",
     "sequencing" : {
         "removeDerivedContentWithOriginal" : true,
-        "sequencers" : [
-            {
-                "name" : "Ddl sequencer test",
+        "sequencers" : {
+            "Ddl sequencer test" : {
                 "classname" : "DdlSequencer",
                 "pathExpressions" : [ "default://(*.ddl)/jcr:content[@jcr:data] => default:/ddl" ]
             }
-        ]
+        }
     }
 }

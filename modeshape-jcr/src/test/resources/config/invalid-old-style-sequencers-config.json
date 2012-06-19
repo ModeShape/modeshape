@@ -75,19 +75,21 @@
     "sequencing" : {
         "removeDerivedContentWithOriginal" : true,
         "threadPool" : "modeshape-workers",
-        "sequencers" : {
-            "zipSequencer" : {
+        "sequencers" : [
+            { 
+                "name" : "zipSequencer",
                 "classname" : "ZipSequencer",
                 "pathExpressions" : ["default:/files(//)(*.zip[*])/jcr:content[@jcr:data] => default:/sequenced/zip/$1"],
             },
-            "delimitedTextSequencer" : {
+            {
+                "name" : "delimitedTextSequencer",
                 "classname" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
                 "pathExpressions" : [ 
                     "default:/files//(*.csv[*])/jcr:content[@jcr:data] => default:/sequenced/text/delimited/$1"
                 ],
                 "splitPattern" : ","
             }
-        }
+        ]
     },
     "clustering" : {
     }

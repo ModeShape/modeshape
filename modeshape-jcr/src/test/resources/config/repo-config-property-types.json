@@ -2,9 +2,8 @@
     "name":"Test Config with various property types",
     "sequencing":{
         "removeDerivedContentWithOriginal":true,
-        "sequencers":[
-            {
-                "name":"Test sequencer",
+        "sequencers": {
+            "Test sequencer" : {
                 "classname":"org.modeshape.jcr.TestSequencersHolder$SequencerWithProperties",
                 "pathExpression":"default://",
                 "intList":[1, 1, 2, 3],
@@ -37,6 +36,6 @@
                     }
                 ]
             }
-        ]
+        }
     }
 }

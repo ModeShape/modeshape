@@ -2,22 +2,19 @@
     "name" : "Java Sequencers Test Repository",
     "sequencing" : {
         "removeDerivedContentWithOriginal" : true,
-        "sequencers" : [
-            {
-                "name" : "Classes in the same location",
+        "sequencers" : {
+            "Classes in the same location" : {
                 "classname" : "ClassSequencer",
                 "pathExpressions" : [ "default://(*.class)/jcr:content[@jcr:data]" ]
             },
-            {
-                "name" : "Classes in different location",
+            "Classes in different location" : {
                 "classname" : "org.modeshape.sequencer.classfile.ClassFileSequencer",
                 "pathExpressions" : [ "default://(*.class)/jcr:content[@jcr:data] => /classes" ]
             } ,
-            {
-                "name" : "Java Sequencer in different location",
+            "Java Sequencer in different location" : {
                 "classname" : "javasourcesequencer",
                 "pathExpressions" : [ "default://(*.java)/jcr:content[@jcr:data] => /java" ]
             }
-        ]
+        }
     }
 }
