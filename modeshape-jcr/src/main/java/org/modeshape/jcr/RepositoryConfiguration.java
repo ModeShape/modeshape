@@ -1876,25 +1876,86 @@ public class RepositoryConfiguration {
                 return ((Document)value).toMap();
             }
 
+            // Strings can be parsed into numbers ...
+            if (value instanceof String) {
+                String strValue = (String)value;
+                // Try the smallest ranges first ...
+                if (Short.TYPE.isAssignableFrom(expectedType) || Short.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Short.parseShort(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+                if (Integer.TYPE.isAssignableFrom(expectedType) || Integer.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Integer.parseInt(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+                if (Long.TYPE.isAssignableFrom(expectedType) || Long.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Long.parseLong(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+                if (Boolean.TYPE.isAssignableFrom(expectedType) || Boolean.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Boolean.parseBoolean(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+                if (Float.TYPE.isAssignableFrom(expectedType) || Float.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Float.parseFloat(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+                if (Double.TYPE.isAssignableFrom(expectedType) || Double.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Double.parseDouble(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+            }
+
             // return value as it is
             return value;
         }
 
         private Object valueToArray( Class<?> arrayComponentType,
                                      Object value ) throws Exception {
-            boolean valueIsArray = value instanceof Array;
-
-            int arraySize = valueIsArray ? ((Array)value).size() : 1;
-            Object array = java.lang.reflect.Array.newInstance(arrayComponentType, arraySize);
-
-            if (valueIsArray) {
+            if (value instanceof Array) {
+                Array valueArray = (Array)value;
+                int arraySize = valueArray.size();
+                Object newArray = java.lang.reflect.Array.newInstance(arrayComponentType, arraySize);
                 for (int i = 0; i < ((Array)value).size(); i++) {
-                    java.lang.reflect.Array.set(array, i, ((Array)value).get(i));
+                    Object element = valueArray.get(i);
+                    element = convertValueToType(arrayComponentType, element);
+                    java.lang.reflect.Array.set(newArray, i, element);
                 }
-            } else {
-                java.lang.reflect.Array.set(array, 0, value);
+                return newArray;
+            } else if (value instanceof String) {
+                // Parse the string into a comma-separated set of values (this works if it's just a single value) ...
+                String strValue = (String)value;
+                if (strValue.length() > 0) {
+                    String[] stringValues = strValue.split(",");
+                    Object newArray = java.lang.reflect.Array.newInstance(arrayComponentType, stringValues.length);
+                    for (int i = 0; i < stringValues.length; i++) {
+                        Object element = convertValueToType(arrayComponentType, stringValues[i]);
+                        java.lang.reflect.Array.set(newArray, i, element);
+                    }
+                    return newArray;
+                }
             }
-            return array;
+
+            // Otherwise, just initialize it to an empty array ...
+            return java.lang.reflect.Array.newInstance(arrayComponentType, 0);
         }
 
         private Collection<?> valueToCollection( Object value,

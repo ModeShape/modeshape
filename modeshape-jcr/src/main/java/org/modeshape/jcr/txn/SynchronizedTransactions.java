@@ -53,6 +53,7 @@ public class SynchronizedTransactions extends Transactions {
     public SynchronizedTransactions( MonitorFactory monitorFactory,
                                      TransactionManager txnMgr ) {
         super(monitorFactory, txnMgr);
+        assert txnMgr != null;
     }
 
     @Override

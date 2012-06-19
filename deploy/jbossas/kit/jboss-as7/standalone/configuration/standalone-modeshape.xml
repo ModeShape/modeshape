@@ -170,11 +170,11 @@
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
                     <file-store passivation="false" path="modeshape/store/sample" relative-to="jboss.server.data.dir" />
                 </local-cache>
-                <local-cache name="sample2">
+                <local-cache name="artifacts">
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store passivation="false" path="modeshape/store/sample2" relative-to="jboss.server.data.dir" />
+                    <file-store passivation="false" path="modeshape/store/artifacts" relative-to="jboss.server.data.dir" />
                 </local-cache>
             </cache-container>
         </subsystem>
@@ -184,7 +184,7 @@
                  that uses defaults for everything; feel free to change and specify other configuration options.  -->
             <repository name="sample" />
             <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
-            <repository name="artifacts" >
+            <repository name="artifacts" cache-name="artifacts" cache-container="modeshape" >
               <!-- Define 3 workspaces to exist upon startup -->
               <workspaces default-workspace="default" allow-workspace-creation="false">
                 <workspace name="default"/>
@@ -212,7 +212,7 @@
                 <sequencer name="java-source-sequencer" classname="org.modeshape.sequencer.java.JavaFileSequencer">
                   <path-expression>/files//(*.java[*])/jcr:content[@jcr:data] => /derived/java</path-expression>
                 </sequencer>
-                <sequencer name="java-class-sequencer" classname="org.modeshape.sequencer.java.ClassFileSequencer">
+                <sequencer name="java-class-sequencer" classname="org.modeshape.sequencer.class.ClassFileSequencer">
                   <path-expression>/files//(*.class[*])/jcr:content[@jcr:data] => /derived/class</path-expression>
                 </sequencer>
                 <sequencer name="cnd-sequencer" classname="cnd">
