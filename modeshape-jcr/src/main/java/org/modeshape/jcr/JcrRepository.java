@@ -218,8 +218,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         this.repositoryName.set(config.getName());
-        assert this.config != null;
-        assert this.repositoryName != null;
         this.logger = Logger.getLogger(getClass());
         this.logger.debug("Initializing '{0}' repository", this.repositoryName);
 
@@ -322,10 +320,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             // Always update the configuration ...
             RunningState oldState = this.runningState.get();
-            RepositoryConfiguration newConfig = new RepositoryConfiguration(copy, copy.getString(FieldName.NAME));
-            // Make sure the new configuration uses the same environment as the old one ...
-            newConfig = newConfig.with(oldConfiguration.environment());
-            this.config.set(newConfig);
+            this.config.set(new RepositoryConfiguration(copy, copy.getString(FieldName.NAME), oldConfiguration.environment()));
             if (oldState != null) {
                 assert state.get() == State.RUNNING;
                 // Repository is running, so create a new running state ...
@@ -1193,17 +1188,21 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return useXaSessions;
         }
 
-        private final ClassLoader classLoader() {
+        private ClassLoader classLoader() {
             return this.getClass().getClassLoader();
         }
 
-        private final ClassLoader classLoader( String classLoaderName,
-                                               ClassLoader defaultLoader ) {
+        private ClassLoader classLoader( String classLoaderName,
+                                         ClassLoader defaultLoader ) {
             if (classLoaderName != null) {
                 classLoaderName = classLoaderName.trim();
-                if (classLoaderName.length() == 0) classLoaderName = null;
+                if (classLoaderName.length() == 0) {
+                    classLoaderName = null;
+                }
             }
-            if (classLoaderName == null) return defaultLoader;
+            if (classLoaderName == null) {
+                return defaultLoader;
+            }
             ClassLoader loader = context.getClassLoader(classLoaderName);
             return loader != null ? loader : defaultLoader;
         }
@@ -1232,7 +1231,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return repositoryQueryManager;
         }
 
-        private final Cache<String, SchematicEntry> infinispanCache() {
+        private Cache<String, SchematicEntry> infinispanCache() {
             return database().getCache();
         }
 

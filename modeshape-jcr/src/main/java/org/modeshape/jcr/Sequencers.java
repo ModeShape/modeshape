@@ -142,6 +142,9 @@ public class Sequencers implements ChangeSetListener {
                     Set<SequencerPathExpression> pathExpressions = buildPathExpressionSet(sequencer);
                     pathExpressionsBySequencerId.put(uuid, pathExpressions);
                 } catch (Throwable t) {
+                    if (t.getCause() != null) {
+                        t = t.getCause();
+                    }
                     logger.error(t, JcrI18n.unableToInitializeSequencer, component, repoName, t.getMessage());
                 }
             }
