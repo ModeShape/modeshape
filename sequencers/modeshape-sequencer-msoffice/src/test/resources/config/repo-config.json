@@ -2,12 +2,11 @@
     "name" : "MS Office Test Repository",
     "sequencing" : {
         "removeDerivedContentWithOriginal" : true,
-        "sequencers" : [
-            {
-                "name" : "Office sequencer",
+        "sequencers" : {
+            "Office sequencer" : {
                 "classname" : "msoffice",
                 "pathExpressions" : [ "default://(*.(xls|doc|ppt))/jcr:content[@jcr:data]" ]
             }
-        ]
+        }
     }
 }

@@ -2,17 +2,15 @@
     "name" : "XML Sequencer Test Repository",
     "sequencing" : {
         "removeDerivedContentWithOriginal" : true,
-        "sequencers" : [
-            {
-                "name" : "XML sequencer",
+        "sequencers" : {
+            "XML sequencer" : {
                 "classname" : "xmlsequencer",
                 "pathExpressions" : [ "default:/(*.xml)/jcr:content[@jcr:data] => /xml" ]
             },
-            {
-                "name" : "Inheriting XML sequencer",
+            "Inheriting XML sequencer" : {
                 "classname" : "org.modeshape.sequencer.xml.InheritingXmlSequencer",
                 "pathExpressions" : [ "default:/(*.xsd)/jcr:content[@jcr:data] => /xml" ]
             }
-        ]
+        }
     }
 }

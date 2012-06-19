@@ -2,17 +2,15 @@
     "name" : "ImageSequencer Test Repository",
     "sequencing" : {
         "removeDerivedContentWithOriginal" : true,
-        "sequencers" : [
-            {
-                "name" : "Images in separate location",
+        "sequencers" : {
+            "Images in separate location" : {
                 "classname" : "ImageSequencer",
                 "pathExpression" : "default://(*.(gif|png|pict|jpg))/jcr:content[@jcr:data] => default:/sequenced/images"
             },
-            {
-                "name" : "Images in the same location",
+            "Images in the same location" : {
                 "classname" : "org.modeshape.sequencer.image.ImageMetadataSequencer",
                 "pathExpressions" : [ "default://(*.(gif|png|pict|jpg))/jcr:content[@jcr:data]" ]
             }
-        ]
+        }
     }
 }

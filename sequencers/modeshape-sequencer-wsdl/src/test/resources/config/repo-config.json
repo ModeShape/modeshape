@@ -2,12 +2,11 @@
     "name" : "WSDL Sequencer Test Repository",
     "sequencing" : {
         "removeDerivedContentWithOriginal" : true,
-        "sequencers" : [
-            {
-                "name" : "WSDL sequencer",
+        "sequencers" : {
+            "WSDL sequencer" : {
                 "classname" : "wsdlsequencer",
                 "pathExpressions" : [ "default:/(*.wsdl)/jcr:content[@jcr:data] => /wsdl" ]
             }
-        ]
+        }
     }
 }

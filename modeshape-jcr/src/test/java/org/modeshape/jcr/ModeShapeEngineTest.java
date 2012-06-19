@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit;
 import javax.jcr.Session;
 import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Editor;
 import org.junit.After;
@@ -297,8 +296,8 @@ public class ModeShapeEngineTest extends AbstractTransactionalTest {
         // Obtain an editor ...
         Editor editor = repository.getConfiguration().edit();
         EditableDocument sequencing = editor.getDocument(FieldName.SEQUENCING);
-        EditableArray sequencers = sequencing.getArray(FieldName.SEQUENCERS);
-        EditableDocument sequencerA = (EditableDocument)sequencers.get(0);
+        EditableDocument sequencers = sequencing.getDocument(FieldName.SEQUENCERS);
+        EditableDocument sequencerA = sequencers.getDocument("CND sequencer");
 
         // Verify the existing value ...
         List<?> exprs = sequencerA.getArray(FieldName.PATH_EXPRESSIONS);
@@ -316,8 +315,8 @@ public class ModeShapeEngineTest extends AbstractTransactionalTest {
         RepositoryConfiguration config2 = engine.getRepositoryConfiguration(config.getName());
         Document sequencerA2 = (Document)config2.getDocument()
                                                 .getDocument(FieldName.SEQUENCING)
-                                                .getArray(FieldName.SEQUENCERS)
-                                                .get(0);
+                                                .getDocument(FieldName.SEQUENCERS)
+                                                .get("CND sequencer");
         List<?> exprs2 = sequencerA2.getArray(FieldName.PATH_EXPRESSIONS);
         assertThat(exprs2.size(), is(2));
         assertThat((String)exprs2.get(0), is("//*.ddl"));

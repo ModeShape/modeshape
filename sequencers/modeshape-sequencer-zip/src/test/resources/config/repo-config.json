@@ -2,12 +2,11 @@
     "name" : "ZIP Sequencer Test Repository",
     "sequencing" : {
         "removeDerivedContentWithOriginal" : true,
-        "sequencers" : [
-            {
-                "name" : "ZIP sequencer",
+        "sequencers" : {
+            "ZIP sequencer" :  {
                 "classname" : "zipsequencer",
                 "pathExpressions" : [ "default:/(*.zip)/jcr:content[@jcr:data] => /zip" ]
             }
-        ]
+        }
     }
 }
