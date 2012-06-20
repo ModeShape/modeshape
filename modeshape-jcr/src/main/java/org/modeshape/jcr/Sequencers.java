@@ -117,17 +117,10 @@ public class Sequencers implements ChangeSetListener {
             this.configByWorkspaceName = new HashMap<String, Collection<SequencingConfiguration>>();
             this.pathExpressionsBySequencerId = new HashMap<UUID, Collection<SequencerPathExpression>>();
 
-            // Get a session that we'll pass to the sequencers to use for registering namespaces and node types
-            ClassLoader defaultClassLoader = getClass().getClassLoader();
-
             String repoName = repository.name();
             for (Component component : components) {
                 try {
-                    ClassLoader cl = context.getClassLoader(component.getClasspath());
-                    if (cl == null) {
-                        cl = defaultClassLoader;
-                    }
-                    Sequencer sequencer = component.createInstance(cl);
+                    Sequencer sequencer = component.createInstance(getClass().getClassLoader());
                     // Set the repository name field ...
                     ReflectionUtil.setValue(sequencer, "repositoryName", repoName);
 

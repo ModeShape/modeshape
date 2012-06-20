@@ -48,14 +48,10 @@ public final class TextExtractors extends TextExtractor {
     public TextExtractors( JcrRepository.RunningState repository,
                            Collection<Component> components ) {
         this.stopAfterFirst = true;
-        final ClassLoader defaultClassLoader = getClass().getClassLoader();
-        final ExecutionContext context = repository.context();
         this.extractors = new ArrayList<TextExtractor>();
         for (Component component : components) {
             try {
-                ClassLoader cl = context.getClassLoader(component.getClasspath());
-                if (cl == null) cl = defaultClassLoader;
-                TextExtractor extractor = component.createInstance(cl);
+                TextExtractor extractor = component.createInstance(getClass().getClassLoader());
                 setLogger(ExtensionLogger.getLogger(extractor.getClass()));
                 this.extractors.add(extractor);
             } catch (Throwable t) {

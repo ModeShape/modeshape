@@ -41,6 +41,7 @@ import org.jboss.msc.service.ServiceTarget;
 import org.modeshape.jboss.service.SequencerService;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.JcrRepository;
+import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
 public class AddSequencer extends AbstractAddStepHandler {
@@ -102,6 +103,7 @@ public class AddSequencer extends AbstractAddStepHandler {
                 props.put(key, node.asString());
             }
         }
+        ensureClassLoadingPropertyIsSet(props);
 
         SequencerService sequencerService = new SequencerService(repositoryName, props);
 
@@ -116,4 +118,22 @@ public class AddSequencer extends AbstractAddStepHandler {
         ServiceController<JcrRepository> controller = sequencerBuilder.install();
         newControllers.add(controller);
     }
+
+    private void ensureClassLoadingPropertyIsSet( Properties sequencerProperties ) {
+        //could be already set if the "module" element is present in the xml (AddSequencer)
+        if (sequencerProperties.contains(FieldName.CLASSLOADER)) {
+            return;
+        }
+        String sequencerClassName = sequencerProperties.getProperty(FieldName.TYPE);
+        //try to see if an alias is configured
+        String fullyQualifiedSequencerClass = RepositoryConfiguration.getBuiltInSequencerClassName(sequencerClassName);
+        if (fullyQualifiedSequencerClass == null) {
+            fullyQualifiedSequencerClass = sequencerClassName;
+        }
+
+        //set the classloader to the package name of the sequencer class
+        String sequencerModuleName = fullyQualifiedSequencerClass.substring(0, fullyQualifiedSequencerClass.lastIndexOf("."));
+        sequencerProperties.setProperty(FieldName.CLASSLOADER, sequencerModuleName);
+    }
+
 }

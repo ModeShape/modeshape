@@ -184,67 +184,70 @@
                  that uses defaults for everything; feel free to change and specify other configuration options.  -->
             <repository name="sample"/>
             <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
-            <repository name="artifacts" cache-name="artifacts" cache-container="modeshape" >
-              <!-- Define 3 workspaces to exist upon startup -->
-              <workspaces default-workspace="default" allow-workspace-creation="false">
-                <workspace name="default"/>
-                <workspace name="other"/>
-                <workspace name="extra"/>
-              </workspaces>
-              <!-- 
-                 Define a bunch of sequencers. Carefully note the differences in the path expressions; some sequencers
-                 do not generate a node to represent a file, while other sequencers (e.g., XML, XSD, WSDL, ZIP) always
-                 generate a node based upon the filename. 
-                 The sequencer names are unique identifiers within the configuration, and should not contain spaces.
-                 Also, some of the sequencer configurations use the fully-qualified classname, while other use the 
-                 short alias (which only works for the sequencer provided by ModeShape). -->
-              <sequencers>
-                <sequencer name="delimited-text-sequencer" classname="org.modeshape.sequencer.text.DelimitedTextSequencer" splitPattern=",">
-                  <path-expression>/files(//*.csv[*])/jcr:content[@jcr:data] => /derived/text/delimited/$1</path-expression>
-                </sequencer>
-                <sequencer name="fixed-width-text-sequencer" classname="org.modeshape.sequencer.text.FixedWidthTextSequencer" commentMarker="#">
-                  <path-expression>/files(//*.txt[*])/jcr:content[@jcr:data] => /derived/text/fixedWidth/$1</path-expression>
-                </sequencer>
-                <sequencer name="ddl-sequencer" classname="org.modeshape.sequencer.ddl.DdlSequencer">
-                  <path-expression>/files(//*.ddl[*])/jcr:content[@jcr:data] => /derived/ddl/$1</path-expression>
-                </sequencer>
-                <sequencer name="java-source-sequencer" classname="org.modeshape.sequencer.javafile.JavaFileSequencer">
-                  <path-expression>/files//(*.java[*])/jcr:content[@jcr:data] => /derived/java</path-expression>
-                </sequencer>
-                <sequencer name="java-class-sequencer" classname="org.modeshape.sequencer.classfile.ClassFileSequencer">
-                  <path-expression>/files//(*.class[*])/jcr:content[@jcr:data] => /derived/class</path-expression>
-                </sequencer>
-                <sequencer name="cnd-sequencer" classname="cnd">
-                  <path-expression>default:/files(//*.cnd[*])/jcr:content[@jcr:data] => other:/derived/nodetypes/$1</path-expression>
-                </sequencer>
-                <sequencer name="msoffice-sequencer" classname="msoffice">
-                  <path-expression>/files(//*.(xls|ppt|doc)[*])/jcr:content[@jcr:data] => /derived/msoffice/$1</path-expression>
-                </sequencer>
-                <!-- Not yet implemented
-                <sequencer name="teiid-model-sequencer" classname="model">
-                  <path-expression>/files(//)*.xmi[*])/jcr:content[@jcr:data] => /derived/teiid/models/$1</path-expression>
-                </sequencer>
-                <sequencer name="teiid-vdb-sequencer" classname="vdb">
-                  <path-expression>/files(//)*.vdb[*])/jcr:content[@jcr:data] => /derived/teiid/vdbs/$1</path-expression>
-                </sequencer>
-                -->
-                <!-- 
-                  The XSD, XML, WSDL, and ZIP sequencers all generate a node for the input documents, and so we don't want the filename to
-                  be included in the output path. Therefore, only the relative path under '/files' and above '*.xsd' (or '*.wsdl'
-                  or '*.xml') is captured in the input path. -->
-                <sequencer name="xsd-sequencer" classname="xsd">
-                  <path-expression>/files(//)*.xsd[*]/jcr:content[@jcr:data] => /derived/xsd/$1</path-expression>
-                </sequencer>
-                <sequencer name="wsdl-sequencer" classname="wsdl">
-                  <path-expression>/files(//)*.wsdl[*]/jcr:content[@jcr:data] => /derived/wsdl/$1</path-expression>
-                </sequencer>
-                <sequencer name="xml-sequencer" classname="xml">
-                  <path-expression>/files(//)*.xml[*]/jcr:content[@jcr:data] => /derived/xml/$1</path-expression>
-                </sequencer>
-                <sequencer name="zip-sequencer" classname="zip">
-                  <path-expression>/files(//)*.zip[*]/jcr:content[@jcr:data] => /derived/zip/$1</path-expression>
-                </sequencer>
-              </sequencers>
+            <repository name="artifacts">
+                <!-- Define 3 workspaces to exist upon startup -->
+                <workspaces default-workspace="default" allow-workspace-creation="false">
+                    <workspace name="default"/>
+                    <workspace name="other"/>
+                    <workspace name="extra"/>
+                </workspaces>
+                <!--
+                Define a bunch of sequencers. Carefully note the differences in the path expressions; some sequencers
+                do not generate a node to represent a file, while other sequencers (e.g., XML, XSD, WSDL, ZIP) always
+                generate a node based upon the filename.
+                The sequencer names are unique identifiers within the configuration, and should not contain spaces.
+                Also, some of the sequencer configurations use the fully-qualified classname, while other use the
+                short alias (which only works for the sequencer provided by ModeShape). -->
+                <sequencers>
+                    <sequencer name="delimited-text-sequencer" classname="org.modeshape.sequencer.text.DelimitedTextSequencer"
+                               splitPattern=",">
+                        <path-expression>/files(//*.csv[*])/jcr:content[@jcr:data] => /derived/text/delimited/$1</path-expression>
+                    </sequencer>
+                    <sequencer name="fixed-width-text-sequencer"
+                               classname="org.modeshape.sequencer.text.FixedWidthTextSequencer"
+                               commentMarker="#">
+                        <path-expression>/files(//*.txt[*])/jcr:content[@jcr:data] => /derived/text/fixedWidth/$1</path-expression>
+                    </sequencer>
+                    <sequencer name="ddl-sequencer" classname="org.modeshape.sequencer.ddl.DdlSequencer">
+                        <path-expression>/files(//*.ddl[*])/jcr:content[@jcr:data] => /derived/ddl/$1</path-expression>
+                    </sequencer>
+                    <sequencer name="java-source-sequencer" classname="org.modeshape.sequencer.javafile.JavaFileSequencer">
+                        <path-expression>/files//(*.java[*])/jcr:content[@jcr:data] => /derived/java</path-expression>
+                    </sequencer>
+                    <sequencer name="java-class-sequencer" classname="org.modeshape.sequencer.classfile.ClassFileSequencer">
+                        <path-expression>/files//(*.class[*])/jcr:content[@jcr:data] => /derived/class</path-expression>
+                    </sequencer>
+                    <sequencer name="cnd-sequencer" classname="cnd">
+                        <path-expression>default:/files(//*.cnd[*])/jcr:content[@jcr:data] => other:/derived/nodetypes/$1</path-expression>
+                    </sequencer>
+                    <sequencer name="msoffice-sequencer" classname="msoffice">
+                        <path-expression>/files(//*.(xls|ppt|doc)[*])/jcr:content[@jcr:data] => /derived/msoffice/$1</path-expression>
+                    </sequencer>
+                    <!-- Not yet implemented
+                    <sequencer name="teiid-model-sequencer" classname="model">
+                      <path-expression>/files(//)*.xmi[*])/jcr:content[@jcr:data] => /derived/teiid/models/$1</path-expression>
+                    </sequencer>
+                    <sequencer name="teiid-vdb-sequencer" classname="vdb">
+                      <path-expression>/files(//)*.vdb[*])/jcr:content[@jcr:data] => /derived/teiid/vdbs/$1</path-expression>
+                    </sequencer>
+                    -->
+                    <!--
+                     The XSD, XML, WSDL, and ZIP sequencers all generate a node for the input documents, and so we don't want the filename to
+                     be included in the output path. Therefore, only the relative path under '/files' and above '*.xsd' (or '*.wsdl'
+                     or '*.xml') is captured in the input path. -->
+                    <sequencer name="xsd-sequencer" classname="xsd">
+                        <path-expression>/files(//)*.xsd[*]/jcr:content[@jcr:data] => /derived/xsd/$1</path-expression>
+                    </sequencer>
+                    <sequencer name="wsdl-sequencer" classname="wsdl">
+                        <path-expression>/files(//)*.wsdl[*]/jcr:content[@jcr:data] => /derived/wsdl/$1</path-expression>
+                    </sequencer>
+                    <sequencer name="xml-sequencer" classname="xml">
+                        <path-expression>/files(//)*.xml[*]/jcr:content[@jcr:data] => /derived/xml/$1</path-expression>
+                    </sequencer>
+                    <sequencer name="zip-sequencer" classname="zip">
+                        <path-expression>/files(//)*.zip[*]/jcr:content[@jcr:data] => /derived/zip/$1</path-expression>
+                    </sequencer>
+                </sequencers>
             </repository>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>

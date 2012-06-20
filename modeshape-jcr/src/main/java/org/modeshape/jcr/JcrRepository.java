@@ -1188,25 +1188,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return useXaSessions;
         }
 
-        private ClassLoader classLoader() {
-            return this.getClass().getClassLoader();
-        }
-
-        private ClassLoader classLoader( String classLoaderName,
-                                         ClassLoader defaultLoader ) {
-            if (classLoaderName != null) {
-                classLoaderName = classLoaderName.trim();
-                if (classLoaderName.length() == 0) {
-                    classLoaderName = null;
-                }
-            }
-            if (classLoaderName == null) {
-                return defaultLoader;
-            }
-            ClassLoader loader = context.getClassLoader(classLoaderName);
-            return loader != null ? loader : defaultLoader;
-        }
-
         final String name() {
             return repositoryName();
         }
@@ -1327,11 +1308,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
 
             // Set up any custom AuthenticationProvider classes ...
-            ClassLoader defaultClassLoader = classLoader();
             for (Component component : securityConfig.getCustomProviders()) {
                 try {
-                    ClassLoader cl = classLoader(component.getClasspath(), defaultClassLoader);
-                    AuthenticationProvider provider = component.createInstance(cl);
+                    AuthenticationProvider provider = component.createInstance(getClass().getClassLoader());
                     authenticators = authenticators.with(provider);
                     if (provider instanceof AnonymousProvider) {
                         Object value = component.getDocument().get(FieldName.USE_ANONYMOUS_ON_FAILED_LOGINS);

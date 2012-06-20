@@ -3,17 +3,17 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * 
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -21,7 +21,6 @@
  */
 package org.modeshape.jboss.service;
 
-import java.util.List;
 import javax.jcr.RepositoryException;
 import javax.transaction.TransactionManager;
 import org.infinispan.manager.CacheContainer;
@@ -34,6 +33,10 @@ import org.infinispan.schematic.document.Editor;
 import org.jboss.as.clustering.jgroups.ChannelFactory;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
+import org.jboss.logging.Logger;
+import org.jboss.modules.ModuleIdentifier;
+import org.jboss.modules.ModuleLoadException;
+import org.jboss.modules.ModuleLoader;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -41,7 +44,8 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jgroups.Channel;
 import org.modeshape.common.collection.Problems;
-import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.DelegatingClassLoader;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jboss.subsystem.MappedAttributeDefinition;
 import org.modeshape.jcr.ConfigurationException;
 import org.modeshape.jcr.Environment;
@@ -52,6 +56,8 @@ import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
 import org.modeshape.jcr.RepositoryConfiguration.QueryRebuild;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A <code>RepositoryService</code> instance is the service responsible for initializing a {@link JcrRepository} in the ModeShape
@@ -62,6 +68,8 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     public static final String CONTENT_CONTAINER_NAME = "content";
     public static final String BINARY_STORAGE_CONTAINER_NAME = "binaries";
 
+    private static final Logger LOG = Logger.getLogger(RepositoryService.class.getPackage().getName());
+
     private final InjectedValue<ModeShapeEngine> engineInjector = new InjectedValue<ModeShapeEngine>();
     private final InjectedValue<CacheContainer> cacheManagerInjector = new InjectedValue<CacheContainer>();
     private final InjectedValue<TransactionManager> txnMgrInjector = new InjectedValue<TransactionManager>();
@@ -69,6 +77,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     private final InjectedValue<IndexStorage> indexStorageConfigInjector = new InjectedValue<IndexStorage>();
     private final InjectedValue<BinaryStorage> binaryStorageInjector = new InjectedValue<BinaryStorage>();
     private final InjectedValue<String> dataDirectoryPathInjector = new InjectedValue<String>();
+    private final InjectedValue<ModuleLoader> moduleLoaderInjector = new InjectedValue<ModuleLoader>();
 
     private RepositoryConfiguration repositoryConfiguration;
 
@@ -108,6 +117,34 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     }
 
     @Override
+    public ClassLoader getClassLoader( ClassLoader fallbackLoader,
+                                       String... classpathEntries ) {
+        List<ClassLoader> delegatingLoaders = new ArrayList<ClassLoader>();
+        if (classpathEntries != null) {
+            //each classpath entry is interpreted as a module identifier
+            for (String moduleIdString : classpathEntries) {
+                if (!StringUtil.isBlank(moduleIdString)) {
+                    try {
+                        ModuleIdentifier moduleIdentifier = ModuleIdentifier.fromString(moduleIdString);
+                        delegatingLoaders.add(moduleLoader().loadModule(moduleIdentifier).getClassLoader());
+                    } catch (IllegalArgumentException e) {
+                        LOG.warnv("The string (classpath entry) is not a valid module identifier: {0}", moduleIdString);
+                    }
+                    catch (ModuleLoadException e) {
+                        LOG.warnv("Cannot load module from (from classpath entry) with identifier: {0}", moduleIdString);
+                    }
+                }
+            }
+        }
+        if (fallbackLoader != null) {
+            delegatingLoaders.add(fallbackLoader);
+        }
+
+        ClassLoader parentLoader = getClass().getClassLoader();
+        return delegatingLoaders.isEmpty() ? parentLoader : new DelegatingClassLoader(parentLoader, delegatingLoaders);
+    }
+
+    @Override
     public void shutdown() {
         // Do nothing; this is the Environment's shutdown method
     }
@@ -119,7 +156,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     @Override
     public void start( StartContext arg0 ) throws StartException {
         ModeShapeEngine engine = getEngine();
-        Logger logger = Logger.getLogger(getClass());
+
         try {
             final String repositoryName = repositoryName();
 
@@ -168,11 +205,11 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
             config.setDocument(FieldName.QUERY, queryConfig);
             config.getOrCreateDocument(FieldName.STORAGE).setDocument(FieldName.BINARY_STORAGE, binaryConfig);
 
-            if (logger.isDebugEnabled()) {
-                logger.debug("ModeShape configuration for '{0}' repository: {1}", repositoryName, config);
+            if (LOG.isDebugEnabled()) {
+                LOG.debugv("ModeShape configuration for '{0}' repository: {1}", repositoryName, config);
                 Problems problems = repositoryConfiguration.validate();
                 if (problems.isEmpty()) {
-                    logger.debug("Problems with configuration for '{0}' repository: {1}", repositoryName, problems);
+                    LOG.debugv("Problems with configuration for '{0}' repository: {1}", repositoryName, problems);
                 }
             }
 
@@ -204,7 +241,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
     /**
      * Immediately change and apply the specified field in the current repository configuration to the new value.
-     * 
+     *
      * @param defn the attribute definition for the value; may not be null
      * @param newValue the new string value
      * @throws RepositoryException if there is a problem obtaining the repository configuration or applying the change
@@ -241,7 +278,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
     /**
      * Immediately change and apply the specified sequencer field in the current repository configuration to the new value.
-     * 
+     *
      * @param defn the attribute definition for the value; may not be null
      * @param newValue the new string value
      * @param sequencerName the name of the sequencer
@@ -337,4 +374,14 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
         return dataDirectoryPathInjector;
     }
 
+    /**
+     * @return the injector used to set the jboss module loader
+     */
+    public InjectedValue<ModuleLoader> getModuleLoaderInjector() {
+        return moduleLoaderInjector;
+    }
+
+    private ModuleLoader moduleLoader() {
+        return moduleLoaderInjector.getValue();
+    }
 }

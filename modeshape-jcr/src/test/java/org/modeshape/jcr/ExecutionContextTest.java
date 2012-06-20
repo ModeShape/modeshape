@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr;
 
+import javax.jcr.NamespaceRegistry;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -30,10 +31,10 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.util.HashSet;
 import java.util.Set;
-import org.modeshape.common.component.ClassLoaderFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.jcr.value.binary.BinaryStore;
 
 public class ExecutionContextTest {
 
@@ -71,7 +72,7 @@ public class ExecutionContextTest {
 
     @Test
     public void shouldCreateSubcontextsWithDifferentIdentifiers() {
-        ExecutionContext newContext = context.with(mock(ClassLoaderFactory.class));
+        ExecutionContext newContext = context.with(mock(BinaryStore.class));
         assertThat(newContext.getId(), is(not(context.getId())));
     }
 }

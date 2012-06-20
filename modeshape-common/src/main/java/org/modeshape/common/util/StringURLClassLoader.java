@@ -3,8 +3,8 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
@@ -21,19 +21,34 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.common.component;
+
+package org.modeshape.common.util;
+
+import org.modeshape.common.logging.Logger;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.List;
 
 /**
- * Factory interface for creating class loaders.
+ * Extension of a {@link URLClassLoader} which accepts a list of strings instead of urls, trying to convert each string to an
+ * url. If a string cannot be converted to a URL, it is discarded.
+ *
+ * @author Horia Chiorean
  */
-public interface ClassLoaderFactory {
+public final class StringURLClassLoader extends URLClassLoader {
 
-    /**
-     * Get a class loader for the supplied classpath.
-     * 
-     * @param classpath the classpath to use
-     * @return the class loader; may not be null
-     */
-    ClassLoader getClassLoader( String... classpath );
+    private static final Logger LOGGER = Logger.getLogger(StringURLClassLoader.class);
 
+    public StringURLClassLoader( List<String> urls ) {
+        super(new URL[0], null);
+        CheckArg.isNotNull(urls, "urls");
+        for (String url : urls) {
+            try {
+                super.addURL(new URL(url));
+            } catch (MalformedURLException e) {
+                LOGGER.debug("{0} is not a valid url ", url);
+            }
+        }
+    }
 }

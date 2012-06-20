@@ -31,6 +31,6 @@
     </resources>
 
     <dependencies>
-        <module name="org.modeshape.sequencer.sramp" />
+        <module name="org.modeshape.sequencer.sramp" export="true"/>
     </dependencies>
 </module>

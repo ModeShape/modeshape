@@ -33,10 +33,8 @@ import java.util.UUID;
 import java.util.concurrent.Executor;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.component.ClassLoaderFactory;
-import org.modeshape.common.component.StandardClassLoaderFactory;
-import org.modeshape.common.component.ThreadPoolFactory;
-import org.modeshape.common.component.ThreadPools;
+import org.modeshape.common.util.ThreadPoolFactory;
+import org.modeshape.common.util.ThreadPools;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.SecureHash;
@@ -69,7 +67,7 @@ import org.modeshape.jcr.value.binary.TransientBinaryStore;
  * </p>
  */
 @Immutable
-public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, Cloneable {
+public class ExecutionContext implements ThreadPoolFactory, Cloneable {
 
     public static final ExecutionContext DEFAULT_CONTEXT = new ExecutionContext();
 
@@ -82,7 +80,6 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
         }
     }
 
-    private final ClassLoaderFactory classLoaderFactory;
     private final ThreadPoolFactory threadPools;
     private final PropertyFactory propertyFactory;
     private final ValueFactories valueFactories;
@@ -102,7 +99,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
      */
     @SuppressWarnings( "synthetic-access" )
     public ExecutionContext() {
-        this(new NullSecurityContext(), null, null, null, null, null, null, null, null, null);
+        this(new NullSecurityContext(), null, null, null, null, null, null, null, null);
         initializeDefaultNamespaces(this.getNamespaceRegistry());
         assert securityContext != null;
 
@@ -120,7 +117,6 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
         this.namespaceRegistry = original.getNamespaceRegistry();
         this.valueFactories = original.getValueFactories();
         this.propertyFactory = original.getPropertyFactory();
-        this.classLoaderFactory = original.getClassLoaderFactory();
         this.threadPools = original.getThreadPoolFactory();
         this.mimeTypeDetector = original.getMimeTypeDetector();
         this.data = original.getData();
@@ -143,7 +139,6 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
         this.namespaceRegistry = original.getNamespaceRegistry();
         this.valueFactories = original.getValueFactories();
         this.propertyFactory = original.getPropertyFactory();
-        this.classLoaderFactory = original.getClassLoaderFactory();
         this.threadPools = original.getThreadPoolFactory();
         this.mimeTypeDetector = original.getMimeTypeDetector();
         this.data = original.getData();
@@ -163,8 +158,6 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
      *        should be used
      * @param mimeTypeDetector the {@link MimeTypeDetector} implementation, or null if the context should use a
      *        {@link MimeTypeDetectors} instance with an {@link ExtensionBasedMimeTypeDetector}
-     * @param classLoaderFactory the {@link ClassLoaderFactory} implementation, or null if a {@link StandardClassLoaderFactory}
-     *        instance should be used
      * @param threadPoolFactory the {@link ThreadPoolFactory} implementation, or null if a {@link ThreadPools} instance should be
      *        used
      * @param binaryStore the {@link BinaryStore} implementation, or null if a default {@link TransientBinaryStore} should be used
@@ -176,7 +169,6 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
                                 ValueFactories valueFactories,
                                 PropertyFactory propertyFactory,
                                 MimeTypeDetector mimeTypeDetector,
-                                ClassLoaderFactory classLoaderFactory,
                                 ThreadPoolFactory threadPoolFactory,
                                 BinaryStore binaryStore,
                                 Map<String, String> data,
@@ -189,20 +181,10 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
                                                                                                                  new SimpleNamespaceRegistry());
         this.valueFactories = valueFactories == null ? new StandardValueFactories(this.namespaceRegistry, binaryStore) : valueFactories;
         this.propertyFactory = propertyFactory == null ? new BasicPropertyFactory(this.valueFactories) : propertyFactory;
-        this.classLoaderFactory = classLoaderFactory == null ? new StandardClassLoaderFactory() : classLoaderFactory;
         this.threadPools = threadPoolFactory == null ? new ThreadPools() : threadPoolFactory;
         this.mimeTypeDetector = mimeTypeDetector != null ? mimeTypeDetector : new MimeTypeDetectors();
         this.data = data != null ? data : Collections.<String, String>emptyMap();
         this.processId = processId != null ? processId : UUID.randomUUID().toString();
-    }
-
-    /**
-     * Get the class loader factory used by this context.
-     * 
-     * @return the class loader factory implementation; never null
-     */
-    protected ClassLoaderFactory getClassLoaderFactory() {
-        return classLoaderFactory;
     }
 
     protected ThreadPoolFactory getThreadPoolFactory() {
@@ -291,11 +273,6 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
     }
 
     @Override
-    public ClassLoader getClassLoader( String... classpath ) {
-        return this.classLoaderFactory.getClassLoader(classpath);
-    }
-
-    @Override
     public Executor getThreadPool( String name ) {
         return this.threadPools.getThreadPool(name);
     }
@@ -343,7 +320,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
     public ExecutionContext with( BinaryStore binaryStore ) {
         if (binaryStore == null) binaryStore = TransientBinaryStore.get();
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), valueFactories, getPropertyFactory(),
-                                    getMimeTypeDetector(), getClassLoaderFactory(), getThreadPoolFactory(), binaryStore,
+                                    getMimeTypeDetector(), getThreadPoolFactory(), binaryStore,
                                     getData(), getProcessId());
     }
 
@@ -360,7 +337,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
         // Don't supply the value factories or property factories, since they'll have to be recreated
         // to reference the supplied namespace registry ...
         return new ExecutionContext(getSecurityContext(), namespaceRegistry, null, getPropertyFactory(), getMimeTypeDetector(),
-                                    getClassLoaderFactory(), getThreadPoolFactory(), getBinaryStore(), getData(), getProcessId());
+                                    getThreadPoolFactory(), getBinaryStore(), getData(), getProcessId());
     }
 
     /**
@@ -374,23 +351,10 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
      */
     public ExecutionContext with( MimeTypeDetector mimeTypeDetector ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    mimeTypeDetector, getClassLoaderFactory(), getThreadPoolFactory(), getBinaryStore(),
+                                    mimeTypeDetector, getThreadPoolFactory(), getBinaryStore(),
                                     getData(), getProcessId());
     }
 
-    /**
-     * Create a new execution context that mirrors this context but that uses the supplied {@link ClassLoaderFactory class loader
-     * factory}.
-     * 
-     * @param classLoaderFactory the new class loader factory implementation, or null if the default implementation should be used
-     * @return the execution context that is identical with this execution context, but which uses the supplied class loader
-     *         factory implementation; never null
-     */
-    public ExecutionContext with( ClassLoaderFactory classLoaderFactory ) {
-        return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), classLoaderFactory, getThreadPoolFactory(), getBinaryStore(),
-                                    getData(), getProcessId());
-    }
 
     /**
      * Create a new execution context that mirrors this context but that uses the supplied {@link ThreadPoolFactory thread pool
@@ -402,7 +366,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
      */
     public ExecutionContext with( ThreadPoolFactory threadPoolFactory ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), getClassLoaderFactory(), threadPoolFactory, getBinaryStore(),
+                                    getMimeTypeDetector(), threadPoolFactory, getBinaryStore(),
                                     getData(), getProcessId());
     }
 
@@ -415,7 +379,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
      */
     public ExecutionContext with( PropertyFactory propertyFactory ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), propertyFactory,
-                                    getMimeTypeDetector(), getClassLoaderFactory(), getThreadPoolFactory(), getBinaryStore(),
+                                    getMimeTypeDetector(), getThreadPoolFactory(), getBinaryStore(),
                                     getData(), getProcessId());
     }
 
@@ -450,7 +414,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
             newData = Collections.unmodifiableMap(new HashMap<String, String>(data));
         }
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), getClassLoaderFactory(), getThreadPoolFactory(), getBinaryStore(),
+                                    getMimeTypeDetector(), getThreadPoolFactory(), getBinaryStore(),
                                     newData, getProcessId());
     }
 
@@ -483,7 +447,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
             newData = Collections.unmodifiableMap(newData);
         }
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), getClassLoaderFactory(), getThreadPoolFactory(), getBinaryStore(),
+                                    getMimeTypeDetector(), getThreadPoolFactory(), getBinaryStore(),
                                     newData, getProcessId());
     }
 
@@ -497,7 +461,7 @@ public class ExecutionContext implements ClassLoaderFactory, ThreadPoolFactory, 
      */
     public ExecutionContext with( String processId ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), getClassLoaderFactory(), getThreadPoolFactory(), getBinaryStore(),
+                                    getMimeTypeDetector(), getThreadPoolFactory(), getBinaryStore(),
                                     getData(), processId);
     }
 

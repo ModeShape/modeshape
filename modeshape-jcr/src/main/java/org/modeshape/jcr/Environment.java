@@ -39,6 +39,8 @@ public interface Environment {
 
     Channel getChannel( String name ) throws Exception;
 
+    ClassLoader getClassLoader(ClassLoader fallbackLoader, String...classpathEntries);
+
     void shutdown();
 
 }

@@ -21,34 +21,28 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.sequencer.ddl;
+package org.modeshape.common.util;
 
-import java.util.Map;
-import org.modeshape.common.component.ComponentConfig;
+import java.util.concurrent.Executor;
 
 /**
- * A {@link ComponentConfig} implementation to support various parser configurations.
+ * Factory interface for creating/obtaining named thread pools.
  */
-public class DdlParserConfig extends ComponentConfig {
+public interface ThreadPoolFactory {
 
-    public DdlParserConfig( String name,
-                            String description,
-                            Map<String, Object> properties,
-                            String classname,
-                            String[] classpath ) {
-        super(name, description, properties, classname, classpath);
-    }
+    /**
+     * Obtain a thread pool with the supplied name, or create and return one if no thread pool exists with that name. When
+     * finished with the thread pool, it should be {@link #releaseThreadPool released}.
+     * 
+     * @param name the name of the thread pool; may not be null
+     * @return the thread pool executor; never null
+     */
+    Executor getThreadPool( String name );
 
-    public DdlParserConfig( String name,
-                            String description,
-                            Map<String, Object> properties,
-                            Class<? extends DdlParser> clazz ) {
-        super(name, description, properties, clazz.getName());
-    }
-
-    public DdlParserConfig( String name,
-                            String description,
-                            Class<? extends DdlParser> clazz ) {
-        super(name, description, clazz.getName());
-    }
+    /**
+     * Signal that the supplied thread pool is no longer needed.
+     * 
+     * @param pool the pool that is no longer needed
+     */
+    void releaseThreadPool( Executor pool );
 }

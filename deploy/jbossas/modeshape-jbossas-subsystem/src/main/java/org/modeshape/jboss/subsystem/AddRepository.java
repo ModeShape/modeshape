@@ -41,7 +41,9 @@ import org.jboss.as.naming.ManagedReferenceFactory;
 import org.jboss.as.naming.ServiceBasedNamingStore;
 import org.jboss.as.naming.deployment.ContextNames;
 import org.jboss.as.naming.service.BinderService;
+import org.jboss.as.server.Services;
 import org.jboss.dmr.ModelNode;
+import org.jboss.modules.ModuleLoader;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceBuilder.DependencyType;
 import org.jboss.msc.service.ServiceController;
@@ -251,6 +253,9 @@ public class AddRepository extends AbstractAddStepHandler {
         builder.addDependency(ServiceName.JBOSS.append("infinispan", namedContainer),
                               CacheContainer.class,
                               repositoryService.getCacheManagerInjector());
+
+        builder.addDependency(Services.JBOSS_SERVICE_MODULE_LOADER, ModuleLoader.class,
+                              repositoryService.getModuleLoaderInjector());
 
         // Add (optional) dependency to the index storage service, which captures the properties for the index storage
         // (if they were specified in the model nodes) ...

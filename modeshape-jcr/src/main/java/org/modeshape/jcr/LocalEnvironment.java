@@ -23,10 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -39,6 +35,15 @@ import org.infinispan.schematic.Schematic;
 import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
 import org.infinispan.transaction.lookup.TransactionManagerLookup;
 import org.jgroups.Channel;
+import org.modeshape.common.util.DelegatingClassLoader;
+import org.modeshape.common.util.StringURLClassLoader;
+import org.modeshape.common.util.StringUtil;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 
@@ -87,6 +92,29 @@ public class LocalEnvironment implements Environment {
             shutdown(container);
         }
         containers.clear();
+    }
+
+    @Override
+    public ClassLoader getClassLoader( ClassLoader fallbackLoader,
+                                       String... classpathEntries ) {
+        List<String> urls = new ArrayList<String>();
+        if (classpathEntries != null) {
+            for (String url : classpathEntries) {
+                if (!StringUtil.isBlank(url)) {
+                    urls.add(url);
+                }
+            }
+        }
+        List<ClassLoader> delegatesList = new ArrayList<ClassLoader>();
+        if (!urls.isEmpty()) {
+            delegatesList.add(new StringURLClassLoader(urls));
+        }
+        if (fallbackLoader != null) {
+            delegatesList.add(fallbackLoader);
+        }
+
+        ClassLoader parentLoader = getClass().getClassLoader();
+        return delegatesList.isEmpty() ? parentLoader : new DelegatingClassLoader(parentLoader, delegatesList);
     }
 
     protected void shutdown( CacheContainer container ) {

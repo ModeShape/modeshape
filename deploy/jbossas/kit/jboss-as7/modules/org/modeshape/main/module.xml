@@ -30,20 +30,10 @@
     </resources>
 
    <dependencies>
+       <!--The sequencers aren't listed here because they are loaded from the ModuleLoader API -->
         <module name="org.modeshape.jcr.api" export="true"/>
         <module name="org.modeshape.common" export="true"/>
-        <module name="org.modeshape.sequencer.ddl"/>
-        <module name="org.modeshape.sequencer.images"/>
-        <module name="org.modeshape.sequencer.java"/>
-        <module name="org.modeshape.sequencer.mp3"/>
-        <module name="org.modeshape.sequencer.msoffice"/>
-        <module name="org.modeshape.sequencer.sramp"/>
-        <module name="org.modeshape.sequencer.teiid"/>
-        <module name="org.modeshape.sequencer.text"/>
-        <module name="org.modeshape.sequencer.wsdl"/>
-        <module name="org.modeshape.sequencer.xml"/>
-        <module name="org.modeshape.sequencer.xsd"/>
-        <module name="org.modeshape.sequencer.zip"/>
+
         <!-- ModeShape JCR dependencies (must export Infinispan so that our stored classes can be loaded )-->
         <module name="org.infinispan" export="true"/>
         <module name="org.joda.time" />

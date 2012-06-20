@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.common.component;
+package org.modeshape.common.util;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -31,8 +31,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.NamedThreadFactory;
 
 /**
  * A simple {@link ThreadPoolFactory} implementation.

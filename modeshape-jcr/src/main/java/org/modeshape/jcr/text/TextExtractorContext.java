@@ -26,7 +26,6 @@ package org.modeshape.jcr.text;
 import java.util.Map;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
-import org.modeshape.common.component.ClassLoaderFactory;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.api.text.TextExtractor;
@@ -62,11 +61,6 @@ public class TextExtractorContext extends ExecutionContext implements TextExtrac
      */
     public Problems getProblems() {
         return this.problems;
-    }
-
-    @Override
-    public TextExtractorContext with( ClassLoaderFactory classLoaderFactory ) {
-        return new TextExtractorContext(super.with(classLoaderFactory), mimeType, problems);
     }
 
     @Override

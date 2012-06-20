@@ -880,6 +880,24 @@ public class RepositoryConfiguration {
     }
 
     /**
+     * Returns a fully qualified built-in sequencer class name mapped to the given alias, or {@code null} if there isn't such a mapping
+     * @param alias
+     * @return
+     */
+    public static String getBuiltInSequencerClassName( String alias ) {
+        return SEQUENCER_ALIASES.get(alias);
+    }
+
+    /**
+     * Returns a fully qualified built-in text extractor class name mapped to the given alias, or {@code null} if there isn't such a mapping
+     * @param alias
+     * @return
+     */
+    public static String getBuiltInTextExtractorClassName( String alias ) {
+        return EXTRACTOR_ALIASES.get(alias);
+    }
+
+    /**
      * The binary-storage-related configuration information.
      */
     @Immutable
@@ -1683,7 +1701,7 @@ public class RepositoryConfiguration {
     }
 
     @Immutable
-    public static class Component {
+    public class Component {
         private final String name;
         private final String classname;
         private final String classpath;
@@ -1756,14 +1774,14 @@ public class RepositoryConfiguration {
 
         /**
          * Create an instance of this class.
-         * 
+         *
          * @param <Type>
-         * @param classLoader the class loader that should be used
+         * @param fallbackLoader the fallback class loader that should be used for {@link Environment#getClassLoader(ClassLoader, String...)}
          * @return the new instance, with all {@link #getDocument() document fields} set on it; never null
          * @see #getClasspath()
          * @throws Exception if anything fails
          */
-        public <Type> Type createInstance( ClassLoader classLoader ) throws Exception {
+        public <Type> Type createInstance( ClassLoader fallbackLoader ) throws Exception {
             // Handle some of the built-in providers in a special way ...
             String classname = getClassname();
             if (AnonymousProvider.class.getName().equals(classname)) {
@@ -1771,6 +1789,7 @@ public class RepositoryConfiguration {
             } else if (JaasProvider.class.getName().equals(classname)) {
                 return createJaasProvider();
             }
+            ClassLoader classLoader = environment().getClassLoader(fallbackLoader, classpath);
             return createGenericComponent(classLoader);
         }
 

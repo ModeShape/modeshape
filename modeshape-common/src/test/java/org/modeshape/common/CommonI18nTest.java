@@ -23,9 +23,6 @@
  */
 package org.modeshape.common;
 
-import org.junit.Test;
-import org.modeshape.common.component.ComponentConfig;
-
 /**
  * @author John Verhaeg
  */
@@ -33,10 +30,5 @@ public class CommonI18nTest extends AbstractI18nTest {
 
     public CommonI18nTest() {
         super(CommonI18n.class);
-    }
-
-    @Test
-    public void shouldHaveI18nConstantsAndPropertiesForComponentConfigs() throws Exception {
-        verifyI18nForAnnotationsOnObject(new ComponentConfig("name", "desc", "classname"));
     }
 }
