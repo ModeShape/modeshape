@@ -26,7 +26,8 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.Set;
-import org.infinispan.marshall.AbstractExternalizer;
+import org.infinispan.marshall.SerializeWith;
+import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Base64;
 import org.infinispan.util.Util;
@@ -38,6 +39,7 @@ import org.infinispan.util.Util;
  * @since 5.1
  */
 @Immutable
+@SerializeWith( Binary.Externalizer.class )
 public final class Binary {
 
     private final byte type;
@@ -92,8 +94,7 @@ public final class Binary {
         return Base64.encodeBytes(data);
     }
 
-    public static class Externalizer extends AbstractExternalizer<Binary> {
-        /** The serialVersionUID */
+    public static class Externalizer extends SchematicExternalizer<Binary> {
         private static final long serialVersionUID = 1L;
 
         @Override

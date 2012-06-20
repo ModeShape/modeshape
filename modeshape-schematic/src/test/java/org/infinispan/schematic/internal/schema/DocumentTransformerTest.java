@@ -68,7 +68,7 @@ public class DocumentTransformerTest {
 
     @Test
     public void shouldTransformDocumentWithStringValueWhereIntegerExpected() throws Exception {
-        print = true;
+        // print = true;
         Document doc = doc("{ 'name' : 'Acme Bottle Opener', 'id' : '123' , 'price' : 2.99, 'tags' : [ 'easy', 'under-10-dollars' ] }");
         transform(doc, PARTS_SCHEMA_URI, 1);
     }

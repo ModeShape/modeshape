@@ -24,11 +24,13 @@ package org.infinispan.schematic.document;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
-import org.infinispan.marshall.AbstractExternalizer;
+import org.infinispan.marshall.SerializeWith;
+import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
 
 @Immutable
+@SerializeWith( MaxKey.Externalizer.class )
 public final class MaxKey {
 
     /**
@@ -70,8 +72,7 @@ public final class MaxKey {
         return INSTANCE;
     }
 
-    public static class Externalizer extends AbstractExternalizer<MaxKey> {
-        /** The serialVersionUID */
+    public static class Externalizer extends SchematicExternalizer<MaxKey> {
         private static final long serialVersionUID = 1L;
 
         @Override

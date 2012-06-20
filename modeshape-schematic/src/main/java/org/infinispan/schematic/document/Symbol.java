@@ -26,7 +26,8 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.util.Set;
-import org.infinispan.marshall.AbstractExternalizer;
+import org.infinispan.marshall.SerializeWith;
+import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
 
@@ -37,6 +38,7 @@ import org.infinispan.util.Util;
  * @since 5.1
  */
 @Immutable
+@SerializeWith( Symbol.Externalizer.class )
 public final class Symbol implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -76,8 +78,7 @@ public final class Symbol implements Serializable {
         return symbol;
     }
 
-    public static class Externalizer extends AbstractExternalizer<Symbol> {
-        /** The serialVersionUID */
+    public static class Externalizer extends SchematicExternalizer<Symbol> {
         private static final long serialVersionUID = 1L;
 
         @Override

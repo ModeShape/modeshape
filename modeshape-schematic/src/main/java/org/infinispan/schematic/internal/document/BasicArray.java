@@ -35,6 +35,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Bson;
@@ -63,6 +64,7 @@ import org.infinispan.schematic.internal.schema.DocumentTransformer.SystemProper
  * 
  * @author Randall Hauch <rhauch@redhat.com> (C) 2011 Red Hat Inc.
  */
+@SerializeWith( DocumentExternalizer.class )
 public class BasicArray implements MutableArray {
 
     private static final long serialVersionUID = 1L;

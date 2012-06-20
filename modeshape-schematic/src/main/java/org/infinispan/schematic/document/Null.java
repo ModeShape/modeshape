@@ -24,7 +24,8 @@ package org.infinispan.schematic.document;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
-import org.infinispan.marshall.AbstractExternalizer;
+import org.infinispan.marshall.SerializeWith;
+import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
 
@@ -35,6 +36,7 @@ import org.infinispan.util.Util;
  * @since 5.1
  */
 @Immutable
+@SerializeWith( Null.Externalizer.class )
 public class Null {
 
     protected static final Null INSTANCE = new Null();
@@ -74,8 +76,7 @@ public class Null {
         return INSTANCE;
     }
 
-    public static class Externalizer extends AbstractExternalizer<Null> {
-        /** The serialVersionUID */
+    public static class Externalizer extends SchematicExternalizer<Null> {
         private static final long serialVersionUID = 1L;
 
         @Override

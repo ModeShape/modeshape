@@ -26,9 +26,10 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
-import org.infinispan.marshall.AbstractExternalizer;
+import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.document.Immutable;
 import org.infinispan.schematic.document.Path;
+import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
@@ -39,6 +40,7 @@ import org.infinispan.util.Util;
  * @author (various)
  */
 @Immutable
+@SerializeWith( RemoveOperation.Externalizer.class )
 public class RemoveOperation extends Operation {
     protected final String fieldName;
     protected final Object oldValue;
@@ -81,8 +83,7 @@ public class RemoveOperation extends Operation {
         return "Remove from '" + parentPath + "' the '" + fieldName + "' field value '" + oldValue + "'";
     }
 
-    public static class Externalizer extends AbstractExternalizer<RemoveOperation> {
-        /** The serialVersionUID */
+    public static final class Externalizer extends SchematicExternalizer<RemoveOperation> {
         private static final long serialVersionUID = 1L;
 
         @Override

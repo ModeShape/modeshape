@@ -7,45 +7,15 @@ import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
-import org.infinispan.config.Configuration;
-import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.schematic.SchemaLibrary.Results;
 import org.infinispan.schematic.SchematicEntry.FieldName;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Json;
 import org.infinispan.schematic.internal.document.BasicDocument;
-import org.infinispan.test.TestingUtil;
-import org.infinispan.test.fwk.TestCacheManagerFactory;
-import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
-@SuppressWarnings( "deprecation" )
-public class SchematicDbTest {
-
-    private SchematicDb db;
-    private EmbeddedCacheManager cm;
-
-    // private TransactionManager tm;
-
-    @Before
-    public void beforeTest() {
-        Configuration c = new Configuration();
-        c = c.fluent().transaction().transactionManagerLookup(new DummyTransactionManagerLookup()).build();
-        cm = TestCacheManagerFactory.createCacheManager(c);
-        // Now create the SchematicDb ...
-        db = Schematic.get(cm, "documents");
-        // tm = TestingUtil.getTransactionManager(db.getCache());
-    }
-
-    @After
-    public void afterTest() {
-        TestingUtil.killCacheManagers(cm);
-        db = null;
-        // tm = null;
-    }
+public class SchematicDbTest extends AbstractSchematicDbTest {
 
     protected static InputStream resource( String resourcePath ) {
         InputStream result = SchemaValidationTest.class.getClassLoader().getResourceAsStream(resourcePath);

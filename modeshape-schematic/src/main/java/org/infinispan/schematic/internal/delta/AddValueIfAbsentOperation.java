@@ -26,8 +26,9 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
-import org.infinispan.marshall.AbstractExternalizer;
+import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.document.Path;
+import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.document.MutableArray;
 import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
@@ -39,6 +40,7 @@ import org.infinispan.util.Util;
  * @author Randall Hauch <rhauch@redhat.com> (C) 2011 Red Hat Inc.
  * @since 5.1
  */
+@SerializeWith( AddValueIfAbsentOperation.Externalizer.class )
 public class AddValueIfAbsentOperation extends AddValueOperation {
 
     protected transient boolean added;
@@ -71,8 +73,7 @@ public class AddValueIfAbsentOperation extends AddValueOperation {
         return super.toString() + " if absent";
     }
 
-    public static class Externalizer extends AbstractExternalizer<AddValueIfAbsentOperation> {
-        /** The serialVersionUID */
+    public static final class Externalizer extends SchematicExternalizer<AddValueIfAbsentOperation> {
         private static final long serialVersionUID = 1L;
 
         @Override

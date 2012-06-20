@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Set;
 import org.infinispan.atomic.Delta;
 import org.infinispan.atomic.DeltaAware;
-import org.infinispan.marshall.AbstractExternalizer;
+import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.internal.delta.DocumentObserver;
 import org.infinispan.schematic.internal.delta.Operation;
@@ -45,6 +45,7 @@ import org.infinispan.util.logging.LogFactory;
  * @since 5.1
  * @see org.infinispan.atomic.AtomicHashMapDelta
  */
+@SerializeWith( SchematicEntryDelta.Externalizer.class )
 public class SchematicEntryDelta implements Delta, DocumentObserver {
     private static final Log log = LogFactory.getLog(SchematicEntryDelta.class);
     private static final boolean trace = log.isTraceEnabled();
@@ -82,8 +83,7 @@ public class SchematicEntryDelta implements Delta, DocumentObserver {
         return changeLog == null ? 0 : changeLog.size();
     }
 
-    public static class Externalizer extends AbstractExternalizer<SchematicEntryDelta> {
-        /** The serialVersionUID */
+    public static class Externalizer extends SchematicExternalizer<SchematicEntryDelta> {
         private static final long serialVersionUID = 1L;
 
         @SuppressWarnings( "synthetic-access" )
@@ -108,8 +108,8 @@ public class SchematicEntryDelta implements Delta, DocumentObserver {
             return Ids.SCHEMATIC_VALUE_DELTA;
         }
 
-        @SuppressWarnings( "unchecked" )
         @Override
+        @SuppressWarnings( "unchecked" )
         public Set<Class<? extends SchematicEntryDelta>> getTypeClasses() {
             return Util.<Class<? extends SchematicEntryDelta>>asSet(SchematicEntryDelta.class);
         }

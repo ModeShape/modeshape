@@ -53,7 +53,9 @@ import org.infinispan.schematic.document.Symbol;
 import org.infinispan.schematic.document.Timestamp;
 import org.infinispan.schematic.internal.CacheSchematicDb;
 import org.infinispan.schematic.internal.InMemorySchemaLibrary;
+import org.infinispan.schematic.internal.SchematicEntryDelta;
 import org.infinispan.schematic.internal.SchematicEntryLiteral;
+import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.delta.AddValueIfAbsentOperation;
 import org.infinispan.schematic.internal.delta.AddValueOperation;
 import org.infinispan.schematic.internal.delta.ClearOperation;
@@ -466,17 +468,24 @@ public class Schematic {
         return EXTERNALIZERS.toArray(new AdvancedExternalizer[EXTERNALIZERS.size()]);
     }
 
-    public static Set<AdvancedExternalizer<?>> externalizerSet() {
+    /**
+     * Get the complete set of {@link AdvancedExternalizer} implementations. Note that this does not include {@link Externalizer}
+     * implementations that are not {@link AdvancedExternalizer}s.
+     * 
+     * @return immutable set of {@link AdvancedExternalizer} implementations.
+     */
+    public static Set<? extends AdvancedExternalizer<?>> externalizerSet() {
         return EXTERNALIZERS;
     }
 
     private static final Set<AdvancedExternalizer<?>> EXTERNALIZERS;
 
     static {
-        Set<AdvancedExternalizer<?>> externalizers = new HashSet<AdvancedExternalizer<?>>();
+        Set<SchematicExternalizer<?>> externalizers = new HashSet<SchematicExternalizer<?>>();
 
         // SchematicDb values ...
         externalizers.add(new SchematicEntryLiteral.Externalizer());
+        externalizers.add(new SchematicEntryDelta.Externalizer());
 
         // Documents ...
         externalizers.add(new DocumentExternalizer()); // BasicDocument and BasicArray
@@ -502,6 +511,13 @@ public class Schematic {
         externalizers.add(new RetainAllValuesOperation.Externalizer());
         externalizers.add(new SetValueOperation.Externalizer());
 
-        EXTERNALIZERS = Collections.unmodifiableSet(externalizers);
+        // Add only those that are advanced ...
+        Set<AdvancedExternalizer<?>> advancedExternalizers = new HashSet<AdvancedExternalizer<?>>();
+        for (SchematicExternalizer<?> externalizer : externalizers) {
+            if (externalizer instanceof AdvancedExternalizer) {
+                advancedExternalizers.add((AdvancedExternalizer<?>)externalizer);
+            }
+        }
+        EXTERNALIZERS = Collections.unmodifiableSet(advancedExternalizers);
     }
 }

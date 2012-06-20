@@ -4,22 +4,17 @@ import java.io.File;
 import org.infinispan.config.Configuration;
 import org.infinispan.config.GlobalConfiguration;
 import org.infinispan.loaders.bdbje.BdbjeCacheStoreConfig;
-import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.test.TestingUtil;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 @SuppressWarnings( "deprecation" )
-public class SchematicDbWithBerkleyTest {
+public class SchematicDbWithBerkleyTest extends AbstractSchematicDbTest {
 
-    private SchematicDb db;
-    private EmbeddedCacheManager cm;
-
+    @Override
     @Before
     public void beforeTest() {
         File dbDir = new File("target/bdb");
@@ -39,14 +34,9 @@ public class SchematicDbWithBerkleyTest {
              .addCacheLoader(berkleyConfig)
              .build();
         cm = TestCacheManagerFactory.createCacheManager(global, c, true);
+        tm = cm.getCache().getAdvancedCache().getTransactionManager();
         // Now create the SchematicDb ...
         db = Schematic.get(cm, "documents");
-    }
-
-    @After
-    public void afterTest() {
-        TestingUtil.killCacheManagers(cm);
-        db = null;
     }
 
     @Test
