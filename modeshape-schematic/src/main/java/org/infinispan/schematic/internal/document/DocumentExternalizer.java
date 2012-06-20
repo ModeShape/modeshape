@@ -26,14 +26,13 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
-import org.infinispan.marshall.AbstractExternalizer;
 import org.infinispan.schematic.document.Bson;
 import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.Json;
+import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
 
-public class DocumentExternalizer extends AbstractExternalizer<Document> {
+public class DocumentExternalizer extends SchematicExternalizer<Document> {
     /** The serialVersionUID */
     private static final long serialVersionUID = 1L;
 
@@ -45,16 +44,18 @@ public class DocumentExternalizer extends AbstractExternalizer<Document> {
         byte[] bytes = Bson.write(doc);
         // Write the number of bytes ...
         output.writeInt(bytes.length);
-        // Write the BSON output ...
-        output.write(bytes);
+        if (bytes.length > 0) {
+            // Write the BSON output ...
+            output.write(bytes);
 
-        // Try to read the bytes back in, and if there's a failure, then write out the doc ...
-        try {
-            Bson.read(new ByteArrayInputStream(bytes));
-        } catch (RuntimeException e) {
-            // Print the original document ...
-            System.err.println("Failed to write and read BSON document: ");
-            System.err.println(Json.write(doc));
+            // // Try to read the bytes back in, and if there's a failure, then write out the doc ...
+            // try {
+            // Bson.read(new ByteArrayInputStream(bytes));
+            // } catch (RuntimeException e) {
+            // // Print the original document ...
+            // System.err.println("Failed to write and read BSON document: ");
+            // System.err.println(Json.write(doc));
+            // }
         }
     }
 

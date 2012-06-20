@@ -21,6 +21,8 @@
  */
 package org.infinispan.schematic.document;
 
+import org.infinispan.marshall.SerializeWith;
+
 /**
  * A {@link Bson.Type#JAVASCRIPT_WITH_SCOPE JavaScript code with scope} value for use within a {@link Document BSON Object}.
  * 
@@ -28,6 +30,7 @@ package org.infinispan.schematic.document;
  * @since 5.1
  */
 @Immutable
+@SerializeWith( Code.Externalizer.class )
 public final class CodeWithScope extends Code {
 
     private final Document scope;

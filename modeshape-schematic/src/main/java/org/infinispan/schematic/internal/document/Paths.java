@@ -30,9 +30,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import org.infinispan.marshall.AbstractExternalizer;
+import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.document.Immutable;
 import org.infinispan.schematic.document.Path;
+import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
 
@@ -124,6 +125,7 @@ public class Paths {
     }
 
     @Immutable
+    @SerializeWith( Paths.Externalizer.class )
     protected static final class EmptyPath implements Path {
         @Override
         public Iterator<String> iterator() {
@@ -209,6 +211,7 @@ public class Paths {
     }
 
     @Immutable
+    @SerializeWith( Paths.Externalizer.class )
     protected static final class SinglePath implements Path {
 
         private final String fieldName;
@@ -312,6 +315,7 @@ public class Paths {
     }
 
     @Immutable
+    @SerializeWith( Paths.Externalizer.class )
     protected static final class MultiSegmentPath implements Path {
 
         private final List<String> fieldNames;
@@ -446,8 +450,7 @@ public class Paths {
         }
     }
 
-    public static class Externalizer extends AbstractExternalizer<Path> {
-        /** The serialVersionUID */
+    public static class Externalizer extends SchematicExternalizer<Path> {
         private static final long serialVersionUID = 1L;
 
         @Override

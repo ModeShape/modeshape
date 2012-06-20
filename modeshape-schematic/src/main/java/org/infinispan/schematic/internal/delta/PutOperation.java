@@ -26,8 +26,9 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
-import org.infinispan.marshall.AbstractExternalizer;
+import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.document.Path;
+import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
@@ -37,6 +38,7 @@ import org.infinispan.util.Util;
  * 
  * @author (various)
  */
+@SerializeWith( PutOperation.Externalizer.class )
 public class PutOperation extends Operation {
     protected final String fieldName;
     protected final Object oldValue;
@@ -88,8 +90,7 @@ public class PutOperation extends Operation {
                + (oldValue != null ? "' (replaces '" + oldValue + "')" : "");
     }
 
-    public static class Externalizer extends AbstractExternalizer<PutOperation> {
-        /** The serialVersionUID */
+    public static final class Externalizer extends SchematicExternalizer<PutOperation> {
         private static final long serialVersionUID = 1L;
 
         @Override

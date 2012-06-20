@@ -26,8 +26,9 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
-import org.infinispan.marshall.AbstractExternalizer;
+import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.document.Path;
+import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.document.MutableArray;
 import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
@@ -39,6 +40,7 @@ import org.infinispan.util.Util;
  * @author Randall Hauch <rhauch@redhat.com> (C) 2011 Red Hat Inc.
  * @since 5.1
  */
+@SerializeWith( SetValueOperation.Externalizer.class )
 public class SetValueOperation extends ArrayOperation {
 
     protected final Object value;
@@ -83,8 +85,8 @@ public class SetValueOperation extends ArrayOperation {
         return "Set at '" + parentPath + "' the value '" + value + "' (at index " + index + ")";
     }
 
-    public static class Externalizer extends AbstractExternalizer<SetValueOperation> {
-        /** The serialVersionUID */
+    @SerializeWith( Externalizer.class )
+    public static final class Externalizer extends SchematicExternalizer<SetValueOperation> {
         private static final long serialVersionUID = 1L;
 
         @Override

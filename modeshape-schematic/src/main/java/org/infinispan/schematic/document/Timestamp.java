@@ -26,7 +26,8 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Date;
 import java.util.Set;
-import org.infinispan.marshall.AbstractExternalizer;
+import org.infinispan.marshall.SerializeWith;
+import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
 
@@ -38,6 +39,7 @@ import org.infinispan.util.Util;
  * @since 5.1
  */
 @Immutable
+@SerializeWith( Timestamp.Externalizer.class )
 public final class Timestamp {
 
     private final Date time;
@@ -90,8 +92,7 @@ public final class Timestamp {
         return "TS(" + time + ':' + inc + ')';
     }
 
-    public static class Externalizer extends AbstractExternalizer<Timestamp> {
-        /** The serialVersionUID */
+    public static class Externalizer extends SchematicExternalizer<Timestamp> {
         private static final long serialVersionUID = 1L;
 
         @Override

@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Bson;
@@ -44,6 +45,7 @@ import org.infinispan.schematic.document.Symbol;
 import org.infinispan.schematic.internal.schema.DocumentTransformer.PropertiesTransformer;
 import org.infinispan.schematic.internal.schema.DocumentTransformer.SystemPropertiesTransformer;
 
+@SerializeWith( DocumentExternalizer.class )
 public class BasicDocument extends LinkedHashMap<String, Object> implements MutableDocument {
 
     private static final long serialVersionUID = 1L;

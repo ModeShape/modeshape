@@ -25,7 +25,8 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
-import org.infinispan.marshall.AbstractExternalizer;
+import org.infinispan.marshall.SerializeWith;
+import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.document.BsonUtils;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Base64;
@@ -39,6 +40,7 @@ import org.infinispan.util.Util;
  * @since 5.1
  */
 @Immutable
+@SerializeWith( ObjectId.Externalizer.class )
 public final class ObjectId {
 
     private final int time;
@@ -117,8 +119,7 @@ public final class ObjectId {
         return "ObjectID(" + time + ':' + machine + ':' + process + ':' + inc + ')';
     }
 
-    public static class Externalizer extends AbstractExternalizer<ObjectId> {
-        /** The serialVersionUID */
+    public static class Externalizer extends SchematicExternalizer<ObjectId> {
         private static final long serialVersionUID = 1L;
 
         @Override

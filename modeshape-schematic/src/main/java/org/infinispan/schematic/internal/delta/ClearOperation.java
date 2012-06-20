@@ -29,9 +29,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import org.infinispan.marshall.AbstractExternalizer;
+import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.document.Immutable;
 import org.infinispan.schematic.document.Path;
+import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.document.MutableArray;
 import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
@@ -44,6 +45,7 @@ import org.infinispan.util.Util;
  * @since 5.1
  */
 @Immutable
+@SerializeWith( ClearOperation.Externalizer.class )
 public class ClearOperation extends ArrayOperation {
 
     private transient List<?> removedValues;
@@ -78,8 +80,7 @@ public class ClearOperation extends ArrayOperation {
         return "Clear at '" + parentPath + "' the existing values";
     }
 
-    public static class Externalizer extends AbstractExternalizer<ClearOperation> {
-        /** The serialVersionUID */
+    public static final class Externalizer extends SchematicExternalizer<ClearOperation> {
         private static final long serialVersionUID = 1L;
 
         @Override
