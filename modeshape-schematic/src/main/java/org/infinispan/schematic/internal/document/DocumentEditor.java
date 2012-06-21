@@ -386,7 +386,7 @@ public class DocumentEditor implements EditableDocument {
     @Override
     public EditableDocument setDocument( String name ) {
         BasicDocument doc = new BasicDocument();
-        doSetValue(name, doc);
+        doSetValueIfAbsent(name, doc);
         return editable(doc, name);
     }
 
@@ -401,7 +401,7 @@ public class DocumentEditor implements EditableDocument {
     @Override
     public EditableArray setArray( String name ) {
         List<?> array = new BasicArray();
-        doSetValue(name, array);
+        doSetValueIfAbsent(name, array);
         return editable(array, name);
     }
 
@@ -538,6 +538,24 @@ public class DocumentEditor implements EditableDocument {
      */
     protected Object doSetValue( String name,
                                  Object value ) {
+        if (value == null) {
+            value = Null.getInstance();
+        } else {
+            value = unwrap(value);
+        }
+        return document.put(name, value);
+    }
+
+    /**
+     * The method that does the actual setting for all of the <code>set...</code> methods. This method may be overridden by
+     * subclasses when additional work needs to be performed during the set operations.
+     * 
+     * @param name the name of the field being set
+     * @param value the new value
+     * @return the old value, or null if there was no existing value
+     */
+    protected Object doSetValueIfAbsent( String name,
+                                         Object value ) {
         if (value == null) {
             value = Null.getInstance();
         } else {

@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,6 +47,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
+import javax.naming.NamingException;
 import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.Editor;
 import org.modeshape.common.annotation.ThreadSafe;
@@ -603,18 +605,30 @@ public class ModeShapeEngine implements Repositories {
                                                                                                           problems.toString()));
             }
 
-            // Create an initializer that will start the repository ...
-            Future<JcrRepository> future = repositoryStarterService.submit(new Callable<JcrRepository>() {
-                @Override
-                public JcrRepository call() throws Exception {
-                    // Apply the changes to the repository ...
-                    repository.apply(changes);
-                    return repository;
-                }
-            });
-
-            // And return the future
-            return future;
+            // Apply the changes immediately (synchronously) ...
+            try {
+                repository.apply(changes);
+            } catch (IOException e) {
+                throw new ConfigurationException(problems, JcrI18n.repositoryConfigurationIsNotValid.text(repositoryName,
+                                                                                                          e.getMessage()), e);
+            } catch (NamingException e) {
+                throw new ConfigurationException(problems, JcrI18n.repositoryConfigurationIsNotValid.text(repositoryName,
+                                                                                                          e.getMessage()), e);
+            }
+            return new ImmediateFuture<JcrRepository>(repository);
+            //
+            // // Create an initializer that will start the repository ...
+            // Future<JcrRepository> future = repositoryStarterService.submit(new Callable<JcrRepository>() {
+            // @Override
+            // public JcrRepository call() throws Exception {
+            // // Apply the changes to the repository ...
+            // repository.apply(changes);
+            // return repository;
+            // }
+            // });
+            //
+            // // And return the future
+            // return future;
         } finally {
             lock.unlock();
         }

@@ -58,6 +58,11 @@ public class RemoveAllValuesOperation extends ArrayOperation {
         this.values = values;
     }
 
+    @Override
+    public RemoveAllValuesOperation clone() {
+        return new RemoveAllValuesOperation(getParentPath(), cloneValues(values));
+    }
+
     public Collection<?> getValuesToRemove() {
         return values;
     }

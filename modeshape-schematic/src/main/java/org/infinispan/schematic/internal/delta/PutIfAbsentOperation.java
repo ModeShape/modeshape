@@ -34,51 +34,47 @@ import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
 
 /**
- * An atomic put operation for SchematicValueDelta.
+ * An atomic put-if-absent operation for SchematicValueDelta.
  * 
  * @author (various)
  */
-@SerializeWith( PutOperation.Externalizer.class )
-public class PutOperation extends Operation {
+@SerializeWith( PutIfAbsentOperation.Externalizer.class )
+public class PutIfAbsentOperation extends Operation {
     protected final String fieldName;
-    protected final Object oldValue;
     protected final Object newValue;
+    private transient boolean absent = false;
 
-    public PutOperation( Path parentPath,
-                         String fieldName,
-                         Object oldValue,
-                         Object newValue ) {
+    public PutIfAbsentOperation( Path parentPath,
+                                 String fieldName,
+                                 Object newValue ) {
         super(parentPath);
         this.fieldName = fieldName;
-        this.oldValue = oldValue;
         this.newValue = newValue;
     }
 
     @Override
-    public PutOperation clone() {
-        return new PutOperation(getParentPath(), fieldName, cloneValue(oldValue), cloneValue(newValue));
+    public PutIfAbsentOperation clone() {
+        return new PutIfAbsentOperation(getParentPath(), fieldName, cloneValue(newValue));
     }
 
     public Object getNewValue() {
         return newValue;
     }
 
-    public Object getOldValue() {
-        return oldValue;
-    }
-
     public String getFieldName() {
         return fieldName;
+    }
+
+    public boolean isApplied() {
+        return absent;
     }
 
     @Override
     public void rollback( MutableDocument delegate ) {
         MutableDocument parent = mutableParent(delegate);
         assert parent != null;
-        if (oldValue == null) {
+        if (absent) {
             parent.remove(fieldName);
-        } else {
-            parent.put(fieldName, oldValue);
         }
     }
 
@@ -86,43 +82,45 @@ public class PutOperation extends Operation {
     public void replay( MutableDocument delegate ) {
         MutableDocument parent = mutableParent(delegate);
         assert parent != null;
-        parent.put(fieldName, newValue);
+        if (!parent.containsField(fieldName)) {
+            parent.put(fieldName, newValue);
+            absent = true;
+        }
     }
 
     @Override
     public String toString() {
-        return "Put at '" + parentPath + "' the '" + fieldName + "' field value '" + newValue
-               + (oldValue != null ? "' (replaces '" + oldValue + "')" : "'");
+        return "Put-if-absent at '" + parentPath + "' the '" + fieldName + "' field value '" + newValue + "'";
     }
 
-    public static final class Externalizer extends SchematicExternalizer<PutOperation> {
+    public static final class Externalizer extends SchematicExternalizer<PutIfAbsentOperation> {
         private static final long serialVersionUID = 1L;
 
         @Override
         public void writeObject( ObjectOutput output,
-                                 PutOperation put ) throws IOException {
+                                 PutIfAbsentOperation put ) throws IOException {
             output.writeObject(put.parentPath);
             output.writeUTF(put.fieldName);
             output.writeObject(put.newValue);
         }
 
         @Override
-        public PutOperation readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
+        public PutIfAbsentOperation readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
             Path path = (Path)input.readObject();
             String fieldName = input.readUTF();
             Object newValue = input.readObject();
-            return new PutOperation(path, fieldName, null, newValue);
+            return new PutIfAbsentOperation(path, fieldName, newValue);
         }
 
         @Override
         public Integer getId() {
-            return Ids.SCHEMATIC_VALUE_PUT_OPERATION;
+            return Ids.SCHEMATIC_VALUE_PUT_IF_ABSENT_OPERATION;
         }
 
         @SuppressWarnings( "unchecked" )
         @Override
-        public Set<Class<? extends PutOperation>> getTypeClasses() {
-            return Util.<Class<? extends PutOperation>>asSet(PutOperation.class);
+        public Set<Class<? extends PutIfAbsentOperation>> getTypeClasses() {
+            return Util.<Class<? extends PutIfAbsentOperation>>asSet(PutIfAbsentOperation.class);
         }
     }
 }

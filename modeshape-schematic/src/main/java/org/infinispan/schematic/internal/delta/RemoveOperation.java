@@ -55,6 +55,11 @@ public class RemoveOperation extends Operation {
         this.oldValue = oldValue;
     }
 
+    @Override
+    public RemoveOperation clone() {
+        return new RemoveOperation(getParentPath(), fieldName, cloneValue(oldValue));
+    }
+
     public String getFieldName() {
         return fieldName;
     }

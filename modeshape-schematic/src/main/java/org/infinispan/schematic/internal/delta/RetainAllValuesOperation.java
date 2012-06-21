@@ -56,6 +56,11 @@ public class RetainAllValuesOperation extends ArrayOperation {
     }
 
     @Override
+    public RetainAllValuesOperation clone() {
+        return new RetainAllValuesOperation(getParentPath(), cloneValues(values));
+    }
+
+    @Override
     public void rollback( MutableDocument delegate ) {
         if (removedEntries != null) {
             // Add into the same locations ...

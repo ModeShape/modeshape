@@ -29,11 +29,17 @@ package org.infinispan.schematic.document;
  */
 public interface Changes {
 
-   /**
-    * Determine if there are any changes.
-    * 
-    * @return true if there is at least one change, or false if there are none
-    */
-   boolean isEmpty();
+    /**
+     * Determine if there are any changes.
+     * 
+     * @return true if there is at least one change, or false if there are none
+     */
+    boolean isEmpty();
 
+    /**
+     * Obtain a clone of these changes.
+     * 
+     * @return the clone of these changes; never null
+     */
+    Changes clone();
 }
