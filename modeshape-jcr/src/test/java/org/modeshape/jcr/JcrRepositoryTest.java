@@ -27,7 +27,12 @@ import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
+import org.infinispan.Cache;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import java.io.File;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
@@ -44,6 +49,7 @@ import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import javax.transaction.TransactionManager;
 import org.junit.After;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -714,6 +720,45 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
 
         } finally {
             session2.logout();
+        }
+    }
+
+    @Test
+    @FixFor("MODE-1526")
+    @Ignore("Ignored because it crashes")
+    public void shouldKeepPersistentDataAcrossRestart() throws Exception {
+        File contentFolder = new File("target/persistent_repository/store/persistentRepository");
+        boolean testNodeShouldExist = contentFolder.exists() && contentFolder.isDirectory();
+
+        URL config = getClass().getClassLoader().getResource("config/repo-config-persistent-cache.json");
+        JcrRepository repository = new JcrRepository(RepositoryConfiguration.read(config));
+        repository.start();
+
+
+        try {
+            Session session = repository.login();
+            if (testNodeShouldExist) {
+                assertNotNull(session.getNode("/testNode"));
+            }
+            else {
+                session.getRootNode().addNode("testNode");
+                session.save();
+            }
+
+            for (Cache cache : repository.caches()) {
+               cache.stop();
+            }
+            repository.shutdown();
+
+            repository.start();
+            for (Cache cache : repository.caches()) {
+                cache.start();
+            }
+
+            session = repository.login();
+            assertNotNull(session.getNode("/testNode"));
+        } finally {
+            TestingUtil.killRepository(repository);
         }
     }
 
