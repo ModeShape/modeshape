@@ -23,11 +23,11 @@
  */
 package org.modeshape.common.i18n;
 
-import org.modeshape.common.util.CheckArg;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import org.modeshape.common.util.CheckArg;
 
 /**
  * Class that loads a properties file from the classpath of the supplied {@link ClassLoader class loader}.
@@ -48,7 +48,8 @@ public final class ClasspathLocalizationRepository {
      * Obtain the URL to the properties file containing the localized messages given the supplied bundle name. This method is
      * responsible for searching to find the most appropriate localized messages given the locale, but does not need to search
      * using the {@link Locale#getDefault() default locale} (as that is done by the {@link I18n#text(Object...) calling} method.
-     *
+     * 
+     * @param classLoader the classloader that should be used to load the localization bundles
      * @param bundleName the name of the bundle of properties; never null
      * @param locale the locale for which the properties file URL is desired
      * @return the URL to the properties file containing the localized messages for the named bundle, or null if no such bundle
@@ -71,8 +72,8 @@ public final class ClasspathLocalizationRepository {
 
     /**
      * Returns a list of paths (as string) of the different bundles searched in the
-     * {@link ClasspathLocalizationRepository#getLocalizationBundle(ClassLoader, String, java.util.Locale)}  method.
-
+     * {@link ClasspathLocalizationRepository#getLocalizationBundle(ClassLoader, String, java.util.Locale)} method.
+     * 
      * @param bundleName the name of the bundle of properties; never null
      * @param locale the locale for which the properties file URL is desired
      * @return a list of paths which the repository would look at.
