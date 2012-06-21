@@ -21,7 +21,6 @@
  */
 package org.infinispan.schematic.internal.document;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -41,45 +40,19 @@ public class DocumentExternalizer extends SchematicExternalizer<Document> {
                              Document doc ) throws IOException {
         // Write the type byte ...
         output.writeByte(1);
-        byte[] bytes = Bson.write(doc);
-        // Write the number of bytes ...
-        output.writeInt(bytes.length);
-        if (bytes.length > 0) {
-            // Write the BSON output ...
-            output.write(bytes);
 
-            // // Try to read the bytes back in, and if there's a failure, then write out the doc ...
-            // try {
-            // Bson.read(new ByteArrayInputStream(bytes));
-            // } catch (RuntimeException e) {
-            // // Print the original document ...
-            // System.err.println("Failed to write and read BSON document: ");
-            // System.err.println(Json.write(doc));
-            // }
-        }
+        // Write the BSON ...
+        Bson.write(doc, output);
     }
 
     @Override
     public Document readObject( ObjectInput input ) throws IOException {
-        if (input.available() < 5) {
-            // There's not enough data in the input, so return null
-            return null;
-        }
         // Read the type byte ...
         int type = input.readByte();
         assert type == 1;
-        // Read the number of bytes ...
-        int length = input.readInt();
-        if (length == 0) {
-            return new BasicDocument();
-        }
 
-        // Otherwise there's data ...
-        byte[] bytes = new byte[length];
-        // Read the BSON bytes...
-        input.readFully(bytes);
-        // Convert to a document ...
-        return Bson.read(new ByteArrayInputStream(bytes));
+        // Read the BSON ...
+        return Bson.read(input);
     }
 
     @Override

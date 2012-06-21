@@ -21,6 +21,7 @@
  */
 package org.infinispan.schematic.document;
 
+import java.io.DataInput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutput;
@@ -194,6 +195,17 @@ public class Bson {
      */
     public static Document read( InputStream stream ) throws IOException {
         return SHARED_READER.read(stream);
+    }
+
+    /**
+     * Read the binary BSON representation from supplied data input and construct the {@link Document} representation.
+     * 
+     * @param input the data input; may not be null
+     * @return the in-memory {@link Document} representation
+     * @throws IOException if there was a problem reading from the stream
+     */
+    public static Document read( DataInput input ) throws IOException {
+        return SHARED_READER.read(input);
     }
 
     /**

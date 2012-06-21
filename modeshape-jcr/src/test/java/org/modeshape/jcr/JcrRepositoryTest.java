@@ -27,11 +27,9 @@ import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
-import org.infinispan.Cache;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import java.io.File;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -49,7 +47,6 @@ import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import javax.transaction.TransactionManager;
 import org.junit.After;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -724,39 +721,54 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
     }
 
     @Test
-    @FixFor("MODE-1526")
-    @Ignore("Ignored because it crashes")
+    @FixFor( {"MODE-1526", "MODE-1512"} )
     public void shouldKeepPersistentDataAcrossRestart() throws Exception {
         File contentFolder = new File("target/persistent_repository/store/persistentRepository");
         boolean testNodeShouldExist = contentFolder.exists() && contentFolder.isDirectory();
 
-        URL config = getClass().getClassLoader().getResource("config/repo-config-persistent-cache.json");
-        JcrRepository repository = new JcrRepository(RepositoryConfiguration.read(config));
-        repository.start();
+        URL configUrl = getClass().getClassLoader().getResource("config/repo-config-persistent-cache.json");
+        RepositoryConfiguration config = RepositoryConfiguration.read(configUrl);
 
+        // Start the repository for the first time ...
 
         try {
+            JcrRepository repository = new JcrRepository(config);
+            repository.start();
+
             Session session = repository.login();
             if (testNodeShouldExist) {
                 assertNotNull(session.getNode("/testNode"));
-            }
-            else {
+            } else {
                 session.getRootNode().addNode("testNode");
                 session.save();
             }
+            session.logout();
+            // System.out.println("SLEEPING for 5sec");
+            // Thread.sleep(5000L);
+        } finally {
 
-            for (Cache cache : repository.caches()) {
-               cache.stop();
-            }
-            repository.shutdown();
+            // Kill the repository and the cache manager (something we only do in testing),
+            // which means we have to recreate the JcrRepository instance (and its Cache instance) ...
+            TestingUtil.killRepository(repository);
+            System.out.println("Stopped repository and killed caches ...");
+        }
 
+        // forcibly delete the update lock (see MODE-1512) ...
+        File lock = new File("target/persistent_repository/index/nodeinfo/write.lock");
+        System.out.println("Lock file exists: " + lock.exists());
+        if (lock.exists()) {
+            assertThat(lock.delete(), is(true));
+        }
+        assertThat(lock.exists(), is(false));
+
+        try {
+            System.out.println("Starting repository again ...");
+            repository = new JcrRepository(config);
             repository.start();
-            for (Cache cache : repository.caches()) {
-                cache.start();
-            }
 
             session = repository.login();
             assertNotNull(session.getNode("/testNode"));
+            session.logout();
         } finally {
             TestingUtil.killRepository(repository);
         }
