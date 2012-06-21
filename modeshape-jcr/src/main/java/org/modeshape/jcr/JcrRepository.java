@@ -1380,6 +1380,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.context().releaseThreadPool(changeDispatchingQueue);
                 this.changeBus.shutdown();
             }
+
+            // Shutdown the query engine ...
+            if (repositoryQueryManager != null) {
+                repositoryQueryManager.queryEngine().shutdown();
+            }
         }
 
         protected void bindIntoJndi() {

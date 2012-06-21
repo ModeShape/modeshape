@@ -93,6 +93,10 @@ public class LuceneQueryEngine extends QueryEngine {
         ((LuceneQueryProcessor)this.processor).initialize(schema);
     }
 
+    public void shutdown() {
+        this.schema.shutdown();
+    }
+
     /**
      * Get the interface for updating the indexes.
      * 

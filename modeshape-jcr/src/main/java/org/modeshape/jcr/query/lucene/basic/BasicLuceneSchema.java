@@ -110,6 +110,11 @@ public class BasicLuceneSchema implements LuceneSchema {
         assert this.searchFactory != null;
     }
 
+    public void shutdown() {
+        this.searchFactory.getWorker().close();
+        this.searchFactory.close();
+    }
+
     @Override
     public LuceneQueryFactory createLuceneQueryFactory( QueryContext context,
                                                         SearchFactory searchFactory ) {
