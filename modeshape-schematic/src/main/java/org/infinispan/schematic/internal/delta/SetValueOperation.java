@@ -57,6 +57,11 @@ public class SetValueOperation extends ArrayOperation {
     }
 
     @Override
+    public SetValueOperation clone() {
+        return new SetValueOperation(getParentPath(), cloneValue(value), index);
+    }
+
+    @Override
     public void rollback( MutableDocument delegate ) {
         MutableArray array = mutableParent(delegate);
         if (oldValue != null) {

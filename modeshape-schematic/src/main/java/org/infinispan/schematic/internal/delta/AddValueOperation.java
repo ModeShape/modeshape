@@ -64,6 +64,11 @@ public class AddValueOperation extends ArrayOperation {
         this.index = index;
     }
 
+    @Override
+    public AddValueOperation clone() {
+        return new AddValueOperation(getParentPath(), cloneValue(value), index);
+    }
+
     public Object getValue() {
         return value;
     }

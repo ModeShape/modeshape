@@ -22,6 +22,7 @@
  */
 package org.infinispan.schematic.internal.delta;
 
+import java.util.Collection;
 import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Immutable;
@@ -51,4 +52,9 @@ public abstract class ArrayOperation extends Operation {
         }
         return (MutableArray)parent;
     }
+
+    protected Collection<?> cloneValues( Collection<?> values ) {
+        return (Collection<?>)cloneValue(values);
+    }
+
 }

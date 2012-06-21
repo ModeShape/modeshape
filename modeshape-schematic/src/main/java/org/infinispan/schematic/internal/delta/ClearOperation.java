@@ -55,6 +55,11 @@ public class ClearOperation extends ArrayOperation {
     }
 
     @Override
+    public ClearOperation clone() {
+        return this; // immutable
+    }
+
+    @Override
     public void replay( MutableDocument delegate ) {
         MutableArray array = mutableParent(delegate);
         if (!array.isEmpty()) {

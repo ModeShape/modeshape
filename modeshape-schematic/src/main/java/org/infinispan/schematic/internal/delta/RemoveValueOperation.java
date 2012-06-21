@@ -53,6 +53,11 @@ public class RemoveValueOperation extends ArrayOperation {
     }
 
     @Override
+    public RemoveValueOperation clone() {
+        return new RemoveValueOperation(getParentPath(), cloneValue(value));
+    }
+
+    @Override
     public void rollback( MutableDocument delegate ) {
         if (actualIndex > -1) {
             MutableArray array = mutableParent(delegate);

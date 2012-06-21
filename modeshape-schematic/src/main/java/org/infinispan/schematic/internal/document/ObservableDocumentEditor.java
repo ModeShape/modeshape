@@ -25,6 +25,7 @@ import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.delta.DocumentObserver;
+import org.infinispan.schematic.internal.delta.PutIfAbsentOperation;
 import org.infinispan.schematic.internal.delta.PutOperation;
 import org.infinispan.schematic.internal.delta.RemoveOperation;
 
@@ -49,6 +50,14 @@ public class ObservableDocumentEditor extends DocumentEditor {
                                  Object newValue ) {
         Object oldValue = super.doSetValue(name, newValue);
         observer.addOperation(new PutOperation(path, name, copy(oldValue), copy(newValue)));
+        return oldValue;
+    }
+
+    @Override
+    protected Object doSetValueIfAbsent( String name,
+                                         Object value ) {
+        Object oldValue = super.doSetValue(name, value);
+        observer.addOperation(new PutIfAbsentOperation(path, name, copy(value)));
         return oldValue;
     }
 

@@ -52,6 +52,11 @@ public class RemoveAtIndexOperation extends ArrayOperation {
         this.index = index;
     }
 
+    @Override
+    public RemoveAtIndexOperation clone() {
+        return new RemoveAtIndexOperation(getParentPath(), index);
+    }
+
     public int getIndex() {
         return index;
     }

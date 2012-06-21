@@ -312,6 +312,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     void apply( Changes changes ) throws IOException, NamingException {
         try {
             stateLock.lock();
+            logger.debug("Applying changes to '{0}' repository configuration: {1} --> {2}", repositoryName, changes, config);
             // Get the configuration and apply the same changes ...
             final RepositoryConfiguration oldConfiguration = this.config.get();
             Editor copy = oldConfiguration.edit();
@@ -330,6 +331,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 if (!configChanges.storageChanged && configChanges.predefinedWorkspacesChanged) workspacesChanged();
                 if (configChanges.nameChanged) repositoryNameChanged();
             }
+            logger.debug("Applied changes to '{0}' repository configuration: {1} --> {2}", repositoryName, changes, config);
         } finally {
             stateLock.unlock();
         }

@@ -22,6 +22,8 @@
  */
 package org.infinispan.schematic.internal.delta;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Immutable;
 import org.infinispan.schematic.document.Path;
@@ -56,6 +58,24 @@ public abstract class Operation {
             parent = parent.getDocument(fieldName);
         }
         return (MutableDocument)parent;
+    }
+
+    @Override
+    public abstract Operation clone();
+
+    protected Object cloneValue( Object value ) {
+        if (value == null) return null;
+        if (value instanceof Document) return ((Document)value).clone();
+        if (value instanceof Collection) {
+            Collection<?> original = (Collection<?>)value;
+            Collection<Object> copy = new ArrayList<Object>(original.size());
+            for (Object v : original) {
+                copy.add(cloneValue(v));
+            }
+            return copy;
+        }
+        // everything else should be immutable ...
+        return value;
     }
 
 }

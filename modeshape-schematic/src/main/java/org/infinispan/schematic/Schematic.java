@@ -24,6 +24,7 @@ package org.infinispan.schematic;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -61,6 +62,7 @@ import org.infinispan.schematic.internal.delta.AddValueOperation;
 import org.infinispan.schematic.internal.delta.ClearOperation;
 import org.infinispan.schematic.internal.delta.DocumentObserver;
 import org.infinispan.schematic.internal.delta.Operation;
+import org.infinispan.schematic.internal.delta.PutIfAbsentOperation;
 import org.infinispan.schematic.internal.delta.PutOperation;
 import org.infinispan.schematic.internal.delta.RemoveAllValuesOperation;
 import org.infinispan.schematic.internal.delta.RemoveAtIndexOperation;
@@ -305,7 +307,7 @@ public class Schematic {
 
         @Override
         public void apply( Changes changes ) {
-            apply(changes, null);
+            apply(changes.clone(), null);
         }
 
         private final static Array.Entry newEntry( int index,
@@ -360,6 +362,11 @@ public class Schematic {
                     } else if (operation instanceof PutOperation) {
                         PutOperation op = (PutOperation)operation;
                         observer.put(op.getParentPath(), op.getFieldName(), op.getNewValue());
+                    } else if (operation instanceof PutIfAbsentOperation) {
+                        PutIfAbsentOperation op = (PutIfAbsentOperation)operation;
+                        if (op.isApplied()) {
+                            observer.put(op.getParentPath(), op.getFieldName(), op.getNewValue());
+                        }
                     } else if (operation instanceof RemoveOperation) {
                         RemoveOperation op = (RemoveOperation)operation;
                         if (op.isRemoved()) {
@@ -377,6 +384,15 @@ public class Schematic {
 
         protected DocumentChanges( List<Operation> operations ) {
             this.operations = operations;
+        }
+
+        @Override
+        public DocumentChanges clone() {
+            List<Operation> newOps = new ArrayList<Operation>(operations.size());
+            for (Operation operation : operations) {
+                newOps.add(operation.clone());
+            }
+            return new DocumentChanges(newOps);
         }
 
         @Override
@@ -504,6 +520,7 @@ public class Schematic {
         externalizers.add(new AddValueOperation.Externalizer());
         externalizers.add(new ClearOperation.Externalizer());
         externalizers.add(new PutOperation.Externalizer());
+        externalizers.add(new PutIfAbsentOperation.Externalizer());
         externalizers.add(new RemoveAllValuesOperation.Externalizer());
         externalizers.add(new RemoveAtIndexOperation.Externalizer());
         externalizers.add(new RemoveOperation.Externalizer());
