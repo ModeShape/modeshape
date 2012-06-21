@@ -84,16 +84,8 @@
  * <h3>Localization Repositories</h3>
  * <p>
  * By default, the localization bundles must be found on the classpath. This makes sense for most applications that
- * include their localization bundles with their JARs or make them available on the classpath.
- * </p>
- * <p>
- * However, it is possible to access the localization bundles from other sources using the {@link org.modeshape.common.i18n.LocalizationRepository}
- * interface that defines a single method for obtaining the {@link java.net.URL URL} for a given bundle name
- * and Locale. The resulting URL must be capable of accessing the bundle contents via the {@link java.net.URL#openStream()} method.
- * </p>
- * <p>
- * To specify that your localization repository should be used, simply call the {@link org.modeshape.common.i18n.I18n#setLocalizationRepository(LocalizationRepository)}
- * method once within your application.
+ * include their localization bundles with their JARs or make them available on the classpath. You can always specify
+ * the classloader to use, however.
  * </p>
  * <h3>Testing the localizations</h3>
  * <p>

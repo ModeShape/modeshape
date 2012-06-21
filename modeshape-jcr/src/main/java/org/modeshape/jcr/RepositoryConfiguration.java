@@ -880,18 +880,22 @@ public class RepositoryConfiguration {
     }
 
     /**
-     * Returns a fully qualified built-in sequencer class name mapped to the given alias, or {@code null} if there isn't such a mapping
-     * @param alias
-     * @return
+     * Returns a fully qualified built-in sequencer class name mapped to the given alias, or {@code null} if there isn't such a
+     * mapping
+     * 
+     * @param alias the alias
+     * @return the name of the sequencer class, or null if the alias did not correspond to a built-in class
      */
     public static String getBuiltInSequencerClassName( String alias ) {
         return SEQUENCER_ALIASES.get(alias);
     }
 
     /**
-     * Returns a fully qualified built-in text extractor class name mapped to the given alias, or {@code null} if there isn't such a mapping
-     * @param alias
-     * @return
+     * Returns a fully qualified built-in text extractor class name mapped to the given alias, or {@code null} if there isn't such
+     * a mapping
+     * 
+     * @param alias the alias
+     * @return the name of the text extractor class, or null if the alias did not correspond to a built-in class
      */
     public static String getBuiltInTextExtractorClassName( String alias ) {
         return EXTRACTOR_ALIASES.get(alias);
@@ -1774,9 +1778,10 @@ public class RepositoryConfiguration {
 
         /**
          * Create an instance of this class.
-         *
+         * 
          * @param <Type>
-         * @param fallbackLoader the fallback class loader that should be used for {@link Environment#getClassLoader(ClassLoader, String...)}
+         * @param fallbackLoader the fallback class loader that should be used for
+         *        {@link Environment#getClassLoader(ClassLoader, String...)}
          * @return the new instance, with all {@link #getDocument() document fields} set on it; never null
          * @see #getClasspath()
          * @throws Exception if anything fails
