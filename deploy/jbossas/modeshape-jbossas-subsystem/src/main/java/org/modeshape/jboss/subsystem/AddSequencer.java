@@ -35,9 +35,11 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
+import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jboss.service.SequencerService;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.JcrRepository;
@@ -47,6 +49,8 @@ import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 public class AddSequencer extends AbstractAddStepHandler {
 
     public static final AddSequencer INSTANCE = new AddSequencer();
+
+    private static final Logger LOG = Logger.getLogger(AddSequencer.class.getPackage().getName());
 
     private AddSequencer() {
     }
@@ -121,16 +125,19 @@ public class AddSequencer extends AbstractAddStepHandler {
 
     private void ensureClassLoadingPropertyIsSet( Properties sequencerProperties ) {
         //could be already set if the "module" element is present in the xml (AddSequencer)
-        if (sequencerProperties.contains(FieldName.CLASSLOADER)) {
+        if (sequencerProperties.containsKey(FieldName.CLASSLOADER)) {
             return;
         }
-        String sequencerClassName = sequencerProperties.getProperty(FieldName.TYPE);
+        String sequencerClassName = sequencerProperties.getProperty(FieldName.CLASSNAME);
+        if (StringUtil.isBlank(sequencerClassName)) {
+            LOG.warnv("Required property: {0} not found among the sequencer properties: {1}", FieldName.CLASSNAME, sequencerProperties);
+            return;
+        }
         //try to see if an alias is configured
         String fullyQualifiedSequencerClass = RepositoryConfiguration.getBuiltInSequencerClassName(sequencerClassName);
         if (fullyQualifiedSequencerClass == null) {
             fullyQualifiedSequencerClass = sequencerClassName;
         }
-
         //set the classloader to the package name of the sequencer class
         String sequencerModuleName = fullyQualifiedSequencerClass.substring(0, fullyQualifiedSequencerClass.lastIndexOf("."));
         sequencerProperties.setProperty(FieldName.CLASSLOADER, sequencerModuleName);

@@ -326,6 +326,11 @@ public class SequencerPathExpressionTest {
                       "/files/a/b/c/d/e.xsd/jcr:content",
                       "/x/xsd/a/b/c/d");
 
+        expr = SequencerPathExpression.compile("/files(//)*.xsd[*]/jcr:content/[@jcr:data] => /x/xsd/$1");
+        assertMatches(expr.matcher("/files/e.xsd/jcr:content/@jcr:data"),
+                      "/files/e.xsd/jcr:content",
+                      "/x/xsd");
+
         expr = SequencerPathExpression.compile("/files(//)(*.xsd[*])[/jcr:content/@jcr:data] => /x/xsd/$1");
         assertMatches(expr.matcher("/files/a/b/c/d/e.xsd/jcr:content/@jcr:data"), "/files/a/b/c/d/e.xsd", "/x/xsd/a/b/c/d");
         assertMatches(expr.matcher("/files/a/b/c/d/e.xsd/jcr:content/@jcr:data"), "/files/a/b/c/d/e.xsd", "/x/xsd/a/b/c/d");

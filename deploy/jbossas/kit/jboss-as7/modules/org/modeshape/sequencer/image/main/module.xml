@@ -20,7 +20,7 @@
   ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
-<module xmlns="urn:jboss:module:1.1" name="org.modeshape.sequencer.images">
+<module xmlns="urn:jboss:module:1.1" name="org.modeshape.sequencer.image">
     <resources>
         <resource-root path="modeshape-sequencer-images-${project.version}.jar" />
     </resources>

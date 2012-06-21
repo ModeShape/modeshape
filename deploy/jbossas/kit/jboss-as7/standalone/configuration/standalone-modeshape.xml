@@ -211,14 +211,19 @@
                     <sequencer name="ddl-sequencer" classname="org.modeshape.sequencer.ddl.DdlSequencer">
                         <path-expression>/files(//*.ddl[*])/jcr:content[@jcr:data] => /derived/ddl/$1</path-expression>
                     </sequencer>
-                    <sequencer name="java-source-sequencer" classname="org.modeshape.sequencer.javafile.JavaFileSequencer">
+                    <!--
+                        For the java & class sequencer we need to explicitly define the module, as it does not map 1-1 to the classname
+                    -->
+                    <sequencer name="java-source-sequencer" classname="org.modeshape.sequencer.javafile.JavaFileSequencer"
+                               module="org.modeshape.sequencer.java">
                         <path-expression>/files//(*.java[*])/jcr:content[@jcr:data] => /derived/java</path-expression>
                     </sequencer>
-                    <sequencer name="java-class-sequencer" classname="org.modeshape.sequencer.classfile.ClassFileSequencer">
+                    <sequencer name="java-class-sequencer" classname="org.modeshape.sequencer.classfile.ClassFileSequencer"
+                               module="org.modeshape.sequencer.java">
                         <path-expression>/files//(*.class[*])/jcr:content[@jcr:data] => /derived/class</path-expression>
                     </sequencer>
                     <sequencer name="cnd-sequencer" classname="cnd">
-                        <path-expression>default:/files(//*.cnd[*])/jcr:content[@jcr:data] => other:/derived/nodetypes/$1</path-expression>
+                        <path-expression>default:/files(//*.cnd[*])/jcr:content[@jcr:data] => /derived/cnd/$1</path-expression>
                     </sequencer>
                     <sequencer name="msoffice-sequencer" classname="msoffice">
                         <path-expression>/files(//*.(xls|ppt|doc)[*])/jcr:content[@jcr:data] => /derived/msoffice/$1</path-expression>
@@ -236,7 +241,7 @@
                      be included in the output path. Therefore, only the relative path under '/files' and above '*.xsd' (or '*.wsdl'
                      or '*.xml') is captured in the input path. -->
                     <sequencer name="xsd-sequencer" classname="xsd">
-                        <path-expression>/files(//)*.xsd[*]/jcr:content[@jcr:data] => /derived/xsd/$1</path-expression>
+                        <path-expression>/files(//*).xsd[*]/jcr:content[@jcr:data] => /derived/xsd/$1</path-expression>
                     </sequencer>
                     <sequencer name="wsdl-sequencer" classname="wsdl">
                         <path-expression>/files(//)*.wsdl[*]/jcr:content[@jcr:data] => /derived/wsdl/$1</path-expression>
@@ -245,7 +250,13 @@
                         <path-expression>/files(//)*.xml[*]/jcr:content[@jcr:data] => /derived/xml/$1</path-expression>
                     </sequencer>
                     <sequencer name="zip-sequencer" classname="zip">
-                        <path-expression>/files(//)*.zip[*]/jcr:content[@jcr:data] => /derived/zip/$1</path-expression>
+                        <path-expression>/files(//*.zip[*])/jcr:content[@jcr:data] => /derived/zip/$1</path-expression>
+                    </sequencer>
+                    <sequencer name="image-sequencer" classname="image">
+                        <path-expression>/files(//*.(png|jpg|gif)[*])/jcr:content[@jcr:data] => /derived/image/$1</path-expression>
+                    </sequencer>
+                    <sequencer name="mp3-sequencer" classname="mp3">
+                        <path-expression>/files(//*.mp3[*])/jcr:content[@jcr:data] => /derived/mp3/$1</path-expression>
                     </sequencer>
                 </sequencers>
             </repository>

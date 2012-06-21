@@ -205,6 +205,11 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
             config.setDocument(FieldName.QUERY, queryConfig);
             config.getOrCreateDocument(FieldName.STORAGE).setDocument(FieldName.BINARY_STORAGE, binaryConfig);
 
+            //TODO author=Horia Chiorean date=6/21/12 description=Temporary fix until MODE-1521 is fixed
+            EditableDocument sequencing = config.getOrCreateDocument("sequencing");
+            sequencing.getOrCreateDocument("sequencers");
+
+
             if (LOG.isDebugEnabled()) {
                 LOG.debugv("ModeShape configuration for '{0}' repository: {1}", repositoryName, config);
                 Problems problems = repositoryConfiguration.validate();

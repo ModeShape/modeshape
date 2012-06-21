@@ -94,7 +94,7 @@
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/org/modeshape/sequencer/images/main</outputDirectory>
+            <outputDirectory>modules/org/modeshape/sequencer/image/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-sequencer-images:jar</include>
             </includes>

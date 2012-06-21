@@ -44,6 +44,7 @@ final class Log4jLoggerImpl extends org.modeshape.common.logging.Logger {
     @Override
     public void debug( String message,
                        Object... params ) {
+        if (!isDebugEnabled()) return;
         logger.debug(StringUtil.createString(message, params));
     }
 
@@ -59,6 +60,7 @@ final class Log4jLoggerImpl extends org.modeshape.common.logging.Logger {
         if (StringUtil.isBlank(message)) {
             return;
         }
+        if (!isDebugEnabled()) return;
         logger.debug(StringUtil.createString(message, params), t);
     }
 
@@ -68,6 +70,7 @@ final class Log4jLoggerImpl extends org.modeshape.common.logging.Logger {
         if (message == null) {
             return;
         }
+        if (!isErrorEnabled()) return;
         logger.error(message.text(getLoggingLocale(), params));
     }
 
@@ -78,6 +81,7 @@ final class Log4jLoggerImpl extends org.modeshape.common.logging.Logger {
         if (message == null) {
             return;
         }
+        if (!isErrorEnabled()) return;
         logger.error(message.text(getLoggingLocale(), params), t);
 
     }
@@ -88,6 +92,7 @@ final class Log4jLoggerImpl extends org.modeshape.common.logging.Logger {
         if (message == null) {
             return;
         }
+        if (!isInfoEnabled()) return;
         logger.info(message.text(getLoggingLocale(), params));
     }
 
@@ -98,6 +103,7 @@ final class Log4jLoggerImpl extends org.modeshape.common.logging.Logger {
         if (message == null) {
             return;
         }
+        if (!isInfoEnabled()) return;
         logger.info(message.text(getLoggingLocale(), params), t);
     }
 
@@ -107,6 +113,7 @@ final class Log4jLoggerImpl extends org.modeshape.common.logging.Logger {
         if (StringUtil.isBlank(message)) {
             return;
         }
+        if (!isTraceEnabled()) return;
         logger.trace(StringUtil.createString(message, params));
     }
 
@@ -117,6 +124,7 @@ final class Log4jLoggerImpl extends org.modeshape.common.logging.Logger {
         if (StringUtil.isBlank(message)) {
             return;
         }
+        if (!isTraceEnabled()) return;
         logger.trace(StringUtil.createString(message, params), t);
     }
 
@@ -126,6 +134,7 @@ final class Log4jLoggerImpl extends org.modeshape.common.logging.Logger {
         if (message == null) {
             return;
         }
+        if (!isWarnEnabled()) return;
         logger.warn(message.text(getLoggingLocale(), params));
     }
 
@@ -136,6 +145,7 @@ final class Log4jLoggerImpl extends org.modeshape.common.logging.Logger {
         if (message == null) {
             return;
         }
+        if (!isWarnEnabled()) return;
         logger.warn(message.text(getLoggingLocale(), params), t);
     }
 
