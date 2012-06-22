@@ -213,7 +213,8 @@ public class ModeShapeEngineTest extends AbstractTransactionalTest {
         long start = System.nanoTime();
         Session session = repository.login();
         if (print) System.out.println("Initial session: "
-                                      + TimeUnit.MILLISECONDS.convert(System.nanoTime() - start, TimeUnit.NANOSECONDS) + " ms");
+                                      + TimeUnit.MILLISECONDS.convert(Math.abs(System.nanoTime() - start), TimeUnit.NANOSECONDS)
+                                      + " ms");
         session.logout();
 
         // Now create bunch of sessions simultaneously ...
@@ -228,7 +229,8 @@ public class ModeShapeEngineTest extends AbstractTransactionalTest {
         start = System.nanoTime();
         session = repository.login();
         if (print) System.out.println("Before close: "
-                                      + TimeUnit.MILLISECONDS.convert(System.nanoTime() - start, TimeUnit.NANOSECONDS) + " ms");
+                                      + TimeUnit.MILLISECONDS.convert(Math.abs(System.nanoTime() - start), TimeUnit.NANOSECONDS)
+                                      + " ms");
         session.logout();
 
         ClientLoad.forEachResult(results, new ClientResultProcessor<Session>() {
@@ -245,7 +247,8 @@ public class ModeShapeEngineTest extends AbstractTransactionalTest {
         start = System.nanoTime();
         session = repository.login();
         if (print) System.out.println("After close: "
-                                      + TimeUnit.MILLISECONDS.convert(System.nanoTime() - start, TimeUnit.NANOSECONDS) + " ms");
+                                      + TimeUnit.MILLISECONDS.convert(Math.abs(System.nanoTime() - start), TimeUnit.NANOSECONDS)
+                                      + " ms");
         session.logout();
 
         // Make sure the repository is running ...

@@ -855,7 +855,7 @@ public class JcrTools {
         } finally {
             session.logout();
         }
-        return TimeUnit.MILLISECONDS.convert(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+        return TimeUnit.MILLISECONDS.convert(Math.abs(System.nanoTime() - startTime), TimeUnit.NANOSECONDS);
     }
 
     public static interface Operation {

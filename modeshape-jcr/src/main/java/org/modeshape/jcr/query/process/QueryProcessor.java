@@ -105,7 +105,7 @@ public abstract class QueryProcessor<ProcessingContextType> implements Processor
             }
 
         } finally {
-            statistics = statistics.withExecutionTime(System.nanoTime() - nanos);
+            statistics = statistics.withExecutionTime(Math.abs(System.nanoTime() - nanos));
         }
         assert tuples != null;
         final String planDesc = context.getHints().showPlan ? plan.getString() : null;

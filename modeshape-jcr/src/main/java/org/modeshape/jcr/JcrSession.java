@@ -1246,7 +1246,7 @@ public class JcrSession implements Session {
         cleanLocks();
         try {
             RunningState running = repository.runningState();
-            long lifetime = System.nanoTime() - this.nanosCreated;
+            long lifetime = Math.abs(System.nanoTime() - this.nanosCreated);
             Map<String, String> payload = Collections.singletonMap("userId", getUserID());
             running.statistics().recordDuration(DurationMetric.SESSION_LIFETIME, lifetime, TimeUnit.NANOSECONDS, payload);
             running.statistics().decrement(ValueMetric.SESSION_COUNT);
