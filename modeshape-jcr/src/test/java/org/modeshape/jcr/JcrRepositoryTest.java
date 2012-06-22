@@ -27,10 +27,7 @@ import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import java.io.File;
-import java.net.URL;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
@@ -717,63 +714,6 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
 
         } finally {
             session2.logout();
-        }
-    }
-
-    @Test
-    @FixFor( {"MODE-1526", "MODE-1512"} )
-    public void shouldKeepPersistentDataAcrossRestart() throws Exception {
-        File contentFolder = new File("target/persistent_repository/store/persistentRepository");
-        boolean testNodeShouldExist = contentFolder.exists() && contentFolder.isDirectory();
-
-        URL configUrl = getClass().getClassLoader().getResource("config/repo-config-persistent-cache.json");
-        RepositoryConfiguration config = RepositoryConfiguration.read(configUrl);
-
-        // Start the repository for the first time ...
-
-        try {
-            JcrRepository repository = new JcrRepository(config);
-            repository.start();
-
-            Session session = repository.login();
-            if (testNodeShouldExist) {
-                assertNotNull(session.getNode("/testNode"));
-            } else {
-                session.getRootNode().addNode("testNode");
-                session.save();
-            }
-            session.logout();
-            // System.out.println("SLEEPING for 5sec");
-            // Thread.sleep(5000L);
-        } finally {
-
-            // Kill the repository and the cache manager (something we only do in testing),
-            // which means we have to recreate the JcrRepository instance (and its Cache instance) ...
-            TestingUtil.killRepository(repository);
-            System.out.println("Stopped repository and killed caches ...");
-        }
-
-        //on windows you cannot delete the lock file from this process because there's an exclusive native lock on the file
-        if (!System.getProperty("os.name").toLowerCase().contains("windows")) {
-            // forcibly delete the update lock (see MODE-1512) ...
-            File lock = new File("target/persistent_repository/index/nodeinfo/write.lock");
-            System.out.println("Lock file exists: " + lock.exists());
-            if (lock.exists()) {
-                assertThat(lock.delete(), is(true));
-            }
-            assertThat(lock.exists(), is(false));
-        }
-
-        try {
-            System.out.println("Starting repository again ...");
-            repository = new JcrRepository(config);
-            repository.start();
-
-            session = repository.login();
-            assertNotNull(session.getNode("/testNode"));
-            session.logout();
-        } finally {
-            TestingUtil.killRepository(repository);
         }
     }
 

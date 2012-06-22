@@ -1383,7 +1383,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             // Shutdown the query engine ...
             if (repositoryQueryManager != null) {
-                repositoryQueryManager.queryEngine().shutdown();
+                repositoryQueryManager.shutdown();
             }
         }
 

@@ -26,12 +26,16 @@ package org.modeshape.jcr;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Repository;
 import javax.transaction.TransactionManager;
 import org.infinispan.Cache;
-import org.modeshape.common.util.FileUtil;
+import org.infinispan.manager.CacheContainer;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.ModeShapeEngine.State;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
 
@@ -59,10 +63,18 @@ public class TestingUtil {
         }
     }
 
-    public static void killRepository( JcrRepository repository ) {
-        if (repository == null) return;
+    public static void killRepositoryAndContainer( JcrRepository repository ) {
+        Collection<CacheContainer> containers = killRepository(repository);
+        // Now kill all the cache managers ...
+        for (CacheContainer container : containers) {
+            org.infinispan.test.TestingUtil.killCacheManagers(container);
+        }
+    }
+
+    public static Collection<CacheContainer> killRepository( JcrRepository repository ) {
+        if (repository == null) return Collections.emptySet();
         try {
-            if (repository.getState() != State.RUNNING) return;
+            if (repository.getState() != State.RUNNING) return Collections.emptySet();
             // Rollback any open transactions ...
             TransactionManager txnMgr = repository.runningState().txnManager();
             if (txnMgr != null) {
@@ -80,12 +92,19 @@ public class TestingUtil {
             repository.shutdown().get(20, TimeUnit.SECONDS);
 
             // Get the caches and kill them ...
+            Set<CacheContainer> cacheContainers = new HashSet<CacheContainer>();
             for (Cache<?, ?> cache : caches) {
-                if (cache != null) org.infinispan.test.TestingUtil.killCaches(cache);
+                if (cache != null) {
+                    cacheContainers.add(cache.getCacheManager());
+                    org.infinispan.test.TestingUtil.killCaches(cache);
+                }
             }
+
+            return cacheContainers;
         } catch (Throwable t) {
             log.error(t, JcrI18n.errorKillingRepository, repository.getName(), t.getMessage());
         }
+        return Collections.emptySet();
     }
 
     public static void killEngine( ModeShapeEngine engine ) {
@@ -94,12 +113,19 @@ public class TestingUtil {
             if (engine.getState() != State.RUNNING) return;
 
             // First shutdown and destroy the repositories ...
+            Set<CacheContainer> cacheContainers = new HashSet<CacheContainer>();
+
             for (String key : engine.getRepositoryKeys()) {
                 JcrRepository repository = engine.getRepository(key);
-                killRepository(repository);
+                cacheContainers.addAll(killRepository(repository));
             }
             // Then shutdown the engine ...
             engine.shutdown().get(20, TimeUnit.SECONDS);
+
+            // Now kill all the cache managers ...
+            for (CacheContainer container : cacheContainers) {
+                org.infinispan.test.TestingUtil.killCacheManagers(container);
+            }
 
         } catch (Throwable t) {
             log.error(t, JcrI18n.errorKillingEngine, t.getMessage());

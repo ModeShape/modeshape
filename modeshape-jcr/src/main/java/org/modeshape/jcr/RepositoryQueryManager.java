@@ -39,8 +39,8 @@ import org.hibernate.search.backend.TransactionContext;
 import org.hibernate.search.engine.spi.SearchFactoryImplementor;
 import org.hibernate.search.spi.SearchFactoryBuilder;
 import org.modeshape.common.annotation.GuardedBy;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.RepositoryConfiguration.QuerySystem;
 import org.modeshape.jcr.api.query.qom.QueryCommand;
@@ -88,6 +88,23 @@ class RepositoryQueryManager {
         // Set up the query engine ...
         String repoName = runningState.name();
         this.config = new BasicLuceneConfiguration(repoName, backendProps, indexingProps, indexStorageProps);
+    }
+
+    void shutdown() {
+        if (queryEngine != null) {
+            try {
+                engineInitLock.lock();
+                if (queryEngine != null) {
+                    try {
+                        queryEngine.shutdown();
+                    } finally {
+                        queryEngine = null;
+                    }
+                }
+            } finally {
+                engineInitLock.unlock();
+            }
+        }
     }
 
     public QueryResults query( ExecutionContext context,
