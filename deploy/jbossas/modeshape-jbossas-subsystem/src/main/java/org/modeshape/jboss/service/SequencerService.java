@@ -79,9 +79,9 @@ public class SequencerService implements Service<JcrRepository> {
         RepositoryConfiguration repositoryConfig = repository.getConfiguration();
 
         Editor editor = repositoryConfig.edit();
-        //TODO author=Horia Chiorean date=6/21/12 description=Temporary fix until MODE-1521 is fixed
-        EditableDocument sequencing = editor.getDocument("sequencing");
-        EditableDocument sequencers = sequencing.getDocument("sequencers");
+
+        EditableDocument sequencing = editor.getOrCreateDocument("sequencing");
+        EditableDocument sequencers = sequencing.getOrCreateDocument("sequencers");
 
         EditableDocument seq = Schematic.newDocument();
         String sequencerName = sequencerProperties.getProperty(FieldName.NAME);

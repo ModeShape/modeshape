@@ -29,11 +29,12 @@ import org.junit.BeforeClass;
 
 /**
  * Abstract test class which should be extended whenever there are tests which use JBoss JTA, to properly configure the output
- * directory locations of the JTA.
+ * directory locations of the JTA: "ObjectStore" and "PutObjectStoreDirHere" for some very annoying reason, are created inside
+ * the current working dir, which is the root module dir during the test run.
  *
  * @author Horia Chiorean
  */
-public abstract  class AbstractTransactionalTest {
+public abstract class AbstractTransactionalTest {
     @BeforeClass
     public static void beforeSuite() {
         JTATestUtil.setJBossJTADefaultStoreLocations();

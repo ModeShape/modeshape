@@ -753,13 +753,16 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
             System.out.println("Stopped repository and killed caches ...");
         }
 
-        // forcibly delete the update lock (see MODE-1512) ...
-        File lock = new File("target/persistent_repository/index/nodeinfo/write.lock");
-        System.out.println("Lock file exists: " + lock.exists());
-        if (lock.exists()) {
-            assertThat(lock.delete(), is(true));
+        //on windows you cannot delete the lock file from this process because there's an exclusive native lock on the file
+        if (!System.getProperty("os.name").toLowerCase().contains("windows")) {
+            // forcibly delete the update lock (see MODE-1512) ...
+            File lock = new File("target/persistent_repository/index/nodeinfo/write.lock");
+            System.out.println("Lock file exists: " + lock.exists());
+            if (lock.exists()) {
+                assertThat(lock.delete(), is(true));
+            }
+            assertThat(lock.exists(), is(false));
         }
-        assertThat(lock.exists(), is(false));
 
         try {
             System.out.println("Starting repository again ...");

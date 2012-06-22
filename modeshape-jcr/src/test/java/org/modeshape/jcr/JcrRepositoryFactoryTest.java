@@ -37,7 +37,7 @@ import org.junit.After;
 import org.junit.Test;
 import org.modeshape.jcr.api.RepositoryFactory;
 
-public class JcrRepositoryFactoryTest {
+public class JcrRepositoryFactoryTest extends AbstractTransactionalTest {
 
     private String url;
     private Map<String, String> params;

@@ -15,7 +15,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.api.Repositories;
 
-public class JndiRepositoryFactoryTest {
+public class JndiRepositoryFactoryTest extends AbstractTransactionalTest {
     private static final String JCR_REPOSITORY_NAME = "Test Repository";
 
     private JndiRepositoryFactory factory = new JndiRepositoryFactory();
@@ -25,6 +25,7 @@ public class JndiRepositoryFactoryTest {
 
     @Before
     public void beforeEach() {
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
     }
 
     @After
