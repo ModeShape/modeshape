@@ -108,7 +108,7 @@ public class JcrQuery extends JcrAbstractQuery {
         Schemata schemata = context.getSchemata();
         QueryResults result = context.execute(query, hints, variables);
         checkForProblems(result.getProblems());
-        context.recordDuration(System.nanoTime() - start, TimeUnit.NANOSECONDS, statement, language);
+        context.recordDuration(Math.abs(System.nanoTime() - start), TimeUnit.NANOSECONDS, statement, language);
         if (Query.XPATH.equals(language)) {
             return new XPathQueryResult(context, statement, result, schemata);
         } else if (Query.SQL.equals(language)) {
