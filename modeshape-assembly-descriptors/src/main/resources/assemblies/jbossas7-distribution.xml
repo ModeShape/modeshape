@@ -77,7 +77,6 @@
             <outputDirectory>modules/org/modeshape/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-jcr:jar</include>
-                <include>org.modeshape:modeshape-schematic:jar</include>
                 <include>org.modeshape:modeshape-jbossas-subsystem:jar</include>
             </includes>
             <unpack>false</unpack>
@@ -204,6 +203,19 @@
                 <include>org.modeshape:modeshape-sequencer-zip:jar</include>
             </includes>
         </dependencySet>
+
+        <!--
+            //TODO author=Horia Chiorean date=6/22/12 description=MODE-1534 - This is a temporary workaround because of the schematic Module for Infinispan
+        -->
+		<dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/infinispan/main</outputDirectory>
+			<unpack>false</unpack>
+			<includes>
+				<include>org.infinispan:infinispan-core:jar</include>
+                <include>org.modeshape:modeshape-schematic:jar</include>
+            </includes>
+		</dependencySet>
 
         <!-- Module for Hibernate Search (Engine) -->
 		<dependencySet>

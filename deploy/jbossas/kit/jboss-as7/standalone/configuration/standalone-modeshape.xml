@@ -168,13 +168,13 @@
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store passivation="false" path="modeshape/store/sample" relative-to="jboss.server.data.dir" />
+                    <file-store passivation="false" path="modeshape/store/sample" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
                 <local-cache name="artifacts">
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store passivation="false" path="modeshape/store/artifacts" relative-to="jboss.server.data.dir" />
+                    <file-store passivation="false" path="modeshape/store/artifacts" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
             </cache-container>
         </subsystem>
