@@ -54,8 +54,8 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.HashMultimap;
 import org.modeshape.common.collection.Multimap;
 import org.modeshape.common.i18n.I18n;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.query.qom.QueryCommand;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
@@ -204,7 +204,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
                     throw new InvalidNodeTypeDefinitionException(JcrI18n.cannotUnregisterInUseType.text(name));
                 }
             }
-            long time = TimeUnit.MILLISECONDS.convert(System.nanoTime() - start, TimeUnit.NANOSECONDS);
+            long time = TimeUnit.MILLISECONDS.convert(Math.abs(System.nanoTime() - start), TimeUnit.NANOSECONDS);
             logger.debug("{0} milliseconds to check if any of these node types are unused before unregistering them: {1}",
                          time,
                          nodeTypeNames);

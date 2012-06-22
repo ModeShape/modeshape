@@ -102,7 +102,7 @@ public class QueryEngine {
         // Create the canonical plan ...
         long start = System.nanoTime();
         PlanNode plan = planner.createPlan(context, query);
-        long duration = System.nanoTime() - start;
+        long duration = Math.abs(System.nanoTime() - start);
         Statistics stats = new Statistics(duration);
 
         QueryResultColumns resultColumns = QueryResultColumns.empty();
@@ -110,13 +110,13 @@ public class QueryEngine {
             // Optimize the plan ...
             start = System.nanoTime();
             PlanNode optimizedPlan = optimizer.optimize(context, plan);
-            duration = System.nanoTime() - start;
+            duration = Math.abs(System.nanoTime() - start);
             stats = stats.withOptimizationTime(duration);
 
             // Find the query result columns ...
             start = System.nanoTime();
             resultColumns = determineQueryResultColumns(optimizedPlan, context.getHints());
-            duration = System.nanoTime() - start;
+            duration = Math.abs(System.nanoTime() - start);
             stats = stats.withResultsFormulationTime(duration);
 
             if (!context.getProblems().hasErrors()) {
@@ -125,7 +125,7 @@ public class QueryEngine {
                     start = System.nanoTime();
                     return processor.execute(context, query, stats, optimizedPlan);
                 } finally {
-                    duration = System.nanoTime() - start;
+                    duration = Math.abs(System.nanoTime() - start);
                     stats = stats.withExecutionTime(duration);
                 }
             }

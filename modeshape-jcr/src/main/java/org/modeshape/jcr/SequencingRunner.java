@@ -203,7 +203,7 @@ final class SequencingRunner implements Runnable {
                         // fire the sequencing event after save (hopefully by this time the transaction has been committed)
                         fireSequencingEvent(selectedNode, outputNodes, outputSession, sequencerName);
 
-                        long durationInNanos = System.nanoTime() - start;
+                        long durationInNanos = Math.abs(System.nanoTime() - start);
                         Map<String, String> payload = new HashMap<String, String>();
                         payload.put("sequencerName", sequencer.getClass().getName());
                         payload.put("sequencedPath", changedProperty.getPath());

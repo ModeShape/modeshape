@@ -524,7 +524,7 @@ public abstract class AbstractNodeCacheTest extends AbstractSchematicDbTest {
 
         long nanos = System.nanoTime();
         CachedNode system = cache.getNode(systemRef);
-        print("Time (load): " + millis(System.nanoTime() - nanos) + " ms");
+        print("Time (load): " + millis(Math.abs(System.nanoTime() - nanos)) + " ms");
 
         for (int i = 0; i != 10; ++i) {
             cache.clear();
@@ -534,7 +534,7 @@ public abstract class AbstractNodeCacheTest extends AbstractSchematicDbTest {
             system.getName(cache);
             system.getProperty(JcrLexicon.UUID, cache);
             system.getProperty(JcrLexicon.PRIMARY_TYPE, cache);
-            print("Time (read): " + millis(System.nanoTime() - nanos) + " ms");
+            print("Time (read): " + millis(Math.abs(System.nanoTime() - nanos)) + " ms");
         }
 
         nanos = System.nanoTime();
@@ -543,7 +543,7 @@ public abstract class AbstractNodeCacheTest extends AbstractSchematicDbTest {
         system.getName(cache);
         system.getProperty(JcrLexicon.UUID, cache);
         system.getProperty(JcrLexicon.PRIMARY_TYPE, cache);
-        print("Time (read): " + millis(System.nanoTime() - nanos) + " ms");
+        print("Time (read): " + millis(Math.abs(System.nanoTime() - nanos)) + " ms");
 
         assertThat(system, is(notNullValue()));
         assertThat(system.getKey(), is(systemRef.getKey()));
@@ -568,11 +568,11 @@ public abstract class AbstractNodeCacheTest extends AbstractSchematicDbTest {
 
         nanos = System.nanoTime();
         CachedNode namespacesNode = cache.getNode(namespaces);
-        print("Time (load): " + millis(System.nanoTime() - nanos) + " ms");
+        print("Time (load): " + millis(Math.abs(System.nanoTime() - nanos)) + " ms");
         nanos = System.nanoTime();
         assertThat(namespacesNode.getPath(cache), is(path("/jcr:system/mode:namespaces")));
         assertThat(namespacesNode.getChildReferences(cache).isEmpty(), is(true));
-        print("Time (read): " + millis(System.nanoTime() - nanos) + " ms");
+        print("Time (read): " + millis(Math.abs(System.nanoTime() - nanos)) + " ms");
     }
 
     @Test

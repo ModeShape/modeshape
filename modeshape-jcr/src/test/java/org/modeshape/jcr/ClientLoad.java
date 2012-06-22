@@ -77,7 +77,7 @@ public class ClientLoad {
 
                             long start = System.nanoTime();
                             result = callable.call();
-                            durationInNanos = System.nanoTime() - start;
+                            durationInNanos = Math.abs(System.nanoTime() - start);
                             latch.countDown();
                         } catch (Exception e) {
                             error = e;

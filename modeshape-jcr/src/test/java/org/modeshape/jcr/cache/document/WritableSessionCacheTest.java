@@ -26,6 +26,9 @@ package org.modeshape.jcr.cache.document;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
@@ -34,9 +37,6 @@ import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Tests that operate against a {@link WritableSessionCache}. Each test method starts with a clean slate of content, which is
@@ -83,7 +83,7 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
                                                        name("newChild"),
                                                        property("p1a", 344),
                                                        property("p2", false));
-        print("Time (createChild): " + millis(System.nanoTime() - nanos) + " ms");
+        print("Time (createChild): " + millis(Math.abs(System.nanoTime() - nanos)) + " ms");
         assertThat(newChild.getPath(session1), is(path("/childB/newChild")));
         check(session1).children(nodeB, "childC", "childD", "newChild");
         check(session1).property("/childB/newChild", property("p1a", 344));
@@ -96,7 +96,7 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
         nanos = System.nanoTime();
         session1.save();
         print(false);
-        print("Time (save): " + millis(System.nanoTime() - nanos) + " ms");
+        print("Time (save): " + millis(Math.abs(System.nanoTime() - nanos)) + " ms");
 
         // Both sessions should see all 3 children ...
         check(session1).children(nodeB, "childC", "childD", "newChild");
@@ -366,15 +366,17 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
     public void shouldReturnTransientKeysAtOrBelowNode() {
         NodeKey rootKey = session1.getRootKey();
         MutableCachedNode root = session1.mutable(rootKey);
-        //root/childA
+        // root/childA
         MutableCachedNode childA = root.createChild(session(), newKey("x-childA"), name("childA"), property("p1", "value A"));
-        //root/childA/childB
+        // root/childA/childB
         MutableCachedNode childB = childA.createChild(session(), newKey("x-childB"), name("childB"), property("p1", "value B"));
-        //root/childC
+        // root/childC
         MutableCachedNode childC = root.createChild(session(), newKey("x-childC"), name("childC"), property("p1", "value C"));
 
-        assertEquals(new HashSet<NodeKey>(Arrays.asList(childA.getKey(), childB.getKey())), session1.getChangedNodeKeysAtOrBelow(childA));
-        assertEquals(new HashSet<NodeKey>(Arrays.asList(rootKey, childA.getKey(), childB.getKey(), childC.getKey())), session1.getChangedNodeKeysAtOrBelow(root));
+        assertEquals(new HashSet<NodeKey>(Arrays.asList(childA.getKey(), childB.getKey())),
+                     session1.getChangedNodeKeysAtOrBelow(childA));
+        assertEquals(new HashSet<NodeKey>(Arrays.asList(rootKey, childA.getKey(), childB.getKey(), childC.getKey())),
+                     session1.getChangedNodeKeysAtOrBelow(root));
         assertEquals(new HashSet<NodeKey>(Arrays.asList(childC.getKey())), session1.getChangedNodeKeysAtOrBelow(childC));
     }
 

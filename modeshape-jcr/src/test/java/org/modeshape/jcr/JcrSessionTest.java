@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import javax.jcr.ReferentialIntegrityException;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
@@ -50,6 +49,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
+import javax.jcr.ReferentialIntegrityException;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
@@ -104,14 +104,14 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         for (int i = 0; i != count; ++i) {
             node.addNode("childNode");
         }
-        long millis = TimeUnit.MILLISECONDS.convert(System.nanoTime() - start1, TimeUnit.NANOSECONDS);
+        long millis = TimeUnit.MILLISECONDS.convert(Math.abs(System.nanoTime() - start1), TimeUnit.NANOSECONDS);
         System.out.println("Time to create " + count + " nodes under root: " + millis + " ms");
 
         long start2 = System.nanoTime();
         session.save();
-        millis = TimeUnit.MILLISECONDS.convert(System.nanoTime() - start2, TimeUnit.NANOSECONDS);
+        millis = TimeUnit.MILLISECONDS.convert(Math.abs(System.nanoTime() - start2), TimeUnit.NANOSECONDS);
         System.out.println("Time to save " + count + " new nodes: " + millis + " ms");
-        millis = TimeUnit.MILLISECONDS.convert(System.nanoTime() - start1, TimeUnit.NANOSECONDS);
+        millis = TimeUnit.MILLISECONDS.convert(Math.abs(System.nanoTime() - start1), TimeUnit.NANOSECONDS);
         System.out.println("Total time to create " + count + " new nodes and save: " + millis + " ms");
 
         NodeIterator iter = node.getNodes("childNode");
@@ -125,7 +125,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         start1 = System.nanoTime();
         node.addNode("oneMore");
         session.save();
-        millis = TimeUnit.MILLISECONDS.convert(System.nanoTime() - start1, TimeUnit.NANOSECONDS);
+        millis = TimeUnit.MILLISECONDS.convert(Math.abs(System.nanoTime() - start1), TimeUnit.NANOSECONDS);
         System.out.println("Time to create " + (count + 1) + "th node and save: " + millis + " ms");
     }
 
@@ -658,22 +658,22 @@ public class JcrSessionTest extends SingleUseAbstractTest {
 
         session.save();
 
-        //there are 2 strong refs
+        // there are 2 strong refs
         referenceableNode.remove();
         expectReferentialIntegrityException();
 
-        //remove the first strong ref
-        node1.setProperty("ref1", (Node) null);
+        // remove the first strong ref
+        node1.setProperty("ref1", (Node)null);
         referenceableNode.remove();
         expectReferentialIntegrityException();
 
-        //remove the second strong ref (we should be able to remove the node now)
+        // remove the second strong ref (we should be able to remove the node now)
         assertEquals(2, referenceableNode.getWeakReferences().getSize());
-        node1.setProperty("ref2", (Node) null);
+        node1.setProperty("ref2", (Node)null);
         referenceableNode.remove();
         session.save();
 
-        //check the node was actually deleted
+        // check the node was actually deleted
         assertFalse(session.getRootNode().hasNode("referenceable"));
     }
 
@@ -682,7 +682,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
             session.save();
             fail("Expected a referential integrity exception");
         } catch (ReferentialIntegrityException e) {
-            //expected
+            // expected
             session.refresh(false);
         }
     }
