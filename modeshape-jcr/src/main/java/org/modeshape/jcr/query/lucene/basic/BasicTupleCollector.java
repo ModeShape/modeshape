@@ -48,6 +48,7 @@ import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.QueryResults.Location;
 import org.modeshape.jcr.query.lucene.LuceneQueryEngine.TupleCollector;
+import org.modeshape.jcr.query.lucene.QueryCancelledIOException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
@@ -170,6 +171,8 @@ public class BasicTupleCollector extends TupleCollector {
         String id = document.get(NodeInfoIndex.FieldName.ID);
         String workspace = document.get(NodeInfoIndex.FieldName.WORKSPACE);
         float score = scorer.score();
+
+        if (queryContext.isCancelled()) throw new QueryCancelledIOException();
 
         // And get the node ...
         NodeKey key = new NodeKey(id);

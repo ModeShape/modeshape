@@ -21,25 +21,33 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.api.query;
+package org.modeshape.jcr.query;
+
+import javax.jcr.RepositoryException;
+import org.modeshape.jcr.api.query.QueryCancelledException;
 
 /**
- * A specialization of the standard JCR {@link javax.jcr.query.Query} interface that adds the ModeShape-specific constant for the
- * {@link #FULL_TEXT_SEARCH full-text search} query language.
+ * A simple interface that allows tracking an executing query that can be cancelled.
  */
-public interface Query extends javax.jcr.query.Query {
+public interface CancellableQuery {
 
     /**
-     * A string constant representing the ModeShape full-text search query language.
+     * Execute the query and get the results. Note that this method can be called by multiple threads, and all will block until
+     * the query execution has completed. Subsequent calls to this method will return the same results.
+     * 
+     * @return the query results.
+     * @throws QueryCancelledException if the query was cancelled
+     * @throws RepositoryException if there was a problem executing the query
      */
-    public static final String FULL_TEXT_SEARCH = "search";
+    QueryResults getResults() throws QueryCancelledException, RepositoryException;
 
     /**
-     * Signal that the query, if currently {@link Query#execute() executing}, should be cancelled and stopped (with an exception).
-     * This method does not block until the query is actually stopped.
+     * Cancel the query if it is currently running. Note that this method does not block until the query is cancelled; it merely
+     * marks the query as being cancelled, and the query will terminate at its next available opportunity. Also, subsequent calls
+     * to this method have no affect.
      * 
      * @return true if the query was executing and will be cancelled, or false if the query was no longer running (because it had
      *         finished successfully or had already been cancelled) and could not be cancelled.
      */
-    public boolean cancel();
+    boolean cancel();
 }

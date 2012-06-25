@@ -27,7 +27,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import org.modeshape.common.annotation.Immutable;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.CheckArg;
@@ -44,8 +45,11 @@ import org.modeshape.jcr.value.NamespaceRegistry;
 /**
  * An immutable context in which queries are to be executed. Each query context defines the information that is available during
  * query execution.
+ * <p>
+ * The only mutable state on this context is whether the query has been {@link #cancel() cancelled}.
+ * </p>
  */
-@Immutable
+@ThreadSafe
 public class QueryContext {
     private final ExecutionContext context;
     private final RepositoryCache repositoryCache;
@@ -56,6 +60,7 @@ public class QueryContext {
     private final Map<String, Object> variables;
     private final Set<String> workspaceNames;
     private final Map<String, NodeCache> overriddenNodeCachesByWorkspaceName;
+    private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
     /**
      * Create a new context for query execution.
@@ -148,6 +153,21 @@ public class QueryContext {
     protected QueryContext( QueryContext original ) {
         this(original.context, original.repositoryCache, original.workspaceNames, original.overriddenNodeCachesByWorkspaceName,
              original.schemata, original.hints, original.problems, original.variables);
+    }
+
+    /**
+     * Cancel the query if it is currently running. Note that this method does not block until the query is cancelled; it merely
+     * marks the query as being cancelled, and the query will terminate at its next available opportunity.
+     * 
+     * @return true if the query was executing and will be cancelled, or false if the query was no longer running (because it had
+     *         finished successfully or had already been cancelled) and could not be cancelled.
+     */
+    public final boolean cancel() {
+        return this.cancelled.compareAndSet(false, true);
+    }
+
+    public final boolean isCancelled() {
+        return this.cancelled.get();
     }
 
     /**

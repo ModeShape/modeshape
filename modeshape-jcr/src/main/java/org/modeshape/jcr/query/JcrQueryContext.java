@@ -57,9 +57,9 @@ public interface JcrQueryContext {
     Value createValue( int propertyType,
                        Object value );
 
-    QueryResults execute( QueryCommand query,
-                          PlanHints hints,
-                          Map<String, Object> variables ) throws RepositoryException;
+    CancellableQuery createExecutableQuery( QueryCommand query,
+                                            PlanHints hints,
+                                            Map<String, Object> variables ) throws RepositoryException;
 
     NodeIterator emptyNodeIterator();
 

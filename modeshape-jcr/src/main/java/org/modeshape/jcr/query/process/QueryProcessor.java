@@ -95,8 +95,8 @@ public abstract class QueryProcessor<ProcessingContextType> implements Processor
                     columns = component.getColumns();
                     tuples = component.execute();
                 } else {
-                    // There must have been an error ...
-                    assert context.getProblems().hasErrors();
+                    // There must have been an error or was cancelled ...
+                    assert context.getProblems().hasErrors() || context.isCancelled();
                     tuples = Collections.emptyList();
                 }
             } finally {

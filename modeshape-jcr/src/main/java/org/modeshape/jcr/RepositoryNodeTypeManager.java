@@ -67,6 +67,7 @@ import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.cache.change.NodeAdded;
 import org.modeshape.jcr.cache.change.NodeRemoved;
 import org.modeshape.jcr.cache.change.PropertyChanged;
+import org.modeshape.jcr.query.CancellableQuery;
 import org.modeshape.jcr.query.QueryResults;
 import org.modeshape.jcr.query.model.TypeSystem;
 import org.modeshape.jcr.query.parse.BasicSqlQueryParser;
@@ -322,8 +323,14 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         RepositoryQueryManager queryManager = repository.queryManager();
         Set<String> workspaceNames = repoCache.getWorkspaceNames();
         Map<String, NodeCache> overridden = null;
-        QueryResults result = queryManager.query(context, repoCache, workspaceNames, overridden, command, schemata, null, null);
-        return result.getRowCount() > 0;
+        CancellableQuery query = queryManager.query(context, repoCache, workspaceNames, overridden, command, schemata, null, null);
+        try {
+            QueryResults result = query.getResults();
+            return result.getRowCount() > 0;
+        } catch (RepositoryException e) {
+            logger.error(e, JcrI18n.errorCheckingNodeTypeUsage, nodeTypeName, e.getLocalizedMessage());
+            return true;
+        }
     }
 
     /**

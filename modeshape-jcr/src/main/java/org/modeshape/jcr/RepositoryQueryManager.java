@@ -51,8 +51,8 @@ import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.cache.RepositoryCache;
+import org.modeshape.jcr.query.CancellableQuery;
 import org.modeshape.jcr.query.QueryIndexing;
-import org.modeshape.jcr.query.QueryResults;
 import org.modeshape.jcr.query.lucene.LuceneQueryEngine;
 import org.modeshape.jcr.query.lucene.LuceneSearchConfiguration;
 import org.modeshape.jcr.query.lucene.basic.BasicLuceneConfiguration;
@@ -107,14 +107,14 @@ class RepositoryQueryManager {
         }
     }
 
-    public QueryResults query( ExecutionContext context,
-                               RepositoryCache repositoryCache,
-                               Set<String> workspaceNames,
-                               Map<String, NodeCache> overriddenNodeCachesByWorkspaceName,
-                               QueryCommand query,
-                               Schemata schemata,
-                               PlanHints hints,
-                               Map<String, Object> variables ) throws InvalidQueryException {
+    public CancellableQuery query( ExecutionContext context,
+                                   RepositoryCache repositoryCache,
+                                   Set<String> workspaceNames,
+                                   Map<String, NodeCache> overriddenNodeCachesByWorkspaceName,
+                                   QueryCommand query,
+                                   Schemata schemata,
+                                   PlanHints hints,
+                                   Map<String, Object> variables ) throws InvalidQueryException {
         return queryEngine().query(context,
                                    repositoryCache,
                                    workspaceNames,
