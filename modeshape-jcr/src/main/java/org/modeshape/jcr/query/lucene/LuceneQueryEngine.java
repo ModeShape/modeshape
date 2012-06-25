@@ -28,6 +28,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import javax.jcr.RepositoryException;
 import javax.jcr.query.InvalidQueryException;
 import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.IndexSearcher;
@@ -38,8 +41,10 @@ import org.hibernate.search.SearchFactory;
 import org.hibernate.search.engine.spi.SearchFactoryImplementor;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
+import org.modeshape.jcr.api.query.QueryCancelledException;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.RepositoryCache;
+import org.modeshape.jcr.query.CancellableQuery;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryIndexing;
 import org.modeshape.jcr.query.QueryResults;
@@ -122,17 +127,38 @@ public class LuceneQueryEngine extends QueryEngine {
      * @return the results
      * @throws InvalidQueryException if the
      */
-    public QueryResults query( ExecutionContext context,
-                               RepositoryCache repositoryCache,
-                               Set<String> workspaceNames,
-                               Map<String, NodeCache> overriddenNodeCachesByWorkspaceName,
-                               QueryCommand query,
-                               Schemata schemata,
-                               PlanHints hints,
-                               Map<String, Object> variables ) throws InvalidQueryException {
-        QueryContext queryContext = new QueryContext(context, repositoryCache, workspaceNames,
-                                                     overriddenNodeCachesByWorkspaceName, schemata, hints, null, variables);
-        return this.execute(queryContext, query);
+    public CancellableQuery query( ExecutionContext context,
+                                   RepositoryCache repositoryCache,
+                                   Set<String> workspaceNames,
+                                   Map<String, NodeCache> overriddenNodeCachesByWorkspaceName,
+                                   final QueryCommand query,
+                                   Schemata schemata,
+                                   PlanHints hints,
+                                   Map<String, Object> variables ) throws InvalidQueryException {
+        final QueryContext queryContext = new QueryContext(context, repositoryCache, workspaceNames,
+                                                           overriddenNodeCachesByWorkspaceName, schemata, hints, null, variables);
+        return new CancellableQuery() {
+            private final Lock lock = new ReentrantLock();
+            private QueryResults results;
+
+            @Override
+            public QueryResults getResults() throws QueryCancelledException, RepositoryException {
+                try {
+                    lock.lock();
+                    if (results == null) {
+                        results = execute(queryContext, query); // this will block and will hold the lock until it is done ...
+                    }
+                    return results;
+                } finally {
+                    lock.unlock();
+                }
+            }
+
+            @Override
+            public boolean cancel() {
+                return queryContext.cancel();
+            }
+        };
     }
 
     /**
@@ -288,12 +314,15 @@ public class LuceneQueryEngine extends QueryEngine {
                         searcher.search(pushDownQuery, collector);
                     }
                     tuples = collector.getTuples();
+                } catch (QueryCancelledIOException e) {
+                    assert queryContext.isCancelled();
+                    return Collections.emptyList();
                 } catch (IOException e) {
                     throw new LuceneException(e);
                 }
             }
 
-            if (!tuples.isEmpty()) {
+            if (!tuples.isEmpty() && !queryContext.isCancelled()) {
                 Constraint postProcessingConstraints = queries.getPostProcessingConstraints();
                 if (postProcessingConstraints != null) {
                     // Create a delegate processing component that will return the tuples we've already found ...
@@ -304,6 +333,8 @@ public class LuceneQueryEngine extends QueryEngine {
                             return allTuples;
                         }
                     };
+                    if (queryContext.isCancelled()) return Collections.emptyList();
+
                     // Create a processing component that will apply these constraints to the tuples we already found ...
                     SelectComponent selector = new SelectComponent(tuplesProcessor, postProcessingConstraints,
                                                                    queryContext.getVariables());

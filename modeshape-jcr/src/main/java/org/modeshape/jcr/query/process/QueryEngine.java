@@ -24,9 +24,11 @@
 package org.modeshape.jcr.query.process;
 
 import java.util.List;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.GraphI18n;
+import org.modeshape.jcr.api.query.QueryCancelledException;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryResults;
 import org.modeshape.jcr.query.QueryResults.Statistics;
@@ -76,6 +78,12 @@ public class QueryEngine {
         this.processor = processor;
     }
 
+    private void checkCancelled( QueryContext context ) throws QueryCancelledException {
+        if (context.isCancelled()) {
+            throw new QueryCancelledException();
+        }
+    }
+
     /**
      * Execute the supplied query by planning, optimizing, and then processing it.
      * 
@@ -83,11 +91,15 @@ public class QueryEngine {
      * @param query the query that is to be executed
      * @return the query results; never null
      * @throws IllegalArgumentException if the context or query references are null
+     * @throws QueryCancelledException if the query was cancelled
+     * @throws RepositoryException if there was a problem executing the query
      */
     public QueryResults execute( final QueryContext context,
-                                 QueryCommand query ) {
+                                 QueryCommand query ) throws QueryCancelledException, RepositoryException {
         CheckArg.isNotNull(context, "context");
         CheckArg.isNotNull(query, "query");
+
+        checkCancelled(context);
 
         // Validate that all of the referenced variables have been provided ...
         Visitors.visitAll(query, new Visitors.AbstractVisitor() {
@@ -105,6 +117,7 @@ public class QueryEngine {
         long duration = Math.abs(System.nanoTime() - start);
         Statistics stats = new Statistics(duration);
 
+        checkCancelled(context);
         QueryResultColumns resultColumns = QueryResultColumns.empty();
         if (!context.getProblems().hasErrors()) {
             // Optimize the plan ...
@@ -120,6 +133,7 @@ public class QueryEngine {
             stats = stats.withResultsFormulationTime(duration);
 
             if (!context.getProblems().hasErrors()) {
+                checkCancelled(context);
                 // Execute the plan ...
                 try {
                     start = System.nanoTime();
@@ -130,6 +144,9 @@ public class QueryEngine {
                 }
             }
         }
+        // Check whether the query was cancelled during execution ...
+        checkCancelled(context);
+
         // There were problems somewhere ...
         return new org.modeshape.jcr.query.process.QueryResults(resultColumns, stats, context.getProblems());
     }

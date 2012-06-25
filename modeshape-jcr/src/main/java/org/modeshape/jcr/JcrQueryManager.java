@@ -49,10 +49,10 @@ import org.modeshape.jcr.api.monitor.DurationMetric;
 import org.modeshape.jcr.api.query.QueryManager;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.RepositoryCache;
+import org.modeshape.jcr.query.CancellableQuery;
 import org.modeshape.jcr.query.JcrQuery;
 import org.modeshape.jcr.query.JcrQueryContext;
 import org.modeshape.jcr.query.JcrTypeSystem;
-import org.modeshape.jcr.query.QueryResults;
 import org.modeshape.jcr.query.QueryResults.Location;
 import org.modeshape.jcr.query.model.QueryCommand;
 import org.modeshape.jcr.query.model.QueryObjectModel;
@@ -261,9 +261,9 @@ class JcrQueryManager implements QueryManager {
         }
 
         @Override
-        public QueryResults execute( QueryCommand query,
-                                     PlanHints hints,
-                                     Map<String, Object> variables ) throws RepositoryException {
+        public CancellableQuery createExecutableQuery( QueryCommand query,
+                                                       PlanHints hints,
+                                                       Map<String, Object> variables ) throws RepositoryException {
             session.checkLive();
             // Submit immediately to the workspace graph ...
             Schemata schemata = session.workspace().nodeTypeManager().schemata();

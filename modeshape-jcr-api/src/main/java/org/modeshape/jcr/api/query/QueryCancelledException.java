@@ -23,23 +23,18 @@
  */
 package org.modeshape.jcr.api.query;
 
+import javax.jcr.RepositoryException;
+
 /**
- * A specialization of the standard JCR {@link javax.jcr.query.Query} interface that adds the ModeShape-specific constant for the
- * {@link #FULL_TEXT_SEARCH full-text search} query language.
+ * A {@link RepositoryException} that signifies that an {@link Query#execute() executing} query has been {@link Query#cancel()
+ * cancelled}.
+ * 
+ * @see Query#cancel()
  */
-public interface Query extends javax.jcr.query.Query {
+public class QueryCancelledException extends RepositoryException {
 
-    /**
-     * A string constant representing the ModeShape full-text search query language.
-     */
-    public static final String FULL_TEXT_SEARCH = "search";
+    private static final long serialVersionUID = 1L;
 
-    /**
-     * Signal that the query, if currently {@link Query#execute() executing}, should be cancelled and stopped (with an exception).
-     * This method does not block until the query is actually stopped.
-     * 
-     * @return true if the query was executing and will be cancelled, or false if the query was no longer running (because it had
-     *         finished successfully or had already been cancelled) and could not be cancelled.
-     */
-    public boolean cancel();
+    public QueryCancelledException() {
+    }
 }

@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.query.Query;
@@ -56,6 +57,7 @@ public class JcrQuery extends JcrAbstractQuery {
     private final PlanHints hints;
     private final Map<String, Object> variables;
     private volatile Set<String> variableNames;
+    private final AtomicReference<CancellableQuery> executingQuery = new AtomicReference<CancellableQuery>();
 
     /**
      * Creates a new JCR {@link Query} by specifying the query statement itself, the language in which the query is stated, the
@@ -106,7 +108,19 @@ public class JcrQuery extends JcrAbstractQuery {
         context.isLive();
         final long start = System.nanoTime();
         Schemata schemata = context.getSchemata();
-        QueryResults result = context.execute(query, hints, variables);
+        // Create an executable query and set it on this object ...
+        CancellableQuery newExecutable = context.createExecutableQuery(query, hints, variables);
+        CancellableQuery executable = executingQuery.getAndSet(newExecutable);
+        if (executable == null) {
+            // We are the first to call 'execute()', so use our newly-created one ...
+            executable = newExecutable;
+        }
+        // otherwise, some other thread called execute, so we can use it and just wait for the results ...
+        final QueryResults result = executable.getResults(); // may be cancelled
+
+        // And reset the reference to null (if not already set to something else) ...
+        executingQuery.compareAndSet(executable, null);
+
         checkForProblems(result.getProblems());
         context.recordDuration(Math.abs(System.nanoTime() - start), TimeUnit.NANOSECONDS, statement, language);
         if (Query.XPATH.equals(language)) {
@@ -115,6 +129,18 @@ public class JcrQuery extends JcrAbstractQuery {
             return new JcrSqlQueryResult(context, statement, result, schemata);
         }
         return new JcrQueryResult(context, statement, result, schemata);
+    }
+
+    @Override
+    public boolean cancel() {
+        CancellableQuery executing = executingQuery.get();
+        if (executing != null) {
+            boolean cancelled = executing.cancel();
+            // Remove the reference (if still there as we obtained it several lines up) ...
+            executingQuery.compareAndSet(executing, null);
+            return cancelled;
+        }
+        return false;
     }
 
     /**

@@ -237,6 +237,7 @@ public final class JcrI18n {
     public static I18n couldNotFindDefinitionOfRequiredPrimaryType;
     public static I18n cannotRedefineChildNodeWithIncompatibleDefinition;
     public static I18n cannotRemoveItemWithProtectedDefinition;
+    public static I18n errorCheckingNodeTypeUsage;
 
     public static I18n noChildNodeDefinition;
     public static I18n noPropertyDefinition;
