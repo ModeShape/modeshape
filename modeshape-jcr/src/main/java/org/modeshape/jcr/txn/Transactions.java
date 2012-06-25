@@ -50,7 +50,7 @@ import org.modeshape.jcr.cache.document.WorkspaceCache;
  * begun}. The resulting ModeShape {@link Transaction} represents the local transaction, and should be used to obtain the
  * {@link Monitor} that is interested in all changes, to regiser {@link TransactionFunction functions} that are to be called upon
  * successful transaction commit, and then either {@link Transaction#commit() committed} or {@link Transaction#rollback() rolled
- * back}. If committed, then any changes made should be forwarded to {@link #updateCache(WorkspaceCache, ChangeSet)}.
+ * back}. If committed, then any changes made should be forwarded to {@link #updateCache(WorkspaceCache, ChangeSet, Transaction)}.
  * </p>
  * <p>
  * In the typical case where no JTA transactions are being used with JCR, then each time changes are made to a Session and
@@ -105,9 +105,11 @@ public abstract class Transactions {
      * 
      * @param workspace the workspace to which the changes were made; may not be null
      * @param changes the changes; may be null if there are no changes
+     * @param transaction the transaction with which the changes were made; may not be null
      */
     public void updateCache( WorkspaceCache workspace,
-                             ChangeSet changes ) {
+                             ChangeSet changes,
+                             Transaction transaction ) {
         // Notify the workspaces of the changes made. This is done outside of our lock but still before the save returns ...
         if (changes != null && changes.size() != 0) {
             // Notify the workspace (outside of the lock, but still before the save returns) ...
