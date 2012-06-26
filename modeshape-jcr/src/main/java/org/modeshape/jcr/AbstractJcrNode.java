@@ -912,7 +912,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException,
         RepositoryException {
         checkSession();
-        return addNode(relPath, "nt:unstructured", null);
+        return addNode(relPath, null, null);
     }
 
     @Override

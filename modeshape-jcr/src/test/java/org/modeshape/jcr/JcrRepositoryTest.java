@@ -28,6 +28,8 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import java.io.InputStream;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
@@ -39,6 +41,7 @@ import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.ValueFormatException;
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.observation.Event;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
@@ -715,6 +718,97 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         } finally {
             session2.logout();
         }
+    }
+
+    @FixFor( "MODE-1525" )
+    @Test
+    public void shouldDiscoverCorrectChildNodeType() throws Exception {
+        session = createSession();
+
+        InputStream cndStream = getClass().getResourceAsStream("/cnd/medical.cnd");
+        assertThat(cndStream, is(notNullValue()));
+        session.getWorkspace().getNodeTypeManager().registerNodeTypes(cndStream, true);
+
+        // Now create a person ...
+        Node root = session.getRootNode();
+        Node person = root.addNode("jsmith", "inf:person");
+        person.setProperty("inf:firstName", "John");
+        person.setProperty("inf:lastName", "Smith");
+        session.save();
+
+        Node doctor = root.addNode("drBarnes", "inf:doctor");
+        doctor.setProperty("inf:firstName", "Sally");
+        doctor.setProperty("inf:lastName", "Barnes");
+        doctor.setProperty("inf:doctorProviderNumber", "12345678-AB");
+        session.save();
+
+        Node referral = root.addNode("referral", "nt:unstructured");
+        referral.addMixin("er:eReferral");
+        assertThat(referral.getMixinNodeTypes()[0].getName(), is("er:eReferral"));
+        Node group = referral.addNode("er:gp");
+        assertThat(group.getPrimaryNodeType().getName(), is("inf:doctor"));
+        // Check that group doesn't specify the first name and last name ...
+        assertThat(group.hasProperty("inf:firstName"), is(false));
+        assertThat(group.hasProperty("inf:lastName"), is(false));
+        session.save();
+        // Check that group has a default first name and last name ...
+        assertThat(group.getProperty("inf:firstName").getString(), is("defaultFirstName"));
+        assertThat(group.getProperty("inf:lastName").getString(), is("defaultLastName"));
+
+        Node docGroup = root.addNode("documentGroup", "inf:documentGroup");
+        assertThat(docGroup.getPrimaryNodeType().getName(), is("inf:documentGroup"));
+        docGroup.addMixin("er:eReferral");
+        Node ergp = docGroup.addNode("er:gp");
+        assertThat(ergp.getPrimaryNodeType().getName(), is("inf:doctor"));
+        // Check that group doesn't specify the first name and last name ...
+        assertThat(ergp.hasProperty("inf:firstName"), is(false));
+        assertThat(ergp.hasProperty("inf:lastName"), is(false));
+        session.save();
+        // Check that group has a default first name and last name ...
+        assertThat(ergp.getProperty("inf:firstName").getString(), is("defaultFirstName"));
+        assertThat(ergp.getProperty("inf:lastName").getString(), is("defaultLastName"));
+    }
+
+    @FixFor( "MODE-1525" )
+    @Test
+    public void shouldDiscoverCorrectChildNodeTypeButFailOnMandatoryPropertiesWithNoDefaultValues() throws Exception {
+        session = createSession();
+
+        InputStream cndStream = getClass().getResourceAsStream("/cnd/medical-invalid-mandatories.cnd");
+        assertThat(cndStream, is(notNullValue()));
+        session.getWorkspace().getNodeTypeManager().registerNodeTypes(cndStream, true);
+
+        // Now create a person ...
+        Node root = session.getRootNode();
+        Node person = root.addNode("jsmith", "inf:person");
+        person.setProperty("inf:firstName", "John");
+        person.setProperty("inf:lastName", "Smith");
+        session.save();
+
+        Node doctor = root.addNode("drBarnes", "inf:doctor");
+        doctor.setProperty("inf:firstName", "Sally");
+        doctor.setProperty("inf:lastName", "Barnes");
+        doctor.setProperty("inf:doctorProviderNumber", "12345678-AB");
+        session.save();
+
+        Node referral = root.addNode("referral", "nt:unstructured");
+        referral.addMixin("er:eReferral");
+        assertThat(referral.getMixinNodeTypes()[0].getName(), is("er:eReferral"));
+        Node group = referral.addNode("er:gp");
+        assertThat(group.getPrimaryNodeType().getName(), is("inf:doctor"));
+        try {
+            session.save();
+            fail("Expected a constraint violation exception");
+        } catch (ConstraintViolationException e) {
+            // expected, since "inf:firstName" is mandatory but doesn't have a default value
+        }
+
+        // Set the missing mandatory properties on the node ...
+        group.setProperty("inf:firstName", "Sally");
+        group.setProperty("inf:lastName", "Barnes");
+
+        // and now Session.save() will work ...
+        session.save();
     }
 
     protected void nodeExists( Session session,

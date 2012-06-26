@@ -1,0 +1,14 @@
+<inf = 'http://acme.com.au/inf'>
+<er = 'http://acme.com.au/eReferral'>
+
+[inf:documentGroup] > mix:referenceable orderable
+
+[inf:person]
+- inf:firstName (STRING) = 'defaultFirstName' mandatory
+- inf:lastName (STRING) = 'defaultLastName' mandatory
+
+[inf:doctor] > inf:person
+- inf:doctorProviderNumber (STRING)
+
+[er:eReferral] > mix:referenceable mixin
++ er:gp (inf:doctor) = inf:doctor mandatory
