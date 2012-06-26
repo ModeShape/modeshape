@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import javax.jcr.NamespaceRegistry;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;

@@ -54,9 +54,11 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.ValueFactory;
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.value.Path;
@@ -615,18 +617,31 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         }
     }
 
+    @FixFor( {"MODE-694", "MODE-1525"} )
     @Test
     public void shouldAddCreatedPropertyForHierarchyNodes() throws Exception {
-        // q.v. MODE-694
         Node folderNode = session.getRootNode().addNode("folderNode", "nt:folder");
         assertThat(folderNode.hasProperty("jcr:created"), is(false));
 
         Node fileNode = folderNode.addNode("fileNode", "nt:file");
-        fileNode.addNode("jcr:content");
+        Node resource = null;
+        try {
+            resource = fileNode.addNode("jcr:content");
+            fail("Should not be able to add this child without specifying the primary type, as there is no default");
+        } catch (ConstraintViolationException e) {
+            resource = fileNode.addNode("jcr:content", "nt:resource");
+        }
         assertThat(fileNode.hasProperty("jcr:created"), is(false));
 
         // Save the changes ...
-        session.save();
+        try {
+            session.save();
+            fail("Should not be able to save this; 'jcr:content' is missing the mandatory 'jcr:data' property");
+        } catch (ConstraintViolationException e) {
+            Binary binary = session.getValueFactory().createBinary("Some binary value".getBytes());
+            resource.setProperty("jcr:data", binary);
+            session.save();
+        }
 
         assertThat(folderNode.hasProperty("jcr:created"), is(true));
         assertThat(fileNode.hasProperty("jcr:created"), is(true));
