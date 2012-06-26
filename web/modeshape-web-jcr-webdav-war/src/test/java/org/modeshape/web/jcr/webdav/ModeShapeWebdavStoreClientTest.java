@@ -1,26 +1,24 @@
 package org.modeshape.web.jcr.webdav;
 
-
-import com.googlecode.sardine.DavResource;
-import com.googlecode.sardine.Sardine;
-import com.googlecode.sardine.SardineFactory;
-import com.googlecode.sardine.util.SardineException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
-import org.modeshape.common.util.IoUtil;
-import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
+import org.junit.Before;
+import org.junit.Test;
+import org.modeshape.common.util.IoUtil;
+import com.googlecode.sardine.DavResource;
+import com.googlecode.sardine.Sardine;
+import com.googlecode.sardine.SardineFactory;
+import com.googlecode.sardine.util.SardineException;
 
 /**
- * Unit test for the {@link ModeShapeWebdavStore} implementation, tested using a real web-dav compliant client.
- * The test doesn't cover all the WebDav possible scenarios, but should be enough to smoke out issues.
- *
+ * Unit test for the {@link ModeShapeWebdavStore} implementation, tested using a real web-dav compliant client. The test doesn't
+ * cover all the WebDav possible scenarios, but should be enough to smoke out issues.
+ * 
  * @author Horia Chiorean
  */
 public class ModeShapeWebdavStoreClientTest {
@@ -108,7 +106,7 @@ public class ModeShapeWebdavStoreClientTest {
         assertEquals(fileBytes.length, file.getContentLength().longValue());
     }
 
-    private String getServerUrl(String workspaceName) {
+    private String getServerUrl( String workspaceName ) {
         String serverContext = getServerContext();
         assertNotNull(serverContext);
         String repositoryName = getRepositoryName();
