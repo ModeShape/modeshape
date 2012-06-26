@@ -40,8 +40,8 @@
 		from the classpath.
 	-->
 	<context-param>
-		<param-name>org.modeshape.web.jcr.JCR_URL</param-name>
-		<param-value>file:/configRepository.xml</param-value>
+		<param-name>org.modeshape.jcr.URL</param-name>
+		<param-value>file:/repo-config.json</param-value>
 	</context-param>
 
 	<!--

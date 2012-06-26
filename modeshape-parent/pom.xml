@@ -263,6 +263,7 @@
         <resteasy.version>2.3.2.Final</resteasy.version>
         <jettison.version>1.1</jettison.version>
         <httpclient.version>4.1.2</httpclient.version>
+        <sardine.version>146</sardine.version>
         <javaassist.version>3.11.0.GA</javaassist.version>
         <jaudiotagger.version>2.0.3</jaudiotagger.version>
         <poi.version>3.7</poi.version>
@@ -1160,6 +1161,13 @@
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>${httpclient.version}</version>
+            </dependency>
+            <!--WebDav client used for testing-->
+            <dependency>
+                <groupId>com.googlecode.sardine</groupId>
+                <artifactId>sardine</artifactId>
+                <version>${sardine.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <!--

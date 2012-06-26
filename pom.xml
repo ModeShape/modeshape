@@ -95,17 +95,17 @@
 		  This profile is used to build everything for a release, including all assemblies,
 			and must be activated manually, as in "mvn ... -Passembly ..."
 		-->
-		<profile>
-			<id>assembly</id>
-			<activation>
-				<activeByDefault>false</activeByDefault>
-			</activation>
-			<modules>
-        <module>demos</module>
-        <module>modeshape-distribution</module>
-        <module>integration</module>
-			</modules>
-		</profile>
+        <profile>
+            <id>assembly</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <modules>
+                <module>demos</module>
+                <module>modeshape-distribution</module>
+                <module>integration</module>
+            </modules>
+        </profile>
 		
 	</profiles>
 </project>
