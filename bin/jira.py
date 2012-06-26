@@ -181,8 +181,8 @@ Thank you very much,
     return text.format(user=first_name,project=proj_name,version=self.version,project_url=proj_url,issue_list=issues,issue_links=links)
 
   def __get_release_info_from_jira(self):
-    request_url = "%sjira/rest/api/2.0.alpha1/project/%s" % (self.jira_url,self.project_key)
-    #print "Request URL = %s" % (request_url)
+    request_url = "%sjira/rest/api/2/project/%s" % (self.jira_url,self.project_key)
+    # print "Request URL = %s" % (request_url)
     # make the REST request ...
     socket = urllib.urlopen(request_url)
     json_response = socket.read()
@@ -323,9 +323,9 @@ def main():
   jira = Jira(jira_url,project_key,project_id,project_name,version)
   jira.fetch_release_info()
   contributor_emails = jira.get_contributor_emails()
-  print contributor_emails
-  html_content = jira.get_contribution_html("joe.smith@bcc_bogus.com")
-  print html_content
+  #print contributor_emails
+  #html_content = jira.get_contribution_html("joe.smith@bcc_bogus.com")
+  #print html_content
   #print jira.get_release_notes_in_markdown()
   #print jira.project_info()
   #print jira.version_info()
