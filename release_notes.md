@@ -1,11 +1,17 @@
 # Release Notes for ModeShape &version;
 
-The ModeShape &version; release is the fifth release of our new architecture, and is suitable
+The ModeShape &version; release is the sixth release of our new architecture, and is suitable
 only for testing and previewing features. APIs and storage formats are still subject to change.
 
 ## What's new
 
-There is a lot that's changed since ModeShape 2.8.x, including:
+&version; includes quite a few important fixes related to persistence, transactions, sequencers, 
+and our AS7 kit, which now includes a second more involved sample "artifacts" repository in
+the sample configuration. We also have brought back the WebDAV service and our local and
+and remote JDBC drivers (both now support queries and database metadata). See the specific issues
+listed below for details.
+
+Overall, ModeShape 3.0 has changed a lot since ModeShape 2.8.x:
 
 - ModeShape now uses Infinispan for all caching and storage, giving a powerful and flexible
 foundation for creating JCR repositories that are fast, scalable, and highly available.
@@ -43,6 +49,7 @@ There weren't many of these; most of the ModeShape API remains the same.
 - Integration with JBoss AS 7.1. ModeShape runs as an integrated subsystem within AS7, and
 the AS7 tooling can be used to define and manage repositories independently of each other
 while the server is running.
+- Local and remote JDBC drivers for issuing JCR-SQL2 queries and getting database metadata via the JDBC API
 - Many bug fixes and minor improvements
 
 There are also several major new features that are planned (but not yet available in this release):
@@ -142,7 +149,8 @@ and ready for testing. If any issues are found, please log a bug report in our J
 - JNDI-Based Deployment
 - Deploy as a subsystem in JBoss AS7, with RHQ/JON monitoring
 - Access through RESTful Service
-- JDBC driver for accessing ModeShape content through JDBC API and JCR-SQL2 queries
+- Access through WebDAV Service
+- Local and remote JDBC drivers for accessing ModeShape content through JDBC API and JCR-SQL2 queries
 - Embedded (in Server or JEE Archive) Deployment
 - JTA support, allowing Sessions to participate in XA and container-managed transactions 
 - OSGi-Compatible Archives
@@ -172,7 +180,6 @@ in the next release.
 
 ### ModeShape Deployment/Access Models
 - Clustering and grids
-- Access through WebDAV Service
 
 
 ## Bug Fixes, Features, and other Issues
