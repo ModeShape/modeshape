@@ -11,6 +11,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.util.IoUtil;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
@@ -35,11 +36,12 @@ public class ModeShapeWebdavStoreClientTest {
 
     @Before
     public void beforeEach() throws Exception {
-        // Configured in pom
-        final String login = "dnauser";
-        final String password = "password";
+        sardine = initializeWebDavClient();
+    }
 
-        sardine = SardineFactory.begin(login, password);
+    protected Sardine initializeWebDavClient() throws SardineException {
+        // Configured in pom
+        return SardineFactory.begin("dnauser", "password");
     }
 
     @Test
@@ -57,19 +59,19 @@ public class ModeShapeWebdavStoreClientTest {
 
     @Test
     public void shouldConnectToRepositoryAndWorkspace() throws Exception {
-        String uri = getServerUrl("default");
+        String uri = getServerUrl(getDefaultWorkspaceName());
         assertTrue(sardine.exists(uri));
         assertNotNull(sardine.getResources(uri));
     }
 
     @Test
-    public void shouldNotFindNonExistentRepository() throws Exception {
+    public void shouldNotFindInvalidRepository() throws Exception {
         String uri = getServerContext() + "/missing_repo";
         assertFalse(sardine.exists(uri));
     }
 
     @Test
-    public void shouldNotFindNonExistentWorkspace() throws Exception {
+    public void shouldNotFindInvalidWorkspace() throws Exception {
         String uri = getServerUrl("missingWS");
         assertFalse(sardine.exists(uri));
     }
@@ -77,7 +79,7 @@ public class ModeShapeWebdavStoreClientTest {
     @Test
     public void shouldCreateFolder() throws Exception {
         String folderName = "testFolder" + UUID.randomUUID().toString();
-        String uri = getServerUrl("default") + "/" + folderName;
+        String uri = getServerUrl(getDefaultWorkspaceName()) + "/" + folderName;
         sardine.createDirectory(uri);
         assertTrue(sardine.exists(uri));
         DavResource folder = getResourceAtURI(uri);
@@ -92,7 +94,7 @@ public class ModeShapeWebdavStoreClientTest {
 
     @Test
     public void shouldCreateFile() throws Exception {
-        String folderUri = getServerUrl("default") + "/testDirectory" + UUID.randomUUID().toString();
+        String folderUri = getServerUrl(getDefaultWorkspaceName()) + "/testDirectory" + UUID.randomUUID().toString();
         sardine.createDirectory(folderUri);
         InputStream fileStream = getClass().getClassLoader().getResourceAsStream("textfile.txt");
         assertNotNull(fileStream);
@@ -102,11 +104,11 @@ public class ModeShapeWebdavStoreClientTest {
 
         assertTrue(sardine.exists(fileUri));
         DavResource file = getResourceAtURI(fileUri);
-        long fileLength = new File(getClass().getClassLoader().getResource("textfile.txt").toURI()).length();
-        assertEquals(fileLength, file.getContentLength().longValue());
+        byte[] fileBytes = IoUtil.readBytes(getClass().getClassLoader().getResourceAsStream("textfile.txt"));
+        assertEquals(fileBytes.length, file.getContentLength().longValue());
     }
 
-    protected String getServerUrl(String workspaceName) {
+    private String getServerUrl(String workspaceName) {
         String serverContext = getServerContext();
         assertNotNull(serverContext);
         String repositoryName = getRepositoryName();
@@ -114,6 +116,10 @@ public class ModeShapeWebdavStoreClientTest {
 
         String baseUrl = serverContext + "/" + repositoryName;
         return workspaceName != null ? baseUrl + "/" + workspaceName : baseUrl;
+    }
+
+    protected String getDefaultWorkspaceName() {
+        return "default";
     }
 
     protected String getServerContext() {

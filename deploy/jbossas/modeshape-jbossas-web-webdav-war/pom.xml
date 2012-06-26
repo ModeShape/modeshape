@@ -1,122 +1,49 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.modeshape</groupId>
-    <artifactId>modeshape-parent</artifactId>
-    <version>3.0-SNAPSHOT</version>
-    <relativePath>../../../modeshape-parent/pom.xml</relativePath>
-  </parent>
-	<artifactId>modeshape-jbossas-web-webdav-war</artifactId>
-	<packaging>war</packaging>
-	<name>ModeShape JCR WebDAV Servlet Deployment for JBoss AS</name>
-	<description>ModeShape servlet that provides WebDAV access to JCR items in a JBoss AS</description>
-	<url>http://www.modeshape.org</url>
-	<dependencies>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-web-jcr-webdav</artifactId>
-		</dependency>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-parent</artifactId>
+        <version>3.0-SNAPSHOT</version>
+        <relativePath>../../../modeshape-parent/pom.xml</relativePath>
+    </parent>
+    <artifactId>modeshape-jbossas-web-webdav-war</artifactId>
+    <packaging>war</packaging>
+    <name>ModeShape JCR WebDAV Servlet Deployment for JBoss AS</name>
+    <description>ModeShape servlet that provides WebDAV access to JCR items in a JBoss AS</description>
+    <url>http://www.modeshape.org</url>
+    <dependencies>
+        <!--The following dependencies are installed in the container and will be picked up via the manifest-->
+        <dependency>
+            <groupId>javax.jcr</groupId>
+            <artifactId>jcr</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-common</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-
-		<!--  TESTING DEPENDENCIES -->
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit-dep</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-jcr</artifactId>
-			<scope>integration-test</scope>
-		</dependency>
-	</dependencies>
-	<build>
-		<finalName>modeshape-test</finalName>
-		<plugins>
-		
-<!--   
-        there are 2 wars being built, a test war and a deployment war
-        the deployment war is built with the limited jars that are needed for Jboss deployment kit
-        This war cant be used in testing because, at the moment, been unsuccessful
-        in passing to cargo an overriding classpath 
-    -->
-	       <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-war-plugin</artifactId>
-                <configuration>
-                    <warName>modeshape-test</warName>
-                    <webResources>
-                    <resource>
-                        <!--  add in the configRepository.xml for running locally  -->
-                            <directory>${project.basedir}/src/test/resources/</directory>
-                        </resource>
-                        <resource>
-                        <!--  override the main web.xml with a web.xml that enables running locally  -->
-                            <directory>${project.basedir}/src/test/webapp/</directory>
-                        </resource>
-                    </webResources>
-                </configuration>
-            </plugin>
-			<plugin>
-				<groupId>org.codehaus.cargo</groupId>
-				<artifactId>cargo-maven2-plugin</artifactId>
-			</plugin>
-			<!--
-				Override the default Surefire behavior to run during
-				integration-test phase
-			-->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration>
-					<skip>true</skip>
-				</configuration>
-				<executions>
-					<execution>
-						<id>surefire-it</id>
-						<phase>integration-test</phase>
-						<goals>
-							<goal>test</goal>
-						</goals>
-						<configuration>
-							<skip>false</skip>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-	       <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
-                    <finalName>modeshape</finalName>
-                    <descriptors>
-                        <descriptor>src/assembly/kit.xml</descriptor>
-                    </descriptors>
-                    <outputDirectory>target/distribution</outputDirectory>
-                    <workDirectory>target/assembly/work</workDirectory>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>attached</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-web-jcr-webdav</artifactId>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
             <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-deploy-plugin</artifactId>
-              <configuration>
-                 <skip>false</skip>
-              </configuration>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
             </plugin>
-
-		</plugins>
-	</build>
-
+        </plugins>
+    </build>
 </project>

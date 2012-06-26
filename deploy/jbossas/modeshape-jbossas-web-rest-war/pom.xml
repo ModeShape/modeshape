@@ -1,75 +1,72 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.modeshape</groupId>
-    <artifactId>modeshape-parent</artifactId>
-    <version>3.0-SNAPSHOT</version>
-    <relativePath>../../../modeshape-parent/pom.xml</relativePath>
-  </parent>
-	<artifactId>modeshape-jbossas-web-rest-war</artifactId>
-	<packaging>war</packaging>
-	<name>ModeShape JCR REST Servlet Deployment for JBoss AS</name>
-	<description>ModeShape servlet that provides RESTful access to JCR items in a JBoss Application Server</description>
-	<url>http://www.modeshape.org</url>
-	<dependencies>
-    <dependency>
-        <groupId>javax.jcr</groupId>
-        <artifactId>jcr</artifactId>
-        <scope>provided</scope>
-    </dependency>
-    <dependency>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
         <groupId>org.modeshape</groupId>
-        <artifactId>modeshape-common</artifactId>
-        <scope>provided</scope>
-    </dependency>
-    <dependency>
-        <groupId>org.modeshape</groupId>
-        <artifactId>modeshape-jcr-api</artifactId>
-        <scope>provided</scope>
-    </dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-web-jcr-rest</artifactId>
-			<exclusions>
-			  <!-- Exclude the artifacts that are provided with AS7; we only want the ModeShape code in the REST module. -->
-			  <exclusion>
-			    <groupId>org.jboss.resteasy</groupId>
-			    <artifactId>resteasy-jaxrs</artifactId>
-			  </exclusion>
-			  <exclusion>
-			    <groupId>org.jboss.resteasy</groupId>
-			    <artifactId>resteasy-jaxb-provider</artifactId>
-			  </exclusion>
-			  <exclusion>
-			    <groupId>org.jboss.resteasy</groupId>
-			    <artifactId>resteasy-jettison-provider</artifactId>
-			  </exclusion>
-			  <exclusion>
-			    <groupId>org.jboss.resteasy</groupId>
-			    <artifactId>jaxrs-api</artifactId>
-			  </exclusion>
-			  <!-- ModeShape REST service code uses this directly ...
-			  <exclusion>
-			    <groupId>org.codehaus.jettison</groupId>
-			    <artifactId>jettison</artifactId>
-			  </exclusion-->
-			</exclusions>
-		</dependency>
-  </dependencies>
+        <artifactId>modeshape-parent</artifactId>
+        <version>3.0-SNAPSHOT</version>
+        <relativePath>../../../modeshape-parent/pom.xml</relativePath>
+    </parent>
+    <artifactId>modeshape-jbossas-web-rest-war</artifactId>
+    <packaging>war</packaging>
+    <name>ModeShape JCR REST Servlet Deployment for JBoss AS</name>
+    <description>ModeShape servlet that provides RESTful access to JCR items in a JBoss Application Server</description>
+    <url>http://www.modeshape.org</url>
+    <dependencies>
+        <dependency>
+            <groupId>javax.jcr</groupId>
+            <artifactId>jcr</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-common</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-web-jcr-rest</artifactId>
+            <exclusions>
+                <!-- Exclude the artifacts that are provided with AS7; we only want the ModeShape code in the REST module. -->
+                <exclusion>
+                    <groupId>org.jboss.resteasy</groupId>
+                    <artifactId>resteasy-jaxrs</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jboss.resteasy</groupId>
+                    <artifactId>resteasy-jaxb-provider</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jboss.resteasy</groupId>
+                    <artifactId>resteasy-jettison-provider</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jboss.resteasy</groupId>
+                    <artifactId>jaxrs-api</artifactId>
+                </exclusion>
+                <!-- ModeShape REST service code uses this directly ...
+                  <exclusion>
+                    <groupId>org.codehaus.jettison</groupId>
+                    <artifactId>jettison</artifactId>
+                  </exclusion-->
+            </exclusions>
+        </dependency>
+    </dependencies>
 
-	<build>
-		<plugins>
-			<!--
-				Override the default Surefire behavior to run during
-				integration-test phase
-			-->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration>
-					<skip>true</skip>
-				</configuration>
-			</plugin>
-    </plugins>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>

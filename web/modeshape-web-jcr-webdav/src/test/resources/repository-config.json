@@ -1,6 +1,5 @@
 {
     "name" : "repo",
-    "jndiName" : "",
     "workspaces" : {
         "predefined" : [],
         "default" : "default",

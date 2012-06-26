@@ -69,14 +69,13 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
      */
     protected static boolean startRepositoryAutomatically = true;
 
-    protected Environment environment;
+    protected Environment environment = new TestingEnvironment();
     protected RepositoryConfiguration config;
     protected JcrRepository repository;
     protected JcrSession session;
     protected JcrTools tools;
 
     protected void startRepository() throws Exception {
-        environment = new TestingEnvironment();
         config = createRepositoryConfiguration(REPO_NAME, environment);
         repository = new JcrRepository(config);
         repository.start();
