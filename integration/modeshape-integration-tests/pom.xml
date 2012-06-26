@@ -85,30 +85,36 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-unit-test</artifactId>
         </dependency>
+        <!--
+            Test jars
+        -->
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jdbc-local</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
+            <version>${project.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jdbc</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>

@@ -24,6 +24,16 @@
 
 package org.modeshape.web.jcr.webdav;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.when;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.security.Principal;
+import java.util.Calendar;
+import java.util.LinkedList;
+import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
@@ -34,29 +44,18 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.http.HttpServletRequest;
 import net.sf.webdav.IWebdavStore;
 import net.sf.webdav.StoredObject;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
 import org.junit.After;
-import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
-import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.JcrRepository;
-import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.TestingUtil;
 import org.modeshape.jcr.api.RepositoryFactory;
 import org.modeshape.web.jcr.ModeShapeJcrDeployer;
 import org.modeshape.web.jcr.RepositoryManager;
 import org.modeshape.web.jcr.webdav.ModeShapeWebdavStore.JcrSessionTransaction;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.security.Principal;
-import java.util.Calendar;
-import java.util.LinkedList;
-import java.util.List;
 
 public class ModeShapeWebdavStoreTest {
 

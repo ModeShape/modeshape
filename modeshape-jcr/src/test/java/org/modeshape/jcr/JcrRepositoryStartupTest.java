@@ -71,7 +71,6 @@ public class JcrRepositoryStartupTest extends AbstractTransactionalTest {
             System.out.println("Stopped repository and killed caches ...");
         }
 
-        // forcibly delete the update lock (see MODE-1512) ...
         File lock = new File("target/persistent_repository/index/nodeinfo/write.lock");
         assertThat(lock.exists(), is(false));
 

@@ -799,6 +799,11 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-extractor-tika</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-web-jcr-rest</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -862,6 +867,7 @@
                 <version>${jboss.seam.version}</version>
                 <scope>provided</scope>
             </dependency>
+
             <!--
                 Infinispan
             -->

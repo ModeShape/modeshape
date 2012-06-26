@@ -46,9 +46,7 @@ import org.modeshape.jcr.value.Property;
 /**
  * An implementation of {@link Transactions} that will attempt to register a {@link Synchronization} with the current transaction.
  */
-public class SynchronizedTransactions extends Transactions {
-
-    private Transaction currentTransaction;
+public final class SynchronizedTransactions extends Transactions {
 
     public SynchronizedTransactions( MonitorFactory monitorFactory,
                                      TransactionManager txnMgr ) {
@@ -58,44 +56,38 @@ public class SynchronizedTransactions extends Transactions {
 
     @Override
     public Transaction begin() throws NotSupportedException, SystemException {
-        if (currentTransaction == null) {
-
-            // Get the transaction currently associated with this thread (if there is one) ...
-            javax.transaction.Transaction txn = txnMgr.getTransaction();
-            if (txn == null) {
-                // There is no transaction, so start one ...
-                txnMgr.begin();
-                // and return immediately ...
-                return new SimpleTransaction(txnMgr);
-            }
-
-            // Otherwise, there's already a transaction, so wrap it ...
-            try {
-                currentTransaction = new SynchronizedTransaction(txnMgr);
-            } catch (RollbackException e) {
-                // This transaction has been marked for rollback only ...
-                currentTransaction = new RollbackOnlyTransaction();
-            }
+        // Get the transaction currently associated with this thread (if there is one) ...
+        javax.transaction.Transaction txn = txnMgr.getTransaction();
+        if (txn == null) {
+            // There is no transaction, so start one ...
+            txnMgr.begin();
+            // and return immediately ...
+            return new SimpleTransaction(txnMgr);
         }
-        return currentTransaction;
+
+        // Otherwise, there's already a transaction, so wrap it ...
+        try {
+            return new SynchronizedTransaction(txnMgr);
+        } catch (RollbackException e) {
+            // This transaction has been marked for rollback only ...
+            return new RollbackOnlyTransaction();
+        }
     }
 
     @Override
     public void updateCache( WorkspaceCache workspace,
-                             ChangeSet changes ) {
+                             ChangeSet changes,
+                             Transaction transaction ) {
         if (changes != null && changes.size() != 0) {
-            if (currentTransaction != null) {
+            if (transaction instanceof SynchronizedTransaction) {
                 // We're in a transaction being managed outside of ModeShape (e.g., container-managed, user-managed,
                 // distributed, etc.) ...
-                if (currentTransaction instanceof SynchronizedTransaction) {
-                    // Capture the changes so they can be applied if and only if the transaction is committed succesfully ...
-                    SynchronizedTransaction synched = (SynchronizedTransaction)currentTransaction;
-                    synched.addUpdate(new WorkspaceUpdates(workspace, changes));
-                } else {
-                    // The transaction has been marked for rollback only, so no need to even capture these changes because
-                    // no changes will ever escape the Session ...
-                    assert currentTransaction instanceof RollbackOnlyTransaction;
-                }
+                // Capture the changes so they can be applied if and only if the transaction is committed succesfully ...
+                SynchronizedTransaction synched = (SynchronizedTransaction)transaction;
+                synched.addUpdate(new WorkspaceUpdates(workspace, changes));
+            } else if (transaction instanceof RollbackOnlyTransaction) {
+                // The transaction has been marked for rollback only, so no need to even capture these changes because
+                // no changes will ever escape the Session ...
             } else {
                 // We're not in a transaction anymore (the changes were succesfully committed already),
                 // so immediately fire the changes ...
@@ -109,6 +101,7 @@ public class SynchronizedTransactions extends Transactions {
         private final Synchronization synchronization;
         private final AccumulatingMonitor monitor;
         private final List<WorkspaceUpdates> updates = new LinkedList<WorkspaceUpdates>();
+        private boolean finished = false;
 
         protected SynchronizedTransaction( TransactionManager txnMgr ) throws SystemException, RollbackException {
             super(txnMgr);
@@ -136,6 +129,7 @@ public class SynchronizedTransactions extends Transactions {
 
         protected void addUpdate( WorkspaceUpdates updates ) {
             assert updates != null;
+            assert !finished;
             this.updates.add(updates);
         }
 
@@ -169,6 +163,7 @@ public class SynchronizedTransactions extends Transactions {
             for (WorkspaceUpdates update : updates) {
                 update.apply();
             }
+            finished = true;
         }
     }
 

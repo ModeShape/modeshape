@@ -314,6 +314,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
         ChangeSet events = null;
         Lock lock = this.lock.writeLock();
+        Transaction txn = null;
         try {
             lock.lock();
 
@@ -329,7 +330,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
             try {
                 // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
-                Transaction txn = txns.begin();
+                txn = txns.begin();
 
                 // Get a monitor via the transaction ...
                 final Monitor monitor = txn.createMonitor();
@@ -387,7 +388,7 @@ public class WritableSessionCache extends AbstractSessionCache {
             logger.debug("Completing SessionCache.save()");
         }
 
-        txns.updateCache(workspaceCache, events);
+        txns.updateCache(workspaceCache, events, txn);
     }
 
     protected void clearState() {
@@ -430,6 +431,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
         ChangeSet events1 = null;
         ChangeSet events2 = null;
+        Transaction txn = null;
         try {
             thisLock.lock();
             thatLock.lock();
@@ -448,7 +450,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 }
 
                 // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
-                Transaction txn = txns.begin();
+                txn = txns.begin();
 
                 // Get a monitor via the transaction ...
                 final Monitor monitor = txn.createMonitor();
@@ -515,8 +517,8 @@ public class WritableSessionCache extends AbstractSessionCache {
 
         // TODO: Events ... these events should be combined, but cannot each ChangeSet only has a single workspace
         // Notify the workspaces of the changes made. This is done outside of our lock but still before the save returns ...
-        txns.updateCache(this.workspaceCache, events1);
-        txns.updateCache(that.workspaceCache, events2);
+        txns.updateCache(this.workspaceCache, events1, txn);
+        txns.updateCache(that.workspaceCache, events2, txn);
     }
 
     private void checkNodeNotRemovedByAnotherTransaction( MutableCachedNode node ) {
@@ -557,6 +559,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
         ChangeSet events1 = null;
         ChangeSet events2 = null;
+        Transaction txn = null;
         try {
             thisLock.lock();
             thatLock.lock();
@@ -566,7 +569,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
             try {
                 // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
-                Transaction txn = txns.begin();
+                txn = txns.begin();
 
                 // Get a monitor via the transaction ...
                 final Monitor monitor = txn.createMonitor();
@@ -633,8 +636,8 @@ public class WritableSessionCache extends AbstractSessionCache {
         }
 
         // TODO: Events ... these events should be combined, but cannot each ChangeSet only has a single workspace
-        txns.updateCache(this.workspaceCache, events1);
-        txns.updateCache(that.workspaceCache, events2);
+        txns.updateCache(this.workspaceCache, events1, txn);
+        txns.updateCache(that.workspaceCache, events2, txn);
     }
 
     private List<NodeKey> filterChangesAtOrBelowPath( Path topPath,
