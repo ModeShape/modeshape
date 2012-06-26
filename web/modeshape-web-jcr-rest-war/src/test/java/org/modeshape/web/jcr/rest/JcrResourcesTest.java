@@ -55,7 +55,7 @@ public class JcrResourcesTest {
 
     /**
      * The name of the repository is dictated by the "repository-config.json" configuration file loaded by the
-     * "org.modeshape.web.jcr.JCR_URL" parameter in the "web.xml" file.
+     * "org.modeshape.jcr.JCR_URL" parameter in the "web.xml" file.
      */
     private static final String REPOSITORY_NAME = "repo";
     private static final String SERVER_CONTEXT = "/resources/test";

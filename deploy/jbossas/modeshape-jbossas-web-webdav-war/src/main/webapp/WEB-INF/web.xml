@@ -50,8 +50,8 @@
 		from the classpath.
 	-->
     <context-param>
-        <param-name>org.modeshape.web.jcr.JCR_URL</param-name>
-        <param-value>jndi:jcr/local</param-value>
+        <param-name>org.modeshape.jcr.URL</param-name>
+        <param-value>jndi:jcr</param-value>
     </context-param>
 
     <!-- 

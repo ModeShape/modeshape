@@ -1,16 +1,14 @@
 {
-    "name" : "repo",
+    "name" : "webdav_repo",
+    "jndiName" : "",
     "workspaces" : {
         "predefined" : [],
         "default" : "default",
         "allowCreation" : true
     },
-    "storage" : {
-        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
-    },
     "security" : {
         "anonymous" : {
-            "roles" : ["readonly","readwrite","admin"],
+            "roles" : ["readonly","readwrite","admin", "connect"],
             "useOnFailedLogin" : false
         },
         "providers" : [

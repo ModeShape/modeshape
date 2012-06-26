@@ -1,17 +1,32 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
 package org.modeshape.web.jcr.webdav;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.when;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.security.Principal;
-import java.util.Calendar;
-import java.util.LinkedList;
-import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -19,27 +34,41 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.http.HttpServletRequest;
 import net.sf.webdav.IWebdavStore;
 import net.sf.webdav.StoredObject;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import org.junit.After;
+import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.jcr.JcrRepository;
+import org.modeshape.jcr.JcrSession;
+import org.modeshape.jcr.TestingUtil;
 import org.modeshape.jcr.api.RepositoryFactory;
 import org.modeshape.web.jcr.ModeShapeJcrDeployer;
 import org.modeshape.web.jcr.RepositoryManager;
 import org.modeshape.web.jcr.webdav.ModeShapeWebdavStore.JcrSessionTransaction;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.security.Principal;
+import java.util.Calendar;
+import java.util.LinkedList;
+import java.util.List;
 
 public class ModeShapeWebdavStoreTest {
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
+    private static final String REPOSITORY_NAME = "repo";
+    private static final String WORKSPACE_NAME = "default";
 
     private IWebdavStore store;
     private JcrSessionTransaction tx;
     private ServletContextListener contextListener = new ModeShapeJcrDeployer();
     private Session session;
-    private String repositoryName = "repo";
-    private String workspaceName = "default";
+    private JcrRepository repository;
 
     @Mock
     private Principal principal;
@@ -58,8 +87,8 @@ public class ModeShapeWebdavStoreTest {
         when(request.getUserPrincipal()).thenReturn(principal);
         when(request.isUserInRole("readwrite")).thenReturn(true);
         when(context.getInitParameter(RepositoryFactory.URL)).thenReturn("file:///repository-config.json");
-        when(context.getInitParameter(SingleRepositoryRequestResolver.INIT_REPOSITORY_NAME)).thenReturn(repositoryName);
-        when(context.getInitParameter(SingleRepositoryRequestResolver.INIT_WORKSPACE_NAME)).thenReturn(workspaceName);
+        when(context.getInitParameter(SingleRepositoryRequestResolver.INIT_REPOSITORY_NAME)).thenReturn(REPOSITORY_NAME);
+        when(context.getInitParameter(SingleRepositoryRequestResolver.INIT_WORKSPACE_NAME)).thenReturn(WORKSPACE_NAME);
         when(event.getServletContext()).thenReturn(context);
 
         RequestResolver uriResolver = new SingleRepositoryRequestResolver();
@@ -73,7 +102,8 @@ public class ModeShapeWebdavStoreTest {
 
         ModeShapeWebdavStore.setRequest(request);
 
-        session = RepositoryManager.getSession(request, repositoryName, workspaceName);
+        session = RepositoryManager.getSession(request, REPOSITORY_NAME, WORKSPACE_NAME);
+        repository = (JcrRepository)session.getRepository();
 
         tx = (JcrSessionTransaction)store.begin(principal);
 
@@ -82,9 +112,9 @@ public class ModeShapeWebdavStoreTest {
 
     @After
     public void afterEach() throws Exception {
-        session.logout();
         ModeShapeWebdavStore.setRequest(null);
         contextListener.contextDestroyed(event);
+        TestingUtil.killRepository(repository);
     }
 
     @Test
@@ -159,7 +189,7 @@ public class ModeShapeWebdavStoreTest {
     public void shouldReadFileLengthAndContent() throws Exception {
         final String TEST_STRING = "This is my miraculous test string!";
 
-        Node fileNode = session.getRootNode().addNode("newFile", "nt:file");
+        Node fileNode = rootNode().addNode("newFile", "nt:file");
         Node contentNode = fileNode.addNode("jcr:content", "mode:resource");
         contentNode.setProperty("jcr:data", TEST_STRING);
         contentNode.setProperty("jcr:mimeType", "text/plain");
@@ -179,7 +209,7 @@ public class ModeShapeWebdavStoreTest {
     public void shouldRemoveFile() throws Exception {
         final String TEST_STRING = "This is my miraculous test string!";
 
-        Node fileNode = session.getRootNode().addNode("newFile", "nt:file");
+        Node fileNode = rootNode().addNode("newFile", "nt:file");
         Node contentNode = fileNode.addNode("jcr:content", "mode:resource");
         contentNode.setProperty("jcr:data", TEST_STRING);
         contentNode.setProperty("jcr:mimeType", "text/plain");
@@ -192,7 +222,11 @@ public class ModeShapeWebdavStoreTest {
         store.commit(tx);
 
         session.refresh(false);
-        assertThat(session.getRootNode().hasNode("newFile"), is(false));
+        assertThat(rootNode().hasNode("newFile"), is(false));
+    }
+
+    private Node rootNode() throws RepositoryException {
+        return session.getRootNode();
     }
 
     @Test

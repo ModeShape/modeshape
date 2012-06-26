@@ -16,7 +16,7 @@
 	<modules>
 		<module>modeshape-jbossas-subsystem</module>
 		<module>modeshape-jbossas-web-rest-war</module>
-		<!-- <module>modeshape-jbossas-web-webdav-war</module> -->
+		<module>modeshape-jbossas-web-webdav-war</module>
 		<!-- <module>modeshape-jbossas-console</module> -->
 	</modules>
 

@@ -23,20 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.UUID;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
@@ -63,12 +49,20 @@ import org.apache.jackrabbit.test.api.observation.PropertyAddedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyChangedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyRemovedTest;
 import org.apache.jackrabbit.test.api.observation.WorkspaceOperationTest;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
-import org.junit.After;
 import org.junit.AfterClass;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -77,6 +71,11 @@ import org.modeshape.common.FixFor;
 import org.modeshape.jcr.JcrObservationManager.JcrEventBundle;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.api.value.DateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.UUID;
 
 /**
  * The {@link JcrObservationManager} test class.
@@ -97,7 +96,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     protected static final String WORKSPACE = "ws1";
     protected static final String WORKSPACE2 = "ws2";
 
-    private List<Session> sessions;
     private Node testRootNode;
 
     @BeforeClass
@@ -167,7 +165,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Before
     public void beforeEach() throws Exception {
         super.beforeEach();
-        sessions = new ArrayList<Session>();
         startRepositoryWithConfiguration(createRepositoryConfiguration());
         session = login(WORKSPACE);
 
@@ -175,20 +172,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         save();
     }
 
-    @Override
-    @After
-    public void afterEach() throws Exception {
-        super.afterEach();
-        try {
-            for (Session session : sessions) {
-                if (session != null && session.isLive()) session.logout();
-            }
-        } finally {
-            this.session = null;
-            this.sessions.clear();
-        }
-        stopRepository();
-    }
 
     SimpleListener addListener( int expectedEventsCount,
                                 int eventTypes,
@@ -248,9 +231,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
     protected JcrSession login( String workspaceName ) throws RepositoryException {
         Session session = repository.login(new SimpleCredentials(USER_ID, USER_ID.toCharArray()), workspaceName);
-        if (session != null) {
-            sessions.add(session);
-        }
         assertTrue(session != this.session);
         return (JcrSession)session;
     }

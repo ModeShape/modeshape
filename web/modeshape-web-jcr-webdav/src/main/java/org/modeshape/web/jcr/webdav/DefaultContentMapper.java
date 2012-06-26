@@ -74,7 +74,7 @@ public class DefaultContentMapper implements ContentMapper {
      * @param elements a set of elements; may not be null
      * @return an unmodifiable set containing all of the elements in {@code elements}; never null
      */
-    private static final Set<String> setFor( String... elements ) {
+    private static Set<String> setFor( String... elements ) {
         Set<String> set = new HashSet<String>(elements.length);
         set.addAll(Arrays.asList(elements));
 
@@ -88,7 +88,7 @@ public class DefaultContentMapper implements ContentMapper {
      * @param commaDelimitedString input string; may not be null, but need not contain any commas
      * @return an unmodifiable set whose elements are the trimmed substrings of the source string; never null
      */
-    private static final Set<String> split( String commaDelimitedString ) {
+    private static Set<String> split( String commaDelimitedString ) {
         return setFor(commaDelimitedString.split("\\s*,\\s*"));
     }
 
@@ -193,12 +193,12 @@ public class DefaultContentMapper implements ContentMapper {
         contentNode.setProperty(DATA_PROP_NAME, binary);
         contentNode.setProperty(MODIFIED_PROP_NAME, Calendar.getInstance());
 
-        // Copy the content to the property, THEN re-read the content from the Binary value to avoid discaring the first
+        // Copy the content to the property, THEN re-read the content from the Binary value to avoid discarding the first
         // bytes of the stream
         if (contentType == null) {
             contentType = binary.getMimeType(resourceName);
         }
-
+        contentNode.setProperty(MIME_TYPE_PROP_NAME, contentType);
         return contentNode.getProperty(DATA_PROP_NAME).getLength();
 
     }

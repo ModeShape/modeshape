@@ -17,18 +17,34 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-web-jcr-webdav</artifactId>
+            <version>${project.version}</version>
+            <scope>integration-test</scope>
+        </dependency>
+
+        <!--
+            Logging dependencies.
+            The WebDav servlet requires SLF4J by default, so we'll overwrite the logging dependencies with "integration-test"
+            scope, but we'll exclude them from the war file during assembly.
+        -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.api.version}</version>
+            <scope>integration-test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-            <scope>runtime</scope>
+            <version>${slf4j.log4j.version}</version>
+            <scope>integration-test</scope>
         </dependency>
 
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
-            <scope>runtime</scope>
+            <version>${log4j.version}</version>
+            <scope>integration-test</scope>
         </dependency>
 
         <!--  TESTING DEPENDENCIES -->
@@ -36,18 +52,28 @@
             <groupId>junit</groupId>
             <artifactId>junit-dep</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.googlecode.sardine</groupId>
+            <artifactId>sardine</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
             <scope>integration-test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-unit-test</artifactId>
-        </dependency>
     </dependencies>
     <build>
         <finalName>webdav</finalName>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>src/main/webapp</directory>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.cargo</groupId>
