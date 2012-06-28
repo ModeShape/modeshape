@@ -9,7 +9,7 @@
     </parent>
     <!-- The groupId and version values are inherited from parent  -->
     <artifactId>modeshape-jbossas-subsystem</artifactId>
-    <name>ModeShape Subsystem Deployment for JBoss AS</name>
+    <name>ModeShape for JBoss AS</name>
     <description>ModeShape deployment as a subsystem within the JBoss Application Server</description>
     <url>http://www.modeshape.org</url>
     

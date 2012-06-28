@@ -87,7 +87,7 @@ public abstract class QueryProcessor<ProcessingContextType> implements Processor
                 // Go through the plan and create the corresponding ProcessingComponents ...
                 ProcessingComponent component = createComponent(command, context, plan, columns, processingContext);
                 long nanos2 = System.nanoTime();
-                statistics = statistics.withResultsFormulationTime(nanos2 - nanos);
+                statistics = statistics.withResultsFormulationTime(Math.abs(nanos2 - nanos));
                 nanos = nanos2;
 
                 if (component != null) {

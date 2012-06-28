@@ -9,7 +9,7 @@
   </parent>
   <!-- The groupId and version values are inherited from parent  -->
   <artifactId>modeshape-jbossas-integration-tests</artifactId>
-  <name>ModeShape Subsystem for JBoss AS (Integration Tests)</name>
+  <name>ModeShape for JBoss AS (Integration Tests)</name>
   <description>Integration tests that use the ModeShape subsystem for JBoss AS7</description>
   <url>http://www.modeshape.org</url>
   <properties>
