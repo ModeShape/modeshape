@@ -9,7 +9,7 @@
     </parent>
     <artifactId>modeshape-jbossas-web-webdav-war</artifactId>
     <packaging>war</packaging>
-    <name>ModeShape JCR WebDAV Servlet Deployment for JBoss AS</name>
+    <name>ModeShape JCR WebDAV Service for JBoss AS</name>
     <description>ModeShape servlet that provides WebDAV access to JCR items in a JBoss AS</description>
     <url>http://www.modeshape.org</url>
     <dependencies>

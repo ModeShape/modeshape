@@ -9,7 +9,7 @@
     </parent>
     <artifactId>modeshape-jbossas-web-rest-war</artifactId>
     <packaging>war</packaging>
-    <name>ModeShape JCR REST Servlet Deployment for JBoss AS</name>
+    <name>ModeShape JCR REST Service for JBoss AS</name>
     <description>ModeShape servlet that provides RESTful access to JCR items in a JBoss Application Server</description>
     <url>http://www.modeshape.org</url>
     <dependencies>

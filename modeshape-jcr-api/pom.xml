@@ -13,7 +13,7 @@
     <!-- The groupId and version values are inherited from parent -->
     <artifactId>modeshape-jcr-api</artifactId>
     <packaging>jar</packaging>
-    <name>ModeShape JCR Repository API</name>
+    <name>ModeShape Repository API</name>
     <description>ModeShape JCR Repository API</description>
     <url>http://www.modeshape.org</url>
 
