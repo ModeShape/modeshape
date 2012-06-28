@@ -46,8 +46,12 @@ import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.common.util.SecureHash.HashingInputStream;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.text.DefaultTextExtractorOutput;
+import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
+import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.binary.FileLocks.WrappedLock;
 
 /**
@@ -384,13 +388,46 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
 
     @SuppressWarnings( "unused" )
     @Override
-    public String getText( BinaryValue binary ) throws BinaryStoreException {
-        return null;
+    public String getText( BinaryValue binary,
+                           Path binaryPropertyPath ) throws BinaryStoreException {
+        DefaultTextExtractorOutput output = new DefaultTextExtractorOutput();
+        try {
+            Path fileNodePath = binaryPropertyPath.getParent();
+            if (fileNodePath.size() > 1 && fileNodePath.endsWith(JcrLexicon.CONTENT)) {
+                fileNodePath = fileNodePath.getParent();
+            }
+            String fileName = fileNodePath.getLastSegment().getString();
+            String detectedMimeType = getMimeType(binary, fileName);
+            InputStream textStream = binary.getStream();
+            try {
+                extractor().extractFrom(textStream, output, new TextExtractorContext(binaryPropertyPath.getString(), detectedMimeType));
+            } finally {
+                tryToClose(textStream);
+            }
+            return output.getText();
+        } catch (Exception e) {
+            throw new BinaryStoreException(e);
+        }
     }
 
     @Override
     public String getMimeType( BinaryValue binary,
                                String name ) throws IOException, RepositoryException {
-        return detector().mimeTypeOf(name, binary.getStream());
+        //we rely on the contract of getStream which should produce a new stream
+        InputStream stream = binary.getStream();
+        try {
+            return detector().mimeTypeOf(name, binary);
+        } finally {
+            tryToClose(stream);
+        }
+    }
+
+    private void tryToClose(InputStream stream) {
+        try {
+            stream.close();
+        }
+        catch (IOException e) {
+            //ignore
+        }
     }
 }

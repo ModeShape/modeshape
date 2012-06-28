@@ -40,14 +40,12 @@ import org.modeshape.jcr.api.text.TextExtractorOutput;
 @Immutable
 public final class TextExtractors extends TextExtractor {
 
-    public static final String DEFAULT_MIME_TYPE = "application/octet-stream";
+    private static final Logger LOGGER = Logger.getLogger(TextExtractors.class);
 
     private final List<TextExtractor> extractors;
-    private final boolean stopAfterFirst;
 
     public TextExtractors( JcrRepository.RunningState repository,
                            Collection<Component> components ) {
-        this.stopAfterFirst = true;
         this.extractors = new ArrayList<TextExtractor>();
         for (Component component : components) {
             try {
@@ -57,7 +55,7 @@ public final class TextExtractors extends TextExtractor {
             } catch (Throwable t) {
                 String desc = component.getName();
                 String repoName = repository.name();
-                Logger.getLogger(getClass()).error(t, JcrI18n.unableToInitializeTextExtractor, desc, repoName, t.getMessage());
+                LOGGER.error(t, JcrI18n.unableToInitializeTextExtractor, desc, repoName, t.getMessage());
             }
         }
     }
@@ -84,17 +82,32 @@ public final class TextExtractors extends TextExtractor {
                              TextExtractorOutput output,
                              Context context ) throws IOException {
         if (stream == null) return;
-        if (stream.markSupported()) {
-            stream.mark(Integer.MAX_VALUE);
-        }
         final String mimeType = context.getMimeType();
 
-        // Run through the extractors and have them extract the text
+        // Run through the extractors and have them extract the text - the first one which accepts the mime-type will win
         for (TextExtractor extractor : extractors) {
-            if (!extractor.supportsMimeType(mimeType)) continue;
-            extractor.extractFrom(stream, output, context);
-            if (stopAfterFirst || !stream.markSupported()) break;
+            if (!extractor.supportsMimeType(mimeType)) {
+                continue;
+            }
+            try {
+                tryMark(stream);
+                extractor.extractFrom(stream, output, context);
+                return;
+            } finally {
+                tryReset(stream);
+            }
+        }
+    }
+
+    private void tryReset( InputStream stream ) throws IOException {
+        if (stream.markSupported()) {
             stream.reset();
+        }
+    }
+
+    private void tryMark( InputStream stream ) {
+        if (stream.markSupported()) {
+            stream.mark(Integer.MAX_VALUE);
         }
     }
 }

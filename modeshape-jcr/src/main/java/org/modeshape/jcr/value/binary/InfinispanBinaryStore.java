@@ -31,6 +31,7 @@ import org.infinispan.manager.EmbeddedCacheManager;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.Path;
 
 /**
  * A {@link BinaryStore} implementation that uses a database for persisting binary values.
@@ -129,13 +130,14 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public String getText( BinaryValue binary ) throws BinaryStoreException {
+    public String getText( BinaryValue binary,
+                           Path binaryPropertyPath ) throws BinaryStoreException {
         throw new BinaryStoreException("Not implemented");
     }
 
     @Override
     public String getMimeType( BinaryValue binary,
-                               String name ) /* throws IOException, RepositoryException*/{
+                               String name ) {
         throw new UnsupportedOperationException("Not implemented");
     }
 }

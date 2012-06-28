@@ -23,13 +23,20 @@
  */
 package org.modeshape.jcr.value.binary;
 
-import java.util.concurrent.atomic.AtomicLong;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.api.text.TextExtractor;
 import org.modeshape.jcr.mimetype.ExtensionBasedMimeTypeDetector;
+import org.modeshape.jcr.text.DefaultTextExtractorOutput;
 import org.modeshape.jcr.text.NoOpTextExtractor;
+import org.modeshape.jcr.text.TextExtractorContext;
+import org.modeshape.jcr.value.BinaryValue;
+import org.modeshape.jcr.value.Path;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * An abstract class for a {@link BinaryStore}, with common functionality needed by implementation classes.

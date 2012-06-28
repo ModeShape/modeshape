@@ -29,7 +29,6 @@ import java.io.InputStream;
 
 /**
  * An abstraction for components that are able to extract text content from an input stream.
- * //TODO author=Horia Chiorean date=2/9/12 description=Refine this class when porting/implementing extractors
  */
 public abstract class TextExtractor {
 
@@ -44,22 +43,16 @@ public abstract class TextExtractor {
     public abstract boolean supportsMimeType( String mimeType );
 
     /**
-     * Sequence the data found in the supplied stream, placing the output information into the supplied map.
-     * <p>
-     * ModeShape's SequencingService determines the sequencers that should be executed by monitoring the changes to one or more
-     * workspaces that it is monitoring. Changes in those workspaces are aggregated and used to determine which sequencers should
-     * be called. If the sequencer implements this interface, then this method is called with the property that is to be sequenced
-     * along with the interface used to register the output. The framework takes care of all the rest.
-     * </p>
-     * 
+     * Extract text from the given {@link InputStream}, using the given output to record the results.
+     *
      * @param stream the stream with the data to be sequenced; never <code>null</code>
      * @param output the output from the sequencing operation; never <code>null</code>
      * @param context the context for the sequencing operation; never <code>null</code>
      * @throws IOException if there is a problem reading the stream
      */
     public abstract void extractFrom( InputStream stream,
-                      TextExtractorOutput output,
-                      Context context ) throws IOException;
+                                      TextExtractorOutput output,
+                                      Context context ) throws IOException;
 
     protected final void setLogger(Logger logger) {
         if (logger ==  null) {
@@ -72,7 +65,23 @@ public abstract class TextExtractor {
         return logger;
     }
 
+    /**
+     * Interface which provides additional information to the text extractors, during the extraction operation.
+     */
     public interface Context {
+
+        /**
+         * Returns a string path of the property on which the text extraction was triggered.
+         *
+         * @return a String representation of a path, using "/" as the separator between segments.
+         */
+        String getInputPropertyPath();
+
+        /**
+         * Returns the mime-type (if detected by ModeShape) of the content represented by the input stream.
+         *
+         * @return the mime-type of the input stream, or null if none was detected
+         */
         String getMimeType();
     }
 

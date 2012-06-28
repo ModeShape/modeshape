@@ -31,14 +31,15 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.modeshape.common.collection.Collections;
-import org.modeshape.common.util.Logger;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.graph.text.TextExtractor;
-import org.modeshape.graph.text.TextExtractorContext;
-import org.modeshape.graph.text.TextExtractorOutput;
+import org.modeshape.jcr.api.JcrConstants;
+import org.modeshape.jcr.api.text.TextExtractor;
+import org.modeshape.jcr.api.text.TextExtractorOutput;
 import org.xml.sax.ContentHandler;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -64,7 +65,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * </ul>
  * </p>
  */
-public class TikaTextExtractor implements TextExtractor {
+public class TikaTextExtractor extends TextExtractor {
 
     private static final Logger LOGGER = Logger.getLogger(TikaTextExtractor.class);
 
@@ -92,24 +93,19 @@ public class TikaTextExtractor implements TextExtractor {
                                                                                               "application/zip",
                                                                                               "application/vnd.teiid.vdb");
 
-    private final Set<String> excludedMimeTypes = new HashSet<String>();
-    private final Set<String> includedMimeTypes = new HashSet<String>();
-    private final Set<String> supportedMediaTypes = new HashSet<String>();
+    private Set<String> excludedMimeTypes = new HashSet<String>();
+    private Set<String> includedMimeTypes = new HashSet<String>();
+    private Set<String> supportedMediaTypes = new HashSet<String>();
 
     private final Lock initLock = new ReentrantLock();
     private DefaultParser parser;
 
-    /**
-     * 
-     */
     public TikaTextExtractor() {
         this.excludedMimeTypes.addAll(DEFAULT_EXCLUDED_MIME_TYPES);
     }
 
     /**
      * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.text.TextExtractor#supportsMimeType(java.lang.String)
      */
     @Override
     public boolean supportsMimeType( String mimeType ) {
@@ -121,14 +117,11 @@ public class TikaTextExtractor implements TextExtractor {
 
     /**
      * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.text.TextExtractor#extractFrom(java.io.InputStream, org.modeshape.graph.text.TextExtractorOutput,
-     *      org.modeshape.graph.text.TextExtractorContext)
      */
     @Override
     public void extractFrom( InputStream stream,
                              TextExtractorOutput output,
-                             TextExtractorContext context ) throws IOException {
+                             Context context ) throws IOException {
         final DefaultParser parser = initialize();
         Metadata metadata = prepareMetadata(stream, context);
 
@@ -142,7 +135,7 @@ public class TikaTextExtractor implements TextExtractor {
         } catch (IOException e) {
             throw e;
         } catch (Throwable e) {
-            context.getProblems().addError(e, TikaI18n.errorWhileExtractingTextFrom, context.getInputPath(), e.getMessage());
+            LOGGER.error(e, TikaI18n.errorWhileExtractingTextFrom, context.getInputPropertyPath(), e.getMessage());
         }
     }
 
@@ -156,19 +149,39 @@ public class TikaTextExtractor implements TextExtractor {
      * @return a <code>Metadata</code> instance.
      * @throws java.io.IOException if auto-detecting the mime-type via Tika fails
      */
-    private Metadata prepareMetadata( InputStream stream, TextExtractorContext context ) throws IOException {
+    private Metadata prepareMetadata( InputStream stream, Context context ) throws IOException {
         Metadata metadata = new Metadata();
 
-        if (StringUtil.isBlank(context.getMimeType())) {
+        String fileName = getFileName(context);
+        metadata.set(Metadata.RESOURCE_NAME_KEY, fileName);
+
+        String mimeType = context.getMimeType();
+
+        if (StringUtil.isBlank(mimeType)) {
             LOGGER.warn(TikaI18n.warnMimeTypeNotSet);
-            metadata.set(Metadata.RESOURCE_NAME_KEY, context.getInputPath().getLastSegment().getString());
             MediaType autoDetectedMimeType = new DefaultDetector(this.getClass().getClassLoader()).detect(stream, metadata);
             metadata.set(Metadata.CONTENT_TYPE, autoDetectedMimeType.toString());
         }
         else {
-            metadata.set(Metadata.CONTENT_TYPE, context.getMimeType());
+            metadata.set(Metadata.CONTENT_TYPE, mimeType);
         }
         return metadata;
+    }
+
+    private String getFileName(Context context) {
+        String inputPropertyPath = context.getInputPropertyPath();
+        String[] pathSegments = inputPropertyPath.split("/");
+        if (pathSegments.length == 1) {
+            return inputPropertyPath;
+        }
+        String parentSegment = pathSegments[pathSegments.length - 2];
+        if (parentSegment.toLowerCase().contains(JcrConstants.JCR_CONTENT) && pathSegments.length > 2) {
+            //return the jcr:content parent
+            return pathSegments[pathSegments.length - 3];
+        }
+        else {
+            return parentSegment;
+        }
     }
 
     /**
@@ -219,14 +232,10 @@ public class TikaTextExtractor implements TextExtractor {
         }
     }
 
-    /**
-     * Add another MIME type that should be excluded. This method does not clear any included MIME types that were previously set.
-     * 
-     * @param includedMimeType the MIME type that is to be included
-     */
-    public void addIncludedMimeType( String includedMimeType ) {
-        if (includedMimeType == null || includedMimeType.length() == 0) return;
-        includeMimeType(includedMimeType);
+    public void setIncludedMimeTypes(Collection<String> includedMimeTypes) {
+        if (includedMimeTypes != null) {
+            this.includedMimeTypes = new HashSet<String>(includedMimeTypes);
+        }
     }
 
     /**
@@ -234,7 +243,7 @@ public class TikaTextExtractor implements TextExtractor {
      * 
      * @param mimeType MIME type that should be included
      */
-    public void includeMimeType( String mimeType ) {
+    private void includeMimeType( String mimeType ) {
         if (mimeType == null) return;
         mimeType = mimeType.trim();
         if (mimeType.length() != 0) includedMimeTypes.add(mimeType);
@@ -262,14 +271,10 @@ public class TikaTextExtractor implements TextExtractor {
         }
     }
 
-    /**
-     * Add another MIME type that should be excluded. This method does not clear any excluded MIME types that were previously set.
-     * 
-     * @param excludedMimeType the MIME type that is to be excluded
-     */
-    public void addExcludedMimeType( String excludedMimeType ) {
-        if (excludedMimeType == null || excludedMimeType.length() == 0) return;
-        excludeMimeType(excludedMimeType);
+    public void setExcludedMimeTypes(Collection<String> excludedMimeTypes) {
+        if (excludedMimeTypes != null) {
+            this.excludedMimeTypes = new HashSet<String>(excludedMimeTypes);
+        }
     }
 
     /**
@@ -277,7 +282,7 @@ public class TikaTextExtractor implements TextExtractor {
      * 
      * @param mimeType MIME type that should be excluded
      */
-    public void excludeMimeType( String mimeType ) {
+    private void excludeMimeType( String mimeType ) {
         if (mimeType == null) return;
         mimeType = mimeType.trim();
         if (mimeType.length() != 0) excludedMimeTypes.add(mimeType);

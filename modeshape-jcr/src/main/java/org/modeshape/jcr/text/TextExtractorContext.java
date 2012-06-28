@@ -23,74 +23,29 @@
  */
 package org.modeshape.jcr.text;
 
-import java.util.Map;
-import org.modeshape.common.collection.Problems;
-import org.modeshape.common.collection.SimpleProblems;
-import org.modeshape.jcr.ExecutionContext;
-import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.api.text.TextExtractor;
-import org.modeshape.jcr.security.SecurityContext;
-import org.modeshape.jcr.value.NamespaceRegistry;
 
 /**
  * A context for extracting the content.
  */
-public class TextExtractorContext extends ExecutionContext implements TextExtractor.Context {
+public final class TextExtractorContext implements TextExtractor.Context {
 
-    private final Problems problems;
     private final String mimeType;
+    private final String inputPropertyPath;
 
-    public TextExtractorContext( ExecutionContext context,
-                                 String mimeType,
-                                 Problems problems ) {
-        super(context);
+    public TextExtractorContext( String inputPropertyPath,
+                                 String mimeType ) {
+        this.inputPropertyPath = inputPropertyPath;
         this.mimeType = mimeType;
-        this.problems = problems != null ? problems : new SimpleProblems();
+    }
+
+    @Override
+    public String getInputPropertyPath() {
+        return inputPropertyPath;
     }
 
     @Override
     public String getMimeType() {
-        return this.mimeType;
-    }
-
-    /**
-     * Get an interface that can be used to record various problems, warnings, and errors that are not extreme enough to warrant
-     * throwing exceptions.
-     * 
-     * @return the interface for recording problems; never null
-     */
-    public Problems getProblems() {
-        return this.problems;
-    }
-
-    @Override
-    public TextExtractorContext with( Map<String, String> data ) {
-        return new TextExtractorContext(super.with(data), mimeType, problems);
-    }
-
-    @Override
-    public TextExtractorContext with( MimeTypeDetector mimeTypeDetector ) {
-        return new TextExtractorContext(super.with(mimeTypeDetector), mimeType, problems);
-    }
-
-    @Override
-    public TextExtractorContext with( NamespaceRegistry namespaceRegistry ) {
-        return new TextExtractorContext(super.with(namespaceRegistry), mimeType, problems);
-    }
-
-    @Override
-    public TextExtractorContext with( SecurityContext securityContext ) {
-        return new TextExtractorContext(super.with(securityContext), mimeType, problems);
-    }
-
-    @Override
-    public TextExtractorContext with( String key,
-                                      String value ) {
-        return new TextExtractorContext(super.with(key, value), mimeType, problems);
-    }
-
-    @Override
-    public TextExtractorContext with( String processId ) {
-        return new TextExtractorContext(super.with(processId), mimeType, problems);
+        return mimeType;
     }
 }

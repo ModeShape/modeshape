@@ -131,8 +131,7 @@ public class MSOfficeMetadataSequencer extends Sequencer {
         Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
 
-        InputStream inputStream = binaryValue.getStream();
-        String mimeType = context.mimeTypeDetector().mimeTypeOf(getInputFileName(inputProperty), inputStream);
+        String mimeType = context.mimeTypeDetector().mimeTypeOf(getInputFileName(inputProperty), binaryValue);
 
         Node sequencedNode = outputNode;
         if (outputNode.isNew()) {
@@ -143,17 +142,17 @@ public class MSOfficeMetadataSequencer extends Sequencer {
 
         sequencedNode.setProperty(JCR_MIME_TYPE, mimeType);
         if (isPowerpoint(mimeType)) {
-            sequencePowerpoint(sequencedNode, context.valueFactory(), inputStream);
+            sequencePowerpoint(sequencedNode, context.valueFactory(), binaryValue.getStream());
             return true;
         }
 
         if (isWord(mimeType)) {
-            sequenceWord(sequencedNode, context.valueFactory(), inputStream);
+            sequenceWord(sequencedNode, context.valueFactory(), binaryValue.getStream());
             return true;
         }
 
         if (isExcel(mimeType)) {
-            sequenceExcel(sequencedNode, context.valueFactory(), inputStream);
+            sequenceExcel(sequencedNode, context.valueFactory(), binaryValue.getStream());
             return true;
         }
 

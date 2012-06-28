@@ -26,7 +26,7 @@
         <module>modeshape-jcr</module>
         <module>modeshape-unit-test</module>
         <module>sequencers</module>
-        <!--module>extractors/modeshape-extractor-tika</module-->
+        <module>extractors</module>
         <!--
           The REST client needs the JDBC driver
         -->

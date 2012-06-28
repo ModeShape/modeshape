@@ -23,6 +23,8 @@
  */
 package org.modeshape.jcr.api.mimetype;
 
+import javax.jcr.Binary;
+import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -33,21 +35,34 @@ import java.io.InputStream;
  * Implementors are expected to have a public, no-arg constructor.
  */
 
-public interface MimeTypeDetector {
+public abstract class MimeTypeDetector {
 
     /**
-     * Returns the MIME-type of a data source, using its supplied content and/or its supplied name, depending upon the
+     * Returns the MIME-type of a binary value, using its supplied content and/or its supplied name, depending upon the
      * implementation. If the MIME-type cannot be determined, either a "default" MIME-type or <code>null</code> may be returned,
      * where the former will prevent earlier registered MIME-type detectors from being consulted.
-     * <p>
-     * Note that detector implementations should <i>not</i> {@link InputStream#close() close} the supplied input stream and should
-     * try their best to {@link java.io.InputStream#reset() reset} the stream.
-     * </p>
-     * 
+     *
      * @param name The name of the data source; may be <code>null</code>.
-     * @param content The content of the data source; may be <code>null</code>.
+     * @param binaryValue The value which contains the raw data for which the mime type should be returned; may be <code>null</code>.
      * @return The MIME-type of the data source, or optionally <code>null</code> if the MIME-type could not be determined.
      * @throws IOException If an error occurs reading the supplied content.
+     * @throws RepositoryException if any error occurs while attempting to read the stream from the binary value
      */
-    String mimeTypeOf( String name, InputStream content ) throws IOException;
+    public abstract String mimeTypeOf( String name, Binary binaryValue ) throws RepositoryException, IOException;
+
+    protected final <T> T processStream(Binary binary, StreamOperation<T> operation) throws RepositoryException, IOException {
+        InputStream stream = binary.getStream();
+        try {
+            return operation.execute(stream);
+        }
+        finally {
+            if (stream != null) {
+                stream.close();
+            }
+        }
+    }
+
+    protected interface StreamOperation<T> {
+        T execute(InputStream stream) throws IOException;
+    }
 }

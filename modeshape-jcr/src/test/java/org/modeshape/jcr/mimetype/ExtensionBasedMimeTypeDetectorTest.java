@@ -4,7 +4,7 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
@@ -14,89 +14,85 @@
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Lesser General Public License for more details
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this software; if not, write to the Free
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org
  */
 package org.modeshape.jcr.mimetype;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertThat;
-import java.io.InputStream;
-import org.junit.Before;
 import org.junit.Test;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.*;
+import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 
 /**
+ * Unit test for {@link ExtensionBasedMimeTypeDetector}
+ * 
  * @author Randall Hauch
+ * @author Horia Chiorean
  */
-public class ExtensionBasedMimeTypeDetectorTest {
+public class ExtensionBasedMimeTypeDetectorTest extends AbstractMimeTypeTest {
 
-    private ExtensionBasedMimeTypeDetector detector;
-    private InputStream stream;
-
-    @Before
-    public void beforeEach() throws Exception {
-        detector = new ExtensionBasedMimeTypeDetector();
-        stream = null;
+    @Override
+    protected MimeTypeDetector getDetector() {
+        return ExtensionBasedMimeTypeDetector.INSTANCE;
     }
 
     @Test
-    public void shouldFindMimeTypeForExtenionsInStandardPropertiesFile() {
-        assertThat(detector.mimeTypeOf("something.txt", stream), is("text/plain"));
+    public void shouldFindMimeTypeForExtenionsInStandardPropertiesFile() throws Exception {
+        testMimeType("something.txt", TEXT_PLAIN);
     }
 
     @Test
-    public void shouldFindMimeTypeForOneCharacterExtension() {
-        assertThat(detector.mimeTypeOf("something.gzip.Z", stream), is("application/x-compress"));
+    public void shouldFindMimeTypeForOneCharacterExtension() throws Exception {
+        testMimeType("something.gzip.Z", LZW);
     }
 
     @Test
-    public void shouldFindMimeTypeForTwoCharacterExtension() {
-        assertThat(detector.mimeTypeOf("something.sh", stream), is("application/x-sh"));
+    public void shouldFindMimeTypeForTwoCharacterExtension() throws Exception {
+        testMimeType("something.sh", SH);
     }
 
     @Test
-    public void shouldFindMimeTypeForThreeCharacterExtension() {
-        assertThat(detector.mimeTypeOf("something.png", stream), is("image/png"));
+    public void shouldFindMimeTypeForThreeCharacterExtension() throws Exception {
+        testMimeType("something.png", PNG);
     }
 
     @Test
-    public void shouldNotFindMimeTypeForNameWithoutExtension() {
-        assertThat(detector.mimeTypeOf("something", stream), is(nullValue()));
+    public void shouldNotFindMimeTypeForNameWithoutExtension() throws Exception {
+        testMimeType("something", null);
     }
 
     @Test
-    public void shouldNotFindMimeTypeForNameUnknownExtension() {
-        assertThat(detector.mimeTypeOf("something.thisExtensionIsNotKnown", stream), is(nullValue()));
+    public void shouldNotFindMimeTypeForNameUnknownExtension() throws Exception {
+        testMimeType("something.thisExtensionIsNotKnown", null);
     }
 
     @Test
-    public void shouldNotFindMimeTypeForZeroLengthName() {
-        assertThat(detector.mimeTypeOf(null, stream), is(nullValue()));
+    public void shouldNotFindMimeTypeForZeroLengthName() throws Exception {
+        testMimeType("", null);
     }
 
     @Test
-    public void shouldNotFindMimeTypeForNameContainingWhitespace() {
-        assertThat(detector.mimeTypeOf("/t   /n  ", stream), is(nullValue()));
+    public void shouldNotFindMimeTypeForNameContainingWhitespace() throws Exception {
+        testMimeType("/t   /n  ", null);
     }
 
     @Test
-    public void shouldNotFindMimeTypeForNullName() {
-        assertThat(detector.mimeTypeOf(null, stream), is(nullValue()));
+    public void shouldNotFindMimeTypeForNullName() throws Exception {
+        testMimeType(null, null);
     }
 
     @Test
-    public void shouldFindMimeTypeForUppercaseExtenionsInStandardPropertiesFile() {
-        assertThat(detector.mimeTypeOf("something.TXT", stream), is("text/plain"));
+    public void shouldFindMimeTypeForUppercaseExtenionsInStandardPropertiesFile() throws Exception {
+        testMimeType("something.TXT", TEXT_PLAIN);
     }
 
     @Test
-    public void shouldFindMimeTypeForNameWithTrailingWhitespace() {
-        assertThat(detector.mimeTypeOf("something.txt \t", stream), is("text/plain"));
+    public void shouldFindMimeTypeForNameWithTrailingWhitespace() throws Exception {
+        testMimeType("something.txt \t", TEXT_PLAIN);
     }
 
 }

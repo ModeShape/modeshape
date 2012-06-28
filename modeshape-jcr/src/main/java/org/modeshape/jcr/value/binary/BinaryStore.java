@@ -32,6 +32,7 @@ import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.api.text.TextExtractor;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.Path;
 
 /**
  * The basic interface for a store for Binary value objects. All binary values that are of a
@@ -122,12 +123,14 @@ public interface BinaryStore {
 
     /**
      * Get the text that can be extracted from this binary content.
-     * 
+     *
      * @param binary the binary content; may not be null
+     * @param binaryPropertyPath a non-null {@link Path} representing the path to the property holding the binary value
      * @return the extracted text, or null if none could be extracted
      * @throws BinaryStoreException if the binary content could not be accessed
      */
-    String getText( BinaryValue binary ) throws BinaryStoreException;
+    String getText( BinaryValue binary,
+                    Path binaryPropertyPath ) throws BinaryStoreException;
 
     /**
      * Get the MIME type for this binary value.

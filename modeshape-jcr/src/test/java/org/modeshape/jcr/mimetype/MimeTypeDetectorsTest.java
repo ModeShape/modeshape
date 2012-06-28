@@ -21,11 +21,10 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org
  */
-package org.modeshape.mimetype;
+package org.modeshape.jcr.mimetype;
 
 import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.*;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
-import org.modeshape.jcr.mimetype.MimeTypeDetectors;
 
 /**
  * Unit test for {@link org.modeshape.jcr.mimetype.MimeTypeDetectors}.

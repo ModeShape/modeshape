@@ -23,21 +23,14 @@
  */
 package org.modeshape.jcr;
 
+import javax.jcr.Binary;
+import javax.jcr.PropertyType;
+import javax.jcr.ValueFormatException;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.UUID;
-import javax.jcr.Binary;
-import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
-import javax.jcr.ValueFormatException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -47,6 +40,10 @@ import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.basic.SimpleNamespaceRegistry;
 import org.modeshape.jcr.value.basic.StandardValueFactories;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
+import java.io.InputStream;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.UUID;
 
 public class JcrValueTest {
 
@@ -321,33 +318,7 @@ public class JcrValueTest {
     }
 
     private Binary createCustomBinary( final String stringValue ) {
-        return new Binary() {
-            @SuppressWarnings( "unused" )
-            @Override
-            public InputStream getStream() throws RepositoryException {
-                return new ByteArrayInputStream(stringValue.getBytes());
-            }
-
-            @SuppressWarnings( "unused" )
-            @Override
-            public int read( byte[] b,
-                             long position ) throws IOException, RepositoryException {
-                byte[] content = stringValue.getBytes();
-                int length = b.length + position < content.length ? b.length : (int)(content.length - position);
-                System.arraycopy(content, (int)position, b, 0, length);
-                return length;
-            }
-
-            @SuppressWarnings( "unused" )
-            @Override
-            public long getSize() throws RepositoryException {
-                return stringValue.getBytes().length;
-            }
-
-            @Override
-            public void dispose() {
-            }
-        };
+        return new InMemoryTestBinary(stringValue.getBytes());
     }
 
     private void testProvidesStream( JcrValue value ) throws Exception {

@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org
  */
-package org.modeshape.mimetype;
+package org.modeshape.jcr.mimetype;
 
 import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.BASH;
 import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.BMP;
@@ -92,7 +92,6 @@ import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.XPM;
 import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.ZIP;
 import org.junit.Test;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
-import org.modeshape.jcr.mimetype.ApertureMimeTypeDetector;
 
 /**
  * Unit test for {@link ApertureMimeTypeDetector}

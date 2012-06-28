@@ -253,7 +253,7 @@ public class BasicLuceneSchema implements LuceneSchema {
             if (fullTextSearchable) {
                 // Get the full text ...
                 try {
-                    String fullTextTerms = binaryStore.getText(binary);
+                    String fullTextTerms = binaryStore.getText(binary, null);
                     if (fullTextTerms != null) {
                         previous = new DynamicField(previous, propertyName, fullTextTerms, true, false); // never store
 

@@ -25,6 +25,8 @@ package org.modeshape.jcr.mimetype;
 
 import java.io.IOException;
 import java.io.InputStream;
+import javax.jcr.Binary;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
@@ -37,15 +39,20 @@ import org.semanticdesktop.aperture.util.IOUtil;
  */
 @Immutable
 @ThreadSafe
-public final class ApertureMimeTypeDetector implements MimeTypeDetector {
+public final class ApertureMimeTypeDetector extends MimeTypeDetector {
 
     @Override
-    public String mimeTypeOf( String name, InputStream content ) throws IOException {
-        MimeTypeIdentifier identifier = new MagicMimeTypeIdentifier();
-        // Read as many bytes of the file as desired by the MIME-type identifier
-        int minimumArrayLength = identifier.getMinArrayLength();
-        byte[] bytes = IOUtil.readBytes(content, minimumArrayLength);
-        // let the MimeTypeIdentifier determine the MIME-type of this file
-        return identifier.identify(bytes, name, null);
+    public String mimeTypeOf( final String name, Binary binaryValue ) throws RepositoryException, IOException {
+        return processStream(binaryValue, new StreamOperation<String>() {
+            @Override
+            public String execute( InputStream stream ) throws IOException {
+                MimeTypeIdentifier identifier = new MagicMimeTypeIdentifier();
+                // Read as many bytes of the file as desired by the MIME-type identifier
+                int minimumArrayLength = identifier.getMinArrayLength();
+                byte[] bytes = IOUtil.readBytes(stream, minimumArrayLength);
+                // let the MimeTypeIdentifier determine the MIME-type of this file
+                return identifier.identify(bytes, name, null);
+            }
+        });
     }
 }

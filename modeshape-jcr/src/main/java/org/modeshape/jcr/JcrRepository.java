@@ -1088,6 +1088,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 List<Component> extractorComponents = config.getQuery().getTextExtractors();
                 this.extractors = new TextExtractors(this, extractorComponents);
             }
+            this.binaryStore.setMimeTypeDetector(this.context.getMimeTypeDetector());
             this.binaryStore.setTextExtractor(this.extractors);
 
             if (other != null && !change.sequencingChanged) {
