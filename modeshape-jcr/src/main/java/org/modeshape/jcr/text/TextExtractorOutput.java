@@ -24,26 +24,27 @@
 
 package org.modeshape.jcr.text;
 
-import org.modeshape.jcr.api.text.TextExtractorOutput;
+import org.modeshape.jcr.api.text.TextExtractor;
+
 
 /**
- * A {@link org.modeshape.jcr.api.text.TextExtractorOutput} implementation which appends each incoming text into a buffer,
+ * A {@link org.modeshape.jcr.api.text.TextExtractor.Output} implementation which appends each incoming text into a buffer,
  * separating the content via the configured separator.
  *
  * @author Horia Chiorean
  */
-public final class DefaultTextExtractorOutput implements TextExtractorOutput {
+public final class TextExtractorOutput implements TextExtractor.Output {
 
     private static final String DEFAULT_SEPARATOR = " ";
 
     private final StringBuilder buffer = new StringBuilder("");
     private final String separator;
 
-    public DefaultTextExtractorOutput() {
+    public TextExtractorOutput() {
         this(DEFAULT_SEPARATOR);
     }
 
-    public DefaultTextExtractorOutput( String separator ) {
+    public TextExtractorOutput( String separator ) {
         this.separator = separator;
     }
 

@@ -50,12 +50,14 @@
                 "type" : "lucene"
             }
         },
-        "extractors" : [
-            {
-                "name" : "General Extractor",
-                "classname" : "tika"
+        "textExtracting": {
+            "extractors" : {
+                "tikaExtractor":{
+                    "name" : "Tika content-based extractor",
+                    "classname" : "tika"
+                }
             }
-        ]
+        }
     },
     "sequencing" : {
         "removeDerivedContentWithOriginal" : true,

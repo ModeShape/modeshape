@@ -386,6 +386,7 @@ public final class JcrI18n {
     public static I18n errorKillingEngine;
 
     // Lucene query engine ...
+    public static I18n errorRetrievingExtractedTextFile;
     public static I18n errorExtractingTextFromBinary;
     public static I18n errorAddingBinaryTextToIndex;
     public static I18n missingQueryVariableValue;

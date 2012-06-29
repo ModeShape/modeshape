@@ -30,22 +30,14 @@ import org.modeshape.jcr.api.text.TextExtractor;
  */
 public final class TextExtractorContext implements TextExtractor.Context {
 
-    private final String mimeType;
-    private final String inputPropertyPath;
+    private final String inputNodePath;
 
-    public TextExtractorContext( String inputPropertyPath,
-                                 String mimeType ) {
-        this.inputPropertyPath = inputPropertyPath;
-        this.mimeType = mimeType;
+    public TextExtractorContext( String inputNodePath) {
+        this.inputNodePath = inputNodePath;
     }
 
     @Override
-    public String getInputPropertyPath() {
-        return inputPropertyPath;
-    }
-
-    @Override
-    public String getMimeType() {
-        return mimeType;
+    public String getInputNodePath() {
+        return inputNodePath;
     }
 }

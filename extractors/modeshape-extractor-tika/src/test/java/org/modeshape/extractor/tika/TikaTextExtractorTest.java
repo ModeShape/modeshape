@@ -33,7 +33,7 @@ import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.InMemoryTestBinary;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetectors;
-import org.modeshape.jcr.text.DefaultTextExtractorOutput;
+import org.modeshape.jcr.text.TextExtractorOutput;
 import org.modeshape.jcr.text.TextExtractorContext;
 import java.io.IOException;
 import java.io.InputStream;
@@ -115,7 +115,7 @@ public class TikaTextExtractorTest {
     }
 
     @Test
-    public void shouldExtractTextFromPdfFileGS() throws Exception{
+    public void shouldExtractTextFromPdfFileGS() throws Exception {
         extractTermsFrom("modeshape_gs.pdf");
         assertExtractedMatchesExpected();
     }
@@ -180,18 +180,14 @@ public class TikaTextExtractorTest {
         return result;
     }
 
-    private void extractTermsFrom( String resourcePath ) throws Exception {
+    private void extractTermsFrom( String resourcePath
+                                 ) throws Exception {
         InputStream stream = getClass().getClassLoader().getResourceAsStream(resourcePath);
-        assertThat(stream, is(notNullValue()));
-        try {
-            TextExtractorContext context = new TextExtractorContext(resourcePath, mimeTypeOf(resourcePath));
-            DefaultTextExtractorOutput output = new DefaultTextExtractorOutput();
-            extractor.extractFrom(stream, output, context);
-            output.toString();
-            addWords(extracted, output.getText());
-        } finally {
-            stream.close();
-        }
+        TextExtractorContext context = new TextExtractorContext(resourcePath);
+        TextExtractorOutput output = new TextExtractorOutput();
+        extractor.extractFrom(new InMemoryTestBinary(stream), output, context);
+        output.toString();
+        addWords(extracted, output.getText());
     }
 
     private void loadExpectedFrom( String resourcePath ) throws IOException {
@@ -214,7 +210,7 @@ public class TikaTextExtractorTest {
     }
 
     private String mimeTypeOf( String fileName ) throws Exception {
-        return mimeTypeDetector.mimeTypeOf(fileName, new InMemoryTestBinary(getClass().getClassLoader().getResourceAsStream(fileName)));
+        return mimeTypeDetector.mimeTypeOf(fileName,
+                                           new InMemoryTestBinary(getClass().getClassLoader().getResourceAsStream(fileName)));
     }
-
 }

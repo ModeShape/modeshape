@@ -24,12 +24,16 @@
 
 package org.modeshape.jcr;
 
-import javax.jcr.Binary;
+
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.SecureHash;
+import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.api.Binary;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * An in-memory implementation of a {@link javax.jcr.Binary} which should used for tests.
@@ -39,13 +43,19 @@ import java.io.InputStream;
 public final class InMemoryTestBinary implements Binary {
 
     private byte[] bytes;
+    private byte[] hash;
 
     public InMemoryTestBinary( byte[] bytes ) {
-        this.bytes = bytes;
+        try {
+            this.bytes = bytes;
+            this.hash = SecureHash.getHash(SecureHash.Algorithm.SHA_1, bytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public InMemoryTestBinary(InputStream is) throws IOException {
-        this.bytes = IoUtil.readBytes(is);
+        this(IoUtil.readBytes(is));
     }
 
     @Override
@@ -99,5 +109,25 @@ public final class InMemoryTestBinary implements Binary {
     @Override
     public long getSize() throws RepositoryException {
         return bytes.length;
+    }
+
+    @Override
+    public byte[] getHash() {
+        return hash;
+    }
+
+    @Override
+    public String getHexHash() {
+        return StringUtil.getHexString(hash);
+    }
+
+    @Override
+    public String getMimeType() throws IOException, RepositoryException {
+        return null;
+    }
+
+    @Override
+    public String getMimeType( String name ) throws IOException, RepositoryException {
+        return null;
     }
 }

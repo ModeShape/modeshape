@@ -14,7 +14,7 @@
   <description>Comprises the set of integration tests for the ModeShape project</description>
 
   <modules>
-    <!--module>modeshape-integration-tests</module-->
+    <!--<module>modeshape-integration-tests</module>-->
     <module>modeshape-jbossas-integration-tests</module>
   </modules>
 </project>

@@ -209,7 +209,7 @@ public class BasicLuceneSchema implements LuceneSchema {
 
     /**
      * Create a dynamic field to store the property value.
-     * 
+     *
      * @param propertyName the name of the field in which the property value is to be stored; never null
      * @param value the property value; may be null
      * @param previous the previous DynamicField; may be null
@@ -253,7 +253,7 @@ public class BasicLuceneSchema implements LuceneSchema {
             if (fullTextSearchable) {
                 // Get the full text ...
                 try {
-                    String fullTextTerms = binaryStore.getText(binary, null);
+                    String fullTextTerms = binaryStore.getText(binary);
                     if (fullTextTerms != null) {
                         previous = new DynamicField(previous, propertyName, fullTextTerms, true, false); // never store
 

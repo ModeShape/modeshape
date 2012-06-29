@@ -23,6 +23,7 @@
  */
 package org.modeshape.extractor.tika;
 
+import javax.jcr.RepositoryException;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -33,9 +34,9 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.text.TextExtractor;
-import org.modeshape.jcr.api.text.TextExtractorOutput;
 import org.xml.sax.ContentHandler;
 import java.io.IOException;
 import java.io.InputStream;
@@ -119,24 +120,29 @@ public class TikaTextExtractor extends TextExtractor {
      * {@inheritDoc}
      */
     @Override
-    public void extractFrom( InputStream stream,
-                             TextExtractorOutput output,
-                             Context context ) throws IOException {
+    public void extractFrom( final Binary binary,
+                             final TextExtractor.Output output,
+                             final Context context ) throws Exception {
+
         final DefaultParser parser = initialize();
-        Metadata metadata = prepareMetadata(stream, context);
+        processStream(binary, new BinaryOperation<Object>() {
+            @Override
+            public Object execute( InputStream stream ) throws Exception {
+                Metadata metadata = prepareMetadata(binary, stream, context);
+                try {
+                    ContentHandler textHandler = new BodyContentHandler();
+                    // Parse the input stream ...
+                    parser.parse(stream, textHandler, metadata, new ParseContext());
 
-        try {
-            ContentHandler textHandler = new BodyContentHandler();
-            // Parse the input stream ...
-            parser.parse(stream, textHandler, metadata, new ParseContext());
+                    // Record all of the text in the body ...
+                    output.recordText(textHandler.toString().trim());
+                } catch (Throwable e) {
+                    LOGGER.error(e, TikaI18n.errorWhileExtractingTextFrom, context.getInputNodePath(), e.getMessage());
+                }
+                return null;
+            }
+        });
 
-            // Record all of the text in the body ...
-            output.recordText(textHandler.toString().trim());
-        } catch (IOException e) {
-            throw e;
-        } catch (Throwable e) {
-            LOGGER.error(e, TikaI18n.errorWhileExtractingTextFrom, context.getInputPropertyPath(), e.getMessage());
-        }
     }
 
     /**
@@ -144,21 +150,21 @@ public class TikaTextExtractor extends TextExtractor {
      * if this is available to the underlying context. If not, Tika's autodetection mechanism is used to try and get the
      * mime-type.
      *
-     * @param stream a <code>InputStream</code> instance of the content being parsed
+     * @param binary a <code>org.modeshape.jcr.api.Binary</code> instance of the content being parsed
      * @param context the text extraction context
      * @return a <code>Metadata</code> instance.
      * @throws java.io.IOException if auto-detecting the mime-type via Tika fails
      */
-    private Metadata prepareMetadata( InputStream stream, Context context ) throws IOException {
+    private Metadata prepareMetadata(final Binary binary, InputStream stream, Context context ) throws IOException, RepositoryException {
         Metadata metadata = new Metadata();
 
         String fileName = getFileName(context);
         metadata.set(Metadata.RESOURCE_NAME_KEY, fileName);
 
-        String mimeType = context.getMimeType();
+        String mimeType = binary.getMimeType();
 
         if (StringUtil.isBlank(mimeType)) {
-            LOGGER.warn(TikaI18n.warnMimeTypeNotSet);
+            LOGGER.warn(TikaI18n.warnCannotDetectMimeType);
             MediaType autoDetectedMimeType = new DefaultDetector(this.getClass().getClassLoader()).detect(stream, metadata);
             metadata.set(Metadata.CONTENT_TYPE, autoDetectedMimeType.toString());
         }
@@ -168,20 +174,14 @@ public class TikaTextExtractor extends TextExtractor {
         return metadata;
     }
 
-    private String getFileName(Context context) {
-        String inputPropertyPath = context.getInputPropertyPath();
-        String[] pathSegments = inputPropertyPath.split("/");
-        if (pathSegments.length == 1) {
-            return inputPropertyPath;
+    private String getFileName( Context context) throws RepositoryException {
+        String parentPath = context.getInputNodePath();
+        int lastSegmentIdx = parentPath.lastIndexOf("/");
+        if (lastSegmentIdx == -1) {
+            return parentPath;
         }
-        String parentSegment = pathSegments[pathSegments.length - 2];
-        if (parentSegment.toLowerCase().contains(JcrConstants.JCR_CONTENT) && pathSegments.length > 2) {
-            //return the jcr:content parent
-            return pathSegments[pathSegments.length - 3];
-        }
-        else {
-            return parentSegment;
-        }
+
+        return parentPath.endsWith(JcrConstants.JCR_CONTENT) ? parentPath.substring(0, parentPath.lastIndexOf("/")) : parentPath;
     }
 
     /**

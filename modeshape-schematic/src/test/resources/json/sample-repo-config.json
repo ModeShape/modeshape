@@ -39,16 +39,19 @@
     "query" : {
         "enabled" : true,
         "rebuildUponStartup" : "if_missing",
-        "extractors" : [
-            {
-                "name" : "MyFileType extractor",
-                "classname" : "com.example.myfile.MyExtractor",
-            },
-            {
-                "name" : "General content-based extractor",
-                "classname" : "tika",
+        "textExtracting": {
+            "threadPool" : "test",
+            "extractors" : {
+                "customExtractor": {
+                    "name" : "MyFileType extractor",
+                    "classname" : "com.example.myfile.MyExtractor",
+                 },
+                "tikaExtractor":{
+                    "name" : "General content-based extractor",
+                    "classname" : "tika",
+                 }
             }
-        ],
+        },
         "indexStorage" : {
             "type" : "filesystem",
             "location" : "Thorough/indexes",

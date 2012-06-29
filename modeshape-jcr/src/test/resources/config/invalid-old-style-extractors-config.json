@@ -39,19 +39,16 @@
     "query" : {
         "enabled" : true,
         "rebuildUponStartup" : "if_missing",
-        "textExtracting": {
-            "threadPool" : "test",
-                "extractors" : {
-                    "customExtractor": {
-                        "name" : "MyFileType extractor",
-                        "classname" : "com.example.myfile.MyExtractor",
-                    },
-                    "tikaExtractor":{
-                        "name" : "General content-based extractor",
-                        "classname" : "tika",
-                    }
-                }
-        },
+        "extractors" : [
+            {
+                "name" : "MyFileType extractor",
+                "classname" : "com.example.myfile.MyExtractor",
+            },
+            {
+                "name" : "General content-based extractor",
+                "classname" : "tika",
+            }
+        ],
         "indexStorage" : {
             "type" : "filesystem",
             "location" : "Thorough/indexes",
@@ -76,23 +73,23 @@
         }
     },
     "sequencing" : {
+        "description" : "Define several sequencers to automatically analyze and extract structured content from files uploaded to the repository. If a file is updated, the content previously derived by the sequencer(s) will be removed before the newly-derived content is stored. Since sequencing is done asynchronously, specify that threads from the 'modeshape-workers' thread poool be used.",
         "removeDerivedContentWithOriginal" : true,
         "threadPool" : "modeshape-workers",
-        "sequencers" : [
-            { 
-                "name" : "zipSequencer",
-                "classname" : "ZipSequencer",
-                "pathExpressions" : ["default:/files(//)(*.zip[*])/jcr:content[@jcr:data] => default:/sequenced/zip/$1"],
+        "sequencers" : {
+        "zipSequencer" : {
+            "classname" : "ZipSequencer",
+            "pathExpressions" : ["default:/files(//)(*.zip[*])/jcr:content[@jcr:data] => default:/sequenced/zip/$1"],
             },
-            {
-                "name" : "delimitedTextSequencer",
-                "classname" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
-                "pathExpressions" : [ 
-                    "default:/files//(*.csv[*])/jcr:content[@jcr:data] => default:/sequenced/text/delimited/$1"
-                ],
-                "splitPattern" : ","
-            }
-        ]
+        "delimitedTextSequencer" : {
+            "description" : "Extracts row and column information from CSV files uploaded under '/files', and stores the derived information under '/sequenced/text/delimited/...'. The ',' character should be used to delimit the different values in a row.",
+            "classname" : "org.modeshape.sequencer.text.DelimitedTextSequencer",
+            "pathExpressions" : [
+                "default:/files//(*.csv[*])/jcr:content[@jcr:data] => default:/sequenced/text/delimited/$1"
+            ],
+        "splitPattern" : ","
+        }
+    }
     },
     "clustering" : {
     }

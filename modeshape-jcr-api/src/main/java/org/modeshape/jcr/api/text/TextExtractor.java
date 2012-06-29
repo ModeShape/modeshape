@@ -23,6 +23,8 @@
  */
 package org.modeshape.jcr.api.text;
 
+import javax.jcr.RepositoryException;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.Logger;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +37,11 @@ public abstract class TextExtractor {
     private Logger logger;
 
     /**
+     * The name of this text extraction, which can be configured for monitoring purposes
+     */
+    private String name;
+
+    /**
      * Determine if this extractor is capable of processing content with the supplied MIME type.
      * 
      * @param mimeType the MIME type; never null
@@ -43,18 +50,41 @@ public abstract class TextExtractor {
     public abstract boolean supportsMimeType( String mimeType );
 
     /**
-     * Extract text from the given {@link InputStream}, using the given output to record the results.
+     * Extract text from the given {@link Binary}, using the given output to record the results.
      *
-     * @param stream the stream with the data to be sequenced; never <code>null</code>
+     * @param binary the binary value that can be used in the extraction process; never <code>null</code>
      * @param output the output from the sequencing operation; never <code>null</code>
      * @param context the context for the sequencing operation; never <code>null</code>
-     * @throws IOException if there is a problem reading the stream
+     * @throws Exception if there is a problem during the extraction process
      */
-    public abstract void extractFrom( InputStream stream,
-                                      TextExtractorOutput output,
-                                      Context context ) throws IOException;
+    public abstract void extractFrom( Binary binary,
+                                      TextExtractor.Output output,
+                                      Context context ) throws Exception;
 
-    protected final void setLogger(Logger logger) {
+    /**
+     * Allows subclasses to process the stream of binary value property in "safe" fashion, making sure the stream is closed at the
+     * end of the operation.
+     * @param binary a {@link org.modeshape.jcr.api.Binary} who is expected to contain a non-null binary value.
+     * @param operation a {@link org.modeshape.jcr.api.text.TextExtractor.BinaryOperation} which should work with the stream
+     * @return whatever type of result the stream operation returns
+     * @throws RepositoryException
+     * @throws IOException
+     */
+    protected final <T> T processStream(Binary binary, BinaryOperation<T> operation) throws Exception {
+        InputStream stream = binary.getStream();
+        if (stream == null) {
+            throw new IllegalArgumentException("The binary value is empty");
+        }
+
+        try {
+            return operation.execute(stream);
+        }
+        finally {
+            stream.close();
+        }
+    }
+
+    public final void setLogger(Logger logger) {
         if (logger ==  null) {
             throw new IllegalArgumentException("Logger cannot be null");
         }
@@ -65,24 +95,45 @@ public abstract class TextExtractor {
         return logger;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName( String name ) {
+        this.name = name;
+    }
+
+    /**
+     * Interface which can be used by subclasses to process the input stream of a binary property.
+     */
+    protected interface BinaryOperation<T> {
+        T execute(InputStream stream) throws Exception;
+    }
+
     /**
      * Interface which provides additional information to the text extractors, during the extraction operation.
      */
     public interface Context {
 
         /**
-         * Returns a string path of the property on which the text extraction was triggered.
+         * Returns the path to the input node (the owner node) of the property which has the binary value that triggered
+         * the sequencing.
          *
-         * @return a String representation of a path, using "/" as the separator between segments.
+         * @return the path of the owning node, never {@code null}
          */
-        String getInputPropertyPath();
-
-        /**
-         * Returns the mime-type (if detected by ModeShape) of the content represented by the input stream.
-         *
-         * @return the mime-type of the input stream, or null if none was detected
-         */
-        String getMimeType();
+        String getInputNodePath();
     }
 
+    /**
+     * The interface passed to a TextExtractor to which the extractor should record all text content.
+     */
+    public interface Output {
+
+        /**
+         * Record the text as being extracted. This method can be called multiple times during a single extract.
+         *
+         * @param text the text extracted from the content.
+         */
+        void recordText( String text );
+    }
 }

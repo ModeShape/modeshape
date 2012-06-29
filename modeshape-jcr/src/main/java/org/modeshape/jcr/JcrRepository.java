@@ -96,6 +96,7 @@ import org.modeshape.jcr.RepositoryConfiguration.Security;
 import org.modeshape.jcr.RepositoryConfiguration.TransactionMode;
 import org.modeshape.jcr.Sequencers.SequencingWorkItem;
 import org.modeshape.jcr.api.AnonymousCredentials;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.Repository;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.monitor.ValueMetric;
@@ -128,9 +129,11 @@ import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.jcr.security.AuthenticationProviders;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.security.SecurityContext;
+import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.txn.NoClientTransactions;
 import org.modeshape.jcr.txn.SynchronizedTransactions;
 import org.modeshape.jcr.txn.Transactions;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Property;
@@ -1082,14 +1085,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
 
             if (other != null && !change.extractorsChanged) {
-                List<Component> extractorComponents = other.config.getQuery().getTextExtractors();
-                this.extractors = new TextExtractors(this, extractorComponents);
+                this.extractors = new TextExtractors(this, other.config.getQuery().getTextExtracting());
             } else {
-                List<Component> extractorComponents = config.getQuery().getTextExtractors();
-                this.extractors = new TextExtractors(this, extractorComponents);
+                this.extractors = new TextExtractors(this, config.getQuery().getTextExtracting());
             }
             this.binaryStore.setMimeTypeDetector(this.context.getMimeTypeDetector());
-            this.binaryStore.setTextExtractor(this.extractors);
+            this.binaryStore.setTextExtractors(this.extractors);
 
             if (other != null && !change.sequencingChanged) {
                 this.sequencingQueue = other.sequencingQueue;
@@ -1225,6 +1226,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         protected final BinaryStore binaryStore() {
             return binaryStore;
+        }
+
+        protected final TextExtractors textExtractors() {
+            return extractors;
         }
 
         protected final TransactionManager txnManager() {
@@ -1661,6 +1666,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                        Name primaryType,
                                        Set<Name> mixinTypes,
                                        Collection<Property> properties ) {
+                    //we need to extract text from here, because we need the node path
+                    extractText(path.toString(), properties.iterator());
                     indexes.addToIndex(workspace, key, path, primaryType, mixinTypes, properties, schemata, txnCtx);
                 }
 
@@ -1671,6 +1678,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                           Name primaryType,
                                           Set<Name> mixinTypes,
                                           Iterator<Property> properties ) {
+                    //we need to extract text from here, because we need the node path
+                    extractText(path.toString(), properties);
                     indexes.updateIndex(workspace, key, path, primaryType, mixinTypes, properties, schemata, txnCtx);
                 }
 
@@ -1680,6 +1689,18 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     indexes.removeFromIndex(workspace, keys, txnCtx);
                 }
 
+                private void extractText(String nodePath, Iterator<Property> propertyIterator ) {
+                    if (runningState.extractors.extractionEnabled()) {
+                        while (propertyIterator.hasNext()) {
+                            Property property = propertyIterator.next();
+                            if (property.isSingle() && property.getFirstValue() instanceof Binary) {
+                                runningState.textExtractors().extract(runningState.binaryStore(),
+                                                                      (BinaryValue)property.getFirstValue(),
+                                                                      new TextExtractorContext(nodePath));
+                            }
+                        }
+                    }
+                }
             };
         }
 

@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr;
 
+import javax.jcr.Session;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -107,6 +108,10 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
 
     @Override
     protected JcrSession session() {
+        return session;
+    }
+
+    protected Session jcrSession() {
         return session;
     }
 

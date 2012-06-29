@@ -25,16 +25,12 @@ package org.modeshape.jcr.value.binary;
 
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.TextExtractors;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
-import org.modeshape.jcr.api.text.TextExtractor;
 import org.modeshape.jcr.mimetype.ExtensionBasedMimeTypeDetector;
-import org.modeshape.jcr.text.DefaultTextExtractorOutput;
-import org.modeshape.jcr.text.NoOpTextExtractor;
-import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.value.BinaryValue;
-import org.modeshape.jcr.value.Path;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -63,8 +59,10 @@ public abstract class AbstractBinaryStore implements BinaryStore {
         return LARGE_BUFFER_SIZE;
     }
 
+    protected Logger logger = Logger.getLogger(getClass());
+
     private final AtomicLong minBinarySizeInBytes = new AtomicLong(DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES);
-    private volatile TextExtractor extractor = NoOpTextExtractor.INSTANCE;
+    private volatile TextExtractors extractors;
     private volatile MimeTypeDetector detector = ExtensionBasedMimeTypeDetector.INSTANCE;
 
     @Override
@@ -79,8 +77,9 @@ public abstract class AbstractBinaryStore implements BinaryStore {
     }
 
     @Override
-    public void setTextExtractor( TextExtractor textExtractor ) {
-        this.extractor = textExtractor != null ? textExtractor : NoOpTextExtractor.INSTANCE;
+    public void setTextExtractors( TextExtractors textExtractors ) {
+        CheckArg.isNotNull(textExtractors, "textExtractors");
+        this.extractors = textExtractors;
     }
 
     @Override
@@ -88,13 +87,40 @@ public abstract class AbstractBinaryStore implements BinaryStore {
         this.detector = mimeTypeDetector != null ? mimeTypeDetector : ExtensionBasedMimeTypeDetector.INSTANCE;
     }
 
+
+    @Override
+    public String getText( BinaryValue binary ) throws BinaryStoreException {
+        if (!extractors.extractionEnabled()) {
+            return null;
+        }
+
+        //try and locate an already extracted file from the store (assuming a worker has already finished)
+        String extractedText = getExtractedText(binary);
+        if (extractedText != null) {
+            return extractedText;
+        }
+        //there isn't any text available, so wait for a job to finish and then return the result
+        try {
+            extractors.getWorkerLatch(binary.getKey()).await();
+            return getExtractedText(binary);
+        } catch (InterruptedException e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    @Override
+    public String getMimeType( BinaryValue binary,
+                               String name ) throws IOException, RepositoryException {
+        return detector().mimeTypeOf(name, binary);
+    }
+
     /**
      * Get the text extractor that can be used to extract text by this store.
      * 
      * @return the text extractor; never null
      */
-    protected final TextExtractor extractor() {
-        return this.extractor;
+    protected final TextExtractors extractors() {
+        return this.extractors;
     }
 
     /**

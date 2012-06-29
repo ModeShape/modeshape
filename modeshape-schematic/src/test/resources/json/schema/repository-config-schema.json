@@ -297,31 +297,43 @@
                     "default" : "if_missing",
                     "description" : "Specifies whether the indexes need to be rebuilt immediately when each ModeShape process starts up."
                 },
-                "extractors" : {
-                    "type" : "array",
+                "textExtracting" : {
+                    "type" : "object",
+                    "additionalProperties" : false,
                     "description" : "An array of extractor configurations.",
-                    "items" : {
-                        "type" : "object",
-                        "description" : "Specification of a text extractor configuration.",
-                        "additionalProperties" : true,
-                        "properties" : {
-                            "classname" : {
-                                "type" : "string",
-                                "required" : true,
-                                "description" : "The fully-qualified name of the 'org.modeshape.jcr.text.TextExtractor' implementation class. A shortcut for built-in extractors is to just specify the name of the class (without the package specifciation)."
-                            },
-                            "classloader" : {
-                                "type" : "string",
-                                "description" : "The optional name of the classloader that should be used to load the extract class. If empty or not provided, the classpath accessible to ModeShape will be used."
-                            },
-                            "name" : {
-                                "type" : "string",
-                                "description" : "The optional unique name of the extractor configuration, used for administration and reporting purposes. If not specified, the extractor's classname will be used."
-                            },
-                            "description" : {
-                                "type" : "string",
-                                "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                            },
+                    "properties" : {
+                        "threadPool" : {
+                            "type" : "string",
+                            "default" : "modeshape-workers",
+                            "description" : "Name of the thread pool that should be used for text extracting. Thread pools are named globally within a single ModeShape engine, and by default all repositories use the same thread pool for sequencing and indexing."
+                        },
+                        "extractors" : {
+                            "type" : "object",
+                            "description" : "The container for the list of configured text extractors",
+                            "additionalProperties" : {
+                                "type" : "object",
+                                "description" : "Specification of a text extractor configuration.",
+                                "additionalProperties" : true,
+                                "properties" : {
+                                    "classname" : {
+                                        "type" : "string",
+                                        "required" : true,
+                                        "description" : "The fully-qualified name of the 'org.modeshape.jcr.text.TextExtractor' implementation class. A shortcut for built-in extractors is to just specify the name of the class (without the package specifciation)."
+                                    },
+                                    "classloader" : {
+                                        "type" : "string",
+                                        "description" : "The optional name of the classloader that should be used to load the extract class. If empty or not provided, the classpath accessible to ModeShape will be used."
+                                    },
+                                    "name" : {
+                                        "type" : "string",
+                                        "description" : "The optional unique name of the extractor configuration, used for administration and reporting purposes. If not specified, the extractor's classname will be used."
+                                    },
+                                    "description" : {
+                                        "type" : "string",
+                                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                    }
+                                }
+                            }
                         }
                     }
                 },
