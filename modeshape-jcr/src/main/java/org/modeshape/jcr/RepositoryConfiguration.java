@@ -1401,7 +1401,7 @@ public class RepositoryConfiguration {
          * @return the thread pool name; never null
          */
         public String getThreadPoolName() {
-            return textExtracting.getString(FieldName.THREAD_POOL, Default.THREAD_POOL);
+            return textExtracting.getString(FieldName.THREAD_POOL, "modeshape-text-extractor");
         }
 
         /**

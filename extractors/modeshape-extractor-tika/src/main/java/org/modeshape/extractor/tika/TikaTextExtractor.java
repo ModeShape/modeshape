@@ -35,7 +35,6 @@ import org.modeshape.common.collection.Collections;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.Binary;
-import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.text.TextExtractor;
 import org.xml.sax.ContentHandler;
 import java.io.IOException;
@@ -128,7 +127,7 @@ public class TikaTextExtractor extends TextExtractor {
         processStream(binary, new BinaryOperation<Object>() {
             @Override
             public Object execute( InputStream stream ) throws Exception {
-                Metadata metadata = prepareMetadata(binary, stream, context);
+                Metadata metadata = prepareMetadata(binary, stream);
                 try {
                     ContentHandler textHandler = new BodyContentHandler();
                     // Parse the input stream ...
@@ -137,7 +136,7 @@ public class TikaTextExtractor extends TextExtractor {
                     // Record all of the text in the body ...
                     output.recordText(textHandler.toString().trim());
                 } catch (Throwable e) {
-                    LOGGER.error(e, TikaI18n.errorWhileExtractingTextFrom, context.getInputNodePath(), e.getMessage());
+                    LOGGER.error(e, TikaI18n.errorWhileExtractingTextFrom, e.getMessage());
                 }
                 return null;
             }
@@ -151,15 +150,11 @@ public class TikaTextExtractor extends TextExtractor {
      * mime-type.
      *
      * @param binary a <code>org.modeshape.jcr.api.Binary</code> instance of the content being parsed
-     * @param context the text extraction context
      * @return a <code>Metadata</code> instance.
      * @throws java.io.IOException if auto-detecting the mime-type via Tika fails
      */
-    private Metadata prepareMetadata(final Binary binary, InputStream stream, Context context ) throws IOException, RepositoryException {
+    private Metadata prepareMetadata(final Binary binary, InputStream stream) throws IOException, RepositoryException {
         Metadata metadata = new Metadata();
-
-        String fileName = getFileName(context);
-        metadata.set(Metadata.RESOURCE_NAME_KEY, fileName);
 
         String mimeType = binary.getMimeType();
 
@@ -172,16 +167,6 @@ public class TikaTextExtractor extends TextExtractor {
             metadata.set(Metadata.CONTENT_TYPE, mimeType);
         }
         return metadata;
-    }
-
-    private String getFileName( Context context) throws RepositoryException {
-        String parentPath = context.getInputNodePath();
-        int lastSegmentIdx = parentPath.lastIndexOf("/");
-        if (lastSegmentIdx == -1) {
-            return parentPath;
-        }
-
-        return parentPath.endsWith(JcrConstants.JCR_CONTENT) ? parentPath.substring(0, parentPath.lastIndexOf("/")) : parentPath;
     }
 
     /**

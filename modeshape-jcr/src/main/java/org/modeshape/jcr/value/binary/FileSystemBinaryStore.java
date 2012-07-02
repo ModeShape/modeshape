@@ -31,6 +31,7 @@ import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.common.util.SecureHash.HashingInputStream;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.FileLocks.WrappedLock;
@@ -119,10 +120,15 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
                 // The content is small enough to just store in-memory ...
                 byte[] content = IoUtil.readBytes(tmpFile);
                 tmpFile.delete();
-                return new InMemoryBinaryValue(this, key, content);
+                value = new InMemoryBinaryValue(this, key, content);
             } else {
-                return saveTempFileToStore(tmpFile, key, numberOfBytes);
+                value = saveTempFileToStore(tmpFile, key, numberOfBytes);
             }
+
+            if (extractors() != null) {
+                extractors().extract(this, value, new TextExtractorContext());
+            }
+            return value;
         } catch (IOException e) {
             throw new BinaryStoreException(e);
         } catch (NoSuchAlgorithmException e) {

@@ -23,36 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.security.AccessControlContext;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
@@ -96,7 +66,6 @@ import org.modeshape.jcr.RepositoryConfiguration.Security;
 import org.modeshape.jcr.RepositoryConfiguration.TransactionMode;
 import org.modeshape.jcr.Sequencers.SequencingWorkItem;
 import org.modeshape.jcr.api.AnonymousCredentials;
-import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.Repository;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.monitor.ValueMetric;
@@ -129,11 +98,9 @@ import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.jcr.security.AuthenticationProviders;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.security.SecurityContext;
-import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.txn.NoClientTransactions;
 import org.modeshape.jcr.txn.SynchronizedTransactions;
 import org.modeshape.jcr.txn.Transactions;
-import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Property;
@@ -142,6 +109,36 @@ import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.InfinispanBinaryStore;
 import org.modeshape.jcr.value.binary.UnusedBinaryChangeSetListener;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.security.AccessControlContext;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * 
@@ -1666,8 +1663,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                        Name primaryType,
                                        Set<Name> mixinTypes,
                                        Collection<Property> properties ) {
-                    //we need to extract text from here, because we need the node path
-                    extractText(path.toString(), properties.iterator());
                     indexes.addToIndex(workspace, key, path, primaryType, mixinTypes, properties, schemata, txnCtx);
                 }
 
@@ -1678,8 +1673,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                           Name primaryType,
                                           Set<Name> mixinTypes,
                                           Iterator<Property> properties ) {
-                    //we need to extract text from here, because we need the node path
-                    extractText(path.toString(), properties);
                     indexes.updateIndex(workspace, key, path, primaryType, mixinTypes, properties, schemata, txnCtx);
                 }
 
@@ -1687,19 +1680,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 public void recordRemove( String workspace,
                                           Iterable<NodeKey> keys ) {
                     indexes.removeFromIndex(workspace, keys, txnCtx);
-                }
-
-                private void extractText(String nodePath, Iterator<Property> propertyIterator ) {
-                    if (runningState.extractors.extractionEnabled()) {
-                        while (propertyIterator.hasNext()) {
-                            Property property = propertyIterator.next();
-                            if (property.isSingle() && property.getFirstValue() instanceof Binary) {
-                                runningState.textExtractors().extract(runningState.binaryStore(),
-                                                                      (BinaryValue)property.getFirstValue(),
-                                                                      new TextExtractorContext(nodePath));
-                            }
-                        }
-                    }
                 }
             };
         }

@@ -29,15 +29,4 @@ import org.modeshape.jcr.api.text.TextExtractor;
  * A context for extracting the content.
  */
 public final class TextExtractorContext implements TextExtractor.Context {
-
-    private final String inputNodePath;
-
-    public TextExtractorContext( String inputNodePath) {
-        this.inputNodePath = inputNodePath;
-    }
-
-    @Override
-    public String getInputNodePath() {
-        return inputNodePath;
-    }
 }

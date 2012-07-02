@@ -26,9 +26,9 @@ package org.modeshape.jcr;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
-import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.text.TextExtractor;
 import org.modeshape.jcr.text.TextExtractorOutput;
 import org.modeshape.jcr.value.BinaryKey;
@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Facility for managing {@link TextExtractor} instances and submitting text extraction work
@@ -54,7 +55,7 @@ public final class TextExtractors {
 
     public TextExtractors( JcrRepository.RunningState repository,
                            RepositoryConfiguration.TextExtracting extracting) {
-        this.extractingQueue = repository.context().getThreadPool(extracting.getThreadPoolName());
+        this.extractingQueue = Executors.newCachedThreadPool(new NamedThreadFactory(extracting.getThreadPoolName()));
         this.workerLatches = new ConcurrentHashMap<BinaryKey, CountDownLatch>();
 
         initExtractors(repository, extracting);
@@ -85,6 +86,9 @@ public final class TextExtractors {
     public void extract( BinaryStore store,
                          BinaryValue binaryValue,
                          TextExtractor.Context context ) {
+        if (!extractionEnabled()) {
+            return;
+        }
         CheckArg.isNotNull(binaryValue, "binaryValue");
         CountDownLatch latch = getWorkerLatch(binaryValue.getKey());
         extractingQueue.execute(new Worker(store, binaryValue, context, latch));
@@ -94,13 +98,6 @@ public final class TextExtractors {
         CountDownLatch latch = new CountDownLatch(1);
         CountDownLatch existingLatch = workerLatches.putIfAbsent(binaryKey, latch);
         return existingLatch != null ? existingLatch : latch;
-    }
-
-    private String getBinaryNameFromNodePath(String nodePath) {
-        if (nodePath.endsWith(JcrConstants.JCR_CONTENT)) {
-            nodePath = nodePath.substring(0, nodePath.lastIndexOf("/"));
-        }
-        return nodePath;
     }
 
     /**
@@ -132,8 +129,7 @@ public final class TextExtractors {
                     return;
                 }
 
-                binaryName = getBinaryNameFromNodePath(context.getInputNodePath());
-                String mimeType = binaryValue.getMimeType(binaryName);
+                String mimeType = binaryValue.getMimeType();
                 TextExtractorOutput output = new TextExtractorOutput();
                 // Run through the extractors and have them extract the text - the first one which accepts the mime-type will win
                 for (TextExtractor extractor : extractors) {

@@ -144,7 +144,8 @@ public final class SharedLockingInputStream extends InputStream {
             doOperation(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
-                    if (stream != null) {
+                    open();
+                    if (stream.markSupported()) {
                         stream.mark(readlimit);
                     }
                     return null;
@@ -161,7 +162,8 @@ public final class SharedLockingInputStream extends InputStream {
             return doOperation(new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
-                    return stream != null && stream.markSupported();
+                    open();
+                    return stream.markSupported();
                 }
             }) ;
         } catch (IOException e) {
@@ -177,12 +179,7 @@ public final class SharedLockingInputStream extends InputStream {
             @Override
             public Integer call() throws Exception {
                 open();
-                int result = stream.read(b, off, len);
-                if (result == -1) {
-                    // the end of the stream has been reached ...
-                    close();
-                }
-                return result;
+                return stream.read(b, off, len);
             }
         });
     }
@@ -193,12 +190,7 @@ public final class SharedLockingInputStream extends InputStream {
             @Override
             public Integer call() throws Exception {
                 open();
-                int result = stream.read(b);
-                if (result == -1) {
-                    // the end of the stream has been reached ...
-                    close();
-                }
-                return result;
+                return stream.read(b);
             }
         });
     }
@@ -209,12 +201,7 @@ public final class SharedLockingInputStream extends InputStream {
             @Override
             public Integer call() throws Exception {
                 open();
-                int result = stream.read();
-                if (result == -1) {
-                    // the end of the stream has been reached ...
-                    close();
-                }
-                return result;
+                return  stream.read();
             }
         });
     }
@@ -224,7 +211,8 @@ public final class SharedLockingInputStream extends InputStream {
         doOperation(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                if (stream != null) {
+                open();
+                if (stream.markSupported()) {
                     stream.reset();
                 }
                 return null;

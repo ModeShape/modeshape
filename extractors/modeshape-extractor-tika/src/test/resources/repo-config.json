@@ -4,8 +4,6 @@
     "storage" : {
         "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup",
         "binaryStorage" : {
-            "type" : "file",
-            "directory" : "target/binaries",
             "minimumBinarySizeInBytes" : 0
         }
     },

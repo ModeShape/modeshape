@@ -255,7 +255,8 @@ public class BasicLuceneSchema implements LuceneSchema {
                 try {
                     String fullTextTerms = binaryStore.getText(binary);
                     if (fullTextTerms != null) {
-                        previous = new DynamicField(previous, propertyName, fullTextTerms, true, false); // never store
+                        String ftsPropName = FieldName.FULL_TEXT_PREFIX + propertyName;
+                        previous = new DynamicField(previous, ftsPropName, fullTextTerms, true, false); // never store
 
                         // Add add the string to the node's full-text value ...
                         fullText.append(' ').append(fullTextTerms);

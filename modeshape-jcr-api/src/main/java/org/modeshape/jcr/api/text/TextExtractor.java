@@ -115,13 +115,6 @@ public abstract class TextExtractor {
      */
     public interface Context {
 
-        /**
-         * Returns the path to the input node (the owner node) of the property which has the binary value that triggered
-         * the sequencing.
-         *
-         * @return the path of the owning node, never {@code null}
-         */
-        String getInputNodePath();
     }
 
     /**

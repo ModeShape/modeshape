@@ -33,8 +33,8 @@ import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.InMemoryTestBinary;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetectors;
-import org.modeshape.jcr.text.TextExtractorOutput;
 import org.modeshape.jcr.text.TextExtractorContext;
+import org.modeshape.jcr.text.TextExtractorOutput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -95,9 +95,16 @@ public class TikaTextExtractorTest {
     }
 
     @Test
-    public void shouldExtractTextFromTextFile() throws Exception {
+    public void shouldExtractTextFromTextFile1() throws Exception {
         extractTermsFrom("modeshape.txt");
         loadExpectedFrom("modeshape.txt");
+        extractedShouldHave(remainingExpectedTerms());
+    }
+
+    @Test
+    public void shouldExtractTextFromTextFile2() throws Exception {
+        extractTermsFrom("text-file.txt");
+        loadExpectedFrom("text-file.txt");
         extractedShouldHave(remainingExpectedTerms());
     }
 
@@ -180,12 +187,10 @@ public class TikaTextExtractorTest {
         return result;
     }
 
-    private void extractTermsFrom( String resourcePath
-                                 ) throws Exception {
+    private void extractTermsFrom( String resourcePath ) throws Exception {
         InputStream stream = getClass().getClassLoader().getResourceAsStream(resourcePath);
-        TextExtractorContext context = new TextExtractorContext(resourcePath);
         TextExtractorOutput output = new TextExtractorOutput();
-        extractor.extractFrom(new InMemoryTestBinary(stream), output, context);
+        extractor.extractFrom(new InMemoryTestBinary(stream), output, new TextExtractorContext());
         output.toString();
         addWords(extracted, output.getText());
     }

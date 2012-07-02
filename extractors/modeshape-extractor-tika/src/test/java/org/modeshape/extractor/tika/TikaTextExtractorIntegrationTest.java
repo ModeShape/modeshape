@@ -41,6 +41,7 @@ import java.io.InputStream;
  *
  * @author Horia Chiorean
  */
+@Ignore("Enable this once MODE-1419 is fixed")
 public class TikaTextExtractorIntegrationTest extends SingleUseAbstractTest {
 
     private JcrTools jcrTools = new JcrTools();
@@ -51,15 +52,30 @@ public class TikaTextExtractorIntegrationTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @Ignore("Enable this once MODE-1419 is fixed")
     public void shouldExtractAndIndexContentFromPlainTextFile() throws Exception {
+        String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'The Quick')";
+        uploadFileAndCheckExtraction("text-file.txt", queryString);
+    }
+
+    @Test
+    public void shouldExtractAndIndexContentFromDocFile() throws Exception {
+        String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')";
+        uploadFileAndCheckExtraction("modeshape.doc", queryString);
+    }
+
+    @Test
+    public void shouldExtractAndIndexContentFromPdfGSFile() throws Exception {
+        String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')";
+        uploadFileAndCheckExtraction("modeshape_gs.pdf", queryString);
+    }
+
+    private void uploadFileAndCheckExtraction(String filepath, String validationQuery) throws Exception {
         //this will create jcr:content of type nt:resource with the jcr:data property
-        jcrTools.uploadFile(session, "/text-file.txt", getResource("text-file.txt"));
+        jcrTools.uploadFile(session, "/" + filepath, getResource(filepath));
         session.save();
         //wait a bit to make sure the text extraction has happened
         Thread.sleep(500);
-        String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'The Quick Red Fox Jumps Over the Lazy Brown Dog')";
-        Query query = jcrSession().getWorkspace().getQueryManager().createQuery(queryString, JcrQuery.JCR_SQL2);
+        Query query = jcrSession().getWorkspace().getQueryManager().createQuery(validationQuery, JcrQuery.JCR_SQL2);
         QueryResult result = query.execute();
         assertEquals("Node with text content not found", 1, result.getNodes().getSize());
     }
