@@ -113,7 +113,6 @@ public class ModeShapeWebdavStoreTest {
     public void afterEach() throws Exception {
         ModeShapeWebdavStore.setRequest(null);
         contextListener.contextDestroyed(event);
-        TestingUtil.killRepository(repository);
     }
 
     @Test

@@ -79,6 +79,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         writeBinaryStorage(writer, repository);
         writeAuthenticators(writer, repository);
         writeSequencing(writer, repository);
+        writeTextExtraction(writer, repository);
 
         writer.writeEndElement();
     }
@@ -356,6 +357,22 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             writer.writeEndElement();
         }
 
+    }
+
+    private void writeTextExtraction( XMLExtendedStreamWriter writer,
+                                      ModelNode repository ) throws XMLStreamException {
+        if (has(repository, ModelKeys.TEXT_EXTRACTOR)) {
+            writer.writeStartElement(Element.TEXT_EXTRACTORS.getLocalName());
+            for (Property extractor : repository.get(ModelKeys.TEXT_EXTRACTOR).asPropertyList()) {
+                writer.writeStartElement(Element.TEXT_EXTRACTOR.getLocalName());
+                writer.writeAttribute(Attribute.NAME.getLocalName(), extractor.getName());
+                ModelNode prop = extractor.getValue();
+                ModelAttributes.TEXT_EXTRACTOR_CLASSNAME.marshallAsAttribute(prop, writer);
+                ModelAttributes.MODULE.marshallAsAttribute(prop, writer);
+                writer.writeEndElement();
+            }
+            writer.writeEndElement();
+        }
     }
 
     private boolean has( ModelNode node,

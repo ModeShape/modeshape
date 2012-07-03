@@ -135,7 +135,18 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
 
     @Override
     public String getMimeType( BinaryValue binary,
-                               String name ) /* throws IOException, RepositoryException*/{
+                               String name ) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public String getExtractedText( BinaryValue source ) throws BinaryStoreException {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public void storeExtractedText( BinaryValue source,
+                                       String extractedText ) throws BinaryStoreException {
         throw new UnsupportedOperationException("Not implemented");
     }
 }

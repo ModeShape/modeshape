@@ -91,6 +91,27 @@ public class ModeShapeSubsystemProviders {
         }
     };
 
+    static final DescriptionProvider TEXT_EXTRACTOR = new DescriptionProvider() {
+        @Override
+        public ModelNode getModelDescription( Locale locale ) {
+            return ModeShapeDescriptions.getTextExtractorDescription(locale);
+        }
+    };
+
+    static final DescriptionProvider TEXT_EXTRACTOR_ADD = new DescriptionProvider() {
+        @Override
+        public ModelNode getModelDescription( Locale locale ) {
+            return ModeShapeDescriptions.getTextExtractorAddDescription(locale);
+        }
+    };
+
+    static final DescriptionProvider TEXT_EXTRACTOR_REMOVE = new DescriptionProvider() {
+        @Override
+        public ModelNode getModelDescription( Locale locale ) {
+            return ModeShapeDescriptions.getTextExtractorRemoveDescription(locale);
+        }
+    };
+
     static final DescriptionProvider INDEX_STORAGE = new DescriptionProvider() {
         @Override
         public ModelNode getModelDescription( Locale locale ) {

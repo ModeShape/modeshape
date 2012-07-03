@@ -91,6 +91,15 @@
       <artifactId>arquillian-protocol-servlet</artifactId>
       <scope>test</scope>
     </dependency>
+
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-jcr</artifactId>
+          <version>${project.version}</version>
+          <scope>test</scope>
+          <type>test-jar</type>
+      </dependency>
+
       <!--Needed by the JDBC remote driver tets -->
       <dependency>
           <groupId>org.modeshape</groupId>

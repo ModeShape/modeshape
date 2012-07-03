@@ -27,6 +27,7 @@ import java.io.File;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.JcrI18n;
 
 /**
@@ -90,6 +91,8 @@ public final class TransientBinaryStore extends FileSystemBinaryStore {
      */
     @Override
     protected void initializeStorage( File directory ) throws BinaryStoreException {
+        //make sure the directory doesn't exist
+        FileUtil.delete(directory);
         if (!directory.exists()) {
             Logger.getLogger(getClass()).debug("Creating temporary directory for transient binary store: {0}",
                                                directory.getAbsolutePath());

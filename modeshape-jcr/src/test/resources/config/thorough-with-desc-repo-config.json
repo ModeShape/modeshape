@@ -48,18 +48,21 @@
         "description" : "Queries are enabled, and indexes should be rebuilt if they are not found",
         "enabled" : true,
         "rebuildUponStartup" : "if_missing",
-        "extractors" : [
-            {
-                "name" : "MyFileType extractor",
-                "classname" : "com.example.myfile.MyExtractor",
-                "description" : "A custom extractor implementation.",
-            },
-            {
-                "name" : "General content-based extractor",
-                "classname" : "tika",
-                "description" : "The Tika-based extractor, which requires adding the Tika JARs to the classpath",
+        "textExtracting": {
+            "threadPool" : "test",
+            "extractors" : {
+                "customExtractor": {
+                    "name" : "MyFileType extractor",
+                    "classname" : "com.example.myfile.MyExtractor",
+                    "description" : "Extracts bits of text"
+                 },
+                "tikaExtractor":{
+                    "name" : "General content-based extractor",
+                    "classname" : "tika",
+                    "description" : "Uses Tika to extract text"
+                }
             }
-        ],
+        },
         "indexStorage" : {
             "description" : "Indexes will be stored on the file system at the relative path 'Thorough/indexes', with a locking strategy that uses native OS locks and which automatically determines the type of file system based Directory implementation..",
             "type" : "filesystem",

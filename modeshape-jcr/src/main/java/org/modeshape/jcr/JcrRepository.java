@@ -23,36 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.security.AccessControlContext;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
@@ -139,6 +109,36 @@ import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.InfinispanBinaryStore;
 import org.modeshape.jcr.value.binary.UnusedBinaryChangeSetListener;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.security.AccessControlContext;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * 
@@ -1082,13 +1082,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
 
             if (other != null && !change.extractorsChanged) {
-                List<Component> extractorComponents = other.config.getQuery().getTextExtractors();
-                this.extractors = new TextExtractors(this, extractorComponents);
+                this.extractors = new TextExtractors(this, other.config.getQuery().getTextExtracting());
             } else {
-                List<Component> extractorComponents = config.getQuery().getTextExtractors();
-                this.extractors = new TextExtractors(this, extractorComponents);
+                this.extractors = new TextExtractors(this, config.getQuery().getTextExtracting());
             }
-            this.binaryStore.setTextExtractor(this.extractors);
+            this.binaryStore.setMimeTypeDetector(this.context.getMimeTypeDetector());
+            this.binaryStore.setTextExtractors(this.extractors);
 
             if (other != null && !change.sequencingChanged) {
                 this.sequencingQueue = other.sequencingQueue;
@@ -1224,6 +1223,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         protected final BinaryStore binaryStore() {
             return binaryStore;
+        }
+
+        protected final TextExtractors textExtractors() {
+            return extractors;
         }
 
         protected final TransactionManager txnManager() {
@@ -1678,7 +1681,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                           Iterable<NodeKey> keys ) {
                     indexes.removeFromIndex(workspace, keys, txnCtx);
                 }
-
             };
         }
 

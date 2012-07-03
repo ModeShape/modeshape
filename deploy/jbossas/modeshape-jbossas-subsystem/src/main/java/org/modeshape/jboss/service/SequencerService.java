@@ -58,7 +58,7 @@ public class SequencerService implements Service<JcrRepository> {
 
     @Override
     public JcrRepository getValue() throws IllegalStateException, IllegalArgumentException {
-        return null;
+        return jcrRepositoryInjector.getValue();
     }
 
     private ModeShapeEngine getModeShapeEngine() {
@@ -80,8 +80,8 @@ public class SequencerService implements Service<JcrRepository> {
 
         Editor editor = repositoryConfig.edit();
 
-        EditableDocument sequencing = editor.getOrCreateDocument("sequencing");
-        EditableDocument sequencers = sequencing.getOrCreateDocument("sequencers");
+        EditableDocument sequencing = editor.getOrCreateDocument(FieldName.SEQUENCING);
+        EditableDocument sequencers = sequencing.getOrCreateDocument(FieldName.SEQUENCERS);
 
         EditableDocument seq = Schematic.newDocument();
         String sequencerName = sequencerProperties.getProperty(FieldName.NAME);

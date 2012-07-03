@@ -259,6 +259,9 @@
                         <path-expression>/files(//*.mp3[*])/jcr:content[@jcr:data] => /derived/mp3/$1</path-expression>
                     </sequencer>
                 </sequencers>
+                <text-extractors>
+                    <text-extractor name="tika-extractor" classname="tika"/>
+                </text-extractors>
             </repository>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>

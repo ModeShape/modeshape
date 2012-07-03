@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import org.modeshape.jcr.value.BinaryKey;
 
@@ -35,6 +36,9 @@ import org.modeshape.jcr.value.BinaryKey;
  * A {@link InputStream} implementation around a file that creates a shared lock when reading the file, ensuring the file is not
  * changed by other writers in this or other JVM processes. The stream automatically closes itself and releases the lock when
  * {@link #close() closed explicitly} or if there are any errors or exceptions while reading.
+ *
+ * Caution: be very careful when working with this class, as any open without close operations can produce "readLocks" which
+ * do not get released, blocking any potential subsequent writes.
  */
 public final class SharedLockingInputStream extends InputStream {
 
@@ -64,38 +68,35 @@ public final class SharedLockingInputStream extends InputStream {
     }
 
     protected void open() throws IOException {
-        if (this.stream == null) {
-            // At this point, we know the lock exists and we just need to wait until the write (if there is one) is done.
-            // We do that by getting a read lock for the SHA-1 (to prevent other threads from modifying the file) ...
-            if (lockManager != null) {
-                processLock = lockManager.readLock(key.toString());
-            }
-            // Also get a shared file lock to prevent other processes from modifying the file ...
-            this.fileLock = FileLocks.get().readLock(file);
+        doOperation(new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                if (SharedLockingInputStream.this.stream == null) {
+                    // At this point, we know the lock exists and we just need to wait until the write (if there is one) is done.
+                    // We do that by getting a read lock for the SHA-1 (to prevent other threads from modifying the file) ...
+                    if (lockManager != null) {
+                        processLock = lockManager.readLock(key.toString());
+                    }
+                    // Also get a shared file lock to prevent other processes from modifying the file ...
+                    SharedLockingInputStream.this.fileLock = FileLocks.get().readLock(file);
 
-            // Now create a buffered stream ...
-            this.stream = new BufferedInputStream(new FileInputStream(file), AbstractBinaryStore.bestBufferSize(file.length()));
-        }
+                    // Now create a buffered stream ...
+                    SharedLockingInputStream.this.stream = new BufferedInputStream(new FileInputStream(file), AbstractBinaryStore.bestBufferSize(file.length()));
+                }
+                return null;
+            }
+        });
     }
 
     @Override
     public int available() throws IOException {
-        try {
-            open();
-            return stream.available();
-        } catch (IOException e) {
-            try {
-                close();
-            } catch (Throwable t) {
+        return doOperation(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                open();
+                return stream.available();
             }
-            throw e;
-        } catch (RuntimeException e) {
-            try {
-                close();
-            } catch (Throwable t) {
-            }
-            throw e;
-        }
+        });
     }
 
     @Override
@@ -138,166 +139,118 @@ public final class SharedLockingInputStream extends InputStream {
     }
 
     @Override
-    public void mark( int readlimit ) {
+    public void mark( final int readlimit ) {
         try {
-            open();
-            stream.mark(readlimit);
+            doOperation(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    open();
+                    if (stream.markSupported()) {
+                        stream.mark(readlimit);
+                    }
+                    return null;
+                }
+            });
         } catch (IOException e) {
-            try {
-                close();
-            } catch (Throwable t) {
-            }
             throw new RuntimeException(e);
-        } catch (RuntimeException e) {
-            try {
-                close();
-            } catch (Throwable t) {
-            }
-            throw e;
         }
     }
 
     @Override
     public boolean markSupported() {
         try {
-            open();
-            return stream.markSupported();
+            return doOperation(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    open();
+                    return stream.markSupported();
+                }
+            }) ;
         } catch (IOException e) {
-            try {
-                close();
-            } catch (Throwable t) {
-            }
             throw new RuntimeException(e);
-        } catch (RuntimeException e) {
-            try {
-                close();
-            } catch (Throwable t) {
-            }
-            throw e;
         }
     }
 
     @Override
-    public int read( byte[] b,
-                     int off,
-                     int len ) throws IOException {
-        try {
-            open();
-            int result = stream.read(b, off, len);
-            if (result == -1) {
-                // the end of the stream has been reached ...
-                close();
+    public int read( final byte[] b,
+                     final int off,
+                     final int len ) throws IOException {
+        return doOperation(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                open();
+                return stream.read(b, off, len);
             }
-            return result;
-        } catch (IOException e) {
-            try {
-                close();
-            } catch (Throwable t) {
-            }
-            throw e;
-        } catch (RuntimeException e) {
-            try {
-                close();
-            } catch (Throwable t) {
-            }
-            throw e;
-        }
+        });
     }
 
     @Override
-    public int read( byte[] b ) throws IOException {
-        try {
-            open();
-            int result = stream.read(b);
-            if (result == -1) {
-                // the end of the stream has been reached ...
-                close();
+    public int read( final byte[] b ) throws IOException {
+        return doOperation(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                open();
+                return stream.read(b);
             }
-            return result;
-        } catch (IOException e) {
-            try {
-                close();
-            } catch (Throwable t) {
-            }
-            throw e;
-        } catch (RuntimeException e) {
-            try {
-                close();
-            } catch (Throwable t) {
-            }
-            throw e;
-        }
+        });
     }
 
     @Override
     public int read() throws IOException {
-        try {
-            open();
-            int result = stream.read();
-            if (result == -1) {
-                // the end of the stream has been reached ...
-                close();
+        return doOperation(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                open();
+                return  stream.read();
             }
-            return result;
-        } catch (IOException e) {
-            try {
-                close();
-            } catch (Throwable t) {
-            }
-            throw e;
-        } catch (RuntimeException e) {
-            try {
-                close();
-            } catch (Throwable t) {
-            }
-            throw e;
-        }
+        });
     }
 
     @Override
     public void reset() throws IOException {
-        if (stream != null) {
-            try {
-                stream.reset();
-            } catch (IOException e) {
-                try {
-                    close();
-                } catch (Throwable t) {
+        doOperation(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                open();
+                if (stream.markSupported()) {
+                    stream.reset();
                 }
-                throw e;
-            } catch (RuntimeException e) {
-                try {
-                    close();
-                } catch (Throwable t) {
-                }
-                throw e;
+                return null;
             }
-        }
+        });
     }
 
     @Override
-    public long skip( long n ) throws IOException {
-        try {
-            open();
-            return stream.skip(n);
-        } catch (IOException e) {
-            try {
-                close();
-            } catch (Throwable t) {
+    public long skip( final long n ) throws IOException {
+        return doOperation(new Callable<Long>() {
+            @Override
+            public Long call() throws Exception {
+                open();
+                return stream.skip(n);
             }
-            throw e;
-        } catch (RuntimeException e) {
-            try {
-                close();
-            } catch (Throwable t) {
-            }
-            throw e;
-        }
+        });
     }
 
     @Override
     public String toString() {
         return key.toString();
+    }
+
+    private <T> T doOperation( Callable<T> streamOperation ) throws IOException {
+        try {
+            return streamOperation.call();
+        }
+        catch (Throwable t) {
+            try {
+                close();
+            } catch (IOException e) {
+                //ignore
+            }
+            if (t instanceof IOException) {
+                throw (IOException) t;
+            }
+            throw new RuntimeException(t);
+        }
     }
 
 }

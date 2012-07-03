@@ -1,0 +1,36 @@
+{
+    "name" : "Test Repository",
+    "jndiName" : "java:jcr/TestRepository",
+    "storage" : {
+        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup",
+        "binaryStorage" : {
+            "minimumBinarySizeInBytes" : 0
+        }
+    },
+    "workspaces" : {
+        "predefined" : ["ws1","ws2"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    },
+    "query" : {
+        "enabled" : true,
+        "rebuildUponStartup" : "if_missing",
+        "indexStorage" : {
+            "type" : "ram"
+        },
+        "textExtracting": {
+            "extractors" : {
+                "tikaExtractor":{
+                    "name" : "Tika content-based extractor",
+                    "classname" : "tika"
+                }
+            }
+        }
+    }
+}

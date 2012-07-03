@@ -331,6 +331,7 @@ public class RepositoryConfiguration {
         public static final String INDEXING = "indexing";
         public static final String INDEXING_BACKEND = "backend";
         public static final String TABLES_INCLUDE_INHERITED_COLUMNS = "tablesIncludeInheritedColumns";
+        public static final String TEXT_EXTRACTING = "textExtracting";
         public static final String EXTRACTORS = "extractors";
         public static final String SEQUENCING = "sequencing";
         public static final String SEQUENCERS = "sequencers";
@@ -917,7 +918,7 @@ public class RepositoryConfiguration {
         }
 
         public AbstractBinaryStore getBinaryStore() throws NamingException, IOException {
-            String type = binaryStorage.getString(FieldName.CLASSNAME, "transient");
+            String type = binaryStorage.getString(FieldName.TYPE, "transient");
             AbstractBinaryStore store = null;
             if (type.equalsIgnoreCase("transient")) {
                 store = TransientBinaryStore.get();
@@ -1373,14 +1374,44 @@ public class RepositoryConfiguration {
             return props;
         }
 
+        public TextExtracting getTextExtracting() {
+            return new TextExtracting(query.getDocument(FieldName.TEXT_EXTRACTING));
+        }
+
+        protected void setDefProp( Properties props,
+                                   String name,
+                                   String defaultValue ) {
+            if (!props.containsKey(name) && defaultValue != null) {
+                props.setProperty(name, defaultValue);
+            }
+        }
+    }
+
+    @Immutable
+    public class TextExtracting {
+        private final Document textExtracting;
+
+        public TextExtracting( Document textExtracting ) {
+            this.textExtracting = textExtracting != null ? textExtracting : EMPTY;
+        }
+
+        /**
+         * Get the name of the thread pool that should be used for sequencing work.
+         *
+         * @return the thread pool name; never null
+         */
+        public String getThreadPoolName() {
+            return textExtracting.getString(FieldName.THREAD_POOL, "modeshape-text-extractor");
+        }
+
         /**
          * Get the ordered list of text extractors. All text extractors are configured with this list.
-         * 
+         *
          * @return the immutable list of text extractors; never null but possibly empty
          */
         public List<Component> getTextExtractors() {
             Problems problems = new SimpleProblems();
-            List<Component> components = readComponents(query,
+            List<Component> components = readComponents(textExtracting,
                                                         FieldName.EXTRACTORS,
                                                         FieldName.CLASSNAME,
                                                         EXTRACTOR_ALIASES,
@@ -1390,15 +1421,7 @@ public class RepositoryConfiguration {
         }
 
         protected void validateTextExtractors( Problems problems ) {
-            readComponents(query, FieldName.EXTRACTORS, FieldName.CLASSNAME, EXTRACTOR_ALIASES, problems);
-        }
-
-        protected void setDefProp( Properties props,
-                                   String name,
-                                   String defaultValue ) {
-            if (!props.containsKey(name) && defaultValue != null) {
-                props.setProperty(name, defaultValue);
-            }
+            readComponents(textExtracting, FieldName.EXTRACTORS, FieldName.CLASSNAME, EXTRACTOR_ALIASES, problems);
         }
     }
 
@@ -1661,7 +1684,7 @@ public class RepositoryConfiguration {
             // Validate the components ...
             getSecurity().validateCustomProviders(problems);
             getSequencing().validateSequencers(problems);
-            getQuery().validateTextExtractors(problems);
+            getQuery().getTextExtracting().validateTextExtractors(problems);
             this.problems = problems;
         }
         return problems;

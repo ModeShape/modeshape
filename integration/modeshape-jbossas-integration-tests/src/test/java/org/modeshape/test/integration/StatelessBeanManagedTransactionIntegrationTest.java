@@ -31,8 +31,9 @@ public class StatelessBeanManagedTransactionIntegrationTest {
     public void testCreatingNodesUsingMultipleTransactions() throws Exception {
         final String path = "/stateless-bmt-test";
         try {
-            bean.createNodes(path, 10, true);
-            bean.verifyNodesInTransaction(path, 10, true);
+            int numNodesAtEachLevel = 2;
+            bean.createNodes(path, numNodesAtEachLevel, true);
+            bean.verifyNodesInTransaction(path, numNodesAtEachLevel, true);
         } finally {
             bean.cleanup(path, false);
         }

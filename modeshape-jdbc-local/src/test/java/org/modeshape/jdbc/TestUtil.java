@@ -23,21 +23,6 @@
  */
 package org.modeshape.jdbc;
 
-import static org.mockito.Mockito.when;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigDecimal;
-import java.sql.Date;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.TimeZone;
 import javax.jcr.Binary;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
@@ -50,6 +35,20 @@ import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import org.mockito.Mockito;
+import static org.mockito.Mockito.when;
+import org.modeshape.jcr.InMemoryTestBinary;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.sql.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.TimeZone;
 
 /**
  * This provides common result set metadata used by various tests
@@ -617,58 +616,7 @@ class QueryResultRow implements javax.jcr.query.Row {
                     return ((Binary)valueObject);
                 }
                 if (value instanceof byte[]) {
-                    final byte[] bytes = (byte[])value;
-                    return new Binary() {
-
-                        @Override
-                        public void dispose() {
-                        }
-
-                        @Override
-                        public long getSize() {
-                            return bytes.length;
-                        }
-
-                        @Override
-                        public InputStream getStream() {
-                            return new ByteArrayInputStream(bytes);
-                        }
-
-                        @Override
-                        public int read( byte[] b,
-                                         long position ) throws IOException {
-                            if (getSize() <= position) return -1;
-                            InputStream stream = null;
-                            IOException error = null;
-                            try {
-                                stream = getStream();
-                                // Read/skip the next 'position' bytes ...
-                                long skip = position;
-                                while (skip > 0) {
-                                    long skipped = stream.skip(skip);
-                                    if (skipped <= 0) return -1;
-                                    skip -= skipped;
-                                }
-                                return stream.read(b);
-                            } catch (IOException e) {
-                                error = e;
-                                throw e;
-                            } finally {
-                                if (stream != null) {
-                                    try {
-                                        stream.close();
-                                    } catch (RuntimeException t) {
-                                        // Only throw if we've not already thrown an exception ...
-                                        if (error == null) throw t;
-                                    } catch (IOException t) {
-                                        // Only throw if we've not already thrown an exception ...
-                                        if (error == null) throw t;
-                                    }
-                                }
-                            }
-                        }
-
-                    };
+                    return new InMemoryTestBinary((byte[])value);
                 }
                 throw new ValueFormatException("Value not a Binary");
             }

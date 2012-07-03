@@ -27,7 +27,6 @@ import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Editor;
 import org.jboss.as.clustering.jgroups.ChannelFactory;
@@ -300,14 +299,15 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
         // Find the array of sequencer documents ...
         List<String> pathToContainer = defn.getPathToContainerOfField();
         EditableDocument sequencing = editor.getOrCreateDocument(pathToContainer.get(0));
-        EditableArray sequencers = sequencing.getOrCreateArray(pathToContainer.get(1));
+        EditableDocument sequencers = sequencing.getOrCreateArray(pathToContainer.get(1));
 
         // The container should be an array ...
-        for (int i = 0; i != sequencers.size(); ++i) {
-            // All these entries should be nested documents ...
-            EditableDocument sequencer = (EditableDocument)sequencers.get(i);
+        for (String configuredSequencerName : sequencers.keySet()) {
             // Look for the entry with a name that matches our sequencer name ...
-            if (sequencerName.equals(sequencer.getString(FieldName.NAME))) {
+            if (sequencerName.equals(configuredSequencerName)) {
+                // All these entries should be nested documents ...
+                EditableDocument sequencer = (EditableDocument)sequencers.get(configuredSequencerName);
+
                 // Change the field ...
                 String fieldName = defn.getFieldName();
                 // Get the raw value from the model node ...
@@ -321,6 +321,52 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
         // Get and apply the changes to the current configuration. Note that the 'update' call asynchronously
         // updates the configuration, and returns a Future<JcrRepository> that we could use if we wanted to
         // wait for the changes to take place. But we don't want/need to wait, so we'll not use the Future ...
+        Changes changes = editor.getChanges();
+        engine.update(repositoryName, changes);
+    }
+
+    /**
+     * Immediately change and apply the specified extractor field in the current repository configuration to the new value.
+     *
+     * @param defn the attribute definition for the value; may not be null
+     * @param newValue the new string value
+     * @param extractorName the name of the sequencer
+     * @throws RepositoryException if there is a problem obtaining the repository configuration or applying the change
+     * @throws OperationFailedException if there is a problem obtaining the raw value from the supplied model node
+     */
+    public void changeTextExtractorField( MappedAttributeDefinition defn,
+                                          ModelNode newValue,
+                                          String extractorName ) throws RepositoryException, OperationFailedException {
+        ModeShapeEngine engine = getEngine();
+        String repositoryName = repositoryName();
+
+        // Get a snapshot of the current configuration ...
+        RepositoryConfiguration config = engine.getRepositoryConfiguration(repositoryName);
+
+        // Now start to make changes ...
+        Editor editor = config.edit();
+
+        // Find the array of sequencer documents ...
+        List<String> pathToContainer = defn.getPathToContainerOfField();
+        EditableDocument textExtracting = editor.getOrCreateDocument(pathToContainer.get(1));
+        EditableDocument extractors = textExtracting.getOrCreateDocument(pathToContainer.get(2));
+
+        // The container should be an array ...
+        for (String configuredExtractorName : extractors.keySet()) {
+            // Look for the entry with a name that matches our extractor name ...
+            if (extractorName.equals(configuredExtractorName)) {
+                // All these entries should be nested documents ...
+                EditableDocument extractor = (EditableDocument)extractors.get(configuredExtractorName);
+                // Change the field ...
+                String fieldName = defn.getFieldName();
+                // Get the raw value from the model node ...
+                Object rawValue = defn.getTypedValue(newValue);
+                // And update the field ...
+                extractor.set(fieldName, rawValue);
+                break;
+            }
+        }
+
         Changes changes = editor.getChanges();
         engine.update(repositoryName, changes);
     }

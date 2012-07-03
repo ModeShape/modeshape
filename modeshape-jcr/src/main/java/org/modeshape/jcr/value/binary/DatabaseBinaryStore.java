@@ -67,4 +67,14 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         throw new UnsupportedOperationException("Not implemented");
     }
 
+    @Override
+    public String getExtractedText( BinaryValue source ) throws BinaryStoreException {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public void storeExtractedText( BinaryValue source,
+                                       String extractedText ) throws BinaryStoreException {
+        throw new UnsupportedOperationException("Not implemented");
+    }
 }

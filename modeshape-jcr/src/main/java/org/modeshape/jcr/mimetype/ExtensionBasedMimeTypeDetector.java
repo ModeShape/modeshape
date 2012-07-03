@@ -23,7 +23,7 @@
  */
 package org.modeshape.jcr.mimetype;
 
-import java.io.InputStream;
+import javax.jcr.Binary;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.MimeTypeUtil;
@@ -34,13 +34,19 @@ import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
  */
 @Immutable
 @ThreadSafe
-public class ExtensionBasedMimeTypeDetector extends MimeTypeUtil implements MimeTypeDetector {
+public class ExtensionBasedMimeTypeDetector extends MimeTypeDetector {
 
     public static final MimeTypeDetector INSTANCE = new ExtensionBasedMimeTypeDetector();
 
+    private final MimeTypeUtil mimeTypeUtil;
+
+    private ExtensionBasedMimeTypeDetector() {
+        mimeTypeUtil = new MimeTypeUtil();
+    }
+
     @Override
     public String mimeTypeOf( String name,
-                              InputStream content ) {
-        return mimeTypeOf(name);
+                              Binary binaryValue ) {
+        return mimeTypeUtil.mimeTypeOf(name);
     }
 }

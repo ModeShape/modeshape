@@ -78,6 +78,7 @@ public class ModelKeys {
     static final String RETRY_MARKER_LOOKUP = "retry-marker-lookup";
     static final String SECURITY_DOMAIN = "security-domain";
     static final String SEQUENCER_CLASSNAME = "classname";
+    static final String TEXT_EXTRACTOR_CLASSNAME = "classname";
     static final String SOURCE_PATH = "source-path";
     static final String SOURCE_RELATIVE_TO = "source-relative-to";
     static final String THREAD_POOL = "indexing-thread-pool";
@@ -98,6 +99,7 @@ public class ModelKeys {
     static final String REMOVE_BINARY_STORAGE = "remove-binary-storage";
 
     static final String SEQUENCER = "sequencer";
+    static final String TEXT_EXTRACTOR = "text-extractor";
 
     static final String INDEX_STORAGE = "index-storage";
     static final String INDEX_STORAGE_NAME = "INDEXES";

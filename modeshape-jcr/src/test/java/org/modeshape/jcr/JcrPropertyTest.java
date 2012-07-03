@@ -208,30 +208,7 @@ public class JcrPropertyTest extends MultiUseAbstractTest {
     public void shouldAllowAnyBinaryImplementation() throws Exception {
         Node node = binaryProp.getParent();
         final String stringValue = "This is the string stringValue";
-        Binary binaryValue = new Binary() {
-            @Override
-            public InputStream getStream() {
-                return new ByteArrayInputStream(stringValue.getBytes());
-            }
-
-            @Override
-            public int read( byte[] b,
-                             long position ) {
-                byte[] content = stringValue.getBytes();
-                int length = b.length + position < content.length ? b.length : (int)(content.length - position);
-                System.arraycopy(content, (int)position, b, 0, length);
-                return length;
-            }
-
-            @Override
-            public long getSize() {
-                return stringValue.getBytes().length;
-            }
-
-            @Override
-            public void dispose() {
-            }
-        };
+        Binary binaryValue = new InMemoryTestBinary(stringValue.getBytes());
         node.setProperty("binProp", binaryValue);
 
         // Get the actual binary value ...

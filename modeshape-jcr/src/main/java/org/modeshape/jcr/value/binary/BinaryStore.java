@@ -28,8 +28,8 @@ import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.TextExtractors;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
-import org.modeshape.jcr.api.text.TextExtractor;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryKey;
 
@@ -62,10 +62,10 @@ public interface BinaryStore {
 
     /**
      * Set the text extractor that can be used for extracting text from binary content.
-     * 
-     * @param textExtractor the text extractor
+     *
+     * @param textExtractors a non-null {@link TextExtractors} instance
      */
-    void setTextExtractor( TextExtractor textExtractor );
+    void setTextExtractors( TextExtractors textExtractors );
 
     /**
      * Set the MIME type detector that can be used for determining the MIME type for binary content.
@@ -121,8 +121,11 @@ public interface BinaryStore {
                                        TimeUnit unit ) throws BinaryStoreException;
 
     /**
-     * Get the text that can be extracted from this binary content.
-     * 
+     * Get the text that can be extracted from this binary content. If text extraction isn't enabled (either full text search
+     * is not enabled or there aren't any configured extractors), this returns {@code null}
+     *
+     * If extraction is enabled, this method may block until a text extractor has finished extracting the text.
+     *
      * @param binary the binary content; may not be null
      * @return the extracted text, or null if none could be extracted
      * @throws BinaryStoreException if the binary content could not be accessed
@@ -140,4 +143,24 @@ public interface BinaryStore {
      */
     public String getMimeType( BinaryValue binary,
                                String name ) throws IOException, RepositoryException;
+
+    /**
+     * Stores the extracted text of a binary value into this store.
+     *
+     * @param source a {@code non-null} {@link BinaryValue} instance from which the text was extracted
+     * @param extractedText a {@code non-null} and {@code non-blank} string representing the extracted text
+     * @throws BinaryStoreException if the operation fails for whatever reason
+     */
+    void storeExtractedText(BinaryValue source, String extractedText) throws BinaryStoreException;
+
+    /**
+     * Retrieves the extracted text of a binary value, which may or may not have been stored previously.
+     *
+     * @param source a {@code non-null} {@link BinaryValue} instance from which the text was extracted
+     * @return a {@code String} representing the extracted text, or {@code null} if such text hasn't been stored in this
+     * store  previously.
+     * @throws BinaryStoreException if the operation fails
+     */
+    String getExtractedText(BinaryValue source) throws BinaryStoreException;
+
 }

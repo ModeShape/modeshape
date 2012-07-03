@@ -145,6 +145,11 @@ public class RepositoryConfigurationTest {
     }
 
     @Test
+    public void shouldNotSuccessfullyValidateRepositoryConfigurationWithOldStyleExtractorsArray() {
+        assertNotValid(1, "config/invalid-old-style-extractors-config.json");
+    }
+
+    @Test
     public void shouldAlwaysReturnNonNullSecurityComponent() {
         RepositoryConfiguration config = new RepositoryConfiguration("repoName");
         assertThat(config.getSecurity(), is(notNullValue()));

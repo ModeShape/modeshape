@@ -23,6 +23,8 @@
  */
 package org.modeshape.jcr.mimetype;
 
+import javax.jcr.Binary;
+import javax.jcr.RepositoryException;
 import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OCTET_STREAM;
 import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.TEXT_PLAIN;
 import java.io.IOException;
@@ -39,7 +41,7 @@ import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
  * @author Horia Chiorean
  */
 @ThreadSafe
-public final class MimeTypeDetectors implements MimeTypeDetector {
+public final class MimeTypeDetectors extends MimeTypeDetector {
 
     private static final List<MimeTypeDetector> MIME_TYPE_DETECTORS = new ArrayList<MimeTypeDetector>();
 
@@ -55,68 +57,50 @@ public final class MimeTypeDetectors implements MimeTypeDetector {
         } catch (NoClassDefFoundError e) {
             // not present
         }
-        MIME_TYPE_DETECTORS.add(new ExtensionBasedMimeTypeDetector());
+        MIME_TYPE_DETECTORS.add(ExtensionBasedMimeTypeDetector.INSTANCE);
     }
 
     /**
      * Returns the first non-null result of iterating over the {@link #MIME_TYPE_DETECTORS registered} MIME-type detectors If the
      * MIME-type cannot be determined by any registered detector, "text/plain" or "application/octet-stream" will be returned, the
      * former only if it is determined the stream contains no nulls.
-     * 
-     * @param name The name of the data source; may be <code>null</code>.
-     * @param content The content of the data source; may be <code>null</code>.
-     * @return The MIME-type of the data source; never <code>null</code>.
-     * @throws IOException If an error occurs reading the supplied content.
+     *
+     * @see MimeTypeDetector#mimeTypeOf(String, javax.jcr.Binary)
      */
     @Override
     public String mimeTypeOf( String name,
-                              InputStream content ) throws IOException {
+                              Binary binaryValue ) throws RepositoryException, IOException {
 
-        String detectedMimeType = detectMimeTypeUsingDetectors(name, content);
-        return detectedMimeType != null ? detectedMimeType : detectFallbackMimeType(content);
+        String detectedMimeType = detectMimeTypeUsingDetectors(name, binaryValue);
+        return detectedMimeType != null ? detectedMimeType : detectFallbackMimeType(binaryValue);
     }
 
-    private String detectFallbackMimeType( InputStream content ) throws IOException {
-        tryMark(content);
-        try {
-            for (int chr = content.read(); chr >= 0; chr = content.read()) {
-                if (chr == 0) {
+    private String detectFallbackMimeType( Binary binaryValue ) throws RepositoryException, IOException {
+        return processStream(binaryValue, new StreamOperation<String>() {
+            @Override
+            public String execute( InputStream stream ) throws IOException {
+                try {
+                    for (int chr = stream.read(); chr >= 0; chr = stream.read()) {
+                        if (chr == 0) {
+                            return OCTET_STREAM;
+                        }
+                    }
+                } catch (IOException meansTooManyBytesRead) {
                     return OCTET_STREAM;
                 }
+                return TEXT_PLAIN;
             }
-        } catch (IOException meansTooManyBytesRead) {
-            return OCTET_STREAM;
-        } finally {
-            tryReset(content);
-        }
-        return TEXT_PLAIN;
+        });
     }
 
     private String detectMimeTypeUsingDetectors( String name,
-                                                 InputStream content ) throws IOException {
+                                                 Binary binary ) throws RepositoryException, IOException {
         for (MimeTypeDetector detector : MIME_TYPE_DETECTORS) {
-            try {
-                tryMark(content);
-                String mimeType = detector.mimeTypeOf(name, content);
-                if (mimeType != null) {
-                    return mimeType;
-                }
-            } finally {
-                tryReset(content);
+            String mimeType = detector.mimeTypeOf(name, binary);
+            if (mimeType != null) {
+                return mimeType;
             }
         }
         return null;
-    }
-
-    private void tryMark( InputStream content ) {
-        if (content != null && content.markSupported()) {
-            content.mark(Integer.MAX_VALUE);
-        }
-    }
-
-    private void tryReset( InputStream content ) throws IOException {
-        if (content != null && content.markSupported()) {
-            content.reset();
-        }
     }
 }
