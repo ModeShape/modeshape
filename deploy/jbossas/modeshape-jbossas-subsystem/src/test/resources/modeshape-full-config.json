@@ -53,6 +53,16 @@
                 "module" : null,
                 "path-expressions" : ["//a/b"]
             }
+        },
+        "text-extractor" : {
+            "tika-extractor1" : {
+                "classname" : "tika",
+                "module" : null
+            },
+            "tika-extractor2" : {
+                "classname" : "org.modeshape.extractor.tika.TikaTextExtractor",
+                "module" : null
+            }
         }
     }}}}
 }

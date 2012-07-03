@@ -751,6 +751,11 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jbossas-subsystem</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-unit-test</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>

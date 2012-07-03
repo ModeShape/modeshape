@@ -528,6 +528,18 @@ public class ModelAttributes {
                                                                                                                                                                      FieldName.CLASSNAME)
                                                                                                                               .build();
 
+    public static final SimpleAttributeDefinition TEXT_EXTRACTOR_CLASSNAME = new MappedAttributeDefinitionBuilder(
+                                                                                                             ModelKeys.TEXT_EXTRACTOR_CLASSNAME,
+                                                                                                             ModelType.STRING).setXmlName(Attribute.CLASSNAME.getLocalName())
+                                                                                                                              .setAllowExpression(false)
+                                                                                                                              .setAllowNull(true)
+                                                                                                                              .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                              .setFieldPathInRepositoryConfiguration(FieldName.QUERY,
+                                                                                                                                                                     FieldName.TEXT_EXTRACTING,
+                                                                                                                                                                     FieldName.EXTRACTORS,
+                                                                                                                                                                     FieldName.CLASSNAME)
+                                                                                                                              .build();
+
     public static final SimpleAttributeDefinition SECURITY_DOMAIN = new MappedAttributeDefinitionBuilder(
                                                                                                          ModelKeys.SECURITY_DOMAIN,
                                                                                                          ModelType.STRING).setXmlName(Attribute.SECURITY_DOMAIN.getLocalName())
@@ -615,5 +627,6 @@ public class ModelAttributes {
     public static final AttributeDefinition[] CUSTOM_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
         CLASSNAME, MODULE,};
 
-    public static final AttributeDefinition[] SEQUENCER_ATTRIBUTES = {PATH_EXPRESSIONS, SEQUENCER_CLASSNAME, MODULE,};
+    public static final AttributeDefinition[] SEQUENCER_ATTRIBUTES = {PATH_EXPRESSIONS, SEQUENCER_CLASSNAME, MODULE};
+    public static final AttributeDefinition[] TEXT_EXTRACTOR_ATTRIBUTES = {TEXT_EXTRACTOR_CLASSNAME, MODULE};
 }

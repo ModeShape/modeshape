@@ -49,6 +49,8 @@ public enum Element {
     REPOSITORY("repository"),
     SEQUENCER("sequencer"),
     SEQUENCERS("sequencers"),
+    TEXT_EXTRACTORS("text-extractors"),
+    TEXT_EXTRACTOR("text-extractor"),
     SLAVE_FILE_INDEX_STORAGE("slave-file-index-storage"),
     WORKSPACE("workspace"),
     WORKSPACES("workspaces");

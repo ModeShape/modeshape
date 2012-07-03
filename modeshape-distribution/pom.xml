@@ -18,108 +18,95 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr-api</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-schematic</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-images</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-mp3</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-java</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-msoffice</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <!--<dependency>-->
         <!--<groupId>org.modeshape</groupId>-->
         <!--<artifactId>modeshape-sequencer-teiid</artifactId>-->
-        <!--<version>${project.version}</version>-->
         <!--</dependency>-->
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-text</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-xml</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-xsd</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-wsdl</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-sramp</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-zip</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-ddl</artifactId>
-            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-extractor-tika</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jdbc-local</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jbossas-subsystem</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
@@ -260,6 +247,14 @@
                 <dependency>
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-ddl</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                    <type>zip</type>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-extractor-tika</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
                     <type>zip</type>

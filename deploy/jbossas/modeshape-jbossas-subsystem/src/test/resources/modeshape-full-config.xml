@@ -86,5 +86,9 @@
       <sequencer name="modeshape-sequencer-ddl" classname="ddl" path-expression="//a/b" />
       <sequencer name="modeshape-sequencer-java" classname="java" path-expression="//a/b" />
     </sequencers>
+    <text-extractors>
+      <text-extractor name="tika-extractor1" classname="tika"/>
+      <text-extractor name="tika-extractor2" classname="org.modeshape.extractor.tika.TikaTextExtractor"/>
+    </text-extractors>
   </repository>
 </subsystem>

@@ -22,51 +22,73 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.extractor.tika;
+package org.modeshape.test.integration;
 
+import javax.annotation.Resource;
+import javax.jcr.Session;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import static junit.framework.Assert.assertEquals;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.shrinkwrap.api.ArchivePaths;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.modeshape.jcr.SingleUseAbstractTest;
+import org.junit.runner.RunWith;
+import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.query.JcrQuery;
+import java.io.File;
 import java.io.InputStream;
 
 /**
- * Integration test which configures a repository to use a Tika-based extractor, creates and saves a node which has a binary
- * value from a text file and using the query mechanism tests that the text is extracted from the binary value and stored
- * in the indexes.
+ * Arquillian test which checks that text-extraction works in an AS7 container.
  *
  * @author Horia Chiorean
  */
 @Ignore("Enable this once MODE-1419 is fixed")
-public class TikaTextExtractorIntegrationTest extends SingleUseAbstractTest {
+@RunWith( Arquillian.class)
+public class TikaTextExtractorIntegrationTest {
 
     private JcrTools jcrTools = new JcrTools();
+    private Session session;
 
-    @Override
+    @Deployment
+    public static WebArchive createDeployment() {
+        return ShrinkWrap.create(WebArchive.class, "tika-extractor-test.war")
+                         .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"))
+                         .addAsResource(new File("src/test/resources/text-extractor"))
+                         .setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
+    }
+
+    @Resource( mappedName = "/jcr/artifacts" )
+    private JcrRepository repository;
+
+    @Before
     public void beforeEach() throws Exception {
-       startRepositoryWithConfiguration(getResource("repo-config.json"));
+        session = repository.login("default");
+    }
+
+    @After
+    public void afterEach() throws Exception {
+        session.logout();
     }
 
     @Test
     public void shouldExtractAndIndexContentFromPlainTextFile() throws Exception {
         String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'The Quick')";
-        uploadFileAndCheckExtraction("text-file.txt", queryString);
+        uploadFileAndCheckExtraction("text-extractor/text-file.txt", queryString);
     }
 
     @Test
     public void shouldExtractAndIndexContentFromDocFile() throws Exception {
         String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')";
-        uploadFileAndCheckExtraction("modeshape.doc", queryString);
-    }
-
-    @Test
-    public void shouldExtractAndIndexContentFromPdfGSFile() throws Exception {
-        String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')";
-        uploadFileAndCheckExtraction("modeshape_gs.pdf", queryString);
+        uploadFileAndCheckExtraction("text-extractor/modeshape.doc", queryString);
     }
 
     private void uploadFileAndCheckExtraction(String filepath, String validationQuery) throws Exception {
@@ -75,7 +97,7 @@ public class TikaTextExtractorIntegrationTest extends SingleUseAbstractTest {
         session.save();
         //wait a bit to make sure the text extraction has happened
         Thread.sleep(500);
-        Query query = jcrSession().getWorkspace().getQueryManager().createQuery(validationQuery, JcrQuery.JCR_SQL2);
+        Query query = session.getWorkspace().getQueryManager().createQuery(validationQuery, JcrQuery.JCR_SQL2);
         QueryResult result = query.execute();
         assertEquals("Node with text content not found", 1, result.getNodes().getSize());
     }

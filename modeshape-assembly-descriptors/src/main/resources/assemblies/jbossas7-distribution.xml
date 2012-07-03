@@ -204,6 +204,30 @@
             </includes>
         </dependencySet>
 
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/extractor/tika/main</outputDirectory>
+            <useTransitiveDependencies>true</useTransitiveDependencies>
+            <includes>
+                <include>org.modeshape:modeshape-extractor-tika:jar</include>
+                <include>org.apache.tika:*:jar</include>
+                <include>org.apache.james:*:jar</include>
+                <include>org.apache.pdfbox:*:jar</include>
+                <include>org.apache.poi:*:jar</include>
+                <include>org.apache.xmlbeans:*:jar</include>
+                <include>org.apache.geronimo.specs:*:jar</include>
+                <include>org.gagravarr:*:jar</include>
+                <include>dom4j:dom4j:jar</include>
+                <include>commons-codec:commons-codec:jar</include>
+                <include>commons-logging:commons-logging:jar</include>
+                <include>org.bouncycastle:*:jar</include>
+                <include>com.googlecode.mp4parser:*:jar</include>
+                <include>javassist:javassist:jar</include>
+                <include>net.sf.scannotation:*:jar</include>
+                <include>org.ccil.cowan.tagsoup:*:jar</include>
+            </includes>
+        </dependencySet>
+
         <!--
             //TODO author=Horia Chiorean date=6/22/12 description=MODE-1534 - This is a temporary workaround because of the schematic Module for Infinispan
         -->

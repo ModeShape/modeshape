@@ -144,6 +144,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         ModelNode indexStorage = null;
         ModelNode binaryStorage = null;
         List<ModelNode> sequencers = new ArrayList<ModelNode>();
+        List<ModelNode> textExtractors = new ArrayList<ModelNode>();
         while (reader.hasNext() && (reader.nextTag() != XMLStreamConstants.END_ELEMENT)) {
             Element element = Element.forName(reader.getLocalName());
             switch (element) {
@@ -197,14 +198,17 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                     binaryStorage = parseCustomBinaryStorage(reader, repositoryName);
                     break;
 
-                // Sequencing ...
+                // Authentication ...
                 case AUTHENTICATORS:
                     parseAuthenticators(reader, address, repository);
                     break;
-
                 // Sequencing ...
                 case SEQUENCERS:
                     sequencers = parseSequencers(reader, address, repositoryName);
+                    break;
+                // Text extracting ...
+                case TEXT_EXTRACTORS:
+                    textExtractors = parseTextExtracting(reader, repositoryName);
                     break;
                 default:
                     throw ParseUtils.unexpectedElement(reader);
@@ -214,7 +218,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         if (indexStorage != null) repositories.add(indexStorage);
         if (binaryStorage != null) repositories.add(binaryStorage);
         repositories.addAll(sequencers);
-
+        repositories.addAll(textExtractors);
     }
 
     private void parseWorkspaces( final XMLExtendedStreamReader reader,
@@ -851,6 +855,67 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                  .add(ModelKeys.REPOSITORY, repositoryName)
                  .add(ModelKeys.SEQUENCER, name);
 
+    }
+
+    private List<ModelNode> parseTextExtracting( final XMLExtendedStreamReader reader,
+                                                 final String repositoryName ) throws XMLStreamException {
+        requireNoAttributes(reader);
+
+        List<ModelNode> extractors = new ArrayList<ModelNode>();
+        while (reader.hasNext()  && reader.nextTag() != END_ELEMENT) {
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case TEXT_EXTRACTOR:
+                    parseTextExtractor(reader, repositoryName, extractors);
+                    break;
+                default:
+                    throw ParseUtils.unexpectedElement(reader);
+            }
+        }
+
+        return extractors;
+    }
+
+    private void parseTextExtractor( XMLExtendedStreamReader reader,
+                                 String repositoryName,
+                                 final List<ModelNode> extractors ) throws XMLStreamException {
+
+        final ModelNode extractor = new ModelNode();
+        extractor.get(OP).set(ADD);
+        String name = null;
+
+        extractors.add(extractor);
+
+        if (reader.getAttributeCount() > 0) {
+            for (int i = 0; i < reader.getAttributeCount(); i++) {
+                String attrName = reader.getAttributeLocalName(i);
+                String attrValue = reader.getAttributeValue(i);
+                Attribute attribute = Attribute.forName(attrName);
+                switch (attribute) {
+                    case NAME:
+                        name = attrValue;
+                        break;
+                    case CLASSNAME:
+                        ModelAttributes.TEXT_EXTRACTOR_CLASSNAME.parseAndSetParameter(attrValue, extractor, reader);
+                        if (name == null) name = attrValue;
+                        break;
+                    case MODULE:
+                        ModelAttributes.MODULE.parseAndSetParameter(attrValue, extractor, reader);
+                        break;
+                    default:
+                        // extra attributes are allowed to set extractor-specific properties ...
+                        extractor.get(attrName).set(attrValue);
+                        break;
+                }
+            }
+        }
+
+        extractor.get(OP_ADDR)
+                 .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                 .add(ModelKeys.REPOSITORY, repositoryName)
+                 .add(ModelKeys.TEXT_EXTRACTOR, name);
+
+        requireNoElements(reader);
     }
 
     /**

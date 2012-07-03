@@ -120,6 +120,12 @@ public class ModeShapeDescriptions {
         repository.get(CHILDREN, ModelKeys.SEQUENCER, MIN_OCCURS).set(0);
         repository.get(CHILDREN, ModelKeys.SEQUENCER, MAX_OCCURS).set(Integer.MAX_VALUE);
         repository.get(CHILDREN, ModelKeys.SEQUENCER, MODEL_DESCRIPTION);
+
+        // information about its child "text-extractor"
+        repository.get(CHILDREN, ModelKeys.TEXT_EXTRACTOR, DESCRIPTION).set(resources.getString("repository.text-extractor"));
+        repository.get(CHILDREN, ModelKeys.TEXT_EXTRACTOR, MIN_OCCURS).set(0);
+        repository.get(CHILDREN, ModelKeys.TEXT_EXTRACTOR, MAX_OCCURS).set(Integer.MAX_VALUE);
+        repository.get(CHILDREN, ModelKeys.TEXT_EXTRACTOR, MODEL_DESCRIPTION);
         return repository;
     }
 
@@ -164,6 +170,32 @@ public class ModeShapeDescriptions {
         ResourceBundle resources = getResources(locale);
         final ModelNode op = createOperationDescription(REMOVE, resources, "repository.sequencer.remove");
         return op;
+    }
+
+    static ModelNode getTextExtractorDescription( Locale locale ) {
+        ResourceBundle resources = getResources(locale);
+        String keyPrefix = "repository.text-extractor";
+        final ModelNode extractor = createDescription(resources, keyPrefix);
+        // attributes
+        for (AttributeDefinition attr : ModelAttributes.TEXT_EXTRACTOR_ATTRIBUTES) {
+            attr.addResourceAttributeDescription(resources, keyPrefix, extractor);
+        }
+        return extractor;
+    }
+
+    static ModelNode getTextExtractorAddDescription( Locale locale ) {
+        ResourceBundle resources = getResources(locale);
+        final ModelNode op = createOperationDescription(ADD, resources, "repository.text-extractor.add");
+        // request parameters
+        for (AttributeDefinition attr : ModelAttributes.TEXT_EXTRACTOR_ATTRIBUTES) {
+            attr.addOperationParameterDescription(resources, "repository.text-extractor", op);
+        }
+        return op;
+    }
+
+    static ModelNode getTextExtractorRemoveDescription( Locale locale ) {
+        ResourceBundle resources = getResources(locale);
+        return createOperationDescription(REMOVE, resources, "repository.text-extractor.remove");
     }
 
     static ModelNode getIndexStorageDescription( Locale locale ) {

@@ -26,6 +26,7 @@
         "rebuild-indexes-upon-startup" : "IF_MISSING",
         "security-domain" : "modeshape-security",
         "sequencer" : null,
+        "text-extractor" : null,
         "use-anonymous-upon-failed-authentication" : false
     }}}}
 }

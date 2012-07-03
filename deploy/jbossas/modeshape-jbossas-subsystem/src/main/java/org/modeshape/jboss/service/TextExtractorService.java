@@ -21,8 +21,6 @@
  */
 package org.modeshape.jboss.service;
 
-import java.util.List;
-import java.util.Properties;
 import javax.jcr.RepositoryException;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Changes;
@@ -41,19 +39,24 @@ import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import java.util.List;
+import java.util.Properties;
 
-public class SequencerService implements Service<JcrRepository> {
+/**
+ * {@link Service} implementation which exposes ModeShape's text extraction feature.
+ */
+public class TextExtractorService implements Service<JcrRepository> {
 
     private final InjectedValue<ModeShapeEngine> engineInjector = new InjectedValue<ModeShapeEngine>();
     private final InjectedValue<JcrRepository> jcrRepositoryInjector = new InjectedValue<JcrRepository>();
 
-    private final Properties sequencerProperties;
+    private final Properties extractorProperties;
     private final String repositoryName;
 
-    public SequencerService( String repositoryName,
-                             Properties sequencerProperties ) {
+    public TextExtractorService( String repositoryName,
+                                 Properties extractorProperties ) {
         this.repositoryName = repositoryName;
-        this.sequencerProperties = sequencerProperties;
+        this.extractorProperties = extractorProperties;
     }
 
     @Override
@@ -78,31 +81,32 @@ public class SequencerService implements Service<JcrRepository> {
 
         RepositoryConfiguration repositoryConfig = repository.getConfiguration();
 
-        Editor editor = repositoryConfig.edit();
+        Editor configEditor = repositoryConfig.edit();
+        EditableDocument queryDocument = configEditor.getDocument(FieldName.QUERY);
 
-        EditableDocument sequencing = editor.getOrCreateDocument(FieldName.SEQUENCING);
-        EditableDocument sequencers = sequencing.getOrCreateDocument(FieldName.SEQUENCERS);
+        EditableDocument textExtracting = queryDocument.getOrCreateDocument(FieldName.TEXT_EXTRACTING);
+        EditableDocument extractors = textExtracting.getOrCreateDocument(FieldName.EXTRACTORS);
 
-        EditableDocument seq = Schematic.newDocument();
-        String sequencerName = sequencerProperties.getProperty(FieldName.NAME);
-        for (Object key : sequencerProperties.keySet()) {
+        EditableDocument extractor = Schematic.newDocument();
+        String sequencerName = extractorProperties.getProperty(FieldName.NAME);
+        for (Object key : extractorProperties.keySet()) {
             String keyStr = (String)key;
             if (FieldName.NAME.equals(keyStr)) continue;
-            Object value = sequencerProperties.get(keyStr);
+            Object value = extractorProperties.get(keyStr);
             if (value instanceof List<?>) {
                 for (Object val : (List<?>)value) {
-                    seq.getOrCreateArray(keyStr).addValue(val);
+                    extractor.getOrCreateArray(keyStr).addValue(val);
                 }
             } else {
                 // Just set the value as a field
-                seq.set(keyStr, value);
+                extractor.set(keyStr, value);
             }
         }
 
-        sequencers.set(sequencerName, seq);
+        extractors.set(sequencerName, extractor);
 
         // Get the changes and validate them ...
-        Changes changes = editor.getChanges();
+        Changes changes = configEditor.getChanges();
         Problems validationResults = repositoryConfig.validate(changes);
 
         if (validationResults.hasErrors()) {
@@ -125,8 +129,6 @@ public class SequencerService implements Service<JcrRepository> {
 
     @Override
     public void stop( StopContext arg0 ) {
-        // TODO Auto-generated method stub
-
     }
 
     /**

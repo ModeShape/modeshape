@@ -44,6 +44,7 @@ public class ModeShapeExtension implements Extension {
 
     private static final PathElement repositoryPath = PathElement.pathElement(ModelKeys.REPOSITORY);
     private static final PathElement sequencerPath = PathElement.pathElement(ModelKeys.SEQUENCER);
+    private static final PathElement textExtractorPath = PathElement.pathElement(ModelKeys.TEXT_EXTRACTOR);
     private static final PathElement indexStoragePath = PathElement.pathElement(ModelKeys.INDEX_STORAGE,
                                                                                 ModelKeys.INDEX_STORAGE_NAME);
     private static final PathElement binaryStoragePath = PathElement.pathElement(ModelKeys.BINARY_STORAGE,
@@ -92,6 +93,16 @@ public class ModeShapeExtension implements Extension {
                                                    ModeShapeSubsystemProviders.SEQUENCER_REMOVE,
                                                    false);
         SequencerWriteAttributeHandler.INSTANCE.registerAttributes(sequencerSubmodel);
+
+        // Text extraction submodel
+        final ManagementResourceRegistration extractorSubmodel = repositorySubmodel.registerSubModel(textExtractorPath,
+                                                                                                     ModeShapeSubsystemProviders.TEXT_EXTRACTOR);
+        extractorSubmodel.registerOperationHandler(ADD, AddTextExtractor.INSTANCE, ModeShapeSubsystemProviders.TEXT_EXTRACTOR_ADD, false);
+        extractorSubmodel.registerOperationHandler(REMOVE,
+                                                   RemoveTextExtractor.INSTANCE,
+                                                   ModeShapeSubsystemProviders.TEXT_EXTRACTOR_REMOVE,
+                                                   false);
+        TextExtractorWriteAttributeHandler.INSTANCE.registerAttributes(extractorSubmodel);
 
         // Index storage submodel
         final ManagementResourceRegistration indexStorageSubmodel = repositorySubmodel.registerSubModel(indexStoragePath,
