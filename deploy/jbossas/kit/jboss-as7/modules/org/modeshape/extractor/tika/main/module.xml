@@ -24,11 +24,13 @@
     <resources>
         <resource-root path="modeshape-extractor-tika-${project.version}.jar" />
         <!--All the following are specific to Tika 1.1. Should the tika version change, those need to change as well-->
+        <resource-root path="asm-3.1.jar" />
         <resource-root path="apache-mime4j-core-0.7.jar" />
         <resource-root path="apache-mime4j-dom-0.7.jar" />
         <resource-root path="bcmail-jdk15-1.45.jar" />
         <resource-root path="bcprov-jdk15-1.45.jar" />
         <resource-root path="commons-codec-1.5.jar" />
+        <resource-root path="commons-compress-1.3.jar" />
         <resource-root path="commons-logging-1.1.1.jar" />
         <resource-root path="dom4j-1.6.1.jar" />
         <resource-root path="fontbox-1.6.0.jar" />

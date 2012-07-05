@@ -107,13 +107,24 @@ public class LocalEnvironment implements Environment {
         }
         List<ClassLoader> delegatesList = new ArrayList<ClassLoader>();
         if (!urls.isEmpty()) {
-            delegatesList.add(new StringURLClassLoader(urls));
-        }
-        if (fallbackLoader != null) {
-            delegatesList.add(fallbackLoader);
+            StringURLClassLoader urlClassLoader = new StringURLClassLoader(urls);
+            //only if any custom urls were parsed add this loader
+            if (urlClassLoader.getURLs().length > 0) {
+                delegatesList.add(urlClassLoader);
+            }
         }
 
         ClassLoader parentLoader = getClass().getClassLoader();
+        if (fallbackLoader != null && !fallbackLoader.equals(parentLoader)) {
+            //if the parent of fallback is the same as the current parent, just use that
+            if (fallbackLoader.getParent().equals(parentLoader)) {
+                parentLoader = fallbackLoader;
+            }
+            else {
+                delegatesList.add(fallbackLoader);
+            }
+        }
+
         return delegatesList.isEmpty() ? parentLoader : new DelegatingClassLoader(parentLoader, delegatesList);
     }
 

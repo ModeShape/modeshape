@@ -212,12 +212,14 @@
                 <include>org.modeshape:modeshape-extractor-tika:jar</include>
                 <include>org.apache.tika:*:jar</include>
                 <include>org.apache.james:*:jar</include>
+                <include>org.apache.commons:commons-compress:jar</include>
                 <include>org.apache.pdfbox:*:jar</include>
                 <include>org.apache.poi:*:jar</include>
                 <include>org.apache.xmlbeans:*:jar</include>
                 <include>org.apache.geronimo.specs:*:jar</include>
                 <include>org.gagravarr:*:jar</include>
                 <include>dom4j:dom4j:jar</include>
+                <include>asm:asm:jar</include>
                 <include>commons-codec:commons-codec:jar</include>
                 <include>commons-logging:commons-logging:jar</include>
                 <include>org.bouncycastle:*:jar</include>

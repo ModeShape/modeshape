@@ -86,6 +86,7 @@ import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.cache.change.WorkspaceAdded;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
+import org.modeshape.jcr.mimetype.MimeTypeDetectors;
 import org.modeshape.jcr.query.QueryIndexing;
 import org.modeshape.jcr.query.parse.FullTextSearchParser;
 import org.modeshape.jcr.query.parse.JcrQomQueryParser;
@@ -936,7 +937,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
             ExecutionContext tempContext = new ExecutionContext();
 
-            // Set up monitoring (doing this early in the process so it is avialable to other components to use) ...
+            // Set up monitoring (doing this early in the process so it is available to other components to use) ...
             if (other != null && !change.monitoringChanged) {
                 this.statistics = other.statistics;
                 this.statsRollupService = other.statsRollupService;
@@ -1022,7 +1023,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                 // Now create the registry implementation and the execution context that uses it ...
                 this.persistentRegistry = new SystemNamespaceRegistry(this);
-                this.context = tempContext.with(persistentRegistry);
+                this.context = tempContext.with(persistentRegistry).with(new MimeTypeDetectors(this.config.environment()));
                 this.persistentRegistry.setContext(this.context);
                 this.internalWorkerContext = this.context.with(new InternalSecurityContext(INTERNAL_WORKER_USERNAME));
 

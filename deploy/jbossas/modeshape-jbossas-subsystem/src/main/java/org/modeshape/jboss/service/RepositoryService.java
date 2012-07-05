@@ -135,11 +135,17 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
                 }
             }
         }
-        if (fallbackLoader != null) {
-            delegatingLoaders.add(fallbackLoader);
+        ClassLoader parentLoader = getClass().getClassLoader();
+        if (fallbackLoader != null && !fallbackLoader.equals(parentLoader)) {
+            //if the parent of fallback is the same as the current parent, just use that
+            if (fallbackLoader.getParent().equals(parentLoader)) {
+                parentLoader = fallbackLoader;
+            }
+            else {
+                delegatingLoaders.add(fallbackLoader);
+            }
         }
 
-        ClassLoader parentLoader = getClass().getClassLoader();
         return delegatingLoaders.isEmpty() ? parentLoader : new DelegatingClassLoader(parentLoader, delegatingLoaders);
     }
 

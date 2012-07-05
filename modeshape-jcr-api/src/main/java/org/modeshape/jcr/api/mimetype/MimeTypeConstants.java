@@ -117,6 +117,7 @@ public final class MimeTypeConstants {
     public static final String MICROSOFT_APPLICATION_MS_WORD = "application/msword";
     public static final String MICROSOFT_OFFICE = "application/vnd.ms-office";
     public static final String MICROSOFT_WORD = "application/vnd.ms-word";
+    public static final String MICROSOFT_WORD_OPEN_XML = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     public static final String MICROSOFT_OFFICE_DOCUMENT_OPENXML = "application/vnd.openxmlformats-officedocument.wordprocessingml";
     public static final String MICROSOFT_WORKS = "application/vnd.ms-works";
     public static final String MICROSOFT_EXCEL = "application/vnd.ms-excel";

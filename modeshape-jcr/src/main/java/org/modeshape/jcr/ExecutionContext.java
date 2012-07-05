@@ -41,6 +41,7 @@ import org.modeshape.common.util.SecureHash;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.ExtensionBasedMimeTypeDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetectors;
+import org.modeshape.jcr.mimetype.NullMimeTypeDetector;
 import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.value.BinaryFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;
@@ -182,7 +183,7 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
         this.valueFactories = valueFactories == null ? new StandardValueFactories(this.namespaceRegistry, binaryStore) : valueFactories;
         this.propertyFactory = propertyFactory == null ? new BasicPropertyFactory(this.valueFactories) : propertyFactory;
         this.threadPools = threadPoolFactory == null ? new ThreadPools() : threadPoolFactory;
-        this.mimeTypeDetector = mimeTypeDetector != null ? mimeTypeDetector : new MimeTypeDetectors();
+        this.mimeTypeDetector = mimeTypeDetector != null ? mimeTypeDetector : NullMimeTypeDetector.INSTANCE;
         this.data = data != null ? data : Collections.<String, String>emptyMap();
         this.processId = processId != null ? processId : UUID.randomUUID().toString();
     }

@@ -25,44 +25,84 @@ package org.modeshape.jcr.mimetype;
 
 import javax.jcr.Binary;
 import javax.jcr.RepositoryException;
+import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.logging.Logger;
+import org.modeshape.jcr.Environment;
+import org.modeshape.jcr.RepositoryI18n;
 import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OCTET_STREAM;
 import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.TEXT_PLAIN;
+import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 
 /**
  * Implementation of {@link MimeTypeDetector} which holds an inner list of different {@link MimeTypeDetector} implementations and
  * queries each of them, in order to determine a mime-type.
- * 
+ *
  * @author Horia Chiorean
  */
 @ThreadSafe
 public final class MimeTypeDetectors extends MimeTypeDetector {
+    private static final Logger LOGGER = Logger.getLogger(MimeTypeDetectors.class);
 
-    private static final List<MimeTypeDetector> MIME_TYPE_DETECTORS = new ArrayList<MimeTypeDetector>();
+    private List<MimeTypeDetector> detectors = new ArrayList<MimeTypeDetector>();
 
-    static {
-        // detected if Aperture is present in the classpath
-        try {
-            Class.forName("org.semanticdesktop.aperture.mime.identifier.magic.MagicMimeTypeIdentifier",
-                          false,
-                          MimeTypeDetectors.class.getClassLoader());
-            MIME_TYPE_DETECTORS.add(new ApertureMimeTypeDetector());
-        } catch (ClassNotFoundException e) {
-            // not present
-        } catch (NoClassDefFoundError e) {
-            // not present
+    public MimeTypeDetectors() {
+        this(null);
+    }
+
+    public MimeTypeDetectors( Environment environment ) {
+        ClassLoader defaultLoader = getClass().getClassLoader();
+        //the extra classpath entry is the package name of the tika extractor, so it can be located inside AS7 (see RepositoryService)
+        ClassLoader classLoader = environment != null ? environment.getClassLoader(defaultLoader,
+                                                                                   "org.modeshape.extractor.tika")
+                : defaultLoader;
+        loadDetectors(classLoader);
+    }
+
+    private void loadDetectors( ClassLoader classLoader ) {
+        //tika
+        if (tryToLoadClass(classLoader, "org.apache.tika.detect.DefaultDetector",
+                           "org.modeshape.extractor.tika.TikaMimeTypeDetector")) {
+            addDetector(classLoader, "org.modeshape.extractor.tika.TikaMimeTypeDetector");
         }
-        MIME_TYPE_DETECTORS.add(ExtensionBasedMimeTypeDetector.INSTANCE);
+
+        //aperture
+        if (tryToLoadClass(classLoader, "org.semanticdesktop.aperture.mime.identifier.magic.MagicMimeTypeIdentifier")) {
+            addDetector(classLoader, "org.modeshape.jcr.mimetype.ApertureMimeTypeDetector");
+        }
+
+        //extension-based (is always present)
+        detectors.add(ExtensionBasedMimeTypeDetector.INSTANCE);
+    }
+
+    private void addDetector( ClassLoader classLoader,
+                              String fqnClassName ) {
+        try {
+            MimeTypeDetector detector = (MimeTypeDetector)classLoader.loadClass(fqnClassName).newInstance();
+            detectors.add(detector);
+        } catch (Exception e) {
+            LOGGER.error(e, RepositoryI18n.unableToLoadMimeTypeDetector, fqnClassName, e.getMessage());
+        }
+    }
+
+    private boolean tryToLoadClass( ClassLoader classLoader,
+                                    String... fqnClassNames ) {
+        try {
+            for (String fqnClassName : fqnClassNames) {
+                Class.forName(fqnClassName, false, classLoader);
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
-     * Returns the first non-null result of iterating over the {@link #MIME_TYPE_DETECTORS registered} MIME-type detectors If the
-     * MIME-type cannot be determined by any registered detector, "text/plain" or "application/octet-stream" will be returned, the
+     * Returns the first non-null result of iterating over the registered MIME-type detectors
+     * If the MIME-type cannot be determined by any registered detector, "text/plain" or "application/octet-stream" will be returned, the
      * former only if it is determined the stream contains no nulls.
      *
      * @see MimeTypeDetector#mimeTypeOf(String, javax.jcr.Binary)
@@ -70,7 +110,6 @@ public final class MimeTypeDetectors extends MimeTypeDetector {
     @Override
     public String mimeTypeOf( String name,
                               Binary binaryValue ) throws RepositoryException, IOException {
-
         String detectedMimeType = detectMimeTypeUsingDetectors(name, binaryValue);
         return detectedMimeType != null ? detectedMimeType : detectFallbackMimeType(binaryValue);
     }
@@ -95,7 +134,7 @@ public final class MimeTypeDetectors extends MimeTypeDetector {
 
     private String detectMimeTypeUsingDetectors( String name,
                                                  Binary binary ) throws RepositoryException, IOException {
-        for (MimeTypeDetector detector : MIME_TYPE_DETECTORS) {
+        for (MimeTypeDetector detector : detectors) {
             String mimeType = detector.mimeTypeOf(name, binary);
             if (mimeType != null) {
                 return mimeType;

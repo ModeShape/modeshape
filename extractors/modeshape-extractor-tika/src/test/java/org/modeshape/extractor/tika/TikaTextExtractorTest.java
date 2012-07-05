@@ -31,8 +31,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.InMemoryTestBinary;
-import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
-import org.modeshape.jcr.mimetype.MimeTypeDetectors;
+import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.text.TextExtractorOutput;
 import java.io.IOException;
@@ -47,14 +46,12 @@ import java.util.List;
 public class TikaTextExtractorTest {
 
     private TikaTextExtractor extractor;
-    private MimeTypeDetector mimeTypeDetector;
     private LinkedList<String> extracted = null;
     private LinkedList<String> expected = null;
 
     @Before
     public void beforeEach() {
         extractor = new TikaTextExtractor();
-        mimeTypeDetector = new MimeTypeDetectors();
         extracted = new LinkedList<String>();
         expected = new LinkedList<String>();
     }
@@ -71,27 +68,27 @@ public class TikaTextExtractorTest {
 
     @Test
     public void shouldSupportExtractingFromTextFiles() throws Exception {
-        assertThat(extractor.supportsMimeType(mimeTypeOf("modeshape.txt")), is(true));
+        assertThat(extractor.supportsMimeType(MimeTypeConstants.TEXT_PLAIN), is(true));
     }
 
     @Test
     public void shouldSupportExtractingFromPdfFiles() throws Exception {
-        assertThat(extractor.supportsMimeType(mimeTypeOf("modeshape.pdf")), is(true));
+        assertThat(extractor.supportsMimeType(MimeTypeConstants.PDF), is(true));
     }
 
     @Test
     public void shouldNotSupportExtractingFromPostscriptFiles() throws Exception {
-        assertThat(extractor.supportsMimeType(mimeTypeOf("modeshape.ps")), is(false));
+        assertThat(extractor.supportsMimeType(MimeTypeConstants.POSTSCRIPT), is(false));
     }
 
     @Test
     public void shouldSupportExtractingFromDocWordFiles() throws Exception {
-        assertThat(extractor.supportsMimeType(mimeTypeOf("modeshape.doc")), is(true));
+        assertThat(extractor.supportsMimeType(MimeTypeConstants.MICROSOFT_APPLICATION_MS_WORD), is(true));
     }
 
     @Test
     public void shouldSupportExtractingFromDocxWordFiles() throws Exception {
-        assertThat(extractor.supportsMimeType(mimeTypeOf("modeshape.docx")), is(true));
+        assertThat(extractor.supportsMimeType(MimeTypeConstants.MICROSOFT_WORD_OPEN_XML), is(true));
     }
 
     @Test
@@ -212,10 +209,5 @@ public class TikaTextExtractorTest {
                 words.add(word);
             }
         }
-    }
-
-    private String mimeTypeOf( String fileName ) throws Exception {
-        return mimeTypeDetector.mimeTypeOf(fileName,
-                                           new InMemoryTestBinary(getClass().getClassLoader().getResourceAsStream(fileName)));
     }
 }
