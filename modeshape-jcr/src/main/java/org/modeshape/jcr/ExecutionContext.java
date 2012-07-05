@@ -23,25 +23,13 @@
  */
 package org.modeshape.jcr;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.Executor;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.ThreadPoolFactory;
 import org.modeshape.common.util.ThreadPools;
-import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.logging.Logger;
-import org.modeshape.common.util.SecureHash;
-import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
-import org.modeshape.jcr.mimetype.ExtensionBasedMimeTypeDetector;
-import org.modeshape.jcr.mimetype.MimeTypeDetectors;
-import org.modeshape.jcr.mimetype.NullMimeTypeDetector;
 import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.value.BinaryFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;
@@ -54,6 +42,14 @@ import org.modeshape.jcr.value.basic.StandardValueFactories;
 import org.modeshape.jcr.value.basic.ThreadSafeNamespaceRegistry;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.Executor;
 
 /**
  * An ExecutionContext is a representation of the environment or context in which a component or operation is operating. Some
@@ -85,7 +81,6 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
     private final PropertyFactory propertyFactory;
     private final ValueFactories valueFactories;
     private final NamespaceRegistry namespaceRegistry;
-    private final MimeTypeDetector mimeTypeDetector;
     private final SecurityContext securityContext;
     private final BinaryStore binaryStore;
     /** The unique ID string, which is always generated so that it can be final and not volatile. */
@@ -100,7 +95,7 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      */
     @SuppressWarnings( "synthetic-access" )
     public ExecutionContext() {
-        this(new NullSecurityContext(), null, null, null, null, null, null, null, null);
+        this(new NullSecurityContext(), null, null, null, null, null, null, null);
         initializeDefaultNamespaces(this.getNamespaceRegistry());
         assert securityContext != null;
 
@@ -119,7 +114,6 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
         this.valueFactories = original.getValueFactories();
         this.propertyFactory = original.getPropertyFactory();
         this.threadPools = original.getThreadPoolFactory();
-        this.mimeTypeDetector = original.getMimeTypeDetector();
         this.data = original.getData();
         this.processId = original.getProcessId();
         this.binaryStore = TransientBinaryStore.get();
@@ -141,7 +135,6 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
         this.valueFactories = original.getValueFactories();
         this.propertyFactory = original.getPropertyFactory();
         this.threadPools = original.getThreadPoolFactory();
-        this.mimeTypeDetector = original.getMimeTypeDetector();
         this.data = original.getData();
         this.processId = original.getProcessId();
         this.binaryStore = original.getBinaryStore();
@@ -157,8 +150,6 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      *        should be used
      * @param propertyFactory the {@link PropertyFactory} implementation, or null if a {@link BasicPropertyFactory} instance
      *        should be used
-     * @param mimeTypeDetector the {@link MimeTypeDetector} implementation, or null if the context should use a
-     *        {@link MimeTypeDetectors} instance with an {@link ExtensionBasedMimeTypeDetector}
      * @param threadPoolFactory the {@link ThreadPoolFactory} implementation, or null if a {@link ThreadPools} instance should be
      *        used
      * @param binaryStore the {@link BinaryStore} implementation, or null if a default {@link TransientBinaryStore} should be used
@@ -169,7 +160,6 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
                                 NamespaceRegistry namespaceRegistry,
                                 ValueFactories valueFactories,
                                 PropertyFactory propertyFactory,
-                                MimeTypeDetector mimeTypeDetector,
                                 ThreadPoolFactory threadPoolFactory,
                                 BinaryStore binaryStore,
                                 Map<String, String> data,
@@ -183,7 +173,6 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
         this.valueFactories = valueFactories == null ? new StandardValueFactories(this.namespaceRegistry, binaryStore) : valueFactories;
         this.propertyFactory = propertyFactory == null ? new BasicPropertyFactory(this.valueFactories) : propertyFactory;
         this.threadPools = threadPoolFactory == null ? new ThreadPools() : threadPoolFactory;
-        this.mimeTypeDetector = mimeTypeDetector != null ? mimeTypeDetector : NullMimeTypeDetector.INSTANCE;
         this.data = data != null ? data : Collections.<String, String>emptyMap();
         this.processId = processId != null ? processId : UUID.randomUUID().toString();
     }
@@ -216,15 +205,6 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      */
     public Logger getLogger( String name ) {
         return Logger.getLogger(name);
-    }
-
-    /**
-     * Return an object that can be used to determine the MIME type of some content, such as the content of a file.
-     * 
-     * @return the detector; never null
-     */
-    public MimeTypeDetector getMimeTypeDetector() {
-        return this.mimeTypeDetector;
     }
 
     /**
@@ -321,8 +301,7 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
     public ExecutionContext with( BinaryStore binaryStore ) {
         if (binaryStore == null) binaryStore = TransientBinaryStore.get();
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), valueFactories, getPropertyFactory(),
-                                    getMimeTypeDetector(), getThreadPoolFactory(), binaryStore,
-                                    getData(), getProcessId());
+                                    getThreadPoolFactory(), binaryStore, getData(), getProcessId());
     }
 
     /**
@@ -337,25 +316,9 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
     public ExecutionContext with( NamespaceRegistry namespaceRegistry ) {
         // Don't supply the value factories or property factories, since they'll have to be recreated
         // to reference the supplied namespace registry ...
-        return new ExecutionContext(getSecurityContext(), namespaceRegistry, null, getPropertyFactory(), getMimeTypeDetector(),
+        return new ExecutionContext(getSecurityContext(), namespaceRegistry, null, getPropertyFactory(),
                                     getThreadPoolFactory(), getBinaryStore(), getData(), getProcessId());
     }
-
-    /**
-     * Create a new execution context that is the same as this context, but which uses the supplied {@link MimeTypeDetector MIME
-     * type detector}.
-     * 
-     * @param mimeTypeDetector the new MIME type detector implementation, or null if the context should use a
-     *        {@link MimeTypeDetectors} instance with an {@link ExtensionBasedMimeTypeDetector}
-     * @return the execution context that is identical with this execution context, but which uses the supplied detector
-     *         implementation; never null
-     */
-    public ExecutionContext with( MimeTypeDetector mimeTypeDetector ) {
-        return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    mimeTypeDetector, getThreadPoolFactory(), getBinaryStore(),
-                                    getData(), getProcessId());
-    }
-
 
     /**
      * Create a new execution context that mirrors this context but that uses the supplied {@link ThreadPoolFactory thread pool
@@ -367,8 +330,7 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      */
     public ExecutionContext with( ThreadPoolFactory threadPoolFactory ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), threadPoolFactory, getBinaryStore(),
-                                    getData(), getProcessId());
+                                    threadPoolFactory, getBinaryStore(), getData(), getProcessId());
     }
 
     /**
@@ -380,8 +342,7 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      */
     public ExecutionContext with( PropertyFactory propertyFactory ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), propertyFactory,
-                                    getMimeTypeDetector(), getThreadPoolFactory(), getBinaryStore(),
-                                    getData(), getProcessId());
+                                    getThreadPoolFactory(), getBinaryStore(), getData(), getProcessId());
     }
 
     /**
@@ -415,8 +376,7 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
             newData = Collections.unmodifiableMap(new HashMap<String, String>(data));
         }
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), getThreadPoolFactory(), getBinaryStore(),
-                                    newData, getProcessId());
+                                    getThreadPoolFactory(), getBinaryStore(), newData, getProcessId());
     }
 
     /**
@@ -448,8 +408,7 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
             newData = Collections.unmodifiableMap(newData);
         }
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), getThreadPoolFactory(), getBinaryStore(),
-                                    newData, getProcessId());
+                                    getThreadPoolFactory(), getBinaryStore(), newData, getProcessId());
     }
 
     /**
@@ -462,8 +421,7 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      */
     public ExecutionContext with( String processId ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), getThreadPoolFactory(), getBinaryStore(),
-                                    getData(), processId);
+                                    getThreadPoolFactory(), getBinaryStore(), getData(), processId);
     }
 
     /**

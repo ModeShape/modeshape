@@ -114,18 +114,18 @@ public class LocalEnvironment implements Environment {
             }
         }
 
-        ClassLoader parentLoader = getClass().getClassLoader();
-        if (fallbackLoader != null && !fallbackLoader.equals(parentLoader)) {
-            //if the parent of fallback is the same as the current parent, just use that
-            if (fallbackLoader.getParent().equals(parentLoader)) {
-                parentLoader = fallbackLoader;
+        ClassLoader currentLoader = getClass().getClassLoader();
+        if (fallbackLoader != null && !fallbackLoader.equals(currentLoader)) {
+            //if the parent of fallback is the same as the current loader, just use that
+            if (fallbackLoader.getParent().equals(currentLoader)) {
+                currentLoader = fallbackLoader;
             }
             else {
                 delegatesList.add(fallbackLoader);
             }
         }
 
-        return delegatesList.isEmpty() ? parentLoader : new DelegatingClassLoader(parentLoader, delegatesList);
+        return delegatesList.isEmpty() ? currentLoader : new DelegatingClassLoader(currentLoader, delegatesList);
     }
 
     protected void shutdown( CacheContainer container ) {

@@ -68,6 +68,7 @@ import org.modeshape.jcr.Sequencers.SequencingWorkItem;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.api.Repository;
 import org.modeshape.jcr.api.Workspace;
+import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.query.Query;
 import org.modeshape.jcr.bus.ChangeBus;
@@ -921,6 +922,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final ChangeBus changeBus;
         private final ExecutorService changeDispatchingQueue;
         private final boolean useXaSessions;
+        private final MimeTypeDetectors mimeTypeDetector;
 
         protected RunningState() throws IOException, NamingException {
             this(null, null);
@@ -991,6 +993,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         this.cache.createWorkspace(workspaceName);
                     }
                 }
+                this.mimeTypeDetector = new MimeTypeDetectors(other.config.environment());
                 this.binaryStore = other.binaryStore;
                 this.internalWorkerContext = other.internalWorkerContext;
                 this.nodeTypes = other.nodeTypes.with(this, true, true);
@@ -1023,7 +1026,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                 // Now create the registry implementation and the execution context that uses it ...
                 this.persistentRegistry = new SystemNamespaceRegistry(this);
-                this.context = tempContext.with(persistentRegistry).with(new MimeTypeDetectors(this.config.environment()));
+                this.mimeTypeDetector = new MimeTypeDetectors(this.config.environment());
+                this.context = tempContext.with(persistentRegistry);
                 this.persistentRegistry.setContext(this.context);
                 this.internalWorkerContext = this.context.with(new InternalSecurityContext(INTERNAL_WORKER_USERNAME));
 
@@ -1087,7 +1091,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             } else {
                 this.extractors = new TextExtractors(this, config.getQuery().getTextExtracting());
             }
-            this.binaryStore.setMimeTypeDetector(this.context.getMimeTypeDetector());
+            this.binaryStore.setMimeTypeDetector(this.mimeTypeDetector);
             this.binaryStore.setTextExtractors(this.extractors);
 
             if (other != null && !change.sequencingChanged) {
@@ -1224,6 +1228,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         protected final BinaryStore binaryStore() {
             return binaryStore;
+        }
+
+        protected final MimeTypeDetector mimeTypeDetector() {
+            return mimeTypeDetector;
         }
 
         protected final TextExtractors textExtractors() {
