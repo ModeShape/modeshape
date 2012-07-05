@@ -24,20 +24,18 @@
 
 package org.modeshape.jcr;
 
-
-import javax.jcr.RepositoryException;
-import org.modeshape.common.util.IoUtil;
-import org.modeshape.common.util.SecureHash;
-import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.api.Binary;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.SecureHash;
+import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.api.Binary;
 
 /**
  * An in-memory implementation of a {@link javax.jcr.Binary} which should used for tests.
- *
+ * 
  * @author Horia Chiorean
  */
 public final class InMemoryTestBinary implements Binary {
@@ -54,7 +52,7 @@ public final class InMemoryTestBinary implements Binary {
         }
     }
 
-    public InMemoryTestBinary(InputStream is) throws IOException {
+    public InMemoryTestBinary( InputStream is ) throws IOException {
         this(IoUtil.readBytes(is));
     }
 
@@ -64,13 +62,13 @@ public final class InMemoryTestBinary implements Binary {
     }
 
     @Override
-    public InputStream getStream() throws RepositoryException {
+    public InputStream getStream() {
         return new ByteArrayInputStream(bytes);
     }
 
     @Override
     public int read( byte[] b,
-                     long position ) throws IOException, RepositoryException {
+                     long position ) throws IOException {
         if (getSize() <= position) {
             return -1;
         }
@@ -95,8 +93,7 @@ public final class InMemoryTestBinary implements Binary {
             if (stream != null) {
                 try {
                     stream.close();
-                }
-                catch (IOException t) {
+                } catch (IOException t) {
                     // Only throw if we've not already thrown an exception ...
                     if (error == null) {
                         throw t;
@@ -107,7 +104,7 @@ public final class InMemoryTestBinary implements Binary {
     }
 
     @Override
-    public long getSize() throws RepositoryException {
+    public long getSize() {
         return bytes.length;
     }
 
@@ -122,12 +119,12 @@ public final class InMemoryTestBinary implements Binary {
     }
 
     @Override
-    public String getMimeType() throws IOException, RepositoryException {
+    public String getMimeType() {
         return null;
     }
 
     @Override
-    public String getMimeType( String name ) throws IOException, RepositoryException {
+    public String getMimeType( String name ) {
         return null;
     }
 }

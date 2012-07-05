@@ -184,6 +184,10 @@ public final class NodeKey implements Serializable, Comparable<NodeKey> {
         return new NodeKey(getSourceKey(), getWorkspaceKey(), UUID.randomUUID().toString());
     }
 
+    public NodeKey withRandomIdAndWorkspace( String workspaceKey ) {
+        return new NodeKey(getSourceKey(), workspaceKey, UUID.randomUUID().toString());
+    }
+
     public NodeKey withId( String identifier ) {
         return new NodeKey(getSourceKey(), getWorkspaceKey(), identifier);
     }

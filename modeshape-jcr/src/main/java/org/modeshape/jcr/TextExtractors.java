@@ -23,6 +23,12 @@
  */
 package org.modeshape.jcr;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
@@ -34,12 +40,6 @@ import org.modeshape.jcr.text.TextExtractorOutput;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.BinaryStore;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 /**
  * Facility for managing {@link TextExtractor} instances and submitting text extraction work
@@ -54,7 +54,7 @@ public final class TextExtractors {
     private final ConcurrentHashMap<BinaryKey, CountDownLatch> workerLatches;
 
     public TextExtractors( JcrRepository.RunningState repository,
-                           RepositoryConfiguration.TextExtracting extracting) {
+                           RepositoryConfiguration.TextExtracting extracting ) {
         this.extractingQueue = Executors.newCachedThreadPool(new NamedThreadFactory(extracting.getThreadPoolName()));
         this.workerLatches = new ConcurrentHashMap<BinaryKey, CountDownLatch>();
 
@@ -78,7 +78,7 @@ public final class TextExtractors {
     }
 
     public boolean extractionEnabled() {
-        //TODO author=Horia Chiorean date=6/29/12 description=Update this once MODE-1419 is complete
+        // TODO author=Horia Chiorean date=6/29/12 description=Update this once MODE-1419 is complete
         boolean ftsEnabled = true;
         return ftsEnabled && !extractors.isEmpty();
     }
@@ -101,30 +101,32 @@ public final class TextExtractors {
     }
 
     /**
-     * A unit of work which extracts text from a binary value, stores that text in a store and notifies a latch that the extraction
-     * operation has finished.
+     * A unit of work which extracts text from a binary value, stores that text in a store and notifies a latch that the
+     * extraction operation has finished.
      */
-    private class Worker implements Runnable {
+    protected final class Worker implements Runnable {
         private final BinaryValue binaryValue;
         private final TextExtractor.Context context;
         private final BinaryStore store;
         private final CountDownLatch latch;
 
-        private Worker( BinaryStore store,
-                        BinaryValue binaryValue,
-                        TextExtractor.Context context,
-                        CountDownLatch latch ) {
+        protected Worker( BinaryStore store,
+                          BinaryValue binaryValue,
+                          TextExtractor.Context context,
+                          CountDownLatch latch ) {
             this.store = store;
             this.binaryValue = binaryValue;
             this.context = context;
             this.latch = latch;
         }
 
+        @SuppressWarnings( "synthetic-access" )
         @Override
         public void run() {
             String binaryName = null;
             try {
-                //only extract text if there isn't a stored value for the binary key (note that any changes in the binary will produce a different key)
+                // only extract text if there isn't a stored value for the binary key (note that any changes in the binary will
+                // produce a different key)
                 if (store.getExtractedText(binaryValue) != null) {
                     return;
                 }
@@ -146,9 +148,8 @@ public final class TextExtractors {
                 }
             } catch (Exception e) {
                 LOGGER.error(JcrI18n.errorExtractingTextFromBinary, binaryName, e.getLocalizedMessage());
-            }
-            finally {
-                //decrement the latch regardless of success/failure to avoid blocking, as extraction is not retried
+            } finally {
+                // decrement the latch regardless of success/failure to avoid blocking, as extraction is not retried
                 latch.countDown();
             }
         }

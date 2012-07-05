@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.cache;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import org.modeshape.jcr.value.Name;
@@ -112,6 +113,24 @@ public interface MutableCachedNode extends CachedNode {
      */
     void setProperties( SessionCache cache,
                         Iterable<Property> properties );
+
+    /**
+     * Set the properties on this node.
+     * 
+     * @param cache the cache to which this node belongs; may not be null
+     * @param properties the iterator over the properties to be set; may not be null
+     * @throws NodeNotFoundException if this node no longer exists
+     */
+    void setProperties( SessionCache cache,
+                        Iterator<Property> properties );
+
+    /**
+     * Remove all of the properties from this node.
+     * 
+     * @param cache the cache to which this node belongs; may not be null
+     * @throws NodeNotFoundException if this node no longer exists
+     */
+    void removeAllProperties( SessionCache cache );
 
     /**
      * Remove the property with the given name.
@@ -215,15 +234,20 @@ public interface MutableCachedNode extends CachedNode {
     /**
      * Link the existing node with the supplied key to be appended as a child of this node. After this method, the referenced node
      * is considered a child of this node as well as a child of its original parent(s).
+     * <p>
+     * The link can be removed by simply {@link #removeChild(SessionCache, NodeKey) removing} the linked child from the parent,
+     * and this works whether or not the parent is the original parent or an additional parent.
+     * </p>
      * 
      * @param cache the cache to which this node belongs; may not be null
      * @param childKey the key for the child that is to be removed; may not be null
      * @param name the name for the (linked) node, or null if the existing name is to be used
+     * @return true if the link was created, or false if the link already existed as a child of this node
      * @throws NodeNotFoundException if the node does not exist
      */
-    void linkChild( SessionCache cache,
-                    NodeKey childKey,
-                    Name name );
+    boolean linkChild( SessionCache cache,
+                       NodeKey childKey,
+                       Name name );
 
     /**
      * Remove the node from being a child of this node and append it as a child before the supplied node.
@@ -317,4 +341,11 @@ public interface MutableCachedNode extends CachedNode {
      * @return the set of {@link NodeKey} instances, never null.
      */
     public Set<NodeKey> getChangedReferrerNodes();
+
+    /**
+     * Return whether this node contains only changes to the additional parents.
+     * 
+     * @return true if this node contains only added or removed additional parents.
+     */
+    public boolean hasOnlyChangesToAdditionalParents();
 }

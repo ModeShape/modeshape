@@ -226,4 +226,9 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         this.closed = true;
         clear();
     }
+
+    @Override
+    public String toString() {
+        return workspaceName;
+    }
 }

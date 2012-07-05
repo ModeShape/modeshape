@@ -24,13 +24,12 @@
 
 package org.modeshape.jcr.cache.change;
 
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Path;
 
 /**
  * Change which is triggered if the sequencing of a node fails
- *
+ * 
  * @author Horia Chiorean
  */
 public class NodeSequencingFailure extends AbstractSequencingChange {
@@ -48,10 +47,15 @@ public class NodeSequencingFailure extends AbstractSequencingChange {
                                   String sequencerName,
                                   Throwable cause ) {
         super(sequencedNodeKey, sequencedNodePath, outputPath, userId, selectedPath, sequencerName);
-        CheckArg.isNotNull(cause, "cause");
+        assert cause != null;
         this.cause = cause;
     }
 
+    /**
+     * Get the cause of the failure.
+     * 
+     * @return the exception; never null
+     */
     public Throwable getCause() {
         return cause;
     }

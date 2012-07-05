@@ -35,11 +35,11 @@ import org.modeshape.common.util.CheckArg;
 class JcrNodeListIterator implements NodeIterator {
 
     private final long size;
-    private final Iterator<AbstractJcrNode> nodes;
+    private final Iterator<? extends Node> nodes;
     private Node nextNode;
     private long position = 0L;
 
-    protected JcrNodeListIterator( Iterator<AbstractJcrNode> nodeIter,
+    protected JcrNodeListIterator( Iterator<? extends Node> nodeIter,
                                    long size ) {
         this.nodes = nodeIter;
         this.size = size;

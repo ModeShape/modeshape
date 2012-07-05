@@ -193,8 +193,10 @@ public class DocumentTranslator {
                 Object v = iter.next();
                 if (v == null) continue;
                 String key = (String)v;
-                if (key.equals(primaryWorkspaceKey) || key.equals(secondaryWorkspaceKey)) {
-                    keys.add(new NodeKey(key));
+                NodeKey nodeKey = new NodeKey(key);
+                String workspaceKey = nodeKey.getWorkspaceKey();
+                if (workspaceKey.equals(primaryWorkspaceKey) || workspaceKey.equals(secondaryWorkspaceKey)) {
+                    keys.add(nodeKey);
                 }
             }
             return keys;
@@ -557,7 +559,7 @@ public class DocumentTranslator {
             }
             if (additionalParents != null) {
                 for (NodeKey removed : additionalParents.getRemovals()) {
-                    parents.remove(removed.toString());
+                    parents.remove((Object)removed.toString()); // remove by value (not by name)
                 }
                 for (NodeKey added : additionalParents.getAdditions()) {
                     parents.addStringIfAbsent(added.toString());

@@ -771,8 +771,13 @@ public class BasicArray implements MutableArray {
 
     @Override
     public Object remove( String name ) {
-        int index = indexFrom(name);
-        return isValidIndex(index) ? values.remove(index) : null;
+        try {
+            int index = indexFrom(name);
+            return isValidIndex(index) ? values.remove(index) : null;
+        } catch (NumberFormatException e) {
+            // Must be a value ...
+            return removeValue(name);
+        }
     }
 
     @Override

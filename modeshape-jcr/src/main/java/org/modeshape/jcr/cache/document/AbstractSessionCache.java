@@ -23,6 +23,10 @@
  */
 package org.modeshape.jcr.cache.document;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.api.value.DateTime;
@@ -36,10 +40,6 @@ import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.ValueFactories;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * 
@@ -120,9 +120,10 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
     final SessionEnvironment sessionContext() {
         return sessionContext;
     }
-    
+
     @Override
-    public final void addContextData(String key, String value) {
+    public final void addContextData( String key,
+                                      String value ) {
         this.context = context.with(key, value);
     }
 
@@ -190,7 +191,7 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
         return result;
     }
 
-
     @Override
     public abstract SessionNode mutable( NodeKey key );
+
 }

@@ -23,11 +23,9 @@
  */
 package org.modeshape.jcr.api.text;
 
-import javax.jcr.RepositoryException;
+import java.io.InputStream;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.Logger;
-import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * An abstraction for components that are able to extract text content from an input stream.
@@ -51,7 +49,7 @@ public abstract class TextExtractor {
 
     /**
      * Extract text from the given {@link Binary}, using the given output to record the results.
-     *
+     * 
      * @param binary the binary value that can be used in the extraction process; never <code>null</code>
      * @param output the output from the sequencing operation; never <code>null</code>
      * @param context the context for the sequencing operation; never <code>null</code>
@@ -64,13 +62,15 @@ public abstract class TextExtractor {
     /**
      * Allows subclasses to process the stream of binary value property in "safe" fashion, making sure the stream is closed at the
      * end of the operation.
+     * 
      * @param binary a {@link org.modeshape.jcr.api.Binary} who is expected to contain a non-null binary value.
      * @param operation a {@link org.modeshape.jcr.api.text.TextExtractor.BinaryOperation} which should work with the stream
+     * @param <T> the return type of the binary operation
      * @return whatever type of result the stream operation returns
-     * @throws RepositoryException
-     * @throws IOException
+     * @throws Exception if there is an error processing the stream
      */
-    protected final <T> T processStream(Binary binary, BinaryOperation<T> operation) throws Exception {
+    protected final <T> T processStream( Binary binary,
+                                         BinaryOperation<T> operation ) throws Exception {
         InputStream stream = binary.getStream();
         if (stream == null) {
             throw new IllegalArgumentException("The binary value is empty");
@@ -78,14 +78,13 @@ public abstract class TextExtractor {
 
         try {
             return operation.execute(stream);
-        }
-        finally {
+        } finally {
             stream.close();
         }
     }
 
-    public final void setLogger(Logger logger) {
-        if (logger ==  null) {
+    public final void setLogger( Logger logger ) {
+        if (logger == null) {
             throw new IllegalArgumentException("Logger cannot be null");
         }
         this.logger = logger;
@@ -105,9 +104,11 @@ public abstract class TextExtractor {
 
     /**
      * Interface which can be used by subclasses to process the input stream of a binary property.
+     * 
+     * @param <T> the return type of the binary operation
      */
     protected interface BinaryOperation<T> {
-        T execute(InputStream stream) throws Exception;
+        T execute( InputStream stream ) throws Exception;
     }
 
     /**
@@ -124,7 +125,7 @@ public abstract class TextExtractor {
 
         /**
          * Record the text as being extracted. This method can be called multiple times during a single extract.
-         *
+         * 
          * @param text the text extracted from the content.
          */
         void recordText( String text );

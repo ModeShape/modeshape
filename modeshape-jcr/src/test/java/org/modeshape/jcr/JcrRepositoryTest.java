@@ -302,7 +302,7 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         assertThat(repository.getDescriptor(Repository.OPTION_LOCKING_SUPPORTED), is("true"));
         assertThat(repository.getDescriptor(Repository.OPTION_OBSERVATION_SUPPORTED), is("true"));
         assertThat(repository.getDescriptor(Repository.OPTION_QUERY_SQL_SUPPORTED), is("true"));
-        assertThat(repository.getDescriptor(Repository.OPTION_TRANSACTIONS_SUPPORTED), is("false"));
+        assertThat(repository.getDescriptor(Repository.OPTION_TRANSACTIONS_SUPPORTED), is("true"));
         assertThat(repository.getDescriptor(Repository.OPTION_VERSIONING_SUPPORTED), is("true"));
         assertThat(repository.getDescriptor(Repository.QUERY_XPATH_DOC_ORDER), is("false"));
         assertThat(repository.getDescriptor(Repository.QUERY_XPATH_POS_INDEX), is("true"));

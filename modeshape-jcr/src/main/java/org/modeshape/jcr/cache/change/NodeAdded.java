@@ -47,6 +47,7 @@ public class NodeAdded extends AbstractNodeChange {
                       Map<Name, Property> properties ) {
         super(key, path);
         this.parentKey = parentKey;
+        assert this.parentKey != null;
         if (properties == null || properties.isEmpty()) {
             this.properties = EMPTY_PROPERTIES;
         } else {
