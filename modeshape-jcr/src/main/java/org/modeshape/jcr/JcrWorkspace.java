@@ -299,7 +299,12 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             /*
              * Find the source node and check if it is locked
              */
-            JcrSession sourceSession = session.spawnSession(srcWorkspace, true);
+            JcrSession sourceSession = null;
+            if (sameWorkspace) {
+                sourceSession = cloneSession;
+            } else {
+                sourceSession = session.spawnSession(srcWorkspace, true);
+            }
             AbstractJcrNode sourceNode = sourceSession.node(srcPath);
             if (session.lockManager().isLocked(sourceNode)
                 && !session.lockManager().hasLockToken(sourceNode.getLock().getLockToken())) {
@@ -309,9 +314,20 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             if (sameWorkspace && sourceNode.isNodeType(JcrMixLexicon.SHAREABLE)) {
                 // cloning in the same workspace should produce a shareable node
                 assert !removeExisting;
-                // TODO author=Horia Chiorean date=5/9/12 description=Shared nodes additional handling
-                AbstractJcrNode clone = parentNode.addChildNode(newNodeName, ModeShapeLexicon.SHARE, null);
-                clone.setProperty(ModeShapeLexicon.SHARED_UUID, session.valueFactory().createValue(sourceNode), false, true);
+
+                // Check that we're not creating the shared node below the shareable node ...
+                if (destPath.isAtOrBelow(srcPath)) {
+                    throw new RepositoryException(JcrI18n.unableToShareNodeWithinSubgraph.text(srcAbsPath, destAbsPath));
+                }
+                // And that we're not creating a share in a parent that already has the
+                Path destParent = destPath.getParent();
+                if (destParent.isSameAs(srcPath.getParent())) {
+                    String msg = JcrI18n.unableToShareNodeWithinSameParent.text(srcAbsPath, destAbsPath, destParent);
+                    throw new UnsupportedRepositoryOperationException(msg);
+                }
+                parentNode.addSharedNode(sourceNode, newNodeName);
+                // save the changes in the clone session ...
+                cloneSession.save();
             } else {
                 // use the source session to load all the keys from the source subgraph
                 SessionCache sourceCache = sourceSession.cache();

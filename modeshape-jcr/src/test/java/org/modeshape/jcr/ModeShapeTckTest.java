@@ -5,9 +5,11 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +30,7 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.ValueFactory;
+import javax.jcr.Workspace;
 import javax.jcr.lock.LockException;
 import javax.jcr.lock.LockManager;
 import javax.jcr.nodetype.ConstraintViolationException;
@@ -46,6 +49,7 @@ import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionIterator;
 import javax.jcr.version.VersionManager;
 import org.apache.jackrabbit.test.AbstractJCRTest;
+import org.apache.jackrabbit.test.api.ShareableNodeTest;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.JcrTools;
 
@@ -56,12 +60,14 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     Session session;
     private Map<String, Node> testAreasByWorkspace = new HashMap<String, Node>();
+    protected boolean print = false;
 
     public ModeShapeTckTest( String testName ) {
         super();
 
         this.setName(testName);
         this.isReadOnly = true;
+        this.print = false;
     }
 
     @Override
@@ -256,9 +262,17 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         }
     }
 
+    protected void print( String msg ) {
+        if (print) {
+            System.out.println(msg);
+        }
+    }
+
     protected void printSubgraph( Node node ) throws RepositoryException {
-        JcrTools tools = new JcrTools();
-        tools.printSubgraph(node);
+        if (print) {
+            JcrTools tools = new JcrTools();
+            tools.printSubgraph(node);
+        }
     }
 
     protected void printVersionHistory( Node node ) throws RepositoryException {
@@ -2514,5 +2528,124 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         nodeType.getNodeDefinitionTemplates().add(subTypes);
 
         nodeTypeMgr.registerNodeType(nodeType, false);
+    }
+
+    /**
+     * Restore a shareable node that automatically removes an existing shareable node (6.13.19). In this case the particular
+     * shared node is removed but its descendants continue to exist below the remaining members of the shared set.
+     * <p>
+     * NOTE: This is a copy of the {@link ShareableNodeTest#testRestoreRemoveExisting()} method in the TCK test, useful for
+     * debugging.
+     * </p>
+     * 
+     * @throws Exception
+     * @see ShareableNodeTest#testRestoreRemoveExisting()
+     */
+    @FixFor( "MODE-1458" )
+    @SuppressWarnings( "deprecation" )
+    public void testRestoreRemoveExisting() throws Exception {
+        testRootNode = testRootNode.addNode("restoreTest");
+        int eventTypes = Event.NODE_ADDED | Event.NODE_MOVED | Event.NODE_REMOVED | Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED
+                         | Event.PROPERTY_REMOVED;
+        EventListener listener = new EventListener() {
+
+            @Override
+            public void onEvent( EventIterator events ) {
+                while (events.hasNext()) {
+                    Event event = events.nextEvent();
+                    if (print) {
+                        System.out.println(event);
+                        System.out.flush();
+                    }
+                }
+            }
+        };
+        testRootNode.getSession()
+                    .getWorkspace()
+                    .getObservationManager()
+                    .addEventListener(listener, eventTypes, testRootNode.getPath(), true, null, null, false);
+
+        // setup parent nodes and first child
+        Node a1 = testRootNode.addNode("a1");
+        Node a2 = testRootNode.addNode("a2");
+        Node b1 = a1.addNode("b1");
+        testRootNode.getSession().save();
+
+        // make b1 shareable
+        ensureMixinType(b1, mixShareable);
+        b1.save();
+
+        // clone
+        Workspace workspace = b1.getSession().getWorkspace();
+        workspace.clone(workspace.getName(), b1.getPath(), a2.getPath() + "/b2", false);
+
+        // add child c
+        b1.addNode("c");
+        b1.save();
+
+        // make a2 versionable
+        ensureMixinType(a2, mixVersionable);
+        a2.save();
+
+        // check in version and check out again
+        Version v = a2.checkin();
+        a2.checkout();
+
+        print("After checkout: ");
+        printSubgraph(testRootNode);
+
+        // delete b2 and save
+        a2.getNode("b2").remove();
+        a2.save();
+
+        print("After remove/save: ");
+        printSubgraph(testRootNode);
+
+        // verify shareable set contains one elements only
+        Node[] shared = getSharedSet(b1);
+        assertEquals(1, shared.length);
+
+        // restore version and remove existing (i.e. b1)
+        a2.restore(v, true);
+
+        print("After restore: ");
+        printSubgraph(testRootNode);
+
+        // verify shareable set contains still one element
+        shared = getSharedSet(a2.getNode("b2"));
+        assertEquals(1, shared.length);
+
+        // verify child c still exists
+        Node[] children = toArray(a2.getNode("b2").getNodes());
+        assertEquals(1, children.length);
+    }
+
+    /**
+     * Return a shared set as an array of nodes.
+     * 
+     * @param n node
+     * @return array of nodes in shared set
+     * @throws RepositoryException
+     */
+    private static Node[] getSharedSet( Node n ) throws RepositoryException {
+        return toArray(n.getSharedSet());
+    }
+
+    /**
+     * Return an array of nodes given a <code>NodeIterator</code>.
+     * 
+     * @param iter node iterator
+     * @return node array
+     */
+    private static Node[] toArray( NodeIterator iter ) {
+        List<Node> list = new ArrayList<Node>();
+
+        while (iter.hasNext()) {
+            list.add(iter.nextNode());
+        }
+
+        Node[] result = new Node[list.size()];
+        list.toArray(result);
+        return result;
     }
 }

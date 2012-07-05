@@ -226,6 +226,11 @@ public class RepositoryChangeBusTest {
         }
 
         @Override
+        public boolean isEmpty() {
+            return true;
+        }
+
+        @Override
         public String getUserId() {
             return null;
         }

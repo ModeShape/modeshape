@@ -31,38 +31,89 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
 
 /**
- * 
+ * An interface used to signal various kinds of changes.
  */
 public interface Changes {
 
+    /**
+     * Signal that a new workspace has been added.
+     * 
+     * @param workspaceName the name of the workspace; may not be null
+     */
     void workspaceAdded( String workspaceName );
 
+    /**
+     * Signal that a new workspace has been removed.
+     * 
+     * @param workspaceName the name of the workspace; may not be null
+     */
     void workspaceRemoved( String workspaceName );
 
+    /**
+     * Signal that a new node was created.
+     * 
+     * @param key the key for the new node; may not be null
+     * @param parentKey the key for the parent of the new node; may not be null
+     * @param path the path to the new node; may not be null
+     * @param properties the properties in the new node, or null if there are none
+     */
     void nodeCreated( NodeKey key,
                       NodeKey parentKey,
                       Path path,
                       Map<Name, Property> properties );
 
+    /**
+     * Signal that a node was removed.
+     * 
+     * @param key the key for the removed node; may not be null
+     * @param parentKey the key for the old parent of the removed node; may not be null
+     * @param path the path to the removed node; may not be null
+     */
     void nodeRemoved( NodeKey key,
                       NodeKey parentKey,
                       Path path );
 
+    /**
+     * Signal that a node was renamed (but still has the same parent)
+     * 
+     * @param key the key for the node; may not be null
+     * @param newPath the new path for the node; may not be null
+     * @param oldName the old name (including SNS index); may not be null
+     */
     void nodeRenamed( NodeKey key,
                       Path newPath,
                       Path.Segment oldName );
 
+    /**
+     * Signal that a node was moved from one parent to another, and may have also been renamed.
+     * 
+     * @param key the key for the node; may not be null
+     * @param newParent the new parent for the node; may not be null
+     * @param oldParent the old parent for the node; may not be null
+     * @param newPath the new path for the node after it has been moved; may not be null
+     * @param oldPath the old path for the node before it was moved; may not be null
+     */
     void nodeMoved( NodeKey key,
                     NodeKey newParent,
                     NodeKey oldParent,
                     Path newPath,
                     Path oldPath );
 
-    void nodeReordered( NodeKey key, 
+    /**
+     * Signal that a node was placed into a new location within the same parent.
+     * 
+     * @param key the key for the node; may not be null
+     * @param parent the key for the parent of the node; may not be null
+     * @param newPath the new path for the node after it has been reordered; may not be null
+     * @param oldPath the old path for the node before it was reordered; may not be null
+     * @param reorderedBeforePath the path of the node before which the node was moved; or null if the node was reordered to the
+     *        end of the list of children of the parent node
+     */
+    void nodeReordered( NodeKey key,
                         NodeKey parent,
                         Path newPath,
                         Path oldPath,
-                        Path reorderedBeforePath);
+                        Path reorderedBeforePath );
 
     /**
      * Create an event signifying that something about the node (other than the properties or location) changed.
@@ -73,6 +124,19 @@ public interface Changes {
     void nodeChanged( NodeKey key,
                       Path path );
 
+    /**
+     * Signal that a node was successfully sequenced.
+     * 
+     * @param sequencedNodeKey the key of the node that was used as input and sequenced; may not be null
+     * @param sequencedNodePath the path of the node that was used as input and sequenced; may not be null
+     * @param outputNodeKey the key of the top-level node output by the sequencing operation; may not be null
+     * @param outputNodePath the path of the top-level node output by the sequencing operation; may not be null
+     * @param outputPath the string representation of the output path of the sequencing operation
+     * @param userId the username of the session that generated the change that led to the sequencing operation
+     * @param selectedPath the string representation of the path that led to the sequencing operation (which may or may not be the
+     *        same as the sequenced node path); may not be null
+     * @param sequencerName the name of the sequencer; may not be null
+     */
     void nodeSequenced( NodeKey sequencedNodeKey,
                         Path sequencedNodePath,
                         NodeKey outputNodeKey,
@@ -80,8 +144,20 @@ public interface Changes {
                         String outputPath,
                         String userId,
                         String selectedPath,
-                        String sequencerName);
+                        String sequencerName );
 
+    /**
+     * Signal that a node was not sequenced successfully.
+     * 
+     * @param sequencedNodeKey the key of the node that was used as input and sequenced; may not be null
+     * @param sequencedNodePath the path of the node that was used as input and sequenced; may not be null
+     * @param outputPath the string representation of the output path of the sequencing operation
+     * @param userId the username of the session that generated the change that led to the (failed) sequencing operation
+     * @param selectedPath the string representation of the path that led to the (failed) sequencing operation (which may or may
+     *        not be the same as the sequenced node path); may not be null
+     * @param sequencerName the name of the sequencer; may not be null
+     * @param cause the exception that caused the failure; may not be null
+     */
     void nodeSequencingFailure( NodeKey sequencedNodeKey,
                                 Path sequencedNodePath,
                                 String outputPath,
@@ -90,14 +166,36 @@ public interface Changes {
                                 String sequencerName,
                                 Throwable cause );
 
+    /**
+     * Signal that a property was added to a node.
+     * 
+     * @param key the key of the node that was changed; may not be null
+     * @param nodePath the path of the node that was changed
+     * @param property the new property, with name and value(s); may not be null
+     */
     void propertyAdded( NodeKey key,
                         Path nodePath,
                         Property property );
 
+    /**
+     * Signal that a property was removed from a node.
+     * 
+     * @param key the key of the node that was changed; may not be null
+     * @param nodePath the path of the node that was changed
+     * @param property the property that was removed, with name and value(s); may not be null
+     */
     void propertyRemoved( NodeKey key,
                           Path nodePath,
                           Property property );
 
+    /**
+     * Signal that a property was changed on a node.
+     * 
+     * @param key the key of the node that was changed; may not be null
+     * @param nodePath the path of the node that was changed
+     * @param newProperty the new property, with name and value(s); may not be null
+     * @param oldProperty the old property, with name and value(s); may not be null
+     */
     void propertyChanged( NodeKey key,
                           Path nodePath,
                           Property newProperty,

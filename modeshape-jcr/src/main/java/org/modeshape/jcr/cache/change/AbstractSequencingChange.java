@@ -24,13 +24,12 @@
 
 package org.modeshape.jcr.cache.change;
 
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Path;
 
 /**
  * Base class for the changes involving sequencing
- *
+ * 
  * @author Horia Chiorean
  */
 public abstract class AbstractSequencingChange extends AbstractNodeChange {
@@ -47,12 +46,10 @@ public abstract class AbstractSequencingChange extends AbstractNodeChange {
                                         String selectedPath,
                                         String sequencerName ) {
         super(sequencedNodeKey, sequencedNodePath);
-
-        CheckArg.isNotNull(outputPath, "outputPath");
-        CheckArg.isNotNull(userId, "userId");
-        CheckArg.isNotNull(selectedPath, "selectedPath");
-        CheckArg.isNotNull(sequencerName, "sequencerName");
-
+        assert outputPath != null;
+        assert userId != null;
+        assert selectedPath != null;
+        assert sequencerName != null;
         this.outputPath = outputPath;
         this.userId = userId;
         this.selectedPath = selectedPath;

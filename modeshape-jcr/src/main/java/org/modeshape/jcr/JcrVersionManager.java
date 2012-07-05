@@ -61,6 +61,7 @@ import javax.jcr.version.VersionIterator;
 import javax.jcr.version.VersionManager;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.i18n.I18n;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.AbstractJcrNode.Type;
 import org.modeshape.jcr.api.value.DateTime;
@@ -86,6 +87,8 @@ import org.modeshape.jcr.value.ReferenceFactory;
  * interface. Valid instances of this class can be obtained by calling {@link JcrWorkspace#versionManager()}.
  */
 final class JcrVersionManager implements VersionManager {
+
+    private final static Logger LOGGER = Logger.getLogger(JcrVersionManager.class);
 
     /**
      * Property names from nt:frozenNode that should never be copied directly to a node when the frozen node is restored.
@@ -297,6 +300,7 @@ final class JcrVersionManager implements VersionManager {
     public Version checkin( String absPath )
         throws VersionException, UnsupportedRepositoryOperationException, InvalidItemStateException, LockException,
         RepositoryException {
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("VersionManager.checkin('{0}')", absPath);
         return checkin(session.getNode(absPath));
     }
 
@@ -368,7 +372,7 @@ final class JcrVersionManager implements VersionManager {
             // Now process the children of the versionable node, and add them under the frozen node ...
             MutableCachedNode frozenNode = frozen.get();
             for (ChildReference childRef : cachedNode.getChildReferences(versionSession)) {
-                AbstractJcrNode child = session.node(childRef.getKey(), null);
+                AbstractJcrNode child = session.node(childRef.getKey(), null, versionedKey);
                 versionNodeAt(child, frozenNode, false, versionSession, systemSession);
             }
 
@@ -430,12 +434,25 @@ final class JcrVersionManager implements VersionManager {
                 // recursive call ...
                 forceCopy = true;
 
+                PropertyFactory factory = propertyFactory();
+                List<Property> props = new LinkedList<Property>();
+
+                if (node.isShared()) {
+                    // This is a shared node, so we should store a proxy to the shareable node ...
+                    props.add(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE));
+                    props.add(factory.create(JcrLexicon.FROZEN_PRIMARY_TYPE, ModeShapeLexicon.SHARE));
+                    props.add(factory.create(JcrLexicon.FROZEN_UUID, node.getIdentifier()));
+                    props.add(factory.create(JcrLexicon.UUID, key));
+                    parentInVersionHistory.createChild(versionHistoryCache, key, node.name(), props);
+
+                    // The proxies to shareable nodes never have children (nor versionable properties), so we're done ...
+                    return;
+                }
+
                 // But the copy needs to be a 'nt:frozenNode', so that it doesn't compete with the actual node
                 // (outside of version history) ...
                 Name primaryTypeName = node.getPrimaryTypeName();
                 Set<Name> mixinTypeNames = node.getMixinTypeNames();
-                PropertyFactory factory = propertyFactory();
-                List<Property> props = new LinkedList<Property>();
                 props.add(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE));
                 props.add(factory.create(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName));
                 props.add(factory.create(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames));
@@ -445,8 +462,9 @@ final class JcrVersionManager implements VersionManager {
                 MutableCachedNode newCopy = parentInVersionHistory.createChild(versionHistoryCache, key, node.name(), props);
 
                 // Now process the children of the versionable node ...
+                NodeKey parentKey = node.key();
                 for (ChildReference childRef : node.node().getChildReferences(nodeCache)) {
-                    AbstractJcrNode child = session.node(childRef.getKey(), null);
+                    AbstractJcrNode child = session.node(childRef.getKey(), null, parentKey);
                     versionNodeAt(child, newCopy, forceCopy, nodeCache, versionHistoryCache);
                 }
                 return;
@@ -505,6 +523,7 @@ final class JcrVersionManager implements VersionManager {
 
     @Override
     public void checkout( String absPath ) throws LockException, RepositoryException {
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("VersionManager.checkout('{0}')", absPath);
         checkout(session.getNode(absPath));
     }
 
@@ -605,6 +624,7 @@ final class JcrVersionManager implements VersionManager {
                          boolean removeExisting )
         throws ItemExistsException, UnsupportedRepositoryOperationException, VersionException, LockException,
         InvalidItemStateException, RepositoryException {
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("VersionManager.restore({0},{1})", versions, removeExisting);
         validateSessionLiveWithoutPendingChanges();
 
         // Create a new session in which we'll perform the restore, so this session remains thread-safe ...
@@ -647,6 +667,7 @@ final class JcrVersionManager implements VersionManager {
                          boolean removeExisting )
         throws VersionException, ItemExistsException, UnsupportedRepositoryOperationException, LockException,
         InvalidItemStateException, RepositoryException {
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("VersionManager.restore('{0}','{1}',{2})", absPath, versionName, removeExisting);
         validateSessionLiveWithoutPendingChanges();
 
         // Create a new session in which we'll finish the restore, so this session remains thread-safe ...
@@ -676,6 +697,7 @@ final class JcrVersionManager implements VersionManager {
                          boolean removeExisting )
         throws VersionException, ItemExistsException, InvalidItemStateException, UnsupportedRepositoryOperationException,
         LockException, RepositoryException {
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("VersionManager.restore({0},{1})", version, removeExisting);
         validateSessionLiveWithoutPendingChanges();
         // Create a new session in which we'll finish the restore, so this session remains thread-safe ...
         JcrSession restoreSession = session.spawnSession(false);
@@ -690,6 +712,7 @@ final class JcrVersionManager implements VersionManager {
                          boolean removeExisting )
         throws PathNotFoundException, ItemExistsException, VersionException, ConstraintViolationException,
         UnsupportedRepositoryOperationException, LockException, InvalidItemStateException, RepositoryException {
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("VersionManager.restore('{0}',{1},{2})", absPath, version, removeExisting);
         restoreAtAbsPath(absPath, version, removeExisting, true);
     }
 
@@ -701,17 +724,22 @@ final class JcrVersionManager implements VersionManager {
 
         // Create a new session in which we'll finish the restore, so this session remains thread-safe ...
         JcrSession restoreSession = session.spawnSession(false);
-        Path path = restoreSession.absolutePathFor(absPath);
+        try {
+            Path path = restoreSession.absolutePathFor(absPath);
 
-        if (failIfNodeAlreadyExists) {
-            try {
-                AbstractJcrNode existingNode = restoreSession.node(path);
-                throw new VersionException(JcrI18n.unableToRestoreAtAbsPathNodeAlreadyExists.text(absPath, existingNode.key()));
-            } catch (PathNotFoundException e) {
-                // expected
+            if (failIfNodeAlreadyExists) {
+                try {
+                    AbstractJcrNode existingNode = restoreSession.node(path);
+                    String msg = JcrI18n.unableToRestoreAtAbsPathNodeAlreadyExists.text(absPath, existingNode.key());
+                    throw new VersionException(msg);
+                } catch (PathNotFoundException e) {
+                    // expected
+                }
             }
+            restore(restoreSession, path, version, null, removeExisting);
+        } finally {
+            restoreSession.logout();
         }
-        restore(restoreSession, path, version, null, removeExisting);
     }
 
     @Override
@@ -720,6 +748,10 @@ final class JcrVersionManager implements VersionManager {
                                 boolean removeExisting )
         throws VersionException, ItemExistsException, UnsupportedRepositoryOperationException, LockException,
         InvalidItemStateException, RepositoryException {
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("VersionManager.restoreByLabel('{0}','{1}',{2})",
+                                                  absPath,
+                                                  versionLabel,
+                                                  removeExisting);
         validateSessionLiveWithoutPendingChanges();
         // Create a new session in which we'll finish the restore, so this session remains thread-safe ...
         JcrSession restoreSession = session.spawnSession(false);
@@ -742,6 +774,7 @@ final class JcrVersionManager implements VersionManager {
                                boolean isShallow )
         throws NoSuchWorkspaceException, AccessDeniedException, MergeException, LockException, InvalidItemStateException,
         RepositoryException {
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("VersionManager.merge('{0}','{1}',{2})", absPath, srcWorkspace, bestEffort);
         CheckArg.isNotNull(srcWorkspace, "source workspace name");
         // Create a new session in which we'll finish the merge, so this session remains thread-safe ...
         JcrSession mergeSession = session.spawnSession(false);
@@ -753,6 +786,7 @@ final class JcrVersionManager implements VersionManager {
     public void doneMerge( String absPath,
                            Version version )
         throws VersionException, InvalidItemStateException, UnsupportedRepositoryOperationException, RepositoryException {
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("VersionManager.doneMerge('{0}',{1})", absPath, version);
         // Create a new session in which we'll finish the merge, so this session remains thread-safe ...
         JcrSession mergeSession = session.spawnSession(false);
         doneMerge(mergeSession.getNode(absPath), version);
@@ -828,13 +862,18 @@ final class JcrVersionManager implements VersionManager {
             AbstractJcrProperty uuidProp = sourceNode.getProperty(JcrLexicon.FROZEN_UUID);
             String frozenUuidString = session.stringFactory().create(uuidProp.property().getFirstValue());
             NodeKey desiredKey = parentNode.key().withId(frozenUuidString);
+            Name name = path.getLastSegment().getName();
 
-            Property primaryType = propFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
-            MutableCachedNode newChild = parentNode.mutable().createChild(cache,
-                                                                          desiredKey,
-                                                                          path.getLastSegment().getName(),
-                                                                          primaryType);
-            existingNode = session.node(newChild, (Type)null);
+            if (ModeShapeLexicon.SHARE.equals(primaryTypeName)) {
+                // Need to link to the existing node with the identifier ...
+                parentNode.mutable().linkChild(cache, desiredKey, name);
+                existingNode = session.node(desiredKey, (Type)null, parentNode.key());
+            } else {
+                // Otherwise recreate/restore the new child ...
+                Property primaryType = propFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
+                MutableCachedNode newChild = parentNode.mutable().createChild(cache, desiredKey, name, primaryType);
+                existingNode = session.node(newChild, (Type)null, parentNode.key());
+            }
             nodeToCheckLock = parentNode;
         }
 
@@ -1134,12 +1173,13 @@ final class JcrVersionManager implements VersionManager {
             // Map the source children to existing target children where possible
             for (ChildReference sourceChild : source.getChildReferences(cache)) {
                 CachedNode child = cache.getNode(sourceChild);
-                boolean isVersionedChild = JcrNtLexicon.VERSIONED_CHILD.equals(name(child.getPrimaryType(cache)));
+                Name primaryTypeName = name(child.getPrimaryType(cache));
                 CachedNode resolvedNode = resolveSourceNode(child, checkinTime, cache);
                 CachedNode match = findMatchFor(resolvedNode, cache);
 
                 if (match != null) {
-                    if (isVersionedChild) {
+                    if (JcrNtLexicon.VERSIONED_CHILD.equals(primaryTypeName)) {
+                        // This is a versioned child ...
                         if (!removeExisting) {
                             throw new ItemExistsException(JcrI18n.itemAlreadyExistsWithUuid.text(match.getKey(),
                                                                                                  session.workspace().getName(),
@@ -1150,7 +1190,6 @@ final class JcrVersionManager implements VersionManager {
                     }
                     inTargetOnly.remove(match.getKey());
                     presentInBoth.put(child.getKey(), match);
-
                 } else {
                     inSourceOnly.put(child, resolvedNode);
                 }
@@ -1163,8 +1202,7 @@ final class JcrVersionManager implements VersionManager {
                     case OnParentVersionAction.ABORT:
                     case OnParentVersionAction.VERSION:
                     case OnParentVersionAction.COPY:
-                        target.removeChild(cache, childKey);
-                        cache.destroy(childKey);
+                        child.doRemove();
                         // Otherwise we're going to reuse the exisiting node
                         break;
                     case OnParentVersionAction.COMPUTE:
@@ -1192,6 +1230,8 @@ final class JcrVersionManager implements VersionManager {
                 AbstractJcrNode sourceChildNode;
                 AbstractJcrNode targetChildNode;
 
+                Property frozenPrimaryType = sourceChild.getProperty(JcrLexicon.FROZEN_PRIMARY_TYPE, cache);
+                Name sourceFrozenPrimaryType = frozenPrimaryType != null ? name(frozenPrimaryType.getFirstValue()) : null;
                 boolean shouldRestore = !versionedChildrenThatShouldNotBeRestored.contains(targetChild);
                 boolean shouldRestoreMixinsAndUuid = false;
 
@@ -1201,7 +1241,12 @@ final class JcrVersionManager implements VersionManager {
                     resolvedPrimaryTypeName = name(resolvedChild.getPrimaryType(cache));
                     sourceChildNode = session.node(resolvedChild, (Type)null);
                     targetChildNode = session.node(targetChild, (Type)null);
-
+                    boolean isShared = ModeShapeLexicon.SHARE.equals(sourceFrozenPrimaryType);
+                    if (isShared && !targetChildNode.path().getParent().isSameAs(target.getPath(cache))) {
+                        // This is a shared node that already exists in the workspace ...
+                        restoredSharedChild(target, sourceChild, targetChildNode);
+                        continue;
+                    }
                 } else {
                     // Pull the resolved node
                     resolvedChild = inSourceOnly.get(sourceChild);
@@ -1210,9 +1255,18 @@ final class JcrVersionManager implements VersionManager {
                     sourceChildNode = session.node(resolvedChild, (Type)null);
                     shouldRestoreMixinsAndUuid = true;
 
+                    boolean isShared = ModeShapeLexicon.SHARE.equals(sourceFrozenPrimaryType);
+
                     Name primaryTypeName = null;
                     NodeKey desiredKey = null;
                     Name desiredName = null;
+                    if (isShared && sourceChildNode != null) {
+                        // This is a shared node that already exists in the workspace ...
+                        AbstractJcrNode resolvedChildNode = session.node(resolvedChild, (Type)null);
+                        restoredSharedChild(target, sourceChild, resolvedChildNode);
+                        continue;
+                    }
+
                     if (JcrNtLexicon.FROZEN_NODE.equals(resolvedPrimaryTypeName)) {
                         primaryTypeName = name(resolvedChild.getProperty(JcrLexicon.FROZEN_PRIMARY_TYPE, cache).getFirstValue());
                         Property idProp = resolvedChild.getProperty(JcrLexicon.FROZEN_UUID, cache);
@@ -1229,6 +1283,7 @@ final class JcrVersionManager implements VersionManager {
                             String uuid = string(idProp.getFirstValue());
                             desiredKey = target.getKey().withId(uuid);
                         }
+                        assert sourceChildNode != null;
                         desiredName = sourceChildNode.name();
                     }
                     Property primaryType = propFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
@@ -1250,6 +1305,7 @@ final class JcrVersionManager implements VersionManager {
                         }
                     }
 
+                    assert sourceChildNode != null;
                     AbstractJcrNode parent = sourceChildNode.getParent();
                     if (parent.isNodeType(JcrNtLexicon.VERSION)) {
                         // Clear the checkout status ...
@@ -1260,6 +1316,42 @@ final class JcrVersionManager implements VersionManager {
 
                 if (prevChildKey != null) target.reorderChild(cache, targetChildNode.key(), prevChildKey);
                 prevChildKey = targetChildNode.key();
+            }
+        }
+
+        /**
+         * @param target
+         * @param sourceChild
+         * @param existingShareableForChild
+         * @throws RepositoryException
+         */
+        private void restoredSharedChild( MutableCachedNode target,
+                                          CachedNode sourceChild,
+                                          AbstractJcrNode existingShareableForChild ) throws RepositoryException {
+            // The node is shared and exists at another location ...
+            Property idProp = sourceChild.getProperty(JcrLexicon.FROZEN_UUID, cache);
+            String frozenUuid = string(idProp.getFirstValue());
+            NodeKey desiredKey = target.getKey().withId(frozenUuid);
+            // the name should be that of the versioned child
+            Name desiredName = session.node(sourceChild, (Type)null).name();
+
+            // Now link the existing node as a child of the target node ...
+            target.linkChild(cache, desiredKey, desiredName);
+
+            // If we're to remove existing nodes, then the other places where the node is shared should be removed ...
+            if (removeExisting) {
+                // Remove the other parents ...
+                NodeKey targetKey = target.getKey();
+                MutableCachedNode shareable = cache.mutable(desiredKey);
+                Set<NodeKey> allParents = new HashSet<NodeKey>(shareable.getAdditionalParentKeys(cache));
+                allParents.add(shareable.getParentKey(cache));
+                for (NodeKey parentKey : allParents) {
+                    if (parentKey.equals(targetKey)) continue; // skip the new target ...
+                    MutableCachedNode parent = cache.mutable(parentKey);
+                    if (parent != null) {
+                        parent.removeChild(cache, desiredKey);
+                    }
+                }
             }
         }
 
@@ -1464,8 +1556,9 @@ final class JcrVersionManager implements VersionManager {
         }
 
         /**
-         * Checks if the given node is outside any of the root paths for this restore command. If this occurs, a special check of
-         * the {@link #removeExisting} flag must be performed.
+         * Checks if the given node is outside any of the root paths (and is not shareable) for this restore command. If this
+         * occurs, a special check of the {@link #removeExisting} flag must be performed. If the node is shareable, then the
+         * restore can be completed successfully.
          * 
          * @param node the node to check; may not be null
          * @return true if the node is not a descendant of any of the {@link #versionRootPaths root paths} for this restore
@@ -1479,6 +1572,7 @@ final class JcrVersionManager implements VersionManager {
             for (Path rootPath : versionRootPaths) {
                 if (nodePath.isAtOrBelow(rootPath)) return false;
             }
+            if (node.isShareable()) return false;
             if (!removeExisting) {
                 throw new ItemExistsException(JcrI18n.itemAlreadyExistsWithUuid.text(node.key(),
                                                                                      session.workspace().getName(),

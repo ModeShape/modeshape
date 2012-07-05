@@ -41,6 +41,8 @@ public interface ChangeSet extends Iterable<Change>, Serializable {
      */
     public int size();
 
+    public boolean isEmpty();
+
     public String getUserId();
 
     public Map<String, String> getUserData();

@@ -185,6 +185,11 @@ public class RecordingChanges implements Changes, ChangeSet {
         return events.size();
     }
 
+    @Override
+    public boolean isEmpty() {
+        return events.isEmpty() && nodeKeys.isEmpty(); // not all changed nodes cause events (e.g., shared nodes)
+    }
+
     /**
      * Returns an iterator over the elements in this queue in proper sequence. The returned iterator is a "weakly consistent"
      * iterator that will never throw {@link ConcurrentModificationException}, and guarantees to traverse elements as they existed

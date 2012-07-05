@@ -108,7 +108,7 @@ class JcrContentHandler extends DefaultHandler {
     protected final List<AbstractJcrProperty> refPropsRequiringConstraintValidation = new LinkedList<AbstractJcrProperty>();
     protected final List<AbstractJcrNode> nodesForPostProcessing = new LinkedList<AbstractJcrNode>();
 
-    private SessionCache cache;
+    protected SessionCache cache;
 
     private final boolean saveWhenCompleted;
 
@@ -448,6 +448,10 @@ class JcrContentHandler extends DefaultHandler {
             return null;
         }
 
+        public boolean ignoreAllChildren() {
+            return false;
+        }
+
         public void addPropertyValue( Name name,
                                       String value,
                                       boolean forceMultiValued,
@@ -538,6 +542,7 @@ class JcrContentHandler extends DefaultHandler {
         private AbstractJcrNode node;
         private final int uuidBehavior;
         private boolean postProcessed = false;
+        private boolean ignoreAllChildren = false;
 
         protected BasicNodeHandler( Name name,
                                     NodeHandler parentHandler,
@@ -552,6 +557,11 @@ class JcrContentHandler extends DefaultHandler {
         @Override
         public void finish() throws SAXException {
             node();
+        }
+
+        @Override
+        public boolean ignoreAllChildren() {
+            return ignoreAllChildren;
         }
 
         /**
@@ -644,18 +654,20 @@ class JcrContentHandler extends DefaultHandler {
         protected void create() throws SAXException {
             try {
                 AbstractJcrNode parent = parentHandler.node();
+                final NodeKey parentKey = parent.key();
                 assert parent != null;
 
                 // Figure out the key for the node ...
                 NodeKey key = null;
                 List<Value> rawUuid = properties.get(JcrLexicon.UUID);
+                boolean makeShareable = false;
                 if (rawUuid != null) {
                     assert rawUuid.size() == 1;
-                    key = parent.key().withId(rawUuid.get(0).getString());
+                    key = parentKey.withId(rawUuid.get(0).getString());
 
                     try {
                         // Deal with any existing node ...
-                        AbstractJcrNode existingNode = session().node(key, null);
+                        AbstractJcrNode existingNode = session().node(key, null, parentKey);
                         switch (uuidBehavior) {
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING:
                                 parent = existingNode.getParent();
@@ -680,10 +692,14 @@ class JcrContentHandler extends DefaultHandler {
                                 existingNode.remove();
                                 break;
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW:
-                                throw new ItemExistsException(JcrI18n.itemAlreadyExistsWithUuid.text(key,
-                                                                                                     session().workspace()
-                                                                                                              .getName(),
-                                                                                                     existingNode.getPath()));
+                                if (existingNode.isShareable()) {
+                                    makeShareable = true;
+                                } else {
+                                    throw new ItemExistsException(JcrI18n.itemAlreadyExistsWithUuid.text(key,
+                                                                                                         session().workspace()
+                                                                                                                  .getName(),
+                                                                                                         existingNode.getPath()));
+                                }
                         }
                     } catch (ItemNotFoundException e) {
                         // there wasn't an existing item, so just continue
@@ -701,17 +717,11 @@ class JcrContentHandler extends DefaultHandler {
                     List<Value> primaryTypeValueList = properties.get(JcrLexicon.PRIMARY_TYPE);
                     String typeName = primaryTypeValueList != null ? primaryTypeValueList.get(0).getString() : null;
                     Name primaryTypeName = nameFor(typeName);
-                    if (JcrNtLexicon.SHARE.equals(primaryTypeName) && key != null) {
-                        // TODO : Shareable nodes
-
-                        // // Per Section 14.7 and 14.8 of the JCR 2.0 specification, shared nodes are imported in a special way
-                        // ...
-                        // child = parent.editor().createChild(nodeName, UUID.randomUUID(), ModeShapeLexicon.SHARE);
-                        // SessionCache.NodeEditor newNodeEditor = child.editor();
-                        // JcrValue uuidValue = (JcrValue)valueFor(uuid.toString(), PropertyType.STRING);
-                        // newNodeEditor.setProperty(ModeShapeLexicon.SHARED_UUID, uuidValue, false, true);
-                        // node = child;
-                        // return;
+                    if ((makeShareable || JcrNtLexicon.SHARE.equals(primaryTypeName)) && key != null) {
+                        parent.mutable().linkChild(cache, key, nodeName);
+                        node = session().node(key, null, parentKey);
+                        ignoreAllChildren = true;
+                        return;
                     }
                     // Otherwise, it's just a regular node...
                     child = parent.addChildNode(nodeName, primaryTypeName, key);
@@ -875,17 +885,11 @@ class JcrContentHandler extends DefaultHandler {
     }
 
     protected class StandardNodeHandlerFactory implements NodeHandlerFactory {
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.jcr.JcrContentHandler.NodeHandlerFactory#createFor(Name,
-         *      org.modeshape.jcr.JcrContentHandler.NodeHandler,int)
-         */
         @Override
         public NodeHandler createFor( Name name,
                                       NodeHandler parentHandler,
                                       int uuidBehavior ) throws SAXException {
-            if (parentHandler instanceof IgnoreBranchHandler) {
+            if (parentHandler instanceof IgnoreBranchHandler || parentHandler.ignoreAllChildren()) {
                 return new IgnoreBranchHandler(parentHandler);
             }
             if (JcrLexicon.ROOT.equals(name)) {

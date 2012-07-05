@@ -81,12 +81,20 @@ public interface CachedNode {
     Path getPath( NodeCache cache ) throws NodeNotFoundException;
 
     /**
-     * Get the node key for this node's primary parent.
+     * Get the node key for this node's primary parent within this workspace.
      * 
      * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
      * @return the parent's key; null if this is the root node or it has been removed from the document by someone else
      */
     NodeKey getParentKey( NodeCache cache );
+
+    /**
+     * Get the node key for this node's primary parent in any workspace.
+     * 
+     * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
+     * @return the parent's key; null if this is the root node or it has been removed from the document by someone else
+     */
+    NodeKey getParentKeyInAnyWorkspace( NodeCache cache );
 
     /**
      * Get the keys for all of the nodes (other than the {@link #getParentKey(NodeCache) primary parent}) under which this node
@@ -186,4 +194,15 @@ public interface CachedNode {
      */
     Set<NodeKey> getReferrers( NodeCache cache,
                                ReferenceType type );
+
+    /**
+     * Determine if this node is effectively at or below the supplied path. Note that because of
+     * {@link #getAdditionalParentKeys(NodeCache) additional parents}, a node has multiple effective paths.
+     * 
+     * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
+     * @param path the path to be used for comparison; may not be null
+     * @return true if this node can be considered at or below the supplied path; or false otherwise
+     */
+    boolean isAtOrBelow( NodeCache cache,
+                         Path path );
 }

@@ -106,6 +106,7 @@ import org.apache.jackrabbit.test.api.SetValueReferenceTest;
 import org.apache.jackrabbit.test.api.SetValueStringTest;
 import org.apache.jackrabbit.test.api.SetValueValueFormatExceptionTest;
 import org.apache.jackrabbit.test.api.SetValueVersionExceptionTest;
+import org.apache.jackrabbit.test.api.ShareableNodeTest;
 import org.apache.jackrabbit.test.api.StringPropertyTest;
 import org.apache.jackrabbit.test.api.UndefinedPropertyTest;
 import org.apache.jackrabbit.test.api.ValueFactoryTest;
@@ -421,9 +422,17 @@ public class JcrTckTest {
 
         suite.addTestSuite(GetWeakReferencesTest.class);
 
-        // shareable nodes
-        // TODO author=Horia Chiorean date=4/13/12 description=https://issues.jboss.org/browse/MODE-1458
         // suite.addTestSuite(ShareableNodeTest.class);
+        // TODO author=Randall Hauch date=7/2/12 description=https://issues.apache.org/jira/browse/JCR-3370 (get path)
+        // TODO author=Randall Hauch date=7/2/12 description=https://issues.apache.org/jira/browse/JCR-3371 (remove mixin)
+        // TODO author=Randall Hauch date=7/9/12 description=https://issues.apache.org/jira/browse/JCR-3380 (move)
+        suite.addTestSuite(excludeTests(ShareableNodeTest.class,
+                                        "testGetPath",
+                                        "testRemoveMixin",
+                                        "testMoveShareableNode",
+                                        "testTransientMoveShareableNode",
+                                        "testModifyDescendantAndSave",
+                                        "testModifyDescendantAndRemoveShareAndSave"));
 
         return suite;
     }

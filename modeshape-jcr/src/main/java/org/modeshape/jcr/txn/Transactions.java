@@ -111,7 +111,7 @@ public abstract class Transactions {
                              ChangeSet changes,
                              Transaction transaction ) {
         // Notify the workspaces of the changes made. This is done outside of our lock but still before the save returns ...
-        if (changes != null && changes.size() != 0) {
+        if (changes != null && !changes.isEmpty()) {
             // Notify the workspace (outside of the lock, but still before the save returns) ...
             workspace.changed(changes);
         }
