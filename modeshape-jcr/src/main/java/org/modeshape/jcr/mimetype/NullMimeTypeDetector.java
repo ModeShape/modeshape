@@ -3,8 +3,8 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
@@ -21,32 +21,28 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+
 package org.modeshape.jcr.mimetype;
 
 import javax.jcr.Binary;
-import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.util.MimeTypeUtil;
+import javax.jcr.RepositoryException;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
+import java.io.IOException;
 
 /**
- * A {@link MimeTypeDetector} that attempts to match the extension of the supplied name against a set of known file extensions.
+ * Implementation of {@link MimeTypeDetector} which doesn't detect mime-types.
+ *
+ * @author Horia Chiorean
  */
-@Immutable
-@ThreadSafe
-public final class ExtensionBasedMimeTypeDetector extends MimeTypeDetector {
+public final class NullMimeTypeDetector extends MimeTypeDetector {
+    public static final MimeTypeDetector INSTANCE = new NullMimeTypeDetector();
 
-    public static final MimeTypeDetector INSTANCE = new ExtensionBasedMimeTypeDetector();
-
-    private final MimeTypeUtil mimeTypeUtil;
-
-    private ExtensionBasedMimeTypeDetector() {
-        mimeTypeUtil = new MimeTypeUtil();
+    private NullMimeTypeDetector() {
     }
 
     @Override
     public String mimeTypeOf( String name,
-                              Binary binaryValue ) {
-        return mimeTypeUtil.mimeTypeOf(name);
+                              Binary binaryValue ) throws RepositoryException, IOException {
+        return null;
     }
 }

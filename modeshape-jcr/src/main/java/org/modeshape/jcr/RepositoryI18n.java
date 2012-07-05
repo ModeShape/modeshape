@@ -125,6 +125,9 @@ public final class RepositoryI18n {
     public static I18n warningsWhileStarting;
     public static I18n errorVerifyingConfiguration;
 
+    //MimeTypes
+    public static I18n unableToLoadMimeTypeDetector;
+
     static {
         try {
             I18n.initialize(RepositoryI18n.class);

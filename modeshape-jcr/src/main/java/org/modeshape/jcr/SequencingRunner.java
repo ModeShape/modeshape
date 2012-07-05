@@ -178,7 +178,7 @@ final class SequencingRunner implements Runnable {
             // Execute the sequencer ...
             DateTime now = outputSession.dateFactory().create();
             Sequencer.Context context = new SequencingContext(now, outputSession.getValueFactory(),
-                                                              outputSession.context().getMimeTypeDetector());
+                                                              repository.runningState().mimeTypeDetector());
             if (inputSession.isLive() && (inputSession == outputSession || outputSession.isLive())) {
                 final long start = System.nanoTime();
 

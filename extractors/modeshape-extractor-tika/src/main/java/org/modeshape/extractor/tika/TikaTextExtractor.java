@@ -24,7 +24,6 @@
 package org.modeshape.extractor.tika;
 
 import javax.jcr.RepositoryException;
-import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.DefaultParser;
@@ -127,7 +126,7 @@ public class TikaTextExtractor extends TextExtractor {
         processStream(binary, new BinaryOperation<Object>() {
             @Override
             public Object execute( InputStream stream ) throws Exception {
-                Metadata metadata = prepareMetadata(binary, stream);
+                Metadata metadata = prepareMetadata(binary);
                 try {
                     ContentHandler textHandler = new BodyContentHandler();
                     // Parse the input stream ...
@@ -153,19 +152,15 @@ public class TikaTextExtractor extends TextExtractor {
      * @return a <code>Metadata</code> instance.
      * @throws java.io.IOException if auto-detecting the mime-type via Tika fails
      */
-    private Metadata prepareMetadata(final Binary binary, InputStream stream) throws IOException, RepositoryException {
+    private Metadata prepareMetadata(final Binary binary) throws IOException, RepositoryException {
         Metadata metadata = new Metadata();
 
         String mimeType = binary.getMimeType();
-
         if (StringUtil.isBlank(mimeType)) {
             LOGGER.warn(TikaI18n.warnCannotDetectMimeType);
-            MediaType autoDetectedMimeType = new DefaultDetector(this.getClass().getClassLoader()).detect(stream, metadata);
-            metadata.set(Metadata.CONTENT_TYPE, autoDetectedMimeType.toString());
+            mimeType = new TikaMimeTypeDetector().mimeTypeOf(null, binary);
         }
-        else {
-            metadata.set(Metadata.CONTENT_TYPE, mimeType);
-        }
+        metadata.set(Metadata.CONTENT_TYPE, mimeType);
         return metadata;
     }
 

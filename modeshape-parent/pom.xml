@@ -1248,22 +1248,7 @@
                         <groupId>org.apache.james</groupId>
                         <artifactId>apache-mime4j</artifactId>
                     </exclusion>
-                    <!--
-                    Archive formats supported by Apache Commons Compres are not often needed for text extraction,
-                    so exclude this library by default.
-                    -->
-                    <exclusion>
-                        <groupId>org.apache.commons</groupId>
-                        <artifactId>commons-compress</artifactId>
-                    </exclusion>
-                    <!--
-                    It is not often that users will need/want to extract text from Java files,
-                    so exclude this library by default.
-                    -->
-                    <exclusion>
-                        <groupId>asm</groupId>
-                        <artifactId>asm</artifactId>
-                    </exclusion>
+
                     <!--
                     Image metadata isn't often for text extraction,
                     so exclude this library by default.

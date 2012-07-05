@@ -51,7 +51,7 @@ import java.io.InputStream;
  *
  * @author Horia Chiorean
  */
-@Ignore("Enable this once MODE-1419 is fixed")
+@Ignore("Enable this once MODE-1419 and MODE-1547 are fixed")
 @RunWith( Arquillian.class)
 public class TikaTextExtractorIntegrationTest {
 
