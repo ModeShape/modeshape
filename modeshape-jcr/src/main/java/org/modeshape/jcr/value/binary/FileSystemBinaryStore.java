@@ -59,6 +59,7 @@ import java.util.concurrent.locks.Lock;
 public class FileSystemBinaryStore extends AbstractBinaryStore {
 
     private static final String EXTRACTED_TEXT_SUFFIX = "-extracted-text";
+    private static final String MIME_TYPE_SUFFIX = "-mime-type";
 
     private static final ConcurrentHashMap<String, FileSystemBinaryStore> INSTANCES = new ConcurrentHashMap<String, FileSystemBinaryStore>();
 
@@ -276,7 +277,9 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         for (BinaryKey key : keys) {
             markAsUnused(key);
             //mark the corresponding extracted text file as unused
-            markAsUnused(extractedTextKeyFromSourceKey(key));
+            markAsUnused(createKeyFromSourceWithSuffix(key, EXTRACTED_TEXT_SUFFIX));
+             //mark the corresponding stored mime-type file as unused
+            markAsUnused(createKeyFromSourceWithSuffix(key, MIME_TYPE_SUFFIX));
         }
     }
 
@@ -411,10 +414,14 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
 
     @Override
     public String getExtractedText( BinaryValue source ) throws BinaryStoreException {
-        BinaryKey extractedTextKey = extractedTextKeyFromSourceKey(source.getKey());
+        BinaryKey extractedTextKey = createKeyFromSourceWithSuffix(source.getKey(), EXTRACTED_TEXT_SUFFIX);
+        return storedStringAtKey(extractedTextKey);
+    }
+
+    private String storedStringAtKey( BinaryKey key ) throws BinaryStoreException {
         InputStream is = null;
         try {
-            is = getInputStream(extractedTextKey);
+            is = getInputStream(key);
         } catch (BinaryStoreException e) {
             //means the file wasn't found (isn't available yet) in the store
             return null;
@@ -430,13 +437,18 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
     @Override
     public void storeExtractedText( BinaryValue source,
                                     String extractedText ) throws BinaryStoreException {
+        BinaryKey extractedTextKey = createKeyFromSourceWithSuffix(source.getKey(), EXTRACTED_TEXT_SUFFIX);
+        storeStringAtKey(extractedText, extractedTextKey);
+    }
+
+    private void storeStringAtKey( String string,
+                                   BinaryKey key ) throws BinaryStoreException {
         File tmpFile = null;
         try {
             tmpFile = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX + EXTRACTED_TEXT_SUFFIX);
-            IoUtil.write(extractedText,
+            IoUtil.write(string,
                          new BufferedOutputStream(new FileOutputStream(tmpFile)));
-            BinaryKey extractedTextKey = extractedTextKeyFromSourceKey(source.getKey());
-            saveTempFileToStore(tmpFile, extractedTextKey, tmpFile.length());
+            saveTempFileToStore(tmpFile, key, tmpFile.length());
         } catch (IOException e) {
             throw new BinaryStoreException(e);
         } finally {
@@ -446,8 +458,21 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         }
     }
 
-    private BinaryKey extractedTextKeyFromSourceKey( BinaryKey sourceKey ) {
-        String extractTextKeyContent = sourceKey.toString() + EXTRACTED_TEXT_SUFFIX;
+    @Override
+    protected String getStoredMimeType( BinaryValue binaryValue ) throws BinaryStoreException {
+        BinaryKey mimeTypeKey = createKeyFromSourceWithSuffix(binaryValue.getKey(), MIME_TYPE_SUFFIX);
+        return storedStringAtKey(mimeTypeKey);
+    }
+
+    @Override
+    protected void storeMimeType( BinaryValue binaryValue,
+                                  String mimeType ) throws BinaryStoreException {
+        BinaryKey mimeTypeKey = createKeyFromSourceWithSuffix(binaryValue.getKey(), MIME_TYPE_SUFFIX);
+        storeStringAtKey(mimeType, mimeTypeKey);
+    }
+
+    private BinaryKey createKeyFromSourceWithSuffix( BinaryKey sourceKey, String suffix ) {
+        String extractTextKeyContent = sourceKey.toString() + suffix;
         return BinaryKey.keyFor(extractTextKeyContent.getBytes());
     }
 }

@@ -25,4 +25,4 @@
 <text='http://www.modeshape.org/sequencer/text/1.0'>
 
 [text:column] mixin
-- text:data(string)  
+- text:data (string)

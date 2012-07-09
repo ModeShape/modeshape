@@ -23,6 +23,7 @@
  */
 package org.modeshape.sequencer.msoffice;
 
+import org.modeshape.jcr.api.Binary;
 import static org.modeshape.jcr.api.JcrConstants.JCR_MIME_TYPE;
 import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.AUTHOR;
 import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.CHARACTERS;
@@ -54,7 +55,6 @@ import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.TOTAL_EDI
 import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.WORDS;
 import java.io.IOException;
 import java.io.InputStream;
-import javax.jcr.Binary;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
@@ -128,10 +128,11 @@ public class MSOfficeMetadataSequencer extends Sequencer {
     public boolean execute( Property inputProperty,
                             Node outputNode,
                             Context context ) throws Exception {
-        Binary binaryValue = inputProperty.getBinary();
+        Binary binaryValue = (Binary)inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
 
-        String mimeType = context.mimeTypeDetector().mimeTypeOf(getInputFileName(inputProperty), binaryValue);
+        String inputFileName = getInputFileName(inputProperty);
+        String mimeType = binaryValue.getMimeType(inputFileName);
 
         Node sequencedNode = outputNode;
         if (outputNode.isNew()) {

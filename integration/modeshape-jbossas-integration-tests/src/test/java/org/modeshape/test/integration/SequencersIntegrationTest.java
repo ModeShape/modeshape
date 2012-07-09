@@ -168,13 +168,16 @@ public class SequencersIntegrationTest {
         jcrTools.uploadFile(session, inputNodePath, resourceAsStream);
         session.save();
 
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
-        String outputNodePath = listener.getSequencedNodePath();
-        assertTrue(outputNodePath.startsWith(outputPathPrefix));
-        Node outputNode = session.getNode(outputNodePath);
-        outputNode.remove();
-        session.getNode(inputNodePath).remove();
-        session.save();
+        try {
+            assertTrue(latch.await(5, TimeUnit.SECONDS));
+            String outputNodePath = listener.getSequencedNodePath();
+            assertTrue(outputNodePath.startsWith(outputPathPrefix));
+            Node outputNode = session.getNode(outputNodePath);
+            outputNode.remove();
+        } finally {
+            session.getNode(inputNodePath).remove();
+            session.save();
+        }
     }
 
     private void assertSequencerConfigured( String expectedSequencerClassConfigured ) {

@@ -725,12 +725,13 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
             Collection<NodeTypeDefinition> nodeTypes = system.readAllNodeTypes();
             if (nodeTypes.isEmpty()) return false;
             registerNodeTypes(nodeTypes, false, false, false);
+            return true;
         } catch (Throwable e) {
             logger.error(e, JcrI18n.errorRefreshingNodeTypes, repository.name());
+            return false;
         } finally {
             this.nodeTypesLock.writeLock().unlock();
         }
-        return true;
     }
 
     @Override

@@ -390,13 +390,6 @@ public abstract class Sequencer {
          * @return a non-null value factory, using the output node's session as context
          */
         org.modeshape.jcr.api.ValueFactory valueFactory();
-
-        /**
-         * Returns a {@link MimeTypeDetector} implementation which can be used to determine content mime-type.
-         * 
-         * @return a non-null value, using the output node's session as context
-         */
-        MimeTypeDetector mimeTypeDetector();
     }
 
 }
