@@ -450,8 +450,8 @@ public class SystemContent {
             props.add(propertyFactory.create(JcrLexicon.NAME, name));
         }
 
-        if (childNodeDef.getDefaultPrimaryType() != null) {
-            props.add(propertyFactory.create(JcrLexicon.DEFAULT_PRIMARY_TYPE, childNodeDef.getDefaultPrimaryType().getName()));
+        if (childNodeDef.defaultPrimaryTypeName() != null) {
+            props.add(propertyFactory.create(JcrLexicon.DEFAULT_PRIMARY_TYPE, childNodeDef.defaultPrimaryTypeName()));
         }
 
         props.add(propertyFactory.create(JcrLexicon.REQUIRED_PRIMARY_TYPES, childNodeDef.requiredPrimaryTypeNames()));

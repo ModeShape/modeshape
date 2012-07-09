@@ -95,6 +95,11 @@ public class TikaMimeTypeDetectorTest {
     }
 
     @Test
+    public void shouldDetectXSD() throws Exception {
+        assertEquals(MimeTypeConstants.APPLICATION_XML, detector.mimeTypeOf(null, binaryFromFile("xsd_file.xsd")));
+    }
+
+    @Test
     public void shouldDetectMimeTypeEventIfNameIsWrong() throws Exception {
         assertEquals(MimeTypeConstants.TEXT_PLAIN, detector.mimeTypeOf(PDF_FILE, binaryFromFile(TXT_FILE)));
     }

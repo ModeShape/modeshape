@@ -23,20 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import java.io.Serializable;
-import java.lang.reflect.Method;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -47,7 +33,6 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
-import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.jcr.api.value.DateTime;
@@ -65,6 +50,20 @@ import org.modeshape.jcr.sequencer.SequencerPathExpression.Matcher;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.ValueFactory;
+import java.io.Serializable;
+import java.lang.reflect.Method;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Component that manages the library of sequencers configured for a repository. Simply instantiate, and register as a
@@ -334,14 +333,11 @@ public class Sequencers implements ChangeSetListener {
     protected static final class SequencingContext implements Sequencer.Context {
         private final DateTime now;
         private final org.modeshape.jcr.api.ValueFactory valueFactory;
-        private final MimeTypeDetector mimeTypeDetector;
 
         protected SequencingContext( DateTime now,
-                                     org.modeshape.jcr.api.ValueFactory jcrValueFactory,
-                                     MimeTypeDetector mimeTypeDetector ) {
+                                     org.modeshape.jcr.api.ValueFactory jcrValueFactory) {
             this.now = now;
             this.valueFactory = jcrValueFactory;
-            this.mimeTypeDetector = mimeTypeDetector;
         }
 
         @Override
@@ -352,11 +348,6 @@ public class Sequencers implements ChangeSetListener {
         @Override
         public org.modeshape.jcr.api.ValueFactory valueFactory() {
             return valueFactory;
-        }
-
-        @Override
-        public MimeTypeDetector mimeTypeDetector() {
-            return mimeTypeDetector;
         }
     }
 

@@ -27,6 +27,7 @@ import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.TextExtractors;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.ExtensionBasedMimeTypeDetector;
@@ -111,7 +112,33 @@ public abstract class AbstractBinaryStore implements BinaryStore {
     @Override
     public String getMimeType( BinaryValue binary,
                                String name ) throws IOException, RepositoryException {
-        return detector().mimeTypeOf(name, binary);
+        String storedMimeType = getStoredMimeType(binary);
+        if (!StringUtil.isBlank(storedMimeType)) {
+            return storedMimeType;
+        }
+        String detectedMimeType = detector().mimeTypeOf(name, binary);
+        storeMimeType(binary, detectedMimeType);
+        return detectedMimeType;
+    }
+
+    /**
+     * Returns the stored mime-type of a binary value.
+     *
+     * @param binaryValue a {@code non-null} {@link BinaryValue}
+     * @return either a non-empty {@code String} if a stored mimetype exists, or {@code null} if such a value doesn't exist yet.
+     */
+    protected String getStoredMimeType(BinaryValue binaryValue) throws BinaryStoreException {
+        throw new UnsupportedOperationException("getStoredMimeType not supported by " + getClass().getName());
+    }
+
+    /**
+     * Stores the given mime-type for a binary value.
+     *
+     * @param binaryValue a {@code non-null} {@link BinaryValue}
+     * @param mimeType a non-empty {@code String}
+     */
+    protected void storeMimeType(BinaryValue binaryValue, String mimeType) throws BinaryStoreException {
+        throw new UnsupportedOperationException("storeMimeType not supported by " + getClass().getName());
     }
 
     /**
