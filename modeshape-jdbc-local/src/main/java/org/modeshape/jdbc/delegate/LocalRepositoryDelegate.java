@@ -133,7 +133,7 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
     @Override
     public QueryResult execute( String query,
                                 String language ) throws RepositoryException {
-        logger.trace("Executing query: {0}" + query);
+        logger.trace("Executing query: {0}", query);
 
         // Create the query ...
 
