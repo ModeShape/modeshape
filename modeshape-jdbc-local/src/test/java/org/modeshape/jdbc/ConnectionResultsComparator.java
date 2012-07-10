@@ -43,7 +43,7 @@ public class ConnectionResultsComparator extends ResultsComparator {
 
     protected Connection internalConnection = null;
     protected ResultSet internalResultSet = null;
-    protected JcrStatement internalStatement = null;
+    protected Statement internalStatement = null;
     private SQLException internalException = null;
     protected int updateCount = -1;
 
@@ -151,8 +151,10 @@ public class ConnectionResultsComparator extends ResultsComparator {
         assertTrue(!this.internalConnection.isClosed());
         boolean result = false;
 
-        this.internalStatement = (JcrStatement)createStatement();
-        this.internalStatement.setJcrSqlLanguage(jcrSQL);
+        this.internalStatement = createStatement();
+        if (internalStatement instanceof JcrStatement) {
+            ((JcrStatement) this.internalStatement).setJcrSqlLanguage(jcrSQL);
+        }
         result = this.internalStatement.execute(sql);
         assertTrue(result);
 
@@ -203,6 +205,8 @@ public class ConnectionResultsComparator extends ResultsComparator {
         if (this.internalStatement != null) {
             try {
                 this.internalStatement.close();
+            } catch (SQLException e) {
+
             } finally {
                 this.internalStatement = null;
             }

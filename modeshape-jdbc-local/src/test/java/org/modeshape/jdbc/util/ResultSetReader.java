@@ -51,7 +51,7 @@ import org.modeshape.jdbc.JcrType;
 public class ResultSetReader extends StringLineReader {
     private static final String DEFAULT_DELIM = "    "; //$NON-NLS-1$
 
-    JcrResultSet source = null;
+    ResultSet source = null;
     ResultSetMetaData metadata = null;
 
     // Number of columns in the result set
@@ -67,15 +67,10 @@ public class ResultSetReader extends StringLineReader {
 
     private boolean compareColumns = true;
 
-    public ResultSetReader( JcrResultSet in,
-                            boolean compareCols ) {
-        this(in, DEFAULT_DELIM, compareCols);
-    }
-
     public ResultSetReader( ResultSet in,
                             String delimiter,
                             boolean compareCols ) {
-        this.source = (JcrResultSet)in;
+        this.source = in;
         this.delimiter = delimiter;
         this.compareColumns = compareCols;
     }
@@ -85,7 +80,11 @@ public class ResultSetReader extends StringLineReader {
      */
     @Override
     public void close() throws IOException {
-        source.close();
+        try {
+            source.close();
+        } catch (SQLException e) {
+
+        }
         super.close();
     }
 
@@ -152,12 +151,11 @@ public class ResultSetReader extends StringLineReader {
 
         if (objIdx == null) return;
 
-        Value v = source.getValue(col);
-
-        JcrType jcrType = JcrType.typeInfo(v.getType());
-
-        assertThat(objIdx, IsInstanceOf.instanceOf(jcrType.getRepresentationClass()));
-
+        if (source instanceof JcrResultSet) {
+            Value v = ((JcrResultSet) source).getValue(col);
+            JcrType jcrType = JcrType.typeInfo(v.getType());
+            assertThat(objIdx, IsInstanceOf.instanceOf(jcrType.getRepresentationClass()));
+        }
     }
 
     public int getRowCount() {
