@@ -126,7 +126,7 @@ public class QueryHandler extends AbstractHandler {
         }
 
         results.put("rows", new JSONArray(jsonRows));
-        return results.toString();
+        return responseString(results, request);
     }
 
 }

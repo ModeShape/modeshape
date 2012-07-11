@@ -23,7 +23,6 @@
  */
 package org.modeshape.web.jcr.rest;
 
-import java.io.IOException;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -41,6 +40,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.GenericEntity;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
@@ -52,6 +53,7 @@ import org.jboss.resteasy.spi.UnauthorizedException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.Base64;
 import org.modeshape.web.jcr.NoSuchRepositoryException;
+import java.io.IOException;
 
 /**
  * RESTEasy handler to provide the JCR resources at the URIs below. Please note that these URIs assume a context of
@@ -164,12 +166,9 @@ public class JcrResources extends AbstractHandler {
      */
     @GET
     @Path( "/" )
-    @Produces( "application/json" )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public String getRepositories( @Context HttpServletRequest request ) throws JSONException, RepositoryException {
-        String result = serverHandler.getRepositories(request);
-        // System.out.println("Request:  " + request);
-        // System.out.println("Response: " + result);
-        return result;
+         return serverHandler.getRepositories(request);
     }
 
     /**
@@ -183,7 +182,7 @@ public class JcrResources extends AbstractHandler {
      */
     @GET
     @Path( "/{repositoryName}" )
-    @Produces( "application/json" )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public String getWorkspaces( @Context HttpServletRequest request,
                                  @PathParam( "repositoryName" ) String rawRepositoryName )
         throws JSONException, RepositoryException {
@@ -215,7 +214,7 @@ public class JcrResources extends AbstractHandler {
      */
     @GET
     @Path( "/{repositoryName}/{workspaceName}/items{path:.*}" )
-    @Produces( "application/json" )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public String getItem( @Context HttpServletRequest request,
                            @PathParam( "repositoryName" ) String rawRepositoryName,
                            @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -251,7 +250,7 @@ public class JcrResources extends AbstractHandler {
      */
     @POST
     @Path( "/{repositoryName}/{workspaceName}/items/{path:.*}" )
-    @Consumes( "application/json" )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public Response postItem( @Context HttpServletRequest request,
                               @PathParam( "repositoryName" ) String rawRepositoryName,
                               @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -311,7 +310,8 @@ public class JcrResources extends AbstractHandler {
      */
     @PUT
     @Path( "/{repositoryName}/{workspaceName}/items{path:.*}" )
-    @Consumes( "application/json" )
+    @Consumes( MediaType.APPLICATION_JSON )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public String putItem( @Context HttpServletRequest request,
                            @PathParam( "repositoryName" ) String rawRepositoryName,
                            @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -346,6 +346,7 @@ public class JcrResources extends AbstractHandler {
     @POST
     @Path( "/{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+xpath" )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public String postXPathQuery( @Context HttpServletRequest request,
                                   @PathParam( "repositoryName" ) String rawRepositoryName,
                                   @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -389,6 +390,7 @@ public class JcrResources extends AbstractHandler {
     @POST
     @Path( "/{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+sql" )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public String postJcrSqlQuery( @Context HttpServletRequest request,
                                    @PathParam( "repositoryName" ) String rawRepositoryName,
                                    @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -431,6 +433,7 @@ public class JcrResources extends AbstractHandler {
     @POST
     @Path( "/{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+sql2" )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public String postJcrSql2Query( @Context HttpServletRequest request,
                                     @PathParam( "repositoryName" ) String rawRepositoryName,
                                     @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -473,6 +476,7 @@ public class JcrResources extends AbstractHandler {
     @POST
     @Path( "/{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+search" )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public String postJcrSearchQuery( @Context HttpServletRequest request,
                                       @PathParam( "repositoryName" ) String rawRepositoryName,
                                       @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -495,7 +499,7 @@ public class JcrResources extends AbstractHandler {
 
         @Override
         public Response toResponse( NotFoundException exception ) {
-            return Response.status(Status.NOT_FOUND).entity(exception.getMessage()).build();
+            return exceptionResponse(exception, Status.NOT_FOUND);
         }
 
     }
@@ -505,7 +509,7 @@ public class JcrResources extends AbstractHandler {
 
         @Override
         public Response toResponse( NoSuchWorkspaceException exception ) {
-            return Response.status(Status.NOT_FOUND).entity(exception.getMessage()).build();
+            return exceptionResponse(exception, Status.NOT_FOUND);
         }
 
     }
@@ -515,7 +519,7 @@ public class JcrResources extends AbstractHandler {
 
         @Override
         public Response toResponse( NoSuchRepositoryException exception ) {
-            return Response.status(Status.NOT_FOUND).entity(exception.getMessage()).build();
+            return exceptionResponse(exception, Status.NOT_FOUND);
         }
 
     }
@@ -525,7 +529,7 @@ public class JcrResources extends AbstractHandler {
 
         @Override
         public Response toResponse( JSONException exception ) {
-            return Response.status(Status.BAD_REQUEST).entity(exception.getMessage()).build();
+            return exceptionResponse(exception, Status.BAD_REQUEST);
         }
 
     }
@@ -535,9 +539,8 @@ public class JcrResources extends AbstractHandler {
 
         @Override
         public Response toResponse( InvalidQueryException exception ) {
-            return Response.status(Status.BAD_REQUEST).entity(exception.getMessage()).build();
+            return exceptionResponse(exception, Status.BAD_REQUEST);
         }
-
     }
 
     @Provider
@@ -545,13 +548,13 @@ public class JcrResources extends AbstractHandler {
 
         @Override
         public Response toResponse( RepositoryException exception ) {
-            /*
-             * This error code is murky - the request must have been syntactically valid to get to
-             * the JCR operations, but there isn't an HTTP status code for "semantically invalid." 
-             */
-            return Response.status(Status.BAD_REQUEST).entity(exception.getMessage()).build();
+            return exceptionResponse(exception, Status.BAD_REQUEST);
         }
+    }
 
+    private static Response exceptionResponse(Exception e, Status status) {
+        GenericEntity<String> entity = new GenericEntity<String>(e.getMessage()){};
+        return Response.status(status).entity(entity).build();
     }
 
 }

@@ -6,7 +6,7 @@
         "allowCreation" : true
     },
     "storage" : {
-        "transactionManagerLookup" = "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
+        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
     },
     "security" : {
         "anonymous" : {

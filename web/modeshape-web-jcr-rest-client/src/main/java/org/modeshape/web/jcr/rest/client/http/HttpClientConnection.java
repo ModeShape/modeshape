@@ -106,6 +106,9 @@ public final class HttpClientConnection {
             throw new RuntimeException(unknownHttpRequestMethodMsg.text(method));
         }
 
+        //set the accepts header to application/json
+        this.request.setHeader("Accept", MediaType.APPLICATION_JSON);
+
         // set request URI
         this.request.setURI(url.toURI());
     }

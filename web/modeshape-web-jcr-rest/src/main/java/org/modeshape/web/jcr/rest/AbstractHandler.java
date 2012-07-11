@@ -1,15 +1,19 @@
 package org.modeshape.web.jcr.rest;
 
-import java.io.IOException;
-import java.io.InputStream;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.MediaType;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.text.UrlEncoder;
 import org.modeshape.common.util.Base64;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.web.jcr.RepositoryManager;
+import java.io.IOException;
+import java.io.InputStream;
 
 abstract class AbstractHandler {
 
@@ -85,5 +89,34 @@ abstract class AbstractHandler {
                 }
             }
         }
+    }
+
+    protected String responseString(JSONObject object, HttpServletRequest request) throws JSONException {
+        String acceptHeader = request.getHeader("Accept");
+        if (StringUtil.isBlank(acceptHeader)) {
+            return responseAsText(object);
+        }
+        acceptHeader = acceptHeader.toLowerCase();
+        if (acceptHeader.contains(MediaType.APPLICATION_JSON.toLowerCase())) {
+            return responseAsApplicationJSON(object);
+        }
+        else if (acceptHeader.contains(MediaType.TEXT_HTML.toLowerCase())) {
+            return responseAsHTML(object);
+        }
+        return responseAsText(object);
+    }
+
+    private String responseAsText( JSONObject object ) throws JSONException {
+        return object.toString(2);
+    }
+
+    private String responseAsApplicationJSON(JSONObject object) {
+        return object.toString();
+    }
+
+    private String responseAsHTML( JSONObject object ) throws JSONException {
+        String indentedString = object.toString(2);
+        indentedString = indentedString.replaceAll("\n", "<br/>").replaceAll("\\\\", "").replaceAll("\\s", "&nbsp;") ;
+        return "<code>" + indentedString + "</code>";
     }
 }
