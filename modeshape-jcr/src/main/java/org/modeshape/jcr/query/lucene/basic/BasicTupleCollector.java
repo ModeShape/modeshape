@@ -40,6 +40,7 @@ import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.cache.RepositoryPathCache;
 import org.modeshape.jcr.cache.SessionCache;
@@ -184,37 +185,41 @@ public class BasicTupleCollector extends TupleCollector {
         CachedNode node = lastWorkspaceCache.getNode(key);
 
         // Every tuple has the location ...
-        Path path = lastWorkspacePathCache.getPath(node);
-        Location location = new Location(path, key);
-        tuple[locationIndex] = location;
+        try {
+            Path path = lastWorkspacePathCache.getPath(node);
+            Location location = new Location(path, key);
+            tuple[locationIndex] = location;
 
-        // Set the column values ...
-        for (int i = 0; i != numValues; ++i) {
-            Name propName = columnNames[i];
-            if (propName == null) {
-                // This value in the tuple is a pseudo-column, which we'll set later ...
-                continue;
+            // Set the column values ...
+            for (int i = 0; i != numValues; ++i) {
+                Name propName = columnNames[i];
+                if (propName == null) {
+                    // This value in the tuple is a pseudo-column, which we'll set later ...
+                    continue;
+                }
+                // Find the node's named property for this tuple column ...
+                Property property = node.getProperty(propName, lastWorkspaceCache);
+                if (property == null) continue;
+                if (property.isEmpty()) continue;
+                if (property.isMultiple()) {
+                    Object[] values = property.getValuesAsArray();
+                    tuple[i] = values;
+                } else {
+                    Object firstValue = property.getFirstValue();
+                    tuple[i] = firstValue;
+                }
             }
-            // Find the node's named property for this tuple column ...
-            Property property = node.getProperty(propName, lastWorkspaceCache);
-            if (property == null) continue;
-            if (property.isEmpty()) continue;
-            if (property.isMultiple()) {
-                Object[] values = property.getValuesAsArray();
-                tuple[i] = values;
-            } else {
-                Object firstValue = property.getFirstValue();
-                tuple[i] = firstValue;
+
+            // Set the pseudo-columns using the assignments ...
+            for (PseudoColumnAssignment assignment : assignments) {
+                assignment.setValue(tuple, path, score);
             }
-        }
 
-        // Set the pseudo-columns using the assignments ...
-        for (PseudoColumnAssignment assignment : assignments) {
-            assignment.setValue(tuple, path, score);
+            tuples.add(tuple);
+            return score;
+        } catch (NodeNotFoundException e) {
+            return 0.0f;
         }
-
-        tuples.add(tuple);
-        return score;
     }
 
     @Override

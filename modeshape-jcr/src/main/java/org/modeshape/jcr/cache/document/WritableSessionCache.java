@@ -185,6 +185,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         try {
             lock.lock();
             changedNodes.clear();
+            changedNodesInOrder.clear();
         } finally {
             lock.unlock();
         }
@@ -199,7 +200,9 @@ public class WritableSessionCache extends AbstractSessionCache {
             // we must first remove the children and only then the parents, otherwise child paths won't be found
             List<SessionNode> nodesToRemoveInOrder = getChangedNodesAtOrBelowChildrenFirst(nodePath);
             for (SessionNode nodeToRemove : nodesToRemoveInOrder) {
-                changedNodes.remove(nodeToRemove.getKey());
+                NodeKey key = nodeToRemove.getKey();
+                changedNodes.remove(key);
+                changedNodesInOrder.remove(key);
             }
         } finally {
             lock.unlock();
@@ -216,12 +219,12 @@ public class WritableSessionCache extends AbstractSessionCache {
         List<SessionNode> changedNodesChildrenFirst = new ArrayList<SessionNode>();
         for (NodeKey key : changedNodes.keySet()) {
             SessionNode changedNode = changedNodes.get(key);
-            Path changedNodePath = changedNode.getPath(this);
-            if (!changedNodePath.isAtOrBelow(nodePath)) {
+            if (!changedNode.isAtOrBelow(this, nodePath)) {
                 continue;
             }
 
             int insertIndex = changedNodesChildrenFirst.size();
+            Path changedNodePath = changedNode.getPath(this);
             for (int i = 0; i < changedNodesChildrenFirst.size(); i++) {
                 if (changedNodesChildrenFirst.get(i).getPath(this).isAncestorOf(changedNodePath)) {
                     insertIndex = i;
@@ -285,7 +288,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         Lock lock = this.lock.readLock();
         try {
             lock.lock();
-            return !changedNodes.isEmpty();
+            return !changedNodesInOrder.isEmpty();
         } finally {
             lock.unlock();
         }
@@ -307,11 +310,6 @@ public class WritableSessionCache extends AbstractSessionCache {
     protected void save( PreSave preSaveOperation ) {
         if (!this.hasChanges()) return;
 
-        Logger logger = Logger.getLogger(getClass());
-        if (logger.isDebugEnabled()) {
-            logger.debug("Beginning SessionCache.save() with these changes: \n{0}", this);
-        }
-
         ChangeSet events = null;
         Lock lock = this.lock.writeLock();
         Transaction txn = null;
@@ -325,6 +323,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     if (node == REMOVED) continue;
                     checkNodeNotRemovedByAnotherTransaction(node);
                     preSaveOperation.process(node, saveContext);
+
                 }
             }
 
@@ -384,10 +383,6 @@ public class WritableSessionCache extends AbstractSessionCache {
             lock.unlock();
         }
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Completing SessionCache.save()");
-        }
-
         txns.updateCache(workspaceCache, events, txn);
     }
 
@@ -424,6 +419,7 @@ public class WritableSessionCache extends AbstractSessionCache {
     @Override
     public void save( SessionCache other,
                       PreSave preSaveOperation ) {
+
         // Try getting locks on both sessions ...
         final WritableSessionCache that = (WritableSessionCache)other;
         Lock thisLock = this.lock.writeLock();
@@ -546,12 +542,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                       PreSave preSaveOperation ) {
         Path topPath = node.getPath(this);
 
-        Logger logger = Logger.getLogger(getClass());
-        if (logger.isDebugEnabled()) {
-            String pathStr = topPath.getString(context().getNamespaceRegistry());
-            logger.debug("Beginning SessionCache.save(Path) with subset of changes below '{0}': \n{1}", pathStr, this);
-        }
-
         // Try getting locks on both sessions ...
         final WritableSessionCache that = (WritableSessionCache)other;
         Lock thisLock = this.lock.writeLock();
@@ -648,16 +638,18 @@ public class WritableSessionCache extends AbstractSessionCache {
         for (NodeKey key : this.changedNodesInOrder) {
             MutableCachedNode changedNode = this.changedNodes.get(key);
             if (changedNode != REMOVED) {
-                Path path = changedNode.getPath(this);
-                if (topPath.isAtOrAbove(path)) {
+                if (changedNode.isAtOrBelow(this, topPath)) {
                     if (preSaveOperation != null) {
                         checkNodeNotRemovedByAnotherTransaction(changedNode);
                         preSaveOperation.process(changedNode, saveContext);
                     }
                     savedNodesInOrder.add(key);
-                } else if (!changedNode.getChangedReferrerNodes().isEmpty()) {
-                    // we need to include any referrer changes
-                    savedNodesInOrder.add(key);
+                } else {
+                    boolean hasReferrers = !changedNode.getChangedReferrerNodes().isEmpty();
+                    if (hasReferrers) {
+                        // we need to include any referrer changes
+                        savedNodesInOrder.add(key);
+                    }
                 }
             } else {
                 // we can't ignore removed nodes below the top path
@@ -957,6 +949,42 @@ public class WritableSessionCache extends AbstractSessionCache {
                     Set<Name> mixinTypes = node.getMixinTypes(this);
                     monitor.recordUpdate(workspaceName, key, newPath, primaryType, mixinTypes, node.getProperties(this));
                 }
+
+                // The above code doesn't properly generate events for newly linked or unlinked nodes (e.g., shareable nodes
+                // in JCR), because NODE_ADDED or NODE_REMOVED events are generated based upon the creation or removal of the
+                // child nodes, whereas linking and unlinking nodes don't result in creation/removal of nodes. Instead,
+                // the linked/unlinked node is modified with the addition/removal of additional parents.
+                //
+                // NOTE that this happens somewhat rarely (as linked/shared nodes are used far less frequently) ...
+                //
+                if (additionalParents != null) {
+                    // Generate NODE_ADDED events for each of the newly-added parents ...
+                    for (NodeKey parentKey : additionalParents.getAdditions()) {
+                        // Find the mutable parent node (if it exists) ...
+                        SessionNode parent = this.changedNodes.get(parentKey);
+                        if (parent != null) {
+                            // Then the parent was changed in this session, so find the one-and-only child reference ...
+                            ChildReference ref = parent.getChildReferences(this).getChild(key);
+                            Path parentPath = sessionPaths.getPath(parent);
+                            Path childPath = pathFactory().create(parentPath, ref.getSegment());
+                            changes.nodeCreated(key, parentKey, childPath, null);
+                        }
+                    }
+                    // Generate NODE_REMOVED events for each of the newly-removed parents ...
+                    for (NodeKey parentKey : additionalParents.getRemovals()) {
+                        // We need to read some information from the parent node before it was changed ...
+                        CachedNode persistedParent = workspaceCache.getNode(parentKey);
+                        if (persistedParent != null) {
+                            // Find the path to the removed child ...
+                            ChildReference ref = persistedParent.getChildReferences(this).getChild(key);
+                            if (ref != null) {
+                                Path parentPath = workspacePaths.getPath(persistedParent);
+                                Path childPath = pathFactory().create(parentPath, ref.getSegment());
+                                changes.nodeRemoved(key, parentKey, childPath);
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -1110,5 +1138,4 @@ public class WritableSessionCache extends AbstractSessionCache {
         }
         return sb.toString();
     }
-
 }

@@ -75,6 +75,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.JcrSharedNodeCache.SharedSet;
 import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.CachedNode;
@@ -108,7 +109,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         ROOT,
         NODE,
         SYSTEM,
-        SHARED,
         VERSION,
         VERSION_HISTORY;
 
@@ -135,10 +135,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             // Locks ...
             byName.put(ModeShapeLexicon.LOCKS, Type.SYSTEM);
             byName.put(ModeShapeLexicon.LOCK, Type.SYSTEM);
-
-            // Shared nodes ...
-            // TODO: Shared nodes
-            // byName.put(ModeShapeLexicon.SHARE,Type.SHARED);
 
             DEFAULT_TYPE_BY_NAME = Collections.unmodifiableMap(byName);
         }
@@ -221,9 +217,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return sessionCache().mutable(key);
     }
 
+    protected NodeKey parentKey() throws RepositoryException {
+        return node().getParentKey(sessionCache());
+    }
+
     protected final MutableCachedNode mutableParent() throws RepositoryException {
         SessionCache cache = sessionCache();
-        return cache.mutable(node().getParentKey(cache));
+        return cache.mutable(parentKey());
     }
 
     @Override
@@ -244,11 +244,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
     }
 
-    protected final Name name() throws RepositoryException {
+    protected Name name() throws RepositoryException {
         return node().getName(sessionCache());
     }
 
-    protected final Segment segment() throws RepositoryException {
+    protected Segment segment() throws RepositoryException {
         return node().getSegment(sessionCache());
     }
 
@@ -693,7 +693,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             String msg = JcrI18n.childNotFoundUnderNode.text(readable(name), location(), session.workspaceName());
             throw new PathNotFoundException(msg);
         }
-        return session().node(ref.getKey(), expectedType);
+        return session().node(ref.getKey(), expectedType, key());
     }
 
     /**
@@ -714,7 +714,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             String msg = JcrI18n.childNotFoundUnderNode.text(readable(segment), location(), session.workspaceName());
             throw new PathNotFoundException(msg);
         }
-        return session().node(ref.getKey(), expectedType);
+        return session().node(ref.getKey(), expectedType, key());
     }
 
     @Override
@@ -791,7 +791,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new PathNotFoundException(msg);
         }
         try {
-            return session().node(ref.getKey(), null);
+            return session().node(ref.getKey(), null, key());
         } catch (ItemNotFoundException e) {
             // expected by TCK
             String msg = JcrI18n.pathNotFoundRelativeTo.text(relativePath, location(), workspaceName());
@@ -806,20 +806,20 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             String msg = JcrI18n.childNotFoundUnderNode.text(readable(childName), location(), session.workspaceName());
             throw new PathNotFoundException(msg);
         }
-        return session().node(ref.getKey(), null);
+        return session().node(ref.getKey(), null, key());
     }
 
     AbstractJcrNode getNodeIfExists( Name childName ) throws RepositoryException {
         // It's just a name, so look for a child ...
         ChildReference ref = node().getChildReferences(sessionCache()).getChild(childName);
-        return ref != null ? session().node(ref.getKey(), null) : null;
+        return ref != null ? session().node(ref.getKey(), null, key()) : null;
     }
 
     @Override
     public NodeIterator getNodes() throws RepositoryException {
         ChildReferences childReferences = node().getChildReferences(sessionCache());
         if (childReferences.isEmpty()) return JcrEmptyNodeIterator.INSTANCE;
-        return new JcrChildNodeIterator(new ChildNodeResolver(session), childReferences);
+        return new JcrChildNodeIterator(new ChildNodeResolver(session, key()), childReferences);
     }
 
     @Override
@@ -847,7 +847,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             NamespaceRegistry registry = session.namespaces();
             iter = node().getChildReferences(sessionCache()).iterator(patterns, registry);
         }
-        return new JcrChildNodeIterator(new ChildNodeResolver(session), iter);
+        return new JcrChildNodeIterator(new ChildNodeResolver(session, key()), iter);
     }
 
     protected static List<?> createPatternsFor( String[] namePatterns ) throws RepositoryException {
@@ -1060,7 +1060,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             MutableCachedNode newChild = mutable().createChild(cache, desiredKey, childName, ptProp);
 
             // And get or create the JCR node ...
-            AbstractJcrNode jcrNode = session.node(newChild.getKey(), null);
+            AbstractJcrNode jcrNode = session.node(newChild.getKey(), null, key());
 
             // Set the child node definition ...
             jcrNode.setNodeDefinitionId(childDefn.getId(), nodeTypes.getVersion());
@@ -1082,7 +1082,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
 
         // And get or create the JCR node ...
-        AbstractJcrNode jcrNode = session.node(newChild.getKey(), null);
+        AbstractJcrNode jcrNode = session.node(newChild.getKey(), null, key());
 
         // Set the child node definition ...
         jcrNode.setNodeDefinitionId(childDefn.getId(), nodeTypes.getVersion());
@@ -2424,6 +2424,27 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new NoSuchNodeTypeException(JcrI18n.invalidMixinTypeForNode.text(mixinName, location()));
         }
 
+        if (JcrMixLexicon.SHAREABLE.equals(removedMixinName) && isShareable()) {
+            // Can only remove the shareable mixin if there are no other shared nodes
+            NodeIterator shared = getSharedSet();
+            long numShared = shared.getSize();
+            if (numShared > 1L) {
+                // This is not possible, so build up a useful error message ...
+                StringBuilder paths = new StringBuilder();
+                if (shared.hasNext()) {
+                    Node sharedNode = shared.nextNode();
+                    paths.append(sharedNode.getPath());
+                }
+                while (shared.hasNext()) {
+                    paths.append(", ");
+                    Node sharedNode = shared.nextNode();
+                    paths.append(sharedNode.getPath());
+                }
+                String msg = JcrI18n.cannotRemoveShareableMixinThatIsShared.text(location(), numShared, paths);
+                throw new ConstraintViolationException(msg);
+            }
+        }
+
         // Get the information from the node ...
         SessionCache cache = sessionCache();
         CachedNode cachedNode = node();
@@ -2824,7 +2845,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public NodeIterator getSharedSet() throws RepositoryException {
         if (isShareable()) {
             // Find the nodes that make up this shared set ...
-            return sharedSet();
+            return sharedSet().getSharedNodes();
         }
         // Otherwise, the shared set is just this node ...
         return new JcrSingleNodeIterator(this);
@@ -2833,40 +2854,88 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     /**
      * Find all of the {@link javax.jcr.Node}s that make up the shared set.
      * 
-     * @return the query result over the nodes in the node set; never null, but possibly empty if the node given by the identifier
-     *         does not exist or is not a shareable node, or possibly of size 1 if the node given by the identifier does exist and
-     *         is shareable but has no other nodes in the shared set
-     * @throws RepositoryException if there is a problem executing the query or finding the shared set
+     * @return the iterator over the nodes in the node set; never null, but possibly empty if this is not shareable, or of size 1
+     *         if the node is shareable but hasn't been shared
      */
-    NodeIterator sharedSet() throws RepositoryException {
-        // This should be all of this node's parents that are in the this workspace ...
-        // TODO: Query
-        // TODO: Shared nodes
-        return JcrEmptyNodeIterator.INSTANCE;
-        // AbstractJcrNode original = this;
-        // String identifierOfSharedNode = getIdentifier();
-        // if (this instanceof JcrSharedNode) {
-        // original = ((JcrSharedNode)this).originalNode();
-        // }
-        // // Execute a query that will report all proxy nodes ...
-        // QueryBuilder builder = new QueryBuilder(context().getValueFactories().getTypeSystem());
-        // QueryCommand query = builder.select("jcr:primaryType")
-        // .from("mode:share")
-        // .where()
-        // .referenceValue("mode:share", "mode:sharedUuid")
-        // .isEqualTo(identifierOfSharedNode)
-        // .end()
-        // .query();
-        // Query jcrQuery = session().workspace().queryManager().createQuery(query);
-        // QueryResult result = jcrQuery.execute();
-        // // And combine the results ...
-        // return new JcrNodeIterator(original, result.getNodes());
+    SharedSet sharedSet() {
+        return session.shareableNodeCache().getSharedSet(this);
+    }
+
+    void addSharedNode( AbstractJcrNode shareableNode,
+                        Name newNodeName ) throws RepositoryException {
+        assert session == shareableNode.session;
+
+        session.checkPermission(getPath(), ModeShapePermissions.ADD_NODE);
+        if (isLocked() && !getLock().isLockOwningSession()) {
+            throw new LockException(JcrI18n.lockTokenNotHeld.text(location()));
+        }
+
+        // Determine the node type based upon this node's type information ...
+        SessionCache cache = sessionCache();
+        MutableCachedNode node = mutable();
+        int numExistingSns = node.getChildReferences(cache).getChildCount(newNodeName);
+
+        // validate there is an appropriate child node definition
+        JcrNodeDefinition childDefn = validateChildNodeDefinition(newNodeName, shareableNode.getPrimaryTypeName(), true);
+
+        // See if this node is checked in. If so, then we can only create children if the child
+        // node definition has an OPV of 'ignore'. See Section 15.2.2 of the JSR-283 spec for details ...
+        if (!isCheckedOut() && childDefn.getOnParentVersion() != OnParentVersionAction.IGNORE) {
+            // The OPV is not 'ignore', so we can't create the new node ...
+            Path parentPath = path();
+            String parentPathStr = readable(parentPath);
+            int sns = numExistingSns + 1;
+            String segment = readable(session.pathFactory().createSegment(newNodeName, sns));
+            String opv = OnParentVersionAction.nameFromValue(childDefn.getOnParentVersion());
+            I18n msg = JcrI18n.cannotCreateChildOnCheckedInNodeSinceOpvOfChildDefinitionIsNotIgnore;
+            throw new VersionException(msg.text(segment, readable(parentPathStr), childDefn.getName(), opv));
+        }
+
+        // We can create the shared node ...
+        NodeKey childKey = shareableNode.key();
+        node.linkChild(cache, childKey, newNodeName);
     }
 
     @Override
     public void removeSharedSet() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
-        // TODO: Query
-        // TODO: Shared nodes
+        if (isShareable()) {
+            // Remove all of the node is the shared set ...
+            SharedSet sharedSet = sharedSet();
+            if (sharedSet.getSize() != 1) {
+                // There's more than one shared
+                NodeIterator sharedSetNodes = sharedSet.getSharedNodes();
+                List<AbstractJcrNode> shared = new ArrayList<AbstractJcrNode>();
+                while (sharedSetNodes.hasNext()) {
+                    AbstractJcrNode nodeInSharedSet = (AbstractJcrNode)sharedSetNodes.nextNode();
+
+                    // Check whether the parent is locked or if the session has permissions ...
+                    try {
+                        AbstractJcrNode parent = nodeInSharedSet.getParent();
+                        parent.checkForLock();
+                        Path path = nodeInSharedSet.path();
+                        session.checkPermission(path, ModeShapePermissions.REMOVE);
+
+                        if (nodeInSharedSet != this) {
+                            // Okay to remove ...
+                            shared.add(nodeInSharedSet);
+                        }
+
+                    } catch (ItemNotFoundException e) {
+                        // expected by the TCK
+                        throw new InvalidItemStateException(e);
+                    }
+                }
+                // It's okay to remove all of the nodes in the shared set ...
+                for (AbstractJcrNode nodeInSharedSet : shared) {
+                    nodeInSharedSet.doRemove();
+                }
+                // continue by removing the shareable node ...
+            }
+        }
+        // Per section 14.2 of the JCR 2.0 specification:
+        // "In cases where the shared set consists of a single node, or when these methods are
+        // called on a non-shareable node, their behavior is identical to Node.remove()."
+        doRemove();
     }
 
     @Override
@@ -2905,52 +2974,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             // Otherwise, child node definition is 'ignore', so okay to remove ...
         }
 
-        if (isShareable()) {
-            // TODO: Shared nodes
-            // // Get the nodes in the shared set ...
-            // NodeIterator sharedSetNodes = sharedSet();
-            // long sharedSetSize = sharedSetNodes.getSize(); // computed w/o respect for privileges
-            // if (sharedSetSize <= 1) {
-            // // There aren't any other nodes in the shared set, so simply remove this node ...
-            // doRemove();
-            // return;
-            // }
-            // // Find the second node in the shared set that is not this object ...
-            // AbstractJcrNode originalNode = (AbstractJcrNode)sharedSetNodes.nextNode();
-            // if (originalNode == this) {
-            // // We need to move this node into the first proxy ...
-            // JcrSharedNode firstProxy = (JcrSharedNode)sharedSetNodes.nextNode();
-            // assert !this.isRoot();
-            // assert !firstProxy.isRoot();
-            // boolean sameParent = firstProxy.getParent().equals(this.getParent());
-            // NodeEditor parentEditor = firstProxy.editorForParent();
-            // if (sameParent) {
-            // // Move this node to just before the other shareable node ...
-            // parentEditor.orderChildBefore(this.segment(), firstProxy.segment());
-            // // And finally remove the first proxy ...
-            // firstProxy.doRemove();
-            // } else {
-            // // Find the node immediately following the proxy ...
-            // Node<JcrNodePayload, JcrPropertyPayload> proxyNode = firstProxy.proxyInfo();
-            // Node<JcrNodePayload, JcrPropertyPayload> nextChild = parentEditor.node().getChildAfter(proxyNode);
-            // Name newName = proxyNode.getName();
-            // // Remove the first proxy ...
-            // firstProxy.doRemove();
-            // // Move this node to the new parent ...
-            // Node<JcrNodePayload, JcrPropertyPayload> newNode = parentEditor.moveToBeChild(this, newName);
-            // if (nextChild != null) {
-            // // And place this node where the first proxy was (just before the 'nextChild') ...
-            // parentEditor.orderChildBefore(newNode.getSegment(), nextChild.getSegment());
-            // }
-            // }
-            // } else {
-            // // We can just remove this proxy ...
-            // doRemove();
-            // }
-            // return;
-        }
-        // If we get to here, either there are no other nodes in the shared set or this node is a non-shareable node,
-        // so simply remove this node (per section 14.2 of the JCR 2.0 specification) ...
+        // Even if this is shareable, we remove the shareable nodes the same way
+        // (per section 14.2 of the JCR 2.0 specification) ...
         doRemove();
     }
 
@@ -3007,7 +3032,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         } catch (ConstraintViolationException cve) {
             throw new UnsupportedRepositoryOperationException(cve);
         }
-
         versionManager().restoreAtAbsPath(getPath(), version, removeExisting, false);
     }
 
@@ -3310,6 +3334,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 changedNode = session().node(changedNodeKey, null);
             } catch (ItemNotFoundException e) {
                 // node was deleted
+                allChangesIt.remove();
+                continue;
+            }
+            boolean isShareable = changedNode.isShareable();
+            if (isShareable /* && changedNodeOutsideBranch.hasOnlyChangesToAdditionalParents() */) {
+                // assume that a shared node was added/removed and is to be included ...
+                allChangesIt.remove();
                 continue;
             }
             boolean isReferenceable = changedNode.isReferenceable();
@@ -3329,15 +3360,18 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     protected static final class ChildNodeResolver implements JcrChildNodeIterator.NodeResolver {
         private final JcrSession session;
+        private final NodeKey parentKey;
 
-        protected ChildNodeResolver( JcrSession session ) {
+        protected ChildNodeResolver( JcrSession session,
+                                     NodeKey parentKey ) {
             this.session = session;
+            this.parentKey = parentKey;
         }
 
         @Override
         public Node nodeFrom( ChildReference ref ) {
             try {
-                return session.node(ref.getKey(), null);
+                return session.node(ref.getKey(), null, parentKey);
             } catch (RepositoryException e) {
                 return null;
             }

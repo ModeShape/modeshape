@@ -42,9 +42,6 @@ import org.modeshape.jcr.api.JcrTools;
 /**
  * A stateless EJB that accesses a Repository using multiple bean-managed transactions (BMT) and creates a JCR Session a variety
  * of ways.
- * <p>
- * This class extends the {@link RepositoryProvider}, which has all the methods for obtaining repositories and using the sessions.
- * </p>
  */
 @Stateless
 @TransactionManagement( TransactionManagementType.BEAN )

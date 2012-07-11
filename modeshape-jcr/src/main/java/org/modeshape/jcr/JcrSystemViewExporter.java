@@ -127,7 +127,8 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
 
         startElement(contentHandler, JcrSvLexicon.NODE, atts);
 
-        if (node instanceof JcrSharedNode) {
+        JcrSharedNode sharedNode = asSharedNode(node);
+        if (sharedNode != null) {
             // This is a shared node, and per Section 14.7 of the JCR 2.0 specification, they have to be written out
             // in a special way ...
 
@@ -135,9 +136,9 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
             emitProperty(JcrLexicon.PRIMARY_TYPE, PropertyType.NAME, JcrNtLexicon.SHARE, contentHandler, skipBinary);
 
             // jcr:uuid = UUID of shared node ...
-            emitProperty(JcrLexicon.UUID, PropertyType.STRING, node.getIdentifier(), contentHandler, skipBinary);
+            emitProperty(JcrLexicon.UUID, PropertyType.STRING, sharedNode.getIdentifier(), contentHandler, skipBinary);
         } else {
-
+            exporting(node);
             // Output any special properties first (see Javadoc for SPECIAL_PROPERTY_NAMES for more context)
             for (Name specialPropertyName : SPECIAL_PROPERTY_NAMES) {
                 Property specialProperty = ((AbstractJcrNode)node).getProperty(specialPropertyName);

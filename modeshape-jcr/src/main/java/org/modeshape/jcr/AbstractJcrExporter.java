@@ -28,8 +28,10 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.jcr.ItemVisitor;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -38,6 +40,7 @@ import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.xml.StreamingContentHandler;
+import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Name;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -85,6 +88,11 @@ abstract class AbstractJcrExporter {
     private final Map<Name, String> prefixedNames;
 
     /**
+     * The set of node keys for the shareable nodes that were already exported.
+     */
+    private final Set<NodeKey> shareableNodes = new HashSet<NodeKey>();
+
+    /**
      * Creates the exporter
      * 
      * @param session the session in which the exporter is created
@@ -124,6 +132,15 @@ abstract class AbstractJcrExporter {
         return prefixedName;
     }
 
+    protected void startDocument( ContentHandler handler ) throws SAXException {
+        shareableNodes.clear();
+        handler.startDocument();
+    }
+
+    protected void endDocument( ContentHandler handler ) throws SAXException {
+        handler.endDocument();
+    }
+
     /**
      * Exports <code>node</code> (or the subtree rooted at <code>node</code>) into an XML document by invoking SAX events on
      * <code>contentHandler</code>.
@@ -148,7 +165,7 @@ abstract class AbstractJcrExporter {
         // Export the namespace mappings used in this session
         NamespaceRegistry registry = session.getWorkspace().getNamespaceRegistry();
 
-        contentHandler.startDocument();
+        startDocument(contentHandler);
         String[] namespacePrefixes = registry.getPrefixes();
         for (int i = 0; i < namespacePrefixes.length; i++) {
             String prefix = namespacePrefixes[i];
@@ -166,7 +183,7 @@ abstract class AbstractJcrExporter {
             }
         }
 
-        contentHandler.endDocument();
+        endDocument(contentHandler);
     }
 
     /**
@@ -244,5 +261,29 @@ abstract class AbstractJcrExporter {
         contentHandler.endElement(name.getNamespaceUri(),
                                   NAME_ENCODER.encode(name.getLocalName()),
                                   NAME_ENCODER.encode(getPrefixedName(name)));
+    }
+
+    protected void exporting( Node node ) throws RepositoryException {
+        if (node instanceof AbstractJcrNode) {
+            AbstractJcrNode jcrNode = (AbstractJcrNode)node;
+            if (jcrNode.isShareable()) {
+                shareableNodes.add(jcrNode.key());
+            }
+        }
+    }
+
+    protected JcrSharedNode asSharedNode( Node node ) {
+        if (node instanceof JcrSharedNode) {
+            JcrSharedNode sharedNode = (JcrSharedNode)node;
+            NodeKey shareableKey = sharedNode.key();
+            // See if the node is already exported ...
+            if (!shareableNodes.add(shareableKey)) {
+                // Already saw it, so return the shared node ...
+                return sharedNode;
+            }
+        }
+        // Otherwise, it's not shareable or it is but hasn't yet been seen, so return null so that it's treated like a regular
+        // node
+        return null;
     }
 }

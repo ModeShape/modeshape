@@ -158,6 +158,9 @@ public final class JcrI18n {
     public static I18n unableToModifySystemNodes;
     public static I18n unableToMoveNodeToBeChildOfDecendent;
     public static I18n nodeHasAlreadyBeenRemovedFromThisSession;
+    public static I18n unableToShareNodeWithinSubgraph;
+    public static I18n unableToShareNodeWithinSameParent;
+    public static I18n unableToMoveNodeDueToCycle;
 
     public static I18n typeNotFound;
     public static I18n supertypeNotFound;
@@ -273,6 +276,7 @@ public final class JcrI18n {
     public static I18n primaryTypeCannotBeAbstract;
     public static I18n setPrimaryTypeOnRootNodeIsNotSupported;
     public static I18n suppliedNodeTypeIsNotMixinType;
+    public static I18n cannotRemoveShareableMixinThatIsShared;
 
     public static I18n errorReadingNodeTypesFromRemote;
     public static I18n problemReadingNodeTypesFromRemote;

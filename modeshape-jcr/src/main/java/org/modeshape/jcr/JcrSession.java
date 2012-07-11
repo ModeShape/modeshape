@@ -67,6 +67,7 @@ import org.modeshape.jcr.AbstractJcrNode.Type;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.JcrNamespaceRegistry.Behavior;
 import org.modeshape.jcr.JcrRepository.RunningState;
+import org.modeshape.jcr.JcrSharedNodeCache.SharedSet;
 import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.api.monitor.DurationMetric;
 import org.modeshape.jcr.api.monitor.ValueMetric;
@@ -119,6 +120,7 @@ public class JcrSession implements Session {
     private final JcrNamespaceRegistry sessionRegistry;
     private final AtomicReference<Map<NodeKey, NodeKey>> baseVersionKeys = new AtomicReference<Map<NodeKey, NodeKey>>();
     private final AtomicReference<Map<NodeKey, NodeKey>> originalVersionKeys = new AtomicReference<Map<NodeKey, NodeKey>>();
+    private final AtomicReference<JcrSharedNodeCache> shareableNodeCache = new AtomicReference<JcrSharedNodeCache>();
     private volatile JcrValueFactory valueFactory;
     private volatile boolean isLive = true;
     private final long nanosCreated;
@@ -344,12 +346,25 @@ public class JcrSession implements Session {
         this.cache.addContextData(key, value);
     }
 
+    final JcrSharedNodeCache shareableNodeCache() {
+        JcrSharedNodeCache result = this.shareableNodeCache.get();
+        if (result == null) {
+            this.shareableNodeCache.compareAndSet(null, new JcrSharedNodeCache(this));
+            result = this.shareableNodeCache.get();
+        }
+        return result;
+    }
+
     protected final String readableLocation( CachedNode node ) {
         try {
             return stringFactory().create(node.getPath(cache));
         } catch (Throwable t) {
             return node.getKey().toString();
         }
+    }
+
+    protected final String readable( Path path ) {
+        return stringFactory().create(path);
     }
 
     /**
@@ -362,22 +377,34 @@ public class JcrSession implements Session {
      */
     AbstractJcrNode node( NodeKey nodeKey,
                           AbstractJcrNode.Type expectedType ) throws ItemNotFoundException {
+        return node(nodeKey, expectedType, null);
+    }
+
+    /**
+     * Obtain the {@link Node JCR Node} object for the node with the supplied key.
+     * 
+     * @param nodeKey the node's key
+     * @param expectedType the expected implementation type for the node, or null if it is not known
+     * @param parentKey the node key for the parent node, or null if the parent is not known
+     * @return the JCR node; never null
+     * @throws ItemNotFoundException if there is no node with the supplied key
+     */
+    AbstractJcrNode node( NodeKey nodeKey,
+                          AbstractJcrNode.Type expectedType,
+                          NodeKey parentKey ) throws ItemNotFoundException {
+        CachedNode cachedNode = cache.getNode(nodeKey);
+        if (cachedNode == null) {
+            // The node must not exist or must have been deleted ...
+            throw new ItemNotFoundException(nodeKey.toString());
+        }
         AbstractJcrNode node = jcrNodes.get(nodeKey);
-        if (node != null) {
-            // Make sure the node is still valid ...
-            CachedNode cachedNode = cache.getNode(nodeKey);
-            if (cachedNode == null) {
-                // The node must have been deleted ...
-                throw new ItemNotFoundException(nodeKey.toString());
-            }
-        } else {
-            CachedNode cachedNode = cache.getNode(nodeKey);
-            if (cachedNode != null) {
-                node = node(cachedNode, expectedType);
-            } else {
-                // The node does not exist ...
-                throw new ItemNotFoundException(nodeKey.toString());
-            }
+        if (node == null) {
+            node = node(cachedNode, expectedType, parentKey);
+        } else if (parentKey != null) {
+            // There was an existing node found, but it might not be the node we're looking for:
+            // In some cases (e.g., shared nodes), the node key might be used in multiple parents,
+            // and we need to find the right one ...
+            node = node(cachedNode, expectedType, parentKey);
         }
         return node;
     }
@@ -388,54 +415,77 @@ public class JcrSession implements Session {
      * @param cachedNode the cached node; may not be null
      * @param expectedType the expected implementation type for the node, or null if it is not known
      * @return the JCR node; never null
+     * @see #node(CachedNode, Type, NodeKey)
      */
     AbstractJcrNode node( CachedNode cachedNode,
                           AbstractJcrNode.Type expectedType ) {
+        return node(cachedNode, expectedType, null);
+    }
+
+    /**
+     * Obtain the {@link Node JCR Node} object for the node with the supplied key.
+     * 
+     * @param cachedNode the cached node; may not be null
+     * @param expectedType the expected implementation type for the node, or null if it is not known
+     * @param parentKey the node key for the parent node, or null if the parent is not known
+     * @return the JCR node; never null
+     */
+    AbstractJcrNode node( CachedNode cachedNode,
+                          AbstractJcrNode.Type expectedType,
+                          NodeKey parentKey ) {
         assert cachedNode != null;
         NodeKey nodeKey = cachedNode.getKey();
         AbstractJcrNode node = jcrNodes.get(nodeKey);
-        if (node != null) return node;
+        boolean mightBeShared = true;
+        if (node == null) {
 
-        if (expectedType == null) {
-            Name primaryType = cachedNode.getPrimaryType(cache);
-            expectedType = Type.typeForPrimaryType(primaryType);
             if (expectedType == null) {
-                // If this node from the system workspace, then the default is Type.SYSTEM rather than Type.NODE ...
-                if (repository().systemWorkspaceKey().equals(nodeKey.getWorkspaceKey())) {
-                    expectedType = Type.SYSTEM;
-                } else {
-                    expectedType = Type.NODE;
+                Name primaryType = cachedNode.getPrimaryType(cache);
+                expectedType = Type.typeForPrimaryType(primaryType);
+                if (expectedType == null) {
+                    // If this node from the system workspace, then the default is Type.SYSTEM rather than Type.NODE ...
+                    if (repository().systemWorkspaceKey().equals(nodeKey.getWorkspaceKey())) {
+                        expectedType = Type.SYSTEM;
+                    } else {
+                        expectedType = Type.NODE;
+                    }
+                    assert expectedType != null;
                 }
-                assert expectedType != null;
+            }
+            switch (expectedType) {
+                case NODE:
+                    node = new JcrNode(this, nodeKey);
+                    break;
+                case VERSION:
+                    node = new JcrVersionNode(this, nodeKey);
+                    mightBeShared = false;
+                    break;
+                case VERSION_HISTORY:
+                    node = new JcrVersionHistoryNode(this, nodeKey);
+                    mightBeShared = false;
+                    break;
+                case SYSTEM:
+                    node = new JcrSystemNode(this, nodeKey);
+                    mightBeShared = false;
+                    break;
+                case ROOT:
+                    try {
+                        return getRootNode();
+                    } catch (RepositoryException e) {
+                        assert false : "Should never happen: " + e.getMessage();
+                    }
+            }
+            assert node != null;
+            AbstractJcrNode newNode = jcrNodes.putIfAbsent(nodeKey, node);
+            if (newNode != null) {
+                // Another thread snuck in and created the node object ...
+                node = newNode;
             }
         }
-        switch (expectedType) {
-            case NODE:
-                node = new JcrNode(this, nodeKey);
-                break;
-            case VERSION:
-                node = new JcrVersionNode(this, nodeKey);
-                break;
-            case VERSION_HISTORY:
-                node = new JcrVersionHistoryNode(this, nodeKey);
-                break;
-            case SHARED:
-                // TODO: Shared nodes
-                throw new UnsupportedOperationException("Need to implement JcrSharedNode node");
-            case SYSTEM:
-                node = new JcrSystemNode(this, nodeKey);
-                break;
-            case ROOT:
-                try {
-                    return getRootNode();
-                } catch (RepositoryException e) {
-                    assert false : "Should never happen: " + e.getMessage();
-                }
-        }
-        AbstractJcrNode newNode = jcrNodes.putIfAbsent(nodeKey, node);
-        if (newNode != null) {
-            // Another thread snuck in and created the node object ...
-            node = newNode;
+
+        if (mightBeShared && parentKey != null && cachedNode.getMixinTypes(cache).contains(JcrMixLexicon.SHAREABLE)) {
+            // This is a shareable node, so we have to get the proper Node instance for the given parent ...
+            node = node.sharedSet().getSharedNode(cachedNode, parentKey);
         }
         return node;
     }
@@ -478,7 +528,13 @@ public class JcrSession implements Session {
     final AbstractJcrNode node( CachedNode node,
                                 Path path ) throws PathNotFoundException, AccessDeniedException, RepositoryException {
         CachedNode child = cachedNode(cache, node, path, "read");
-        return node(child, (Type)null);
+        AbstractJcrNode result = node(child, (Type)null, null);
+        if (result.isShareable()) {
+            // Find the shared node with the desired path ...
+            AbstractJcrNode atOrBelow = result.sharedSet().getSharedNodeAtOrBelow(path);
+            if (atOrBelow != null) result = atOrBelow;
+        }
+        return result;
     }
 
     final AbstractJcrNode node( Path absolutePath ) throws PathNotFoundException, AccessDeniedException, RepositoryException {
@@ -495,7 +551,7 @@ public class JcrSession implements Session {
 
     final AbstractJcrItem findItem( NodeKey nodeKey,
                                     Path relativePath ) throws RepositoryException {
-        return findItem(node(nodeKey, null), relativePath);
+        return findItem(node(nodeKey, null, null), relativePath);
     }
 
     final AbstractJcrItem findItem( AbstractJcrNode node,
@@ -708,6 +764,16 @@ public class JcrSession implements Session {
         }
     }
 
+    /**
+     * Utility method to determine if the node with the specified key still exists within the transient & persisted state.
+     * 
+     * @param key the key of the node; may not be null
+     * @return true if the node exists, or false if it does not
+     */
+    protected boolean nodeExists( NodeKey key ) {
+        return cache.getNode(key) != null;
+    }
+
     @Override
     public boolean propertyExists( String absPath ) throws RepositoryException {
         checkLive();
@@ -795,6 +861,25 @@ public class JcrSession implements Session {
 
         // check whether the parent definition allows children which match the source
         destParentNode.validateChildNodeDefinition(srcNode.name(), srcNode.getPrimaryTypeName(), true);
+
+        // We already checked whether the supplied destination path is below the supplied source path, but this isn't
+        // sufficient if any of the ancestors are shared nodes. Therefore, check whether the destination node
+        // is actually underneath the source node by walking up the destination path to see if there are any
+        // shared nodes (including the shareable node) below the source path ...
+        AbstractJcrNode destAncestor = destParentNode;
+        do {
+            if (destAncestor.isShareable()) {
+                SharedSet sharedSet = destAncestor.sharedSet();
+                AbstractJcrNode sharedNodeThatCreatesCircularity = sharedSet.getSharedNodeAtOrBelow(srcPath);
+                if (sharedNodeThatCreatesCircularity != null) {
+                    Path badPath = sharedNodeThatCreatesCircularity.path();
+                    throw new RepositoryException(JcrI18n.unableToMoveNodeDueToCycle.text(srcAbsPath,
+                                                                                          destAbsPath,
+                                                                                          readable(badPath)));
+                }
+            }
+            destAncestor = destAncestor.getParent();
+        } while (!destAncestor.isRoot());
 
         try {
             MutableCachedNode mutableSrcParent = srcParent.mutable();
@@ -1503,7 +1588,7 @@ public class JcrSession implements Session {
                         // There is no mandatory property ...
                         if (defn.hasDefaultValues()) {
                             // This may or may not be auto-created; we don't care ...
-                            if (jcrNode == null) jcrNode = node(node, (Type)null);
+                            if (jcrNode == null) jcrNode = node(node, (Type)null, null);
                             JcrValue[] defaultValues = defn.getDefaultValues();
                             if (defn.isMultiple()) {
                                 jcrNode.setProperty(propName, defaultValues, defn.getRequiredType(), false);
@@ -1522,7 +1607,7 @@ public class JcrSession implements Session {
                         // There is a property with the same name as the mandatory property, so verify that the
                         // existing property does indeed use this property definition. Use the JCR property
                         // since it may already cache the property definition ID or will know how to find it ...
-                        if (jcrNode == null) jcrNode = node(node, (Type)null);
+                        if (jcrNode == null) jcrNode = node(node, (Type)null, null);
                         AbstractJcrProperty jcrProperty = jcrNode.getProperty(propName);
                         PropertyDefinitionId defnId = jcrProperty.propertyDefinitionId();
                         if (defn.getId().equals(defnId)) {

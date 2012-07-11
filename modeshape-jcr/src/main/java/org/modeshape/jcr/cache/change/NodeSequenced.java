@@ -1,12 +1,11 @@
 package org.modeshape.jcr.cache.change;
 
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Path;
 
 /**
  * Change which is triggered after the sequencing process of a node is finished.
- *
+ * 
  * @author Horia Chiorean
  */
 public class NodeSequenced extends AbstractSequencingChange {
@@ -21,20 +20,28 @@ public class NodeSequenced extends AbstractSequencingChange {
                           String outputPath,
                           String userId,
                           String selectedPath,
-                          String sequencerName) {
+                          String sequencerName ) {
         super(sequencedNodeKey, sequencedNodePath, outputPath, userId, selectedPath, sequencerName);
-
-        CheckArg.isNotNull(outputNodeKey, "outputNodeKey");
-        CheckArg.isNotNull(outputNodePath, "outputNodePath");
-
+        assert outputNodeKey != null;
+        assert outputNodePath != null;
         this.outputNodeKey = outputNodeKey;
         this.outputNodePath = outputNodePath;
     }
 
+    /**
+     * Get the key of the top-level node that was output by the sequencer.
+     * 
+     * @return the output node key; never null
+     */
     public NodeKey getOutputNodeKey() {
         return outputNodeKey;
     }
 
+    /**
+     * Get the path of the top-level node that was output by the sequencer.
+     * 
+     * @return the output node path; never null
+     */
     public Path getOutputNodePath() {
         return outputNodePath;
     }

@@ -105,14 +105,40 @@ public class LazyCachedNode implements CachedNode {
     }
 
     @Override
+    public NodeKey getParentKeyInAnyWorkspace( NodeCache cache ) {
+        WorkspaceCache wsCache = workspaceCache(cache);
+        return wsCache.translator().getParentKey(document(wsCache), key.getWorkspaceKey(), key.getWorkspaceKey());
+    }
+
+    @Override
     public Set<NodeKey> getAdditionalParentKeys( NodeCache cache ) {
         if (additionalParents == null) {
             WorkspaceCache wsCache = workspaceCache(cache);
-            additionalParents = wsCache.translator().getParentKeys(document(wsCache),
-                                                                   wsCache.getWorkspaceKey(),
-                                                                   key.getWorkspaceKey());
+            Set<NodeKey> additionalParents = wsCache.translator().getParentKeys(document(wsCache),
+                                                                                wsCache.getWorkspaceKey(),
+                                                                                key.getWorkspaceKey());
+            this.additionalParents = additionalParents.isEmpty() ? additionalParents : Collections.unmodifiableSet(additionalParents);
         }
         return additionalParents;
+    }
+
+    @Override
+    public boolean isAtOrBelow( NodeCache cache,
+                                Path path ) {
+        Path aPath = getPath(cache);
+        if (path.isAtOrAbove(aPath)) return true;
+        Set<NodeKey> additionalParents = getAdditionalParentKeys(cache);
+        if (!additionalParents.isEmpty()) {
+            Path parentOfPath = path.getParent();
+            for (NodeKey parentKey : additionalParents) {
+                CachedNode parent = cache.getNode(parentKey);
+                if (parent.getPath(cache).isAtOrBelow(parentOfPath)) {
+                    ChildReference ref = parent.getChildReferences(cache).getChild(key);
+                    if (ref != null && ref.getSegment().equals(path.getLastSegment())) return true;
+                }
+            }
+        }
+        return false;
     }
 
     protected CachedNode parent( WorkspaceCache cache ) {
@@ -180,7 +206,7 @@ public class LazyCachedNode implements CachedNode {
             Path parentPath = parent.getPath(wsCache);
             return wsCache.pathFactory().create(parentPath, getSegment(wsCache));
         }
-        //check that the node hasn't been removed in the meantime
+        // check that the node hasn't been removed in the meantime
         if (wsCache.getNode(key) == null) {
             throw new NodeNotFoundException(key);
         }

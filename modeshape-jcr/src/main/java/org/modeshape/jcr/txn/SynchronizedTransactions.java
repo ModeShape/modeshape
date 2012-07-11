@@ -78,7 +78,7 @@ public final class SynchronizedTransactions extends Transactions {
     public void updateCache( WorkspaceCache workspace,
                              ChangeSet changes,
                              Transaction transaction ) {
-        if (changes != null && changes.size() != 0) {
+        if (changes != null && !changes.isEmpty()) {
             if (transaction instanceof SynchronizedTransaction) {
                 // We're in a transaction being managed outside of ModeShape (e.g., container-managed, user-managed,
                 // distributed, etc.) ...

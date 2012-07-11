@@ -36,7 +36,7 @@ public interface SessionCache extends NodeCache {
      * The context of a save operation, created during each call to {@link #save} and passed to the
      * {@link PreSave#process(MutableCachedNode, SaveContext)} invocations.
      */
-    static interface SaveContext {
+    public static interface SaveContext {
         /**
          * Get the instance in time that the save is taking place.
          * 
@@ -59,7 +59,7 @@ public interface SessionCache extends NodeCache {
      * implementations are free to make additional modifications to the supplied nodes, and even create additional nodes or change
      * persistent but unchanged nodes, as long as these operations are done within the same calling thread.
      */
-    static interface PreSave {
+    public static interface PreSave {
         /**
          * Process the supplied node prior to saving the changes. This allows implementations to use the changes to automatically
          * adjust this node or other content.
@@ -169,7 +169,7 @@ public interface SessionCache extends NodeCache {
      * 
      * @param node the node at or below which all changes should be cleared; may not be null
      */
-    void clear( CachedNode node );
+    public void clear( CachedNode node );
 
     /**
      * Get the cache the reflects the workspace content, without any of the transient, unsaved changes of this session.

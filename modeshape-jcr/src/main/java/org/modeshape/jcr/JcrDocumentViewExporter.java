@@ -94,10 +94,10 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
                             boolean noRecurse ) throws RepositoryException, SAXException {
         ExecutionContext executionContext = session.context();
 
-        if (node instanceof JcrSharedNode) {
+        JcrSharedNode sharedNode = asSharedNode(node);
+        if (sharedNode != null) {
             // This is a shared node, and per Section 14.7 of the JCR 2.0 specification, they have to be written out
             // in a special way ...
-            AbstractJcrNode sharedNode = ((JcrSharedNode)node).proxyNode();
             AttributesImpl atts = new AttributesImpl();
 
             // jcr:primaryType = nt:share ...
@@ -112,6 +112,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
             endElement(contentHandler, name);
             return;
         }
+        exporting(node);
 
         // If this node is a special xmltext node, output it as raw content (see JCR 1.0 spec - section 6.4.2.3)
         if (node.getDepth() > 0 && isXmlTextNode(node)) {

@@ -23,6 +23,36 @@
  */
 package org.modeshape.jcr;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.security.AccessControlContext;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
@@ -111,36 +141,6 @@ import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.InfinispanBinaryStore;
 import org.modeshape.jcr.value.binary.UnusedBinaryChangeSetListener;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.security.AccessControlContext;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * 
@@ -746,14 +746,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         descriptors.put(Repository.OPTION_LOCKING_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.OPTION_OBSERVATION_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.OPTION_QUERY_SQL_SUPPORTED, valueFor(factories, true));
-        // TODO: Transactions
-        descriptors.put(Repository.OPTION_TRANSACTIONS_SUPPORTED, valueFor(factories, false));
+        descriptors.put(Repository.OPTION_TRANSACTIONS_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.OPTION_VERSIONING_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.QUERY_XPATH_DOC_ORDER, valueFor(factories, false)); // see MODE-613
         descriptors.put(Repository.QUERY_XPATH_POS_INDEX, valueFor(factories, true));
 
         descriptors.put(Repository.WRITE_SUPPORTED, valueFor(factories, true));
-        // TODO: Change in 3.0
         descriptors.put(Repository.IDENTIFIER_STABILITY, valueFor(factories, Repository.IDENTIFIER_STABILITY_INDEFINITE_DURATION));
         descriptors.put(Repository.OPTION_XML_IMPORT_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.OPTION_XML_EXPORT_SUPPORTED, valueFor(factories, true));
@@ -766,7 +764,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         descriptors.put(Repository.OPTION_RETENTION_SUPPORTED, valueFor(factories, false));
         descriptors.put(Repository.OPTION_LIFECYCLE_SUPPORTED, valueFor(factories, false));
         descriptors.put(Repository.OPTION_NODE_AND_PROPERTY_WITH_SAME_NAME_SUPPORTED, valueFor(factories, true));
-        // TODO: Change in 3.0
         descriptors.put(Repository.OPTION_UPDATE_PRIMARY_NODE_TYPE_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.OPTION_UPDATE_MIXIN_NODE_TYPES_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.OPTION_SHAREABLE_NODES_SUPPORTED, valueFor(factories, true));
@@ -783,7 +780,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         descriptors.put(Repository.NODE_TYPE_MANAGEMENT_MULTIVALUED_PROPERTIES_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.NODE_TYPE_MANAGEMENT_MULTIPLE_BINARY_PROPERTIES_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.NODE_TYPE_MANAGEMENT_VALUE_CONSTRAINTS_SUPPORTED, valueFor(factories, true));
-        // TODO: Change in 3.0
         descriptors.put(Repository.NODE_TYPE_MANAGEMENT_UPDATE_IN_USE_SUPORTED, valueFor(factories, true));
         descriptors.put(Repository.QUERY_LANGUAGES,
                         new JcrValue[] {valueFor(factories, Query.XPATH), valueFor(factories, Query.JCR_SQL2),
