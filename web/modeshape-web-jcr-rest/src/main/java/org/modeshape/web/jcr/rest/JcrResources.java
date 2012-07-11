@@ -309,6 +309,7 @@ public class JcrResources extends AbstractHandler {
     @PUT
     @Path( "/{repositoryName}/{workspaceName}/items{path:.*}" )
     @Consumes( "application/json" )
+    @Produces( "application/json" )
     public String putItem( @Context HttpServletRequest request,
                            @PathParam( "repositoryName" ) String rawRepositoryName,
                            @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -343,6 +344,7 @@ public class JcrResources extends AbstractHandler {
     @POST
     @Path( "/{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+xpath" )
+    @Produces( "application/json" )
     public String postXPathQuery( @Context HttpServletRequest request,
                                   @PathParam( "repositoryName" ) String rawRepositoryName,
                                   @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -386,6 +388,7 @@ public class JcrResources extends AbstractHandler {
     @POST
     @Path( "/{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+sql" )
+    @Produces( "application/json" )
     public String postJcrSqlQuery( @Context HttpServletRequest request,
                                    @PathParam( "repositoryName" ) String rawRepositoryName,
                                    @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -428,6 +431,7 @@ public class JcrResources extends AbstractHandler {
     @POST
     @Path( "/{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+sql2" )
+    @Produces( "application/json" )
     public String postJcrSql2Query( @Context HttpServletRequest request,
                                     @PathParam( "repositoryName" ) String rawRepositoryName,
                                     @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -470,6 +474,7 @@ public class JcrResources extends AbstractHandler {
     @POST
     @Path( "/{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+search" )
+    @Produces( "application/json" )
     public String postJcrSearchQuery( @Context HttpServletRequest request,
                                       @PathParam( "repositoryName" ) String rawRepositoryName,
                                       @PathParam( "workspaceName" ) String rawWorkspaceName,
