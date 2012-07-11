@@ -69,7 +69,7 @@ class ServerHandler extends AbstractHandler {
                 e.printStackTrace();
             }
         }
-        return jsonRepositories.toString();
+        return responseString(jsonRepositories, request);
     }
 
     protected JSONObject getRepositoryMetadata( Session session ) throws JSONException, RepositoryException {

@@ -93,10 +93,8 @@ class ItemHandler extends AbstractHandler {
             }
         }
 
-        if (item instanceof Node) {
-            return jsonFor((Node)item, depth).toString();
-        }
-        return jsonFor((Property)item).toString();
+        JSONObject jsonObject = item instanceof Node ? jsonFor((Node)item, depth) : jsonFor((Property)item);
+        return responseString(jsonObject, request);
     }
 
     /**

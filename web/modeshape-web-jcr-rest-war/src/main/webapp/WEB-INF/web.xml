@@ -50,13 +50,6 @@
 		<param-name>javax.ws.rs.Application</param-name>
 		<param-value>org.modeshape.web.jcr.rest.JcrApplication</param-value>
 	</context-param>
-	
-	<!--  Optional parameter If the url-pattern for the Resteasy servlet-mapping is not /* -->
-
-	<context-param>
-		<param-name>resteasy.servlet.mapping.prefix</param-name>
-		<param-value>/test</param-value>
-	</context-param>
 
 	<!-- Required parameter for RESTEasy - should not be modified -->
 	<listener>
@@ -91,7 +84,7 @@
 		<display-name>ModeShape REST</display-name>
 		<web-resource-collection>
 			<web-resource-name>RestEasy</web-resource-name>
-			<url-pattern>/test/*</url-pattern>
+			<url-pattern>/*</url-pattern>
 		</web-resource-collection>
 		<auth-constraint>
 			<!--  

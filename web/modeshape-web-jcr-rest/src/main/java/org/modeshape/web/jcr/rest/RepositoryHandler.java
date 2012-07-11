@@ -55,7 +55,7 @@ class RepositoryHandler extends AbstractHandler {
             workspaces.put(name, wrapper);
         }
 
-        return workspaces.toString();
+        return responseString(workspaces, request);
     }
 
 }
