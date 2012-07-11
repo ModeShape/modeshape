@@ -23,6 +23,8 @@
  */
 package org.modeshape.jcr.value.binary;
 
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
@@ -32,8 +34,6 @@ import org.modeshape.jcr.TextExtractors;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.ExtensionBasedMimeTypeDetector;
 import org.modeshape.jcr.value.BinaryValue;
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * An abstract class for a {@link BinaryStore}, with common functionality needed by implementation classes.
@@ -88,19 +88,18 @@ public abstract class AbstractBinaryStore implements BinaryStore {
         this.detector = mimeTypeDetector != null ? mimeTypeDetector : ExtensionBasedMimeTypeDetector.INSTANCE;
     }
 
-
     @Override
     public String getText( BinaryValue binary ) throws BinaryStoreException {
         if (!extractors.extractionEnabled()) {
             return null;
         }
 
-        //try and locate an already extracted file from the store (assuming a worker has already finished)
+        // try and locate an already extracted file from the store (assuming a worker has already finished)
         String extractedText = getExtractedText(binary);
         if (extractedText != null) {
             return extractedText;
         }
-        //there isn't any text available, so wait for a job to finish and then return the result
+        // there isn't any text available, so wait for a job to finish and then return the result
         try {
             extractors.getWorkerLatch(binary.getKey()).await();
             return getExtractedText(binary);
@@ -123,21 +122,24 @@ public abstract class AbstractBinaryStore implements BinaryStore {
 
     /**
      * Returns the stored mime-type of a binary value.
-     *
+     * 
      * @param binaryValue a {@code non-null} {@link BinaryValue}
      * @return either a non-empty {@code String} if a stored mimetype exists, or {@code null} if such a value doesn't exist yet.
+     * @throws BinaryStoreException if there's a problem accessing the binary store
      */
-    protected String getStoredMimeType(BinaryValue binaryValue) throws BinaryStoreException {
+    protected String getStoredMimeType( BinaryValue binaryValue ) throws BinaryStoreException {
         throw new UnsupportedOperationException("getStoredMimeType not supported by " + getClass().getName());
     }
 
     /**
      * Stores the given mime-type for a binary value.
-     *
+     * 
      * @param binaryValue a {@code non-null} {@link BinaryValue}
      * @param mimeType a non-empty {@code String}
+     * @throws BinaryStoreException if there's a problem accessing the binary store
      */
-    protected void storeMimeType(BinaryValue binaryValue, String mimeType) throws BinaryStoreException {
+    protected void storeMimeType( BinaryValue binaryValue,
+                                  String mimeType ) throws BinaryStoreException {
         throw new UnsupportedOperationException("storeMimeType not supported by " + getClass().getName());
     }
 
