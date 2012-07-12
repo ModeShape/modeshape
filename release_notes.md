@@ -1,6 +1,6 @@
 # Release Notes for ModeShape &version;
 
-ModeShape &version; fixes 10 issues in 2.8.0.Final.
+ModeShape &version; fixes 9 issues in 2.8.1.Final.
 
 ## JCR Supported Features
 
