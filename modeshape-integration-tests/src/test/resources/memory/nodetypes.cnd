@@ -4,11 +4,37 @@
 <jcr='http://www.jcp.org/jcr/1.0'>
 <nt='http://www.jcp.org/jcr/nt/1.0'>
 <mix='http://www.jcp.org/jcr/mix/1.0'>
+<cim='http://paas.services.intraxa/cim/1.0'>
 <test='http://paas.services.intraxa/test/1.0'>
 
 //------------------------------------------------------------------------------
 // CIM N O D E T Y P E S
 //------------------------------------------------------------------------------
 
-[test:test] > nt:unstructured, mix:referenceable
- - ref (Reference) < test:test
+// use NAME properties?
+[cim:managedElement] > nt:unstructured, mix:created, mix:referenceable
+ - parentAttribute (Long)
+
+[test:test] > cim:managedElement
+ - myAttribute (String) mandatory
+ - testAttributeB (String)
+ - num (LONG)
+ - self (Reference)  					< test:test
+ - other (Reference)  					< test:test
+ - otherAgain (Reference)  				< test:test
+ - testEntities (Reference)  multiple	< test:test
+ - second (Reference) 					< test:second
+ 
+[test:compositeTestEntity] > test:test
+ - owner (Reference)					< test:owner
+ 
+[test:owner] > cim:managedElement
+ - myAttribute (String) mandatory
+ - myAttribute2 (String) mandatory
+ - testEntities (Reference)  multiple	< test:test
+
+[test:second] > cim:managedElement
+ - first (Reference)  					< test:test
+- myAttribute (String) mandatory
+- owner (Reference)						< test:owner
+- testEntities (Reference)  multiple	< test:test
