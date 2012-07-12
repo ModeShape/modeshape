@@ -2913,7 +2913,7 @@ class SessionCache {
                 JcrNodePayload childPayload = child.getPayload();
                 AbstractJcrNode childJcrNode = childPayload.getJcrNode();
                 if (childJcrNode.isShared()) {
-                    childJcrNode = ((JcrSharedNode)childJcrNode).proxyNode();
+                    childJcrNode = ((JcrSharedNode)childJcrNode).originalNode();
                     try {
                         childPayload = childJcrNode.nodeInfo().getPayload();
                     } catch (RepositoryException e) {
