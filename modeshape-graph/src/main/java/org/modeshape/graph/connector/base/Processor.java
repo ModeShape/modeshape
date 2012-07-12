@@ -284,13 +284,14 @@ public class Processor<NodeType extends Node, WorkspaceType extends Workspace> e
         NodeType parentNode = txn.getNode(workspace, request.under());
 
         UUID uuid = null;
-        // Make a list of the properties that we will store: all props except dna:uuid and jcr:uuid
+        // Make a list of the properties that we will store: all props except dna:uuid
         List<Property> propsToStore = new ArrayList<Property>(request.properties().size());
         for (Property property : request.properties()) {
             if (property.getName().equals(ModeShapeLexicon.UUID) || property.getName().equals(JcrLexicon.UUID)) {
                 uuid = getExecutionContext().getValueFactories().getUuidFactory().create(property.getValues().next());
-            } else {
-                if (property.size() > 0) propsToStore.add(property);
+            }
+            if (property.size() > 0 && !property.getName().equals(ModeShapeLexicon.UUID)) {
+                propsToStore.add(property);
             }
         }
 
