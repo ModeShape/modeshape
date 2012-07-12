@@ -15,7 +15,6 @@
 [cim:managedElement] > nt:unstructured, mix:created, mix:referenceable
  - parentAttribute (Long)
 
-// FIX: multiple below, should be single on all but selves
 [test:test] > cim:managedElement
  - myAttribute (String) mandatory
  - testAttributeB (String)
