@@ -25,6 +25,7 @@
 package org.modeshape.test.integration;
 
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.Session;
@@ -57,7 +58,7 @@ public class InMemoryRepositoryTest extends ModeShapeUnitTest {
     }
 
     @Test
-    @FixFor( "MODE-1422")
+    @FixFor( "MODE-1422" )
     public void shouldBeAbleToRemoveNodeWithSNSAfterRemovingIncomingReference() throws Exception {
         engine = startEngineUsing("memory/configRepositoryReferences.xml");
         Session session = engine.getRepository("cimRepo").login();
@@ -141,6 +142,41 @@ public class InMemoryRepositoryTest extends ModeShapeUnitTest {
 
         assertEquals(4, node.getProperty("testEntities").getValues().length);
         qr = q.execute();
+
         assertEquals(4, qr.getRows().getSize());
+    }
+
+    @FixFor( "MODE-1490" )
+    @Test
+    public void shouldAllowMultipleOrderBeforeWithoutSave() throws Exception {
+        engine = startEngineUsing("memory/configEmptyRepository.xml");
+        Session session = engine.getRepository("testRepo").login();
+
+        int childCount = 2;
+
+        Node parent = session.getRootNode().addNode("parent", "nt:unstructured");
+        for (int i = 0; i < childCount; i++) {
+            parent.addNode("Child " + i, "nt:unstructured");
+        }
+
+        session.save();
+
+        long childIdx = 0;
+        NodeIterator nodeIterator = parent.getNodes();
+        while (nodeIterator.hasNext()) {
+            parent.orderBefore("Child " + childIdx, "Child 0");
+            childIdx++;
+            nodeIterator.nextNode();
+        }
+
+        session.save();
+
+        nodeIterator = parent.getNodes();
+        childIdx = nodeIterator.getSize() - 1;
+        while (nodeIterator.hasNext()) {
+            Node child = nodeIterator.nextNode();
+            assertEquals("Child " + childIdx, child.getName());
+            childIdx--;
+        }
     }
 }

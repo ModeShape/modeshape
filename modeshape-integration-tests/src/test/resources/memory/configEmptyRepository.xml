@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Windows Local Repository Configuration -->
+<configuration xmlns:mode="http://www.modeshape.org/1.0"
+	xmlns:jcr="http://www.jcp.org/jcr/1.0">
+	<mode:sources jcr:primaryType="nt:unstructured">
+		<mode:source jcr:name="testSource" mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource"
+			mode:retryLimit="3" mode:defaultWorkspaceName="default" />
+	</mode:sources>
+	<mode:repositories>
+		<!-- Define a JCR repository that accesses the 'Cars' source directly. 
+			This of course is optional, since we could access the same content through 
+			'vehicles'. -->
+		<mode:repository jcr:name="testRepo">
+			<!-- Specify the source that should be used for the repository -->
+			<mode:source>testSource</mode:source>
+			<!-- Define any custom node types. Importing CND files via JcrConfiguration 
+				is equivalent to specifying here. -->
+		</mode:repository>
+	</mode:repositories>
+</configuration>

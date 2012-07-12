@@ -2409,6 +2409,10 @@ public class GraphSession<Payload, PropertyPayload> {
             Node<Payload, PropertyPayload> nodeToBeMoved = getChild(childToBeMoved);
             Node<Payload, PropertyPayload> beforeNode = before != null ? getChild(before) : null;
 
+            if (nodeToBeMoved.equals(beforeNode)) {
+                return;
+            }
+
             if (beforeNode == null) {
                 // Moving the node into its parent will remove it from its current spot in the child list and re-add it to the end
                 cache.operations.move(nodeToBeMoved.getLocation()).into(this.location);

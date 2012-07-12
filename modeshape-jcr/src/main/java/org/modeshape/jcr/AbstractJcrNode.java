@@ -2173,6 +2173,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                 String workspaceName = this.cache.session().getWorkspace().getName();
                 throw new ItemNotFoundException(JcrI18n.pathNotFound.text(destPath, workspaceName));
             }
+
+            if (destPath.equals(srcPath)) {
+                return;
+            }
         }
 
         this.editor().orderChildBefore(sourceSegment, destSegment);
