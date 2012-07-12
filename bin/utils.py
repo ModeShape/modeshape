@@ -368,10 +368,10 @@ class Uploader(object):
       self.rsync_cmd = ['rsync', '-r']
       
   def upload_scp(self, fr, to, flags = []):
-    self.upload(fr, to, flags, self.scp_cmd)
+    self.upload(fr, to, flags, list(self.scp_cmd))
   
   def upload_rsync(self, fr, to, flags = []):
-    self.upload(fr, to, flags, self.rsync_cmd)    
+    self.upload(fr, to, flags, list(self.rsync_cmd))    
   
   def upload(self, fr, to, flags, cmd):
     for e in flags:
@@ -439,6 +439,7 @@ def unmarkdown(markdown_text):
      "^#{3,4}\\s*" : "",         # remove h3 and h4 headers
      "^##\\s*(.*)$" : "\\1\\n-------------------------------------------------------------------",
      "^#\\s*" : "",              # remove h1 headers
+     "^#\\s*" : "",              # remove h2 headers
      "\*\*(.*?)\*\*" : "\\1",    # remove emphasis
      "\*(.*?)\*" : "\\1",        # remove emphasis
      "__(.*?)__" : "\\1",        # remove emphasis
