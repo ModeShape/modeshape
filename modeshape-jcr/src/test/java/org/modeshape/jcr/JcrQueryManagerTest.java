@@ -30,6 +30,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -67,6 +68,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.api.query.QueryManager;
 import org.modeshape.jcr.api.query.qom.Limit;
 import org.modeshape.jcr.api.query.qom.QueryObjectModelFactory;
@@ -158,6 +160,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @BeforeClass
     public static void beforeAll() throws Exception {
         if (WRITE_INDEXES_TO_FILE) {
+            File dir = new File("target/querytest/indexes");
+            if (dir.exists()) FileUtil.delete(dir);
+
             String configFileName = JcrQueryManagerTest.class.getSimpleName() + ".json";
             String configFilePath = "config/" + configFileName;
             InputStream configStream = JcrQueryManagerTest.class.getClassLoader().getResourceAsStream(configFilePath);
@@ -275,10 +280,25 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             System.out.println(result);
         }
         if (result.getSelectorNames().length == 1) {
-            assertThat(result.getNodes().getSize(), is(numberOfResults));
+            NodeIterator iter = result.getNodes();
+            if (iter.getSize() != numberOfResults && !print) {
+                // print anyway since this is an error
+                System.out.println();
+                System.out.println(query);
+                System.out.println(" plan -> " + ((JcrQueryResult)result).getPlan());
+                System.out.println(result);
+            }
+            assertThat(iter.getSize(), is(numberOfResults));
         } else {
             try {
                 result.getNodes();
+                if (!print) {
+                    // print anyway since this is an error
+                    System.out.println();
+                    System.out.println(query);
+                    System.out.println(" plan -> " + ((JcrQueryResult)result).getPlan());
+                    System.out.println(result);
+                }
                 fail("should not be able to call this method when the query has multiple selectors");
             } catch (RepositoryException e) {
                 // expected; can't call this when the query uses multiple selectors ...
@@ -586,23 +606,10 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertRow(result, 10).has("car:model", "DB9").and("car:msrp", "$171,600").and("car:mpgCity", 12);
     }
 
-    @FixFor( "MODE-1057" )
-    @Test
-    public void shouldAllowEqualityCriteriaOnPropertyDefinedWithNumericPropertyDefinition() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT [car:maker], [car:model], [car:year], [car:userRating] FROM [car:Car] AS car WHERE [car:userRating] = 4",
-                                          Query.JCR_SQL2);
-        assertThat(query, is(notNullValue()));
-        QueryResult result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 4L);
-        assertResultsHaveColumns(result, "car:maker", "car:model", "car:year", "car:userRating");
-    }
-
     @FixFor( "MODE-1234" )
     @Test
     public void shouldAllowEqualityCriteriaOnPropertyDefinedWithBooleanPropertyDefinition() throws RepositoryException {
+        assertQueryWithBooleanValue(1, "");
         assertQueryWithBooleanValue(1, "WHERE [notion:booleanProperty] = true");
         assertQueryWithBooleanValue(0, "WHERE [notion:booleanProperty] = false");
 
@@ -631,7 +638,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     }
 
-    protected void assertQueryWithBooleanValue( int results,
+    protected void assertQueryWithBooleanValue( int numResults,
                                                 String criteria ) throws RepositoryException {
         String[] columnNames = {"notion:booleanProperty", "notion:booleanProperty2"};
         String queryStr = "SELECT [notion:booleanProperty], [notion:booleanProperty2] FROM [notion:typed] AS node " + criteria;
@@ -639,22 +646,46 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, results);
+        assertResults(query, result, numResults);
         assertResultsHaveColumns(result, columnNames);
     }
 
     @FixFor( "MODE-1057" )
     @Test
-    public void shouldAllowLikeCriteriaOnPropertyDefinedWithNumericPropertyDefinition() throws RepositoryException {
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("SELECT [car:maker], [car:model], [car:year], [car:userRating] FROM [car:Car] AS car WHERE [car:userRating] LIKE 4",
-                                          Query.JCR_SQL2);
+    public void shouldAllowEqualityNumericCriteriaOnPropertyDefinedWithNumericPropertyDefinition() throws RepositoryException {
+        assertQueryWithLongValue(13, "");
+        assertQueryWithLongValue(2, "WHERE [car:userRating] = 3");
+        assertQueryWithLongValue(1, "WHERE [car:userRating] < 3");
+        assertQueryWithLongValue(8, "WHERE [car:userRating] > 3");
+        assertQueryWithLongValue(3, "WHERE [car:userRating] <= 3");
+        assertQueryWithLongValue(10, "WHERE [car:userRating] >= 3");
+        assertQueryWithLongValue(9, "WHERE [car:userRating] <> 3");
+        assertQueryWithLongValue(9, "WHERE [car:userRating] != 3");
+    }
+
+    @FixFor( "MODE-1057" )
+    @Test
+    public void shouldAllowEqualityStringCriteriaOnPropertyDefinedWithNumericPropertyDefinition() throws RepositoryException {
+        assertQueryWithLongValue(13, "");
+        assertQueryWithLongValue(2, "WHERE [car:userRating] = '3'");
+        assertQueryWithLongValue(1, "WHERE [car:userRating] < '3'");
+        assertQueryWithLongValue(8, "WHERE [car:userRating] > '3'");
+        assertQueryWithLongValue(3, "WHERE [car:userRating] <= '3'");
+        assertQueryWithLongValue(10, "WHERE [car:userRating] >= '3'");
+        assertQueryWithLongValue(9, "WHERE [car:userRating] <> '3'");
+        assertQueryWithLongValue(9, "WHERE [car:userRating] != '3'");
+    }
+
+    protected void assertQueryWithLongValue( int numResults,
+                                             String criteria ) throws RepositoryException {
+        String[] columnNames = {"car:maker", "car:model", "car:year", "car:userRating"};
+        String queryStr = "SELECT [car:maker], [car:model], [car:year], [car:userRating] FROM [car:Car] AS car " + criteria;
+        Query query = session.getWorkspace().getQueryManager().createQuery(queryStr, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 4L);
-        assertResultsHaveColumns(result, "car:maker", "car:model", "car:year", "car:userRating");
+        assertResults(query, result, numResults);
+        assertResultsHaveColumns(result, columnNames);
     }
 
     @Test

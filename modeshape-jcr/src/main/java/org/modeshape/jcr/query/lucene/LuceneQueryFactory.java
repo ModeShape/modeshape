@@ -478,8 +478,6 @@ public abstract class LuceneQueryFactory {
     }
 
     protected Query not( Query notted ) {
-        // if (notted == null) return new MatchAllDocsQuery();
-        // return new NotQuery(notted);
         BooleanQuery query = new BooleanQuery();
         // We need at least some positive match, so get all docs ...
         query.add(new MatchAllDocsQuery(), Occur.SHOULD);

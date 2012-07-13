@@ -268,6 +268,13 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
             // Otherwise the types are different, so build the same query using the actual type ...
             Query query2 = findNodesWith(selectorName, propertyValue, operator, value, caseOperation, valueType, metadata);
             if (query1.equals(query2)) return query1;
+            if (operator == Operator.NOT_EQUAL_TO) {
+                // We actually want to AND the negated results ...
+                BooleanQuery result = new BooleanQuery();
+                result.add(new BooleanClause(query1, Occur.MUST));
+                result.add(new BooleanClause(query2, Occur.MUST));
+                return result;
+            }
             BooleanQuery result = new BooleanQuery();
             result.add(new BooleanClause(query1, Occur.SHOULD));
             result.add(new BooleanClause(query2, Occur.SHOULD));
@@ -478,8 +485,12 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                         return NumericRangeQuery.newLongRange(field, date, date, true, true);
                     case NOT_EQUAL_TO:
                         if (date < longMinimum || date > longMaximum) return new MatchAllDocsQuery();
-                        Query query = NumericRangeQuery.newLongRange(field, date, date, true, true);
-                        return not(query);
+                        Query lowerRange = NumericRangeQuery.newLongRange(field, longMinimum, date, true, false);
+                        Query upperRange = NumericRangeQuery.newLongRange(field, date, longMaximum, false, true);
+                        BooleanQuery query = new BooleanQuery();
+                        query.add(lowerRange, Occur.SHOULD);
+                        query.add(upperRange, Occur.SHOULD);
+                        return query;
                     case GREATER_THAN:
                         if (date > longMaximum) return new MatchNoneQuery();
                         return NumericRangeQuery.newLongRange(field, date, longMaximum, false, true);
@@ -514,9 +525,13 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                         if (longValue < longMinimum || longValue > longMaximum) return new MatchNoneQuery();
                         return NumericRangeQuery.newLongRange(field, longValue, longValue, true, true);
                     case NOT_EQUAL_TO:
-                        if (longValue < longMinimum || longValue > longMaximum) return new MatchAllDocsQuery();
-                        Query query = NumericRangeQuery.newLongRange(field, longValue, longValue, true, true);
-                        return not(query);
+                        if (longValue < longMinimum || longValue > longMaximum) return new MatchNoneQuery();
+                        Query lowerRange = NumericRangeQuery.newLongRange(field, longMinimum, longValue, true, false);
+                        Query upperRange = NumericRangeQuery.newLongRange(field, longValue, longMaximum, false, true);
+                        BooleanQuery query = new BooleanQuery();
+                        query.add(lowerRange, Occur.SHOULD);
+                        query.add(upperRange, Occur.SHOULD);
+                        return query;
                     case GREATER_THAN:
                         if (longValue > longMaximum) return new MatchNoneQuery();
                         return NumericRangeQuery.newLongRange(field, longValue, longMaximum, false, true);
@@ -537,34 +552,48 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                 break;
             case BOOLEAN:
                 boolean booleanValue = factories.getBooleanFactory().create(value);
-                int intValue = booleanValue ? 1 : 0;
-                switch (operator) {
-                    case EQUAL_TO:
-                        return NumericRangeQuery.newIntRange(field, intValue, intValue, true, true);
-                    case NOT_EQUAL_TO:
-                        return NumericRangeQuery.newIntRange(field, intValue, intValue, true, true);
-                    case GREATER_THAN_OR_EQUAL_TO:
-                        return NumericRangeQuery.newIntRange(field, intValue, 1, true, true);
-                    case LESS_THAN_OR_EQUAL_TO:
-                        return NumericRangeQuery.newIntRange(field, 0, intValue, true, true);
-                    case GREATER_THAN:
-                        if (!booleanValue) {
-                            // 'true' is greater than 'false' ...
+                if (booleanValue) {
+                    switch (operator) {
+                        case EQUAL_TO:
+                            return NumericRangeQuery.newIntRange(field, 0, 1, false, true);
+                        case NOT_EQUAL_TO:
+                            return NumericRangeQuery.newIntRange(field, 0, 1, true, false);
+                        case GREATER_THAN_OR_EQUAL_TO:
                             return NumericRangeQuery.newIntRange(field, 1, 1, true, true);
-                        }
-                        // Can't be greater than 'true', per JCR spec
-                        return new MatchNoneQuery();
-                    case LESS_THAN:
-                        if (booleanValue) {
+                        case LESS_THAN_OR_EQUAL_TO:
+                            return NumericRangeQuery.newIntRange(field, 0, 1, true, true);
+                        case GREATER_THAN:
+                            // Can't be greater than 'true', per JCR spec
+                            return new MatchNoneQuery();
+                        case LESS_THAN:
                             // 'false' is less than 'true' ...
                             return NumericRangeQuery.newIntRange(field, 0, 0, true, true);
-                        }
-                        // Can't be less than 'false', per JCR spec
-                        return new MatchNoneQuery();
-                    case LIKE:
-                        // This is not allowed ...
-                        assert false;
-                        return null;
+                        case LIKE:
+                            // This is not allowed ...
+                            assert false;
+                            return null;
+                    }
+                } else {
+                    switch (operator) {
+                        case EQUAL_TO:
+                            return NumericRangeQuery.newIntRange(field, 0, 1, true, false);
+                        case NOT_EQUAL_TO:
+                            return NumericRangeQuery.newIntRange(field, 0, 1, false, true);
+                        case GREATER_THAN_OR_EQUAL_TO:
+                            return NumericRangeQuery.newIntRange(field, 0, 1, true, true);
+                        case LESS_THAN_OR_EQUAL_TO:
+                            return NumericRangeQuery.newIntRange(field, 0, 0, true, true);
+                        case GREATER_THAN:
+                            // 'true' is greater than 'false' ...
+                            return NumericRangeQuery.newIntRange(field, 1, 1, true, true);
+                        case LESS_THAN:
+                            // Can't be less than 'false', per JCR spec
+                            return new MatchNoneQuery();
+                        case LIKE:
+                            // This is not allowed ...
+                            assert false;
+                            return null;
+                    }
                 }
                 break;
             case DOUBLE:
@@ -583,8 +612,12 @@ public class BasicLuceneQueryFactory extends LuceneQueryFactory {
                         return NumericRangeQuery.newDoubleRange(field, doubleValue, doubleValue, true, true);
                     case NOT_EQUAL_TO:
                         if (doubleValue < doubleMinimum || doubleValue > doubleMaximum) return new MatchAllDocsQuery();
-                        Query query = NumericRangeQuery.newDoubleRange(field, doubleValue, doubleValue, true, true);
-                        return not(query);
+                        Query lowerRange = NumericRangeQuery.newDoubleRange(field, doubleMinimum, doubleValue, true, false);
+                        Query upperRange = NumericRangeQuery.newDoubleRange(field, doubleValue, doubleMaximum, false, true);
+                        BooleanQuery query = new BooleanQuery();
+                        query.add(lowerRange, Occur.SHOULD);
+                        query.add(upperRange, Occur.SHOULD);
+                        return query;
                     case GREATER_THAN:
                         if (doubleValue > doubleMaximum) return new MatchNoneQuery();
                         return NumericRangeQuery.newDoubleRange(field, doubleValue, doubleMaximum, false, true);

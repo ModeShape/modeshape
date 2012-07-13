@@ -1162,16 +1162,16 @@ public class SqlQueryParserTest {
         assertThat(parser.parseLiteral(tokens("false"), typeSystem).value(), is((Object)Boolean.FALSE));
         assertThat(parser.parseLiteral(tokens("TRUE"), typeSystem).value(), is((Object)Boolean.TRUE));
         assertThat(parser.parseLiteral(tokens("FALSE"), typeSystem).value(), is((Object)Boolean.FALSE));
-        assertThat(parser.parseLiteral(tokens("123"), typeSystem).value(), is((Object)"123"));
-        assertThat(parser.parseLiteral(tokens("+123"), typeSystem).value(), is((Object)"123"));
-        assertThat(parser.parseLiteral(tokens("-123"), typeSystem).value(), is((Object)"-123"));
-        assertThat(parser.parseLiteral(tokens("1.23"), typeSystem).value(), is((Object)"1.23"));
-        assertThat(parser.parseLiteral(tokens("+1.23"), typeSystem).value(), is((Object)"1.23"));
-        assertThat(parser.parseLiteral(tokens("-1.23"), typeSystem).value(), is((Object)"-1.23"));
-        assertThat(parser.parseLiteral(tokens("1.23e10"), typeSystem).value(), is((Object)"1.23E10"));
-        assertThat(parser.parseLiteral(tokens("1.23e+10"), typeSystem).value(), is((Object)"1.23E10"));
-        assertThat(parser.parseLiteral(tokens("1.23e-10"), typeSystem).value(), is((Object)"1.23E-10"));
-        assertThat(parser.parseLiteral(tokens("0"), typeSystem).value(), is((Object)"0"));
+        assertThat(parser.parseLiteral(tokens("123"), typeSystem).value(), is((Object)123L));
+        assertThat(parser.parseLiteral(tokens("+123"), typeSystem).value(), is((Object)123L));
+        assertThat(parser.parseLiteral(tokens("-123"), typeSystem).value(), is((Object)new Long(-123)));
+        assertThat(parser.parseLiteral(tokens("1.23"), typeSystem).value(), is((Object)1.23D));
+        assertThat(parser.parseLiteral(tokens("+1.23"), typeSystem).value(), is((Object)1.23D));
+        assertThat(parser.parseLiteral(tokens("-1.23"), typeSystem).value(), is((Object)new Double(-1.23)));
+        assertThat(parser.parseLiteral(tokens("1.23e10"), typeSystem).value(), is((Object)new Double(1.23E10)));
+        assertThat(parser.parseLiteral(tokens("1.23e+10"), typeSystem).value(), is((Object)new Double(1.23E10)));
+        assertThat(parser.parseLiteral(tokens("1.23e-10"), typeSystem).value(), is((Object)new Double(1.23E-10)));
+        assertThat(parser.parseLiteral(tokens("0"), typeSystem).value(), is((Object)0L));
         assertThat(parser.parseLiteral(tokens("2009-03-22T03:22:45.345Z"), typeSystem).value(),
                    is((Object)"2009-03-22T03:22:45.345Z"));
         assertThat(parser.parseLiteral(tokens("2009-03-22T03:22:45.345UTC"), typeSystem).value(),
@@ -1213,27 +1213,27 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParseLiteralValueFromStringWithPositiveAndNegativeIntegerValues() {
-        assertThat(parser.parseLiteralValue(tokens("123"), typeSystem), is((Object)"123"));
-        assertThat(parser.parseLiteralValue(tokens("-123"), typeSystem), is((Object)"-123"));
-        assertThat(parser.parseLiteralValue(tokens("- 123"), typeSystem), is((Object)"-123"));
-        assertThat(parser.parseLiteralValue(tokens("+123"), typeSystem), is((Object)"123"));
-        assertThat(parser.parseLiteralValue(tokens("+ 123"), typeSystem), is((Object)"123"));
-        assertThat(parser.parseLiteralValue(tokens("0"), typeSystem), is((Object)"0"));
+        assertThat(parser.parseLiteralValue(tokens("123"), typeSystem), is((Object)123L));
+        assertThat(parser.parseLiteralValue(tokens("-123"), typeSystem), is((Object)new Long(-123)));
+        assertThat(parser.parseLiteralValue(tokens("- 123"), typeSystem), is((Object)new Long(-123)));
+        assertThat(parser.parseLiteralValue(tokens("+123"), typeSystem), is((Object)123L));
+        assertThat(parser.parseLiteralValue(tokens("+ 123"), typeSystem), is((Object)123L));
+        assertThat(parser.parseLiteralValue(tokens("0"), typeSystem), is((Object)0L));
     }
 
     @Test
     public void shouldParseLiteralValueFromStringWithPositiveAndNegativeDecimalValues() {
-        assertThat(parser.parseLiteralValue(tokens("1.23"), typeSystem), is((Object)"1.23"));
-        assertThat(parser.parseLiteralValue(tokens("-1.23"), typeSystem), is((Object)"-1.23"));
-        assertThat(parser.parseLiteralValue(tokens("+0.123"), typeSystem), is((Object)"0.123"));
+        assertThat(parser.parseLiteralValue(tokens("1.23"), typeSystem), is((Object)1.23D));
+        assertThat(parser.parseLiteralValue(tokens("-1.23"), typeSystem), is((Object)new Double(-1.23)));
+        assertThat(parser.parseLiteralValue(tokens("+0.123"), typeSystem), is((Object)0.123D));
     }
 
     @Test
     public void shouldParseLiteralValueFromStringWithPositiveAndNegativeDecimalValuesInScientificNotation() {
-        assertThat(parser.parseLiteralValue(tokens("1.23"), typeSystem), is((Object)"1.23"));
-        assertThat(parser.parseLiteralValue(tokens("1.23e10"), typeSystem), is((Object)"1.23E10"));
-        assertThat(parser.parseLiteralValue(tokens("- 1.23e10"), typeSystem), is((Object)"-1.23E10"));
-        assertThat(parser.parseLiteralValue(tokens("- 1.23e-10"), typeSystem), is((Object)"-1.23E-10"));
+        assertThat(parser.parseLiteralValue(tokens("1.23"), typeSystem), is((Object)1.23D));
+        assertThat(parser.parseLiteralValue(tokens("1.23e10"), typeSystem), is((Object)1.23E10));
+        assertThat(parser.parseLiteralValue(tokens("- 1.23e10"), typeSystem), is((Object)new Double(-1.23E10)));
+        assertThat(parser.parseLiteralValue(tokens("- 1.23e-10"), typeSystem), is((Object)new Double(-1.23E-10)));
     }
 
     @Test
