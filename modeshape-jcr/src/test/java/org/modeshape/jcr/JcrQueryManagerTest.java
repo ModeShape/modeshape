@@ -28,7 +28,9 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.IOException;
@@ -37,6 +39,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -88,10 +91,16 @@ import org.modeshape.jcr.value.Path.Segment;
  */
 public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
+    private static final String[] SYSTEM_NODES_PATHS = new String[] {
+            "/jcr:system/jcr:nodeTypes",
+            "/jcr:system/jcr:versionStorage",
+            "/jcr:system/mode:namespaces",
+            "/jcr:system/mode:locks" };
+
     private static final boolean WRITE_INDEXES_TO_FILE = false;
 
     /** The total number of nodes at or below '/jcr:system' */
-    protected static final int TOTAL_SYSTEM_NODE_COUNT = 57;
+    protected static final int TOTAL_SYSTEM_NODE_COUNT = 238;
 
     /** The total number of nodes excluding '/jcr:system' */
     protected static final int TOTAL_NON_SYSTEM_NODE_COUNT = 25;
@@ -1210,10 +1219,11 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // print = true;
         result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 22L);
+        assertResults(query, result, 23L);
         assertResultsHaveColumns(result, new String[] {"jcr:path"});
         assertResultsHaveRows(result,
                               "jcr:path",
+                              "/",
                               "/",
                               "/Cars",
                               "/Cars/Hybrid/Nissan Altima",
@@ -1251,7 +1261,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 319L);
+        assertResults(query, result, 1881L);
         assertResultsHaveColumns(result, new String[] {"myfirstnodetypes.jcr:path", "mythirdnodetypes.mode:depth",
             "mysecondnodetypes.mode:depth", "mythirdnodetypes.jcr:path", "mysecondnodetypes.jcr:path",
             "mythirdnodetypes.jcr:mixinTypes", "mythirdnodetypes.jcr:score", "myfirstnodetypes.jcr:score",
@@ -1816,7 +1826,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 1);
+        assertResults(query, result, 2);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
@@ -1858,7 +1868,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindNodeWithAttrbuteCriteria() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("//Infiniti_x0020_G37[@car:year='2008']", Query.XPATH);
+        Query query = session.getWorkspace().getQueryManager().createQuery("//Infiniti_x0020_G37[@car:year='2008']",
+                                                                           Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         // print = true;
@@ -1928,7 +1939,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithContainsCriteria() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//*[jcr:contains(., 'liter')]", Query.XPATH);
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//*[jcr:contains(., 'liter')]",
+                                                                           Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -2057,8 +2069,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldBeAbleToExecuteXPathQueryWithCompoundCriteria() throws Exception {
         Query query = session.getWorkspace()
                              .getQueryManager()
-                             .createQuery("/jcr:root/Cars//element(*,car:Car)[@car:year='2008' and jcr:contains(., '\"liter V 12\"')]",
-                                          Query.XPATH);
+                             .createQuery(
+                                     "/jcr:root/Cars//element(*,car:Car)[@car:year='2008' and jcr:contains(., '\"liter V 12\"')]",
+                                     Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -2357,5 +2370,48 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(result2, is(notNullValue()));
         assertResults(query2, result2, 2L);
         assertResultsHaveColumns(result2, "maker", "car:model", "car:year", "car:userRating");
+    }
+
+    @Test
+    public void shouldFindSystemNodesUsingPathCriteria() throws Exception {
+        String queryString = "select [jcr:path] from [nt:base] where [jcr:path] like '/jcr:system/%' and [jcr:path] not like '/jcr:system/%/%'";
+        assertNodesAreFound(queryString, Query.JCR_SQL2, SYSTEM_NODES_PATHS);
+    }
+
+    @Test
+    public void shouldFindSystemNodesUsingIsChildNodeCriteria() throws Exception {
+        String queryString = "select [jcr:path] from [nt:base] where ischildnode('/jcr:system')";
+        assertNodesAreFound(queryString, Query.JCR_SQL2, SYSTEM_NODES_PATHS);
+    }
+
+    @Test
+    @Ignore("Ignored until 1550 is fixed")
+    @FixFor( "MODE-1550" )
+    public void shouldFindChildrenOfRootUsingIsChildNodeCriteria() throws Exception {
+        session.getRootNode().addNode("node1");
+        session.getRootNode().addNode("node2");
+
+        String queryString = "select [jcr:path] from [nt:base] where ischildnode('/')";
+        assertNodesAreFound(queryString, Query.JCR_SQL2, "/jcr:system", "/node1", "/node2");
+    }
+
+    private void assertNodesAreFound( String queryString,
+                                      String queryType,
+                                      String... expectedNodesPaths) throws RepositoryException {
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        Query query = queryManager.createQuery(queryString, queryType);
+        QueryResult result = query.execute();
+
+        List<String> actualNodePaths = new ArrayList<String>();
+        for (NodeIterator nodeIterator = result.getNodes(); nodeIterator.hasNext();) {
+            actualNodePaths.add(nodeIterator.nextNode().getPath().toLowerCase());
+        }
+
+        List<String> expectedNodePaths = Arrays.asList(expectedNodesPaths);
+
+        assertEquals(actualNodePaths.toString(), expectedNodePaths.size(), actualNodePaths.size());
+        for (String expectedPath : expectedNodePaths) {
+            assertTrue(expectedPath + " not found", actualNodePaths.remove(expectedPath.toLowerCase()));
+        }
     }
 }

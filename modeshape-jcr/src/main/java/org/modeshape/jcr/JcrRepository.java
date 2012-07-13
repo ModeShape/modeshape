@@ -961,6 +961,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.defaultWorkspaceName = config.getDefaultWorkspaceName();
             }
 
+            boolean systemContentInitialized = false;
             if (other != null) {
                 if (change.storageChanged) {
                     // Can't change where we're storing the content while we're running, so take effect upon next startup
@@ -1035,7 +1036,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // Set up the repository cache ...
                 final SessionEnvironment sessionEnv = new RepositorySessionEnvironment(this.transactions);
                 this.cache = new RepositoryCache(context, database, config, new SystemContentInitializer(), sessionEnv, changeBus);
-                assert this.cache != null;
+                systemContentInitialized = true;
 
                 // Set up the node type manager ...
                 this.nodeTypes = new RepositoryNodeTypeManager(this, true, true);
@@ -1136,6 +1137,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 Properties indexStorageProps = query.getIndexStorageProperties();
                 this.repositoryQueryManager = new RepositoryQueryManager(this, config.getQuery(), indexingExecutor, backendProps,
                                                                          indexingProps, indexStorageProps);
+                if (systemContentInitialized) {
+                    this.repositoryQueryManager.reindexSystemContent();
+                }
             } else {
                 this.repositoryQueryManager = null;
             }

@@ -942,12 +942,19 @@ public class WritableSessionCache extends AbstractSessionCache {
                             throw new DocumentAlreadyExistsException(keyStr);
                         }
                     }
-                } else if (monitor != null) {
-                    // Get the primary and mixin type names; even though we're passing in the session, the two properties
-                    // should be there and shouldn't require a looking in the cache...
-                    Name primaryType = node.getPrimaryType(this);
-                    Set<Name> mixinTypes = node.getMixinTypes(this);
-                    monitor.recordUpdate(workspaceName, key, newPath, primaryType, mixinTypes, node.getProperties(this));
+                } else {
+                    boolean isSameWorkspace = workspaceCache().getWorkspaceKey().equalsIgnoreCase(node.getKey().getWorkspaceKey());
+                    //only update the indexes if the node we're working with is in the same workspace as the current workspace.
+                    //when linking/un-linking nodes (e.g. shareable node or jcr:system) this condition will be false.
+                    //the downside of this is that there may be cases (e.g. back references when working with versions) in which
+                    //we might loose information from the indexes
+                    if (monitor != null && isSameWorkspace) {
+                        // Get the primary and mixin type names; even though we're passing in the session, the two properties
+                        // should be there and shouldn't require a looking in the cache...
+                        Name primaryType = node.getPrimaryType(this);
+                        Set<Name> mixinTypes = node.getMixinTypes(this);
+                        monitor.recordUpdate(workspaceName, key, newPath, primaryType, mixinTypes, node.getProperties(this));
+                    }
                 }
 
                 // The above code doesn't properly generate events for newly linked or unlinked nodes (e.g., shareable nodes

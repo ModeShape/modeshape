@@ -288,6 +288,14 @@ class RepositoryQueryManager {
         reindexContent(workspaceName, schemata, systemWorkspaceCache, nodeInSystemBranch, depth, false);
     }
 
+    protected void reindexSystemContent() {
+        RepositoryCache repositoryCache = runningState.repositoryCache();
+        NodeCache systemWorkspaceCache = repositoryCache.getWorkspaceCache(repositoryCache.getSystemWorkspaceName());
+        CachedNode systemRoot = systemWorkspaceCache.getNode(systemWorkspaceCache.getRootKey());
+        NodeTypeSchemata schemata = runningState.nodeTypeManager().getRepositorySchemata();
+        reindexSystemContent(systemRoot, Integer.MAX_VALUE, schemata);
+    }
+
     /**
      * Asynchronously crawl and index the content in the named workspace.
      * 
