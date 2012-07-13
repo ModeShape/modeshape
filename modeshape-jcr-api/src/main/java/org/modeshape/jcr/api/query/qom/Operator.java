@@ -29,7 +29,7 @@ import java.util.Map;
 
 public enum Operator {
     EQUAL_TO("="),
-    NOT_EQUAL_TO("!="),
+    NOT_EQUAL_TO("<>"),
     LESS_THAN("<"),
     LESS_THAN_OR_EQUAL_TO("<="),
     GREATER_THAN(">"),
@@ -42,7 +42,7 @@ public enum Operator {
         for (Operator operator : Operator.values()) {
             opsBySymbol.put(operator.symbol().toUpperCase(), operator);
         }
-        opsBySymbol.put("<>", NOT_EQUAL_TO);
+        opsBySymbol.put("!=", NOT_EQUAL_TO);
         OPERATORS_BY_SYMBOL = Collections.unmodifiableMap(opsBySymbol);
     }
 
