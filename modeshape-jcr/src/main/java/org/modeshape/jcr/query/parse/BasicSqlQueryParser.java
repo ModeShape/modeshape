@@ -996,7 +996,7 @@ public class BasicSqlQueryParser implements QueryParser {
                 }
                 try {
                     // Convert to a double and then back to a string to get canonical form ...
-                    return doubleFactory.asString(doubleFactory.create(value));
+                    return doubleFactory.create(value);
                 } catch (ValueFormatException e) {
                     String msg = GraphI18n.expectingLiteralAndUnableToParseAsDouble.text(value, pos.getLine(), pos.getColumn());
                     throw new ParsingException(pos, msg);
@@ -1058,7 +1058,7 @@ public class BasicSqlQueryParser implements QueryParser {
         String value = sign + integral;
         try {
             // Convert to a long and then back to a string to get canonical form ...
-            return longFactory.asString(longFactory.create(value));
+            return longFactory.create(value);
         } catch (ValueFormatException e) {
             String msg = GraphI18n.expectingLiteralAndUnableToParseAsLong.text(value, pos.getLine(), pos.getColumn());
             throw new ParsingException(pos, msg);

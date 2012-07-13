@@ -34,8 +34,6 @@ import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.query.model.QueryCommand;
 import org.modeshape.jcr.query.model.TypeSystem;
 import org.modeshape.jcr.query.parse.BasicSqlQueryParser;
-import org.modeshape.jcr.query.xpath.XPathParser;
-import org.modeshape.jcr.query.xpath.XPathToQueryTranslator;
 import org.modeshape.jcr.query.xpath.XPath.Component;
 
 /**
@@ -185,20 +183,20 @@ public class XPathToQueryTranslatorTest {
         assertThat(xpath("//element(*,my:type)[not(jcr:contains(@desc,'rock star'))]"),
                    isSql("SELECT * FROM [my:type] WHERE NOT(CONTAINS(desc,'rock star'))"));
         assertThat(xpath("//element(*,my:type)[not(@id < 1 and jcr:contains(@desc,'rock star'))]"),
-                   isSql("SELECT * FROM [my:type] WHERE NOT(id < 1 AND CONTAINS(desc,'rock star'))"));
+                   isSql("SELECT * FROM [my:type] WHERE NOT(id < '1' AND CONTAINS(desc,'rock star'))"));
     }
 
     @Test
     public void shouldTranslateFromXPathContainingPredicatesIdentifyingPropertyCriteria() {
-        assertThat(xpath("//element(*,my:type)[@id = 1]"), isSql("SELECT * FROM [my:type] WHERE id = 1"));
+        assertThat(xpath("//element(*,my:type)[@id = 1]"), isSql("SELECT * FROM [my:type] WHERE id = '1'"));
         assertThat(xpath("//element(*,my:type)[@id < 1 and @name = 'john']"),
-                   isSql("SELECT * FROM [my:type] WHERE id < 1 AND name = 'john'"));
+                   isSql("SELECT * FROM [my:type] WHERE id < '1' AND name = 'john'"));
         assertThat(xpath("//element(*,my:type)[@id < 1 and ( @name = 'john' or @name = 'mary')]"),
-                   isSql("SELECT * FROM [my:type] WHERE id < 1 AND (name = 'john' OR name = 'mary')"));
+                   isSql("SELECT * FROM [my:type] WHERE id < '1' AND (name = 'john' OR name = 'mary')"));
         assertThat(xpath("//element(*,my:type)[@id < 1 and ( jcr:like(@name,'%john') or @name = 'mary')]"),
-                   isSql("SELECT * FROM [my:type] WHERE id < 1 AND (name like '%john' OR name = 'mary')"));
+                   isSql("SELECT * FROM [my:type] WHERE id < '1' AND (name like '%john' OR name = 'mary')"));
         assertThat(xpath("//element(*,my:type)[@id < 1 and jcr:contains(@desc,'rock star')]"),
-                   isSql("SELECT * FROM [my:type] WHERE id < 1 AND CONTAINS(desc,'rock star')"));
+                   isSql("SELECT * FROM [my:type] WHERE id < '1' AND CONTAINS(desc,'rock star')"));
     }
 
     @Test

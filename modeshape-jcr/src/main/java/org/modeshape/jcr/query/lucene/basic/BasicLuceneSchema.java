@@ -209,7 +209,7 @@ public class BasicLuceneSchema implements LuceneSchema {
 
     /**
      * Create a dynamic field to store the property value.
-     *
+     * 
      * @param propertyName the name of the field in which the property value is to be stored; never null
      * @param value the property value; may be null
      * @param previous the previous DynamicField; may be null
@@ -301,9 +301,9 @@ public class BasicLuceneSchema implements LuceneSchema {
             Boolean bool = (Boolean)value;
 
             // Convert big decimals to a string, using a specific format ...
-            previous = new DynamicField(previous, propertyName, bool ? TRUE_VALUE : FALSE_VALUE, false, true);
+            previous = new DynamicField(previous, propertyName, bool ? Boolean.TRUE : Boolean.FALSE, false, true);
 
-            // Add a field with the length of the value ...
+            // Add a field with the length of the **stringified** value ...
             long len = bool.booleanValue() ? 4 : 5;
             previous = new DynamicField(previous, FieldName.LENGTH_PREFIX + propertyName, len, false, true);
 
@@ -322,7 +322,7 @@ public class BasicLuceneSchema implements LuceneSchema {
             } else if (value instanceof Long) {
                 strValue = stringFactory.create(number.longValue());
             } else if (value instanceof Short) {
-                strValue = stringFactory.create(number.intValue());
+                strValue = stringFactory.create(number.shortValue());
             } else if (value instanceof Float) {
                 strValue = stringFactory.create(number.floatValue());
             } else if (value instanceof Double) {
