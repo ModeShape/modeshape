@@ -378,7 +378,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
                 //for different DB, use different type
                 .addProperty("idColumnType", "VARCHAR(255)")
                 //for different DB, use different type
-                .addProperty("dataColumnType", "VARBINARY(1000)")
+                .addProperty("dataColumnType", dataColumnType)
                 .addProperty("dropTableOnExit", "false")
                 .addProperty("createTableOnStart", "true");
         }
