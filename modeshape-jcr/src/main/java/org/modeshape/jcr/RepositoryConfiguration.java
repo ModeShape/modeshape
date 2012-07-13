@@ -311,6 +311,16 @@ public class RepositoryConfiguration {
         public static final String ANONYMOUS_USERNAME = "username";
 
         /**
+         * The name for the field under "security" specifying the username.
+         */
+        public static final String USER_NAME = "username";
+
+        /**
+         * The name for the field under "security" specifying the user's password.
+         */
+        public static final String USER_PASSWORD = "password";
+
+        /**
          * The name for the field under "security/anonymous" specifying whether clients that fail authentication should instead be
          * granted anonymous credentials.
          */
@@ -337,6 +347,9 @@ public class RepositoryConfiguration {
         public static final String SEQUENCERS = "sequencers";
         public static final String PATH_EXPRESSION = "pathExpression";
         public static final String PATH_EXPRESSIONS = "pathExpressions";
+        public static final String JDBC_DRIVER_CLASS = "driverClass";
+        public static final String CONNECTION_URL = "connectionURL";
+        public static final String DATA_COLUMN_TYPE = "dataColumnType";
         /**
          * The name for the field (under "sequencing" and "query") specifying the thread pool that should be used for sequencing.
          * By default, all repository instances will use the same thread pool within the engine. To use a dedicated thread pool
@@ -928,7 +941,16 @@ public class RepositoryConfiguration {
                 File dir = new File(directory);
                 store = FileSystemBinaryStore.create(dir);
             } else if (type.equalsIgnoreCase("database")) {
-                store = new DatabaseBinaryStore();
+                String driverClass = binaryStorage.getString(FieldName.JDBC_DRIVER_CLASS);
+                String connectionURL = binaryStorage.getString(FieldName.CONNECTION_URL);
+                String username = binaryStorage.getString(FieldName.USER_NAME);
+                String password = binaryStorage.getString(FieldName.USER_PASSWORD);
+                String dataType = binaryStorage.getString(FieldName.DATA_COLUMN_TYPE);
+
+                store = new DatabaseBinaryStore(driverClass, connectionURL, username, password);
+                if (dataType != null) {
+                    ((DatabaseBinaryStore) store).setDataColumnType(dataType);
+                }
             } else if (type.equalsIgnoreCase("cache")) {
                 String cacheName = binaryStorage.getString(FieldName.CACHE_NAME, getName());
                 String cacheConfiguration = binaryStorage.getString(FieldName.CACHE_CONFIGURATION); // may be null
