@@ -497,7 +497,12 @@
                         </configuration>
                     </configuration>
                 </plugin>
-               <plugin>
+
+                <!--
+                    Need to inform m2e to ignore build errors that started occurring when upgrading to Eclipse Indigo (3.7). This
+                    issue is discussed/solved here: http://stackoverflow.com/questions/8706017/maven-dependency-plugin-goals-copy-dependencies-unpack-is-not-supported-b
+                -->
+                <plugin>
                     <groupId>org.eclipse.m2e</groupId>
                     <artifactId>lifecycle-mapping</artifactId>
                     <version>1.0.0</version>
