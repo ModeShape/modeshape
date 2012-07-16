@@ -54,6 +54,8 @@ public interface CachedNode {
      * 
      * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
      * @return the name; never null, but the root node will have a zero-length name
+     * @throws NodeNotFoundInParentException if this node no longer exists inside the parent node (and perhaps in no other parent)
+     * @throws NodeNotFoundException if this node no longer exists
      * @see #getSegment(NodeCache)
      * @see #getPath(NodeCache)
      */
@@ -64,6 +66,8 @@ public interface CachedNode {
      * 
      * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
      * @return the segment; never null, but the root node will have a zero-length name
+     * @throws NodeNotFoundInParentException if this node no longer exists inside the parent node (and perhaps in no other parent)
+     * @throws NodeNotFoundException if this node no longer exists
      * @see #getName(NodeCache)
      * @see #getPath(NodeCache)
      */
@@ -74,9 +78,10 @@ public interface CachedNode {
      * 
      * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
      * @return the node's path; never null with at least one segment for all nodes except the root node
+     * @throws NodeNotFoundInParentException if this node no longer exists inside the parent node (and perhaps in no other parent)
+     * @throws NodeNotFoundException if this node no longer exists
      * @see #getName(NodeCache)
      * @see #getSegment(NodeCache)
-     * @throws NodeNotFoundException if this node does not exist anymore
      */
     Path getPath( NodeCache cache ) throws NodeNotFoundException;
 

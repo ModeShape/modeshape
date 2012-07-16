@@ -57,6 +57,7 @@ import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundException;
+import org.modeshape.jcr.cache.NodeNotFoundInParentException;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
@@ -371,11 +372,23 @@ public class SessionNode implements MutableCachedNode {
         return getSegment(cache, parent);
     }
 
+    /**
+     * Get the segment for this node.
+     * 
+     * @param cache the cache
+     * @param parent the parent node
+     * @return the segment
+     * @throws NodeNotFoundInParentException if the node doesn't exist in the referenced parent
+     */
     protected final Segment getSegment( NodeCache cache,
                                         CachedNode parent ) {
         if (parent != null) {
             ChildReference ref = parent.getChildReferences(cache).getChild(key, new BasicContext());
-            return ref != null ? ref.getSegment() : null;
+            if (ref == null) {
+                // This node doesn't exist in the parent
+                throw new NodeNotFoundInParentException(key, parent.getKey());
+            }
+            return ref.getSegment();
         }
         // This is the root node ...
         return workspace(cache).childReferenceForRoot().getSegment();
