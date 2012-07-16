@@ -28,7 +28,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.ObjectUtil;
 
 /**
- * An immutable {@link Map.Entry} implementation.
+ * An immutable {@link java.util.Map.Entry} implementation.
  * 
  * @param <K> the key type
  * @param <V> the value type

@@ -31,7 +31,7 @@ import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 
 /**
- * A basic implementation of {@link Path.Segment}.
+ * A basic implementation of {@link org.modeshape.jcr.value.Path.Segment}.
  */
 @Immutable
 public class BasicPathSegment implements Path.Segment {

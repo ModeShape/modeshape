@@ -25,13 +25,12 @@ package org.modeshape.jboss.subsystem;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.registry.AttributeAccess;
 
 /**
  * An {@link OperationStepHandler} implementation that handles changes to the model values for a repository submodel's
  * {@link AttributeDefinition attribute definitions}. Those attributes that can be changed
- * {@link AttributeAccess.Flag#RESTART_NONE RESTART_NONE without restarting} will be immediately reflected in the repository's
- * configuration; other attributes will be changed in the submodel and used upon the next restart.
+ * {@link org.jboss.as.controller.registry.AttributeAccess.Flag#RESTART_NONE RESTART_NONE without restarting} will be immediately
+ * reflected in the repository's configuration; other attributes will be changed in the submodel and used upon the next restart.
  */
 public class RepositoryWriteAttributeHandler extends AbstractRepositoryConfigWriteAttributeHandler {
 

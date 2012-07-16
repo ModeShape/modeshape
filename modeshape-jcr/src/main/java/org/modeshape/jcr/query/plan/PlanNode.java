@@ -47,7 +47,6 @@ import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.SetQuery.Operation;
 import org.modeshape.jcr.query.model.Visitable;
 import org.modeshape.jcr.query.model.Visitors;
-import org.modeshape.jcr.query.validate.Schemata;
 
 /**
  * A representation of a single node within a plan tree.
@@ -166,8 +165,8 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
         /** For SOURCE nodes, the alias name of the selector. Value is a {@link SelectorName} object. */
         SOURCE_ALIAS,
         /**
-         * For SOURCE nodes, the collection of columns that are available. Value is a Collection of {@link Schemata.Column}
-         * objects.
+         * For SOURCE nodes, the collection of columns that are available. Value is a Collection of
+         * {@link org.modeshape.jcr.query.validate.Schemata.Column} objects.
          */
         SOURCE_COLUMNS,
 

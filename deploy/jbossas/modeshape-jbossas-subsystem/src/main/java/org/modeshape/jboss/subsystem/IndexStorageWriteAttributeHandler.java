@@ -25,13 +25,13 @@ package org.modeshape.jboss.subsystem;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.registry.AttributeAccess;
 
 /**
  * {@link OperationStepHandler} implementations that handles changes to the model values for the index storage submodel's
  * {@link AttributeDefinition attribute definitions}, including the different kinds of index storage. Those attributes that can be
- * changed {@link AttributeAccess.Flag#RESTART_NONE RESTART_NONE without restarting} will be immediately reflected in the
- * repository's configuration; other attributes will be changed in the submodel and used upon the next restart.
+ * changed {@link org.jboss.as.controller.registry.AttributeAccess.Flag#RESTART_NONE RESTART_NONE without restarting} will be
+ * immediately reflected in the repository's configuration; other attributes will be changed in the submodel and used upon the
+ * next restart.
  */
 public class IndexStorageWriteAttributeHandler extends AbstractRepositoryConfigWriteAttributeHandler {
 

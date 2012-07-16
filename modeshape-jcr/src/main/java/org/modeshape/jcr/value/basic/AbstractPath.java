@@ -43,7 +43,7 @@ import org.modeshape.jcr.value.Path;
 /**
  * An abstract foundation for different {@link Path} implementations. This class does not manage any of the {@link Path}'s state,
  * but it does provide implementations for most of the methods based upon a few abstract methods. For example, any implementaton
- * that requires the {@link Path.Segment path's segments} are written to use the {@link #iterator()}, since that is likely more
+ * that requires the {@link org.modeshape.jcr.value.Path.Segment path's segments} are written to use the {@link #iterator()}, since that is likely more
  * efficient for the majority of implementations.
  */
 @Immutable
