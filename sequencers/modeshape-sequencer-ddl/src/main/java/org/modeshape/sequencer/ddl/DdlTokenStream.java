@@ -256,41 +256,42 @@ public class DdlTokenStream extends TokenStream {
         public static final String PARSER_ID = "PARSER_ID";
 
         /**
-         * The {@link TokenStream.Token#type() token type} for tokens that represent an unquoted string containing a character
-         * sequence made up of non-whitespace and non-symbol characters.
+         * The {@link org.modeshape.common.text.TokenStream.Token#type() token type} for tokens that represent an unquoted string
+         * containing a character sequence made up of non-whitespace and non-symbol characters.
          */
         public static final int WORD = 1;
         /**
-         * The {@link TokenStream.Token#type() token type} for tokens that consist of an individual "symbol" character. The set of
-         * characters includes: <code>-(){}*,;+%?$[]!<>|=:</code>
+         * The {@link org.modeshape.common.text.TokenStream.Token#type() token type} for tokens that consist of an individual
+         * "symbol" character. The set of characters includes: <code>-(){}*,;+%?$[]!<>|=:</code>
          */
         public static final int SYMBOL = 2;
         /**
-         * The {@link TokenStream.Token#type() token type} for tokens that consist of an individual '.' character.
+         * The {@link org.modeshape.common.text.TokenStream.Token#type() token type} for tokens that consist of an individual '.'
+         * character.
          */
         public static final int DECIMAL = 4;
         /**
-         * The {@link TokenStream.Token#type() token type} for tokens that consist of all the characters within single-quotes.
-         * Single quote characters are included if they are preceded (escaped) by a '\' character.
+         * The {@link org.modeshape.common.text.TokenStream.Token#type() token type} for tokens that consist of all the characters
+         * within single-quotes. Single quote characters are included if they are preceded (escaped) by a '\' character.
          */
         public static final int SINGLE_QUOTED_STRING = 8;
         /**
-         * The {@link TokenStream.Token#type() token type} for tokens that consist of all the characters within double-quotes.
-         * Double quote characters are included if they are preceded (escaped) by a '\' character.
+         * The {@link org.modeshape.common.text.TokenStream.Token#type() token type} for tokens that consist of all the characters
+         * within double-quotes. Double quote characters are included if they are preceded (escaped) by a '\' character.
          */
         public static final int DOUBLE_QUOTED_STRING = 16;
         /**
-         * The {@link TokenStream.Token#type() token type} for tokens that consist of all the characters between "/*" and
-         * "&#42;/", between "//" and the next line terminator (e.g., '\n', '\r' or "\r\n"), or between "--" and the next line
-         * terminator (e.g., '\n', '\r' or "\r\n").
+         * The {@link org.modeshape.common.text.TokenStream.Token#type() token type} for tokens that consist of all the characters
+         * between "/*" and "&#42;/", between "//" and the next line terminator (e.g., '\n', '\r' or "\r\n"), or between "--" and
+         * the next line terminator (e.g., '\n', '\r' or "\r\n").
          */
         public static final int COMMENT = 32;
 
         private final boolean useComments;
 
         /**
-         * The {@link TokenStream.Token#type() token type} for tokens that represent key words or reserved words for a given DDL
-         * dialect.
+         * The {@link org.modeshape.common.text.TokenStream.Token#type() token type} for tokens that represent key words or
+         * reserved words for a given DDL dialect.
          * <p>
          * Examples would be: "CREATE", "TABLE", "ALTER", "SCHEMA", "DROP", etc...
          * </p>
@@ -299,7 +300,8 @@ public class DdlTokenStream extends TokenStream {
         public static final int KEYWORD = 64;
 
         /**
-         * The {@link TokenStream.Token#type() token type} for tokens that represent the start of a DDL statement.
+         * The {@link org.modeshape.common.text.TokenStream.Token#type() token type} for tokens that represent the start of a DDL
+         * statement.
          * <p>
          * Examples would be: {"CREATE", "TABLE"} {"CREATE", "OR", "REPLACE", "VIEW"}
          * </p>

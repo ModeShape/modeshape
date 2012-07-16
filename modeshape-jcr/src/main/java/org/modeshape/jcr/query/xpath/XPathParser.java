@@ -727,11 +727,12 @@ public class XPathParser {
     }
 
     /**
-     * A {@link TokenStream.Tokenizer} implementation that parses single- and double-quoted strings, symbols, words consisting of
-     * {@link TokenStream.CharacterStream#isNextValidXmlNcNameCharacter() NCName}s (as defined by the <a
-     * href="http://www.w3.org/TR/REC-xml-names/#NT-NCName">Namespaces in XML 1.0</a> specification), XPath comments,and
-     * {@link #OTHER other} single-character tokens. Quoted phrases are delimited by single-quote and double-quote characters
-     * (which may be escaped within the quote). XPath comments begin with a "(:" and end with a ":)".
+     * A {@link org.modeshape.common.text.TokenStream.Tokenizer} implementation that parses single- and double-quoted strings,
+     * symbols, words consisting of {@link org.modeshape.common.text.TokenStream.CharacterStream#isNextValidXmlNcNameCharacter()
+     * NCName}s (as defined by the <a href="http://www.w3.org/TR/REC-xml-names/#NT-NCName">Namespaces in XML 1.0</a>
+     * specification), XPath comments,and {@link #OTHER other} single-character tokens. Quoted phrases are delimited by
+     * single-quote and double-quote characters (which may be escaped within the quote). XPath comments begin with a "(:" and end
+     * with a ":)".
      */
     public static class XPathTokenizer implements TokenStream.Tokenizer {
         /**

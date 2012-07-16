@@ -30,7 +30,7 @@ import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 
 /**
- * A {@link Path.Segment} implementation that represents an identifier segment.
+ * A {@link org.modeshape.jcr.value.Path.Segment} implementation that represents an identifier segment.
  */
 @Immutable
 public class IdentifierPathSegment extends BasicPathSegment {

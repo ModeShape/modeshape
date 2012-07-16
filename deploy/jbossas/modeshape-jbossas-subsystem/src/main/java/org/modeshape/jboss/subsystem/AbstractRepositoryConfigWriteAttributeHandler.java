@@ -36,7 +36,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
@@ -45,8 +44,8 @@ import org.modeshape.jboss.service.RepositoryService;
 
 /**
  * An {@link OperationStepHandler} implementation that automatically handles all write-attribute operations against
- * {@link AttributeAccess.Flag#RESTART_NONE RESTART_NONE} {@link AttributeDefinition}s so that the changes are immediately
- * reflected in the repository configuration.
+ * {@link org.jboss.as.controller.registry.AttributeAccess.Flag#RESTART_NONE RESTART_NONE} {@link AttributeDefinition}s so that
+ * the changes are immediately reflected in the repository configuration.
  */
 public abstract class AbstractRepositoryConfigWriteAttributeHandler extends AbstractWriteAttributeHandler<Void> {
 

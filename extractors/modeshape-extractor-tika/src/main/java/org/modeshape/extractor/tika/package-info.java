@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * The classes that make up the {@link org.modeshape.graph.text.TextExtractor} implementation that uses the Apache Tika
+ * The classes that make up the {@link org.modeshape.jcr.api.text.TextExtractor} implementation that uses the Apache Tika
  * {@link org.apache.tika.parser.Parser} implementations.
  */
 

@@ -1535,11 +1535,11 @@ public class BasicSqlQueryParser implements QueryParser {
     }
 
     /**
-     * A {@link TokenStream.Tokenizer} implementation that parses words, quoted phrases, comments, and symbols. Words are
-     * delimited by whitespace and consist only of alpha-number characters plus the underscore character. Quoted phrases are
-     * delimited by single-quote and double-quote characters (which may be escaped within the quote). Comments are the characters
-     * starting with '/*' and ending with '&#42;/', or starting with '--' and ending with the next line terminator (or the end of
-     * the content).
+     * A {@link org.modeshape.common.text.TokenStream.Tokenizer} implementation that parses words, quoted phrases, comments, and
+     * symbols. Words are delimited by whitespace and consist only of alpha-number characters plus the underscore character.
+     * Quoted phrases are delimited by single-quote and double-quote characters (which may be escaped within the quote). Comments
+     * are the characters starting with '/*' and ending with '&#42;/', or starting with '--' and ending with the next line
+     * terminator (or the end of the content).
      */
     public static class SqlTokenizer implements TokenStream.Tokenizer {
         /**

@@ -53,9 +53,10 @@ import org.infinispan.schematic.internal.schema.DocumentTransformer.PropertiesTr
 import org.infinispan.schematic.internal.schema.DocumentTransformer.SystemPropertiesTransformer;
 
 /**
- * A {@link Bson.Type#ARRAY ordered array of values} for use as a value within a {@link Document BSON Object}. Instances of this
- * type are designed to be unmodifiable from a client's perspective, since clients always modify the instances using an editor.
- * There are several <code>internal*</code> methods that do modify the contents, but these may not be used by client applications.
+ * A {@link org.infinispan.schematic.document.Bson.Type#ARRAY ordered array of values} for use as a value within a
+ * {@link Document BSON Object}. Instances of this type are designed to be unmodifiable from a client's perspective, since clients
+ * always modify the instances using an editor. There are several <code>internal*</code> methods that do modify the contents, but
+ * these may not be used by client applications.
  * <p>
  * Since BSON and JSON documents can be simple arrays of values, this class implements the {@link Document} interface, where the
  * object's names are expected to be string values of integer indexes. This class also implements {@link List} interface, but only

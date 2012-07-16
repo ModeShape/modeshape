@@ -151,6 +151,7 @@ public class TikaTextExtractor extends TextExtractor {
      * @param binary a <code>org.modeshape.jcr.api.Binary</code> instance of the content being parsed
      * @return a <code>Metadata</code> instance.
      * @throws java.io.IOException if auto-detecting the mime-type via Tika fails
+     * @throws RepositoryException if error obtaining MIME-type of the binary parameter
      */
     private Metadata prepareMetadata(final Binary binary) throws IOException, RepositoryException {
         Metadata metadata = new Metadata();

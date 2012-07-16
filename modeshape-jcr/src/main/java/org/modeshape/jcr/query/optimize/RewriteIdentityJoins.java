@@ -44,8 +44,9 @@ import org.modeshape.jcr.query.validate.Schemata.Table;
 
 /**
  * An {@link OptimizerRule optimizer rule} that rewrites JOIN nodes that have {@link EquiJoinCondition equi-join criteria} where
- * the columns involved in the equi-join are all identity columns (that is, they form a {@link Schemata.Table#getKeys() key} for
- * the table). This rewrite only happens when the left and right children of the JOIN node are both SOURCE nodes.
+ * the columns involved in the equi-join are all identity columns (that is, they form a
+ * {@link org.modeshape.jcr.query.validate.Schemata.Table#getKeys() key} for the table). This rewrite only happens when the left
+ * and right children of the JOIN node are both SOURCE nodes.
  * <p>
  * The basic idea is that in these identity equi-join cases, the following structure:
  * 

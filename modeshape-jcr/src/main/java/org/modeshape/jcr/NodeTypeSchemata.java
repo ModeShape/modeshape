@@ -58,8 +58,8 @@ import org.modeshape.jcr.value.basic.LocalNamespaceRegistry;
 
 /**
  * A {@link Schemata} implementation that is constructed from the {@link NodeType}s and {@link PropertyDefinition}s contained
- * within a {@link RepositoryNodeTypeManager}. The resulting {@link Schemata.Table}s will never change, so the
- * {@link RepositoryNodeTypeManager} must replace it's cached instance whenever the node types change.
+ * within a {@link RepositoryNodeTypeManager}. The resulting {@link org.modeshape.jcr.query.validate.Schemata.Table}s will never
+ * change, so the {@link RepositoryNodeTypeManager} must replace it's cached instance whenever the node types change.
  */
 @Immutable
 public class NodeTypeSchemata implements Schemata {

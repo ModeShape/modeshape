@@ -32,3 +32,6 @@ ObjectStore
 
 # Presentation Keynote files
 /docs/presentations/*.key
+
+# ignore OS X (Mac) files
+.DS_Store

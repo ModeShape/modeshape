@@ -187,9 +187,9 @@ public class DocumentTransformer {
     }
 
     /**
-     * An implementation of {@link Document.ValueTransformer} that replaces variables in the field values with values from the
-     * system properties. Only string values are considered, since other types cannot contain variables (and since the
-     * transformers are never called on Document or List values).
+     * An implementation of {@link org.infinispan.schematic.document.Document.ValueTransformer} that replaces variables in the
+     * field values with values from the system properties. Only string values are considered, since other types cannot contain
+     * variables (and since the transformers are never called on Document or List values).
      * <p>
      * Variables may appear anywhere within a string value, and multiple variables can be used within the same value. Variables
      * take the form:
@@ -232,9 +232,9 @@ public class DocumentTransformer {
     }
 
     /**
-     * An implementation of {@link Document.ValueTransformer} that replaces variables in the field values with values from the
-     * system properties. Only string values are considered, since other types cannot contain variables (and since the
-     * transformers are never called on Document or List values).
+     * An implementation of {@link org.infinispan.schematic.document.Document.ValueTransformer} that replaces variables in the
+     * field values with values from the system properties. Only string values are considered, since other types cannot contain
+     * variables (and since the transformers are never called on Document or List values).
      * <p>
      * Variables may appear anywhere within a string value, and multiple variables can be used within the same value. Variables
      * take the form:
