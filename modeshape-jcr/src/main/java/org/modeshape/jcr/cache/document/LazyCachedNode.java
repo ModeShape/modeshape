@@ -39,6 +39,7 @@ import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundException;
+import org.modeshape.jcr.cache.NodeNotFoundInParentException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;
@@ -158,6 +159,8 @@ public class LazyCachedNode implements CachedNode {
      * 
      * @param cache the cache
      * @return the child reference; never null (even for the root node)
+     * @throws NodeNotFoundInParentException if this node is no longer referenced by its parent as a child of the parent node
+     *         (which can happen if this node is used while in the midst of being (re)moved.
      */
     protected ChildReference parentReferenceToSelf( WorkspaceCache cache ) {
         if (parentReferenceToSelf == null) {
@@ -168,6 +171,12 @@ public class LazyCachedNode implements CachedNode {
             } else {
                 parentReferenceToSelf = parent.getChildReferences(cache).getChild(key);
             }
+        }
+        if (parentReferenceToSelf == null) {
+            // This node references a parent, but that parent no longer has a child reference to this node. Perhaps this node is
+            // in the midst of being moved or removed. Either way, we don't have much choice but to throw an exception about
+            // us not being found...
+            throw new NodeNotFoundInParentException(key, getParentKey(cache));
         }
         return parentReferenceToSelf;
     }
@@ -194,6 +203,16 @@ public class LazyCachedNode implements CachedNode {
         return parentReferenceToSelf(workspaceCache(cache)).getSegment();
     }
 
+    /**
+     * Get the name for this node, without any same-name-sibiling (SNS) index.
+     * 
+     * @param cache the workspace cache to which this node belongs, required in case this node needs to use the cache; may not be
+     *        null
+     * @return the name; never null, but the root node will have a zero-length name
+     * @throws NodeNotFoundInParentException if this node no longer exists
+     * @see #getSegment(NodeCache)
+     * @see #getPath(NodeCache)
+     */
     protected Segment getSegment( WorkspaceCache cache ) {
         return parentReferenceToSelf(cache).getSegment();
     }

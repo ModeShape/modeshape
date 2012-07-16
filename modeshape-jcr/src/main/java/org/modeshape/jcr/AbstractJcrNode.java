@@ -85,6 +85,7 @@ import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.NodeNotFoundInParentException;
 import org.modeshape.jcr.cache.PropertyTypeUtil;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.value.Name;
@@ -2955,9 +2956,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             // expected by the TCK
             throw new InvalidItemStateException(e);
         }
-        parent.checkForLock();
-        Path path = path();
-        session.checkPermission(path, ModeShapePermissions.REMOVE);
+        Path path = null;
+        try {
+            parent.checkForLock();
+            path = path();
+            session.checkPermission(path, ModeShapePermissions.REMOVE);
+        } catch (NodeNotFoundInParentException e) {
+            // expected by the TCK
+            throw new InvalidItemStateException(e);
+        }
 
         if (!parent.isCheckedOut()) {
             // The parent node is checked in, so we can only remove this node if this node has an OPV of 'ignore'.
