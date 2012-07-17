@@ -23,6 +23,29 @@
  */
 package org.modeshape.jcr;
 
+import static javax.jcr.query.qom.QueryObjectModelConstants.JCR_OPERATOR_LIKE;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Set;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -39,19 +62,10 @@ import javax.jcr.query.qom.Constraint;
 import javax.jcr.query.qom.Literal;
 import javax.jcr.query.qom.Ordering;
 import javax.jcr.query.qom.PropertyValue;
-import static javax.jcr.query.qom.QueryObjectModelConstants.JCR_OPERATOR_LIKE;
 import javax.jcr.query.qom.Selector;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Json;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -65,20 +79,6 @@ import org.modeshape.jcr.api.query.qom.SelectQuery;
 import org.modeshape.jcr.query.JcrQueryResult;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path.Segment;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Set;
 
 /**
  * This is a test suite that operates against a complete JcrRepository instance created and managed using the JcrEngine.
@@ -91,11 +91,10 @@ import java.util.Set;
  */
 public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
-    private static final String[] INDEXED_SYSTEM_NODES_PATHS = new String[] {
-            "/jcr:system/jcr:nodeTypes",
-            "/jcr:system/mode:namespaces"};
+    private static final String[] INDEXED_SYSTEM_NODES_PATHS = new String[] {"/jcr:system/jcr:nodeTypes",
+        "/jcr:system/mode:namespaces"};
 
-    private static final boolean WRITE_INDEXES_TO_FILE = false;
+    private static final boolean WRITE_INDEXES_TO_FILE = true;
 
     /** The total number of nodes at or below '/jcr:system' */
     protected static final int TOTAL_SYSTEM_NODE_COUNT = 235;
@@ -1405,7 +1404,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     /**
      * Tests that the child nodes (but no grandchild nodes) are returned.
-     *
+     * 
      * @throws RepositoryException
      */
     @SuppressWarnings( "deprecation" )
@@ -1424,7 +1423,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     /**
      * Tests that the child nodes (but no grandchild nodes) are returned.
-     *
+     * 
      * @throws RepositoryException
      */
     @SuppressWarnings( "deprecation" )
@@ -1864,8 +1863,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindNodeWithAttrbuteCriteria() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("//Infiniti_x0020_G37[@car:year='2008']",
-                                                                           Query.XPATH);
+        Query query = session.getWorkspace().getQueryManager().createQuery("//Infiniti_x0020_G37[@car:year='2008']", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         // print = true;
@@ -1935,8 +1933,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithContainsCriteria() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//*[jcr:contains(., 'liter')]",
-                                                                           Query.XPATH);
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//*[jcr:contains(., 'liter')]", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -2065,9 +2062,8 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldBeAbleToExecuteXPathQueryWithCompoundCriteria() throws Exception {
         Query query = session.getWorkspace()
                              .getQueryManager()
-                             .createQuery(
-                                     "/jcr:root/Cars//element(*,car:Car)[@car:year='2008' and jcr:contains(., '\"liter V 12\"')]",
-                                     Query.XPATH);
+                             .createQuery("/jcr:root/Cars//element(*,car:Car)[@car:year='2008' and jcr:contains(., '\"liter V 12\"')]",
+                                          Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -2391,19 +2387,25 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     }
 
     @Test
-    @Ignore("Ignored until 1550 is fixed")
     @FixFor( "MODE-1550" )
     public void shouldFindChildrenOfRootUsingIsChildNodeCriteria() throws Exception {
         session.getRootNode().addNode("node1");
         session.getRootNode().addNode("node2");
 
+        // We didn't save our changes, so we shouldn't find the newly-added nodes
         String queryString = "select [jcr:path] from [nt:base] where ischildnode('/')";
-        assertNodesAreFound(queryString, Query.JCR_SQL2, "/jcr:system", "/node1", "/node2");
+        assertNodesAreFound(queryString, Query.JCR_SQL2, "/jcr:system", "/Cars", "/Other", "/NodeB");
+
+        // Now save the session, and re-query to find the newly-added nodes ...
+        session.save();
+
+        // We should now find the newly-added nodes ...
+        assertNodesAreFound(queryString, Query.JCR_SQL2, "/jcr:system", "/Cars", "/Other", "/NodeB", "/node1", "/node2");
     }
 
     private void assertNodesAreFound( String queryString,
                                       String queryType,
-                                      String... expectedNodesPaths) throws RepositoryException {
+                                      String... expectedNodesPaths ) throws RepositoryException {
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         Query query = queryManager.createQuery(queryString, queryType);
         QueryResult result = query.execute();
