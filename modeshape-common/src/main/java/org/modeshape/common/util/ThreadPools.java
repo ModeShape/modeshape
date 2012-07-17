@@ -23,14 +23,12 @@
  */
 package org.modeshape.common.util;
 
+import org.modeshape.common.annotation.ThreadSafe;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
-import org.modeshape.common.annotation.ThreadSafe;
 
 /**
  * A simple {@link ThreadPoolFactory} implementation.
@@ -38,79 +36,48 @@ import org.modeshape.common.annotation.ThreadSafe;
 @ThreadSafe
 public class ThreadPools implements ThreadPoolFactory {
 
-    public static final String DEFAULT_THREAD_NAME = "modeshape-workers";
-    public static final int DEFAULT_MAX_THREAD_COUNT = 4;
+    private static final int DEFAULT_MAX_THREAD_COUNT = 4;
+    private static final int DEFAULT_SCHEDULED_THREAD_COUNT = 1;
 
-    private final int defaultMaxThreadCount;
-    private final ThreadFactory threadFactory;
-    private final ConcurrentMap<String, ThreadPoolHolder> poolsByName = new ConcurrentHashMap<String, ThreadPoolHolder>();
-
-    public ThreadPools() {
-        this.threadFactory = new NamedThreadFactory(DEFAULT_THREAD_NAME);
-        this.defaultMaxThreadCount = DEFAULT_MAX_THREAD_COUNT;
-    }
-
-    public ThreadPools( int defaultMaxThreads,
-                        String threadFactoryName ) {
-        CheckArg.isGreaterThan(0, defaultMaxThreads, "defaultMaxThreads");
-        if (threadFactoryName == null || threadFactoryName.trim().length() == 0) threadFactoryName = DEFAULT_THREAD_NAME;
-        this.threadFactory = new NamedThreadFactory(threadFactoryName);
-        this.defaultMaxThreadCount = defaultMaxThreads;
-    }
-
-    public ThreadPools( int defaultMaxThreads,
-                        ThreadFactory threadFactory ) {
-        CheckArg.isGreaterThan(0, defaultMaxThreads, "defaultMaxThreads");
-        CheckArg.isNotNull(threadFactory, "threadFactory");
-        this.threadFactory = threadFactory;
-        this.defaultMaxThreadCount = defaultMaxThreads;
-    }
+    private final ConcurrentMap<String, ExecutorService> poolsByName = new ConcurrentHashMap<String, ExecutorService>();
 
     @Override
     public Executor getThreadPool( String name ) {
-        ThreadPoolHolder pool = poolsByName.get(name);
-        if (pool == null) {
-            // Create an executor ...
-            ExecutorService newExecutor = Executors.newFixedThreadPool(defaultMaxThreadCount, threadFactory);
-            ThreadPoolHolder newPool = new ThreadPoolHolder(newExecutor);
-            pool = poolsByName.putIfAbsent(name, newPool);
-            if (pool != null) {
-                // There was an existing one created since we originally checked, so shut down the new executor we just created
-                // ...
-                newExecutor.shutdownNow();
-            } else {
-                pool = newPool;
-            }
-        }
-        pool.users.incrementAndGet();
-        return pool.threadPool;
+        return getOrCreateNewPool(name, Executors.newFixedThreadPool(DEFAULT_MAX_THREAD_COUNT, new NamedThreadFactory(name)));
     }
 
     @Override
-    public void releaseThreadPool( Executor pool ) {
-        for (ThreadPoolHolder holder : poolsByName.values()) {
-            if (holder.release(pool)) return;
-        }
+    public Executor getCachedTreadPool( String name ) {
+        return getOrCreateNewPool(name,  Executors.newCachedThreadPool(new NamedThreadFactory(name)));
     }
 
-    protected static final class ThreadPoolHolder {
-        protected final ExecutorService threadPool;
-        protected final AtomicInteger users = new AtomicInteger(0);
+    @Override
+    public Executor getScheduledThreadPool( String name ) {
+        return getOrCreateNewPool(name, Executors.newScheduledThreadPool(DEFAULT_SCHEDULED_THREAD_COUNT, new NamedThreadFactory(name)));
+    }
 
-        protected ThreadPoolHolder( ExecutorService threadPool ) {
-            this.threadPool = threadPool;
-        }
-
-        protected boolean release( Executor pool ) {
-            if (threadPool == pool) {
-                // It's a match ...
-                if (users.decrementAndGet() == 0) {
-                    threadPool.shutdown();
-                }
-                return true;
+    private Executor getOrCreateNewPool( String name,
+                                         ExecutorService executorService ) {
+        ExecutorService executor = poolsByName.get(name);
+        if (executor == null) {
+            executor = poolsByName.putIfAbsent(name, executorService);
+            if (executor != null) {
+                // There was an existing one created since we originally checked, so shut down the new executor we just created
+                // ...
+                executor.shutdownNow();
             }
-            return false;
+            executor = executorService;
         }
+        return executor;
     }
 
+    @Override
+    public void releaseThreadPool( Executor executor ) {
+        for (ExecutorService executorService : poolsByName.values()) {
+            if (executor.equals(executorService)) {
+                executorService.shutdown();
+                return;
+            }
+        }
+    }
 }

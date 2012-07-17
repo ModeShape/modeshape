@@ -8,6 +8,11 @@
     "storage" : {
         "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
     },
+    "query" : {
+        "indexing": {
+            "systemContentMode" : "sync"
+        }
+    },
     "security" : {
         "anonymous" : {
             "roles" : ["readonly","readwrite","admin"],

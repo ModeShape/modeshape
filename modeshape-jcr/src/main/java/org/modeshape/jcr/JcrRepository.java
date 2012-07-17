@@ -943,8 +943,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.statistics = other != null ? other.statistics : new RepositoryStatistics(tempContext);
                 if (this.config.getMonitoring().enabled()) {
                     // Start the Cron service, with a minimum of a single thread ...
-                    ThreadFactory cronThreadFactory = new NamedThreadFactory("modeshape-stats");
-                    this.statsRollupService = new ScheduledThreadPoolExecutor(1, cronThreadFactory);
+                    this.statsRollupService = (ScheduledExecutorService)tempContext.getScheduledThreadPool("modeshape-stats");
                     this.statistics.start(this.statsRollupService);
                 } else {
                     this.statsRollupService = null;
@@ -961,7 +960,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.defaultWorkspaceName = config.getDefaultWorkspaceName();
             }
 
-            boolean systemContentInitialized = false;
             if (other != null) {
                 if (change.storageChanged) {
                     // Can't change where we're storing the content while we're running, so take effect upon next startup
@@ -1029,14 +1027,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.internalWorkerContext = this.context.with(new InternalSecurityContext(INTERNAL_WORKER_USERNAME));
 
                 // Create the event bus
-                this.changeDispatchingQueue = Executors.newCachedThreadPool(new NamedThreadFactory("modeshape-event-dispatcher"));
+                this.changeDispatchingQueue = (ExecutorService)this.context().getCachedTreadPool("modeshape-event-dispatcher");
                 this.changeBus = createBus(config.getClustering(), this.changeDispatchingQueue, systemWorkspaceName(), false);
                 this.changeBus.start();
 
                 // Set up the repository cache ...
                 final SessionEnvironment sessionEnv = new RepositorySessionEnvironment(this.transactions);
                 this.cache = new RepositoryCache(context, database, config, new SystemContentInitializer(), sessionEnv, changeBus);
-                systemContentInitialized = true;
 
                 // Set up the node type manager ...
                 this.nodeTypes = new RepositoryNodeTypeManager(this, true, true);
@@ -1137,8 +1134,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 Properties indexStorageProps = query.getIndexStorageProperties();
                 this.repositoryQueryManager = new RepositoryQueryManager(this, config.getQuery(), indexingExecutor, backendProps,
                                                                          indexingProps, indexStorageProps);
-                if (systemContentInitialized) {
-                    this.repositoryQueryManager.reindexSystemContent();
+                boolean shouldIndexSystemContent = !indexingProps.getProperty(FieldName.INDEXING_MODE_SYSTEM_CONTENT).equalsIgnoreCase(
+                        RepositoryConfiguration.IndexingMode.DISABLED.toString());
+                if (this.cache.isSystemContentInitialized() && shouldIndexSystemContent) {
+                    boolean async = indexingProps.getProperty(FieldName.INDEXING_MODE_SYSTEM_CONTENT).equalsIgnoreCase(
+                            RepositoryConfiguration.IndexingMode.ASYNC.toString());
+                    this.repositoryQueryManager.reindexSystemContent(async);
                 }
             } else {
                 this.repositoryQueryManager = null;
@@ -1389,13 +1390,19 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             // shutdown the event bus
             if (this.changeBus != null) {
-                this.context().releaseThreadPool(changeDispatchingQueue);
                 this.changeBus.shutdown();
+                this.context().releaseThreadPool(changeDispatchingQueue);
             }
 
             // Shutdown the query engine ...
             if (repositoryQueryManager != null) {
                 repositoryQueryManager.shutdown();
+                this.context().releaseThreadPool(indexingExecutor);
+            }
+
+            if (statistics != null) {
+                statistics.stop();
+                this.context().releaseThreadPool(statsRollupService);
             }
         }
 

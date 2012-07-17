@@ -2622,10 +2622,10 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         assertEquals(1, children.length);
     }
 
+    @FixFor( "MODE-1469" )
     public void testShouldReturnAllNodesUnderRootUsingPathCriteria() throws Exception {
         Session session = testRootNode.getSession();
         List<String> rootNodesPaths = new ArrayList<String>();
-        rootNodesPaths.add(session.getRootNode().getPath());
         rootNodesPaths.add(session.getRootNode().getPath());
         for (NodeIterator it  = session.getRootNode().getNodes(); it.hasNext(); ) {
             rootNodesPaths.add(it.nextNode().getPath());

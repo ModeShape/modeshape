@@ -352,6 +352,7 @@ public class RepositoryConfiguration {
         public static final String INDEXING_INDEX_FORMAT = "indexFormat";
         public static final String INDEXING_READER_STRATEGY = "readerStrategy";
         public static final String INDEXING_MODE = "mode";
+        public static final String INDEXING_MODE_SYSTEM_CONTENT = "systemContentMode";
         public static final String INDEXING_ASYNC_THREAD_POOL_SIZE = "asyncThreadPoolSize";
         public static final String INDEXING_ASYNC_MAX_QUEUE_SIZE = "asyncMaxQueueSize";
 
@@ -447,10 +448,8 @@ public class RepositoryConfiguration {
 
         public static final boolean REMOVE_DERIVED_CONTENT_WITH_ORIGINAL = true;
 
-        /**
-         * The default value of the {@link FieldName#THREAD_POOL} field is '{@value} '.
-         */
-        public static final String THREAD_POOL = "modeshape-workers";
+        public static final String SEQUENCING_POOL = "modeshape-sequencer";
+        public static final String QUERY_THREAD_POOL = "modeshape-indexer";
 
         public static final String INDEXING_ANALYZER = StandardAnalyzer.class.getName();
         public static final String INDEXING_SIMILARITY = DefaultSimilarity.class.getName();
@@ -459,6 +458,7 @@ public class RepositoryConfiguration {
         public static final String INDEXING_INDEX_FORMAT = Version.LUCENE_CURRENT.name();
         public static final IndexReaderStrategy INDEXING_READER_STRATEGY = IndexReaderStrategy.SHARED;
         public static final IndexingMode INDEXING_MODE = IndexingMode.SYNC;
+        public static final IndexingMode INDEXING_MODE_SYSTEM_CONTENT = IndexingMode.DISABLED;
         public static final String INDEXING_ASYNC_THREAD_POOL_SIZE = "1";
         public static final String INDEXING_ASYNC_MAX_QUEUE_SIZE = "1";
 
@@ -501,7 +501,8 @@ public class RepositoryConfiguration {
 
     public enum IndexingMode {
         SYNC,
-        ASYNC;
+        ASYNC,
+        DISABLED;
     }
 
     public enum IndexReaderStrategy {
@@ -1260,7 +1261,7 @@ public class RepositoryConfiguration {
          * @return the thread pool name; never null
          */
         public String getThreadPoolName() {
-            return query.getString(FieldName.THREAD_POOL, Default.THREAD_POOL);
+            return query.getString(FieldName.THREAD_POOL, Default.QUERY_THREAD_POOL);
         }
 
         /**
@@ -1346,6 +1347,7 @@ public class RepositoryConfiguration {
             setDefProp(props, FieldName.INDEXING_INDEX_FORMAT, Default.INDEXING_INDEX_FORMAT);
             setDefProp(props, FieldName.INDEXING_READER_STRATEGY, Default.INDEXING_READER_STRATEGY.toString().toLowerCase());
             setDefProp(props, FieldName.INDEXING_MODE, Default.INDEXING_MODE.toString().toLowerCase());
+            setDefProp(props, FieldName.INDEXING_MODE_SYSTEM_CONTENT, Default.INDEXING_MODE_SYSTEM_CONTENT.toString().toLowerCase());
             setDefProp(props, FieldName.INDEXING_ASYNC_THREAD_POOL_SIZE, Default.INDEXING_ASYNC_THREAD_POOL_SIZE);
             setDefProp(props, FieldName.INDEXING_ASYNC_MAX_QUEUE_SIZE, Default.INDEXING_ASYNC_MAX_QUEUE_SIZE);
             return props;
@@ -1462,7 +1464,7 @@ public class RepositoryConfiguration {
          * @return the thread pool name; never null
          */
         public String getThreadPoolName() {
-            return sequencing.getString(FieldName.THREAD_POOL, Default.THREAD_POOL);
+            return sequencing.getString(FieldName.THREAD_POOL, Default.SEQUENCING_POOL);
         }
 
         /**

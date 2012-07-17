@@ -595,7 +595,7 @@
                             <value>${jgroups.preferIpv6}</value>
                         </property>
                     </systemProperties>
-                    <argLine>-Xmx712M ${debug.argline} -XX:MaxPermSize=512m</argLine>
+                    <argLine>-Xmx1024M ${debug.argline} -XX:MaxPermSize=256M</argLine>
                     <runOrder>alphabetical</runOrder>
                 </configuration>
             </plugin>

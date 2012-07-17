@@ -33,15 +33,33 @@ public interface ThreadPoolFactory {
     /**
      * Obtain a thread pool with the supplied name, or create and return one if no thread pool exists with that name. When
      * finished with the thread pool, it should be {@link #releaseThreadPool released}.
-     * 
+     *
      * @param name the name of the thread pool; may not be null
      * @return the thread pool executor; never null
      */
     Executor getThreadPool( String name );
 
     /**
+     * Obtain a cached thread pool with the supplied name, or create and return one if no thread pool exists with that name. When
+     * finished with the thread pool, it should be {@link #releaseThreadPool released}.
+     *
+     * @param name the name of the thread pool; may not be null
+     * @return the thread pool executor; never null
+     */
+    Executor getCachedTreadPool( String name );
+
+    /**
+     * Obtain a scheduled thread pool with the supplied name, or create and return one if no thread pool exists with that name. When
+     * finished with the thread pool, it should be {@link #releaseThreadPool released}.
+     *
+     * @param name the name of the thread pool; may not be null
+     * @return the thread pool executor; never null
+     */
+    Executor getScheduledThreadPool( String name );
+
+    /**
      * Signal that the supplied thread pool is no longer needed.
-     * 
+     *
      * @param pool the pool that is no longer needed
      */
     void releaseThreadPool( Executor pool );

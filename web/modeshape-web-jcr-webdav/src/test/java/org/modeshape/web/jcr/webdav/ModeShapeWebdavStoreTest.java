@@ -24,19 +24,8 @@
 
 package org.modeshape.web.jcr.webdav;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.when;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.security.Principal;
-import java.util.Calendar;
-import java.util.LinkedList;
-import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
-import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -44,30 +33,44 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.http.HttpServletRequest;
 import net.sf.webdav.IWebdavStore;
 import net.sf.webdav.StoredObject;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import org.junit.After;
+import org.junit.AfterClass;
+import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.JcrRepository;
-import org.modeshape.jcr.TestingUtil;
 import org.modeshape.jcr.api.RepositoryFactory;
 import org.modeshape.web.jcr.ModeShapeJcrDeployer;
 import org.modeshape.web.jcr.RepositoryManager;
 import org.modeshape.web.jcr.webdav.ModeShapeWebdavStore.JcrSessionTransaction;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.security.Principal;
+import java.util.Calendar;
+import java.util.LinkedList;
+import java.util.List;
 
 public class ModeShapeWebdavStoreTest {
 
+    private static final String TEST_ROOT = "testRoot";
+    private static final String TEST_ROOT_PATH = "/" + TEST_ROOT;
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
     private static final String REPOSITORY_NAME = "repo";
     private static final String WORKSPACE_NAME = "default";
 
+    private static ServletContextListener contextListener = new ModeShapeJcrDeployer();
+    @Mock
+    private static ServletContextEvent event;
+
     private IWebdavStore store;
     private JcrSessionTransaction tx;
-    private ServletContextListener contextListener = new ModeShapeJcrDeployer();
     private Session session;
-    private JcrRepository repository;
 
     @Mock
     private Principal principal;
@@ -75,8 +78,8 @@ public class ModeShapeWebdavStoreTest {
     private HttpServletRequest request;
     @Mock
     private ServletContext context;
-    @Mock
-    private ServletContextEvent event;
+
+    private Node testRoot;
 
     @Before
     public void beforeEach() throws Exception {
@@ -102,7 +105,8 @@ public class ModeShapeWebdavStoreTest {
         ModeShapeWebdavStore.setRequest(request);
 
         session = RepositoryManager.getSession(request, REPOSITORY_NAME, WORKSPACE_NAME);
-        repository = (JcrRepository)session.getRepository();
+        testRoot = session.getRootNode().addNode(TEST_ROOT);
+        session.save();
 
         tx = (JcrSessionTransaction)store.begin(principal);
 
@@ -112,6 +116,14 @@ public class ModeShapeWebdavStoreTest {
     @After
     public void afterEach() throws Exception {
         ModeShapeWebdavStore.setRequest(null);
+
+        testRoot.remove();
+        session.save();
+        session.logout();
+    }
+
+    @AfterClass
+    public static void afterClass() throws Exception {
         contextListener.contextDestroyed(event);
     }
 
@@ -134,7 +146,7 @@ public class ModeShapeWebdavStoreTest {
                                              String path ) throws Exception {
         List<String> sessChildren = new LinkedList<String>();
         Node node = (Node)session.getItem(path);
-        for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
+        for (NodeIterator iter = node.getNodes(); iter.hasNext(); ) {
             sessChildren.add(iter.nextNode().getName());
         }
 
@@ -152,7 +164,7 @@ public class ModeShapeWebdavStoreTest {
     public void shouldAddFolderAtRoot() throws Exception {
         String[] children = store.getChildrenNames(tx, "/");
 
-        store.createFolder(tx, "/newFolder");
+        store.createFolder(tx, TEST_ROOT_PATH + "/newFolder");
 
         // Make sure that the node isn't visible yet
         compareChildrenWithSession(children, "/");
@@ -169,7 +181,7 @@ public class ModeShapeWebdavStoreTest {
     public void shouldAddFileAtRoot() throws Exception {
         String[] children = store.getChildrenNames(tx, "/");
 
-        store.createResource(tx, "/newFile");
+        store.createResource(tx, TEST_ROOT_PATH + "/newFile");
 
         // Make sure that the node isn't visible yet
         compareChildrenWithSession(children, "/");
@@ -180,14 +192,13 @@ public class ModeShapeWebdavStoreTest {
 
         // Make sure that the node is visible after the commit
         compareChildrenWithSession(store.getChildrenNames(tx, "/"), "/");
-
     }
 
     @Test
     public void shouldReadFileLengthAndContent() throws Exception {
         final String TEST_STRING = "This is my miraculous test string!";
 
-        Node fileNode = rootNode().addNode("newFile", "nt:file");
+        Node fileNode = testRoot.addNode("newFile", "nt:file");
         Node contentNode = fileNode.addNode("jcr:content", "mode:resource");
         contentNode.setProperty("jcr:data", TEST_STRING);
         contentNode.setProperty("jcr:mimeType", "text/plain");
@@ -195,10 +206,10 @@ public class ModeShapeWebdavStoreTest {
         contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
         session.save();
 
-        when(request.getPathInfo()).thenReturn("/newFile");
-        assertThat((int)store.getResourceLength(tx, "/newFile"), is(TEST_STRING.length()));
+        when(request.getPathInfo()).thenReturn(TEST_ROOT_PATH + "/newFile");
+        assertThat((int)store.getResourceLength(tx, TEST_ROOT_PATH + "/newFile"), is(TEST_STRING.length()));
 
-        InputStream is = store.getResourceContent(tx, "/newFile");
+        InputStream is = store.getResourceContent(tx, TEST_ROOT_PATH + "/newFile");
         String webdavContent = IoUtil.read(is);
         assertThat(webdavContent, is(TEST_STRING));
     }
@@ -207,7 +218,7 @@ public class ModeShapeWebdavStoreTest {
     public void shouldRemoveFile() throws Exception {
         final String TEST_STRING = "This is my miraculous test string!";
 
-        Node fileNode = rootNode().addNode("newFile", "nt:file");
+        Node fileNode = testRoot.addNode("newFile", "nt:file");
         Node contentNode = fileNode.addNode("jcr:content", "mode:resource");
         contentNode.setProperty("jcr:data", TEST_STRING);
         contentNode.setProperty("jcr:mimeType", "text/plain");
@@ -215,22 +226,18 @@ public class ModeShapeWebdavStoreTest {
         contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
         session.save();
 
-        when(request.getPathInfo()).thenReturn("/newFile");
-        store.removeObject(tx, "/newFile");
+        when(request.getPathInfo()).thenReturn(TEST_ROOT_PATH + "/newFile");
+        store.removeObject(tx, TEST_ROOT_PATH + "/newFile");
         store.commit(tx);
 
         session.refresh(false);
-        assertThat(rootNode().hasNode("newFile"), is(false));
-    }
-
-    private Node rootNode() throws RepositoryException {
-        return session.getRootNode();
+        assertThat(testRoot.hasNode("newFile"), is(false));
     }
 
     @Test
     public void shouldSimulateAddingFileThroughWebdav() throws Exception {
         final String TEST_STRING = "This is my miraculous test string!";
-        final String TEST_URI = "/TestFile.rtf";
+        final String TEST_URI = TEST_ROOT_PATH + "/TestFile.rtf";
 
         when(request.getPathInfo()).thenReturn("");
         store.getStoredObject(tx, "");

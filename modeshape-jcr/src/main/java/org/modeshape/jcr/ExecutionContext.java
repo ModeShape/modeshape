@@ -263,6 +263,16 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
         this.threadPools.releaseThreadPool(pool);
     }
 
+    @Override
+    public Executor getCachedTreadPool( String name ) {
+        return this.threadPools.getCachedTreadPool(name);
+    }
+
+    @Override
+    public Executor getScheduledThreadPool( String name ) {
+        return this.threadPools.getScheduledThreadPool(name);
+    }
+
     /**
      * Get the unique identifier for this context. Each context will always have a unique identifier.
      * 
