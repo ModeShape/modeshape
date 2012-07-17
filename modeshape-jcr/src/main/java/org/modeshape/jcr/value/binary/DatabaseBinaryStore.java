@@ -23,11 +23,16 @@
  */
 package org.modeshape.jcr.value.binary;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import javax.transaction.TransactionManager;
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
@@ -36,10 +41,11 @@ import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.loaders.jdbc.stringbased.JdbcStringBasedCacheStore;
 import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.transaction.TransactionMode;
+import org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
-import org.semanticdesktop.aperture.util.IOUtil;
 
 /**
  * A {@link BinaryStore} implementation that uses a database for persisting binary values.
@@ -48,19 +54,29 @@ import org.semanticdesktop.aperture.util.IOUtil;
 public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     //JDBC storage through infinispan
-    private Cache<String, Record> cache;
+    private Cache<String, Metadata> metadata;
+    private Cache<String, Chunk> payload;
+
     //JDBC storage for unused values
-    private Cache<String, Record> trash;
+    private Cache<String, Metadata> trash;
+
+    //Transactio manager
+    private TransactionManager tm;
 
     //JDBC params
     private String driverClass;
     private String connectionURL;
     private String username;
     private String password;
-    
+    private String datasourceJNDILocation;
+
     //database specific type
     private String dataColumnType = "VARBINARY(1000)";
-    
+    private int chunkSize = 1000;
+
+    //max idle time before key/value passivation
+    private long expireTime = 2;
+
     /**
      * Create new store.
      *
@@ -69,11 +85,13 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
      * @param username database user name
      * @param password database password
      */
-    public DatabaseBinaryStore(String driverClass, String connectionURL, String username, String password) {
+    public DatabaseBinaryStore(String driverClass, String connectionURL, 
+            String username, String password, String datasourceJNDILocation) {
         this.driverClass = driverClass;
         this.connectionURL = connectionURL;
         this.username = username;
         this.password = password;
+        this.datasourceJNDILocation = datasourceJNDILocation;
     }
 
     /**
@@ -85,38 +103,45 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         this.dataColumnType = dataColumnType;
     }
 
+    public void setExpireTime(long expireTime) {
+        this.expireTime = expireTime;
+    }
+
     @Override
     public BinaryValue storeValue( InputStream stream ) throws BinaryStoreException {
-        //read content from stream and generate unique key
-        byte[] content = readContent(stream);
-        BinaryKey key = BinaryKey.keyFor(content);
+        //Generating unique key. There is no qurantee that supplied input stream
+        //support marks and reset, so no quarantee that we can walk back and forth
+        //through the stream for generating key and then again for reading data.
+        //It is unnecessary to hold entire content in memory and write termporary
+        //to local disk as well, so let's use UUID generator for generating the key
+        String uuid = UUID.randomUUID().toString();
+        BinaryKey root = BinaryKey.keyFor(uuid.getBytes());
 
-        //create local record for the supplied content and store record
-        //under the computed key (hex view of the content's hash)
-        Record record = new Record(content);
-        cache.put(key.toString(), record);
+        //Create receiving stream
+        ChunkOutputStream dataField = new ChunkOutputStream(root);
 
-        //create and return representation of the local record
-        return new StoredBinaryValue(this, key, content.length);
+        //Store data: here we have a deal with two caches so we need
+        //to customize transaction's boundary
+        this.begin();
+        try {
+            //write metadata and content
+            metadata.put(root.toString(), new Metadata());
+            int contentLength = this.writeStream(stream, dataField);
+
+            this.commit();
+
+            //create and return representation of the record
+            return new StoredBinaryValue(this, root, contentLength);
+        } catch (Exception e) {
+            this.rollback();
+            throw new BinaryStoreException(e);
+        }
     }
 
     @Override
     public InputStream getInputStream( BinaryKey key ) throws BinaryStoreException {
-        Record record = cache.get(key.toString());
-
-        //check that there is such record
-        if (record == null) {
-            throw new BinaryStoreException("No such record: " + key.toString());
-        }
-
-        //check content: if content is null return empty stream
-        byte[] content = record.getContent();
-        if (content == null) {
-            content = new byte[]{};
-        }
-
-        //return content as stream
-        return new ByteArrayInputStream(content);
+        //just wrap chunks stored in table raws with input stream wrapper
+        return new ChunkInputStream(key);
     }
 
     @Override
@@ -129,7 +154,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         //move records from working cache to trash
         for (BinaryKey key : keys) {
             //poll record
-            Record record = cache.remove(key.toString());
+            Metadata record = metadata.remove(key.toString());
 
             //no such record, ignore and proceed with next key
             if (record == null) {
@@ -159,17 +184,35 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
             }
         }
 
-        //clean up
-        for (String k : blackList) {
-            trash.remove(k);
+        //clean up: again two caches so customize tx boundaries
+        this.begin();
+        try {
+            for (String k : blackList) {
+                //remove metadata stored under root key
+                trash.remove(k);
+
+                //subsequently generare composite key with specified root
+                //and remove all chunks with this root:
+                CompositeKey ck = new CompositeKey(k);
+                Chunk chunk = payload.remove(ck.toString());
+                while (chunk != null) {
+                    ck.next();
+                    chunk = payload.remove(ck.toString());
+                }
+            }
+
+            blackList.clear();
+            this.commit();
+        } catch (Exception e) {
+            this.rollback();
+            throw new BinaryStoreException(e);
         }
-        blackList.clear();
     }
 
     @Override
     protected String getStoredMimeType( BinaryValue source ) throws BinaryStoreException {
         //get record
-        Record record = cache.get(source.getKey().toString());
+        Metadata record = metadata.get(source.getKey().toString());
         if (record == null) {
             throw new BinaryStoreException("Value has been deleted");
         }
@@ -181,20 +224,20 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     protected void storeMimeType(BinaryValue source, String mimeType)
             throws BinaryStoreException {
         //get record
-        Record record = cache.get(source.getKey().toString());
+        Metadata record = metadata.get(source.getKey().toString());
         if (record == null) {
             throw new BinaryStoreException("Value has been deleted");
         }
 
         //modify record and store modifications
         record.setMimeType(mimeType);
-        cache.replace(source.getKey().toString(), record);
+        metadata.replace(source.getKey().toString(), record);
     }
 
     @Override
     public String getExtractedText( BinaryValue source ) throws BinaryStoreException {
         //get record
-        Record record = cache.get(source.getKey().toString());
+        Metadata record = metadata.get(source.getKey().toString());
         if (record == null) {
             throw new BinaryStoreException("Value has been deleted");
         }
@@ -206,30 +249,14 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     public void storeExtractedText( BinaryValue source,
                                        String extractedText ) throws BinaryStoreException {
         //get record
-        Record record = cache.get(source.getKey().toString());
+        Metadata record = metadata.get(source.getKey().toString());
         if (record == null) {
             throw new BinaryStoreException("Value has been deleted");
         }
 
         //modify record and store modifications
         record.setExtractedText(extractedText);
-        cache.replace(source.getKey().toString(), record);
-    }
-
-    /**
-     * Reads binary data from the specified stream.
-     * @param stream stream to read data.
-     * @return data read from stream
-     * @throws BinaryStoreException 
-     */
-    private byte[] readContent(InputStream stream) throws BinaryStoreException {
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        try {
-            IOUtil.writeStream(stream, bout);
-            return bout.toByteArray();
-        } catch (IOException e) {
-            throw new BinaryStoreException(e);
-        }
+        metadata.replace(source.getKey().toString(), record);
     }
 
     @Override
@@ -242,19 +269,23 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         CacheConfigurationBuilder cacheConfig = new CacheConfigurationBuilder()
                 .driverClass(driverClass)
                 .connectionURL(connectionURL)
-                .credentials(username, password);
+                .credentials(username, password)
+                .jndiLocation(datasourceJNDILocation);
 
         //init cache
-        cache = new DefaultCacheManager(glob, cacheConfig.name("CACHE").build(), true).getCache();
+        metadata = new DefaultCacheManager(glob, cacheConfig.name("METADATA").build(), true).getCache();
+        payload = new DefaultCacheManager(glob, cacheConfig.name("PAYLOAD").build(), true).getCache();
         trash = new DefaultCacheManager(glob, cacheConfig.name("TRASH").build(), true).getCache();
 
-        cache.start();
+        metadata.start();
         trash.start();
+
+        tm = metadata.getAdvancedCache().getTransactionManager();
     }
 
     @Override
     public void shutdown() {
-        cache.stop();
+        metadata.stop();
         trash.stop();
         super.shutdown();
     }
@@ -269,13 +300,71 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     }
 
     /**
+     * Transmits data between streams.
+     * 
+     * @param in stream to read data
+     * @param out stream to transfer data to
+     * @return number of bytes transfered.
+     * @throws IOException 
+     */
+    private int writeStream(InputStream in, OutputStream out) throws IOException {
+        int b = 0;
+        int count = 0;
+        while (b != -1) {
+            b = in.read();
+            if (b != -1) {
+                count++;
+                out.write(b);
+            }
+        }
+        out.flush();
+        return count;
+    }
+
+    /**
+     * Starts transaction.
+     * 
+     * @throws BinaryStoreException 
+     */
+    private void begin() throws BinaryStoreException {
+        try {
+            tm.begin();
+        } catch (Exception e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    /**
+     * Commits transaction.
+     *
+     * @throws BinaryStoreException
+     */
+    private void commit() throws BinaryStoreException {
+        try {
+            tm.commit();
+        } catch (Exception e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    /**
+     * Rollback transaction.
+     * 
+     * @throws BinaryStoreException
+     */
+    private void rollback() throws BinaryStoreException {
+        try {
+            tm.rollback();
+        } catch (Exception e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    /**
      * Local content representation.
      *
      */
-    private class Record implements Serializable {
-        //binary content
-        private byte[] content;
-
+    private class Metadata implements Serializable {
         //attributes
         private long timestamp;
         private String mimeType;
@@ -286,18 +375,8 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
          *
          * @param content binary content
          */
-        public Record (byte[] content) {
-            this.content = content;
+        public Metadata () {
             this.timestamp = new Date().getTime();
-        }
-
-        /**
-         * Gets content.
-         *
-         * @return binary content
-         */
-        public byte[] getContent() {
-            return content;
         }
 
         /**
@@ -354,6 +433,160 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     }
 
     /**
+     * InputStream which retrieve rows which stores chunk of data.
+     */
+    private class ChunkInputStream extends InputStream {
+        private CompositeKey key;
+        private Chunk chunk = new Chunk();
+
+        public ChunkInputStream(BinaryKey root) {
+            this.key = new CompositeKey(root.toString());
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (chunk.eoc()) {
+                chunk = payload.get(key.toString());
+                chunk.reset();
+
+                key.next();
+            }
+
+            if (chunk == null) {
+                return -1;
+            }
+
+            return chunk.read();
+        }
+
+    }
+
+    /**
+     * OutputStream which stores chunks of data in rows.
+     */
+    private class ChunkOutputStream extends OutputStream {
+
+        private CompositeKey key;
+        private Chunk chunk = new Chunk();
+
+        public ChunkOutputStream(BinaryKey root) {
+            key = new CompositeKey(root.toString());
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            chunk.write((byte)b);
+            if (chunk.eob()) flush();
+        }
+
+        @Override
+        public void flush() {
+            payload.put(key.toString(), chunk, expireTime, TimeUnit.SECONDS);
+            key.next();
+            chunk = new Chunk();
+        }
+    }
+
+    /**
+     * Represent chunk of payload.
+     */
+    private class Chunk implements Serializable {
+        //internal buffer
+        private byte[] buffer = new byte[chunkSize];
+        //the length of payload stored in the buffer
+        private int length;
+
+        //current read/write position
+        private transient int offset = 0;
+
+        /**
+         * The state of the chunk.
+         *
+         * @return true if end of chunk reached and false otherwise
+         */
+        public boolean eoc() {
+            return offset == length;
+        }
+
+        /**
+         * The state of the backing buffer.
+         *
+         * @return true if end of backing buffer reached and false otherwise
+         */
+        public boolean eob() {
+            return offset == buffer.length;
+        }
+
+        /**
+         * Reads single byte from this chunk.
+         *
+         * @return byte read or -1 if end of data reached.
+         */
+        public byte read() {
+            return eoc()? -1 : buffer[offset++];
+        }
+
+        /**
+         * Writes buffer into the chunk's buffer.
+         *
+         * @param b the byte to write
+         */
+        public void write(byte b) {
+            if (!eob()) {
+                buffer[offset++] = b;
+                length++;
+            }
+        }
+
+        /**
+         * Puts read/write pointer into the beginning of the buffer.
+         */
+        public void reset() {
+            offset = 0;
+        }
+    }
+
+    /**
+     * Composite key which is used for identification of the chunks.
+     *
+     * The key consists from unique root which is common for the entire sequence
+     * and dynamic suffix.
+     *
+     */
+    private class CompositeKey {
+
+        //base root for this key
+        private String root;
+        //no of chunk
+        private int chunkNo;
+
+        /**
+         * Creates new instance of the key.
+         *
+         * @param root root key which is common
+         */
+        public CompositeKey(String root) {
+            this.root = root;
+        }
+
+        /**
+         * Key for next chunk in a chain
+         */
+        public void next() {
+            chunkNo++;
+        }
+
+        public void reset() {
+            chunkNo = 0;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s-%d", root.toString(), chunkNo);
+        }
+    }
+
+    /**
      * Utility class for configuring infinispan cache.
      */
     private class CacheConfigurationBuilder extends ConfigurationBuilder {
@@ -365,6 +598,9 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
          */
         public CacheConfigurationBuilder () {
             builder = new ConfigurationBuilder()
+                .transaction().transactionMode(TransactionMode.TRANSACTIONAL)
+                .autoCommit(false)
+                .transactionManagerLookup(new JBossStandaloneJTAManagerLookup())
                 .loaders().addCacheLoader()
                 .cacheLoader(new JdbcStringBasedCacheStore())
                 .fetchPersistentState(false).purgeOnStartup(true)
@@ -401,7 +637,9 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
          * @return provisioned builder instance.
          */
         public CacheConfigurationBuilder connectionURL(String url) {
-            builder = builder.addProperty("connectionUrl", url);
+            if (url != null) {
+                builder = builder.addProperty("connectionUrl", url);
+            }
             return this;
         }
 
@@ -412,7 +650,9 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
          * @return provisioned instance.
          */
         public CacheConfigurationBuilder driverClass(String driverClass) {
-            builder = builder.addProperty("driverClass", driverClass);
+            if (driverClass != null) {
+                builder = builder.addProperty("driverClass", driverClass);
+            }
             return this;
         }
 
@@ -424,12 +664,22 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
          * @return provisioned builder
          */
         public CacheConfigurationBuilder credentials(String username, String password) {
-            builder = builder
-                    .addProperty("userName", username)
-                    .addProperty("password", password);
+            if (username != null) {
+                builder = builder.addProperty("username", username);
+            }
+            if (password != null) {
+                builder = builder.addProperty("password", password);
+            }
             return this;
         }
-        
+
+        public CacheConfigurationBuilder jndiLocation(String jndiLocation) {
+            if (jndiLocation != null) {
+                builder = builder.addProperty("datasourceJNDILocation", jndiLocation);
+            }
+            return this;
+        }
+
         @Override
         public Configuration build() {
             return builder.build();

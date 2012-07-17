@@ -350,6 +350,7 @@ public class RepositoryConfiguration {
         public static final String JDBC_DRIVER_CLASS = "driverClass";
         public static final String CONNECTION_URL = "connectionURL";
         public static final String DATA_COLUMN_TYPE = "dataColumnType";
+        public static final String DATASOURCE_JNDI_LOCATION = "jndiLocation";
         /**
          * The name for the field (under "sequencing" and "query") specifying the thread pool that should be used for sequencing.
          * By default, all repository instances will use the same thread pool within the engine. To use a dedicated thread pool
@@ -946,8 +947,9 @@ public class RepositoryConfiguration {
                 String username = binaryStorage.getString(FieldName.USER_NAME);
                 String password = binaryStorage.getString(FieldName.USER_PASSWORD);
                 String dataType = binaryStorage.getString(FieldName.DATA_COLUMN_TYPE);
+                String datasource = binaryStorage.getString(FieldName.DATASOURCE_JNDI_LOCATION);
 
-                store = new DatabaseBinaryStore(driverClass, connectionURL, username, password);
+                store = new DatabaseBinaryStore(driverClass, connectionURL, username, password, datasource);
                 if (dataType != null) {
                     ((DatabaseBinaryStore) store).setDataColumnType(dataType);
                 }
