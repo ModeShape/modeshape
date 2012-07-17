@@ -622,8 +622,8 @@
                         "systemContentMode": {
                             "type" : "string",
                             "enum" : [ "sync", "async", "disabled"],
-                            "default" : "async",
-                            "description" : "Specifies whether the system content should be indexed synchronously or asynchronously, at repository startup"
+                            "default" : "disabled",
+                            "description" : "Specifies whether the system content should be indexed synchronously or asynchronously at repository startup or should be disabled. Since indexing system content is an expensive operation, this is disabled by default."
                         },
                         "asyncThreadPoolSize" : {
                             "type" : "integer",

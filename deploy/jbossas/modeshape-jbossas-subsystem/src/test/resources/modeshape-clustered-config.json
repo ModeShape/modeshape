@@ -26,6 +26,7 @@
             "predefined-workspace-names" : null,
             "rebuild-indexes-upon-startup" : "IF_MISSING",
             "security-domain" : "modeshape-security",
+            "system-content-indexing-mode" : "DISABLED",
             "text-extractor" : null,
             "use-anonymous-upon-failed-authentication" : false,
             "sequencer" : {
@@ -66,6 +67,7 @@
             "predefined-workspace-names" : null,
             "rebuild-indexes-upon-startup" : "IF_MISSING",
             "security-domain" : "modeshape-security",
+            "system-content-indexing-mode" : "DISABLED",
             "text-extractor" : null,
             "use-anonymous-upon-failed-authentication" : false,
             "sequencer" : {

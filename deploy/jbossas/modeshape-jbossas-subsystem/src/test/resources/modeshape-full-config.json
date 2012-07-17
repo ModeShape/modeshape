@@ -33,6 +33,7 @@
         ],
         "rebuild-indexes-upon-startup" : "IF_MISSING",
         "security-domain" : "modeshape-security",
+        "system-content-indexing-mode" : "ASYNC",
         "use-anonymous-upon-failed-authentication" : false,
         "index-storage" : {"INDEXES" : {
             "access-type" : "AUTO",

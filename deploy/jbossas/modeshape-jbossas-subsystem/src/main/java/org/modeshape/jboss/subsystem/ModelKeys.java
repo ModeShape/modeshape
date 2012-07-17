@@ -62,6 +62,7 @@ public class ModelKeys {
     static final String METADATA_CACHE_NAME = "metadata-cache-name";
     static final String MINIMUM_BINARY_SIZE = "minimum-binary-size";
     static final String MODE = "indexing-mode";
+    static final String SYSTEM_CONTENT_MODE = "system-content-indexing-mode";
     static final String MODULE = "module";
     static final String NAME = "name";
     static final String PATH = "path";

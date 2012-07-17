@@ -63,6 +63,7 @@ public enum Attribute {
     META_CACHE_NAME("metadata-cache-name"),
     MIN_VALUE_SIZE("min-value-size"),
     MODE("mode"),
+    SYSTEM_CONTENT_MODE("systemContentMode"),
     MODULE("module"),
     NAME("name"),
     PATH("path"),
