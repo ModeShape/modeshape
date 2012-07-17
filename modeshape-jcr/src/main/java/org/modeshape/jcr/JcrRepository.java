@@ -23,36 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.security.AccessControlContext;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
@@ -84,7 +54,6 @@ import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.jcr.ModeShapeEngine.State;
 import org.modeshape.jcr.RepositoryConfiguration.AnonymousSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.BinaryStorage;
@@ -141,6 +110,33 @@ import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.InfinispanBinaryStore;
 import org.modeshape.jcr.value.binary.UnusedBinaryChangeSetListener;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.security.AccessControlContext;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * 
@@ -910,7 +906,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final AbstractBinaryStore binaryStore;
         private final ScheduledExecutorService statsRollupService;
         private final Sequencers sequencers;
-        private final Executor sequencingQueue;
+        private final ExecutorService sequencingQueue;
         private final QueryParsers queryParsers;
         private final RepositoryQueryManager repositoryQueryManager;
         private final ExecutorService indexingExecutor;
@@ -1027,7 +1023,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.internalWorkerContext = this.context.with(new InternalSecurityContext(INTERNAL_WORKER_USERNAME));
 
                 // Create the event bus
-                this.changeDispatchingQueue = (ExecutorService)this.context().getCachedTreadPool("modeshape-event-dispatcher");
+                this.changeDispatchingQueue = this.context().getCachedTreadPool("modeshape-event-dispatcher");
                 this.changeBus = createBus(config.getClustering(), this.changeDispatchingQueue, systemWorkspaceName(), false);
                 this.changeBus.start();
 
@@ -1104,8 +1100,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 } else {
                     // Create an in-memory queue of sequencing work items ...
                     String threadPool = config.getSequencing().getThreadPoolName();
-                    final Executor sequencingQueue = this.context.getThreadPool(threadPool);
-                    this.sequencingQueue = sequencingQueue;
+                    this.sequencingQueue = this.context.getThreadPool(threadPool);
                     queue = new Sequencers.WorkQueue() {
                         @Override
                         public void submit( final SequencingWorkItem work ) {
@@ -1122,7 +1117,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.queryParsers = other.queryParsers;
             } else {
                 String indexThreadPoolName = config.getQuery().getThreadPoolName();
-                this.indexingExecutor = (ExecutorService)this.context.getThreadPool(indexThreadPoolName);
+                this.indexingExecutor = this.context.getThreadPool(indexThreadPoolName);
                 this.queryParsers = new QueryParsers(new JcrSql2QueryParser(), new XPathQueryParser(),
                                                      new FullTextSearchParser(), new JcrSqlQueryParser(), new JcrQomQueryParser());
             }
@@ -1189,6 +1184,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         protected final Sequencers sequencers() {
             return sequencers;
+        }
+
+        protected ExecutorService sequencingQueue() {
+            return sequencingQueue;
         }
 
         protected final boolean useXaSessions() {

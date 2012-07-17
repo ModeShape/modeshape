@@ -23,7 +23,7 @@
  */
 package org.modeshape.common.util;
 
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Factory interface for creating/obtaining named thread pools.
@@ -37,16 +37,18 @@ public interface ThreadPoolFactory {
      * @param name the name of the thread pool; may not be null
      * @return the thread pool executor; never null
      */
-    Executor getThreadPool( String name );
+    ExecutorService getThreadPool( String name );
 
     /**
+     * Signal that the supplied thread pool is no longer needed.
+     *
      * Obtain a cached thread pool with the supplied name, or create and return one if no thread pool exists with that name. When
      * finished with the thread pool, it should be {@link #releaseThreadPool released}.
      *
      * @param name the name of the thread pool; may not be null
      * @return the thread pool executor; never null
      */
-    Executor getCachedTreadPool( String name );
+    ExecutorService getCachedTreadPool( String name );
 
     /**
      * Obtain a scheduled thread pool with the supplied name, or create and return one if no thread pool exists with that name. When
@@ -55,12 +57,13 @@ public interface ThreadPoolFactory {
      * @param name the name of the thread pool; may not be null
      * @return the thread pool executor; never null
      */
-    Executor getScheduledThreadPool( String name );
+    ExecutorService getScheduledThreadPool( String name );
 
     /**
-     * Signal that the supplied thread pool is no longer needed.
-     *
+     * Performs a {@link java.util.concurrent.ExecutorService#shutdownNow()} on the given pool, if the pool has been created
+     * previously by this class. Clients which use this method should handle, if necessary, any potential {@link InterruptedException}
+    *
      * @param pool the pool that is no longer needed
      */
-    void releaseThreadPool( Executor pool );
+    void releaseThreadPool( ExecutorService pool );
 }

@@ -49,7 +49,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 /**
  * An ExecutionContext is a representation of the environment or context in which a component or operation is operating. Some
@@ -254,22 +254,20 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
     }
 
     @Override
-    public Executor getThreadPool( String name ) {
+    public ExecutorService getThreadPool( String name ) {
         return this.threadPools.getThreadPool(name);
     }
 
     @Override
-    public void releaseThreadPool( Executor pool ) {
+    public void releaseThreadPool( ExecutorService pool ) {
         this.threadPools.releaseThreadPool(pool);
     }
 
-    @Override
-    public Executor getCachedTreadPool( String name ) {
+    public ExecutorService getCachedTreadPool( String name ) {
         return this.threadPools.getCachedTreadPool(name);
     }
 
-    @Override
-    public Executor getScheduledThreadPool( String name ) {
+    public ExecutorService getScheduledThreadPool( String name ) {
         return this.threadPools.getScheduledThreadPool(name);
     }
 
