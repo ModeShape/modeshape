@@ -75,6 +75,20 @@ public class ConnectionResultsComparator extends ResultsComparator {
 
     public static void executeTest( Connection conn,
                                     String sql,
+                                    int expectedRowCount,
+                                    String jcrSQL ) throws SQLException {
+        ConnectionResultsComparator util = new ConnectionResultsComparator(conn);
+        try {
+            util.execute(sql, jcrSQL);
+            util.assertRowCount(expectedRowCount);
+        } finally {
+            util.closeResultSet();
+            util.closeStatement();
+        }
+    }
+
+    public static void executeTest( Connection conn,
+                                    String sql,
                                     String[] expected,
                                     int expectedRowCount,
                                     String jcrSQL ) throws SQLException {

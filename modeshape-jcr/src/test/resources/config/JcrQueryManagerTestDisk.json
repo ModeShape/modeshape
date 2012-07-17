@@ -4,6 +4,12 @@
         "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
     },
     "query" : {
+        "indexStorage" : {
+            "type" : "filesystem",
+            "location" : "target/querytest/indexes",
+            "lockingStrategy" : "simple",
+            "fileSystemAccessType" : "auto"
+        },
         "indexing": {
             "systemContentMode" : "sync"
         }

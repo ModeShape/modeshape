@@ -474,7 +474,7 @@ public class JcrTckTest {
 
             addTestSuite(SQLJoinTest.class);
             addTestSuite(SQLJcrPathTest.class);
-            // TODO author=Horia Chiorean date=4/20/12 description=https://issues.jboss.org/browse/MODE-1469
+            //TODO author=Horia Chiorean date=7/16/12 description=https://issues.apache.org/jira/browse/JCR-3376
             addTestSuite(excludeTests(SQLPathTest.class, "testChildAxisRoot"));
             addTestSuite(XPathDocOrderTest.class);
             addTestSuite(XPathOrderByTest.class);

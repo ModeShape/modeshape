@@ -30,6 +30,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.modeshape.common.annotation.GuardedBy;
@@ -53,11 +54,8 @@ public final class RepositoryChangeBus implements ChangeBus {
     private final Set<ChangeSetListener> listeners;
     private final ReadWriteLock listenersLock = new ReentrantReadWriteLock(true);
 
-    protected volatile boolean shutdown;
+    private volatile boolean shutdown;
 
-    // TODO author=Horia Chiorean date=2/29/12 description=The following members can be removed once multi-threaded changes
-    // (MODE-1411)
-    // and the system workspace are fixed
     private final String systemWorkspaceName;
     private final boolean separateThreadForSystemWorkspace;
 
@@ -87,9 +85,6 @@ public final class RepositoryChangeBus implements ChangeBus {
         try {
             listenersLock.writeLock().lock();
             listeners.clear();
-            if (!executor.isShutdown()) {
-                executor.shutdownNow();
-            }
         } finally {
             listenersLock.writeLock().unlock();
         }
@@ -153,7 +148,8 @@ public final class RepositoryChangeBus implements ChangeBus {
                     listenerQueue = new LinkedBlockingQueue<ChangeSet>();
                     listenerQueue.add(changeSet);
                     listenersForWorkspace.putIfAbsent(listener, listenerQueue);
-                    executor.execute(new ChangeSetDispatcher(listener, listenerQueue));
+                    ChangeSetDispatcher dispatcher = new ChangeSetDispatcher(listener, listenerQueue);
+                    executor.execute(dispatcher);
                 } else {
                     listenerQueue.add(changeSet);
                 }
@@ -189,10 +185,12 @@ public final class RepositoryChangeBus implements ChangeBus {
         }
     }
 
-    private class ChangeSetDispatcher implements Runnable {
+    private class ChangeSetDispatcher extends Thread {
 
-        private final ChangeSetListener listener;
-        private final BlockingQueue<ChangeSet> changeSetQueue;
+        private static final int DEFAULT_POLL_TIMEOUT = 3;
+
+        private ChangeSetListener listener;
+        private BlockingQueue<ChangeSet> changeSetQueue;
 
         ChangeSetDispatcher( ChangeSetListener listener,
                              BlockingQueue<ChangeSet> changeSetQueue ) {
@@ -202,14 +200,25 @@ public final class RepositoryChangeBus implements ChangeBus {
 
         @Override
         public void run() {
-            try {
-                while (!shutdown) {
-                    ChangeSet changeSet = changeSetQueue.take();
-                    listener.notify(changeSet);
+            while (!shutdown) {
+                try {
+                    ChangeSet changeSet = changeSetQueue.poll(DEFAULT_POLL_TIMEOUT, TimeUnit.SECONDS);
+                    if (changeSet != null) {
+                        listener.notify(changeSet);
+                    }
+                } catch (InterruptedException e) {
+                    break;
                 }
-            } catch (InterruptedException e) {
-                // ignore
             }
+            shutdown();
+        }
+
+        private void shutdown() {
+            while (!changeSetQueue.isEmpty()) {
+                listener.notify(changeSetQueue.poll());
+            }
+            this.listener = null;
+            this.changeSetQueue = null;
         }
     }
 }

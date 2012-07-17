@@ -401,6 +401,14 @@ public class ModelAttributes {
                                                                                                                                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                                .build();
 
+    public static final SimpleAttributeDefinition SYSTEM_CONTENT_MODE = new MappedAttributeDefinitionBuilder(ModelKeys.SYSTEM_CONTENT_MODE, ModelType.STRING).setXmlName(Attribute.SYSTEM_CONTENT_MODE.getLocalName())
+                                                                                                                               .setAllowExpression(true)
+                                                                                                                               .setAllowNull(true)
+                                                                                                                               .setDefaultValue(new ModelNode().set(IndexingMode.DISABLED.toString()))
+                                                                                                                               .setValidator(INDEXING_MODE_VALIDATOR)
+                                                                                                                               .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                               .build();
+
     public static final SimpleAttributeDefinition MODULE = new MappedAttributeDefinitionBuilder(ModelKeys.MODULE,
                                                                                                 ModelType.STRING).setXmlName(Attribute.MODULE.getLocalName())
                                                                                                                  .setAllowExpression(false)
@@ -593,7 +601,7 @@ public class ModelAttributes {
     public static final AttributeDefinition[] REPOSITORY_ATTRIBUTES = {CACHE_NAME, CACHE_CONTAINER, JNDI_NAME, ENABLE_MONITORING,
         SECURITY_DOMAIN, ANONYMOUS_ROLES, ANONYMOUS_USERNAME, USE_ANONYMOUS_IF_AUTH_FAILED, DEFAULT_WORKSPACE,
         PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, MINIMUM_BINARY_SIZE, THREAD_POOL, BATCH_SIZE, READER_STRATEGY,
-        MODE, ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME, ANALYZER_MODULE, REBUILD_INDEXES_UPON_STARTUP,
+        MODE, SYSTEM_CONTENT_MODE, ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME, ANALYZER_MODULE, REBUILD_INDEXES_UPON_STARTUP,
         CLUSTER_NAME, CLUSTER_STACK,};
 
     public static final AttributeDefinition[] RAM_INDEX_STORAGE_ATTRIBUTES = {INDEX_STORAGE_TYPE,};

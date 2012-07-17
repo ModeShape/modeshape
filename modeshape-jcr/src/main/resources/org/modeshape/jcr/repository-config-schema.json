@@ -619,6 +619,12 @@
                             "default" : "sync",
                             "description" : "Specifies whether to apply the index changes synchronously or asynchronously (in separate threads). Synchronous updates have the advantage that the index is at all times in sync with the storec content. Asynchronous updates, on the other hand, can help to minimize Session.save() times since index updates are executed in the background, but may result in potential discrepancies between the saved changes and query results."
                         },
+                        "systemContentMode": {
+                            "type" : "string",
+                            "enum" : [ "sync", "async", "disabled"],
+                            "default" : "disabled",
+                            "description" : "Specifies whether the system content should be indexed synchronously or asynchronously at repository startup or should be disabled. Since indexing system content is an expensive operation, this is disabled by default."
+                        },
                         "asyncThreadPoolSize" : {
                             "type" : "integer",
                             "default" : 1,

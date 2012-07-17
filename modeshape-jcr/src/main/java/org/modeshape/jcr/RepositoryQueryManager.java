@@ -211,7 +211,6 @@ class RepositoryQueryManager {
         Path nodePath = paths.getPath(node);
 
         // Index the first node ...
-        final int maxPathSize = nodePath.size() + depth;
         final QueryIndexing indexes = getIndexes();
         final TransactionContext txnCtx = NO_TRANSACTION;
         indexes.updateIndex(workspaceName,
@@ -270,7 +269,7 @@ class RepositoryQueryManager {
                                 txnCtx);
 
             // Check the depth ...
-            if (nodePath.size() <= maxPathSize) {
+            if (nodePath.size() <= depth) {
                 // Add the children to the queue ...
                 for (ChildReference childRef : node.getChildReferences(cache)) {
                     queue.add(childRef.getKey());
@@ -286,6 +285,39 @@ class RepositoryQueryManager {
         String workspaceName = repoCache.getSystemWorkspaceName();
         NodeCache systemWorkspaceCache = repoCache.getWorkspaceCache(workspaceName);
         reindexContent(workspaceName, schemata, systemWorkspaceCache, nodeInSystemBranch, depth, false);
+    }
+
+    protected void reindexSystemContent(boolean async) {
+        RepositoryCache repositoryCache = runningState.repositoryCache();
+        final NodeCache systemWorkspaceCache = repositoryCache.getWorkspaceCache(repositoryCache.getSystemWorkspaceName());
+        final CachedNode systemRoot = systemWorkspaceCache.getNode(repositoryCache.getSystemKey());
+        if (async) {
+           indexingExecutorService.submit(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    reindexSystemContent(systemRoot, systemWorkspaceCache);
+                    return null;
+                }
+            });
+        }
+        else {
+            reindexSystemContent(systemRoot, systemWorkspaceCache);
+        }
+    }
+
+    private void reindexSystemContent(CachedNode systemRoot, NodeCache systemWorkspaceCache) {
+        final NodeTypeSchemata schemata = runningState.nodeTypeManager().getRepositorySchemata();
+        //first reindex only /jcr:system
+        reindexSystemContent(systemRoot, 1, schemata);
+        for (ChildReference childReference : systemRoot.getChildReferences(systemWorkspaceCache)) {
+            CachedNode systemNode = systemWorkspaceCache.getNode(childReference.getKey());
+            String systemNodeName = systemNode.getName(systemWorkspaceCache).toString();
+            //we don't want to reindex versioning content or locks
+            if (systemNodeName.contains("versionStorage") || systemNodeName.contains("locks")) {
+                continue;
+            }
+            reindexSystemContent(systemNode, Integer.MAX_VALUE, schemata);
+        }
     }
 
     /**

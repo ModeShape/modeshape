@@ -28,6 +28,10 @@ import org.junit.Test;
 import org.modeshape.common.FixFor;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Common test class for the JDBC integration tests
@@ -67,51 +71,23 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
                 "nt:unstructured    null    /Other/NodeA[2]    NodeA    NodeA    2",
                 "nt:unstructured    null    /Other/NodeA[3]    NodeA    NodeA    2"};
 
-        // executeQuery("SELECT * FROM [nt:base] WHERE NOT( [jcr:path] LIKE '/jcr:*' ) ORDER BY [jcr:path]", expected, 23);
-        // SELECT * FROM ... except the [jcr:score] column ...
-        executeQuery("SELECT [jcr:primaryType], [jcr:mixinTypes], [jcr:path], [jcr:name], [mode:localName], [mode:depth] FROM [nt:base] WHERE [jcr:path] NOT LIKE '/jcr:*' ORDER BY [jcr:path]",
+        //make sure system nodes are avoided
+        executeQuery("SELECT [jcr:primaryType], [jcr:mixinTypes], [jcr:path], [jcr:name], [mode:localName], [mode:depth] FROM [nt:base] " +
+                             "WHERE [jcr:path] NOT LIKE '/jcr:*' AND [jcr:path] NOT LIKE '/jcr:*/%' AND [jcr:path] NOT LIKE '/jcr:*/%/%' ORDER BY [jcr:path]",
                      expected,
                      23);
     }
 
     @Test
     public void shouldBeAbleToExecuteSqlSelectAllCars() throws SQLException {
-
-        String[] expected = {
-                "car:Car.car:maker[STRING]    car:Car.car:model[STRING]    car:Car.car:year[STRING]    car:Car.car:msrp[STRING]    car:Car.car:userRating[LONG]    car:Car.car:valueRating[LONG]    car:Car.car:mpgCity[LONG]    car:Car.car:mpgHighway[LONG]    car:Car.car:lengthInInches[DOUBLE]    car:Car.car:wheelbaseInInches[DOUBLE]    car:Car.car:engine[STRING]    car:Car.jcr:primaryType[STRING]    car:Car.jcr:mixinTypes[STRING]    car:Car.jcr:path[STRING]    car:Car.jcr:name[STRING]    car:Car.jcr:score[DOUBLE]    car:Car.mode:localName[STRING]    car:Car.mode:depth[LONG]",
-                "Aston Martin    DB9    2008    $171,600    5    null    12    19    185.5    108.0    5,935 cc 5.9 liters V 12    car:Car    null    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    1.7436792850494385    Aston Martin DB9    3",
-                "Bentley    Continental    2008    $170,990    null    null    10    17    null    null    null    car:Car    null    /Cars/Luxury/Bentley Continental    Bentley Continental    1.7436792850494385    Bentley Continental    3",
-                "Cadillac    DTS    2008    null    1    null    null    null    null    null    3.6 liter V6    car:Car    null    /Cars/Luxury/Cadillac DTS    Cadillac DTS    1.7436792850494385    Cadillac DTS    3",
-                "Ford    F-150    2008    $23,910    5    1    14    20    null    null    null    car:Car    null    /Cars/Utility/Ford F-150    Ford F-150    1.7436792850494385    Ford F-150    3",
-                "Hummer    H3    2008    $30,595    3    4    13    16    null    null    null    car:Car    null    /Cars/Utility/Hummer H3    Hummer H3    1.7436792850494385    Hummer H3    3",
-                "Infiniti    G37    2008    $34,900    3    4    18    24    null    null    null    car:Car    null    /Cars/Sports/Infiniti G37    Infiniti G37    1.7436792850494385    Infiniti G37    3",
-                "Land Rover    LR2    2008    $33,985    4    5    16    23    null    null    null    car:Car    null    /Cars/Utility/Land Rover LR2    Land Rover LR2    1.7436792850494385    Land Rover LR2    3",
-                "Land Rover    LR3    2008    $48,525    5    2    12    17    null    null    null    car:Car    null    /Cars/Utility/Land Rover LR3    Land Rover LR3    1.7436792850494385    Land Rover LR3    3",
-                "Lexus    IS350    2008    $36,305    4    5    18    25    null    null    null    car:Car    null    /Cars/Luxury/Lexus IS350    Lexus IS350    1.7436792850494385    Lexus IS350    3",
-                "Nissan    Altima    2008    $18,260    null    null    23    32    null    null    null    car:Car    null    /Cars/Hybrid/Nissan Altima    Nissan Altima    1.7436792850494385    Nissan Altima    3",
-                "Toyota    Highlander    2008    $34,200    4    5    27    25    null    null    null    car:Car    null    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    1.7436792850494385    Toyota Highlander    3",
-                "Toyota    Prius    2008    $21,500    4    5    48    45    null    null    null    car:Car    null    /Cars/Hybrid/Toyota Prius    Toyota Prius    1.7436792850494385    Toyota Prius    3"};
-        executeQuery("SELECT * FROM [car:Car] ORDER BY [jcr:name]", expected, 12);
+        String[] expected = allCarsAsc();
+        executeQuery("SELECT" + carColumns() + " FROM [car:Car] ORDER BY [jcr:name]", expected, 12);
     }
 
     @Test
     public void shouldBeAbleToExecuteSqlQueryWithOrderByClauseUsingDefault() throws SQLException {
-        String[] expected = {
-                "car:Car.car:maker[STRING]    car:Car.car:model[STRING]    car:Car.car:year[STRING]    car:Car.car:msrp[STRING]    car:Car.car:userRating[LONG]    car:Car.car:valueRating[LONG]    car:Car.car:mpgCity[LONG]    car:Car.car:mpgHighway[LONG]    car:Car.car:lengthInInches[DOUBLE]    car:Car.car:wheelbaseInInches[DOUBLE]    car:Car.car:engine[STRING]    car:Car.jcr:primaryType[STRING]    car:Car.jcr:mixinTypes[STRING]    car:Car.jcr:path[STRING]    car:Car.jcr:name[STRING]    car:Car.jcr:score[DOUBLE]    car:Car.mode:localName[STRING]    car:Car.mode:depth[LONG]",
-                "Aston Martin    DB9    2008    $171,600    5    null    12    19    185.5    108.0    5,935 cc 5.9 liters V 12    car:Car    null    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    1.7436792850494385    Aston Martin DB9    3",
-                "Bentley    Continental    2008    $170,990    null    null    10    17    null    null    null    car:Car    null    /Cars/Luxury/Bentley Continental    Bentley Continental    1.7436792850494385    Bentley Continental    3",
-                "Cadillac    DTS    2008    null    1    null    null    null    null    null    3.6 liter V6    car:Car    null    /Cars/Luxury/Cadillac DTS    Cadillac DTS    1.7436792850494385    Cadillac DTS    3",
-                "Ford    F-150    2008    $23,910    5    1    14    20    null    null    null    car:Car    null    /Cars/Utility/Ford F-150    Ford F-150    1.7436792850494385    Ford F-150    3",
-                "Hummer    H3    2008    $30,595    3    4    13    16    null    null    null    car:Car    null    /Cars/Utility/Hummer H3    Hummer H3    1.7436792850494385    Hummer H3    3",
-                "Infiniti    G37    2008    $34,900    3    4    18    24    null    null    null    car:Car    null    /Cars/Sports/Infiniti G37    Infiniti G37    1.7436792850494385    Infiniti G37    3",
-                "Land Rover    LR2    2008    $33,985    4    5    16    23    null    null    null    car:Car    null    /Cars/Utility/Land Rover LR2    Land Rover LR2    1.7436792850494385    Land Rover LR2    3",
-                "Land Rover    LR3    2008    $48,525    5    2    12    17    null    null    null    car:Car    null    /Cars/Utility/Land Rover LR3    Land Rover LR3    1.7436792850494385    Land Rover LR3    3",
-                "Lexus    IS350    2008    $36,305    4    5    18    25    null    null    null    car:Car    null    /Cars/Luxury/Lexus IS350    Lexus IS350    1.7436792850494385    Lexus IS350    3",
-                "Nissan    Altima    2008    $18,260    null    null    23    32    null    null    null    car:Car    null    /Cars/Hybrid/Nissan Altima    Nissan Altima    1.7436792850494385    Nissan Altima    3",
-                "Toyota    Highlander    2008    $34,200    4    5    27    25    null    null    null    car:Car    null    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    1.7436792850494385    Toyota Highlander    3",
-                "Toyota    Prius    2008    $21,500    4    5    48    45    null    null    null    car:Car    null    /Cars/Hybrid/Toyota Prius    Toyota Prius    1.7436792850494385    Toyota Prius    3"};
-
-        executeQuery("SELECT * FROM [car:Car] ORDER BY [car:maker], [car:model]", expected, 12);
+        String[] expected = allCarsAsc();
+        executeQuery("SELECT" + carColumns() + "FROM [car:Car] ORDER BY [car:maker], [car:model]", expected, 12);
 
     }
 
@@ -128,23 +104,8 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
 
     @Test
     public void shouldBeAbleToExecuteSqlQueryWithOrderedByClauseDesc() throws SQLException {
-        String[] expected = {
-                "car:Car.car:maker[STRING]    car:Car.car:model[STRING]    car:Car.car:year[STRING]    car:Car.car:msrp[STRING]    car:Car.car:userRating[LONG]    car:Car.car:valueRating[LONG]    car:Car.car:mpgCity[LONG]    car:Car.car:mpgHighway[LONG]    car:Car.car:lengthInInches[DOUBLE]    car:Car.car:wheelbaseInInches[DOUBLE]    car:Car.car:engine[STRING]    car:Car.jcr:primaryType[STRING]    car:Car.jcr:mixinTypes[STRING]    car:Car.jcr:path[STRING]    car:Car.jcr:name[STRING]    car:Car.jcr:score[DOUBLE]    car:Car.mode:localName[STRING]    car:Car.mode:depth[LONG]",
-                "Land Rover    LR3    2008    $48,525    5    2    12    17    null    null    null    car:Car    null    /Cars/Utility/Land Rover LR3    Land Rover LR3    1.7436792850494385    Land Rover LR3    3",
-                "Lexus    IS350    2008    $36,305    4    5    18    25    null    null    null    car:Car    null    /Cars/Luxury/Lexus IS350    Lexus IS350    1.7436792850494385    Lexus IS350    3",
-                "Infiniti    G37    2008    $34,900    3    4    18    24    null    null    null    car:Car    null    /Cars/Sports/Infiniti G37    Infiniti G37    1.7436792850494385    Infiniti G37    3",
-                "Toyota    Highlander    2008    $34,200    4    5    27    25    null    null    null    car:Car    null    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    1.7436792850494385    Toyota Highlander    3",
-                "Land Rover    LR2    2008    $33,985    4    5    16    23    null    null    null    car:Car    null    /Cars/Utility/Land Rover LR2    Land Rover LR2    1.7436792850494385    Land Rover LR2    3",
-                "Hummer    H3    2008    $30,595    3    4    13    16    null    null    null    car:Car    null    /Cars/Utility/Hummer H3    Hummer H3    1.7436792850494385    Hummer H3    3",
-                "Ford    F-150    2008    $23,910    5    1    14    20    null    null    null    car:Car    null    /Cars/Utility/Ford F-150    Ford F-150    1.7436792850494385    Ford F-150    3",
-                "Toyota    Prius    2008    $21,500    4    5    48    45    null    null    null    car:Car    null    /Cars/Hybrid/Toyota Prius    Toyota Prius    1.7436792850494385    Toyota Prius    3",
-                "Nissan    Altima    2008    $18,260    null    null    23    32    null    null    null    car:Car    null    /Cars/Hybrid/Nissan Altima    Nissan Altima    1.7436792850494385    Nissan Altima    3",
-                "Aston Martin    DB9    2008    $171,600    5    null    12    19    185.5    108.0    5,935 cc 5.9 liters V 12    car:Car    null    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    1.7436792850494385    Aston Martin DB9    3",
-                "Bentley    Continental    2008    $170,990    null    null    10    17    null    null    null    car:Car    null    /Cars/Luxury/Bentley Continental    Bentley Continental    1.7436792850494385    Bentley Continental    3",
-                "Cadillac    DTS    2008    null    1    null    null    null    null    null    3.6 liter V6    car:Car    null    /Cars/Luxury/Cadillac DTS    Cadillac DTS    1.7436792850494385    Cadillac DTS    3",};
-        // Results are sorted by lexicographic MSRP (as a string, not as a number)!!!
-        executeQuery("SELECT * FROM [car:Car] ORDER BY [car:msrp] DESC", expected, 12);
-
+        String[] expected = allCarsDesc();
+        executeQuery("SELECT" + carColumns() + " FROM [car:Car] ORDER BY [jcr:name] DESC", expected, 12);
     }
 
     @Test
@@ -205,6 +166,36 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
         executeQuery("SELECT [jcr:primaryType], [jcr:mixinTypes], [jcr:path], [jcr:name], [mode:localName], [mode:depth] FROM [nt:unstructured] WHERE [jcr:path] NOT LIKE '/jcr:*' ORDER BY [jcr:primaryType], [jcr:path]",
                      expected,
                      22);
+    }
+
+
+    private String carColumns() {
+        return " [car:maker], [car:model], [car:year], [car:msrp], [car:userRating], [car:valueRating], [car:mpgCity], [car:mpgHighway], [car:lengthInInches], [car:wheelbaseInInches], [car:engine], [jcr:path], [jcr:name]";
+    }
+
+    private String[] allCarsDesc() {
+        List<String> allCarsAsc = new ArrayList<String>(Arrays.asList(allCarsAsc()));
+        String header = allCarsAsc.remove(0);
+        Collections.reverse(allCarsAsc);
+        allCarsAsc.add(0, header);
+        return allCarsAsc.toArray(new String[0]);
+    }
+
+    private String[] allCarsAsc() {
+        return new String[] {
+                "car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:path[STRING]    jcr:name[STRING]",
+                "Aston Martin    DB9    2008    $171,600    5    null    12    19    185.5    108.0    5,935 cc 5.9 liters V 12    /Cars/Sports/Aston Martin DB9    Aston Martin DB9",
+                "Bentley    Continental    2008    $170,990    null    null    10    17    null    null    null    /Cars/Luxury/Bentley Continental    Bentley Continental",
+                "Cadillac    DTS    2008    null    1    null    null    null    null    null    3.6 liter V6    /Cars/Luxury/Cadillac DTS    Cadillac DTS",
+                "Ford    F-150    2008    $23,910    5    1    14    20    null    null    null    /Cars/Utility/Ford F-150    Ford F-150",
+                "Hummer    H3    2008    $30,595    3    4    13    16    null    null    null    /Cars/Utility/Hummer H3    Hummer H3",
+                "Infiniti    G37    2008    $34,900    3    4    18    24    null    null    null    /Cars/Sports/Infiniti G37    Infiniti G37",
+                "Land Rover    LR2    2008    $33,985    4    5    16    23    null    null    null    /Cars/Utility/Land Rover LR2    Land Rover LR2",
+                "Land Rover    LR3    2008    $48,525    5    2    12    17    null    null    null    /Cars/Utility/Land Rover LR3    Land Rover LR3",
+                "Lexus    IS350    2008    $36,305    4    5    18    25    null    null    null    /Cars/Luxury/Lexus IS350    Lexus IS350",
+                "Nissan    Altima    2008    $18,260    null    null    23    32    null    null    null    /Cars/Hybrid/Nissan Altima    Nissan Altima",
+                "Toyota    Highlander    2008    $34,200    4    5    27    25    null    null    null    /Cars/Hybrid/Toyota Highlander    Toyota Highlander",
+                "Toyota    Prius    2008    $21,500    4    5    48    45    null    null    null    /Cars/Hybrid/Toyota Prius    Toyota Prius"};
     }
 
     /**

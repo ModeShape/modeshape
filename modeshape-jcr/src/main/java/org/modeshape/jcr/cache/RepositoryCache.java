@@ -83,6 +83,7 @@ public class RepositoryCache implements Observable {
     private final String systemWorkspaceName;
     private final Logger logger;
     private final SessionEnvironment sessionContext;
+    private final boolean systemContentInitialized;
 
     public RepositoryCache( ExecutionContext context,
                             SchematicDb database,
@@ -136,7 +137,9 @@ public class RepositoryCache implements Observable {
             if (systemRef == null) {
                 throw new SystemFailureException(JcrI18n.unableToInitializeSystemWorkspace.text(name));
             }
+            this.systemContentInitialized = true;
         } else {
+            this.systemContentInitialized = false;
             logger.debug("Found existing '{0}' workspace in repository '{1}'", systemWorkspaceName, name);
         }
         this.systemKey = systemRef.getKey();
@@ -167,6 +170,10 @@ public class RepositoryCache implements Observable {
 
     public long largeValueSizeInBytes() {
         return minimumBinarySizeInBytes.get();
+    }
+
+    public boolean isSystemContentInitialized() {
+        return systemContentInitialized;
     }
 
     protected void refreshWorkspaces( boolean update ) {

@@ -1,18 +1,5 @@
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Binary;
 import javax.jcr.Credentials;
@@ -50,8 +37,21 @@ import javax.jcr.version.VersionIterator;
 import javax.jcr.version.VersionManager;
 import org.apache.jackrabbit.test.AbstractJCRTest;
 import org.apache.jackrabbit.test.api.ShareableNodeTest;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.JcrTools;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Additional ModeShape tests that check for JCR compliance.
@@ -72,11 +72,13 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     @Override
     protected void setUp() throws Exception {
+        JTATestUtil.setJBossJTADefaultStoreLocations();
         super.setUp();
     }
 
     @Override
     protected void tearDown() throws Exception {
+        JTATestUtil.clearJBossJTADefaultStoreLocation();
         try {
             superuser.getRootNode().getNode(this.nodeName1).remove();
             superuser.save();
@@ -2618,6 +2620,34 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         // verify child c still exists
         Node[] children = toArray(a2.getNode("b2").getNodes());
         assertEquals(1, children.length);
+    }
+
+    @FixFor( "MODE-1469" )
+    public void testShouldReturnAllNodesUnderRootUsingPathCriteria() throws Exception {
+        Session session = testRootNode.getSession();
+        List<String> rootNodesPaths = new ArrayList<String>();
+        rootNodesPaths.add(session.getRootNode().getPath());
+        for (NodeIterator it  = session.getRootNode().getNodes(); it.hasNext(); ) {
+            rootNodesPaths.add(it.nextNode().getPath());
+        }
+
+        String query = "SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '/%' AND NOT [jcr:path] LIKE '/%/%'";
+        javax.jcr.query.QueryManager queryManager = session.getWorkspace().getQueryManager();
+        QueryResult result = queryManager.createQuery(query, Query.JCR_SQL2).execute();
+
+        for (NodeIterator it = result.getNodes(); it.hasNext(); ) {
+            Node queryNode = it.nextNode();
+            String queryNodePath = queryNode.getPath();
+            assertTrue(queryNodePath + " not part of the original nodes list", rootNodesPaths.remove(queryNodePath));
+        }
+        if (!rootNodesPaths.isEmpty()) {
+            StringBuilder nodesNotFound = new StringBuilder("Nodes: ");
+            for (String nodePath : rootNodesPaths) {
+                nodesNotFound.append(nodePath).append(" ");
+            }
+            nodesNotFound.append(" not found by query");
+            fail(nodesNotFound.toString());
+        }
     }
 
     /**

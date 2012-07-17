@@ -79,6 +79,7 @@
             "indexFormat" : "LUCENE_35",
             "readerStrategy" : "shared",
             "mode" : "sync",
+            "systemContentMode" : "async",
             "asyncThreadPoolSize" : 1,
             "asyncMaxQueueSize" : 0,
             "backend" : {

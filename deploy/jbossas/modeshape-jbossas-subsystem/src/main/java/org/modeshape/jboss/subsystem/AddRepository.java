@@ -158,6 +158,7 @@ public class AddRepository extends AbstractAddStepHandler {
         int indexBatchSize = ModelAttributes.BATCH_SIZE.resolveModelAttribute(context, model).asInt();
         String indexReaderStrategy = ModelAttributes.READER_STRATEGY.resolveModelAttribute(context, model).asString();
         String indexMode = ModelAttributes.MODE.resolveModelAttribute(context, model).asString();
+        String systemContentIndexingMode = ModelAttributes.SYSTEM_CONTENT_MODE.resolveModelAttribute(context, model).asString();
         int indexAsyncThreadPoolSize = ModelAttributes.ASYNC_THREAD_POOL_SIZE.resolveModelAttribute(context, model).asInt();
         int indexAsyncMaxQueueSize = ModelAttributes.ASYNC_MAX_QUEUE_SIZE.resolveModelAttribute(context, model).asInt();
 
@@ -169,6 +170,7 @@ public class AddRepository extends AbstractAddStepHandler {
         indexing.set(FieldName.INDEXING_BATCH_SIZE, indexBatchSize);
         indexing.set(FieldName.INDEXING_READER_STRATEGY, indexReaderStrategy);
         indexing.set(FieldName.INDEXING_MODE, indexMode);
+        indexing.set(FieldName.INDEXING_MODE_SYSTEM_CONTENT, systemContentIndexingMode);
         indexing.set(FieldName.INDEXING_ASYNC_THREAD_POOL_SIZE, indexAsyncThreadPoolSize);
         indexing.set(FieldName.INDEXING_ASYNC_MAX_QUEUE_SIZE, indexAsyncMaxQueueSize);
         for (String key : model.keys()) {

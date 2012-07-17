@@ -21,6 +21,7 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import static org.jboss.as.controller.parsing.ParseUtils.missingOneOf;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -300,6 +301,9 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                         break;
                     case MODE:
                         ModelAttributes.MODE.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case SYSTEM_CONTENT_MODE:
+                        ModelAttributes.SYSTEM_CONTENT_MODE.parseAndSetParameter(attrValue, repository, reader);
                         break;
                     case ASYNC_THREAD_POOL_SIZE:
                         ModelAttributes.ASYNC_THREAD_POOL_SIZE.parseAndSetParameter(attrValue, repository, reader);
