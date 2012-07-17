@@ -284,6 +284,7 @@ public class Sequencers implements ChangeSetListener {
     }
 
     protected final void shutdown() {
+        repository.sequencingQueue().shutdown();
         shutdown = true;
     }
 

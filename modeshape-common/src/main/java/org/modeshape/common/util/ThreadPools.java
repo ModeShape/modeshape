@@ -24,9 +24,10 @@
 package org.modeshape.common.util;
 
 import org.modeshape.common.annotation.ThreadSafe;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -42,22 +43,22 @@ public class ThreadPools implements ThreadPoolFactory {
     private final ConcurrentMap<String, ExecutorService> poolsByName = new ConcurrentHashMap<String, ExecutorService>();
 
     @Override
-    public Executor getThreadPool( String name ) {
+    public ExecutorService getThreadPool( String name ) {
         return getOrCreateNewPool(name, Executors.newFixedThreadPool(DEFAULT_MAX_THREAD_COUNT, new NamedThreadFactory(name)));
     }
 
-    @Override
-    public Executor getCachedTreadPool( String name ) {
-        return getOrCreateNewPool(name,  Executors.newCachedThreadPool(new NamedThreadFactory(name)));
+    public ExecutorService getCachedTreadPool( String name ) {
+        return getOrCreateNewPool(name, Executors.newCachedThreadPool(new NamedThreadFactory(name)));
     }
 
     @Override
-    public Executor getScheduledThreadPool( String name ) {
-        return getOrCreateNewPool(name, Executors.newScheduledThreadPool(DEFAULT_SCHEDULED_THREAD_COUNT, new NamedThreadFactory(name)));
+    public ExecutorService getScheduledThreadPool( String name ) {
+        return getOrCreateNewPool(name, Executors.newScheduledThreadPool(DEFAULT_SCHEDULED_THREAD_COUNT, new NamedThreadFactory(
+                name)));
     }
 
-    private Executor getOrCreateNewPool( String name,
-                                         ExecutorService executorService ) {
+    private ExecutorService getOrCreateNewPool( String name,
+                                                ExecutorService executorService ) {
         ExecutorService executor = poolsByName.get(name);
         if (executor == null) {
             executor = poolsByName.putIfAbsent(name, executorService);
@@ -71,11 +72,13 @@ public class ThreadPools implements ThreadPoolFactory {
         return executor;
     }
 
-    @Override
-    public void releaseThreadPool( Executor executor ) {
-        for (ExecutorService executorService : poolsByName.values()) {
+    public void releaseThreadPool( ExecutorService executor ) {
+        for (Iterator<Map.Entry<String,ExecutorService>> entryIterator = poolsByName.entrySet().iterator(); entryIterator.hasNext(); ) {
+            Map.Entry<String,ExecutorService> entry = entryIterator.next();
+            ExecutorService executorService = entry.getValue();
             if (executor.equals(executorService)) {
                 executorService.shutdown();
+                entryIterator.remove();
                 return;
             }
         }

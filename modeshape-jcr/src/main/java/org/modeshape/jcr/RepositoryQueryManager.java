@@ -91,6 +91,7 @@ class RepositoryQueryManager {
     }
 
     void shutdown() {
+        indexingExecutorService.shutdown();
         if (queryEngine != null) {
             try {
                 engineInitLock.lock();
@@ -105,6 +106,7 @@ class RepositoryQueryManager {
                 engineInitLock.unlock();
             }
         }
+
     }
 
     public CancellableQuery query( ExecutionContext context,

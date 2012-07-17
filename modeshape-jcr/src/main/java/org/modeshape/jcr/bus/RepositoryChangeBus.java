@@ -80,6 +80,7 @@ public final class RepositoryChangeBus implements ChangeBus {
 
     @Override
     public void shutdown() {
+        executor.shutdown();
         shutdown = true;
         workspaceListenerQueues.clear();
         try {
