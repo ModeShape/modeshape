@@ -80,9 +80,6 @@ import org.modeshape.jcr.value.binary.BinaryStoreException;
  */
 public class BasicLuceneSchema implements LuceneSchema {
 
-    private final Integer TRUE_VALUE = new Integer(1);
-    private final Integer FALSE_VALUE = new Integer(0);
-
     private final SearchFactoryImplementor searchFactory;
     private final Version version;
     private final NamespaceRegistry namespaces;
