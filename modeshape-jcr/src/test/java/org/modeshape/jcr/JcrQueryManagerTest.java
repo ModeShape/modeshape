@@ -94,7 +94,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     private static final String[] INDEXED_SYSTEM_NODES_PATHS = new String[] {"/jcr:system/jcr:nodeTypes",
         "/jcr:system/mode:namespaces"};
 
-    private static final boolean WRITE_INDEXES_TO_FILE = true;
+    private static final boolean WRITE_INDEXES_TO_FILE = false;
 
     /** The total number of nodes at or below '/jcr:system' */
     protected static final int TOTAL_SYSTEM_NODE_COUNT = 235;
@@ -1312,6 +1312,38 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1L);
+    }
+
+    @Test
+    @FixFor( "MODE-1547" )
+    @Ignore(" enable once FTS is configured ")
+    public void shouldBeAbleToExecuteFullTextSearchQueriesOnPropertiesWhichIncludeStopWords() throws Exception {
+        String propertyText = "the quick Brown fox jumps over to the dog in at the gate";
+        session.getRootNode().addNode("FTSNode").setProperty("FTSProp", propertyText);
+        session.save();
+
+        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains([nt:unstructured].*,'" + propertyText +"')");
+
+        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'" + propertyText +"')");
+        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'" + propertyText +"')");
+
+        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'" + propertyText.toUpperCase() +"')");
+        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'" + propertyText.toUpperCase() +"')");
+
+        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick Dog')");
+        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick Dog')");
+
+        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick jumps over gate')");
+        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick jumps over gate')");
+
+        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the gate')");
+        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the gate')");
+    }
+
+    private void executeJcrSQL2AndExpectOneResult( String sql ) throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, JcrRepository.QueryLanguage.JCR_SQL2);
+        QueryResult result = query.execute();
+        assertResults(query, result, 1);
     }
 
     // ----------------------------------------------------------------------------------------------------------------

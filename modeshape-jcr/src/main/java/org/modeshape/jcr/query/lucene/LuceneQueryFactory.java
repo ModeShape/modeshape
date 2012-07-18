@@ -23,9 +23,6 @@
  */
 package org.modeshape.jcr.query.lucene;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Iterator;
 import javax.jcr.query.qom.Constraint;
 import javax.jcr.query.qom.DynamicOperand;
 import javax.jcr.query.qom.Length;
@@ -80,12 +77,17 @@ import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.Iterator;
 
 /**
  * The factory that creates a Lucene {@link Query} object from a Query Object Model {@link Constraint} object.
  */
 @NotThreadSafe
 public abstract class LuceneQueryFactory {
+
+    private static final PhraseQuery EMPTY_PHRASE_QUERY = new PhraseQuery();
 
     protected final QueryContext context;
     protected final SearchFactory searchFactory;
@@ -412,9 +414,15 @@ public abstract class LuceneQueryFactory {
             BooleanQuery query = new BooleanQuery();
             for (FullTextSearch.Term nested : conjunction) {
                 if (nested instanceof NegationTerm) {
-                    query.add(createQuery(selectorName, fieldName, ((NegationTerm)nested).getNegatedTerm()), Occur.MUST_NOT);
+                    Query subQuery = createQuery(selectorName, fieldName, ((NegationTerm)nested).getNegatedTerm());
+                    if (!EMPTY_PHRASE_QUERY.equals(subQuery)) {
+                        query.add(subQuery, Occur.MUST_NOT);
+                    }
                 } else {
-                    query.add(createQuery(selectorName, fieldName, nested), Occur.MUST);
+                    Query subQuery = createQuery(selectorName, fieldName, nested);
+                    if (!EMPTY_PHRASE_QUERY.equals(subQuery)) {
+                        query.add(subQuery, Occur.MUST);
+                    }
                 }
             }
             return query;
@@ -424,9 +432,15 @@ public abstract class LuceneQueryFactory {
             BooleanQuery query = new BooleanQuery();
             for (FullTextSearch.Term nested : disjunction) {
                 if (nested instanceof NegationTerm) {
-                    query.add(createQuery(selectorName, fieldName, ((NegationTerm)nested).getNegatedTerm()), Occur.MUST_NOT);
+                    Query subQuery = createQuery(selectorName, fieldName, ((NegationTerm)nested).getNegatedTerm());
+                    if (!EMPTY_PHRASE_QUERY.equals(subQuery)) {
+                        query.add(subQuery, Occur.MUST_NOT);
+                    }
                 } else {
-                    query.add(createQuery(selectorName, fieldName, nested), Occur.SHOULD);
+                    Query subQuery = createQuery(selectorName, fieldName, nested);
+                    if (!EMPTY_PHRASE_QUERY.equals(subQuery)) {
+                        query.add(subQuery, Occur.SHOULD);
+                    }
                 }
             }
             return query;
@@ -453,8 +467,7 @@ public abstract class LuceneQueryFactory {
                     // // Replace any '-' between tokens, except when preceded or followed by a digit, '*', or '?' ...
                     expression = expression.replaceAll("((?<![\\d*?]))[-]((?![\\d*?]))", "$1 $2");
                     // Then use the parser ...
-                    Query query = parser.parse(expression);
-                    return query;
+                    return parser.parse(expression);
                 } catch (ParseException e) {
                     throw new IOException(e);
                 }

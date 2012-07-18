@@ -24,6 +24,7 @@
 
 package org.modeshape.extractor.tika;
 
+import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import static junit.framework.Assert.assertEquals;
@@ -32,6 +33,7 @@ import org.junit.Test;
 import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.query.JcrQuery;
+import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -48,39 +50,45 @@ public class TikaTextExtractorRepositoryTest extends SingleUseAbstractTest {
 
     @Override
     public void beforeEach() throws Exception {
-       startRepositoryWithConfiguration(getResource("repo-config.json"));
+        startRepositoryWithConfiguration(getResource("repo-config.json"));
     }
 
     @Test
     public void shouldExtractAndIndexContentFromPlainTextFile() throws Exception {
-        String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'The Quick')";
-        uploadFileAndCheckExtraction("text-file.txt", queryString);
+        uploadFile("text-file.txt");
+        assertExtractedTextHasBeenIndexed(
+                "select [jcr:path] from [nt:resource] as res where contains(res.*, 'The Quick Red Fox Jumps Over the Lazy Brown Dog')");
     }
 
     @Test
     public void shouldExtractAndIndexContentFromDocFile() throws Exception {
-        String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')";
-        uploadFileAndCheckExtraction("modeshape.doc", queryString);
+        uploadFile("modeshape.doc");
+        assertExtractedTextHasBeenIndexed(
+                "select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')");
     }
 
     @Test
     public void shouldExtractAndIndexContentFromPdfGSFile() throws Exception {
-        String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')";
-        uploadFileAndCheckExtraction("modeshape_gs.pdf", queryString);
+        uploadFile("modeshape_gs.pdf");
+        assertExtractedTextHasBeenIndexed(
+                "select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')");
     }
 
-    private void uploadFileAndCheckExtraction(String filepath, String validationQuery) throws Exception {
-        //this will create jcr:content of type nt:resource with the jcr:data property
-        jcrTools.uploadFile(session, "/" + filepath, getResource(filepath));
-        session.save();
-        //wait a bit to make sure the text extraction has happened
-        Thread.sleep(500);
+    private void assertExtractedTextHasBeenIndexed( String validationQuery ) throws RepositoryException {
         Query query = jcrSession().getWorkspace().getQueryManager().createQuery(validationQuery, JcrQuery.JCR_SQL2);
         QueryResult result = query.execute();
         assertEquals("Node with text content not found", 1, result.getNodes().getSize());
     }
 
-    private InputStream getResource(String path) {
+    private void uploadFile( String filepath ) throws RepositoryException, IOException, InterruptedException {
+        //this will create jcr:content of type nt:resource with the jcr:data property
+        jcrTools.uploadFile(session, "/" + filepath, getResource(filepath));
+        session.save();
+        //wait a bit to make sure the text extraction has happened
+        Thread.sleep(500);
+    }
+
+    private InputStream getResource( String path ) {
         return getClass().getClassLoader().getResourceAsStream(path);
     }
 }
