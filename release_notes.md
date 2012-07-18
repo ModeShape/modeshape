@@ -1,15 +1,15 @@
 # Release Notes for ModeShape &version;
 
-The ModeShape &version; release is the sixth release of our new architecture, and is suitable
+The ModeShape &version; release is the first beta release of our new architecture, and is suitable
 only for testing and previewing features. APIs and storage formats are still subject to change.
 
 ## What's new
 
-&version; includes quite a few important fixes related to persistence, transactions, sequencers, 
-and our AS7 kit, which now includes a second more involved sample "artifacts" repository in
-the sample configuration. We also have brought back the WebDAV service and our local and
-and remote JDBC drivers (both now support queries and database metadata). See the specific issues
-listed below for details.
+&version; is the first 3.x release that provides a feature complete implementation of the 
+JCR 2.0 (JSR-283) specification. This release adds support for full-text search, text extraction,
+and shareable nodes, plus it fixes quite a few bugs and issues. We've also improved the way
+binary values (and related information such as MIME types and extract text) are handled and
+stored within the BinaryStore.
 
 Overall, ModeShape 3.0 has changed a lot since ModeShape 2.8.x:
 
@@ -42,6 +42,7 @@ and create/update the derived content. Sequencers can also dynamically register 
 node types. Now it's easy to create custom sequencers.
 - Simplified API for implementing custom MIME type detectors. ModeShape still has built-in
 detectors that use the filename extensions and the binary content.
+- New and simpler API for implementing custom text extractors.
 - Improved storage of binary values of all sizes, with a separate facility for storing these on the file
 system. Storage of binary values in Infinispan and DBMSes will be added in upcoming releases.
 - API interfaces and methods that were deprecated in 2.7.0.Final (or later) have been removed.
@@ -52,24 +53,16 @@ while the server is running.
 - Local and remote JDBC drivers for issuing JCR-SQL2 queries and getting database metadata via the JDBC API
 - Many bug fixes and minor improvements
 
-There are also several major new features that are planned (but not yet available in this release):
-
-- Shareable nodes.
-- Map-reduce based operations for performing reporting and custom read-only operations in parallel
-against the entire content of a repository. ModeShape will use this to enable validation of
-repository content against the current set or a proposed set of node types, as well as
-optimizing the storage format/layout of each node.
-- Full-text search is currently disabled.
-
 ## Features
 
-Most of the JCR features previously supported in 2.x are working
-and ready for testing. If any issues are found, please log a bug report in our JIRA.
+Most of the JCR features previously supported in 2.x are working and ready for testing. 
+If any issues are found, please log a bug report in our JIRA.
 
 ### Accessing the Repository
 - RepositoryFactory access
 - JNDI registration of Repository
 - JAAS Authentication
+- Servlet Authentication
 - Custom Authentication
 
 ### Namespaces
@@ -96,6 +89,7 @@ and ready for testing. If any issues are found, please log a bug report in our J
 - JCR-SQL
 - JCR-SQL2
 - JCR-QOM
+- Full-Text Search
 
 ### Importing/Exporting Repository Content
 - System View Import/Export
@@ -120,16 +114,17 @@ and ready for testing. If any issues are found, please log a bug report in our J
 - Observation
 - Locking
 - Versioning
+- Shareable nodes
 
-### ModeShape Storage Options
-- In-memory
+### Content Storage Options
+- In-memory (local, replicated, and distributed)
 - BerkleyDB
 - Relational databases (via JDBC), including in-memory, file-based, or remote
 - File system
 - Cassandra
 - Cloud storage (e.g., Amazon's S3, Rackspace's Cloudfiles, or any other provider supported by JClouds)
 - Remote Infinispan
-- Separate large binary storage on file system
+- Separate large binary storage on file system (database and Infinispan coming soon)
 
 ### ModeShape Sequencers
 - Compact Node Definition (CND) Sequencer
@@ -144,10 +139,12 @@ and ready for testing. If any issues are found, please log a bug report in our J
 - XML Schema Document (XSD) Sequencer
 - Web Service Definition Lanaguage (WSDL) 1.1 Sequencer
 - Zip File Sequencer (also WARs, JARs, and EARs)
+- Teiid Relational Model Sequencer (coming soon)
+- Teiid VDB Sequencer (coming soon)
 
 ### ModeShape Deployment/Access Models
 - JNDI-Based Deployment
-- Deploy as a subsystem in JBoss AS7, with RHQ/JON monitoring
+- Deploy as a subsystem in JBoss AS7, with RHQ/JON monitoring, @Resource injection
 - Access through RESTful Service
 - Access through WebDAV Service
 - Local and remote JDBC drivers for accessing ModeShape content through JDBC API and JCR-SQL2 queries
@@ -159,27 +156,10 @@ and ready for testing. If any issues are found, please log a bug report in our J
 - Automatic MIME type detection of binary content
 - Asynchronous sequencing operations, within completion notified via events
 
-
-However, a number of features are **not** yet implemented. Please do not use these
-features or report problems; many will be implemented and ready for testing
-in the next release.
-
-### Query / Search
-- Full-Text Search
-
-### Other JCR Optional Features
-- Shareable Nodes
-
-### ModeShape Storage Options
-- Federate and access content in external systems (e.g., file system, SVN, JDBC, JCR, etc.)
-- Separate large binary storage in Infinispan and DBMS
-
-### ModeShape Sequencers
-- Teiid Relational Model Sequencer
-- Teiid VDB Sequencer
-
-### ModeShape Deployment/Access Models
-- Clustering and grids
+A few features not related to the JCR 2.0 API have been planned and are still not yet
+implemented. The most important one is enabling a repository to access the content in 
+external systems (e.g., file system, SVN, JDBC, JCR, etc.). This most likely will be pushed
+to 3.1 so that we can focus on releasing 3.0 with full support for JCR 2.0.
 
 
 ## Bug Fixes, Features, and other Issues
