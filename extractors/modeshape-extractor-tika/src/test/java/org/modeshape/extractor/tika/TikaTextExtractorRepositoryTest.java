@@ -24,26 +24,24 @@
 
 package org.modeshape.extractor.tika;
 
+import static junit.framework.Assert.assertEquals;
+import java.io.IOException;
+import java.io.InputStream;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
-import static junit.framework.Assert.assertEquals;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.query.JcrQuery;
-import java.io.IOException;
-import java.io.InputStream;
 
 /**
- * Integration test which configures a repository to use a Tika-based extractor, creates and saves a node which has a binary
- * value from a text file and using the query mechanism tests that the text is extracted from the binary value and stored
- * in the indexes.
- *
+ * Integration test which configures a repository to use a Tika-based extractor, creates and saves a node which has a binary value
+ * from a text file and using the query mechanism tests that the text is extracted from the binary value and stored in the
+ * indexes.
+ * 
  * @author Horia Chiorean
  */
-@Ignore("Enable this once MODE-1419 and MODE-1547 are fixed")
 public class TikaTextExtractorRepositoryTest extends SingleUseAbstractTest {
 
     private JcrTools jcrTools = new JcrTools();
@@ -56,22 +54,19 @@ public class TikaTextExtractorRepositoryTest extends SingleUseAbstractTest {
     @Test
     public void shouldExtractAndIndexContentFromPlainTextFile() throws Exception {
         uploadFile("text-file.txt");
-        assertExtractedTextHasBeenIndexed(
-                "select [jcr:path] from [nt:resource] as res where contains(res.*, 'The Quick Red Fox Jumps Over the Lazy Brown Dog')");
+        assertExtractedTextHasBeenIndexed("select [jcr:path] from [nt:resource] as res where contains(res.*, 'The Quick Red Fox Jumps Over the Lazy Brown Dog')");
     }
 
     @Test
     public void shouldExtractAndIndexContentFromDocFile() throws Exception {
         uploadFile("modeshape.doc");
-        assertExtractedTextHasBeenIndexed(
-                "select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')");
+        assertExtractedTextHasBeenIndexed("select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')");
     }
 
     @Test
     public void shouldExtractAndIndexContentFromPdfGSFile() throws Exception {
         uploadFile("modeshape_gs.pdf");
-        assertExtractedTextHasBeenIndexed(
-                "select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')");
+        assertExtractedTextHasBeenIndexed("select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')");
     }
 
     private void assertExtractedTextHasBeenIndexed( String validationQuery ) throws RepositoryException {
@@ -81,10 +76,10 @@ public class TikaTextExtractorRepositoryTest extends SingleUseAbstractTest {
     }
 
     private void uploadFile( String filepath ) throws RepositoryException, IOException, InterruptedException {
-        //this will create jcr:content of type nt:resource with the jcr:data property
+        // this will create jcr:content of type nt:resource with the jcr:data property
         jcrTools.uploadFile(session, "/" + filepath, getResource(filepath));
         session.save();
-        //wait a bit to make sure the text extraction has happened
+        // wait a bit to make sure the text extraction has happened
         Thread.sleep(500);
     }
 

@@ -305,7 +305,7 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         assertThat(repository.getDescriptor(Repository.OPTION_TRANSACTIONS_SUPPORTED), is("true"));
         assertThat(repository.getDescriptor(Repository.OPTION_VERSIONING_SUPPORTED), is("true"));
         assertThat(repository.getDescriptor(Repository.QUERY_XPATH_DOC_ORDER), is("false"));
-        assertThat(repository.getDescriptor(Repository.QUERY_XPATH_POS_INDEX), is("true"));
+        assertThat(repository.getDescriptor(Repository.QUERY_XPATH_POS_INDEX), is("false"));
         assertThat(repository.getDescriptor(Repository.REP_NAME_DESC), is("ModeShape"));
         assertThat(repository.getDescriptor(Repository.REP_VENDOR_DESC), is("JBoss, a division of Red Hat"));
         assertThat(repository.getDescriptor(Repository.REP_VENDOR_URL_DESC), is("http://www.modeshape.org"));

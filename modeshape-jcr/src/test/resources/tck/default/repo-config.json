@@ -9,6 +9,8 @@
         "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
     },
     "query" : {
+        "enabled" : true,
+        "enableFullTextSearch" : true,
         "indexing": {
             "systemContentMode" : "sync"
         }

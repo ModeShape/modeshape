@@ -24,6 +24,14 @@
 
 package org.modeshape.test.integration;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
+import java.io.File;
+import java.io.InputStream;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Resource;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
@@ -38,27 +46,18 @@ import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.observation.Event;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
-import java.io.File;
-import java.io.InputStream;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Arquillian integration tests that uses the predefined repository which contains sequencers, to test that sequencing is
- * successful. This test verifies that:
- *  - each of the built-in sequencers are configured in the repository
- *  - each sequencer, given an input file at the preconfigured path, sequences that file in the preconfigured output (see standalone-modeshape.xml)
- *
+ * successful. This test verifies that: - each of the built-in sequencers are configured in the repository - each sequencer, given
+ * an input file at the preconfigured path, sequences that file in the preconfigured output (see standalone-modeshape.xml)
+ * 
  * @author Horia Chiorean
  */
 
@@ -75,9 +74,9 @@ public class SequencersIntegrationTest {
     @Deployment
     public static WebArchive createDeployment() {
         return ShrinkWrap.create(WebArchive.class, "sequencers-test.war")
-                                          .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"))
-                                          .addAsResource(new File("src/test/resources/sequencer"))
-                                          .setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
+                         .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"))
+                         .addAsResource(new File("src/test/resources/sequencer"))
+                         .setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
     }
 
     @Test
@@ -102,7 +101,9 @@ public class SequencersIntegrationTest {
 
     @Test
     public void shouldSequenceClassFile() throws Exception {
-        uploadFileAndAssertSequenced("/class_file.clazz", "/derived/class", "org.modeshape.sequencer.classfile.ClassFileSequencer");
+        uploadFileAndAssertSequenced("/class_file.clazz",
+                                     "/derived/class",
+                                     "org.modeshape.sequencer.classfile.ClassFileSequencer");
     }
 
     @Test
@@ -116,18 +117,24 @@ public class SequencersIntegrationTest {
     }
 
     @Test
-    public void shouldSequenceDelimitedTextFile() throws Exception  {
-        uploadFileAndAssertSequenced("/delimited_file.csv", "/derived/text/delimited", "org.modeshape.sequencer.text.DelimitedTextSequencer");
+    public void shouldSequenceDelimitedTextFile() throws Exception {
+        uploadFileAndAssertSequenced("/delimited_file.csv",
+                                     "/derived/text/delimited",
+                                     "org.modeshape.sequencer.text.DelimitedTextSequencer");
     }
 
     @Test
-    public void shouldSequenceFixedTextFile() throws Exception  {
-        uploadFileAndAssertSequenced("/fixed_file.txt", "/derived/text/fixedWidth", "org.modeshape.sequencer.text.FixedWidthTextSequencer");
+    public void shouldSequenceFixedTextFile() throws Exception {
+        uploadFileAndAssertSequenced("/fixed_file.txt",
+                                     "/derived/text/fixedWidth",
+                                     "org.modeshape.sequencer.text.FixedWidthTextSequencer");
     }
 
     @Test
-    public void shouldSequenceMsOfficeFile() throws Exception  {
-        uploadFileAndAssertSequenced("/msoffice_file.xls", "/derived/msoffice", "org.modeshape.sequencer.msoffice.MSOfficeMetadataSequencer");
+    public void shouldSequenceMsOfficeFile() throws Exception {
+        uploadFileAndAssertSequenced("/msoffice_file.xls",
+                                     "/derived/msoffice",
+                                     "org.modeshape.sequencer.msoffice.MSOfficeMetadataSequencer");
     }
 
     @Test
@@ -145,8 +152,9 @@ public class SequencersIntegrationTest {
         uploadFileAndAssertSequenced("/xsd_file.xsd", "/derived/xsd", "org.modeshape.sequencer.xsd.XsdSequencer");
     }
 
-
-    private void uploadFileAndAssertSequenced( String fileName, String outputPathPrefix, String expectedSequencerClassConfigured ) throws Exception {
+    private void uploadFileAndAssertSequenced( String fileName,
+                                               String outputPathPrefix,
+                                               String expectedSequencerClassConfigured ) throws Exception {
         assertSequencerConfigured(expectedSequencerClassConfigured);
 
         Session session = repository.login("default");
@@ -161,7 +169,7 @@ public class SequencersIntegrationTest {
         String inputNodePath = "/files" + fileName;
         InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("sequencer" + fileName);
         assertNotNull(resourceAsStream);
-        //class files can't be named .class because the container tries to load them
+        // class files can't be named .class because the container tries to load them
         if (fileName.endsWith(".clazz")) {
             inputNodePath = "/files" + fileName.substring(0, fileName.indexOf(".clazz")) + ".class";
         }
@@ -169,7 +177,7 @@ public class SequencersIntegrationTest {
         session.save();
 
         try {
-            assertTrue(latch.await(5, TimeUnit.SECONDS));
+            assertTrue(latch.await(15, TimeUnit.SECONDS));
             String outputNodePath = listener.getSequencedNodePath();
             assertTrue(outputNodePath.startsWith(outputPathPrefix));
             Node outputNode = session.getNode(outputNodePath);
@@ -187,7 +195,7 @@ public class SequencersIntegrationTest {
             String className = component.getClassname();
             String classNameFromAlias = RepositoryConfiguration.getBuiltInSequencerClassName(className);
             sequencerConfigured = expectedSequencerClassConfigured.equalsIgnoreCase(className)
-                    || expectedSequencerClassConfigured.equalsIgnoreCase(classNameFromAlias);
+                                  || expectedSequencerClassConfigured.equalsIgnoreCase(classNameFromAlias);
             if (sequencerConfigured) {
                 break;
             }
@@ -196,27 +204,27 @@ public class SequencersIntegrationTest {
         if (!sequencerConfigured) {
             System.err.println("Sequencer configuration: " + sequencers);
         }
-        assertTrue("The expected sequencer:" + expectedSequencerClassConfigured + " is not configured in the repository", sequencerConfigured);
+        assertTrue("The expected sequencer:" + expectedSequencerClassConfigured + " is not configured in the repository",
+                   sequencerConfigured);
     }
 
     private void ensureTestRootNodeExists( Session session ) throws RepositoryException {
         try {
-           session.getRootNode().getNode(SEQUENCING_EXPRESSION_INPUT_ROOT);
+            session.getRootNode().getNode(SEQUENCING_EXPRESSION_INPUT_ROOT);
         } catch (PathNotFoundException e) {
             session.getRootNode().addNode(SEQUENCING_EXPRESSION_INPUT_ROOT).getPath();
             session.save();
         }
     }
 
-    private final class SequencingListener implements EventListener {
+    protected static final class SequencingListener implements EventListener {
         private final CountDownLatch latch;
         private volatile String sequencedNodePath;
 
-        private SequencingListener( CountDownLatch latch ) {
+        protected SequencingListener( CountDownLatch latch ) {
             this.latch = latch;
         }
 
-        @SuppressWarnings( "synthetic-access" )
         @Override
         public void onEvent( EventIterator events ) {
             try {

@@ -23,18 +23,6 @@
  */
 package org.modeshape.jcr.value.binary;
 
-import org.modeshape.common.SystemFailureException;
-import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.logging.Logger;
-import org.modeshape.common.util.IoUtil;
-import org.modeshape.common.util.SecureHash;
-import org.modeshape.common.util.SecureHash.Algorithm;
-import org.modeshape.common.util.SecureHash.HashingInputStream;
-import org.modeshape.jcr.JcrI18n;
-import org.modeshape.jcr.text.TextExtractorContext;
-import org.modeshape.jcr.value.BinaryKey;
-import org.modeshape.jcr.value.BinaryValue;
-import org.modeshape.jcr.value.binary.FileLocks.WrappedLock;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -49,6 +37,18 @@ import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import org.modeshape.common.SystemFailureException;
+import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.SecureHash;
+import org.modeshape.common.util.SecureHash.Algorithm;
+import org.modeshape.common.util.SecureHash.HashingInputStream;
+import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.text.TextExtractorContext;
+import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.BinaryValue;
+import org.modeshape.jcr.value.binary.FileLocks.WrappedLock;
 
 /**
  * A {@link BinaryStore} that stores files in a directory on the file system. The store does use file locks to prevent other
@@ -126,7 +126,8 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
                 value = saveTempFileToStore(tmpFile, key, numberOfBytes);
             }
 
-            if (extractors() != null) {
+            if (extractors() != null && !(value instanceof InMemoryBinaryValue)) {
+                // We never store the text for in-memory values ...
                 extractors().extract(this, value, new TextExtractorContext());
             }
             return value;
@@ -276,9 +277,9 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         }
         for (BinaryKey key : keys) {
             markAsUnused(key);
-            //mark the corresponding extracted text file as unused
+            // mark the corresponding extracted text file as unused
             markAsUnused(createKeyFromSourceWithSuffix(key, EXTRACTED_TEXT_SUFFIX));
-             //mark the corresponding stored mime-type file as unused
+            // mark the corresponding stored mime-type file as unused
             markAsUnused(createKeyFromSourceWithSuffix(key, MIME_TYPE_SUFFIX));
         }
     }
@@ -322,7 +323,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
 
     /**
      * Remove any empty directories above <code>removeable</code> but below <code>directory</code>
-     *
+     * 
      * @param directory the top-level directory to keep; may not be null and must be an ancestor of <code>removeable</code>
      * @param removeable the file or directory above which any empty directories can be removed; may not be null
      */
@@ -423,7 +424,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         try {
             is = getInputStream(key);
         } catch (BinaryStoreException e) {
-            //means the file wasn't found (isn't available yet) in the store
+            // means the file wasn't found (isn't available yet) in the store
             return null;
         }
 
@@ -446,8 +447,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         File tmpFile = null;
         try {
             tmpFile = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX + EXTRACTED_TEXT_SUFFIX);
-            IoUtil.write(string,
-                         new BufferedOutputStream(new FileOutputStream(tmpFile)));
+            IoUtil.write(string, new BufferedOutputStream(new FileOutputStream(tmpFile)));
             saveTempFileToStore(tmpFile, key, tmpFile.length());
         } catch (IOException e) {
             throw new BinaryStoreException(e);
@@ -471,7 +471,8 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         storeStringAtKey(mimeType, mimeTypeKey);
     }
 
-    private BinaryKey createKeyFromSourceWithSuffix( BinaryKey sourceKey, String suffix ) {
+    private BinaryKey createKeyFromSourceWithSuffix( BinaryKey sourceKey,
+                                                     String suffix ) {
         String extractTextKeyContent = sourceKey.toString() + suffix;
         return BinaryKey.keyFor(extractTextKeyContent.getBytes());
     }

@@ -132,7 +132,7 @@ public class XPathQueryResult extends JcrQueryResult {
                 return ((XPathQueryResultRowIterator)iterator).jcrPath(location.getPath());
             }
             if (JCR_SCORE_COLUMN_NAME.equals(columnName)) {
-                Float score = (Float)tuple[iterator.scoreIndex];
+                Double score = (Double)tuple[iterator.scoreIndex];
                 return ((XPathQueryResultRowIterator)iterator).jcrDouble(score);
             }
             return super.getValue(columnName);

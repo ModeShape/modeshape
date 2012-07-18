@@ -293,7 +293,7 @@ public class BasicTupleCollector extends TupleCollector {
         @Override
         protected Object computeValue( Path path,
                                        float score ) {
-            return new Float(score);
+            return new Double(score);
         }
     }
 

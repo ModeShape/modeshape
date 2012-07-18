@@ -180,9 +180,11 @@ import org.apache.jackrabbit.test.api.query.SaveTest;
 import org.apache.jackrabbit.test.api.query.SetLimitTest;
 import org.apache.jackrabbit.test.api.query.SetOffsetTest;
 import org.apache.jackrabbit.test.api.query.SimpleSelectionTest;
+import org.apache.jackrabbit.test.api.query.TextNodeTest;
 import org.apache.jackrabbit.test.api.query.XPathDocOrderTest;
 import org.apache.jackrabbit.test.api.query.XPathJcrPathTest;
 import org.apache.jackrabbit.test.api.query.XPathOrderByTest;
+import org.apache.jackrabbit.test.api.query.XPathPosIndexTest;
 import org.apache.jackrabbit.test.api.query.XPathQueryLevel2Test;
 import org.apache.jackrabbit.test.api.query.qom.AndConstraintTest;
 import org.apache.jackrabbit.test.api.query.qom.BindVariableValueTest;
@@ -474,7 +476,7 @@ public class JcrTckTest {
 
             addTestSuite(SQLJoinTest.class);
             addTestSuite(SQLJcrPathTest.class);
-            //TODO author=Horia Chiorean date=7/16/12 description=https://issues.apache.org/jira/browse/JCR-3376
+            // TODO author=Horia Chiorean date=7/16/12 description=https://issues.apache.org/jira/browse/JCR-3376
             addTestSuite(excludeTests(SQLPathTest.class, "testChildAxisRoot"));
             addTestSuite(XPathDocOrderTest.class);
             addTestSuite(XPathOrderByTest.class);
@@ -510,11 +512,10 @@ public class JcrTckTest {
             addTestSuite(SetLimitTest.class);
             addTestSuite(SetOffsetTest.class);
 
-            // TODO author=Horia Chiorean date=4/20/12 description=https://issues.jboss.org/browse/MODE-1419
-            addTestSuite(excludeTests(SQLQueryLevel2Test.class, "testScoreColumn", "testFullTextSearch", "testPathColumn"));
-            // addTestSuite(XPathPosIndexTest.class);
-            addTestSuite(excludeTests(XPathQueryLevel2Test.class, "testScoreColumn", "testFullTextSearch", "testPathColumn"));
-            // addTestSuite(TextNodeTest.class);
+            addTestSuite(SQLQueryLevel2Test.class);
+            addTestSuite(XPathPosIndexTest.class);
+            addTestSuite(XPathQueryLevel2Test.class);
+            addTestSuite(TextNodeTest.class);
         }
     }
 
