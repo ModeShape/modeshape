@@ -187,9 +187,9 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         try {
             PreparedStatement sql = connection.prepareStatement(
                     "insert into content_store(cid, usage_time, payload, usage) values(?,?,?,1)");
-            sql.setString(0, key.toString());
-            sql.setTimestamp(1, new java.sql.Timestamp(now()));
-            sql.setBinaryStream(2, stream);
+            sql.setString(1, key.toString());
+            sql.setTimestamp(2, new java.sql.Timestamp(now()));
+            sql.setBinaryStream(3, stream);
             return sql;
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
@@ -207,7 +207,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         try {
             PreparedStatement sql = connection.prepareStatement(
                     "select payload from content_store where cid =?");
-            sql.setString(0, key.toString());
+            sql.setString(1, key.toString());
             return sql;
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
@@ -225,8 +225,8 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         try {
             PreparedStatement sql = connection.prepareStatement(
                     "update content_store set usage=0, timestamp=? where cid =?");
-            sql.setTimestamp(0, new java.sql.Timestamp(now()));
-            sql.setString(1, key.toString());
+            sql.setTimestamp(1, new java.sql.Timestamp(now()));
+            sql.setString(2, key.toString());
             return sql;
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
@@ -244,7 +244,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         try {
             PreparedStatement sql = connection.prepareStatement(
                     "delete from content_store where usage_time < ?");
-            sql.setTimestamp(0, new java.sql.Timestamp(deadline));
+            sql.setTimestamp(1, new java.sql.Timestamp(deadline));
             return sql;
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
@@ -262,7 +262,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         try {
             PreparedStatement sql = connection.prepareStatement(
                     "select mime_type from content_store where cid = ?");
-            sql.setString(0, key.toString());
+            sql.setString(1, key.toString());
             return sql;
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
@@ -281,8 +281,8 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         try {
             PreparedStatement sql = connection.prepareStatement(
                     "update content_store set mime_type= ? where cid = ?");
-            sql.setString(0, mimeType);
-            sql.setString(1, key.toString());
+            sql.setString(1, mimeType);
+            sql.setString(2, key.toString());
             return sql;
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
@@ -300,7 +300,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         try {
             PreparedStatement sql = connection.prepareStatement(
                     "select ext_text from content_store where cid = ?");
-            sql.setString(0, key.toString());
+            sql.setString(1, key.toString());
             return sql;
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
@@ -383,7 +383,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
             if (!hasRaw) {
                 throw new BinaryStoreException("The content has been deleted");
             }
-            return rs.getBinaryStream(0);
+            return rs.getBinaryStream(1);
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
         }
@@ -402,7 +402,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
             if (!hasRaw) {
                 throw new BinaryStoreException("The content has been deleted");
             }
-            return rs.getString(0);
+            return rs.getString(1);
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
         }
