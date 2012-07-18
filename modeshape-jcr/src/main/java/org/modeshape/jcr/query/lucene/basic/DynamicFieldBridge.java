@@ -39,8 +39,8 @@ import org.modeshape.jcr.query.lucene.FieldUtil;
  */
 public class DynamicFieldBridge implements FieldBridge {
 
-    private static final Integer TRUE_INT = new Integer(1);
-    private static final Integer FALSE_INT = new Integer(0);
+    private static final Integer TRUE_INT = 1;
+    private static final Integer FALSE_INT = 0;
 
     /**
      * This class always always adds fields that are {@link Index#NOT_ANALYZED}, since we want to search based up the fields
@@ -52,7 +52,7 @@ public class DynamicFieldBridge implements FieldBridge {
                                                                                    1.0f);
 
     /**
-     * This class always always adds fields that are {@link Index#NOT_ANALYZED}, since we want to search based up the fields
+     * This class always adds fields that are {@link Index#NOT_ANALYZED}, since we want to search based up the fields
      * actual (non-analyzed) values. Only the fields used in full-text searching need to be analyzed, and those fields are handled
      * in other ways. All fields using this option are {@link org.apache.lucene.document.Field.Store#NO not stored}.
      */
@@ -82,7 +82,7 @@ public class DynamicFieldBridge implements FieldBridge {
                                    LuceneOptions analyzedOptions ) {
         boolean analyzed = field.isAnalyzed();
         boolean stored = analyzed ? field.isStored() : true; // if we don't store non-analyzed fields, we can't query them
-        LuceneOptions options = analyzed ? analyzedOptions : (stored ? STORED_NOT_ANALYZED : NOT_STORED_NOT_ANALYZED);
+        LuceneOptions options = analyzed ? analyzedOptions : STORED_NOT_ANALYZED;
         Object value = field.getValue();
         String name = field.getFieldName();
         // Add the field value for the property ...
@@ -108,17 +108,17 @@ public class DynamicFieldBridge implements FieldBridge {
         if (value instanceof Boolean) {
             // Boolean values are stored using integer values '1' and '0' ...
             Boolean bValue = (Boolean)value;
-            Integer iValue = bValue.booleanValue() ? TRUE_INT : FALSE_INT;
+            Integer iValue = bValue ? TRUE_INT : FALSE_INT;
             options.addNumericFieldToDocument(fieldName, iValue, document);
         } else if (value instanceof Integer) {
             // Integer values are stored as longs ...
-            options.addNumericFieldToDocument(fieldName, new Long((Integer)value), document);
+            options.addNumericFieldToDocument(fieldName, Long.valueOf((Integer)value), document);
         } else if (value instanceof Long) {
             // Long values are stored as longs ...
             options.addNumericFieldToDocument(fieldName, value, document);
         } else if (value instanceof Float) {
             // Float values are stored as doubles ...
-            options.addNumericFieldToDocument(fieldName, new Double((Float)value), document);
+            options.addNumericFieldToDocument(fieldName, Double.valueOf((Float)value), document);
         } else if (value instanceof Double) {
             // Double values are stored as doubles ...
             options.addNumericFieldToDocument(fieldName, value, document);
