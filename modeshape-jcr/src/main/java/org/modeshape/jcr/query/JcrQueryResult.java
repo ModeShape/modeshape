@@ -382,7 +382,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             return context.createValue(PropertyType.LONG, value);
         }
 
-        protected Value jcrDouble( Float score ) {
+        protected Value jcrDouble( Double score ) {
             return context.createValue(PropertyType.DOUBLE, score);
         }
     }
@@ -475,7 +475,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
                     return iterator.jcrLong(depth);
                 }
                 if (JCR_SCORE_COLUMN_NAME.equals(propertyName)) {
-                    Float score = iterator.scoreIndex == -1 ? 0.0f : (Float)tuple[iterator.scoreIndex];
+                    Double score = iterator.scoreIndex == -1 ? 0.0d : (Double)tuple[iterator.scoreIndex];
                     return iterator.jcrDouble(score);
                 }
             }
@@ -605,7 +605,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
                 }
                 if (JCR_SCORE_COLUMN_NAME.equals(propertyName)) {
                     int scoreIndex = iterator.columns.getFullTextSearchScoreIndexFor(columnName);
-                    Float score = scoreIndex == -1 ? 0.0f : (Float)tuple[scoreIndex];
+                    Double score = scoreIndex == -1 ? 0.0d : (Double)tuple[scoreIndex];
                     return iterator.jcrDouble(score);
                 }
             }

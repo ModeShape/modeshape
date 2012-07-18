@@ -291,6 +291,11 @@
                     "default" : true,
                     "description" : "A boolean flag that specifies whether this repository is expected to execute searches and queries. If client applications will never perform searches or queries, then maintaining the query indexes is an unnecessary overhead, and can be disabled. Note that this is merely a hint, and that searches and queries might still work when this is set to 'false'."
                 },
+                "enableFullTextSearch" : {
+                    "type" : "boolean",
+                    "default" : true,
+                    "description" : "A boolean flag that specifies whether this repository is expected to execute full-text searches. If client applications will never perform full-text searches, then maintaining the full-text indexes is an unnecessary overhead, and can be disabled. The default is 'false', meaning that full-text searching is disabled by default."
+                },
                 "rebuildUponStartup" : {
                     "type" : "string",
                     "enum" : ["if_missing","always"],

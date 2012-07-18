@@ -24,11 +24,13 @@
 
 package org.modeshape.test.integration;
 
+import static junit.framework.Assert.assertEquals;
+import java.io.File;
+import java.io.InputStream;
 import javax.annotation.Resource;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
-import static junit.framework.Assert.assertEquals;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ArchivePaths;
@@ -37,22 +39,18 @@ import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.query.JcrQuery;
-import java.io.File;
-import java.io.InputStream;
 
 /**
  * Arquillian test which checks that text-extraction works in an AS7 container.
- *
+ * 
  * @author Horia Chiorean
  */
-@Ignore("Enable this once MODE-1419 and MODE-1547 are fixed")
-@RunWith( Arquillian.class)
+@RunWith( Arquillian.class )
 public class TikaTextExtractorIntegrationTest {
 
     private JcrTools jcrTools = new JcrTools();
@@ -91,18 +89,19 @@ public class TikaTextExtractorIntegrationTest {
         uploadFileAndCheckExtraction("text-extractor/modeshape.doc", queryString);
     }
 
-    private void uploadFileAndCheckExtraction(String filepath, String validationQuery) throws Exception {
-        //this will create jcr:content of type nt:resource with the jcr:data property
+    private void uploadFileAndCheckExtraction( String filepath,
+                                               String validationQuery ) throws Exception {
+        // this will create jcr:content of type nt:resource with the jcr:data property
         jcrTools.uploadFile(session, "/" + filepath, getResource(filepath));
         session.save();
-        //wait a bit to make sure the text extraction has happened
+        // wait a bit to make sure the text extraction has happened
         Thread.sleep(500);
         Query query = session.getWorkspace().getQueryManager().createQuery(validationQuery, JcrQuery.JCR_SQL2);
         QueryResult result = query.execute();
         assertEquals("Node with text content not found", 1, result.getNodes().getSize());
     }
 
-    private InputStream getResource(String path) {
+    private InputStream getResource( String path ) {
         return getClass().getClassLoader().getResourceAsStream(path);
     }
 }

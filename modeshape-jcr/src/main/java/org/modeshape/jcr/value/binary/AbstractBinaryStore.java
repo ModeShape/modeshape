@@ -24,6 +24,8 @@
 package org.modeshape.jcr.value.binary;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
@@ -33,6 +35,7 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.TextExtractors;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.ExtensionBasedMimeTypeDetector;
+import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.value.BinaryValue;
 
 /**
@@ -40,6 +43,8 @@ import org.modeshape.jcr.value.BinaryValue;
  */
 @ThreadSafe
 public abstract class AbstractBinaryStore implements BinaryStore {
+
+    private static final long DEFAULT_LATCH_WAIT_IN_SECONDS = 10L;
 
     private static final long LARGE_SIZE = 1 << 25; // 32MB
     private static final long MEDIUM_FILE_SIZE = 1 << 20; // 1MB
@@ -89,9 +94,14 @@ public abstract class AbstractBinaryStore implements BinaryStore {
     }
 
     @Override
-    public String getText( BinaryValue binary ) throws BinaryStoreException {
+    public final String getText( BinaryValue binary ) throws BinaryStoreException {
         if (!extractors.extractionEnabled()) {
             return null;
+        }
+
+        if (binary instanceof InMemoryBinaryValue) {
+            // The extracted text will never be stored, so try directly using the text extractors ...
+            return extractors.extract((InMemoryBinaryValue)binary, new TextExtractorContext());
         }
 
         // try and locate an already extracted file from the store (assuming a worker has already finished)
@@ -101,8 +111,19 @@ public abstract class AbstractBinaryStore implements BinaryStore {
         }
         // there isn't any text available, so wait for a job to finish and then return the result
         try {
-            extractors.getWorkerLatch(binary.getKey()).await();
-            return getExtractedText(binary);
+            CountDownLatch latch = extractors.getWorkerLatch(binary.getKey(), false);
+            if (latch == null) {
+                // There is no latch, so just compute the text here ...
+                extractors.extract(this, binary, new TextExtractorContext());
+                // Find the latch again ...
+                latch = extractors.getWorkerLatch(binary.getKey(), false);
+            }
+            // There was a latch, so wait till the work is done ...
+            if (latch != null && latch.await(DEFAULT_LATCH_WAIT_IN_SECONDS, TimeUnit.SECONDS)) {
+                return getExtractedText(binary);
+            }
+            // Stopped waiting ...
+            return null;
         } catch (InterruptedException e) {
             throw new BinaryStoreException(e);
         }

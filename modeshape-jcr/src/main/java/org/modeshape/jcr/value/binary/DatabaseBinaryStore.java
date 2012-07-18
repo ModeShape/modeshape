@@ -26,8 +26,8 @@ package org.modeshape.jcr.value.binary;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.BinaryValue;
 
 /**
  * A {@link BinaryStore} implementation that uses a database for persisting binary values.
@@ -57,11 +57,6 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     }
 
     @Override
-    public String getText( BinaryValue binary ) throws BinaryStoreException {
-        throw new BinaryStoreException("Not implemented");
-    }
-
-    @Override
     public String getMimeType( BinaryValue binary,
                                String name ) {
         throw new UnsupportedOperationException("Not implemented");
@@ -74,7 +69,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     @Override
     public void storeExtractedText( BinaryValue source,
-                                       String extractedText ) throws BinaryStoreException {
+                                    String extractedText ) throws BinaryStoreException {
         throw new UnsupportedOperationException("Not implemented");
     }
 }

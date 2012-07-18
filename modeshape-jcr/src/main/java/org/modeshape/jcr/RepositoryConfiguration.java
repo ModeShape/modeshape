@@ -323,6 +323,7 @@ public class RepositoryConfiguration {
         public static final String CLASSNAME = "classname";
         public static final String DATA_SOURCE_JNDI_NAME = "dataSourceJndiName";
         public static final String DATA_CACHE_NAME = "dataCacheName";
+        public static final String FULL_TEXT_SEARCH_ENABLED = "enableFullTextSearch";
         public static final String METADATA_CACHE_NAME = "metadataCacheName";
         public static final String QUERY = "query";
         public static final String QUERY_ENABLED = "enabled";
@@ -443,6 +444,7 @@ public class RepositoryConfiguration {
         public static final String ANONYMOUS_USERNAME = "<anonymous>";
 
         public static final boolean QUERY_ENABLED = true;
+        public static final boolean FULL_TEXT_SEARCH_ENABLED = true;
 
         public static final boolean MONITORING_ENABLED = true;
 
@@ -1235,13 +1237,25 @@ public class RepositoryConfiguration {
         }
 
         /**
-         * Determine whether queries are enabled. The default is to enable queries, but this can be used to turn off support for
-         * queries and improve performance.
+         * Determine whether queries and searches are enabled. The default is to enable queries, but this can be used to turn off
+         * support for queries and improve performance.
          * 
          * @return true if queries are enabled, or false if they are disabled
+         * @see #fullTextSearchEnabled()
          */
-        public boolean enabled() {
+        public boolean queriesEnabled() {
             return query.getBoolean(FieldName.QUERY_ENABLED, Default.QUERY_ENABLED);
+        }
+
+        /**
+         * Get whether full-text searching is enabled for this repository. Note that full-text search requires that
+         * {@link #queriesEnabled() queries are enabled}, so this method returns false if queries are disabled.
+         * 
+         * @return true if full-text searching is enabled, or false otherwise
+         * @see #queriesEnabled()
+         */
+        public boolean fullTextSearchEnabled() {
+            return queriesEnabled() && query.getBoolean(FieldName.FULL_TEXT_SEARCH_ENABLED, Default.FULL_TEXT_SEARCH_ENABLED);
         }
 
         /**
@@ -1347,7 +1361,8 @@ public class RepositoryConfiguration {
             setDefProp(props, FieldName.INDEXING_INDEX_FORMAT, Default.INDEXING_INDEX_FORMAT);
             setDefProp(props, FieldName.INDEXING_READER_STRATEGY, Default.INDEXING_READER_STRATEGY.toString().toLowerCase());
             setDefProp(props, FieldName.INDEXING_MODE, Default.INDEXING_MODE.toString().toLowerCase());
-            setDefProp(props, FieldName.INDEXING_MODE_SYSTEM_CONTENT, Default.INDEXING_MODE_SYSTEM_CONTENT.toString().toLowerCase());
+            setDefProp(props, FieldName.INDEXING_MODE_SYSTEM_CONTENT, Default.INDEXING_MODE_SYSTEM_CONTENT.toString()
+                                                                                                          .toLowerCase());
             setDefProp(props, FieldName.INDEXING_ASYNC_THREAD_POOL_SIZE, Default.INDEXING_ASYNC_THREAD_POOL_SIZE);
             setDefProp(props, FieldName.INDEXING_ASYNC_MAX_QUEUE_SIZE, Default.INDEXING_ASYNC_MAX_QUEUE_SIZE);
             return props;
@@ -1399,7 +1414,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the name of the thread pool that should be used for sequencing work.
-         *
+         * 
          * @return the thread pool name; never null
          */
         public String getThreadPoolName() {
@@ -1408,7 +1423,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the ordered list of text extractors. All text extractors are configured with this list.
-         *
+         * 
          * @return the immutable list of text extractors; never null but possibly empty
          */
         public List<Component> getTextExtractors() {

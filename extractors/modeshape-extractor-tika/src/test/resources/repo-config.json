@@ -20,6 +20,7 @@
     },
     "query" : {
         "enabled" : true,
+        "enableFullTextSearch" : true,
         "rebuildUponStartup" : "if_missing",
         "indexStorage" : {
             "type" : "ram"

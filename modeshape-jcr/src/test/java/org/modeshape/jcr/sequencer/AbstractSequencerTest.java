@@ -68,7 +68,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
 
-    private static final int DEFAULT_WAIT_TIME_SECONDS = 8;
+    private static final int DEFAULT_WAIT_TIME_SECONDS = 15;
 
     protected Node rootNode;
 

@@ -40,6 +40,7 @@ import org.modeshape.jcr.text.TextExtractorOutput;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.BinaryStore;
+import org.modeshape.jcr.value.binary.InMemoryBinaryValue;
 
 /**
  * Facility for managing {@link TextExtractor} instances and submitting text extraction work
@@ -52,12 +53,13 @@ public final class TextExtractors {
     private final List<TextExtractor> extractors = new ArrayList<TextExtractor>();
     private final Executor extractingQueue;
     private final ConcurrentHashMap<BinaryKey, CountDownLatch> workerLatches;
+    private final boolean enabledFullTextSearch;
 
     public TextExtractors( JcrRepository.RunningState repository,
                            RepositoryConfiguration.TextExtracting extracting ) {
         this.extractingQueue = Executors.newCachedThreadPool(new NamedThreadFactory(extracting.getThreadPoolName()));
         this.workerLatches = new ConcurrentHashMap<BinaryKey, CountDownLatch>();
-
+        this.enabledFullTextSearch = repository.isFullTextSearchEnabled();
         initExtractors(repository, extracting);
     }
 
@@ -78,9 +80,29 @@ public final class TextExtractors {
     }
 
     public boolean extractionEnabled() {
-        // TODO author=Horia Chiorean date=6/29/12 description=Update this once MODE-1419 is complete
-        boolean ftsEnabled = true;
-        return ftsEnabled && !extractors.isEmpty();
+        return enabledFullTextSearch && !extractors.isEmpty();
+    }
+
+    public String extract( InMemoryBinaryValue inMemoryBinaryValue,
+                           TextExtractor.Context context ) {
+        try {
+            String mimeType = inMemoryBinaryValue.getMimeType();
+            TextExtractorOutput output = new TextExtractorOutput();
+            // Run through the extractors and have them extract the text - the first one which accepts the mime-type will win
+            for (TextExtractor extractor : extractors) {
+                if (!extractor.supportsMimeType(mimeType)) {
+                    continue;
+                }
+                extractor.extractFrom(inMemoryBinaryValue, output, context);
+                break;
+            }
+
+            String extractedText = output.getText();
+            return extractedText;
+        } catch (Exception e) {
+            LOGGER.error(JcrI18n.errorExtractingTextFromBinary, inMemoryBinaryValue.getHexHash(), e.getLocalizedMessage());
+        }
+        return null;
     }
 
     public void extract( BinaryStore store,
@@ -89,15 +111,23 @@ public final class TextExtractors {
         if (!extractionEnabled()) {
             return;
         }
+        if (binaryValue instanceof InMemoryBinaryValue) {
+            // We never extract the text for binary values this way ...
+            return;
+        }
         CheckArg.isNotNull(binaryValue, "binaryValue");
-        CountDownLatch latch = getWorkerLatch(binaryValue.getKey());
+        CountDownLatch latch = getWorkerLatch(binaryValue.getKey(), true);
         extractingQueue.execute(new Worker(store, binaryValue, context, latch));
     }
 
-    public CountDownLatch getWorkerLatch( BinaryKey binaryKey ) {
-        CountDownLatch latch = new CountDownLatch(1);
-        CountDownLatch existingLatch = workerLatches.putIfAbsent(binaryKey, latch);
-        return existingLatch != null ? existingLatch : latch;
+    public CountDownLatch getWorkerLatch( BinaryKey binaryKey,
+                                          boolean createIfMissing ) {
+        if (createIfMissing) {
+            CountDownLatch latch = new CountDownLatch(1);
+            CountDownLatch existingLatch = workerLatches.putIfAbsent(binaryKey, latch);
+            return existingLatch != null ? existingLatch : latch;
+        }
+        return workerLatches.get(binaryKey);
     }
 
     /**
@@ -123,7 +153,6 @@ public final class TextExtractors {
         @SuppressWarnings( "synthetic-access" )
         @Override
         public void run() {
-            String binaryName = null;
             try {
                 // only extract text if there isn't a stored value for the binary key (note that any changes in the binary will
                 // produce a different key)
@@ -147,7 +176,7 @@ public final class TextExtractors {
                     store.storeExtractedText(binaryValue, extractedText);
                 }
             } catch (Exception e) {
-                LOGGER.error(JcrI18n.errorExtractingTextFromBinary, binaryName, e.getLocalizedMessage());
+                LOGGER.error(JcrI18n.errorExtractingTextFromBinary, binaryValue.getHexHash(), e.getLocalizedMessage());
             } finally {
                 // decrement the latch regardless of success/failure to avoid blocking, as extraction is not retried
                 latch.countDown();

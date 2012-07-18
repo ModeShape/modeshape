@@ -84,17 +84,19 @@ public class LuceneQueryEngine extends QueryEngine {
      * @param optimizer the optimizer that should be used
      * @param searchFactory the search factory for accessing the indexes
      * @param version the Lucene version used by the indexes
+     * @param enableFullTextSearch true if full-text searching is enabled, or false otherwise
      */
     public LuceneQueryEngine( ExecutionContext context,
                               String repositoryName,
                               Planner planner,
                               Optimizer optimizer,
                               SearchFactoryImplementor searchFactory,
-                              Version version ) {
+                              Version version,
+                              boolean enableFullTextSearch ) {
         super(planner, optimizer, new LuceneQueryProcessor(repositoryName, searchFactory));
         this.repositoryContext = context;
         // this.repositoryName = repositoryName;
-        this.schema = new BasicLuceneSchema(this.repositoryContext, searchFactory, version);
+        this.schema = new BasicLuceneSchema(this.repositoryContext, searchFactory, version, enableFullTextSearch);
         ((LuceneQueryProcessor)this.processor).initialize(schema);
     }
 

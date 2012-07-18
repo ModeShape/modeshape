@@ -64,6 +64,7 @@ import org.modeshape.jcr.query.xpath.XPath.OrderBySpec;
 import org.modeshape.jcr.query.xpath.XPath.ParenthesizedExpression;
 import org.modeshape.jcr.query.xpath.XPath.PathExpression;
 import org.modeshape.jcr.query.xpath.XPath.StepExpression;
+import org.modeshape.jcr.query.xpath.XPath.TextTest;
 import org.modeshape.jcr.query.xpath.XPath.Union;
 import org.modeshape.jcr.value.PropertyType;
 
@@ -181,6 +182,17 @@ public class XPathToQueryTranslator {
                 } else if (nodeTest instanceof AttributeNameTest) {
                     AttributeNameTest attributeName = (AttributeNameTest)nodeTest;
                     builder.select(nameFrom(attributeName.getNameTest()));
+                } else if (nodeTest instanceof TextTest) {
+                    NameTest nameTest = new NameTest("jcr", "xmltext");
+                    List<Component> predicates = axis.getPredicates();
+                    if (predicates == null || predicates.isEmpty() || appliesToPathConstraint(predicates)) {
+                        AxisStep textStep = new AxisStep(nameTest, axis.getPredicates());
+                        path.add(textStep);
+                    } else {
+                        tableName = translateSource(tableName, path, where);
+                        translatePredicates(predicates, tableName, where);
+                        path.clear();
+                    }
                 } else {
                     throw new InvalidQueryException(query, "The '" + step + "' step is not supported");
                 }

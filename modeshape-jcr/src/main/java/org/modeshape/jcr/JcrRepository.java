@@ -23,6 +23,33 @@
  */
 package org.modeshape.jcr;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.security.AccessControlContext;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
@@ -110,33 +137,6 @@ import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.InfinispanBinaryStore;
 import org.modeshape.jcr.value.binary.UnusedBinaryChangeSetListener;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.security.AccessControlContext;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * 
@@ -745,7 +745,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         descriptors.put(Repository.OPTION_TRANSACTIONS_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.OPTION_VERSIONING_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.QUERY_XPATH_DOC_ORDER, valueFor(factories, false)); // see MODE-613
-        descriptors.put(Repository.QUERY_XPATH_POS_INDEX, valueFor(factories, true));
+        descriptors.put(Repository.QUERY_XPATH_POS_INDEX, valueFor(factories, false)); // no support doc order searching in xpath
 
         descriptors.put(Repository.WRITE_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.IDENTIFIER_STABILITY, valueFor(factories, Repository.IDENTIFIER_STABILITY_INDEFINITE_DURATION));
@@ -1122,18 +1122,18 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                                      new FullTextSearchParser(), new JcrSqlQueryParser(), new JcrQomQueryParser());
             }
             QuerySystem query = config.getQuery();
-            if (query.enabled()) {
+            if (query.queriesEnabled()) {
                 // The query system is enabled ...
                 Properties backendProps = query.getIndexingBackendProperties();
                 Properties indexingProps = query.getIndexingProperties();
                 Properties indexStorageProps = query.getIndexStorageProperties();
                 this.repositoryQueryManager = new RepositoryQueryManager(this, config.getQuery(), indexingExecutor, backendProps,
                                                                          indexingProps, indexStorageProps);
-                boolean shouldIndexSystemContent = !indexingProps.getProperty(FieldName.INDEXING_MODE_SYSTEM_CONTENT).equalsIgnoreCase(
-                        RepositoryConfiguration.IndexingMode.DISABLED.toString());
+                boolean shouldIndexSystemContent = !indexingProps.getProperty(FieldName.INDEXING_MODE_SYSTEM_CONTENT)
+                                                                 .equalsIgnoreCase(RepositoryConfiguration.IndexingMode.DISABLED.toString());
                 if (this.cache.isSystemContentInitialized() && shouldIndexSystemContent) {
-                    boolean async = indexingProps.getProperty(FieldName.INDEXING_MODE_SYSTEM_CONTENT).equalsIgnoreCase(
-                            RepositoryConfiguration.IndexingMode.ASYNC.toString());
+                    boolean async = indexingProps.getProperty(FieldName.INDEXING_MODE_SYSTEM_CONTENT)
+                                                 .equalsIgnoreCase(RepositoryConfiguration.IndexingMode.ASYNC.toString());
                     this.repositoryQueryManager.reindexSystemContent(async);
                 }
             } else {
@@ -1286,6 +1286,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         protected final String repositoryKey() {
             return cache.getKey();
+        }
+
+        protected final boolean isFullTextSearchEnabled() {
+            return config.getQuery().fullTextSearchEnabled();
         }
 
         private AuthenticationProviders createAuthenticationProviders( AtomicBoolean useAnonymouOnFailedLogins ) {

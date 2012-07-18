@@ -1316,28 +1316,38 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     @Test
     @FixFor( "MODE-1547" )
-    @Ignore(" enable once FTS is configured ")
     public void shouldBeAbleToExecuteFullTextSearchQueriesOnPropertiesWhichIncludeStopWords() throws Exception {
         String propertyText = "the quick Brown fox jumps over to the dog in at the gate";
-        session.getRootNode().addNode("FTSNode").setProperty("FTSProp", propertyText);
-        session.save();
+        Node ftsNode = session.getRootNode().addNode("FTSNode").setProperty("FTSProp", propertyText).getParent();
+        try {
+            session.save();
 
-        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains([nt:unstructured].*,'" + propertyText +"')");
+            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains([nt:unstructured].*,'"
+                                             + propertyText + "')");
 
-        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'" + propertyText +"')");
-        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'" + propertyText +"')");
+            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'"
+                                             + propertyText + "')");
+            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'" + propertyText
+                                             + "')");
 
-        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'" + propertyText.toUpperCase() +"')");
-        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'" + propertyText.toUpperCase() +"')");
+            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'"
+                                             + propertyText.toUpperCase() + "')");
+            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'"
+                                             + propertyText.toUpperCase() + "')");
 
-        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick Dog')");
-        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick Dog')");
+            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick Dog')");
+            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick Dog')");
 
-        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick jumps over gate')");
-        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick jumps over gate')");
+            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick jumps over gate')");
+            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick jumps over gate')");
 
-        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the gate')");
-        executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the gate')");
+            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the gate')");
+            executeJcrSQL2AndExpectOneResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the gate')");
+        } finally {
+            // Try to remove the node (which messes up the expected results from subsequent tests) ...
+            ftsNode.remove();
+            session.save();
+        }
     }
 
     private void executeJcrSQL2AndExpectOneResult( String sql ) throws RepositoryException {

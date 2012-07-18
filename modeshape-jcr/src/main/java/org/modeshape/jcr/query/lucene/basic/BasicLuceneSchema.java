@@ -87,20 +87,24 @@ public class BasicLuceneSchema implements LuceneSchema {
     private final Logger logger;
     private final BinaryStore binaryStore;
     private final ValueFactory<String> stringFactory;
+    private final boolean enableFullTextSearch;
 
     /**
      * @param context the execution context for the repository
      * @param searchFactory the search factory for accessing the indexes
      * @param version the Lucene version
+     * @param enableFullTextSearch true if full-text searching is enabled, or false otherwise
      */
     public BasicLuceneSchema( ExecutionContext context,
                               SearchFactoryImplementor searchFactory,
-                              Version version ) {
+                              Version version,
+                              boolean enableFullTextSearch ) {
         this.searchFactory = searchFactory;
         this.context = context;
         this.stringFactory = this.context.getValueFactories().getStringFactory();
         this.binaryStore = this.context.getBinaryStore();
         this.version = version;
+        this.enableFullTextSearch = enableFullTextSearch;
         // TODO: This should use the durable namespaces ...
         this.namespaces = context.getNamespaceRegistry();
         this.logger = Logger.getLogger(getClass());
@@ -166,8 +170,11 @@ public class BasicLuceneSchema implements LuceneSchema {
         IndexRules rules = schemata.getIndexRules();
 
         // Start accumulating the full-text search value for the whole node ...
-        StringBuilder fullText = new StringBuilder();
-        fullText.append(localName);
+        StringBuilder fullText = null;
+        if (enableFullTextSearch) {
+            fullText = new StringBuilder();
+            fullText.append(localName);
+        }
 
         // Process the properties ...
         DynamicField dynamicField = null;
@@ -179,10 +186,8 @@ public class BasicLuceneSchema implements LuceneSchema {
             IndexRules.Rule rule = rules.getRule(propertyName);
             if (rule.isSkipped()) continue;
             Field.Store store = rule.getStoreOption();
-            boolean fullTextSearchable = rule.isFullTextSearchable();
+            boolean fullTextSearchable = enableFullTextSearch && rule.isFullTextSearchable();
 
-            // TODO: Query - fulltext search (remove next line)
-            fullTextSearchable = false;
             if (property.isSingle()) {
                 // Create a field with the value ...
                 Object value = property.getFirstValue();
@@ -196,9 +201,11 @@ public class BasicLuceneSchema implements LuceneSchema {
             }
         }
 
-        // TODO: Query - fulltext search (add back in)
         // Add the full-text searchable text for the whole node ...
-        // dynamicField = new DynamicField(dynamicField, NodeInfoIndex.FieldName.FULL_TEXT, fullText.toString(), true, false);
+        if (fullText != null) {
+            assert enableFullTextSearch;
+            dynamicField = new DynamicField(dynamicField, NodeInfoIndex.FieldName.FULL_TEXT, fullText.toString(), true, false);
+        }
 
         // Return the node information object ...
         return new NodeInfo(id, workspace, pathStr, name, localName, snsIndex, depth, dynamicField);
@@ -355,6 +362,15 @@ public class BasicLuceneSchema implements LuceneSchema {
 
             // Add a field with the length of the value (yes, we have to compute this) ...
             previous = new DynamicField(previous, FieldName.LENGTH_PREFIX + propertyName, (long)str.length(), false, true);
+
+            if (fullTextSearchable) {
+                // Also add a field with the string value and DO analyze it so we can find it with full-text search ...
+                String ftsPropName = FieldName.FULL_TEXT_PREFIX + propertyName;
+                previous = new DynamicField(previous, ftsPropName, str, true, false); // never store
+
+                // Add add the string to the node's full-text value ...
+                fullText.append(' ').append(str);
+            }
         }
         return previous;
     }
