@@ -24,10 +24,16 @@
 package org.modeshape.jcr.value.binary;
 
 import java.io.InputStream;
+import java.sql.*;
+import java.util.Date;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.BinaryValue;
 
 /**
  * A {@link BinaryStore} implementation that uses a database for persisting binary values.
@@ -35,46 +41,194 @@ import org.modeshape.jcr.value.BinaryKey;
 @ThreadSafe
 public class DatabaseBinaryStore extends AbstractBinaryStore {
 
+    //JDBC Datasource
+    private Database database;
+
+    //JDBC params
+    private String driverClass;
+    private String connectionURL;
+    private String username;
+    private String password;
+    private String datasourceJNDILocation;
+
+    /**
+     * Create new store.
+     *
+     * @param driverClass JDBC driver class name
+     * @param connectionURL database location
+     * @param username database user name
+     * @param password database password
+     */
+    public DatabaseBinaryStore(String driverClass, String connectionURL, 
+            String username, String password, String datasourceJNDILocation) {
+        this.driverClass = driverClass;
+        this.connectionURL = connectionURL;
+        this.username = username;
+        this.password = password;
+        this.datasourceJNDILocation = datasourceJNDILocation;
+    }
+
+
     @Override
     public BinaryValue storeValue( InputStream stream ) throws BinaryStoreException {
-        throw new BinaryStoreException("Not implemented");
+        BinaryKey key = new BinaryKey(UUID.randomUUID().toString());
+
+        PreparedStatement sql = database.insertContentSQL(key, stream);
+        Database.execute(sql);
+
+        return new StoredBinaryValue(this, key, getContentLength(getInputStream(key)));
     }
 
     @Override
     public InputStream getInputStream( BinaryKey key ) throws BinaryStoreException {
-        throw new BinaryStoreException("Not implemented");
+        PreparedStatement sql = database.retrieveContentSQL(key);
+        return Database.asStream(Database.executeQuery(sql));
     }
 
     @Override
     public void markAsUnused( Iterable<BinaryKey> keys ) throws BinaryStoreException {
-        throw new BinaryStoreException("Not implemented");
+        for (BinaryKey key : keys) {
+            PreparedStatement sql = database.markUnusedSQL(key);
+            Database.executeUpdate(sql);
+        }
     }
 
     @Override
-    public void removeValuesUnusedLongerThan( long minimumAge,
-                                              TimeUnit unit ) throws BinaryStoreException {
-        throw new BinaryStoreException("Not implemented");
+    public void removeValuesUnusedLongerThan(long minimumAge,  TimeUnit unit) throws BinaryStoreException {
+        //compute usage deadline (in past)
+        long deadline = now() - unit.toMillis(minimumAge);
+        PreparedStatement sql = database.removeExpiredContentSQL(deadline);
+        Database.execute(sql);
     }
 
     @Override
-    public String getText( BinaryValue binary ) throws BinaryStoreException {
-        throw new BinaryStoreException("Not implemented");
+    protected String getStoredMimeType( BinaryValue source ) throws BinaryStoreException {
+        PreparedStatement sql = database.retrieveMimeTypeSQL(source.getKey());
+        return Database.asString(Database.executeQuery(sql));
     }
 
     @Override
-    public String getMimeType( BinaryValue binary,
-                               String name ) {
-        throw new UnsupportedOperationException("Not implemented");
+    protected void storeMimeType(BinaryValue source, String mimeType) throws BinaryStoreException {
+        PreparedStatement sql = database.updateMimeTypeSQL(source.getKey(), mimeType);
+        Database.executeUpdate(sql);
     }
 
     @Override
     public String getExtractedText( BinaryValue source ) throws BinaryStoreException {
-        throw new UnsupportedOperationException("Not implemented");
+        PreparedStatement sql = database.retrieveExtTextSQL(source.getKey());
+        return Database.asString(Database.executeQuery(sql));
     }
 
     @Override
-    public void storeExtractedText( BinaryValue source,
-                                       String extractedText ) throws BinaryStoreException {
-        throw new UnsupportedOperationException("Not implemented");
+    public void storeExtractedText( BinaryValue source, String extractedText ) throws BinaryStoreException {
+        PreparedStatement sql = database.updateExtTextSQL(source.getKey(), extractedText);
+        Database.executeUpdate(sql);
     }
+
+    @Override
+    public void start() {
+        super.start();
+        try {
+            Connection connection = datasourceJNDILocation != null ?
+                DatabaseBinaryStore.connect(datasourceJNDILocation) :
+                DatabaseBinaryStore.connect(driverClass, connectionURL, username, password);
+
+            DatabaseMetaData metaData = connection.getMetaData();
+            //here we are making decision which database we will create
+            database = new Database(connection);
+
+            if (!database.tableExists()) {
+                database.createTable();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        super.shutdown();
+    }
+
+    /**
+     * Current time.
+     *
+     * @return current time in milliseconds
+     */
+    private long now() {
+        return new Date().getTime();
+    }
+
+    /**
+     * Determine length of the content.
+     * 
+     * @param stream content 
+     * @return the length of the content in bytes.
+     * @throws BinaryStoreException 
+     */
+    private long getContentLength(InputStream stream) throws BinaryStoreException {
+        try {
+            int b = 0; int count = 0;
+            while (b != -1) {
+                b = stream.read();
+                count++;
+            }
+            return count;
+        } catch (Exception e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    /**
+     * Creates connection with a database using data source registered via JNDI.
+     *
+     * @param jndiName the JNDI location of the data source
+     * @return connection to database
+     * @throws BinaryStoreException
+     */
+    private static Connection connect(String jndiName) throws BinaryStoreException {
+        DataSource dataSource = null;
+        try {
+            InitialContext context = new InitialContext();
+            dataSource = (DataSource) context.lookup(jndiName);
+        } catch (NamingException e) {
+            throw new BinaryStoreException(e);
+        }
+
+        if (dataSource == null) {
+            throw new BinaryStoreException("Datasource is not bound: " + jndiName);
+        }
+
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    /**
+     * Creates connection to a database using driver, location and credentials.
+     *
+     * @param driverClass driver's class name
+     * @param connectionURL database location
+     * @param username database user name
+     * @param password user's password.
+     * @return connection to a database.
+     * @throws BinaryStoreException
+     */
+    private static Connection connect(String driverClass, String connectionURL,
+            String username, String password) throws BinaryStoreException {
+        try {
+            Class.forName(driverClass);
+        } catch (Exception e) {
+            throw new BinaryStoreException(e);
+        }
+
+        try {
+            return DriverManager.getConnection(connectionURL, username, password);
+        } catch (Exception e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
 }
