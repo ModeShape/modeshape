@@ -195,8 +195,8 @@ public class Database {
         try {
             PreparedStatement sql = connection.prepareStatement(
                     "update content_store set ext_text= ? where cid = ?");
-            sql.setString(0, text);
-            sql.setString(1, key.toString());
+            sql.setString(1, text);
+            sql.setString(2, key.toString());
             return sql;
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
@@ -291,18 +291,11 @@ public class Database {
      * @throws BinaryStoreException
      */
     public boolean tableExists() throws BinaryStoreException {
-        PreparedStatement sql = null;
-
         try {
-            sql = connection.prepareStatement("select * from content_store");
-        } catch (SQLException e) {
-            throw new BinaryStoreException(e);
-        }
-
-        try {
+            PreparedStatement sql = connection.prepareStatement("select * from content_store");
             Database.execute(sql);
             return true;
-        } catch (BinaryStoreException e) {
+        } catch (SQLException e) {
             return false;
         }
     }
@@ -320,9 +313,9 @@ public class Database {
                     + "ext_text varchar(1000),"
                     + "usage integer,"
                     + "usage_time timestamp,"
-                    + "payload" + blob(connection, 0) + ","
+                    + "payload " + blob(connection, 0) + ","
                     + "primary key(cid))");
-            Database.executeQuery(sql);
+            Database.execute(sql);
         } catch (Exception e) {
             throw new BinaryStoreException(e);
         }
@@ -338,32 +331,32 @@ public class Database {
      */
     private static String blob(Connection connection, int size) throws BinaryStoreException {
         try {
-            String name = connection.getMetaData().getDatabaseProductName();
+            String name = connection.getMetaData().getDatabaseProductName().toLowerCase();
             if (name.toLowerCase().contains("mysql")) {
                 return String.format("LONGBLOB", size);
-            } else if (name.toLowerCase().contains("postgres")) {
+            } else if (name.contains("postgres")) {
                 return "oid";
-            } else if (name.toLowerCase().contains("derby")) {
+            } else if (name.contains("derby")) {
                 return String.format("blolb", size);
-            } else if (name.toLowerCase().contains("hsql") || name.toLowerCase().contains("hypersonic")) {
-            } else if (name.toLowerCase().contains("h2")) {
+            } else if (name.contains("hsql") || name.toLowerCase().contains("hypersonic")) {
+            } else if (name.contains("h2")) {
                 return "blob";
-            } else if (name.toLowerCase().contains("sqlite")) {
+            } else if (name.contains("sqlite")) {
                 return "blob";
-            } else if (name.toLowerCase().contains("db2")) {
+            } else if (name.contains("db2")) {
                 return "blob";
-            } else if (name.toLowerCase().contains("informix")) {
+            } else if (name.contains("informix")) {
                 return "blob";
-            } else if (name.toLowerCase().contains("interbase")) {
+            } else if (name.contains("interbase")) {
                 return "blob subtype 0";
-            } else if (name.toLowerCase().contains("firebird")) {
+            } else if (name.contains("firebird")) {
                 return "blob subtype 0";
-            } else if (name.toLowerCase().contains("sqlserver") || name.toLowerCase().contains("microsoft")) {
+            } else if (name.contains("sqlserver") || name.toLowerCase().contains("microsoft")) {
                 return "blob";
-            } else if (name.toLowerCase().contains("access")) {
-            } else if (name.toLowerCase().contains("oracle")) {
+            } else if (name.contains("access")) {
+            } else if (name.contains("oracle")) {
                 return "blob";
-            } else if (name.toLowerCase().contains("adaptive")) {
+            } else if (name.contains("adaptive")) {
             }
             return "";
         } catch (SQLException e) {
