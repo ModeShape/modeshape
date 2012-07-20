@@ -41,12 +41,19 @@ public class TestingEnvironment extends LocalEnvironment {
     private final CacheLoaderConfig cacheLoaderConfiguration;
 
     public TestingEnvironment() {
-        super(DummyTransactionManagerLookup.class);
-        this.cacheLoaderConfiguration = null;
+        this(null, DummyTransactionManagerLookup.class);
+    }
+
+    public TestingEnvironment(Class<? extends TransactionManagerLookup> transactionManagerLookup) {
+        this(null, transactionManagerLookup);
     }
 
     public TestingEnvironment( CacheLoaderConfig cacheLoaderConfiguration ) {
-        super(DummyTransactionManagerLookup.class);
+        this(cacheLoaderConfiguration, DummyTransactionManagerLookup.class);
+    }
+
+    public TestingEnvironment(CacheLoaderConfig cacheLoaderConfiguration, Class<? extends TransactionManagerLookup> transactionManagerLookup) {
+        super(transactionManagerLookup);
         this.cacheLoaderConfiguration = cacheLoaderConfiguration;
     }
 

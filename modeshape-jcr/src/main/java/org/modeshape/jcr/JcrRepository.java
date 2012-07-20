@@ -81,6 +81,7 @@ import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.jcr.ModeShapeEngine.State;
 import org.modeshape.jcr.RepositoryConfiguration.AnonymousSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.BinaryStorage;
@@ -280,7 +281,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      */
     Future<Boolean> shutdown() {
         // Create a simple executor that will do the backgrounding for us ...
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        final ExecutorService executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("modeshape-repository-shutdown"));
         try {
             // Submit a runnable to terminate all sessions ...
             Future<Boolean> future = executor.submit(new Callable<Boolean>() {
@@ -1401,6 +1402,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             if (repositoryQueryManager != null) {
                 repositoryQueryManager.shutdown();
                 this.context().releaseThreadPool(indexingExecutor);
+            }
+
+            //Shutdown the text extractors
+            if (extractors != null) {
+                extractors.shutdown();
             }
 
             if (statistics != null) {

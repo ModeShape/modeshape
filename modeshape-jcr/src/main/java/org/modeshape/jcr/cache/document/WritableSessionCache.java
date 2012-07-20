@@ -358,6 +358,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
             } catch (NotSupportedException err) {
                 // No nested transactions are supported ...
+                return;
             } catch (SecurityException err) {
                 // No privilege to commit ...
                 throw new SystemFailureException(err);
@@ -366,6 +367,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 throw new SystemFailureException(err);
             } catch (RollbackException err) {
                 // Couldn't be committed, but the txn is already rolled back ...
+                return;
             } catch (HeuristicMixedException err) {
             } catch (HeuristicRollbackException err) {
                 // Rollback has occurred ...
@@ -482,6 +484,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
             } catch (NotSupportedException err) {
                 // No nested transactions are supported ...
+                return;
             } catch (SecurityException err) {
                 // No privilege to commit ...
                 throw new SystemFailureException(err);
@@ -490,6 +493,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 throw new SystemFailureException(err);
             } catch (RollbackException err) {
                 // Couldn't be committed, but the txn is already rolled back ...
+                return;
             } catch (HeuristicMixedException err) {
             } catch (HeuristicRollbackException err) {
                 // Rollback has occurred ...
@@ -596,6 +600,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
             } catch (NotSupportedException err) {
                 // No nested transactions are supported ...
+                return;
             } catch (SecurityException err) {
                 // No privilege to commit ...
                 throw new SystemFailureException(err);
@@ -604,6 +609,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 throw new SystemFailureException(err);
             } catch (RollbackException err) {
                 // Couldn't be committed, but the txn is already rolled back ...
+                return;
             } catch (HeuristicMixedException err) {
             } catch (HeuristicRollbackException err) {
                 // Rollback has occurred ...

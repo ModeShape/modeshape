@@ -220,7 +220,10 @@ public class RepositoryCache implements Observable {
             String workspaceName = changeSet.getWorkspaceName();
             if (workspaceName != null) {
                 for (WorkspaceCache cache : workspaces()) {
-                    cache.notify(changeSet);
+                    if (!cache.getWorkspaceName().equalsIgnoreCase(workspaceName)) {
+                        //the workspace which triggered the event should've already processed the changeset, so we don't want to do it
+                        cache.notify(changeSet);
+                    }
                 }
             } else {
                 // Look for changes to the workspaces ...

@@ -38,13 +38,8 @@ public class NodeNotFoundInParentException extends NodeNotFoundException {
      */
     public NodeNotFoundInParentException( NodeKey key,
                                           NodeKey parentKey ) {
-        super(key);
+        super(key, "Cannot locate child node: " + key + " within parent: " + parentKey);
         this.parentKey = parentKey;
-    }
-
-    @Override
-    public String toString() {
-        return super.toString();
     }
 
     /**

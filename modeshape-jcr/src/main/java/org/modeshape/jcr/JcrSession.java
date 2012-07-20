@@ -1008,7 +1008,7 @@ public class JcrSession implements Session {
         if (!keepChanges) {
             cache.clear();
         }
-        // Otherwise there is nothing to do, as all persistent changes are always immediately vislble to all sessions
+        // Otherwise there is nothing to do, as all persistent changes are always immediately visible to all sessions
         // using that same workspace
     }
 
@@ -1437,6 +1437,34 @@ public class JcrSession implements Session {
         } catch (WorkspaceNotFoundException e) {
             throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(repository().repositoryName(), workspaceName));
         }
+    }
+
+    /**
+     * Checks if the node given key is foreign by comparing the source key & workspace key against the same keys from this session's
+     * root. This method is used for reference resolving.
+     *
+     * @return true if the node key is considered foreign, false otherwise.
+     */
+    protected boolean isForeignKey(NodeKey key) {
+        if (key == null) {
+            return false;
+        }
+        String nodeWorkspaceKey = key.getWorkspaceKey();
+
+        NodeKey rootKey = cache().getRootKey();
+        boolean sameWorkspace = rootKey.getWorkspaceKey().equals(nodeWorkspaceKey);
+        boolean sameSource = rootKey.getSourceKey().equalsIgnoreCase(key.getSourceKey());
+        return !sameWorkspace || !sameSource;
+    }
+
+
+    /**
+     * Returns a string representing a node's identifier, based on whether the node is foreign or not.
+     *
+     * @see javax.jcr.Node#getIdentifier()
+     */
+    protected String nodeIdentifier( NodeKey key ) {
+        return isForeignKey(key) ? key.toString() : key.getIdentifier();
     }
 
     @Override

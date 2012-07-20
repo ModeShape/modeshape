@@ -23,16 +23,9 @@
  */
 package org.modeshape.jcr;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.api.text.TextExtractor;
@@ -41,6 +34,11 @@ import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.InMemoryBinaryValue;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Facility for managing {@link TextExtractor} instances and submitting text extraction work
@@ -51,16 +49,21 @@ public final class TextExtractors {
     private static final Logger LOGGER = Logger.getLogger(TextExtractors.class);
 
     private final List<TextExtractor> extractors = new ArrayList<TextExtractor>();
-    private final Executor extractingQueue;
+    private final ExecutorService extractingQueue;
     private final ConcurrentHashMap<BinaryKey, CountDownLatch> workerLatches;
     private final boolean enabledFullTextSearch;
 
     public TextExtractors( JcrRepository.RunningState repository,
                            RepositoryConfiguration.TextExtracting extracting ) {
-        this.extractingQueue = Executors.newCachedThreadPool(new NamedThreadFactory(extracting.getThreadPoolName()));
+        this.extractingQueue = repository.context().getCachedTreadPool(extracting.getThreadPoolName());
         this.workerLatches = new ConcurrentHashMap<BinaryKey, CountDownLatch>();
         this.enabledFullTextSearch = repository.isFullTextSearchEnabled();
         initExtractors(repository, extracting);
+    }
+
+    protected void shutdown() {
+        extractors.clear();
+        extractingQueue.shutdown();
     }
 
     private void initExtractors( JcrRepository.RunningState repository,

@@ -254,22 +254,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     /**
-     * Checks if this node is foreign by comparing the node's source key & workspace key against the same keys from the session
-     * root. This method is used for reference resolving.
-     * 
-     * @return true if the node is considered foreign, false otherwise.
+     * Checks if this node is foreign for its current owning session
+     *
+     * @see JcrSession#isForeignKey(org.modeshape.jcr.cache.NodeKey)
      */
     protected final boolean isForeign() {
-        NodeKey nodeKey = key();
-        if (nodeKey == null) {
-            return false;
-        }
-        String nodeWorkspaceKey = nodeKey.getWorkspaceKey();
-
-        NodeKey rootKey = cache().getRootKey();
-        boolean sameWorkspace = rootKey.getWorkspaceKey().equals(nodeWorkspaceKey);
-        boolean sameSource = rootKey.getSourceKey().equalsIgnoreCase(nodeKey.getSourceKey());
-        return !sameWorkspace || !sameSource;
+        return session().isForeignKey(key());
     }
 
     protected final boolean isInTheSameProcessAs( String otherProcessId ) {
@@ -278,7 +268,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     @Override
     public final String getIdentifier() {
-        return isForeign() ? key().toString() : key().getIdentifier();
+        return session().nodeIdentifier(key());
     }
 
     /**
@@ -3298,8 +3288,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 propertyBuff.append(prop).append(", ");
             }
             return this.getPath() + " {" + propertyBuff.toString() + "}";
-        } catch (RepositoryException re) {
-            return re.getMessage();
+        } catch (Exception e) {
+            return e.getMessage();
         }
     }
 
