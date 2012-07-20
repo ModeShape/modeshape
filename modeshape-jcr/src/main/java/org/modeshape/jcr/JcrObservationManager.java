@@ -1,30 +1,6 @@
 package org.modeshape.jcr;
 
-import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCING_FAILURE;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.OUTPUT_PATH;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.SELECTED_PATH;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_ID;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_PATH;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCER_NAME;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCING_FAILURE_CAUSE;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.USER_ID;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.AccessDeniedException;
-import javax.jcr.ItemNotFoundException;
 import javax.jcr.RangeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.observation.Event;
@@ -36,10 +12,19 @@ import javax.jcr.observation.ObservationManager;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.monitor.ValueMetric;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCING_FAILURE;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.OUTPUT_PATH;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SELECTED_PATH;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_ID;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_PATH;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCER_NAME;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCING_FAILURE_CAUSE;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.USER_ID;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.AbstractNodeChange;
@@ -61,6 +46,21 @@ import org.modeshape.jcr.cache.change.PropertyRemoved;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * The implementation of JCR {@link ObservationManager}.
@@ -120,7 +120,12 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
      * A map of [changeSetHashCode, integer] which keep track of the events which have been received by the observation manager
      * and dispatched to the individual listeners. This is used for statistic purposes only.
      */
-    private final ConcurrentHashMap<Integer, AtomicInteger> changesReceivedAndDispatched;
+    private final Map<Integer, AtomicInteger> changesReceivedAndDispatched;
+
+    /**
+     * A lock which guards the JcrObservationManager#changesReceivedAndDispatched map
+     */
+    private final Lock changesLock;
 
     /**
      * A lock used to provide thread-safe guarantees when working it the repository observable
@@ -153,7 +158,8 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         this.listeners = new HashMap<EventListener, JcrListenerAdapter>();
 
         this.repositoryStatistics = statistics;
-        this.changesReceivedAndDispatched = new ConcurrentHashMap<Integer, AtomicInteger>();
+        this.changesLock = new ReentrantLock();
+        this.changesReceivedAndDispatched = new HashMap<Integer, AtomicInteger>();
     }
 
     @Override
@@ -205,34 +211,35 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
         // whenever a change set is received from the bus, increment the que size
         repositoryStatistics.increment(ValueMetric.EVENT_QUEUE_SIZE);
 
-        if (!this.changesReceivedAndDispatched.containsKey(changeSet.hashCode())) {
-            // none of the adapters have processed this change set yet, register it
-            try {
-                listenersLock.readLock().lock();
-                changesReceivedAndDispatched.putIfAbsent(changeSet.hashCode(), new AtomicInteger(listeners.size()));
-            } finally {
-                listenersLock.readLock().unlock();
+        try {
+            changesLock.lock();
+            if (!this.changesReceivedAndDispatched.containsKey(changeSet.hashCode())) {
+                // none of the adapters have processed this change set yet, register it
+                    changesReceivedAndDispatched.put(changeSet.hashCode(), new AtomicInteger(listeners.size()));
             }
+        } finally {
+            changesLock.unlock();
         }
     }
 
     private void decrementEventQueueStatistic( ChangeSet changeSet ) {
-        if (changesReceivedAndDispatched.containsKey(changeSet.hashCode())) {
-            // the change set has already been registered (and the que size incremented)
-            int timesProcessed = changesReceivedAndDispatched.get(changeSet.hashCode()).decrementAndGet();
-            if (timesProcessed == 0) {
-                repositoryStatistics.decrement(ValueMetric.EVENT_QUEUE_SIZE);
-                changesReceivedAndDispatched.remove(changeSet.hashCode());
-            }
-        } else {
-            // the change got to this adapter (from the bus) before it got to the observation manager, so it'll be registered
-            try {
-                listenersLock.readLock().lock();
+
+        try {
+            changesLock.lock();
+            if (changesReceivedAndDispatched.containsKey(changeSet.hashCode())) {
+                // the change set has already been registered (and the que size incremented)
+                int timesProcessed = changesReceivedAndDispatched.get(changeSet.hashCode()).decrementAndGet();
+                if (timesProcessed == 0) {
+                    repositoryStatistics.decrement(ValueMetric.EVENT_QUEUE_SIZE);
+                    changesReceivedAndDispatched.remove(changeSet.hashCode());
+                }
+            } else {
+                // the change got to this adapter (from the bus) before it got to the observation manager, so it'll be registered
                 // this listener already received the event, so total count of expected listeners is decremented by 1
-                changesReceivedAndDispatched.putIfAbsent(changeSet.hashCode(), new AtomicInteger(listeners.size() - 1));
-            } finally {
-                listenersLock.readLock().unlock();
+                changesReceivedAndDispatched.put(changeSet.hashCode(), new AtomicInteger(listeners.size() - 1));
             }
+        } finally {
+            changesLock.unlock();
         }
     }
 
@@ -276,16 +283,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
     }
 
     final String nodeIdentifier( NodeKey key ) {
-        try {
-            AbstractJcrNode node = session.node(key, null);
-            return node.getIdentifier();
-        } catch (ItemNotFoundException e) {
-            // the node was removed, so just return the identifier part of the key
-            return key.getIdentifier();
-        } catch (Exception e) {
-            LOGGER.debug(e, "Unexpected exception while retrieving the identifier of a node");
-            return key.getIdentifier();
-        }
+        return session.nodeIdentifier(key);
     }
 
     /**

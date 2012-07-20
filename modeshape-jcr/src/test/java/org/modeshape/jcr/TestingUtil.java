@@ -77,11 +77,11 @@ public class TestingUtil {
             if (repository.getState() != State.RUNNING) return Collections.emptySet();
             // Rollback any open transactions ...
             TransactionManager txnMgr = repository.runningState().txnManager();
-            if (txnMgr != null) {
+            if (txnMgr != null && txnMgr.getTransaction() != null) {
                 try {
                     txnMgr.rollback();
                 } catch (Throwable t) {
-                    // don't care
+                   log.warn(t, JcrI18n.errorKillingRepository, repository.getName(), t.getMessage());
                 }
             }
 
@@ -89,7 +89,7 @@ public class TestingUtil {
             Collection<Cache<?, ?>> caches = repository.caches();
 
             // First shut down the repository ...
-            repository.shutdown().get(20, TimeUnit.SECONDS);
+            repository.shutdown().get();
 
             // Get the caches and kill them ...
             Set<CacheContainer> cacheContainers = new HashSet<CacheContainer>();

@@ -64,7 +64,6 @@ public class ThreadPools implements ThreadPoolFactory {
             executor = poolsByName.putIfAbsent(name, executorService);
             if (executor != null) {
                 // There was an existing one created since we originally checked, so shut down the new executor we just created
-                // ...
                 executor.shutdownNow();
             }
             executor = executorService;
