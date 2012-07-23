@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A simple {@link ThreadPoolFactory} implementation.
@@ -64,7 +65,6 @@ public class ThreadPools implements ThreadPoolFactory {
             executor = poolsByName.putIfAbsent(name, executorService);
             if (executor != null) {
                 // There was an existing one created since we originally checked, so shut down the new executor we just created
-                // ...
                 executor.shutdownNow();
             }
             executor = executorService;
@@ -73,13 +73,33 @@ public class ThreadPools implements ThreadPoolFactory {
     }
 
     public void releaseThreadPool( ExecutorService executor ) {
-        for (Iterator<Map.Entry<String,ExecutorService>> entryIterator = poolsByName.entrySet().iterator(); entryIterator.hasNext(); ) {
-            Map.Entry<String,ExecutorService> entry = entryIterator.next();
-            ExecutorService executorService = entry.getValue();
+        for (String executorServiceName : poolsByName.keySet()) {
+            ExecutorService executorService = poolsByName.get(executorServiceName);
             if (executor.equals(executorService)) {
                 executorService.shutdown();
-                entryIterator.remove();
                 return;
+            }
+        }
+    }
+
+    @Override
+    public void terminateAllPools( long maxTimeMillis ) {
+        for (Iterator<Map.Entry<String, ExecutorService>> entryIterator = poolsByName.entrySet().iterator(); entryIterator
+                .hasNext(); ) {
+            Map.Entry<String, ExecutorService> entry = entryIterator.next();
+            ExecutorService executorService = entry.getValue();
+            executorService.shutdown();
+            try {
+                if (maxTimeMillis > 0) {
+                    long now = System.nanoTime();
+                    executorService.awaitTermination(maxTimeMillis, TimeUnit.MILLISECONDS);
+                    long elapsed = System.nanoTime() - now;
+                    maxTimeMillis -= TimeUnit.NANOSECONDS.toMillis(elapsed);
+                }
+                executorService.shutdownNow();
+                entryIterator.remove();
+            } catch (InterruptedException e) {
+                Thread.interrupted();
             }
         }
     }
