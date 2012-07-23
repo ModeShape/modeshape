@@ -52,11 +52,11 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
 
     private static String currentConfigurationName = "default";
     private static boolean reloadRepositoryInstance = false;
+    private static ModeShapeEngine engine;
 
     private Properties configProps;
     private String repositoryConfigurationName;
     private JcrRepository repository;
-    private ModeShapeEngine engine;
 
     static {
         // Initialize the JAAS configuration to allow for an admin login later
@@ -166,6 +166,14 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
 
     public static void reloadRepositoryInstance() {
         reloadRepositoryInstance = true;
+    }
+
+    public static void shutdownEngine() {
+        if (engine != null && engine.checkRunning()) {
+            engine.shutdown();
+            engine = null;
+            reloadRepositoryInstance = true;
+        }
     }
 
     /**
