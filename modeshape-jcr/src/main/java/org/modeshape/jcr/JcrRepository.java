@@ -1373,7 +1373,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             if (this.sequencingQueue != null) {
                 // Shutdown the sequencers ...
                 sequencers().shutdown();
-                this.context().releaseThreadPool(sequencingQueue);
             }
 
             // Now wait until all the internal sessions are gone ...
@@ -1395,13 +1394,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             // shutdown the event bus
             if (this.changeBus != null) {
                 this.changeBus.shutdown();
-                this.context().releaseThreadPool(changeDispatchingQueue);
             }
 
             // Shutdown the query engine ...
             if (repositoryQueryManager != null) {
                 repositoryQueryManager.shutdown();
-                this.context().releaseThreadPool(indexingExecutor);
             }
 
             //Shutdown the text extractors
@@ -1411,8 +1408,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             if (statistics != null) {
                 statistics.stop();
-                this.context().releaseThreadPool(statsRollupService);
             }
+
+            this.context().terminateAllPools(TimeUnit.SECONDS.toMillis(30));
         }
 
         protected void bindIntoJndi() {
