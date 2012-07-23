@@ -271,6 +271,11 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
         return this.threadPools.getScheduledThreadPool(name);
     }
 
+    @Override
+    public void terminateAllPools( long maxWaitTimeMillis ) {
+        this.threadPools.terminateAllPools(maxWaitTimeMillis);
+    }
+
     /**
      * Get the unique identifier for this context. Each context will always have a unique identifier.
      * 

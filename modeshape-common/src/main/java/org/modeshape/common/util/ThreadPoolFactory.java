@@ -66,4 +66,10 @@ public interface ThreadPoolFactory {
      * @param pool the pool that is no longer needed
      */
     void releaseThreadPool( ExecutorService pool );
+
+    /**
+     * Terminates all the existing thread pool, by waiting for them maximum {@code maxWaitTimeMillis} milliseconds, after which
+     * calling {@link java.util.concurrent.ExecutorService#shutdownNow()}.
+     */
+    void terminateAllPools( long maxWaitTimeMillis );
 }
