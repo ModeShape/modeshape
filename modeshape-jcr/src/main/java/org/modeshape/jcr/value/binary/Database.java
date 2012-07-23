@@ -257,7 +257,7 @@ public class Database {
         try {
             boolean hasRaw = rs.first();
             if (!hasRaw) {
-                throw new BinaryStoreException("The content has been deleted");
+                return null;
             }
             return rs.getBinaryStream(1);
         } catch (SQLException e) {

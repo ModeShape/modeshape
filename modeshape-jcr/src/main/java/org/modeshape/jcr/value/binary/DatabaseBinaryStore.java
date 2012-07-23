@@ -23,15 +23,19 @@
  */
 package org.modeshape.jcr.value.binary;
 
+import java.io.File;
 import java.io.InputStream;
 import java.sql.*;
 import java.util.Date;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.util.SizeMeasuringInputStream;
+import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 
@@ -40,6 +44,8 @@ import org.modeshape.jcr.value.BinaryValue;
  */
 @ThreadSafe
 public class DatabaseBinaryStore extends AbstractBinaryStore {
+    private static final String JAVA_IO_TMPDIR = "java.io.tmpdir";
+    private FileSystemBinaryStore cache;
 
     //JDBC Datasource
     private Database database;
@@ -66,17 +72,38 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         this.username = username;
         this.password = password;
         this.datasourceJNDILocation = datasourceJNDILocation;
+
+        String path = System.getProperty(JAVA_IO_TMPDIR);
+        if (path == null) {
+            throw new SystemFailureException(JcrI18n.tempDirectorySystemPropertyMustBeSet.text(JAVA_IO_TMPDIR));
+        }
+
+        cache = new FileSystemBinaryStore(new File(path));
     }
 
 
     @Override
     public BinaryValue storeValue( InputStream stream ) throws BinaryStoreException {
-        BinaryKey key = new BinaryKey(UUID.randomUUID().toString());
+        BinaryValue temp = cache.storeValue(stream);
+        try {
+            BinaryKey key = new BinaryKey(temp.getKey().toString());
 
-        PreparedStatement sql = database.insertContentSQL(key, stream);
-        Database.execute(sql);
+            InputStream content = this.getInputStream(key);
+            if (content != null && getContentLength(content) > 0) {
+                return new StoredBinaryValue(this, key, temp.getSize());
+            }
 
-        return new StoredBinaryValue(this, key, getContentLength(getInputStream(key)));
+            try {
+                PreparedStatement sql = database.insertContentSQL(key, temp.getStream());
+                Database.execute(sql);
+
+                return new StoredBinaryValue(this, key, temp.getSize());
+            } catch (Exception e) {
+                throw new BinaryStoreException(e);
+            }
+        } finally {
+            cache.markAsUnused(temp.getKey());
+        }
     }
 
     @Override
@@ -167,13 +194,14 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
      * @throws BinaryStoreException 
      */
     private long getContentLength(InputStream stream) throws BinaryStoreException {
+        AtomicLong length = new AtomicLong();
+        SizeMeasuringInputStream ms = new SizeMeasuringInputStream(stream, length);
         try {
-            int b = 0; int count = 0;
+            int b = 0;
             while (b != -1) {
-                b = stream.read();
-                count++;
+                b = ms.read();
             }
-            return count;
+            return length.longValue();
         } catch (Exception e) {
             throw new BinaryStoreException(e);
         }
