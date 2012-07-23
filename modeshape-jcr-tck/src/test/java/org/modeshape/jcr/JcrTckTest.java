@@ -25,11 +25,12 @@
 package org.modeshape.jcr;
 
 import junit.framework.Test;
-import org.apache.jackrabbit.test.JCRTestSuite;
 
 /**
  * Test suite to wrap Apache Jackrabbit JCR technology compatibility kit (TCK) unit tests. Note that technically these are not the
  * actual TCK, but these are unit tests that happen to be similar to (or provided the basis for) a subset of the TCK.
+ *
+ * This class should run the exact type of suite as the real JCR Tck tests.
  */
 public class JcrTckTest {
 
@@ -39,7 +40,6 @@ public class JcrTckTest {
      * @return a new instance of {@link org.apache.jackrabbit.test.JCRTestSuite}.
      */
     public static Test suite() {
-        // Create the Jackrabbit test suite, which runs the tests concurrently (reducing the overall clock time) ...
-        return new JCRTestSuite();
+        return JcrTckSuites.defaultSuite();
     }
 }

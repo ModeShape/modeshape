@@ -35,6 +35,7 @@ import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionIterator;
 import javax.jcr.version.VersionManager;
+import junit.framework.Test;
 import org.apache.jackrabbit.test.AbstractJCRTest;
 import org.apache.jackrabbit.test.api.ShareableNodeTest;
 import static org.hamcrest.core.Is.is;
@@ -70,15 +71,12 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         this.print = false;
     }
 
-    @Override
-    protected void setUp() throws Exception {
-        JTATestUtil.setJBossJTADefaultStoreLocations();
-        super.setUp();
+    public static Test suite() {
+      return JcrTckSuites.someTestsInline(ModeShapeTckTest.class);
     }
 
     @Override
     protected void tearDown() throws Exception {
-        JTATestUtil.clearJBossJTADefaultStoreLocation();
         try {
             superuser.getRootNode().getNode(this.nodeName1).remove();
             superuser.save();
