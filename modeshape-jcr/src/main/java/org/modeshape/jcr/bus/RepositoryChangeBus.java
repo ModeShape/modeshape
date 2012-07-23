@@ -24,23 +24,27 @@
 
 package org.modeshape.jcr.bus;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * A standard {@link ChangeBus} implementation.
- * 
+ *
  * @author Horia Chiorean
  */
 @ThreadSafe
@@ -50,6 +54,7 @@ public final class RepositoryChangeBus implements ChangeBus {
 
     private final ExecutorService executor;
     private final ConcurrentHashMap<String, ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>> workspaceListenerQueues;
+    private final Set<Future> workers;
 
     private final Set<ChangeSetListener> listeners;
     private final ReadWriteLock listenersLock = new ReentrantReadWriteLock(true);
@@ -57,16 +62,15 @@ public final class RepositoryChangeBus implements ChangeBus {
     private volatile boolean shutdown;
 
     private final String systemWorkspaceName;
-    private final boolean separateThreadForSystemWorkspace;
 
     public RepositoryChangeBus( ExecutorService executor,
                                 String systemWorkspaceName,
                                 boolean separateThreadForSystemWorkspace ) {
         this.systemWorkspaceName = systemWorkspaceName;
-        this.separateThreadForSystemWorkspace = separateThreadForSystemWorkspace;
+        this.workers = new HashSet<Future>();
         this.workspaceListenerQueues = new ConcurrentHashMap<String, ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>>();
         this.executor = executor;
-        this.listeners = new LinkedHashSet<ChangeSetListener>();
+        this.listeners = Collections.synchronizedSet(new LinkedHashSet<ChangeSetListener>());
         this.shutdown = false;
     }
 
@@ -80,15 +84,22 @@ public final class RepositoryChangeBus implements ChangeBus {
 
     @Override
     public void shutdown() {
-        executor.shutdown();
-        shutdown = true;
-        workspaceListenerQueues.clear();
         try {
             listenersLock.writeLock().lock();
             listeners.clear();
+            workspaceListenerQueues.clear();
+            stopWork();
         } finally {
             listenersLock.writeLock().unlock();
         }
+    }
+
+    private void stopWork() {
+        executor.shutdown();
+        for (Future<?> worker : workers) {
+            worker.cancel(true);
+        }
+        workers.clear();
     }
 
     @GuardedBy( "listenersLock" )
@@ -138,7 +149,10 @@ public final class RepositoryChangeBus implements ChangeBus {
         ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>> listenersForWorkspace = workspaceListenerQueues.get(workspaceName);
         if (listenersForWorkspace == null) {
             listenersForWorkspace = new ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>();
-            workspaceListenerQueues.putIfAbsent(workspaceName, listenersForWorkspace);
+            ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>> existingMap = workspaceListenerQueues.putIfAbsent(workspaceName, listenersForWorkspace);
+            if (existingMap != null) {
+                listenersForWorkspace = existingMap;
+            }
         }
 
         try {
@@ -148,9 +162,12 @@ public final class RepositoryChangeBus implements ChangeBus {
                 if (listenerQueue == null) {
                     listenerQueue = new LinkedBlockingQueue<ChangeSet>();
                     listenerQueue.add(changeSet);
-                    listenersForWorkspace.putIfAbsent(listener, listenerQueue);
+                    BlockingQueue<ChangeSet> existingQueue = listenersForWorkspace.putIfAbsent(listener, listenerQueue);
+                    if (existingQueue != null) {
+                        listenerQueue = existingQueue;
+                    }
                     ChangeSetDispatcher dispatcher = new ChangeSetDispatcher(listener, listenerQueue);
-                    executor.execute(dispatcher);
+                    workers.add(executor.submit(dispatcher));
                 } else {
                     listenerQueue.add(changeSet);
                 }
@@ -162,7 +179,7 @@ public final class RepositoryChangeBus implements ChangeBus {
 
     private boolean notifiedSystemWorkspaceListenersInline( ChangeSet changeSet,
                                                             String workspaceName ) {
-        if (!separateThreadForSystemWorkspace && workspaceName.equalsIgnoreCase(systemWorkspaceName)) {
+        if (workspaceName.equalsIgnoreCase(systemWorkspaceName)) {
             listenersLock.readLock().lock();
             try {
                 for (ChangeSetListener listener : listeners) {
@@ -186,7 +203,7 @@ public final class RepositoryChangeBus implements ChangeBus {
         }
     }
 
-    private class ChangeSetDispatcher extends Thread {
+    private class ChangeSetDispatcher implements Callable<Void> {
 
         private static final int DEFAULT_POLL_TIMEOUT = 3;
 
@@ -200,7 +217,7 @@ public final class RepositoryChangeBus implements ChangeBus {
         }
 
         @Override
-        public void run() {
+        public Void call() {
             while (!shutdown) {
                 try {
                     ChangeSet changeSet = changeSetQueue.poll(DEFAULT_POLL_TIMEOUT, TimeUnit.SECONDS);
@@ -208,10 +225,12 @@ public final class RepositoryChangeBus implements ChangeBus {
                         listener.notify(changeSet);
                     }
                 } catch (InterruptedException e) {
+                    Thread.interrupted();
                     break;
                 }
             }
             shutdown();
+            return null;
         }
 
         private void shutdown() {
