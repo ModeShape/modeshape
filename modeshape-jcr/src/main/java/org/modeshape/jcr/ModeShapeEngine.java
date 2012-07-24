@@ -252,10 +252,11 @@ public class ModeShapeEngine implements Repositories {
             if (repositories.isEmpty()) {
                 // All repositories were properly shutdown, so now stop the service for starting and shutting down the repos ...
                 repositoryStarterService.shutdown();
-
+                cron.shutdown();
                 // Do not clear the set of repositories, so that restarting will work just fine ...
                 this.state = State.NOT_RUNNING;
                 repositoryStarterService = null;
+                cron = null;
             } else {
                 // Could not shut down all repositories, so keep running ..
                 this.state = State.RUNNING;
