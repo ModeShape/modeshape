@@ -25,6 +25,7 @@
 package org.modeshape.jcr.bus;
 
 import static org.hamcrest.core.Is.is;
+import org.jgroups.Global;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertThat;
 import org.junit.BeforeClass;
@@ -36,6 +37,7 @@ import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.clustering.DefaultChannelProvider;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,21 +49,41 @@ import java.util.List;
 public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
 
     private static final String CLUSTER_NAME = "testcluster-event-bus";
-    private static final String JGROUPS_BIND_ADDRESS_PROP = "jgroups.bind_addr";
-    
+
     private ClusteredRepositoryChangeBus defaultBus;
 
     private List<ChangeBus> buses;
     
     @BeforeClass
     public static void beforeClass() throws Exception {
-        String loopbackAddress = (InetAddress.getLocalHost() instanceof Inet6Address) ? "::1" : "127.0.0.1";
-        System.setProperty(JGROUPS_BIND_ADDRESS_PROP, loopbackAddress);
+        InetAddress localHost = getLocalHost();
+        System.setProperty(Global.BIND_ADDR, localHost.getHostAddress());
+        System.setProperty(Global.EXTERNAL_ADDR, localHost.getHostAddress());
     }
-    
+
+    private static InetAddress getLocalHost() throws UnknownHostException {
+        String ipv6Prop = System.getProperty(Global.IPv6);
+        boolean preferIpv6 = ipv6Prop != null && Boolean.TRUE.toString().equalsIgnoreCase(ipv6Prop);
+
+        InetAddress localHost = null;
+        InetAddress[] localHostAddresses = InetAddress.getAllByName("localhost");
+        for (InetAddress localAddress : localHostAddresses) {
+            if (preferIpv6 && localAddress instanceof Inet6Address) {
+                localHost = localAddress;
+                break;
+            } else if (!preferIpv6 && !(localAddress instanceof Inet6Address)) {
+                localHost = localAddress;
+                break;
+            }
+        }
+        assert localHost != null;
+        return localHost;
+    }
+
     @AfterClass
     public static void afterClass() throws Exception {
-        System.clearProperty(JGROUPS_BIND_ADDRESS_PROP);
+        System.clearProperty(Global.BIND_ADDR);
+        System.clearProperty(Global.EXTERNAL_ADDR);
     }
     
     @Override
