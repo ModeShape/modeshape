@@ -578,10 +578,7 @@
                         <include>**/*TestCase.java</include>
                         <include>**/*Test.java</include>
                     </includes>
-                    <!--
-                             excludes> <exclude>**/Abstract*TestCase.java</exclude>
-                             <exclude>**/Abstract*Test.java</exclude> </excludes -->
-                    <systemProperties>
+                    <systemProperties combine.children="append">
                         <property>
                             <name>java.io.tmpdir</name>
                             <value>${basedir}/target</value>
