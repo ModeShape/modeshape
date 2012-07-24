@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr.value.binary;
 
-import java.io.File;
 import java.io.InputStream;
 import java.sql.*;
 import java.util.Date;
@@ -32,10 +31,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
-import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.SizeMeasuringInputStream;
-import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 
@@ -44,7 +41,6 @@ import org.modeshape.jcr.value.BinaryValue;
  */
 @ThreadSafe
 public class DatabaseBinaryStore extends AbstractBinaryStore {
-    private static final String JAVA_IO_TMPDIR = "java.io.tmpdir";
     private FileSystemBinaryStore cache;
 
     //JDBC Datasource
@@ -72,27 +68,25 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         this.username = username;
         this.password = password;
         this.datasourceJNDILocation = datasourceJNDILocation;
-
-        String path = System.getProperty(JAVA_IO_TMPDIR);
-        if (path == null) {
-            throw new SystemFailureException(JcrI18n.tempDirectorySystemPropertyMustBeSet.text(JAVA_IO_TMPDIR));
-        }
-
-        cache = new FileSystemBinaryStore(new File(path));
+        this.cache = TransientBinaryStore.get();
     }
 
 
     @Override
     public BinaryValue storeValue( InputStream stream ) throws BinaryStoreException {
+        //store into temporary file system store and get SHA-1
         BinaryValue temp = cache.storeValue(stream);
         try {
+            //prepare new binary key based on SHA-1
             BinaryKey key = new BinaryKey(temp.getKey().toString());
 
+            //check for duplicate content
             InputStream content = this.getInputStream(key);
             if (content != null && getContentLength(content) > 0) {
                 return new StoredBinaryValue(this, key, temp.getSize());
             }
 
+            //store content
             try {
                 PreparedStatement sql = database.insertContentSQL(key, temp.getStream());
                 Database.execute(sql);
@@ -102,6 +96,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
                 throw new BinaryStoreException(e);
             }
         } finally {
+            //remove content from temp store
             cache.markAsUnused(temp.getKey());
         }
     }
