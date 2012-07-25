@@ -42,6 +42,7 @@ import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.util.Base64;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
@@ -58,8 +59,6 @@ import org.xml.sax.helpers.AttributesImpl;
  */
 @NotThreadSafe
 class JcrDocumentViewExporter extends AbstractJcrExporter {
-
-    private static final int ENCODE_BUFFER_SIZE = 2 << 15;
 
     /** The name encoder needs to encode spaces plus the standard slash characters */
     static final TextEncoder NAME_ENCODER = new JcrDocumentViewExporter.JcrDocumentViewPropertyEncoder(' ', '\r', '\n', '\t');
@@ -200,19 +199,12 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
 
         String valueAsString;
         if (PropertyType.BINARY == prop.getType()) {
-            StringBuffer buff = new StringBuffer(ENCODE_BUFFER_SIZE);
             try {
                 Base64.InputStream is = new Base64.InputStream(value.getBinary().getStream(), Base64.ENCODE);
-
-                byte[] bytes = new byte[ENCODE_BUFFER_SIZE];
-                int len;
-                while (-1 != (len = is.read(bytes, 0, ENCODE_BUFFER_SIZE))) {
-                    buff.append(new String(bytes, 0, len));
-                }
+                valueAsString = IoUtil.read(is);
             } catch (IOException ioe) {
                 throw new RepositoryException(ioe);
             }
-            valueAsString = buff.toString();
         } else {
             valueAsString = VALUE_ENCODER.encode(value.getString());
         }
