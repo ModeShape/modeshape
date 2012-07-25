@@ -23,16 +23,7 @@
  */
 package org.modeshape.jcr;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import javax.jcr.Binary;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
@@ -49,6 +40,7 @@ import org.modeshape.common.collection.Collections;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.util.Base64;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
@@ -62,6 +54,16 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Content handler that provides SAX-based event handling that maps incoming documents to the repository based on the
@@ -69,7 +71,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * <p>
  * Each content handler is only intended to be used once and discarded. This class is <b>NOT</b> thread-safe.
  * </p>
- * 
+ *
  * @see JcrSession#getImportContentHandler(String, int)
  * @see JcrWorkspace#getImportContentHandler(String, int)
  */
@@ -78,7 +80,7 @@ class JcrContentHandler extends DefaultHandler {
 
     /**
      * Encoder to properly escape XML names.
-     * 
+     *
      * @see XmlNameEncoder
      */
     protected static final TextDecoder SYSTEM_VIEW_NAME_DECODER = new XmlNameEncoder();
@@ -165,6 +167,15 @@ class JcrContentHandler extends DefaultHandler {
         return nodeTypes.getNodeType(nameFor(name));
     }
 
+    protected final Map<Name, Integer> propertyTypesFor( String primaryTypeName ) {
+        Map<Name, Integer> propertyTypesMap = new HashMap<Name, Integer>();
+        JcrNodeType nodeType = nodeTypeFor(primaryTypeName);
+        for (JcrPropertyDefinition propertyDefinition : nodeType.getPropertyDefinitions()) {
+            propertyTypesMap.put(propertyDefinition.getInternalName(), propertyDefinition.getRequiredType());
+        }
+        return propertyTypesMap;
+    }
+
     protected final String stringFor( Object name ) {
         return stringFactory.create(name);
     }
@@ -188,7 +199,8 @@ class JcrContentHandler extends DefaultHandler {
     }
 
     protected final Value valueFor( InputStream stream ) throws RepositoryException {
-        return jcrValueFactory.createValue(jcrValueFactory.createBinary(stream));
+        Binary binary = jcrValueFactory.createBinary(stream);
+        return jcrValueFactory.createValue(binary);
     }
 
     protected final SessionCache cache() {
@@ -302,7 +314,7 @@ class JcrContentHandler extends DefaultHandler {
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @see org.xml.sax.ContentHandler#characters(char[], int, int)
      */
     @Override
@@ -315,7 +327,7 @@ class JcrContentHandler extends DefaultHandler {
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @see org.xml.sax.helpers.DefaultHandler#endDocument()
      */
     @Override
@@ -334,7 +346,7 @@ class JcrContentHandler extends DefaultHandler {
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @see org.xml.sax.ContentHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
      */
     @Override
@@ -347,7 +359,7 @@ class JcrContentHandler extends DefaultHandler {
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @see org.xml.sax.ContentHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
      */
     @Override
@@ -387,7 +399,7 @@ class JcrContentHandler extends DefaultHandler {
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @see org.xml.sax.ContentHandler#startPrefixMapping(java.lang.String, java.lang.String)
      */
     @Override
@@ -470,7 +482,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see java.lang.Object#toString()
          */
         @Override
@@ -566,7 +578,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#name()
          */
         @Override
@@ -612,8 +624,7 @@ class JcrContentHandler extends DefaultHandler {
                         properties.put(name, values);
                     }
                     if (propertyType == PropertyType.BINARY) {
-                        byte[] binary = decodeBase64(value);
-                        ByteArrayInputStream is = new ByteArrayInputStream(binary);
+                        Base64.InputStream is = new Base64.InputStream(new ByteArrayInputStream(value.getBytes("UTF-8")));
                         values.add(valueFor(is));
                     } else {
                         if (decoder != null) value = decoder.decode(value);
@@ -800,7 +811,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#node()
          */
         @Override
@@ -810,7 +821,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#parentHandler()
          */
         @Override
@@ -820,7 +831,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#addPropertyValue(Name, String, boolean, int, TextDecoder)
          */
         @Override
@@ -840,7 +851,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#addPropertyValue(Name, String, boolean, int, TextDecoder)
          */
         @Override
@@ -862,7 +873,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#parentHandler()
          */
         @Override
@@ -916,9 +927,9 @@ class JcrContentHandler extends DefaultHandler {
         private final NodeHandlerFactory nodeHandlerFactory;
         private String currentPropertyName;
         private int currentPropertyType;
-        private boolean currentPropertyValueIsBinary;
+        private boolean currentPropertyValueIsBase64Encoded;
         private boolean currentPropertyIsMultiValued;
-        private StringBuilder currentPropertyValue;
+        private final StringBuilder currentPropertyValue;
 
         SystemViewContentHandler( AbstractJcrNode parent ) {
             super();
@@ -927,11 +938,12 @@ class JcrContentHandler extends DefaultHandler {
             this.svMultipleName = JcrSvLexicon.MULTIPLE.getString(namespaces());
             this.current = new ExistingNodeHandler(parent, null);
             this.nodeHandlerFactory = new StandardNodeHandlerFactory();
+            this.currentPropertyValue = new StringBuilder();
         }
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see org.xml.sax.ContentHandler#startElement(java.lang.String, java.lang.String, java.lang.String,
          *      org.xml.sax.Attributes)
          */
@@ -940,9 +952,9 @@ class JcrContentHandler extends DefaultHandler {
                                   String localName,
                                   String name,
                                   Attributes atts ) throws SAXException {
-            // Always create a new string buffer for the content value, because we're starting a new element ...
-            currentPropertyValue = new StringBuilder();
-
+            // Always reset the string builder at the beginning of an element
+            currentPropertyValue.setLength(0);
+            currentPropertyValueIsBase64Encoded = false;
             if ("node".equals(localName)) {
                 // Finish the parent handler ...
                 current.finish();
@@ -959,7 +971,16 @@ class JcrContentHandler extends DefaultHandler {
                 // See if there is an "xsi:type" attribute on this element, which means the property value contained
                 // characters that cannot be represented in XML without escaping. See Section 11.2, Item 11.b ...
                 String xsiType = atts.getValue("http://www.w3.org/2001/XMLSchema-instance", "type");
-                currentPropertyValueIsBinary = "xs:base64Binary".equals(xsiType);
+                if (StringUtil.isBlank(xsiType)) {
+                    return;
+                }
+
+                String propertyPrefix = namespaces.getPrefixForNamespaceUri("http://www.w3.org/2001/XMLSchema", false);
+                if (StringUtil.isBlank(propertyPrefix)) {
+                    return;
+                }
+                String base64TypeName = propertyPrefix + ":base64Binary";
+                currentPropertyValueIsBase64Encoded = base64TypeName.equals(xsiType);
 
             } else if (!"value".equals(localName)) {
                 throw new IllegalStateException("Unexpected element '" + name + "' in system view");
@@ -968,7 +989,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see org.xml.sax.ContentHandler#characters(char[], int, int)
          */
         @Override
@@ -988,7 +1009,7 @@ class JcrContentHandler extends DefaultHandler {
             } else if ("value".equals(localName)) {
                 // Add the content for the current property ...
                 String currentPropertyString = currentPropertyValue.toString();
-                if (currentPropertyValueIsBinary) {
+                if (currentPropertyValueIsBase64Encoded) {
                     // The current string is a base64 encoded string, so we need to decode it first ...
                     try {
                         currentPropertyString = decodeBase64AsString(currentPropertyString);
@@ -1005,7 +1026,6 @@ class JcrContentHandler extends DefaultHandler {
             } else {
                 throw new IllegalStateException("Unexpected element '" + name + "' in system view");
             }
-            currentPropertyValue = new StringBuilder();
         }
     }
 
@@ -1024,7 +1044,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see org.xml.sax.ContentHandler#startElement(java.lang.String, java.lang.String, java.lang.String,
          *      org.xml.sax.Attributes)
          */
@@ -1033,17 +1053,31 @@ class JcrContentHandler extends DefaultHandler {
                                   String localName,
                                   String name,
                                   Attributes atts ) throws SAXException {
+
             // Create the new handler for the new node ...
             String nodeName = DOCUMENT_VIEW_NAME_DECODER.decode(name);
             current = nodeHandlerFactory.createFor(nameFor(nodeName), current, uuidBehavior);
 
-            // Add the properties ...
+            String primaryType = null;
+            Map<Name, String> propertiesNamesValues = new HashMap<Name, String>();
             for (int i = 0; i < atts.getLength(); i++) {
+                Name propertyName = nameFor(DOCUMENT_VIEW_NAME_DECODER.decode(atts.getQName(i)));
                 String value = atts.getValue(i);
-                if (value == null) continue;
-                value = DOCUMENT_VIEW_VALUE_DECODER.decode(value);
-                String propertyName = DOCUMENT_VIEW_NAME_DECODER.decode(atts.getQName(i));
-                current.addPropertyValue(nameFor(propertyName), value, false, PropertyType.STRING, null);
+                if (value != null) {
+                    propertiesNamesValues.put(propertyName, value);
+                    if (JcrLexicon.PRIMARY_TYPE.equals(propertyName)) {
+                        primaryType = value;
+                    }
+                }
+            }
+
+            Map<Name, Integer> propertyTypes = primaryType != null ? propertyTypesFor(primaryType) :
+                    java.util.Collections.<Name, Integer>emptyMap();
+            for (Map.Entry<Name, String> entry : propertiesNamesValues.entrySet()) {
+                Name propertyName = entry.getKey();
+                Integer propertyDefinitionType = propertyTypes.get(propertyName);
+                int propertyType = propertyDefinitionType != null ? propertyDefinitionType : PropertyType.STRING;
+                current.addPropertyValue(propertyName, entry.getValue(), false, propertyType, DOCUMENT_VIEW_VALUE_DECODER);
             }
 
             // Now create the node ...
@@ -1060,7 +1094,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see org.xml.sax.ContentHandler#characters(char[], int, int)
          */
         @Override
