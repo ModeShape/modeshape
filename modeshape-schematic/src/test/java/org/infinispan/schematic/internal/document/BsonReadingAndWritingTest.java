@@ -22,7 +22,9 @@
 package org.infinispan.schematic.internal.document;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -51,6 +53,7 @@ import org.infinispan.schematic.document.ObjectId;
 import org.infinispan.schematic.document.Symbol;
 import org.infinispan.schematic.document.Timestamp;
 import org.junit.After;
+import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -185,9 +188,30 @@ public class BsonReadingAndWritingTest {
     }
 
     @Test
-    public void shouldRoundTripSimpleBsonObjectWithBinary() {
+    public void shouldRoundTripSimpleBsonObjectWithBinary1() {
         byte[] data = new byte[] {0x16, 0x00, 0x00, 0x00, 0x02, 0x68, 0x65, 0x6c};
         input = new BasicDocument("foo", new Binary(data));
+        assertRoundtrip(input);
+    }
+
+    @Test
+    //Fix-For MODE-1575
+    public void shouldRoundTripSimpleBsonObjectWithBinary2() throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        InputStream is = getClass().getClassLoader().getResourceAsStream("binary");
+        assertNotNull(is);
+        try {
+            byte[] buff = new byte[1024];
+            int read;
+            while ((read = is.read(buff)) != -1) {
+                bos.write(buff, 0, read);
+            }
+        } finally {
+            bos.close();
+            is.close();
+        }
+
+        input = new BasicDocument("foo", new Binary(bos.toByteArray()));
         assertRoundtrip(input);
     }
 

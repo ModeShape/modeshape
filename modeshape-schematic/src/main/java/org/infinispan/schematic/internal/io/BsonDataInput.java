@@ -154,12 +154,12 @@ public class BsonDataInput implements DataInput {
                            int off,
                            int len ) throws IOException {
         while (len > 0) {
-            int r = read(b, off, len);
-            if (r < 0) {
+            int read = read(b, off, len);
+            if (read < 0) {
                 throw new EOFException();
             }
-            len -= r;
-            off += r;
+            len -= read;
+            off += read;
         }
     }
 
@@ -174,28 +174,19 @@ public class BsonDataInput implements DataInput {
             return 0;
         }
 
-        int c = read();
-        if (c == -1) {
-            return -1;
-        }
-        b[off] = (byte)c;
-
-        int i = 1;
+        int i = 0;
         try {
-            for (; i < len; i++) {
-                c = read();
-                if (c == -1) {
-                    break;
-                }
-                b[off + i] = (byte)c;
+            for ( ; i < len; i++) {
+                b[off + i] = read();
             }
-        } catch (IOException ee) {
+        } catch (EOFException ee) {
+            return -1;
         }
         return i;
     }
 
-    protected final int read() throws IOException {
-        int result = input.readByte();
+    protected final byte read() throws IOException {
+        byte result = input.readByte();
         ++total;
         return result;
     }
