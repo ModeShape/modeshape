@@ -44,7 +44,6 @@ import org.mockito.Mock;
 import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.api.RepositoryFactory;
 import org.modeshape.web.jcr.ModeShapeJcrDeployer;
 import org.modeshape.web.jcr.RepositoryManager;

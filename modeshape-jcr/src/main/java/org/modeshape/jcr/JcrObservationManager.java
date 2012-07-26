@@ -1,5 +1,29 @@
 package org.modeshape.jcr;
 
+import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCING_FAILURE;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.OUTPUT_PATH;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SELECTED_PATH;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_ID;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_PATH;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCER_NAME;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCING_FAILURE_CAUSE;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.USER_ID;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.RangeIterator;
 import javax.jcr.RepositoryException;
@@ -16,15 +40,6 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.monitor.ValueMetric;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCING_FAILURE;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.OUTPUT_PATH;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.SELECTED_PATH;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_ID;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_PATH;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCER_NAME;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCING_FAILURE_CAUSE;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.USER_ID;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.AbstractNodeChange;
@@ -46,21 +61,6 @@ import org.modeshape.jcr.cache.change.PropertyRemoved;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * The implementation of JCR {@link ObservationManager}.
@@ -69,8 +69,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 @ThreadSafe
 class JcrObservationManager implements ObservationManager, ChangeSetListener {
-
-    private static final Logger LOGGER = Logger.getLogger(JcrObservationManager.class);
 
     /**
      * The key for storing the {@link JcrObservationManager#setUserData(String) observation user data} in the
@@ -215,7 +213,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             changesLock.lock();
             if (!this.changesReceivedAndDispatched.containsKey(changeSet.hashCode())) {
                 // none of the adapters have processed this change set yet, register it
-                    changesReceivedAndDispatched.put(changeSet.hashCode(), new AtomicInteger(listeners.size()));
+                changesReceivedAndDispatched.put(changeSet.hashCode(), new AtomicInteger(listeners.size()));
             }
         } finally {
             changesLock.unlock();

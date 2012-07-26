@@ -23,24 +23,24 @@
  */
 package org.modeshape.jcr.mimetype;
 
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OCTET_STREAM;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.TEXT_PLAIN;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import javax.jcr.Binary;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.RepositoryI18n;
-import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OCTET_STREAM;
-import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.TEXT_PLAIN;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Implementation of {@link MimeTypeDetector} which holds an inner list of different {@link MimeTypeDetector} implementations and
  * queries each of them, in order to determine a mime-type.
- *
+ * 
  * @author Horia Chiorean
  */
 @ThreadSafe
@@ -55,26 +55,26 @@ public final class MimeTypeDetectors extends MimeTypeDetector {
 
     public MimeTypeDetectors( Environment environment ) {
         ClassLoader defaultLoader = getClass().getClassLoader();
-        //the extra classpath entry is the package name of the tika extractor, so it can be located inside AS7 (see RepositoryService)
-        ClassLoader classLoader = environment != null ? environment.getClassLoader(defaultLoader,
-                                                                                   "org.modeshape.extractor.tika")
-                : defaultLoader;
+        // the extra classpath entry is the package name of the tika extractor, so it can be located inside AS7 (see
+        // RepositoryService)
+        ClassLoader classLoader = environment != null ? environment.getClassLoader(defaultLoader, "org.modeshape.extractor.tika") : defaultLoader;
         loadDetectors(classLoader);
     }
 
     private void loadDetectors( ClassLoader classLoader ) {
-        //tika
-        if (tryToLoadClass(classLoader, "org.apache.tika.detect.DefaultDetector",
+        // tika
+        if (tryToLoadClass(classLoader,
+                           "org.apache.tika.detect.DefaultDetector",
                            "org.modeshape.extractor.tika.TikaMimeTypeDetector")) {
             addDetector(classLoader, "org.modeshape.extractor.tika.TikaMimeTypeDetector");
         }
 
-        //aperture
+        // aperture
         if (tryToLoadClass(classLoader, "org.semanticdesktop.aperture.mime.identifier.magic.MagicMimeTypeIdentifier")) {
             addDetector(classLoader, "org.modeshape.jcr.mimetype.ApertureMimeTypeDetector");
         }
 
-        //extension-based (is always present)
+        // extension-based (is always present)
         detectors.add(ExtensionBasedMimeTypeDetector.INSTANCE);
     }
 
@@ -101,10 +101,10 @@ public final class MimeTypeDetectors extends MimeTypeDetector {
     }
 
     /**
-     * Returns the first non-null result of iterating over the registered MIME-type detectors
-     * If the MIME-type cannot be determined by any registered detector, "text/plain" or "application/octet-stream" will be returned, the
-     * former only if it is determined the stream contains no nulls.
-     *
+     * Returns the first non-null result of iterating over the registered MIME-type detectors If the MIME-type cannot be
+     * determined by any registered detector, "text/plain" or "application/octet-stream" will be returned, the former only if it
+     * is determined the stream contains no nulls.
+     * 
      * @see MimeTypeDetector#mimeTypeOf(String, javax.jcr.Binary)
      */
     @Override
@@ -117,7 +117,7 @@ public final class MimeTypeDetectors extends MimeTypeDetector {
     private String detectFallbackMimeType( Binary binaryValue ) throws RepositoryException, IOException {
         return processStream(binaryValue, new StreamOperation<String>() {
             @Override
-            public String execute( InputStream stream ) throws IOException {
+            public String execute( InputStream stream ) {
                 try {
                     for (int chr = stream.read(); chr >= 0; chr = stream.read()) {
                         if (chr == 0) {

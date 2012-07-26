@@ -23,7 +23,6 @@
  */
 package org.modeshape.common.util;
 
-import org.modeshape.common.annotation.ThreadSafe;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,6 +30,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.modeshape.common.annotation.ThreadSafe;
 
 /**
  * A simple {@link ThreadPoolFactory} implementation.
@@ -48,14 +48,15 @@ public class ThreadPools implements ThreadPoolFactory {
         return getOrCreateNewPool(name, Executors.newFixedThreadPool(DEFAULT_MAX_THREAD_COUNT, new NamedThreadFactory(name)));
     }
 
+    @Override
     public ExecutorService getCachedTreadPool( String name ) {
         return getOrCreateNewPool(name, Executors.newCachedThreadPool(new NamedThreadFactory(name)));
     }
 
     @Override
     public ExecutorService getScheduledThreadPool( String name ) {
-        return getOrCreateNewPool(name, Executors.newScheduledThreadPool(DEFAULT_SCHEDULED_THREAD_COUNT, new NamedThreadFactory(
-                name)));
+        return getOrCreateNewPool(name,
+                                  Executors.newScheduledThreadPool(DEFAULT_SCHEDULED_THREAD_COUNT, new NamedThreadFactory(name)));
     }
 
     private ExecutorService getOrCreateNewPool( String name,
@@ -72,6 +73,7 @@ public class ThreadPools implements ThreadPoolFactory {
         return executor;
     }
 
+    @Override
     public void releaseThreadPool( ExecutorService executor ) {
         for (String executorServiceName : poolsByName.keySet()) {
             ExecutorService executorService = poolsByName.get(executorServiceName);
@@ -83,18 +85,21 @@ public class ThreadPools implements ThreadPoolFactory {
     }
 
     @Override
-    public void terminateAllPools( long maxTimeMillis ) {
-        for (Iterator<Map.Entry<String, ExecutorService>> entryIterator = poolsByName.entrySet().iterator(); entryIterator
-                .hasNext(); ) {
+    public void terminateAllPools( long maxWaitTime,
+                                   TimeUnit unit ) {
+        // Calculate the time in the future when we don't need to wait any more ...
+        long futureStopTimeInMillis = System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(maxWaitTime, unit);
+
+        for (Iterator<Map.Entry<String, ExecutorService>> entryIterator = poolsByName.entrySet().iterator(); entryIterator.hasNext();) {
             Map.Entry<String, ExecutorService> entry = entryIterator.next();
             ExecutorService executorService = entry.getValue();
             executorService.shutdown();
+
+            // Calculate how long till we have to wait till the future stop time ...
+            long waitTimeInMillis = futureStopTimeInMillis - System.currentTimeMillis();
             try {
-                if (maxTimeMillis > 0) {
-                    long now = System.nanoTime();
-                    executorService.awaitTermination(maxTimeMillis, TimeUnit.MILLISECONDS);
-                    long elapsed = System.nanoTime() - now;
-                    maxTimeMillis -= TimeUnit.NANOSECONDS.toMillis(elapsed);
+                if (waitTimeInMillis > 0) {
+                    executorService.awaitTermination(waitTimeInMillis, TimeUnit.MILLISECONDS);
                 }
                 executorService.shutdownNow();
                 entryIterator.remove();

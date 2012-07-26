@@ -24,10 +24,6 @@
 
 package org.modeshape.jcr.bus;
 
-import org.modeshape.common.annotation.GuardedBy;
-import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.jcr.cache.change.ChangeSet;
-import org.modeshape.jcr.cache.change.ChangeSetListener;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -41,10 +37,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.modeshape.common.annotation.GuardedBy;
+import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.cache.change.ChangeSet;
+import org.modeshape.jcr.cache.change.ChangeSetListener;
 
 /**
  * A standard {@link ChangeBus} implementation.
- *
+ * 
  * @author Horia Chiorean
  */
 @ThreadSafe
@@ -54,12 +54,12 @@ public final class RepositoryChangeBus implements ChangeBus {
 
     private final ExecutorService executor;
     private final ConcurrentHashMap<String, ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>> workspaceListenerQueues;
-    private final Set<Future> workers;
+    private final Set<Future<?>> workers;
 
     private final Set<ChangeSetListener> listeners;
     private final ReadWriteLock listenersLock = new ReentrantReadWriteLock(true);
 
-    private volatile boolean shutdown;
+    protected volatile boolean shutdown;
 
     private final String systemWorkspaceName;
 
@@ -67,7 +67,7 @@ public final class RepositoryChangeBus implements ChangeBus {
                                 String systemWorkspaceName,
                                 boolean separateThreadForSystemWorkspace ) {
         this.systemWorkspaceName = systemWorkspaceName;
-        this.workers = new HashSet<Future>();
+        this.workers = new HashSet<Future<?>>();
         this.workspaceListenerQueues = new ConcurrentHashMap<String, ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>>();
         this.executor = executor;
         this.listeners = Collections.synchronizedSet(new LinkedHashSet<ChangeSetListener>());
@@ -149,7 +149,8 @@ public final class RepositoryChangeBus implements ChangeBus {
         ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>> listenersForWorkspace = workspaceListenerQueues.get(workspaceName);
         if (listenersForWorkspace == null) {
             listenersForWorkspace = new ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>>();
-            ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>> existingMap = workspaceListenerQueues.putIfAbsent(workspaceName, listenersForWorkspace);
+            ConcurrentHashMap<ChangeSetListener, BlockingQueue<ChangeSet>> existingMap = workspaceListenerQueues.putIfAbsent(workspaceName,
+                                                                                                                             listenersForWorkspace);
             if (existingMap != null) {
                 listenersForWorkspace = existingMap;
             }

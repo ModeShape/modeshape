@@ -23,6 +23,14 @@
  */
 package org.modeshape.extractor.tika;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.RepositoryException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -36,14 +44,6 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.text.TextExtractor;
 import org.xml.sax.ContentHandler;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A {@link TextExtractor} that uses the Apache Tika library.
@@ -66,7 +66,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class TikaTextExtractor extends TextExtractor {
 
-    private static final Logger LOGGER = Logger.getLogger(TikaTextExtractor.class);
+    protected static final Logger LOGGER = Logger.getLogger(TikaTextExtractor.class);
 
     /**
      * The MIME types that are excluded by default. Currently, this list consists of:
@@ -144,16 +144,15 @@ public class TikaTextExtractor extends TextExtractor {
     }
 
     /**
-     * Creates a new tika metadata object used by the parser. This will contain the mime-type of the content being parsed,
-     * if this is available to the underlying context. If not, Tika's autodetection mechanism is used to try and get the
-     * mime-type.
-     *
+     * Creates a new tika metadata object used by the parser. This will contain the mime-type of the content being parsed, if this
+     * is available to the underlying context. If not, Tika's autodetection mechanism is used to try and get the mime-type.
+     * 
      * @param binary a <code>org.modeshape.jcr.api.Binary</code> instance of the content being parsed
      * @return a <code>Metadata</code> instance.
      * @throws java.io.IOException if auto-detecting the mime-type via Tika fails
      * @throws RepositoryException if error obtaining MIME-type of the binary parameter
      */
-    private Metadata prepareMetadata(final Binary binary) throws IOException, RepositoryException {
+    protected final Metadata prepareMetadata( final Binary binary ) throws IOException, RepositoryException {
         Metadata metadata = new Metadata();
 
         String mimeType = binary.getMimeType();
@@ -213,7 +212,7 @@ public class TikaTextExtractor extends TextExtractor {
         }
     }
 
-    public void setIncludedMimeTypes(Collection<String> includedMimeTypes) {
+    public void setIncludedMimeTypes( Collection<String> includedMimeTypes ) {
         if (includedMimeTypes != null) {
             this.includedMimeTypes = new HashSet<String>(includedMimeTypes);
         }
@@ -252,7 +251,7 @@ public class TikaTextExtractor extends TextExtractor {
         }
     }
 
-    public void setExcludedMimeTypes(Collection<String> excludedMimeTypes) {
+    public void setExcludedMimeTypes( Collection<String> excludedMimeTypes ) {
         if (excludedMimeTypes != null) {
             this.excludedMimeTypes = new HashSet<String>(excludedMimeTypes);
         }
