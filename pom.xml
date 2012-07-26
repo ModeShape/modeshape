@@ -49,9 +49,6 @@
 		-->
 		<profile>
 			<id>jcr-tck</id>
-			<activation>
-				<activeByDefault>false</activeByDefault>
-			</activation>
 			<modules>
 				<module>modeshape-jcr-tck</module>
 			</modules>
@@ -63,9 +60,6 @@
 		-->
 		<profile>
 			<id>integration</id>
-			<activation>
-				<activeByDefault>false</activeByDefault>
-			</activation>
 			<modules>
 			  <!-- 
 			    Build the distribution before running the integration tests, 
@@ -80,16 +74,13 @@
 		  This profile is used to run longer-running performance tests,
 		  and must be activated manually, as in "mvn ... -Pperformance ..."
 		-->
-		<profile>
-			<id>performance</id>
-			<activation>
-				<activeByDefault>false</activeByDefault>
-			</activation>
-			<modules>
-        <module>modeshape-distribution</module>
-				<module>modeshape-performance-tests</module>
-			</modules>
-		</profile>
+        <profile>
+            <id>performance</id>
+            <modules>
+                <module>modeshape-distribution</module>
+                <module>modeshape-performance-tests</module>
+            </modules>
+        </profile>
 		
 		<!-- 
 		  This profile is used to build everything for a release, including all assemblies,
@@ -97,9 +88,6 @@
 		-->
         <profile>
             <id>assembly</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
             <modules>
                 <module>demos</module>
                 <module>modeshape-distribution</module>
