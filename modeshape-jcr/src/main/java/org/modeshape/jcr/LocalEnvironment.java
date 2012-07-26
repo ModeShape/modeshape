@@ -23,6 +23,12 @@
  */
 package org.modeshape.jcr;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -31,19 +37,12 @@ import org.infinispan.config.FluentConfiguration;
 import org.infinispan.config.GlobalConfiguration;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.DefaultCacheManager;
-import org.infinispan.schematic.Schematic;
 import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
 import org.infinispan.transaction.lookup.TransactionManagerLookup;
 import org.jgroups.Channel;
 import org.modeshape.common.util.DelegatingClassLoader;
 import org.modeshape.common.util.StringURLClassLoader;
 import org.modeshape.common.util.StringUtil;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * 
@@ -108,7 +107,7 @@ public class LocalEnvironment implements Environment {
         List<ClassLoader> delegatesList = new ArrayList<ClassLoader>();
         if (!urls.isEmpty()) {
             StringURLClassLoader urlClassLoader = new StringURLClassLoader(urls);
-            //only if any custom urls were parsed add this loader
+            // only if any custom urls were parsed add this loader
             if (urlClassLoader.getURLs().length > 0) {
                 delegatesList.add(urlClassLoader);
             }
@@ -116,11 +115,10 @@ public class LocalEnvironment implements Environment {
 
         ClassLoader currentLoader = getClass().getClassLoader();
         if (fallbackLoader != null && !fallbackLoader.equals(currentLoader)) {
-            //if the parent of fallback is the same as the current loader, just use that
+            // if the parent of fallback is the same as the current loader, just use that
             if (fallbackLoader.getParent().equals(currentLoader)) {
                 currentLoader = fallbackLoader;
-            }
-            else {
+            } else {
                 delegatesList.add(fallbackLoader);
             }
         }
@@ -175,8 +173,8 @@ public class LocalEnvironment implements Environment {
 
     protected GlobalConfiguration createGlobalConfiguration() {
         GlobalConfiguration global = new GlobalConfiguration();
-        //TODO author=Horia Chiorean date=7/26/12 description=MODE-1524 - Currently we don't use advanced externalizers
-        //global = global.fluent().serialization().addAdvancedExternalizer(Schematic.externalizers()).build();
+        // TODO author=Horia Chiorean date=7/26/12 description=MODE-1524 - Currently we don't use advanced externalizers
+        // global = global.fluent().serialization().addAdvancedExternalizer(Schematic.externalizers()).build();
         return global;
     }
 
