@@ -307,8 +307,8 @@ class RepositoryQueryManager {
         }
     }
 
-    private void reindexSystemContent( CachedNode systemRoot,
-                                       NodeCache systemWorkspaceCache ) {
+    protected final void reindexSystemContent( CachedNode systemRoot,
+                                               NodeCache systemWorkspaceCache ) {
         final NodeTypeSchemata schemata = runningState.nodeTypeManager().getRepositorySchemata();
         // first reindex only /jcr:system
         reindexSystemContent(systemRoot, 1, schemata);

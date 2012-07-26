@@ -1100,9 +1100,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.sequencers = new Sequencers(this, sequencerComponents, cache.getWorkspaceNames(), queue);
                 } else {
                     // Create an in-memory queue of sequencing work items ...
-                    String threadPool = config.getSequencing().getThreadPoolName();
-                    this.sequencingQueue = this.context.getThreadPool(threadPool);
+                    String threadPoolName = config.getSequencing().getThreadPoolName();
+                    this.sequencingQueue = this.context.getThreadPool(threadPoolName);
                     queue = new Sequencers.WorkQueue() {
+                        @SuppressWarnings( "synthetic-access" )
                         @Override
                         public void submit( final SequencingWorkItem work ) {
                             sequencingQueue.execute(new SequencingRunner(JcrRepository.this, work));
@@ -1401,7 +1402,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 repositoryQueryManager.shutdown();
             }
 
-            //Shutdown the text extractors
+            // Shutdown the text extractors
             if (extractors != null) {
                 extractors.shutdown();
             }
@@ -1410,7 +1411,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 statistics.stop();
             }
 
-            this.context().terminateAllPools(TimeUnit.SECONDS.toMillis(30));
+            this.context().terminateAllPools(30, TimeUnit.SECONDS);
         }
 
         protected void bindIntoJndi() {

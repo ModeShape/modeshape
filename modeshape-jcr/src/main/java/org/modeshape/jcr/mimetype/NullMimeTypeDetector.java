@@ -25,13 +25,11 @@
 package org.modeshape.jcr.mimetype;
 
 import javax.jcr.Binary;
-import javax.jcr.RepositoryException;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
-import java.io.IOException;
 
 /**
  * Implementation of {@link MimeTypeDetector} which doesn't detect mime-types.
- *
+ * 
  * @author Horia Chiorean
  */
 public final class NullMimeTypeDetector extends MimeTypeDetector {
@@ -42,7 +40,7 @@ public final class NullMimeTypeDetector extends MimeTypeDetector {
 
     @Override
     public String mimeTypeOf( String name,
-                              Binary binaryValue ) throws RepositoryException, IOException {
+                              Binary binaryValue ) {
         return null;
     }
 }

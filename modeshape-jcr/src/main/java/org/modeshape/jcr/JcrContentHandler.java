@@ -23,6 +23,16 @@
  */
 package org.modeshape.jcr;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import javax.jcr.Binary;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.ItemExistsException;
@@ -54,16 +64,6 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Content handler that provides SAX-based event handling that maps incoming documents to the repository based on the
@@ -71,7 +71,7 @@ import java.util.Set;
  * <p>
  * Each content handler is only intended to be used once and discarded. This class is <b>NOT</b> thread-safe.
  * </p>
- *
+ * 
  * @see JcrSession#getImportContentHandler(String, int)
  * @see JcrWorkspace#getImportContentHandler(String, int)
  */
@@ -80,7 +80,7 @@ class JcrContentHandler extends DefaultHandler {
 
     /**
      * Encoder to properly escape XML names.
-     *
+     * 
      * @see XmlNameEncoder
      */
     protected static final TextDecoder SYSTEM_VIEW_NAME_DECODER = new XmlNameEncoder();
@@ -93,7 +93,7 @@ class JcrContentHandler extends DefaultHandler {
     private final NameFactory nameFactory;
     private final PathFactory pathFactory;
     private final org.modeshape.jcr.value.ValueFactory<String> stringFactory;
-    private final NamespaceRegistry namespaces;
+    protected final NamespaceRegistry namespaces;
     private final ValueFactory jcrValueFactory;
     private final JcrNodeTypeManager nodeTypes;
     private final javax.jcr.NamespaceRegistry jcrNamespaceRegistry;
@@ -314,7 +314,7 @@ class JcrContentHandler extends DefaultHandler {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.xml.sax.ContentHandler#characters(char[], int, int)
      */
     @Override
@@ -327,7 +327,7 @@ class JcrContentHandler extends DefaultHandler {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.xml.sax.helpers.DefaultHandler#endDocument()
      */
     @Override
@@ -346,7 +346,7 @@ class JcrContentHandler extends DefaultHandler {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.xml.sax.ContentHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
      */
     @Override
@@ -359,7 +359,7 @@ class JcrContentHandler extends DefaultHandler {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.xml.sax.ContentHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
      */
     @Override
@@ -399,7 +399,7 @@ class JcrContentHandler extends DefaultHandler {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.xml.sax.ContentHandler#startPrefixMapping(java.lang.String, java.lang.String)
      */
     @Override
@@ -482,7 +482,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see java.lang.Object#toString()
          */
         @Override
@@ -578,7 +578,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#name()
          */
         @Override
@@ -811,7 +811,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#node()
          */
         @Override
@@ -821,7 +821,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#parentHandler()
          */
         @Override
@@ -831,7 +831,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#addPropertyValue(Name, String, boolean, int, TextDecoder)
          */
         @Override
@@ -851,7 +851,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#addPropertyValue(Name, String, boolean, int, TextDecoder)
          */
         @Override
@@ -873,7 +873,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#parentHandler()
          */
         @Override
@@ -943,7 +943,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.xml.sax.ContentHandler#startElement(java.lang.String, java.lang.String, java.lang.String,
          *      org.xml.sax.Attributes)
          */
@@ -989,7 +989,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.xml.sax.ContentHandler#characters(char[], int, int)
          */
         @Override
@@ -1044,7 +1044,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.xml.sax.ContentHandler#startElement(java.lang.String, java.lang.String, java.lang.String,
          *      org.xml.sax.Attributes)
          */
@@ -1071,8 +1071,7 @@ class JcrContentHandler extends DefaultHandler {
                 }
             }
 
-            Map<Name, Integer> propertyTypes = primaryType != null ? propertyTypesFor(primaryType) :
-                    java.util.Collections.<Name, Integer>emptyMap();
+            Map<Name, Integer> propertyTypes = primaryType != null ? propertyTypesFor(primaryType) : java.util.Collections.<Name, Integer>emptyMap();
             for (Map.Entry<Name, String> entry : propertiesNamesValues.entrySet()) {
                 Name propertyName = entry.getKey();
                 Integer propertyDefinitionType = propertyTypes.get(propertyName);
@@ -1094,7 +1093,7 @@ class JcrContentHandler extends DefaultHandler {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see org.xml.sax.ContentHandler#characters(char[], int, int)
          */
         @Override

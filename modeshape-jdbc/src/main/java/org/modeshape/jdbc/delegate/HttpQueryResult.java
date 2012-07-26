@@ -24,36 +24,34 @@
 
 package org.modeshape.jdbc.delegate;
 
-import javax.jcr.ItemNotFoundException;
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.RepositoryException;
-import javax.jcr.Value;
-import javax.jcr.query.Row;
-import javax.jcr.query.RowIterator;
-import org.modeshape.jcr.api.query.QueryResult;
-import org.modeshape.jdbc.JdbcJcrValueFactory;
-import org.modeshape.web.jcr.rest.client.domain.QueryRow;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import javax.jcr.Node;
+import javax.jcr.NodeIterator;
+import javax.jcr.Value;
+import javax.jcr.query.Row;
+import javax.jcr.query.RowIterator;
+import org.modeshape.jcr.api.query.QueryResult;
+import org.modeshape.jdbc.JdbcJcrValueFactory;
+import org.modeshape.web.jcr.rest.client.domain.QueryRow;
 
 /**
  * A simple implementation of the {@link QueryResult} interface used to iterate over list of {@link QueryRow rows}
- *
+ * 
  * @author Horia Chiorean
  */
 public final class HttpQueryResult implements QueryResult {
 
-    private final List<HttpRow> rows = new ArrayList<HttpRow>();
+    protected final List<HttpRow> rows = new ArrayList<HttpRow>();
 
     /**
      * [columnName, columnType] mappings
      */
-    private final Map<String, String> columns = new LinkedHashMap<String, String>();
+    protected final Map<String, String> columns = new LinkedHashMap<String, String>();
 
     HttpQueryResult( List<QueryRow> queryRows ) {
         assert queryRows != null;
@@ -72,22 +70,22 @@ public final class HttpQueryResult implements QueryResult {
     }
 
     @Override
-    public String[] getColumnNames() throws RepositoryException {
-       return columns.keySet().toArray(new String[columns.size()]);
+    public String[] getColumnNames() {
+        return columns.keySet().toArray(new String[columns.size()]);
     }
 
     @Override
-    public RowIterator getRows() throws RepositoryException {
+    public RowIterator getRows() {
         return new HttpRowIterator();
     }
 
     @Override
-    public NodeIterator getNodes() throws RepositoryException {
+    public NodeIterator getNodes() {
         throw new UnsupportedOperationException("Method getNodes() not supported");
     }
 
     @Override
-    public String[] getSelectorNames() throws RepositoryException {
+    public String[] getSelectorNames() {
         throw new UnsupportedOperationException("Method getSelectorNames() not supported");
     }
 
@@ -101,7 +99,7 @@ public final class HttpQueryResult implements QueryResult {
         private static final int EMPTY_CURSOR = -1;
         private int cursor = rows.isEmpty() ? EMPTY_CURSOR : 0;
 
-        private HttpRowIterator() {
+        protected HttpRowIterator() {
         }
 
         @Override
@@ -150,10 +148,10 @@ public final class HttpQueryResult implements QueryResult {
         }
     }
 
-    private class HttpRow implements Row  {
+    private class HttpRow implements Row {
         private final Map<String, Value> valuesMap = new LinkedHashMap<String, Value>();
 
-        private HttpRow(QueryRow row) {
+        protected HttpRow( QueryRow row ) {
             assert row != null;
             for (String columnName : columns.keySet()) {
                 Object queryRowValue = row.getValue(columnName);
@@ -162,42 +160,42 @@ public final class HttpQueryResult implements QueryResult {
         }
 
         @Override
-        public Node getNode() throws RepositoryException {
+        public Node getNode() {
             throw new UnsupportedOperationException("Method getNode() not supported");
         }
 
         @Override
-        public Value[] getValues() throws RepositoryException {
+        public Value[] getValues() {
             return valuesMap.values().toArray(new Value[valuesMap.size()]);
         }
 
         @Override
-        public Value getValue( String columnName ) throws ItemNotFoundException, RepositoryException {
+        public Value getValue( String columnName ) {
             return valuesMap.get(columnName);
         }
 
         @Override
-        public Node getNode( String selectorName ) throws RepositoryException {
+        public Node getNode( String selectorName ) {
             throw new UnsupportedOperationException("Method getNode(selectorName) not supported");
         }
 
         @Override
-        public String getPath() throws RepositoryException {
+        public String getPath() {
             throw new UnsupportedOperationException("Method getPath() not supported");
         }
 
         @Override
-        public String getPath( String selectorName ) throws RepositoryException {
+        public String getPath( String selectorName ) {
             throw new UnsupportedOperationException("Method getPath(selectorName) not supported");
         }
 
         @Override
-        public double getScore() throws RepositoryException {
+        public double getScore() {
             throw new UnsupportedOperationException("Method getScore() not supported");
         }
 
         @Override
-        public double getScore( String selectorName ) throws RepositoryException {
+        public double getScore( String selectorName ) {
             throw new UnsupportedOperationException("Method getScore( String selectorName ) not supported");
         }
     }

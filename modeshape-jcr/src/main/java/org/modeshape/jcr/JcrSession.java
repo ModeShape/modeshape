@@ -1440,12 +1440,13 @@ public class JcrSession implements Session {
     }
 
     /**
-     * Checks if the node given key is foreign by comparing the source key & workspace key against the same keys from this session's
-     * root. This method is used for reference resolving.
-     *
+     * Checks if the node given key is foreign by comparing the source key & workspace key against the same keys from this
+     * session's root. This method is used for reference resolving.
+     * 
+     * @param key the node key; may be null
      * @return true if the node key is considered foreign, false otherwise.
      */
-    protected boolean isForeignKey(NodeKey key) {
+    protected boolean isForeignKey( NodeKey key ) {
         if (key == null) {
             return false;
         }
@@ -1457,10 +1458,11 @@ public class JcrSession implements Session {
         return !sameWorkspace || !sameSource;
     }
 
-
     /**
      * Returns a string representing a node's identifier, based on whether the node is foreign or not.
-     *
+     * 
+     * @param key the node key; may be null
+     * @return the identifier for the node; never null
      * @see javax.jcr.Node#getIdentifier()
      */
     protected String nodeIdentifier( NodeKey key ) {

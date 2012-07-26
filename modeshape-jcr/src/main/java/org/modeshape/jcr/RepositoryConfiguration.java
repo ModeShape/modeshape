@@ -72,6 +72,7 @@ import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.ObjectUtil;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.clustering.DefaultChannelProvider;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
@@ -948,9 +949,14 @@ public class RepositoryConfiguration {
                 String connectionURL = binaryStorage.getString(FieldName.CONNECTION_URL);
                 String username = binaryStorage.getString(FieldName.USER_NAME);
                 String password = binaryStorage.getString(FieldName.USER_PASSWORD);
-                String datasource = binaryStorage.getString(FieldName.DATASOURCE_JNDI_LOCATION);
-
-                store = new DatabaseBinaryStore(driverClass, connectionURL, username, password, datasource);
+                String dataSourceJndi = binaryStorage.getString(FieldName.DATASOURCE_JNDI_LOCATION);
+                if (StringUtil.isBlank(dataSourceJndi)) {
+                    // Use the connection properties ...
+                    store = new DatabaseBinaryStore(driverClass, connectionURL, username, password);
+                } else {
+                    // Use the DataSource in JNDI ...
+                    store = new DatabaseBinaryStore(dataSourceJndi);
+                }
             } else if (type.equalsIgnoreCase("cache")) {
                 String cacheName = binaryStorage.getString(FieldName.CACHE_NAME, getName());
                 String cacheConfiguration = binaryStorage.getString(FieldName.CACHE_CONFIGURATION); // may be null

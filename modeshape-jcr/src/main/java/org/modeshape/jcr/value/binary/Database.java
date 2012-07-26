@@ -313,7 +313,7 @@ public class Database {
                     + "ext_text varchar(1000),"
                     + "usage integer,"
                     + "usage_time timestamp,"
-                    + "payload " + blob(connection, 0) + ","
+                    + "payload " + blobType(connection, 0) + ","
                     + "primary key(cid))");
             Database.execute(sql);
         } catch (Exception e) {
@@ -322,14 +322,14 @@ public class Database {
     }
 
     /**
-     * Database specific BLOB column type.
+     * Determine the database-specific BLOB column type.
      *
-     * @param connection
-     * @param size
-     * @return
+     * @param connection the connection
+     * @param size the size of the column
+     * @return the type of BLOB column; never null but possibly empty
      * @throws BinaryStoreException
      */
-    private static String blob(Connection connection, int size) throws BinaryStoreException {
+    protected String blobType(Connection connection, int size) throws BinaryStoreException {
         try {
             String name = connection.getMetaData().getDatabaseProductName().toLowerCase();
             if (name.toLowerCase().contains("mysql")) {
