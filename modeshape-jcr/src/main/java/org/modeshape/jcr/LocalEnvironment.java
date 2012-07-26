@@ -175,7 +175,8 @@ public class LocalEnvironment implements Environment {
 
     protected GlobalConfiguration createGlobalConfiguration() {
         GlobalConfiguration global = new GlobalConfiguration();
-        global = global.fluent().serialization().addAdvancedExternalizer(Schematic.externalizers()).build();
+        //TODO author=Horia Chiorean date=7/26/12 description=MODE-1524 - Currently we don't use advanced externalizers
+        //global = global.fluent().serialization().addAdvancedExternalizer(Schematic.externalizers()).build();
         return global;
     }
 
