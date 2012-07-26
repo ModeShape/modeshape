@@ -21,7 +21,6 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.parsing.ParseUtils.missingOneOf;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -866,7 +865,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         requireNoAttributes(reader);
 
         List<ModelNode> extractors = new ArrayList<ModelNode>();
-        while (reader.hasNext()  && reader.nextTag() != END_ELEMENT) {
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case TEXT_EXTRACTOR:
@@ -881,8 +880,8 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
     }
 
     private void parseTextExtractor( XMLExtendedStreamReader reader,
-                                 String repositoryName,
-                                 final List<ModelNode> extractors ) throws XMLStreamException {
+                                     String repositoryName,
+                                     final List<ModelNode> extractors ) throws XMLStreamException {
 
         final ModelNode extractor = new ModelNode();
         extractor.get(OP).set(ADD);

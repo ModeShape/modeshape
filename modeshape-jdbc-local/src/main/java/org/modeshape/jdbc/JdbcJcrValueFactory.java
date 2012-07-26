@@ -55,7 +55,7 @@ public final class JdbcJcrValueFactory {
 
         private Object value;
 
-        private JdbcJcrValue( Object value ) {
+        protected JdbcJcrValue( Object value ) {
             this.value = value;
         }
 

@@ -49,7 +49,6 @@ import org.modeshape.jdbc.JcrType;
  * PS: remember this is a Reader not InputStream, so all the fields read going to be converted to strings before they returned.
  */
 public class ResultSetReader extends StringLineReader {
-    private static final String DEFAULT_DELIM = "    "; //$NON-NLS-1$
 
     ResultSet source = null;
     ResultSetMetaData metadata = null;
@@ -117,10 +116,9 @@ public class ResultSetReader extends StringLineReader {
             for (int col = 1; col <= columnCount; col++) {
                 // this does not work when database metadata is being queried
                 final Object anObj = source.getObject(col);
-                
+
                 if (compareColumns) compareColumn(col, anObj);
 
-                
                 if (columnTypes[col - 1] == Types.CLOB) {
                     sb.append(anObj != null ? anObj : "null"); //$NON-NLS-1$
                 } else if (columnTypes[col - 1] == Types.BLOB) {
@@ -142,7 +140,8 @@ public class ResultSetReader extends StringLineReader {
         return null;
     }
 
-    private void compareColumn( int col, Object objIdx ) throws SQLException {
+    private void compareColumn( int col,
+                                Object objIdx ) throws SQLException {
 
         String colName = metadata.getColumnName(col);
         Object objName = source.getObject(colName);
@@ -152,7 +151,7 @@ public class ResultSetReader extends StringLineReader {
         if (objIdx == null) return;
 
         if (source instanceof JcrResultSet) {
-            Value v = ((JcrResultSet) source).getValue(col);
+            Value v = ((JcrResultSet)source).getValue(col);
             JcrType jcrType = JcrType.typeInfo(v.getType());
             assertThat(objIdx, IsInstanceOf.instanceOf(jcrType.getRepresentationClass()));
         }
@@ -193,7 +192,8 @@ public class ResultSetReader extends StringLineReader {
             }
 
             sb.append(colName).append("[") //$NON-NLS-1$
-            .append(colTypeName).append("]"); //$NON-NLS-1$
+              .append(colTypeName)
+              .append("]"); //$NON-NLS-1$
             if (col != columnCount) {
                 sb.append(delimiter);
             }

@@ -255,7 +255,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     /**
      * Checks if this node is foreign for its current owning session
-     *
+     * 
+     * @return boolean if this node is considered "foreign" to this session, or false otherwise
      * @see JcrSession#isForeignKey(org.modeshape.jcr.cache.NodeKey)
      */
     protected final boolean isForeign() {

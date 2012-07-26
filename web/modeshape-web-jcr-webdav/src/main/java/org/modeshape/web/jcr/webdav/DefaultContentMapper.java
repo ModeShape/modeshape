@@ -99,8 +99,8 @@ public class DefaultContentMapper implements ContentMapper {
     }
 
     @Override
-    public long getResourceLength( Node node ) throws RepositoryException, IOException {
-        if (!node.hasNode(CONTENT_NODE_NAME)){
+    public long getResourceLength( Node node ) throws RepositoryException {
+        if (!node.hasNode(CONTENT_NODE_NAME)) {
             return -1;
         }
         return node.getProperty(CONTENT_NODE_NAME + "/" + DATA_PROP_NAME).getLength();

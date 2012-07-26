@@ -38,7 +38,6 @@ import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import org.modeshape.jcr.api.Logger;
-import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 
 /**

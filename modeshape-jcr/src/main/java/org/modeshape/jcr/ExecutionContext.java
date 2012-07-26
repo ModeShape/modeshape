@@ -23,6 +23,15 @@
  */
 package org.modeshape.jcr;
 
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.logging.Logger;
@@ -42,14 +51,6 @@ import org.modeshape.jcr.value.basic.StandardValueFactories;
 import org.modeshape.jcr.value.basic.ThreadSafeNamespaceRegistry;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 
 /**
  * An ExecutionContext is a representation of the environment or context in which a component or operation is operating. Some
@@ -263,17 +264,20 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
         this.threadPools.releaseThreadPool(pool);
     }
 
+    @Override
     public ExecutorService getCachedTreadPool( String name ) {
         return this.threadPools.getCachedTreadPool(name);
     }
 
+    @Override
     public ExecutorService getScheduledThreadPool( String name ) {
         return this.threadPools.getScheduledThreadPool(name);
     }
 
     @Override
-    public void terminateAllPools( long maxWaitTimeMillis ) {
-        this.threadPools.terminateAllPools(maxWaitTimeMillis);
+    public void terminateAllPools( long maxWaitTime,
+                                   TimeUnit timeUnit ) {
+        this.threadPools.terminateAllPools(maxWaitTime, timeUnit);
     }
 
     /**
@@ -329,8 +333,8 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
     public ExecutionContext with( NamespaceRegistry namespaceRegistry ) {
         // Don't supply the value factories or property factories, since they'll have to be recreated
         // to reference the supplied namespace registry ...
-        return new ExecutionContext(getSecurityContext(), namespaceRegistry, null, getPropertyFactory(),
-                                    getThreadPoolFactory(), getBinaryStore(), getData(), getProcessId());
+        return new ExecutionContext(getSecurityContext(), namespaceRegistry, null, getPropertyFactory(), getThreadPoolFactory(),
+                                    getBinaryStore(), getData(), getProcessId());
     }
 
     /**

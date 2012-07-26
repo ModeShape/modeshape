@@ -43,15 +43,15 @@ import org.modeshape.jcr.value.BinaryValue;
 public class DatabaseBinaryStore extends AbstractBinaryStore {
     private FileSystemBinaryStore cache;
 
-    //JDBC Datasource
+    /** JDBC utility for working with the database. */
     private Database database;
 
     //JDBC params
-    private String driverClass;
-    private String connectionURL;
-    private String username;
-    private String password;
-    private String datasourceJNDILocation;
+    private final String driverClass;
+    private final String connectionURL;
+    private final String username;
+    private final String password;
+    private final String datasourceJNDILocation;
 
     /**
      * Create new store.
@@ -62,11 +62,24 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
      * @param password database password
      */
     public DatabaseBinaryStore(String driverClass, String connectionURL, 
-            String username, String password, String datasourceJNDILocation) {
+            String username, String password) {
         this.driverClass = driverClass;
         this.connectionURL = connectionURL;
         this.username = username;
         this.password = password;
+        this.datasourceJNDILocation = null;
+        this.cache = TransientBinaryStore.get();
+    }
+    /**
+     * Create new store that uses the JDBC DataSource in the given JNDI location.
+     *
+     * @param datasourceJNDILocation the JNDI name of the JDBC Data Source that should be used, or null
+     */
+    public DatabaseBinaryStore(String datasourceJNDILocation) {
+        this.driverClass = null;
+        this.connectionURL = null;
+        this.username = null;
+        this.password = null;
         this.datasourceJNDILocation = datasourceJNDILocation;
         this.cache = TransientBinaryStore.get();
     }
@@ -155,8 +168,9 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
                 DatabaseBinaryStore.connect(datasourceJNDILocation) :
                 DatabaseBinaryStore.connect(driverClass, connectionURL, username, password);
 
-            DatabaseMetaData metaData = connection.getMetaData();
-            //here we are making decision which database we will create
+            // TODO: here we are making decision which kind of database we will talk to.
+            // Right now, we just have one kind of utility, and no specializations for specific databases
+            //DatabaseMetaData metaData = connection.getMetaData();
             database = new Database(connection);
 
             if (!database.tableExists()) {
@@ -165,6 +179,10 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+    
+    protected Database doCreateDatabase( Connection connection ) {
+        return new Database(connection);
     }
 
     @Override

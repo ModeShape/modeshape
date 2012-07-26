@@ -35,19 +35,18 @@ import org.modeshape.jcr.value.BinaryKey;
 /**
  * A {@link InputStream} implementation around a file that creates a shared lock when reading the file, ensuring the file is not
  * changed by other writers in this or other JVM processes. The stream automatically closes itself and releases the lock when
- * {@link #close() closed explicitly} or if there are any errors or exceptions while reading.
- *
- * Caution: be very careful when working with this class, as any open without close operations can produce "readLocks" which
- * do not get released, blocking any potential subsequent writes.
+ * {@link #close() closed explicitly} or if there are any errors or exceptions while reading. Caution: be very careful when
+ * working with this class, as any open without close operations can produce "readLocks" which do not get released, blocking any
+ * potential subsequent writes.
  */
 public final class SharedLockingInputStream extends InputStream {
 
-    private final BinaryKey key;
-    private final File file;
-    private final NamedLocks lockManager;
-    private InputStream stream;
-    private Lock processLock;
-    private FileLocks.WrappedLock fileLock;
+    protected final BinaryKey key;
+    protected final File file;
+    protected final NamedLocks lockManager;
+    protected InputStream stream;
+    protected Lock processLock;
+    protected FileLocks.WrappedLock fileLock;
 
     /**
      * Create a self-closing, (shared) locking {@link InputStream} to read the content of the supplied {@link File file}.
@@ -81,7 +80,9 @@ public final class SharedLockingInputStream extends InputStream {
                     SharedLockingInputStream.this.fileLock = FileLocks.get().readLock(file);
 
                     // Now create a buffered stream ...
-                    SharedLockingInputStream.this.stream = new BufferedInputStream(new FileInputStream(file), AbstractBinaryStore.bestBufferSize(file.length()));
+                    SharedLockingInputStream.this.stream = new BufferedInputStream(
+                                                                                   new FileInputStream(file),
+                                                                                   AbstractBinaryStore.bestBufferSize(file.length()));
                 }
                 return null;
             }
@@ -165,7 +166,7 @@ public final class SharedLockingInputStream extends InputStream {
                     open();
                     return stream.markSupported();
                 }
-            }) ;
+            });
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -201,7 +202,7 @@ public final class SharedLockingInputStream extends InputStream {
             @Override
             public Integer call() throws Exception {
                 open();
-                return  stream.read();
+                return stream.read();
             }
         });
     }
@@ -239,15 +240,14 @@ public final class SharedLockingInputStream extends InputStream {
     private <T> T doOperation( Callable<T> streamOperation ) throws IOException {
         try {
             return streamOperation.call();
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             try {
                 close();
             } catch (IOException e) {
-                //ignore
+                // ignore
             }
             if (t instanceof IOException) {
-                throw (IOException) t;
+                throw (IOException)t;
             }
             throw new RuntimeException(t);
         }
