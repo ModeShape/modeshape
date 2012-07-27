@@ -684,6 +684,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
 
         // remove the second strong ref (we should be able to remove the node now)
         assertEquals(2, referenceableNode.getWeakReferences().getSize());
+        node1.setProperty("ref1", (Node)null);
         node1.setProperty("ref2", (Node)null);
         referenceableNode.remove();
         session.save();

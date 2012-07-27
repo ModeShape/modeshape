@@ -43,6 +43,7 @@ import javax.transaction.SystemException;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
+import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.GuardedBy;
@@ -1006,7 +1007,9 @@ public class WritableSessionCache extends AbstractSessionCache {
             // we need to collect the referrers at the end only, so that other potential changes in references have been computed
             Set<NodeKey> referrers = new HashSet<NodeKey>();
             for (NodeKey removedKey : removedNodes) {
-                referrers.addAll(workspaceCache.getNode(removedKey).getReferrers(workspaceCache, ReferenceType.STRONG));
+                //we need the current document from the database, because this differs from what's persisted
+                Document doc = database.get(removedKey.toString()).getContentAsDocument();
+                referrers.addAll(translator.getReferrers(doc, ReferenceType.STRONG));
             }
             // check referential integrity ...
             referrers.removeAll(removedNodes);

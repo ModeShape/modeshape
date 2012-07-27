@@ -82,8 +82,8 @@ public interface SchematicEntry extends Cloneable {
     String getContentType();
 
     /**
-     * Return this value's content. The result will either be a {@link Document} or {@link Binary}. if it is a Documentrepresented
-     * as a Document object. Note that this method will return a non-null value only if the {@link #hasDocumentContent()} method
+     * Return this value's content. The result will either be a {@link Document} or {@link Binary}.
+     * Note that this method will return a non-null value only if the {@link #hasDocumentContent()} method
      * returns <code>true</code>.
      * 
      * @return the content, represented as a {@link Document} object, or null if there is no content

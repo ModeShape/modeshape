@@ -1216,7 +1216,19 @@ public class DocumentTranslator {
         return largeValueDoc.getString(LARGE_VALUE);
     }
 
-    public void optimizeChildrenBlocks( NodeKey key,
+    /**
+     * <p>
+     * Note that this method changes the underlying db as well as the given document, so *it must* be called either from a
+     * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
+     * a session sees as "persisted" state and the reality.
+     * </p>
+     *
+     * @param key
+     * @param document
+     * @param targetCountPerBlock
+     * @param tolerance
+     */
+    protected void optimizeChildrenBlocks( NodeKey key,
                                         EditableDocument document,
                                         int targetCountPerBlock,
                                         int tolerance ) {
@@ -1296,6 +1308,12 @@ public class DocumentTranslator {
      * (with the smaller number of children and the pointer to the next block).
      * <p>
      * Note this method returns very quickly if the method determines that there is no work to do.
+     * </p>
+     *
+     * <p>
+     * Note that this method changes the underlying db as well as the given document, so *it must* be called either from a
+     * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
+     * a session sees as "persisted" state and the reality.
      * </p>
      * 
      * @param key the key for the document whose children are to be split; may not be null
@@ -1396,6 +1414,12 @@ public class DocumentTranslator {
      * empty or contains no children, it will be deleted its next block merged. Note that this merging is performed, even if the
      * resulting number of children is considered 'too-large' (as such 'too-large' blocks will be optimized at a subsequent
      * optimization pass).
+     *
+     * <p>
+     * Note that this method changes the underlying db as well as the given document, so *it must* be called either from a
+     * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
+     * a session sees as "persisted" state and the reality.
+     * </p>
      * 
      * @param key the key for the document whose children are to be merged with the next block; may not be null
      * @param document the document to be modified with the next block's children; may not be null

@@ -130,6 +130,9 @@ public class DocumentTranslatorTest extends AbstractSessionCacheTest {
         // Make it optimum to start out ...
         NodeKey key = nodeB.getKey();
         workspaceCache.translator().optimizeChildrenBlocks(key, null, 5, 2); // will merge into a single block ...
+        //Save the session, otherwise the database is inconsistent after the optimize operation
+        session1.save();
+        nodeB = check(session1).mutableNode("/childB");
         print(false);
         print(document(key), true);
         print(false);
