@@ -27,8 +27,9 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.graph.sequencer.AbstractStreamSequencerTest;
 import org.modeshape.graph.sequencer.StreamSequencer;
+import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 
-public class ModelSequencerTest extends AbstractStreamSequencerTest {
+public class ModelSequencerTest extends AbstractSequencerTest {
 
     @Override
     protected StreamSequencer createSequencer() {

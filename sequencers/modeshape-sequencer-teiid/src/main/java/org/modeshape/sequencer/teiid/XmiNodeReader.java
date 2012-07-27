@@ -394,6 +394,7 @@ public class XmiNodeReader {
      *
      * @param property the property
      * @return the list of mmuuid values, or null if this property does not contain any references; never empty
+     * @throws RepositoryException if error access property value(s)
      */
     protected List<String> references( Property property ) throws RepositoryException {
         List<String> result = new LinkedList<String>();

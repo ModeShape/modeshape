@@ -26,6 +26,8 @@ package org.modeshape.sequencer.teiid;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.jcr.NamespaceRegistry;
+import javax.jcr.Node;
+import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.SecureHash.Algorithm;
@@ -96,41 +98,46 @@ public class ModelSequencer extends Sequencer {
 
     /**
      * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.sequencer.StreamSequencer#sequence(java.io.InputStream,
-     *      org.modeshape.graph.sequencer.SequencerOutput, org.modeshape.graph.sequencer.StreamSequencerContext)
+     *
+     * @see org.modeshape.jcr.api.sequencer.Sequencer#execute(javax.jcr.Property, javax.jcr.Node, org.modeshape.jcr.api.sequencer.Sequencer.Context)
      */
     @Override
-    public void sequence( InputStream stream,
-                          SequencerOutput output,
-                          StreamSequencerContext context ) {
-
+    public boolean execute( Property inputProperty,
+                            Node outputNode,
+                            Context context ) throws Exception {
         // Figure out the name of the model ...
         String originalFilePath = null;
-        Name modelName = null;
+        String modelName = null;
+
         if (vdbModel != null) {
-            Path pathToOriginalVdb = context.getInputPath();
-            originalFilePath = context.getValueFactories().getStringFactory().create(pathToOriginalVdb);
+//            Path pathToOriginalVdb = context.getInputPath();
+            originalFilePath = inputProperty.getPath();
             String pathInVdb = vdbModel.getPathInVdb();
             String modelFileName = pathInVdb;
             int index = modelFileName.lastIndexOf('/') + 1;
+
             if (index != -1 && index < modelFileName.length()) {
                 modelFileName = modelFileName.substring(index);
             }
-            modelName = context.getValueFactories().getNameFactory().create(modelFileName);
+
+            modelName = modelFileName;
         } else {
             Path pathToModelFile = context.getInputPath();
+
             if (pathToModelFile != null && !pathToModelFile.isRoot()) {
                 if (pathToModelFile.getLastSegment().getName().equals(JcrLexicon.CONTENT)) pathToModelFile = pathToModelFile.getParent();
                 if (!pathToModelFile.isRoot()) modelName = pathToModelFile.getLastSegment().getName();
             }
+
             originalFilePath = context.getValueFactories().getStringFactory().create(pathToModelFile);
         }
+
         if (modelName == null) {
             modelName = XmiLexicon.MODEL;
         }
+
         // Remove the ".xmi" extension
-        String modelNameWithoutExtension = modelName.getLocalName().replaceAll("\\.xmi$", "");
+        String modelNameWithoutExtension = modelName.replaceAll("\\.xmi$", "");
         modelName = context.getValueFactories().getNameFactory().create(modelName.getNamespaceUri(), modelNameWithoutExtension);
 
         // Use a local namespace registry so that we know which namespaces were used ...
@@ -139,6 +146,7 @@ public class ModelSequencer extends Sequencer {
         context = context.with(localRegistry);
 
         Graph graph = Graph.create(context);
+
         try {
             // Load the input into the transient graph ...
             HashingInputStream hashingStream = SecureHash.createHashingStream(Algorithm.SHA_1, stream);
@@ -154,6 +162,7 @@ public class ModelSequencer extends Sequencer {
                                                        useXmiUuidsAsJcrUuids, vdbModel);
             if (resolver != null) reader.setResolver(resolver);
             if (sha1 != null) reader.setSha1Hash(sha1);
+
             for (Namespace namespace : localRegistry.getLocalNamespaces()) {
                 String uri = namespace.getNamespaceUri();
                 if (!registry.isRegisteredNamespaceUri(uri)) {
@@ -177,5 +186,91 @@ public class ModelSequencer extends Sequencer {
                 context.getProblems().addError(e, TeiidI18n.errorSequencingModelContent, e.getLocalizedMessage());
             }
         }
+        return false;
     }
+//    
+//    /**
+//     * {@inheritDoc}
+//     * 
+//     * @see org.modeshape.graph.sequencer.StreamSequencer#sequence(java.io.InputStream,
+//     *      org.modeshape.graph.sequencer.SequencerOutput, org.modeshape.graph.sequencer.StreamSequencerContext)
+//     */
+//    @Override
+//    public void sequence( InputStream stream,
+//                          SequencerOutput output,
+//                          StreamSequencerContext context ) {
+//
+//        // Figure out the name of the model ...
+//        String originalFilePath = null;
+//        Name modelName = null;
+//        if (vdbModel != null) {
+//            Path pathToOriginalVdb = context.getInputPath();
+//            originalFilePath = context.getValueFactories().getStringFactory().create(pathToOriginalVdb);
+//            String pathInVdb = vdbModel.getPathInVdb();
+//            String modelFileName = pathInVdb;
+//            int index = modelFileName.lastIndexOf('/') + 1;
+//            if (index != -1 && index < modelFileName.length()) {
+//                modelFileName = modelFileName.substring(index);
+//            }
+//            modelName = context.getValueFactories().getNameFactory().create(modelFileName);
+//        } else {
+//            Path pathToModelFile = context.getInputPath();
+//            if (pathToModelFile != null && !pathToModelFile.isRoot()) {
+//                if (pathToModelFile.getLastSegment().getName().equals(JcrLexicon.CONTENT)) pathToModelFile = pathToModelFile.getParent();
+//                if (!pathToModelFile.isRoot()) modelName = pathToModelFile.getLastSegment().getName();
+//            }
+//            originalFilePath = context.getValueFactories().getStringFactory().create(pathToModelFile);
+//        }
+//        if (modelName == null) {
+//            modelName = XmiLexicon.MODEL;
+//        }
+//        // Remove the ".xmi" extension
+//        String modelNameWithoutExtension = modelName.getLocalName().replaceAll("\\.xmi$", "");
+//        modelName = context.getValueFactories().getNameFactory().create(modelName.getNamespaceUri(), modelNameWithoutExtension);
+//
+//        // Use a local namespace registry so that we know which namespaces were used ...
+//        NamespaceRegistry registry = context.getNamespaceRegistry();
+//        LocalNamespaceRegistry localRegistry = new LocalNamespaceRegistry(registry);
+//        context = context.with(localRegistry);
+//
+//        Graph graph = Graph.create(context);
+//        try {
+//            // Load the input into the transient graph ...
+//            HashingInputStream hashingStream = SecureHash.createHashingStream(Algorithm.SHA_1, stream);
+//            graph.importXmlFrom(hashingStream).usingAttributeForName("name").into("/");
+//            hashingStream.close();
+//            String sha1 = hashingStream.getHashAsHexString();
+//
+//            // Now read the graph ...
+//            Subgraph subgraph = graph.getSubgraphOfDepth(100).at("/xmi:XMI");
+//
+//            // Register any namespaces that were used, but use the desired case (not what's used in XMI) ...
+//            XmiModelReader reader = new XmiModelReader(parentPath, modelName, originalFilePath, subgraph, true,
+//                                                       useXmiUuidsAsJcrUuids, vdbModel);
+//            if (resolver != null) reader.setResolver(resolver);
+//            if (sha1 != null) reader.setSha1Hash(sha1);
+//            for (Namespace namespace : localRegistry.getLocalNamespaces()) {
+//                String uri = namespace.getNamespaceUri();
+//                if (!registry.isRegisteredNamespaceUri(uri)) {
+//                    String prefix = reader.namespacePrefix(namespace.getPrefix());
+//                    registry.register(prefix, uri);
+//                    // And re-register so that the sequencing context uses the updated prefixes ...
+//                    localRegistry.register(prefix, uri);
+//                }
+//            }
+//
+//            // Now process the input graph and output the desired format ...
+//            reader.write(output);
+//        } catch (RuntimeException e) {
+//            throw e;
+//        } catch (Throwable e) {
+//            context.getProblems().addError(e, TeiidI18n.errorSequencingModelContent, e.getLocalizedMessage());
+//        } finally {
+//            try {
+//                if (stream != null) stream.close();
+//            } catch (Throwable e) {
+//                context.getProblems().addError(e, TeiidI18n.errorSequencingModelContent, e.getLocalizedMessage());
+//            }
+//        }
+//    }
 }

@@ -30,33 +30,78 @@
 <xmi = "http://www.omg.org/XMI">
 <vdb = "http://www.metamatrix.com/metamodels/VirtualDatabase">
 <mmcore = "http://www.metamatrix.com/metamodels/Core">
+<mode = "http://www.modeshape.org/1.0">
 
 //------------------------------------------------------------------------------
 // N O D E T Y P E S
 //------------------------------------------------------------------------------
 
-[vdb:virtualDatabase] > nt:unstructured
+[vdb:virtualDatabase] > nt:unstructured, mode:hashed
  - vdb:description (string) 
  - vdb:version (long) = '1'
- - vdb:preview (boolean) = 'false'
- - vdb:originalFile (string)
- - mmcore:sha1 (string)
+ - vdb:originalFile (string) mandatory
+ + vdb:translators (vdb:translators) copy
+ + vdb:dataRoles (vdb:dataRoles) copy
+ + vdb:entries (vdb:entries) copy
+ + vdb:properties (vdb:properties) = vdb:properties copy
  
-[vdb:model] > xmi:model, mmcore:model
- - vdb:visible (boolean) = 'true'
- - vdb:checksum (long)
- - vdb:builtIn (boolean) = 'false'
- - vdb:pathInVdb (string)
- - vdb:sourceTranslator (string)
- - vdb:sourceJndiName (string)
- - vdb:sourceName (string)
- + vdb:markers (vdb:markers) = vdb:markers copy
+//[vdb:model] > mmcore:model
+// - vdb:pathInVdb (string) mandatory
+// - vdb:visible (boolean) = 'true'
+// - vdb:sourceTranslator (string)
+// - vdb:sourceJndiName (string)
+// - vdb:sourceName (string)
+//  - * (string) multiple copy
+// + vdb:markers (vdb:markers) = vdb:markers copy
+// + vdb:properties (vdb:properties) copy
 
-[vdb:markers] > nt:unstructured
- + vdb:marker (vdb:marker) = vdb:marker copy sns
+//[vdb:markers] > nt:unstructured
+// + vdb:marker (vdb:marker) = vdb:marker copy sns
 
-[vdb:marker] > nt:unstructured
- - vdb:severity (string) = 'WARNING' < 'WARNING','ERROR','INFO'
- - vdb:path (string)
- - vdb:message (string)
+//[vdb:marker] > nt:unstructured
+// - vdb:severity (string) = 'WARNING' < 'WARNING','ERROR','INFO'
+// - vdb:path (string) mandatory
+// - vdb:message (string) mandatory
  
+[vdb:translators] > nt:unstructured
+ + vdb:translator (vdb:translator) copy sns
+  
+[vdb:translator] > nt:unstructured
+ - vdb:name (string) mandatory
+ - vdb:type (string) mandatory
+ - vdb:description (string)
+ + vdb:properties (vdb:properties) copy
+ 
+[vdb:dataRoles] > nt:unstructured
+ + vdb:dataRole (vdb:dataRole) copy sns
+ 
+[vdb:dataRole] > nt:unstructured
+ - vdb:name (string) mandatory
+ - vdb:description (string)
+ - vdb:anyAuthenticated (boolean) = 'false'
+ - vdb:allowCreateTemporaryTables (boolean) = 'false'
+ - vdb:mappedRoleNames (string) multiple
+ + vdb:permission (vdb:permission) = vdb:permission multiple copy
+
+[vdb:entries] > nt:unstructured
+ + vdb:vdbEntry (vdb:entry) copy sns
+ 
+[vdb:entry] > nt:unstructured
+ - vdb:path (string) mandatory
+ - vdb:description (string)
+ + vdb:properties (vdb:properties) copy
+
+[vdb:permissions] > nt:unstructured
+ + vdb:permission (vdb:permission) copy sns
+
+[vdb:permission] > nt:unstructured
+ - resourceName (string) mandatory
+ - allowCreate (boolean) = 'false'
+ - allowRead (boolean) = 'false'
+ - allowUpdate (boolean) = 'false'
+ - allowDelete (boolean) = 'false'
+ - allowExecute (boolean) = 'false'
+ - allowAlter (boolean) = 'false'
+
+[vdb:properties] > nt:unstructured
+ - * (string) multiple

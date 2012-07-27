@@ -24,54 +24,73 @@
 package org.modeshape.sequencer.teiid;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.jcr.Node;
+import javax.jcr.NodeIterator;
+import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
 import org.junit.Test;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.sequencer.AbstractStreamSequencerTest;
-import org.modeshape.graph.sequencer.StreamSequencer;
+import org.modeshape.jcr.sequencer.AbstractSequencerTest;
+import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
 
 /**
  * 
  */
-public class VdbSequencerTest extends AbstractStreamSequencerTest {
+public class VdbSequencerTest extends AbstractSequencerTest {
+//
+//    @Override
+//    protected InputStream getRepositoryConfigStream() {
+//        return resourceStream("config/repo-config.json");
+//    }
 
-    @Override
-    protected StreamSequencer createSequencer() {
-        return new VdbSequencer();
+    @Test
+    public void shouldSequenceBooksVDB() throws Exception {
+        Node parent = createNodeWithContentFromFile("model/books/BooksVDB.vdb", "model/books/BooksVDB.vdb");
+        Node outputNode = getOutputNode(this.rootNode, "model/books/BooksVDB.vdb/" + VdbLexicon.VIRTUAL_DATABASE, 60);
+        assertNotNull(outputNode);
+        assertEquals(VdbLexicon.VIRTUAL_DATABASE, outputNode.getPrimaryNodeType().getName());
     }
 
     @Test
     public void shouldSequenceVdbForQuickEmployees() throws Exception {
-        // print = true;
-        sequence("vdb/qe.vdb");
-        assertNoProblems();
-        printOutput();
+        Node parent = createNodeWithContentFromFile("Employees.xmi", "model/QuickEmployees/Employees.xmi");
+        Node outputNode = getOutputNode(this.rootNode, "model/QuickEmployees/Employees.xmi/" + VdbLexicon.VIRTUAL_DATABASE, 60);
+        assertNotNull(outputNode);
+        assertEquals(VdbLexicon.VIRTUAL_DATABASE, outputNode.getPrimaryNodeType().getName());
+//
+//        // print = true;
+//        sequence("vdb/qe.vdb");
+//        assertNoProblems();
+//        printOutput();
     }
-
-    @Test
-    public void shouldSequenceVdbForQuickEmployeesWithVersionSpecifiedInFileName() throws Exception {
-        // print = true;
-        sequence("vdb/qe.2.vdb");
-        assertNoProblems();
-        printOutput();
-    }
-
-    @Test
-    public void shouldSequenceVdbForPartsFromXml() throws Exception {
-        // print = true;
-        sequence("vdb/PartsFromXml.vdb");
-        assertNoProblems();
-        printOutput();
-    }
-
-    @Test
-    public void shouldSequenceVdbForYahooUdfTest() throws Exception {
-        // print = true;
-        sequence("vdb/YahooUdfTest.vdb");
-        assertNoProblems();
-        printOutput();
-    }
+//
+//    @Test
+//    public void shouldSequenceVdbForQuickEmployeesWithVersionSpecifiedInFileName() throws Exception {
+//        // print = true;
+//        sequence("vdb/qe.2.vdb");
+//        assertNoProblems();
+//        printOutput();
+//    }
+//
+//    @Test
+//    public void shouldSequenceVdbForPartsFromXml() throws Exception {
+//        // print = true;
+//        sequence("vdb/PartsFromXml.vdb");
+//        assertNoProblems();
+//        printOutput();
+//    }
+//
+//    @Test
+//    public void shouldSequenceVdbForYahooUdfTest() throws Exception {
+//        // print = true;
+//        sequence("vdb/YahooUdfTest.vdb");
+//        assertNoProblems();
+//        printOutput();
+//    }
 
     @Test
     public void shouldExtractVersionInformation() {
@@ -95,8 +114,8 @@ public class VdbSequencerTest extends AbstractStreamSequencerTest {
                                       String expectedName,
                                       int expectedVersion ) {
         AtomicInteger actual = new AtomicInteger(1);
-        Name name = VdbSequencer.extractVersionInfomation(context, fileNameWithoutExtension, actual);
-        assertThat(name, is(context.getValueFactories().getNameFactory().create(expectedName)));
+        String name = VdbSequencer.extractVersionInfomation(fileNameWithoutExtension, actual);
+        assertThat(name, is(expectedName));
         assertThat(actual.get(), is(expectedVersion));
     }
 }

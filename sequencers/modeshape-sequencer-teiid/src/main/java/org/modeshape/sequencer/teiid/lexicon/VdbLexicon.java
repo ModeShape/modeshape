@@ -23,7 +23,6 @@
  */
 package org.modeshape.sequencer.teiid.lexicon;
 
-
 import static org.modeshape.sequencer.teiid.lexicon.VdbLexicon.Namespace.PREFIX;
 
 /**
@@ -39,23 +38,63 @@ public class VdbLexicon {
     public static final String VIRTUAL_DATABASE = PREFIX + ":virtualDatabase";
     public static final String DESCRIPTION = PREFIX + ":description";
     public static final String VERSION = PREFIX + ":version";
-    public static final String PREVIEW = PREFIX + ":preview";
     public static final String ORIGINAL_FILE = PREFIX + ":originalFile";
+    public static final String PROPERTIES = PREFIX + ":properties";
 
-    public static final String MODEL = PREFIX + ":model";
-    public static final String VISIBLE = PREFIX + ":visible";
-    public static final String CHECKSUM = PREFIX + ":checksum";
-    public static final String BUILT_IN = PREFIX + ":builtIn";
-    public static final String PATH_IN_VDB = PREFIX + ":pathInVdb";
-    public static final String SOURCE_TRANSLATOR = PREFIX + ":sourceTranslator";
-    public static final String SOURCE_JNDI_NAME = PREFIX + ":sourceJndiName";
-    public static final String SOURCE_NAME = PREFIX + ":sourceName";
+    public interface Model {
+        String MODEL = PREFIX + ":model";
+        String VISIBLE = PREFIX + ":visible";
+        String PATH_IN_VDB = PREFIX + ":pathInVdb";
+        String SOURCE_TRANSLATOR = PREFIX + ":sourceTranslator";
+        String SOURCE_JNDI_NAME = PREFIX + ":sourceJndiName";
+        String SOURCE_NAME = PREFIX + ":sourceName";
+        String PROPERTIES = PREFIX + ":properties";
+    
+        public interface Marker {
+            String MARKERS = PREFIX + ":markers";
+            String MARKER = PREFIX + ":marker";
+            String SEVERITY = PREFIX + ":severity";
+            String PATH = PREFIX + ":path";
+            String MESSAGE = PREFIX + ":message";
+        }
+    }
 
-    public static final String MARKERS = PREFIX + ":markers";
+    public interface DataRole {
+        String DATA_ROLES = PREFIX + ":dataRoles";
+        String DATA_ROLE = PREFIX + ":dataRole";
+        String NAME = PREFIX + ":name";
+        String DESCRIPTION = PREFIX + ":description";
+        String ANY_AUTHENTICATED = PREFIX + ":anyAuthenticated";
+        String ALLOW_CREATE_TEMP_TABLES = PREFIX + ":allowCreateTemporaryTables";
+        String MAPPED_ROLE_NAMES = PREFIX + ":mappedRoleNames";
 
-    public static final String MARKER = PREFIX + ":marker";
-    public static final String SEVERITY = PREFIX + ":severity";
-    public static final String PATH = PREFIX + ":path";
-    public static final String MESSAGE = PREFIX + ":message";
+        public interface Permission {
+            String PERMISSIONS = PREFIX + ":permissions";
+            String PERMISSION = PREFIX + ":permission";
+            String RESOURCE_NAME = PREFIX + ":resourceName";
+            String ALLOW_ALTER = PREFIX + ":allowAlter";
+            String ALLOW_CREATE = PREFIX + ":allowCreate";
+            String ALLOW_DELETE = PREFIX + ":allowDelete";
+            String ALLOW_EXECUTE = PREFIX + ":allowExecute";
+            String ALLOW_READ = PREFIX + ":allowRead";
+            String ALLOW_UPDATE = PREFIX + ":allowUpdate";
+        }
+    }
 
+    public interface Translator {
+        String TRANSLATORS = PREFIX + ":translators";
+        String TRANSLATOR = PREFIX + ":translator";
+        String NAME = PREFIX + ":name";
+        String TYPE = PREFIX + ":type";
+        String DESCRIPTION = PREFIX + ":description";
+        String PROPERTIES = PREFIX + ":properties";
+    }
+
+    public interface Entry {
+        String ENTRIES = PREFIX + ":entries";
+        String ENTRY = PREFIX + ":entry";
+        String PATH = PREFIX + ":path";
+        String DESCRIPTION = PREFIX + ":description";
+        String PROPERTIES = PREFIX + ":properties";
+    }
 }
