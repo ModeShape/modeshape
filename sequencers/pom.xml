@@ -86,7 +86,7 @@
         <module>modeshape-sequencer-mp3</module>
         <module>modeshape-sequencer-text</module>
         <module>modeshape-sequencer-sramp</module>
-        <!--<module>sequencers/modeshape-sequencer-teiid</module>-->
+        <module>sequencers/modeshape-sequencer-teiid</module>
         <module>modeshape-sequencer-xsd</module>
         <module>modeshape-sequencer-xml</module>
         <module>modeshape-sequencer-wsdl</module>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+    <xs:element name="vdb">
+        <xs:annotation>
+            <xs:documentation>Describes the configuration for a VDB</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="description" type="xs:string" minOccurs="0"/>
+                <xs:element name="property" type="property" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="model" maxOccurs="unbounded" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>A model defines the alias for the Schema the data being integrated. In the Designer
+                        built VDB, the Schema for this model is defined by external index files. In the "Dynamic VDB"
+                        this defines the importer properties along with "source" information the Schema 
+                        is generated at deploy time.</xs:documentation>
+                    </xs:annotation>                
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="description" type="xs:string" minOccurs="0"/>
+                            <xs:element name="property" type="property" minOccurs="0" maxOccurs="unbounded"/>
+                            <xs:element name="source" minOccurs="0" maxOccurs="unbounded">
+                                <xs:annotation>
+                                    <xs:documentation>A source defines access to physical data source with its connection-jndi-name.
+                                    translator-name defines a translator. Translator is a layer between Teiid engine and data source
+                                    that knows how to convert and execute commands native to source. Teiid offers various 
+                                    pre-built translators.</xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:attribute name="name" type="xs:string" use="required"/>
+                                    <xs:attribute name="translator-name" type="xs:string" use="required"/>
+                                    <xs:attribute name="connection-jndi-name" type="xs:string"/>
+                                </xs:complexType>
+                            </xs:element>
+                            <xs:element name="validation-error" minOccurs="0" maxOccurs="unbounded">
+                                <xs:annotation>
+                                    <xs:documentation>When Schema files for model defined by Designer, the validation-errors define
+                                    any errors in the schema. This is not applicable in the Dynamic VDB scenario.</xs:documentation>
+                                </xs:annotation>                            
+                                <xs:complexType>
+                                    <xs:simpleContent>
+                                        <xs:extension base="xs:string">
+                                            <xs:attribute name="severity" use="required">
+                                                <xs:simpleType>
+                                                    <xs:restriction base="xs:string">
+                                                        <xs:enumeration value="ERROR"/>
+                                                        <xs:enumeration value="WARNING"/>
+                                                    </xs:restriction>
+                                                </xs:simpleType>
+                                            </xs:attribute>
+                                            <xs:attribute name="path" type="xs:string"/>
+                                        </xs:extension>
+                                    </xs:simpleContent>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                        <xs:attribute name="name" type="xs:string" use="required"/>
+                        <xs:attribute name="type" type="xs:string" default="PHYSICAL"/>
+                        <xs:attribute name="visible" type="xs:boolean" default="true"/>
+                        <xs:attribute name="path" type="xs:string"/>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="translator" maxOccurs="unbounded" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>When the pre-built translator's behavior need to be altered, this optional element need to
+                         be used to override them.</xs:documentation>
+                    </xs:annotation>                 
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="property" type="property" minOccurs="0" maxOccurs="unbounded"/>
+                        </xs:sequence>
+                        <xs:attribute name="name" type="xs:string" use="required"/>
+                        <xs:attribute name="type" type="xs:string" use="required"/>
+                        <xs:attribute name="description" type="xs:string"/>
+                    </xs:complexType>
+                </xs:element>                
+                <xs:element name="data-role" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>This defines a data role. The "resource-name" element defines fully qualified 
+                        name for a Schema, Table, Procedure, etc.  The "allows-*" elements define the security access, which are applied to the resource
+                        and all child resources.  The "mapped-role-name" defines the "role" name that user must have before they have access to this data. 
+                        The "role" name matches to the JAAS based role that user has.</xs:documentation>
+                    </xs:annotation>                 
+                
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="description" type="xs:string" minOccurs="0"/>
+                            <xs:element name="permission" minOccurs="1" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:sequence>                            
+                                         <xs:element name="resource-name" type="xs:string"/>
+                                         <xs:element name="allow-create" type="xs:boolean" minOccurs="0"/>
+                                         <xs:element name="allow-read" type="xs:boolean" minOccurs="0"/>
+                                         <xs:element name="allow-update" type="xs:boolean" minOccurs="0"/>
+                                         <xs:element name="allow-delete" type="xs:boolean" minOccurs="0"/>
+                                         <xs:element name="allow-execute" type="xs:boolean" minOccurs="0"/>
+                                         <xs:element name="allow-alter" type="xs:boolean" minOccurs="0"/>
+                                   </xs:sequence>      
+                                </xs:complexType>
+                            </xs:element>                                                                      
+                            <xs:element name="mapped-role-name" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+                        </xs:sequence>
+                        <xs:attribute name="name" type="xs:string" use="required"/>
+                        <xs:attribute name="any-authenticated" type="xs:boolean"/>
+                        <xs:attribute name="allow-create-temporary-tables" type="xs:boolean"/>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="entry" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>With Designer based VDBs, this element is used to define extra files that are
+                        defined inside the VDB archive. Not applicable for Dynamic VDBs</xs:documentation>
+                    </xs:annotation>                 
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="description" type="xs:string" minOccurs="0"/>
+                            <xs:element name="property" type="property" minOccurs="0" maxOccurs="unbounded"/>
+                        </xs:sequence>
+                        <xs:attribute name="path" type="xs:string" use="required"/>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+            <xs:attribute name="version" type="xs:int" use="required"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:complexType name="property">
+        <xs:annotation>
+            <xs:documentation> property</xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="value" type="xs:string" use="required"/>
+    </xs:complexType>
+</xs:schema>

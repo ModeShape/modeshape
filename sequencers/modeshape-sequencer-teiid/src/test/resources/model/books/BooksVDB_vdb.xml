@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<vdb version="2" name="BooksVDB">
+    <description>This is a VDB description</description>
+    <property value="true" name="preview"/>
+    <property value="10000" name="query-timeout"/>
+    <model visible="false" type="VIRTUAL" name="BooksProcedures" path="/TestRESTWarGen/BooksProcedures.xmi">
+        <description>This is a model description</description>
+        <property value="1855484649" name="checksum"/>
+        <property value="Relational" name="modelClass"/>
+        <property value="false" name="builtIn"/>
+        <property value="1159106455.INDEX" name="indexName"/>
+        <property value="/TestRESTWarGen/MyBooks.xmi" name="imports"/>
+    </model>
+    <model visible="true" type="PHYSICAL" name="MyBooks" path="/TestRESTWarGen/MyBooks.xmi">
+        <property value="2550610907" name="checksum"/>
+        <property value="Relational" name="modelClass"/>
+        <property value="false" name="builtIn"/>
+        <property value="718925066.INDEX" name="indexName"/>
+        <source translator-name="MyBooks_mysql5" connection-jndi-name="MyBooks" name="MyBooks"/>
+    </model>
+    <model visible="true" type="VIRTUAL" name="MyBooksView" path="/TestRESTWarGen/MyBooksView.xmi">
+        <property value="825941341" name="checksum"/>
+        <property value="Relational" name="modelClass"/>
+        <property value="false" name="builtIn"/>
+        <property value="2173178531.INDEX" name="indexName"/>
+        <property value="/TestRESTWarGen/MyBooks.xmi" name="imports"/>
+        <validation-error path="BOOKS" severity="ERROR">The name BOOKS is the same (ignoring case) as 1 other object(s) under the same parent</validation-error>
+        <validation-error path="BOOKS" severity="ERROR">Group does not exist: MyBooksView.BOOKS</validation-error>
+        <validation-error path="BOOKS" severity="ERROR">The name BOOKS is the same (ignoring case) as 1 other object(s) under the same parent</validation-error>
+    </model>
+    <translator description="This is a translator description" type="mysql5" name="MyBooks_mysql5">
+        <property value="bogusName" name="nameInSource"/>
+        <property value="true" name="supportsUpdate"/>
+    </translator>
+    <data-role allow-create-temporary-tables="true" any-authenticated="true" name="My Data Role">
+        <description>my data role description</description>
+        <mapped-role-name>Sledge</mapped-role-name>
+        <mapped-role-name>Hammer</mapped-role-name>
+        <permission>
+            <resource-name>BooksProcedures</resource-name>
+            <allow-create>false</allow-create>
+            <allow-read>true</allow-read>
+            <allow-update>true</allow-update>
+            <allow-delete>true</allow-delete>
+            <allow-execute>false</allow-execute>
+            <allow-alter>false</allow-alter>
+        </permission>
+        <permission>
+            <resource-name>sysadmin</resource-name>
+            <allow-create>false</allow-create>
+            <allow-read>true</allow-read>
+            <allow-update>false</allow-update>
+            <allow-delete>false</allow-delete>
+            <allow-execute>false</allow-execute>
+            <allow-alter>false</allow-alter>
+        </permission>
+        <permission>
+            <resource-name>MyBooks</resource-name>
+            <allow-create>false</allow-create>
+            <allow-read>true</allow-read>
+            <allow-update>true</allow-update>
+            <allow-delete>true</allow-delete>
+            <allow-execute>false</allow-execute>
+            <allow-alter>false</allow-alter>
+        </permission>
+    </data-role>
+    <entry path="path1">
+        <description>This is entry 1 description</description>
+        <property value="Ringo" name="drummer"/>
+        <property value="John" name="guitar"/>
+    </entry>
+    <entry path="path2">
+        <description>This is entry 2 description</description>
+        <property value="Paul" name="bass"/>
+        <property value="George" name="leadGuitar"/>
+    </entry>
+</vdb>

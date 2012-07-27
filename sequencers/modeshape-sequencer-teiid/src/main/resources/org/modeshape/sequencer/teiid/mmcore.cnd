@@ -51,7 +51,7 @@
   - mmcore:producerName (string)
   - mmcore:producerVersion (string)
   - mmcore:originalFile (string)
-  - mmcore:sha1 (string)
+//  - mmcore:sha1 (string)
 
 [mmcore:import] > nt:unstructured, xmi:referenceable orderable
   - mmcore:modelType (string) = 'UNKNOWN' < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'

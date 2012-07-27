@@ -24,9 +24,12 @@
 package org.modeshape.sequencer.teiid;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import org.modeshape.common.util.CheckArg;
 
 /**
  * A simple POJO that is used to represent the information for a model read in from a VDB manifest ("vdb.xml").
@@ -39,6 +42,7 @@ public class VdbModel implements Comparable<VdbModel> {
         public static final String VIRTUAL = "VIRTUAL";
     }
 
+    private String description;
     private final String name;
     private final String type;
     private final String pathInVdb;
@@ -46,35 +50,59 @@ public class VdbModel implements Comparable<VdbModel> {
     private String sourceJndiName;
     private String sourceName;
     private boolean visible = true;
-    private boolean builtIn = false;
-    private long checksum;
     private final Set<String> imports = new HashSet<String>();
     private List<ValidationMarker> problems = new ArrayList<ValidationMarker>();
+    private final Map<String, String> properties = new HashMap<String, String>();
 
     public VdbModel( String name,
                      String type,
                      String pathInVdb ) {
+        CheckArg.isNotEmpty(name, "name");
+        CheckArg.isNotEmpty(type, "type");
+        CheckArg.isNotEmpty(pathInVdb, "pathInVdb");
+
         this.name = name;
         this.pathInVdb = pathInVdb;
         this.type = type;
     }
 
     /**
-     * @return name
+     * @return the description (never <code>null</code> but can be empty)
+     */
+    public String getDescription() {
+        return ((this.description == null) ? "" : this.description);
+    }
+
+    /**
+     * @param newValue the new description value (can be <code>null</code> or empty)
+     */
+    public void setDescription( final String newValue ) {
+        this.description = newValue;
+    }
+
+    /**
+     * @return the name (never <code>null</code> or empty)
      */
     public String getName() {
         return name;
     }
 
     /**
-     * @return type
+     * @return the overridden properties (never <code>null</code>)
+     */
+    public Map<String, String> getProperties() {
+        return this.properties;
+    }
+
+    /**
+     * @return the type (never <code>null</code> or empty)
      */
     public String getType() {
         return type;
     }
 
     /**
-     * @return visible
+     * @return <code>true</code> if model can be queried by user
      */
     public boolean isVisible() {
         return visible;
@@ -88,35 +116,7 @@ public class VdbModel implements Comparable<VdbModel> {
     }
 
     /**
-     * @return builtIn
-     */
-    public boolean isBuiltIn() {
-        return builtIn;
-    }
-
-    /**
-     * @param builtIn Sets builtIn to the specified value.
-     */
-    public void setBuiltIn( boolean builtIn ) {
-        this.builtIn = builtIn;
-    }
-
-    /**
-     * @return checksum
-     */
-    public long getChecksum() {
-        return checksum;
-    }
-
-    /**
-     * @param checksum Sets checksum to the specified value.
-     */
-    public void setChecksum( long checksum ) {
-        this.checksum = checksum;
-    }
-
-    /**
-     * @return pathInVdb
+     * @return the path in the VDB (never <code>null</code> or empty)
      */
     public String getPathInVdb() {
         return pathInVdb;
@@ -151,7 +151,7 @@ public class VdbModel implements Comparable<VdbModel> {
     }
 
     /**
-     * @return sourceName
+     * @return the source name
      */
     public String getSourceName() {
         return sourceName;
@@ -165,14 +165,18 @@ public class VdbModel implements Comparable<VdbModel> {
     }
 
     /**
-     * @return imports
+     * @return the paths of the imported models (never <code>null</code> but can be empty)
      */
     public Set<String> getImports() {
         return imports;
     }
 
-    public void addImport( String importedPath ) {
-        if (importedPath != null) imports.add(importedPath);
+    /**
+     * @param newImport the model import path being added as an import (cannot be <code>null</code> or empty)
+     */
+    public void addImport( final String newImport ) {
+        CheckArg.isNotEmpty(newImport, "newImport");
+        this.imports.add(newImport);
     }
 
     /**
@@ -195,7 +199,7 @@ public class VdbModel implements Comparable<VdbModel> {
             try {
                 addProblem(Severity.valueOf(severity.trim().toUpperCase()), path, message);
             } catch (IllegalArgumentException e) {
-                // Uknown severity, so ignore
+                // Unknown severity, so ignore
             }
         }
     }
