@@ -110,8 +110,8 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
     public SchematicEntryLiteral copyForWrite() {
         try {
             SchematicEntryLiteral clone = (SchematicEntryLiteral)super.clone();
-            //TODO author=Horia Chiorean date=7/20/12 description=MODE-1546 - This is not efficient and should be handled differently
-            //clone.value = (MutableDocument)value.clone();
+            //TODO author=Horia Chiorean date=7/27/12 description=This may not be optimal
+            clone.value = (MutableDocument)value.clone();
             clone.proxy = proxy;
             clone.copied = true;
             return clone;
