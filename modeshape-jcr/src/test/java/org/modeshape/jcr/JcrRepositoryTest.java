@@ -33,8 +33,12 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.jcr.NamespaceException;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
@@ -809,6 +813,44 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
 
         // and now Session.save() will work ...
         session.save();
+    }
+
+    @Test
+    @FixFor( "MODE-1360" )
+    public void shouldHandleMultipleConcurrentReadWriteSessions() throws Exception {
+        int numThreads = 100;
+        final AtomicBoolean passed = new AtomicBoolean(true);
+        final AtomicInteger counter = new AtomicInteger(0);
+        ExecutorService executor = Executors.newFixedThreadPool(50);
+        try {
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Session session = repository.login();
+                        session.getRootNode().addNode("n" + counter.getAndIncrement()); // unique name
+                        session.save();
+                        session.logout();
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                        passed.set(false);
+                    }
+                }
+
+            };
+            for (int i = 0; i < numThreads; i++) {
+                executor.execute(runnable);
+            }
+            executor.shutdown(); // Disable new tasks from being submitted
+            System.out.println("Done");
+        } finally {
+            if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
+                fail("timeout");
+            }
+            if (!passed.get()) {
+                fail("one or more threads got an exception");
+            }
+        }
     }
 
     protected void nodeExists( Session session,
