@@ -1,6 +1,6 @@
 # Release Notes for ModeShape &version;
 
-The ModeShape &version; release is the first beta release of our new architecture, and is suitable
+The ModeShape &version; release is the second beta release of our new architecture, and is suitable
 only for testing and previewing features. APIs and storage formats are still subject to change.
 
 ## What's new
