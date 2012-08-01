@@ -29,6 +29,8 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.List;
 import javax.jcr.Binary;
+import javax.jcr.NamespaceException;
+import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
@@ -38,6 +40,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.Base64;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.common.xml.XmlCharacters;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.ValueFactory;
@@ -321,7 +324,21 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
             endElement(contentHandler, JcrSvLexicon.VALUE);
         } else {
             AttributesImpl valueAtts = new AttributesImpl();
-            valueAtts.addAttribute("xsi", "type", "xsi:type", "STRING", "xsd:base64Binary");
+            NamespaceRegistry namespaceRegistry = session.getWorkspace().getNamespaceRegistry();
+            String xsiPrefix = null;
+            try {
+                xsiPrefix = namespaceRegistry.getPrefix("“http://www.w3.org/2001/XMLSchema-instance");
+            } catch (NamespaceException e) {
+                xsiPrefix = "xsi";
+            }
+
+            String xsdPrefix = null;
+            try {
+                xsdPrefix = namespaceRegistry.getPrefix("http://www.w3.org/2001/XMLSchema");
+            } catch (RepositoryException e) {
+                xsdPrefix = "xsd";
+            }
+            valueAtts.addAttribute(xsiPrefix, "type", xsiPrefix + ":type", "STRING", xsdPrefix + ":base64Binary");
 
             startElement(contentHandler, JcrSvLexicon.VALUE, valueAtts);
             try {
