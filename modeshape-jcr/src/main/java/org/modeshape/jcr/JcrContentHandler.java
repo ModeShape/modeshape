@@ -53,6 +53,7 @@ import org.modeshape.common.collection.Collections;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.util.Base64;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
@@ -1004,9 +1005,9 @@ class JcrContentHandler extends DefaultHandler {
         private final NodeHandlerFactory nodeHandlerFactory;
         private String currentPropertyName;
         private int currentPropertyType;
-        private boolean currentPropertyValueIsBinary;
+        private boolean currentPropertyValueIsBase64Encoded;
         private boolean currentPropertyIsMultiValued;
-        private StringBuilder currentPropertyValue;
+        private final StringBuilder currentPropertyValue;
 
         SystemViewContentHandler( AbstractJcrNode parent ) {
             super();
@@ -1015,6 +1016,7 @@ class JcrContentHandler extends DefaultHandler {
             this.svMultipleName = JcrSvLexicon.MULTIPLE.getString(namespaces());
             this.current = new ExistingNodeHandler(parent, null);
             this.nodeHandlerFactory = new StandardNodeHandlerFactory();
+            currentPropertyValue = new StringBuilder();
         }
 
         /**
@@ -1029,7 +1031,8 @@ class JcrContentHandler extends DefaultHandler {
                                   String name,
                                   Attributes atts ) throws SAXException {
             // Always create a new string buffer for the content value, because we're starting a new element ...
-            currentPropertyValue = new StringBuilder();
+            currentPropertyValue.setLength(0);
+            currentPropertyValueIsBase64Encoded = false;
 
             if ("node".equals(localName)) {
                 // Finish the parent handler ...
@@ -1047,8 +1050,16 @@ class JcrContentHandler extends DefaultHandler {
                 // See if there is an "xsi:type" attribute on this element, which means the property value contained
                 // characters that cannot be represented in XML without escaping. See Section 11.2, Item 11.b ...
                 String xsiType = atts.getValue("http://www.w3.org/2001/XMLSchema-instance", "type");
-                currentPropertyValueIsBinary = "xs:base64Binary".equals(xsiType);
+                if (StringUtil.isBlank(xsiType)) {
+                    return;
+                }
 
+                String propertyPrefix = namespaces.getPrefixForNamespaceUri("http://www.w3.org/2001/XMLSchema", false);
+                if (StringUtil.isBlank(propertyPrefix)) {
+                    return;
+                }
+                String base64TypeName = propertyPrefix + ":base64Binary";
+                currentPropertyValueIsBase64Encoded = base64TypeName.equals(xsiType);
             } else if (!"value".equals(localName)) {
                 throw new IllegalStateException("Unexpected element '" + name + "' in system view");
             }
@@ -1076,7 +1087,7 @@ class JcrContentHandler extends DefaultHandler {
             } else if ("value".equals(localName)) {
                 // Add the content for the current property ...
                 String currentPropertyString = currentPropertyValue.toString();
-                if (currentPropertyValueIsBinary) {
+                if (currentPropertyValueIsBase64Encoded) {
                     // The current string is a base64 encoded string, so we need to decode it first ...
                     try {
                         currentPropertyString = decodeBase64AsString(currentPropertyString);
@@ -1093,7 +1104,6 @@ class JcrContentHandler extends DefaultHandler {
             } else {
                 throw new IllegalStateException("Unexpected element '" + name + "' in system view");
             }
-            currentPropertyValue = new StringBuilder();
         }
     }
 
