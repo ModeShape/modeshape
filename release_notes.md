@@ -5,11 +5,10 @@ only for testing and previewing features. APIs and storage formats are still sub
 
 ## What's new
 
-&version; is the first 3.x release that provides a feature complete implementation of the 
-JCR 2.0 (JSR-283) specification. This release adds support for full-text search, text extraction,
-and shareable nodes, plus it fixes quite a few bugs and issues. We've also improved the way
-binary values (and related information such as MIME types and extract text) are handled and
-stored within the BinaryStore.
+&version; provides a feature complete implementation of the JCR 2.0 (JSR-283) specification. 
+This release adds support for full-text search, text extraction, and shareable nodes, plus 
+it fixes quite a few bugs and issues. We've also improved the way binary values (and related 
+information such as MIME types and extract text) are handled and stored within the BinaryStore.
 
 Overall, ModeShape 3.0 has changed a lot since ModeShape 2.8.x:
 
