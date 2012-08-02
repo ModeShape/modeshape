@@ -36,9 +36,9 @@ public class HashCodeTest {
 
     @Test
     public void shouldComputeHashCodeForOnePrimitive() {
-//        assertThat(HashCode.compute(1), is(not(0)));
+        assertThat(HashCode.compute(1), is(not(0)));
         assertThat(HashCode.compute((long)8), is(not(0)));
-//        assertThat(HashCode.compute((short)3), is(not(0)));
+        assertThat(HashCode.compute((short)3), is(not(0)));
         assertThat(HashCode.compute(1.0f), is(not(0)));
         assertThat(HashCode.compute(1.0d), is(not(0)));
         assertThat(HashCode.compute(true), is(not(0)));
@@ -46,9 +46,9 @@ public class HashCodeTest {
 
     @Test
     public void shouldComputeHashCodeForMultiplePrimitives() {
-//        assertThat(HashCode.compute(1, 2, 3), is(not(0)));
+        assertThat(HashCode.compute(1, 2, 3), is(not(0)));
         assertThat(HashCode.compute((long)8, (long)22, 33), is(not(0)));
-//        assertThat(HashCode.compute((short)3, (long)22, true), is(not(0)));
+        assertThat(HashCode.compute((short)3, (long)22, true), is(not(0)));
     }
 
     @Test
