@@ -201,10 +201,11 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
 
         String valueAsString;
         if (PropertyType.BINARY == prop.getType()) {
-            StringBuffer buff = new StringBuffer(ENCODE_BUFFER_SIZE);
+            StringBuilder buff = new StringBuilder(ENCODE_BUFFER_SIZE);
             Binary binary = value.getBinary();
+            Base64.InputStream is = null;
             try {
-                Base64.InputStream is = new Base64.InputStream(value.getBinary().getStream(), Base64.ENCODE);
+                is = new Base64.InputStream(value.getBinary().getStream(), Base64.ENCODE);
 
                 byte[] bytes = new byte[ENCODE_BUFFER_SIZE];
                 int len;
@@ -215,6 +216,13 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
                 throw new RepositoryException(ioe);
             } finally {
                 try {
+                    if (is != null) {
+                        try {
+                            is.close();
+                        } catch (IOException e) {
+                            //ignore
+                        }
+                    }
                     binary.dispose();
                 } finally {
                     if (!prop.isModified()) {

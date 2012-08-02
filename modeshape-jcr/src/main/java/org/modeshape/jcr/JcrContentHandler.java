@@ -217,6 +217,20 @@ class JcrContentHandler extends DefaultHandler {
         return jcrValueFactory.createValue(jcrValueFactory.createBinary(stream));
     }
 
+    protected final Map<Name, Integer> propertyTypesFor( String primaryTypeName ) {
+        Map<Name, Integer> propertyTypesMap = new HashMap<Name, Integer>();
+
+        JcrNodeType nodeType = nodeTypeFor(primaryTypeName);
+        if (nodeType == null) {
+            //nt:share seems to fall into this category
+            return propertyTypesMap;
+        }
+        for (JcrPropertyDefinition propertyDefinition : nodeType.getPropertyDefinitions()) {
+            propertyTypesMap.put(propertyDefinition.getInternalName(), propertyDefinition.getRequiredType());
+        }
+        return propertyTypesMap;
+    }
+
     protected final SessionCache cache() {
         return cache;
     }
@@ -1135,13 +1149,26 @@ class JcrContentHandler extends DefaultHandler {
             String nodeName = DOCUMENT_VIEW_NAME_DECODER.decode(name);
             current = nodeHandlerFactory.createFor(nameFor(nodeName), current, uuidBehavior);
 
-            // Add the properties ...
+            String primaryType = null;
+            Map<Name, String> propertiesNamesValues = new HashMap<Name, String>();
             for (int i = 0; i < atts.getLength(); i++) {
+                Name propertyName = nameFor(DOCUMENT_VIEW_NAME_DECODER.decode(atts.getQName(i)));
                 String value = atts.getValue(i);
-                if (value == null) continue;
-                value = DOCUMENT_VIEW_VALUE_DECODER.decode(value);
-                String propertyName = DOCUMENT_VIEW_NAME_DECODER.decode(atts.getQName(i));
-                current.addPropertyValue(nameFor(propertyName), value, false, PropertyType.STRING, null);
+                if (value != null) {
+                    propertiesNamesValues.put(propertyName, value);
+                    if (JcrLexicon.PRIMARY_TYPE.equals(propertyName)) {
+                        primaryType = value;
+                    }
+                }
+            }
+
+            Map<Name, Integer> propertyTypes = primaryType != null ? propertyTypesFor(primaryType) :
+                    java.util.Collections.<Name, Integer>emptyMap();
+            for (Map.Entry<Name, String> entry : propertiesNamesValues.entrySet()) {
+                Name propertyName = entry.getKey();
+                Integer propertyDefinitionType = propertyTypes.get(propertyName);
+                int propertyType = propertyDefinitionType != null ? propertyDefinitionType : PropertyType.STRING;
+                current.addPropertyValue(propertyName, entry.getValue(), false, propertyType, DOCUMENT_VIEW_VALUE_DECODER);
             }
 
             // Now create the node ...
