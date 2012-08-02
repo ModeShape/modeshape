@@ -23,6 +23,10 @@
  */
 package org.modeshape.jcr;
 
+import javax.jcr.Binary;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertTrue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -30,6 +34,9 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
@@ -409,6 +416,34 @@ public class ImportExportTest {
 
         Node desc2 = session2.getNode("/unicodeContent/descriptionNode");
         assertSameProperties(desc, desc2);
+    }
+
+    @Test
+    @FixFor( "MODE-1573" )
+    public void shouldPerformRoundTripOnDocumentViewWithBinaryContent() throws Exception {
+        JcrTools tools = new JcrTools();
+
+        File binaryFile = new File("src/test/resources/io/binary.pdf");
+        assert(binaryFile.exists() && binaryFile.isFile());
+
+        File outputFile = File.createTempFile("modeshape_import_export_" + System.currentTimeMillis(), "_test");
+        outputFile.deleteOnExit();
+        tools.uploadFile(session, "file", binaryFile);
+        session.save();
+        session.exportDocumentView("/file", new FileOutputStream(outputFile), false, false);
+        assertTrue(outputFile.length() > 0);
+
+        session.getRootNode().getNode("file").remove();
+        session.save();
+
+        session.getWorkspace().importXML("/", new FileInputStream(outputFile), ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
+        assertNotNull(session.getNode("/file"));
+        assertNotNull(session.getNode("/file/jcr:content"));
+        Property data = session.getNode("/file/jcr:content").getProperty("jcr:data");
+        assertNotNull(data);
+        Binary binary = data.getBinary();
+        assertNotNull(binary);
+        assertEquals(binaryFile.length(), binary.getSize());
     }
 
     protected void assertSameProperties( Node node1,
