@@ -170,6 +170,10 @@ class JcrContentHandler extends DefaultHandler {
     protected final Map<Name, Integer> propertyTypesFor( String primaryTypeName ) {
         Map<Name, Integer> propertyTypesMap = new HashMap<Name, Integer>();
         JcrNodeType nodeType = nodeTypeFor(primaryTypeName);
+        if (nodeType == null) {
+            //nt:share falls in this category
+            return propertyTypesMap;
+        }
         for (JcrPropertyDefinition propertyDefinition : nodeType.getPropertyDefinitions()) {
             propertyTypesMap.put(propertyDefinition.getInternalName(), propertyDefinition.getRequiredType());
         }
