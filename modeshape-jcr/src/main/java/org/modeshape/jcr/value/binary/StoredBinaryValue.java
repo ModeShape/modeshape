@@ -49,7 +49,7 @@ public class StoredBinaryValue extends AbstractBinary {
         this.store = store;
         this.size = size;
         assert this.store != null;
-        assert this.size > 0L;
+        assert this.size >= 0L;
     }
 
     @Override
