@@ -136,7 +136,7 @@ import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStore;
-import org.modeshape.jcr.value.binary.InfinispanBinaryStore;
+import org.modeshape.jcr.value.binary.infinispan.InfinispanBinaryStore;
 import org.modeshape.jcr.value.binary.UnusedBinaryChangeSetListener;
 
 /**
@@ -853,8 +853,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         BinaryStore store = running.binaryStore();
         if (store instanceof InfinispanBinaryStore) {
             InfinispanBinaryStore ispnStore = (InfinispanBinaryStore)store;
-            Cache<?, ?> binaryCache = ispnStore.getCache();
-            if (binaryCache != null) caches.add(binaryCache);
+            caches.addAll(ispnStore.getCaches());
         }
 
         return caches;
@@ -1008,11 +1007,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // Set up the binary store ...
                 BinaryStorage binaryStorageConfig = config.getBinaryStorage();
                 binaryStore = binaryStorageConfig.getBinaryStore();
-                if (binaryStore instanceof InfinispanBinaryStore) {
-                    InfinispanBinaryStore ispanBinStore = (InfinispanBinaryStore)binaryStore;
-                    ispanBinStore.setContentCacheName(cacheName);
-                    ispanBinStore.setContentCacheContainer(container);
-                }
                 binaryStore.start();
                 tempContext = tempContext.with(binaryStore);
 
