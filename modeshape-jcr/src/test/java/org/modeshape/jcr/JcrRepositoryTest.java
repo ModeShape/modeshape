@@ -821,6 +821,7 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         int numThreads = 100;
         final AtomicBoolean passed = new AtomicBoolean(true);
         final AtomicInteger counter = new AtomicInteger(0);
+        final Repository repository = this.repository;
         ExecutorService executor = Executors.newFixedThreadPool(50);
         try {
             Runnable runnable = new Runnable() {
