@@ -88,8 +88,9 @@ public interface BinaryStore {
      * Get an {@link InputStream} to the binary content with the supplied key.
      * 
      * @param key the key to the binary content; never null
-     * @return the input stream through which the content can be read
-     * @throws BinaryStoreException if there is a problem reading the content from the store
+     * @return the input stream through which the content can be read, {@code never null}
+     * @throws BinaryStoreException if there is a problem reading the content from the store or if a valid, non-null {@link InputStream}
+     * cannot be returned for the given key.
      */
     InputStream getInputStream( BinaryKey key ) throws BinaryStoreException;
 
@@ -118,7 +119,12 @@ public interface BinaryStore {
      * Get the text that can be extracted from this binary content. If text extraction isn't enabled (either full text search
      * is not enabled or there aren't any configured extractors), this returns {@code null}
      *
-     * If extraction is enabled, this method may block until a text extractor has finished extracting the text.
+     * <p>If extraction is enabled, this method may block until a text extractor has finished extracting the text.</p>
+     * <p>If there are any problems either with the binary value or during the extraction process, the exception will
+     * be logged and {@code null} is returned</p>
+     *
+     * In general, the implementation from {@link AbstractBinaryStore} should be enough and any custom {@link BinaryStore} implementations
+     * aren't expected to implement this.
      *
      * @param binary the binary content; may not be null
      * @return the extracted text, or null if none could be extracted
@@ -127,13 +133,13 @@ public interface BinaryStore {
     String getText( BinaryValue binary ) throws BinaryStoreException;
 
     /**
-     * Get the MIME type for this binary value.
+     * Get the MIME type for this binary value or {@code null} if the mime-type cannot be determined.
      * 
      * @param binary the binary content; may not be null
      * @param name the name of the content, useful for determining the MIME type; may be null if not known
      * @return the MIME type, or null if it cannot be determined (e.g., the Binary is empty)
      * @throws IOException if there is a problem reading the binary content
-     * @throws RepositoryException if an error occurs.
+     * @throws RepositoryException if any other error occurs.
      */
     public String getMimeType( BinaryValue binary,
                                String name ) throws IOException, RepositoryException;
@@ -143,17 +149,19 @@ public interface BinaryStore {
      *
      * @param source a {@code non-null} {@link BinaryValue} instance from which the text was extracted
      * @param extractedText a {@code non-null} and {@code non-blank} string representing the extracted text
-     * @throws BinaryStoreException if the operation fails for whatever reason
+     * @throws BinaryStoreException if the operation fails or if the extracted text cannot be stored for the given binary value
+     * (regardless of the reason)
      */
     void storeExtractedText(BinaryValue source, String extractedText) throws BinaryStoreException;
 
     /**
-     * Retrieves the extracted text of a binary value, which may or may not have been stored previously.
+     * Returns the extracted text of a binary value, or {@code null} if such text hasn't been stored previously or if the
+     * binary value cannot be found in this store.
      *
      * @param source a {@code non-null} {@link BinaryValue} instance from which the text was extracted
      * @return a {@code String} representing the extracted text, or {@code null} if such text hasn't been stored in this
      * store  previously.
-     * @throws BinaryStoreException if the operation fails
+     * @throws BinaryStoreException if anything unexpected happens.
      */
     String getExtractedText(BinaryValue source) throws BinaryStoreException;
 
