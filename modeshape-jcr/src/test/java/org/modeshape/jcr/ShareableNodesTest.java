@@ -23,6 +23,17 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.HashSet;
+import java.util.Set;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -38,22 +49,10 @@ import javax.jcr.nodetype.NodeDefinitionTemplate;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.version.Version;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.HashSet;
-import java.util.Set;
-
 
 /**
  * A series of tests of the shareable nodes feature.
@@ -88,7 +87,7 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
     /**
      * Verify that it is possible to create a new shareable node and then clone it to create a shared node and a shared set of
      * exactly one node.
-     *
+     * 
      * @throws RepositoryException
      */
     @Test
@@ -107,7 +106,7 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
     /**
      * Verify that it is possible to create a new shareable node and then clone it to create several shared nodes and a shared set
      * of more than one node.
-     *
+     * 
      * @throws RepositoryException
      */
     @Test
@@ -138,7 +137,7 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
 
     /**
      * Verify that it is possible to move a (proxy) node in a shared set.
-     *
+     * 
      * @throws RepositoryException
      */
     @Test
@@ -168,7 +167,7 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
 
     /**
      * Verify that it is possible to copy a (proxy) node in a shared set.
-     *
+     * 
      * @throws RepositoryException
      */
     @Test
@@ -199,12 +198,12 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
      * This test attempts to create a share underneath a node, A, that has a node type without a child definition for the
      * "mode:share" node type. This means that normally, a child of type "mode:share" cannot be placed under the node A. However,
      * because that node is only there as a proxy, ModeShape should transparently allow this.
-     *
+     * 
      * @throws RepositoryException
      */
     @Test
     public void shouldAllowCreatingShareUnderNodeWithTypeThatDoesNotAllowProxyNodeButAllowsPrimaryTypeOfOriginal()
-            throws RepositoryException {
+        throws RepositoryException {
         // Register the "car:Carrier" node type ...
         registerCarCarrierNodeType(session);
         // And create a new node of this type ...
@@ -274,7 +273,7 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
     /**
      * This test attempts to verify that a user cannot explicitly use the "mode:share" node type as the primary type for a new
      * manually-created node.
-     *
+     * 
      * @throws RepositoryException
      */
     @Test( expected = ConstraintViolationException.class )
@@ -285,7 +284,7 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
     /**
      * This test attempts to verify that 'canAddNode()' returns false if using the "mode:share" node type as the primary type for
      * a new manually-created node.
-     *
+     * 
      * @throws RepositoryException
      */
     @Test
@@ -400,9 +399,8 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
         assertSharedSetIs(sharedNode3, originalPath, sharedPath, sharedPath2, sharedPath3);
     }
 
-
     protected String string( Object object ) {
-        return ((JcrSession) session).context().getValueFactories().getStringFactory().create(object);
+        return session.context().getValueFactories().getStringFactory().create(object);
     }
 
     protected Node makeShareable( String absPath ) throws RepositoryException {
@@ -568,7 +566,6 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
         // Verify it was registered ...
         ntManager.getNodeType(CAR_CARRIER_TYPENAME);
     }
-
 
     protected static URI resourceUri( String name ) throws URISyntaxException {
         return resourceUrl(name).toURI();

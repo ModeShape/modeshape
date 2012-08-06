@@ -40,7 +40,6 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.Base64;
-import org.modeshape.common.util.StringUtil;
 import org.modeshape.common.xml.XmlCharacters;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.ValueFactory;
