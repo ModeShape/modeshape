@@ -219,23 +219,13 @@
                                 <property>
                                     <name>known.issues</name>
                                     <value>
-                                        <!--// TODO author=Randall Hauch date=7/2/12 description=https://issues.apache.org/jira/browse/JCR-3370 -->
-                                        org.apache.jackrabbit.test.api.ShareableNodeTest#testGetPath
-                                        <!--// TODO author=Randall Hauch date=7/2/12 description=https://issues.apache.org/jira/browse/JCR-3371-->
-                                        org.apache.jackrabbit.test.api.ShareableNodeTest#testRemoveMixin
-                                        <!--// TODO author=Randall Hauch date=7/9/12 description=https://issues.apache.org/jira/browse/JCR-3380-->
-                                        org.apache.jackrabbit.test.api.ShareableNodeTest#testMoveShareableNode
-                                        org.apache.jackrabbit.test.api.ShareableNodeTest#testTransientMoveShareableNode
-                                        org.apache.jackrabbit.test.api.ShareableNodeTest#testModifyDescendantAndSave
-                                        org.apache.jackrabbit.test.api.ShareableNodeTest#testModifyDescendantAndRemoveShareAndSave
-                                        <!--// TODO author=Horia Chiorean date=7/16/12 description=https://issues.apache.org/jira/browse/JCR-3376-->
-                                        org.apache.jackrabbit.test.api.query.SQLPathTest#testChildAxisRoot
-                                        <!--// TODO author=Randall Hauch date=5/17/12 description=https://issues.apache.org/jira/browse/JCR-3313-->
-                                        org.apache.jackrabbit.test.api.query.qom.ColumnTest#testExpandColumnsForNodeType
                                         <!--// TODO author=Randall Hauch date=5/17/12 description=https://issues.apache.org/jira/browse/MODE-1095-->
                                         org.apache.jackrabbit.test.api.query.qom.OrderingTest#testMultipleSelectors
-                                        <!--// TODO author=Horia Chiorean date=4/19/12 description=https://issues.apache.org/jira/browse/JCR-2666-->
-                                        org.apache.jackrabbit.test.api.version.RestoreTest#testRestoreNameJcr2
+                                        <!--// TODO author=Randall Hauch date=7/10/12 description=https://issues.apache.org/jira/browse/MODE-1552-->
+                                        org.apache.jackrabbit.test.api.ShareableNodeTest#testModifyDescendantAndSave
+                                        org.apache.jackrabbit.test.api.ShareableNodeTest#testModifyDescendantAndRemoveShareAndSave
+                                        <!--// TODO author=Randall Hauch date=8/16/12 description=https://issues.apache.org/jira/browse/MODE-1599-->
+                                        org.apache.jackrabbit.test.api.query.qom.ColumnTest#testExpandColumnsForNodeType
                                     </value>
                                 </property>
                             </systemProperties>
