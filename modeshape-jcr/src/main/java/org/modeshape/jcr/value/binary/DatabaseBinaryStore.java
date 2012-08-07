@@ -33,6 +33,7 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.SizeMeasuringInputStream;
+import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 
@@ -116,8 +117,11 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     @Override
     public InputStream getInputStream( BinaryKey key ) throws BinaryStoreException {
-        PreparedStatement sql = database.retrieveContentSQL(key);
-        return Database.asStream(Database.executeQuery(sql));
+        ResultSet rs = Database.executeQuery(database.retrieveContentSQL(key));
+        if (rs == null) {
+            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.toString());
+        }
+        return Database.asStream(rs);
     }
 
     @Override
@@ -138,8 +142,11 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     @Override
     protected String getStoredMimeType( BinaryValue source ) throws BinaryStoreException {
-        PreparedStatement sql = database.retrieveMimeTypeSQL(source.getKey());
-        return Database.asString(Database.executeQuery(sql));
+        ResultSet rs = Database.executeQuery(database.retrieveMimeTypeSQL(source.getKey()));
+        if (rs == null) {
+            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.toString());
+        }
+        return Database.asString(rs);
     }
 
     @Override
@@ -150,8 +157,11 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     @Override
     public String getExtractedText( BinaryValue source ) throws BinaryStoreException {
-        PreparedStatement sql = database.retrieveExtTextSQL(source.getKey());
-        return Database.asString(Database.executeQuery(sql));
+        ResultSet rs = Database.executeQuery(database.retrieveExtTextSQL(source.getKey()));
+        if (rs == null) {
+            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.toString());
+        }
+        return Database.asString(rs);
     }
 
     @Override
@@ -181,13 +191,16 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         }
     }
     
-    protected Database doCreateDatabase( Connection connection ) {
+    protected Database doCreateDatabase( Connection connection ) throws BinaryStoreException {
         return new Database(connection);
     }
 
     @Override
     public void shutdown() {
         super.shutdown();
+        if (database != null) {
+            database.disconnect();
+        }
     }
 
     /**

@@ -28,6 +28,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.value.BinaryKey;
 
 /**
@@ -36,12 +37,68 @@ import org.modeshape.jcr.value.BinaryKey;
  * @author kulikov
  */
 public class Database {
+    //connection to a database
     private Connection connection;
+    //table name prefix
+    private String prefix;
 
-    public Database(Connection connection) {
+    private Type databaseType;
+
+    //SQLBuilder
+    private SQLBuilder sqlBuilder = new SQLBuilder();
+    private SQLType sqlType = new SQLType();
+
+    public enum Type {
+        MYSQL, POSTGRES, DERBY, HSQL, H2, SQLITE, DB2, DB2_390,INFORMIX,
+        INTERBASE, FIREBIRD, SQL_SERVER, ACCESS, ORACLE, SYBASE, UNKNOWN;
+    }
+
+    /**
+     * Creates new instance of the database.
+     *
+     * @param connection connection to a database
+     */
+    public Database(Connection connection) throws BinaryStoreException {
         this.connection = connection;
+        databaseType = determineType();
     }
     
+    /**
+     * Shows type of this database.
+     * 
+     * @return database type identifier.
+     */
+    public Type getDatabaseType() {
+        return databaseType;
+    }
+
+    /**
+     * Modifies database type.
+     *
+     * @param databaseType new database type identifier.
+     */
+    protected void setDatabaseType(Type databaseType) {
+        this.databaseType = databaseType;
+    }
+
+    /**
+     * Configures table name prefix.
+     * 
+     * @param prefix table name prefix.
+     */
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
+
+    /**
+     * Convergence table name including prefix if configured.
+     *
+     * @return table name.
+     */
+    private String tableName() {
+        return StringUtil.isBlank(prefix) ? "CONTENT_STORE" : prefix + "_CONTENT_STORE";
+    }
+
     /**
      * Current time.
      *
@@ -61,8 +118,11 @@ public class Database {
      */
     public PreparedStatement insertContentSQL(BinaryKey key, InputStream stream) throws BinaryStoreException {
         try {
-            PreparedStatement sql = connection.prepareStatement(
-                    "insert into content_store(cid, usage_time, payload, usage) values(?,?,?,1)");
+            PreparedStatement sql = sqlBuilder
+                    .insert().into(tableName())
+                    .columns("cid", "usage_time", "payload", "usage")
+                    .values("?","?","?", "1")
+                    .build();
             sql.setString(1, key.toString());
             sql.setTimestamp(2, new java.sql.Timestamp(now()));
             sql.setBinaryStream(3, stream);
@@ -81,8 +141,11 @@ public class Database {
      */
     public PreparedStatement retrieveContentSQL(BinaryKey key) throws BinaryStoreException {
         try {
-            PreparedStatement sql = connection.prepareStatement(
-                    "select payload from content_store where cid =?");
+            PreparedStatement sql = sqlBuilder
+                    .select().columns("payload").from(tableName())
+                    .where().condition("cid", sqlType.integer(), "=", "?")
+                    .and().condition("usage", sqlType.integer(), "=", "1")
+                    .build();
             sql.setString(1, key.toString());
             return sql;
         } catch (SQLException e) {
@@ -99,10 +162,15 @@ public class Database {
      */
     public PreparedStatement markUnusedSQL(BinaryKey key) throws BinaryStoreException {
         try {
-            PreparedStatement sql = connection.prepareStatement(
-                    "update content_store set usage=0, timestamp=? where cid =?");
-            sql.setTimestamp(1, new java.sql.Timestamp(now()));
-            sql.setString(2, key.toString());
+            PreparedStatement sql = sqlBuilder
+                    .update(tableName())
+                    .set("usage", "?")
+                    .set("usage_time", "?")
+                    .where().condition("cid", sqlType.integer(), "=", "?")
+                    .build();
+            sql.setInt(1, 0);
+            sql.setTimestamp(2, new java.sql.Timestamp(now()));
+            sql.setString(3, key.toString());
             return sql;
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
@@ -118,8 +186,10 @@ public class Database {
      */
     public PreparedStatement removeExpiredContentSQL(long deadline) throws BinaryStoreException {
         try {
-            PreparedStatement sql = connection.prepareStatement(
-                    "delete from content_store where usage_time < ?");
+            PreparedStatement sql = sqlBuilder
+                    .delete().from(tableName())
+                    .where().condition("usage_time", sqlType.timestamp(), "<", "?")
+                    .build();
             sql.setTimestamp(1, new java.sql.Timestamp(deadline));
             return sql;
         } catch (SQLException e) {
@@ -136,8 +206,9 @@ public class Database {
      */
     public PreparedStatement retrieveMimeTypeSQL(BinaryKey key) throws BinaryStoreException {
         try {
-            PreparedStatement sql = connection.prepareStatement(
-                    "select mime_type from content_store where cid = ?");
+            PreparedStatement sql = sqlBuilder
+                    .select().columns("mime_type").from(tableName())
+                    .where().condition("cid", sqlType.integer(), "=", "?").build();
             sql.setString(1, key.toString());
             return sql;
         } catch (SQLException e) {
@@ -155,8 +226,10 @@ public class Database {
      */
     public PreparedStatement updateMimeTypeSQL(BinaryKey key, String mimeType) throws BinaryStoreException {
         try {
-            PreparedStatement sql = connection.prepareStatement(
-                    "update content_store set mime_type= ? where cid = ?");
+            PreparedStatement sql = sqlBuilder
+                    .update(tableName())
+                    .set("mime_type", "?")
+                    .where().condition("cid", sqlType.integer(), "=", "?").build();
             sql.setString(1, mimeType);
             sql.setString(2, key.toString());
             return sql;
@@ -174,8 +247,9 @@ public class Database {
      */
     public PreparedStatement retrieveExtTextSQL(BinaryKey key) throws BinaryStoreException {
         try {
-            PreparedStatement sql = connection.prepareStatement(
-                    "select ext_text from content_store where cid = ?");
+            PreparedStatement sql = sqlBuilder
+                    .select().columns("ext_text").from(tableName())
+                    .where().condition("cid", sqlType.integer(), "=", "?").build();
             sql.setString(1, key.toString());
             return sql;
         } catch (SQLException e) {
@@ -193,8 +267,10 @@ public class Database {
      */
     public PreparedStatement updateExtTextSQL(BinaryKey key, String text) throws BinaryStoreException {
         try {
-            PreparedStatement sql = connection.prepareStatement(
-                    "update content_store set ext_text= ? where cid = ?");
+            PreparedStatement sql = sqlBuilder
+                    .update(tableName())
+                    .set("ext_text", "?")
+                    .where().condition("cid", sqlType.integer(), "=", "?").build();
             sql.setString(1, text);
             sql.setString(2, key.toString());
             return sql;
@@ -276,7 +352,7 @@ public class Database {
         try {
             boolean hasRaw = rs.first();
             if (!hasRaw) {
-                throw new BinaryStoreException("The content has been deleted");
+                return null;
             }
             return rs.getString(1);
         } catch (SQLException e) {
@@ -292,7 +368,7 @@ public class Database {
      */
     public boolean tableExists() throws BinaryStoreException {
         try {
-            PreparedStatement sql = connection.prepareStatement("select * from content_store");
+            PreparedStatement sql = connection.prepareStatement("select count(*) from " + tableName());
             Database.execute(sql);
             return true;
         } catch (SQLException e) {
@@ -307,13 +383,13 @@ public class Database {
      */
     public void createTable() throws BinaryStoreException {
         try {
-            PreparedStatement sql = connection.prepareStatement("create table content_store ("
-                    + "cid varchar(255) not null,"
-                    + "mime_type varchar(255),"
-                    + "ext_text varchar(1000),"
-                    + "usage integer,"
-                    + "usage_time timestamp,"
-                    + "payload " + blobType(connection, 0) + ","
+            PreparedStatement sql = connection.prepareStatement("create table " + tableName() + " ("
+                    + "cid " + sqlType.varchar(255) + " not null,"
+                    + "mime_type " + sqlType.varchar(255)+ ", "
+                    + "ext_text " + sqlType.varchar(1000) + ","
+                    + "usage " + sqlType.integer() +","
+                    + "usage_time " + sqlType.timestamp() +","
+                    + "payload " + sqlType.blob() + ","
                     + "primary key(cid))");
             Database.execute(sql);
         } catch (Exception e) {
@@ -321,47 +397,322 @@ public class Database {
         }
     }
 
-    /**
-     * Determine the database-specific BLOB column type.
-     *
-     * @param connection the connection
-     * @param size the size of the column
-     * @return the type of BLOB column; never null but possibly empty
-     * @throws BinaryStoreException
-     */
-    protected String blobType(Connection connection, int size) throws BinaryStoreException {
+    private Type determineType() throws BinaryStoreException {
+        if (connection == null) {
+            return Type.UNKNOWN;
+        }
         try {
             String name = connection.getMetaData().getDatabaseProductName().toLowerCase();
             if (name.toLowerCase().contains("mysql")) {
-                return String.format("LONGBLOB", size);
+                return Type.MYSQL;
             } else if (name.contains("postgres")) {
-                return "oid";
+                return Type.POSTGRES;
             } else if (name.contains("derby")) {
-                return String.format("blolb", size);
+                return Type.DERBY;
             } else if (name.contains("hsql") || name.toLowerCase().contains("hypersonic")) {
+                return Type.HSQL;
             } else if (name.contains("h2")) {
-                return "blob";
+                return Type.H2;
             } else if (name.contains("sqlite")) {
-                return "blob";
+                return Type.SQLITE;
             } else if (name.contains("db2")) {
-                return "blob";
+                return Type.DB2;
             } else if (name.contains("informix")) {
-                return "blob";
+                return Type.INFORMIX;
             } else if (name.contains("interbase")) {
-                return "blob subtype 0";
+                return Type.INTERBASE;
             } else if (name.contains("firebird")) {
-                return "blob subtype 0";
+                return Type.FIREBIRD;
             } else if (name.contains("sqlserver") || name.toLowerCase().contains("microsoft")) {
-                return "blob";
+                return Type.SQL_SERVER;
             } else if (name.contains("access")) {
+                return Type.ACCESS;
             } else if (name.contains("oracle")) {
-                return "blob";
+                return Type.ORACLE;
             } else if (name.contains("adaptive")) {
+                return Type.SYBASE;
             }
-            return "";
+            return Type.UNKNOWN;
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
         }
+    }
+    /**
+     * Closes connection with database.
+     */
+    public void disconnect() {
+        if (connection != null) {
+            try {
+                connection.close();
+            } catch (SQLException e) {
+            }
+        }
+    }
+
+    /**
+     * Database specific SQL types
+     */
+    private class SQLType {
+
+        /**
+         * Integer type.
+         * @return integer type descriptor.
+         */
+        public String integer() {
+            return "INTEGER";
+        }
+
+        /**
+         * Timestamp type.
+         * @return timestamp type descriptor.
+         */
+        public String timestamp() {
+            return "TIMESTAMP";
+        }
+
+        /**
+         * BLOB type.
+         * @return BLOB type descriptor.
+         */
+        private String blob() {
+            switch (databaseType) {
+                case SQL_SERVER:
+                case SYBASE:
+                    return "IMAGE";
+                case HSQL:
+                    return "OBJECT";
+                default:
+                    return "BLOB";
+            }
+        }
+
+        /**
+         * VARCHAR type.
+         *
+         * @param size size in characters.
+         * @return VACRCHAR type descriptor.
+         */
+        private String varchar(int size) {
+            switch (databaseType) {
+                case ORACLE:
+                    return "VARCHAR2(" + size + " char)";
+                default:
+                    return "VARCHAR(" + size + ")";
+            }
+        }
+    }
+
+    /**
+     * Database specific SQL query builder.
+     */
+    public class SQLBuilder {
+        private boolean set = false;
+
+        //inner buffer for building sql string
+        private StringBuilder sql;
+
+        /**
+         * Generates prepared statement.
+         *
+         * @return prepared statement
+         * @throws SQLException
+         */
+        public PreparedStatement build() throws SQLException {
+            return connection.prepareStatement(sql.toString());
+        }
+
+        /**
+         * Shows built statement as text.
+         *
+         * @return build statement as text.
+         */
+        public String getSQL() {
+            return sql.toString();
+        }
+
+        /**
+         * Appends 'insert' keyword to the statement.
+         *
+         * @return this builder instance.
+         */
+        public SQLBuilder insert() {
+            set = false;
+            sql = new StringBuilder();
+            sql.append("INSERT ");
+            return this;
+        }
+
+        /**
+         * Appends 'select' keyword to the statement.
+         *
+         * @return this builder instance.
+         */
+        public SQLBuilder select() {
+            set = false;
+            sql = new StringBuilder();
+            sql.append("SELECT ");
+            return this;
+        }
+
+        /**
+         * Appends 'delete' keyword to the statement.
+         *
+         * @return this builder instance.
+         */
+        public SQLBuilder delete() {
+            set = false;
+            sql = new StringBuilder();
+            sql.append("DELETE ");
+            return this;
+        }
+
+        /**
+         * Appends 'update' keyword with table name to the statement.
+         *
+         * @param tableName the name of the table to update
+         * @return this builder instance.
+         */
+        public SQLBuilder update(String tableName) {
+            set = false;
+            sql = new StringBuilder();
+            sql.append("UPDATE ");
+            sql.append(tableName);
+            return this;
+        }
+
+        /**
+         * Appends 'set' part.
+         * 
+         * @param col column name to update
+         * @param val new value
+         * @return this builder instance
+         */
+        public SQLBuilder set(String col, String val) {
+            if (!set) {
+                sql.append(" SET ");
+                set = true;
+            } else {
+                sql.append(", ");
+            }
+            sql.append(col);
+            sql.append("=");
+            sql.append(val);
+            return this;
+        }
+
+        /**
+         * Appends 'into 'keyword and open bracket to the statement.
+         *
+         * @return this builder instance.
+         */
+        public SQLBuilder into(String tableName) {
+            sql.append("INTO ");
+            sql.append(tableName);
+            sql.append(" (");
+            return this;
+        }
+
+        /**
+         * Appends comma separated list of specified column names.
+         *
+         * @param  columns list of column names
+         * @return this builder instance.
+         */
+        public SQLBuilder columns(String... columns) {
+            sql.append(columns[0]);
+
+            for (int i = 1; i < columns.length; i++) {
+                sql.append(", ");
+                sql.append(columns[i]);
+            }
+
+            return this;
+        }
+
+        /**
+         * Appends closed bracket and 'value(...)' of sql statement.
+         *
+         * @param  columns list of values
+         * @return this builder instance.
+         */
+
+        public SQLBuilder values(String... columns) {
+            sql.append(") VALUES (");
+            sql.append(columns[0]);
+
+            for (int i = 1; i < columns.length; i++) {
+                sql.append(", ");
+                sql.append(columns[i]);
+            }
+
+            sql.append(")");
+            return this;
+        }
+
+        /**
+         * Appends 'from' keyword.
+         *
+         * @return this builder instance.
+         */
+        public SQLBuilder from(String tableName) {
+            sql.append(" FROM ");
+            sql.append(tableName);
+            return this;
+        }
+
+        /**
+         * Appends 'where' keyword.
+         *
+         * @return this builder instance.
+         */
+        public SQLBuilder where() {
+            sql.append(" WHERE ");
+            return this;
+        }
+
+        /**
+         * Appends 'and' keyword.
+         *
+         * @return this builder instance.
+         */
+        public SQLBuilder and() {
+            sql.append(" AND ");
+            return this;
+        }
+
+        /**
+         * Builds database specific condition statement.
+         *
+         * @param column  column name used in left hand side of condition
+         * @param colType type of the column
+         * @param sign sign between lhs and rhs
+         * @param value right hand side of the condition
+         * @return this builder instance.
+         */
+        public SQLBuilder condition(String column, String colType, String sign, String value) {
+            sql.append(column);
+            sql.append(sign);
+            switch (databaseType) {
+                case SYBASE :
+                    sql.append("convert(");
+                    sql.append(colType);
+                    sql.append(",");
+                    sql.append(value);
+                    sql.append(")");
+                    break;
+                case POSTGRES :
+                    sql.append("cast(");
+                    sql.append(value);
+                    sql.append(" as ");
+                    sql.append(colType);
+                    sql.append(")");
+                    break;
+                default :
+                    sql.append(value);
+            }
+            return this;
+        }
+
     }
 
 }
