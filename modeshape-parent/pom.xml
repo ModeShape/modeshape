@@ -1331,6 +1331,12 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>mongo-java-driver</artifactId>
+                <scope>provided</scope>
+                <version>${mongo.driver.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.googlecode.json-simple</groupId>
                 <artifactId>json-simple</artifactId>
                 <version>${json.simple.version}</version>
