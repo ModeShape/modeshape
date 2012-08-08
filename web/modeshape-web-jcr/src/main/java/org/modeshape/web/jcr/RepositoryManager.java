@@ -99,6 +99,17 @@ public class RepositoryManager {
                                       String repositoryName,
                                       String workspaceName ) throws RepositoryException {
         // Go through all the RepositoryFactory instances and try to create one ...
+        Repository repository = getRepository(repositoryName);
+
+        // If there's no authenticated user, try an anonymous login
+        if (request == null || request.getUserPrincipal() == null) {
+            return repository.login(workspaceName);
+        }
+
+        return repository.login(new ServletCredentials(request), workspaceName);
+    }
+
+    public static Repository getRepository( String repositoryName ) throws NoSuchRepositoryException {
         Repository repository = null;
         boolean found = false;
         for (javax.jcr.RepositoryFactory factory : ServiceLoader.load(javax.jcr.RepositoryFactory.class)) {
@@ -115,7 +126,7 @@ public class RepositoryManager {
             // Try loading the repository via the parameters ...
             try {
                 Map<String, Object> params = new HashMap<String, Object>(immutableFactoryParams);
-                params.put(org.modeshape.jcr.api.RepositoryFactory.REPOSITORY_NAME, repositoryName);
+                params.put(RepositoryFactory.REPOSITORY_NAME, repositoryName);
                 repository = factory.getRepository(params);
                 if (repository != null) break;
             } catch (RepositoryException e) {
@@ -130,13 +141,7 @@ public class RepositoryManager {
         if (repository == null) {
             throw new NoSuchRepositoryException("No repository named '" + repositoryName + "' was found");
         }
-
-        // If there's no authenticated user, try an anonymous login
-        if (request == null || request.getUserPrincipal() == null) {
-            return repository.login(workspaceName);
-        }
-
-        return repository.login(new ServletCredentials(request), workspaceName);
+        return repository;
     }
 
     public static Set<String> getJcrRepositoryNames() {

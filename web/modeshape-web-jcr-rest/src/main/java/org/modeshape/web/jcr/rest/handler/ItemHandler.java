@@ -1,17 +1,5 @@
-package org.modeshape.web.jcr.rest;
+package org.modeshape.web.jcr.rest.handler;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import javax.jcr.Binary;
 import javax.jcr.Item;
 import javax.jcr.Node;
@@ -37,22 +25,36 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.Base64;
+import org.modeshape.jcr.api.JcrConstants;
+import org.modeshape.web.jcr.rest.RestHelper;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Resource handler that implements REST methods for items.
  */
 @Immutable
-class ItemHandler extends AbstractHandler {
+public class ItemHandler extends AbstractHandler {
 
-    private static final String PROPERTIES_HOLDER = "properties";
-    private static final String CHILD_NODE_HOLDER = "children";
+    protected static final String PRIMARY_TYPE_PROPERTY = JcrConstants.JCR_PRIMARY_TYPE;
+    protected static final String MIXIN_TYPES_PROPERTY = JcrConstants.JCR_MIXIN_TYPES;
+    protected static final String PROPERTIES_HOLDER = "properties";
+    protected static final String CHILD_NODE_HOLDER = "children";
 
-    private static final String PRIMARY_TYPE_PROPERTY = "jcr:primaryType";
-    private static final String MIXIN_TYPES_PROPERTY = "jcr:mixinTypes";
 
     /**
      * Handles GET requests for an item in a workspace.
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -94,7 +96,7 @@ class ItemHandler extends AbstractHandler {
         }
 
         JSONObject jsonObject = item instanceof Node ? jsonFor((Node)item, depth) : jsonFor((Property)item);
-        return responseString(jsonObject, request);
+        return RestHelper.responseString(jsonObject, request);
     }
 
     /**
@@ -106,7 +108,7 @@ class ItemHandler extends AbstractHandler {
      * However, if no values are binary, then all values will simply be the {@link Value#getString() string} representation of the
      * value.
      * </p>
-     * 
+     *
      * @param property the property to be encoded
      * @return the JSON-encoded version of the property
      * @throws JSONException if there is an error encoding the node
@@ -128,7 +130,7 @@ class ItemHandler extends AbstractHandler {
             List<String> list = new ArrayList<String>(values.length);
             if (encoded) {
                 for (Value value : values) {
-                    list.add(jsonEncodedStringFor(value));
+                    list.add(RestHelper.jsonEncodedStringFor(value));
                 }
             } else {
                 for (Value value : values) {
@@ -139,7 +141,7 @@ class ItemHandler extends AbstractHandler {
         } else {
             Value value = property.getValue();
             encoded = value.getType() == PropertyType.BINARY;
-            valueObject = encoded ? jsonEncodedStringFor(value) : value.getString();
+            valueObject = encoded ? RestHelper.jsonEncodedStringFor(value) : value.getString();
         }
         String propertyName = property.getName();
         if (encoded) propertyName = propertyName + BASE64_ENCODING_SUFFIX;
@@ -150,7 +152,7 @@ class ItemHandler extends AbstractHandler {
 
     /**
      * Recursively returns the JSON-encoding of a node and its children to depth {@code toDepth}.
-     * 
+     *
      * @param node the node to be encoded
      * @param toDepth the depth to which the recursion should extend; {@code 0} means no further recursion should occur.
      * @return the JSON-encoding of a node and its children to depth {@code toDepth}.
@@ -181,7 +183,7 @@ class ItemHandler extends AbstractHandler {
                 if (encoded) propName = propName + BASE64_ENCODING_SUFFIX;
                 JSONArray array = new JSONArray();
                 for (int i = 0; i < values.length; i++) {
-                    array.put(encoded ? jsonEncodedStringFor(values[i]) : values[i].getString());
+                    array.put(encoded ? RestHelper.jsonEncodedStringFor(values[i]) : values[i].getString());
                 }
                 properties.put(propName, array);
 
@@ -189,7 +191,7 @@ class ItemHandler extends AbstractHandler {
                 Value value = prop.getValue();
                 encoded = value.getType() == PropertyType.BINARY;
                 if (encoded) propName = propName + BASE64_ENCODING_SUFFIX;
-                properties.put(propName, encoded ? jsonEncodedStringFor(value) : value.getString());
+                properties.put(propName, encoded ? RestHelper.jsonEncodedStringFor(value) : value.getString());
             }
 
         }
@@ -234,7 +236,7 @@ class ItemHandler extends AbstractHandler {
      * The primary type and mixin type(s) may optionally be specified through the {@code jcr:primaryType} and
      * {@code jcr:mixinTypes} properties.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -286,7 +288,7 @@ class ItemHandler extends AbstractHandler {
 
     /**
      * Adds the node described by {@code jsonNode} with name {@code nodeName} to the existing node {@code parentNode}.
-     * 
+     *
      * @param parentNode the parent of the node to be added
      * @param nodeName the name of the node to be added
      * @param jsonNode the JSON-encoded representation of the node or nodes to be added.
@@ -295,9 +297,9 @@ class ItemHandler extends AbstractHandler {
      * @throws JSONException if there is an error encoding the node
      * @throws RepositoryException if any other error occurs
      */
-    private Node addNode( Node parentNode,
-                          String nodeName,
-                          JSONObject jsonNode ) throws RepositoryException, JSONException {
+    protected Node addNode( Node parentNode,
+                            String nodeName,
+                            JSONObject jsonNode ) throws RepositoryException, JSONException {
         Node newNode;
 
         JSONObject properties = jsonNode.has(PROPERTIES_HOLDER) ? jsonNode.getJSONObject(PROPERTIES_HOLDER) : new JSONObject();
@@ -309,26 +311,10 @@ class ItemHandler extends AbstractHandler {
             newNode = parentNode.addNode(nodeName);
         }
 
-        if (properties.has(MIXIN_TYPES_PROPERTY)) {
-            Object rawMixinTypes = properties.get(MIXIN_TYPES_PROPERTY);
-
-            if (rawMixinTypes instanceof JSONArray) {
-                JSONArray mixinTypes = (JSONArray)rawMixinTypes;
-                for (int i = 0; i < mixinTypes.length(); i++) {
-                    newNode.addMixin(mixinTypes.getString(i));
-                }
-
-            } else {
-                newNode.addMixin(rawMixinTypes.toString());
-
-            }
-        }
-
         for (Iterator<?> iter = properties.keys(); iter.hasNext();) {
             String key = (String)iter.next();
 
             if (PRIMARY_TYPE_PROPERTY.equals(key)) continue;
-            if (MIXIN_TYPES_PROPERTY.equals(key)) continue;
             setPropertyOnNode(newNode, key, properties.get(key));
         }
 
@@ -371,14 +357,14 @@ class ItemHandler extends AbstractHandler {
      * Sets the named property on the given node. This method expects {@code value} to be either a JSON string or a JSON array of
      * JSON strings. If {@code value} is a JSON array, {@code Node#setProperty(String, String[]) the multi-valued property setter}
      * will be used.
-     * 
+     *
      * @param node the node on which the property is to be set
      * @param propName the name of the property to set
      * @param value the JSON-encoded values to be set
      * @throws RepositoryException if there is an error setting the property
      * @throws JSONException if {@code value} cannot be decoded
      */
-    private void setPropertyOnNode( Node node,
+    protected void setPropertyOnNode( Node node,
                                     String propName,
                                     Object value ) throws RepositoryException, JSONException {
         // Are the property values encoded ?
@@ -445,7 +431,7 @@ class ItemHandler extends AbstractHandler {
 
     /**
      * Deletes the item at {@code path}.
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -483,7 +469,7 @@ class ItemHandler extends AbstractHandler {
      * content to be a JSON object. The keys of the objects correspond to property names that will be set and the values for the
      * keys correspond to the values that will be set on the properties.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -518,56 +504,62 @@ class ItemHandler extends AbstractHandler {
             }
         }
 
-        Node node = updateItem(item, requestContent);
+        Item  updatedItem = updateItem(item, new JSONObject(requestContent));
+        Node node = updatedItem instanceof Property ? updatedItem.getParent() : (Node) updatedItem;
         node.getSession().save();
         return jsonFor(node, 0).toString();
     }
 
     /**
      * Updates the existing item based upon the supplied JSON content.
-     * 
+     *
      * @param item the node or property to be updated
-     * @param requestContent the JSON-encoded representation of the item(s) to be updated
+     * @param jsonItem the JSON of the item(s) to be updated
      * @return the node that was updated; never null
      * @throws JSONException if there is an error encoding the node
      * @throws RepositoryException if any other error occurs
      */
-    private Node updateItem( Item item,
-                             String requestContent ) throws RepositoryException, JSONException {
+    protected Item updateItem( Item item,
+                             JSONObject jsonItem ) throws RepositoryException, JSONException {
         if (item instanceof Node) {
-            JSONObject jsonNode = new JSONObject(requestContent);
-            Node node = (Node)item;
-            VersionableChanges changes = new VersionableChanges(node.getSession());
-            try {
-                node = updateNode(node, jsonNode, changes);
-                changes.checkin();
-            } catch (RepositoryException e) {
-                changes.abort();
-                throw e;
-            } catch (JSONException e) {
-                changes.abort();
-                throw e;
-            } catch (RuntimeException e) {
-                changes.abort();
-                throw e;
-            }
-            return node;
+            return updateNode((Node)item, jsonItem);
         }
+        else {
+            return updateProperty((Property)item, jsonItem);
+        }
+    }
 
-        // Otherwise the incoming content should be a JSON object containing the property name and
-        // a value that is either a JSON string or a JSON array.
-        Property property = (Property)item;
+    private Property updateProperty( Property property,
+                                       JSONObject jsonItem ) throws RepositoryException, JSONException {
         String propertyName = property.getName();
-        JSONObject jsonProperty = new JSONObject(requestContent);
-        String jsonPropertyName = jsonProperty.has(propertyName) ? propertyName : propertyName + BASE64_ENCODING_SUFFIX;
+        String jsonPropertyName = jsonItem.has(propertyName) ? propertyName : propertyName + BASE64_ENCODING_SUFFIX;
         Node node = property.getParent();
-        setPropertyOnNode(node, jsonPropertyName, jsonProperty.get(jsonPropertyName));
+        setPropertyOnNode(node, jsonPropertyName, jsonItem.get(jsonPropertyName));
+        return property;
+    }
+
+    private Node updateNode( Node node,
+                               JSONObject jsonItem ) throws RepositoryException, JSONException {
+        VersionableChanges changes = new VersionableChanges(node.getSession());
+        try {
+            node = updateNode(node, jsonItem, changes);
+            changes.checkin();
+        } catch (RepositoryException e) {
+            changes.abort();
+            throw e;
+        } catch (JSONException e) {
+            changes.abort();
+            throw e;
+        } catch (RuntimeException e) {
+            changes.abort();
+            throw e;
+        }
         return node;
     }
 
     /**
      * Updates the existing node with the properties (and optionally children) as described by {@code jsonNode}.
-     * 
+     *
      * @param node the node to be updated
      * @param jsonNode the JSON-encoded representation of the node or nodes to be updated.
      * @param changes the versionable changes; may not be null
@@ -575,7 +567,7 @@ class ItemHandler extends AbstractHandler {
      * @throws JSONException if there is an error encoding the node
      * @throws RepositoryException if any other error occurs
      */
-    private Node updateNode( Node node,
+    protected Node updateNode( Node node,
                              JSONObject jsonNode,
                              VersionableChanges changes ) throws RepositoryException, JSONException {
         // If the JSON object has a properties holder, then this is likely a subgraph ...

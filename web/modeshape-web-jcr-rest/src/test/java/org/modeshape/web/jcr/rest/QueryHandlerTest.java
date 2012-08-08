@@ -34,6 +34,7 @@ import org.mockito.stubbing.Answer;
 import org.modeshape.jcr.api.RepositoryFactory;
 import org.modeshape.web.jcr.ModeShapeJcrDeployer;
 import org.modeshape.web.jcr.RepositoryManager;
+import org.modeshape.web.jcr.rest.handler.QueryHandler;
 
 @Ignore
 // TODO: Query
