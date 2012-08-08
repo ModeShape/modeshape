@@ -1,4 +1,4 @@
-package org.modeshape.web.jcr.rest;
+package org.modeshape.web.jcr.rest.handler;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -6,12 +6,15 @@ import javax.servlet.http.HttpServletRequest;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.web.jcr.rest.RestHelper;
 
 /**
  * Resource handler that implements REST methods for repositories and workspaces.
+ *
+ * @deprecated since 3.x, use {@link RestRepositoryHandler}
  */
 @Immutable
-class RepositoryHandler extends AbstractHandler {
+public class RepositoryHandler extends AbstractHandler {
 
     /**
      * Returns the list of workspaces available to this user within the named repository.
@@ -23,7 +26,7 @@ class RepositoryHandler extends AbstractHandler {
      * @throws RepositoryException if there is any other error accessing the list of available workspaces for the repository
      */
     public String getWorkspaces( HttpServletRequest request,
-                                 String rawRepositoryName ) throws JSONException, RepositoryException {
+                          String rawRepositoryName ) throws JSONException, RepositoryException {
 
         assert request != null;
         assert rawRepositoryName != null;
@@ -31,7 +34,7 @@ class RepositoryHandler extends AbstractHandler {
         JSONObject workspaces = new JSONObject();
 
         Session session = getSession(request, rawRepositoryName, null);
-        rawRepositoryName = URL_ENCODER.encode(rawRepositoryName);
+        rawRepositoryName = RestHelper.URL_ENCODER.encode(rawRepositoryName);
 
         String uri = request.getRequestURI();
         uri = uri.substring(0, uri.length() - rawRepositoryName.length() - 1);
@@ -40,7 +43,7 @@ class RepositoryHandler extends AbstractHandler {
             if (name.trim().length() == 0) {
                 name = EMPTY_WORKSPACE_NAME;
             }
-            name = URL_ENCODER.encode(name);
+            name = RestHelper.URL_ENCODER.encode(name);
 
             JSONObject workspace = new JSONObject();
             JSONObject resources = new JSONObject();
@@ -55,7 +58,7 @@ class RepositoryHandler extends AbstractHandler {
             workspaces.put(name, wrapper);
         }
 
-        return responseString(workspaces, request);
+        return RestHelper.responseString(workspaces, request);
     }
 
 }

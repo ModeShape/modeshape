@@ -1,4 +1,4 @@
-package org.modeshape.web.jcr.rest;
+package org.modeshape.web.jcr.rest.handler;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -24,6 +24,7 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Collections;
+import org.modeshape.web.jcr.rest.RestHelper;
 
 /**
  * Resource handler that implements REST methods for items.
@@ -99,7 +100,7 @@ public class QueryHandler extends AbstractHandler {
                 if (value == null) {
                     // do nothing ...
                 } else if (value.getType() == PropertyType.BINARY) {
-                    jsonRow.put(columnName + BASE64_ENCODING_SUFFIX, jsonEncodedStringFor(value));
+                    jsonRow.put(columnName + BASE64_ENCODING_SUFFIX, RestHelper.jsonEncodedStringFor(value));
                 } else {
                     jsonRow.put(columnName, value.getString());
                 }
@@ -126,7 +127,7 @@ public class QueryHandler extends AbstractHandler {
         }
 
         results.put("rows", new JSONArray(jsonRows));
-        return responseString(results, request);
+        return RestHelper.responseString(results, request);
     }
 
 }

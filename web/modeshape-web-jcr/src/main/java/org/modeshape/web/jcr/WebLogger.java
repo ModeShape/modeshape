@@ -22,28 +22,29 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.jcr;
+package org.modeshape.web.jcr;
 
 import org.modeshape.common.i18n.TextI18n;
 import org.modeshape.common.logging.Logger;
 
 /**
  * Implementation of the {@link org.modeshape.jcr.api.Logger} interface which delegates the logging operations to an I18n based
- * {@link org.modeshape.common.logging.Logger} implementation, using pass-through I18n objects. This is implementation should be
- * normally used by ModeShape extensions, to avoid coupling with the I18n objects and the -common module.
+ * {@link org.modeshape.common.logging.Logger} implementation, using pass-through {@link TextI18n} objects.
+ *
+ * This should be used in ModeShape's server-side web modules.
  *
  * @author Horia Chiorean
  */
-public final class ExtensionLogger implements org.modeshape.jcr.api.Logger {
+public final class WebLogger implements org.modeshape.jcr.api.Logger {
 
     private final Logger logger;
 
-    private ExtensionLogger( Logger logger ) {
+    private WebLogger( Logger logger ) {
         this.logger = logger;
     }
 
     public static org.modeshape.jcr.api.Logger getLogger(Class<?> clazz) {
-        return new ExtensionLogger(Logger.getLogger(clazz));
+        return new WebLogger(Logger.getLogger(clazz));
     }
 
     @Override

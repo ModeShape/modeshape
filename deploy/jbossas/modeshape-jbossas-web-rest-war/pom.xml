@@ -49,6 +49,10 @@
                     <groupId>org.jboss.resteasy</groupId>
                     <artifactId>jaxrs-api</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.jboss.resteasy</groupId>
+                    <artifactId>resteasy-multipart-provider</artifactId>
+                </exclusion>
                 <!-- ModeShape REST service code uses this directly ...
                   <exclusion>
                     <groupId>org.codehaus.jettison</groupId>

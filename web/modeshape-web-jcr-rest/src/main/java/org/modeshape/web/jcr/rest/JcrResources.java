@@ -23,8 +23,6 @@
  */
 package org.modeshape.web.jcr.rest;
 
-import java.io.IOException;
-import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.query.InvalidQueryException;
@@ -41,19 +39,19 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
 import org.codehaus.jettison.json.JSONException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.Base64;
-import org.modeshape.web.jcr.NoSuchRepositoryException;
+import org.modeshape.web.jcr.rest.handler.ItemHandler;
+import org.modeshape.web.jcr.rest.handler.QueryHandler;
+import org.modeshape.web.jcr.rest.handler.RepositoryHandler;
+import org.modeshape.web.jcr.rest.handler.ServerHandler;
+import java.io.IOException;
 
 /**
  * RESTEasy handler to provide the JCR resources at the URIs below. Please note that these URIs assume a context of
@@ -140,10 +138,12 @@ import org.modeshape.web.jcr.NoSuchRepositoryException;
  * <i>must</i> be appended with "/base64/" and the string representation of each value are to be encoded in Base64.</li>
  * </ul>
  * </p>
+ *
+ * @deprecated since 3.x, the default service is {@link ModeShapeRestService}
  */
 @Immutable
 @Path( "/" )
-public class JcrResources extends AbstractHandler {
+public class JcrResources {
 
     /**
      * This is a duplicate of the FullTextSearchParser.LANGUAGE field, but it is split out here to avoid adding a dependency on
@@ -208,8 +208,8 @@ public class JcrResources extends AbstractHandler {
      * @throws JSONException if there is an error encoding the node
      * @throws UnauthorizedException if the given login information is invalid
      * @throws RepositoryException if any other error occurs
-     * @see #EMPTY_REPOSITORY_NAME
-     * @see #EMPTY_WORKSPACE_NAME
+     * @see org.modeshape.web.jcr.rest.handler.AbstractHandler#EMPTY_REPOSITORY_NAME
+     * @see org.modeshape.web.jcr.rest.handler.AbstractHandler#EMPTY_REPOSITORY_NAME
      * @see Session#getItem(String)
      */
     @GET
@@ -493,69 +493,4 @@ public class JcrResources extends AbstractHandler {
                                      limit,
                                      uriInfo);
     }
-
-    @Provider
-    public static class NotFoundExceptionMapper implements ExceptionMapper<NotFoundException> {
-
-        @Override
-        public Response toResponse( NotFoundException exception ) {
-            return exceptionResponse(exception, Status.NOT_FOUND);
-        }
-
-    }
-
-    @Provider
-    public static class NoSuchWorkspaceExceptionMapper implements ExceptionMapper<NoSuchWorkspaceException> {
-
-        @Override
-        public Response toResponse( NoSuchWorkspaceException exception ) {
-            return exceptionResponse(exception, Status.NOT_FOUND);
-        }
-
-    }
-
-    @Provider
-    public static class NoSuchRepositoryExceptionMapper implements ExceptionMapper<NoSuchRepositoryException> {
-
-        @Override
-        public Response toResponse( NoSuchRepositoryException exception ) {
-            return exceptionResponse(exception, Status.NOT_FOUND);
-        }
-
-    }
-
-    @Provider
-    public static class JSONExceptionMapper implements ExceptionMapper<JSONException> {
-
-        @Override
-        public Response toResponse( JSONException exception ) {
-            return exceptionResponse(exception, Status.BAD_REQUEST);
-        }
-
-    }
-
-    @Provider
-    public static class InvalidQueryExceptionMapper implements ExceptionMapper<InvalidQueryException> {
-
-        @Override
-        public Response toResponse( InvalidQueryException exception ) {
-            return exceptionResponse(exception, Status.BAD_REQUEST);
-        }
-    }
-
-    @Provider
-    public static class RepositoryExceptionMapper implements ExceptionMapper<RepositoryException> {
-
-        @Override
-        public Response toResponse( RepositoryException exception ) {
-            return exceptionResponse(exception, Status.BAD_REQUEST);
-        }
-    }
-
-    protected static Response exceptionResponse( Exception e,
-                                                 Status status ) {
-        GenericEntity<String> entity = new GenericEntity<String>(e.getMessage()) {};
-        return Response.status(status).entity(entity).build();
-    }
-
 }

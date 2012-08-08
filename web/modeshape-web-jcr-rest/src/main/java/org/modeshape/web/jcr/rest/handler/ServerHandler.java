@@ -1,4 +1,28 @@
-package org.modeshape.web.jcr.rest;
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
+package org.modeshape.web.jcr.rest.handler;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,12 +37,15 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.web.jcr.RepositoryManager;
+import org.modeshape.web.jcr.rest.RestHelper;
 
 /**
  * Resource handler that implements REST methods for servers.
+ *
+ * @deprecated since 3.x, use {@link RestServerHandler} instead
  */
 @Immutable
-class ServerHandler extends AbstractHandler {
+public class ServerHandler extends AbstractHandler {
 
     /**
      * Returns the list of JCR repositories available on this server
@@ -44,7 +71,7 @@ class ServerHandler extends AbstractHandler {
             if (repoName.trim().length() == 0) {
                 repoName = EMPTY_REPOSITORY_NAME;
             }
-            String name = URL_ENCODER.encode(repoName);
+            String name = RestHelper.URL_ENCODER.encode(repoName);
             JSONObject repository = new JSONObject();
             JSONObject resources = new JSONObject();
             resources.put("workspaces", uri + "/" + name);
@@ -69,7 +96,7 @@ class ServerHandler extends AbstractHandler {
                 e.printStackTrace();
             }
         }
-        return responseString(jsonRepositories, request);
+        return RestHelper.responseString(jsonRepositories, request);
     }
 
     protected JSONObject getRepositoryMetadata( Session session ) throws JSONException, RepositoryException {
@@ -81,12 +108,12 @@ class ServerHandler extends AbstractHandler {
             if (values.length == 1) {
                 Value value = values[0];
                 if (value == null) continue;
-                metadata.put(key, jsonEncodedStringFor(value));
+                metadata.put(key, RestHelper.jsonEncodedStringFor(value));
             } else {
                 List<String> valueStrings = new ArrayList<String>();
                 for (Value value : values) {
                     if (value == null) continue;
-                    valueStrings.add(jsonEncodedStringFor(value));
+                    valueStrings.add(RestHelper.jsonEncodedStringFor(value));
                 }
                 if (valueStrings.isEmpty()) continue;
                 if (valueStrings.size() == 1) {
