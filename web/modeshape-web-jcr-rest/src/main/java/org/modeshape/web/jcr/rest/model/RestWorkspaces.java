@@ -27,7 +27,6 @@ package org.modeshape.web.jcr.rest.model;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.modeshape.web.jcr.rest.ModeShapeRestService;
 import org.modeshape.web.jcr.rest.RestHelper;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,13 +64,17 @@ public final class RestWorkspaces implements JSONAble {
         private final String repositoryUrl;
         private final String queryUrl;
         private final String itemsUrl;
+        private final String binaryUrl;
+        private final String nodeTypesUrl;
 
         public Workspace( String name,
                           String repositoryUrl ) {
             this.name = name;
             this.repositoryUrl = repositoryUrl;
-            this.queryUrl = RestHelper.urlFrom(repositoryUrl, name, ModeShapeRestService.QUERY_METHOD_NAME);
-            this.itemsUrl = RestHelper.urlFrom(repositoryUrl, name, ModeShapeRestService.ITEMS_METHOD_NAME);
+            this.queryUrl = RestHelper.urlFrom(repositoryUrl, name, RestHelper.QUERY_METHOD_NAME);
+            this.itemsUrl = RestHelper.urlFrom(repositoryUrl, name, RestHelper.ITEMS_METHOD_NAME);
+            this.binaryUrl = RestHelper.urlFrom(repositoryUrl, name, RestHelper.BINARY_METHOD_NAME);
+            this.nodeTypesUrl = RestHelper.urlFrom(repositoryUrl, name, RestHelper.NODE_TYPES_METHOD_NAME);
         }
 
         @Override
@@ -79,8 +82,10 @@ public final class RestWorkspaces implements JSONAble {
             JSONObject result = new JSONObject();
             result.put("name", name);
             result.put("repository", repositoryUrl);
-            result.put("items", itemsUrl);
+            result.put("edit", itemsUrl);
             result.put("query", queryUrl);
+            result.put("binary", binaryUrl);
+            result.put("nodeTypes", nodeTypesUrl);
             return result;
         }
     }

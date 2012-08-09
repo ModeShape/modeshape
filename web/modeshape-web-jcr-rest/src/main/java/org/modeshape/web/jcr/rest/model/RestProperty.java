@@ -60,7 +60,7 @@ public final class RestProperty extends RestItem {
     public JSONObject toJSON() throws JSONException {
         JSONObject object = new JSONObject();
         if (isMultiValue()) {
-            object.put(name, values);
+            object.put("values", values);
         }
         else if (getValue() != null) {
             object.put(name, getValue());

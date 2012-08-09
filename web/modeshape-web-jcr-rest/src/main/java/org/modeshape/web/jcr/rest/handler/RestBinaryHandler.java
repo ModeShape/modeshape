@@ -33,6 +33,7 @@ import javax.jcr.Session;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.web.jcr.rest.model.RestProperty;
 import java.io.IOException;
@@ -79,7 +80,8 @@ public final class RestBinaryHandler extends AbstractHandler {
                                   String path,
                                   InputStream binaryStream,
                                   boolean allowCreation ) throws RepositoryException {
-        assert binaryStream != null;
+        //TODO author=Horia Chiorean date=8/9/12 description=We don't have a way (without changing the API) to set the mime-type on a binary
+        CheckArg.isNotNull(binaryStream, "request body");
 
         int lastSlashInd = path.lastIndexOf('/');
         String parentPath = lastSlashInd == -1 ? "/" : "/" + path.substring(0, lastSlashInd);

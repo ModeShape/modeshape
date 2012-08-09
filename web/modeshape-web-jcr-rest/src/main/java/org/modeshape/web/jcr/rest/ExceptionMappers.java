@@ -27,6 +27,7 @@ package org.modeshape.web.jcr.rest;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.query.InvalidQueryException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
@@ -106,6 +107,22 @@ public final class ExceptionMappers {
 
         @Override
         public Response toResponse( RepositoryException exception ) {
+            return exceptionResponse(exception, Response.Status.BAD_REQUEST);
+        }
+    }
+
+    @Provider
+    public static class NoSuchNodeTypeExceptionMapper implements ExceptionMapper<NoSuchNodeTypeException> {
+        @Override
+        public Response toResponse( NoSuchNodeTypeException exception ) {
+            return exceptionResponse(exception, Response.Status.NOT_FOUND);
+        }
+    }
+
+    @Provider
+    public static class IllegalArgumentExceptionMapper implements ExceptionMapper<IllegalArgumentException> {
+        @Override
+        public Response toResponse( IllegalArgumentException exception ) {
             return exceptionResponse(exception, Response.Status.BAD_REQUEST);
         }
     }

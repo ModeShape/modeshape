@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.web.jcr.rest.model.RestItem;
 
 /**
@@ -39,11 +40,11 @@ import org.modeshape.web.jcr.rest.model.RestItem;
  */
 public class RestItemHandler extends ItemHandler {
 
-    public RestItem item(  HttpServletRequest request,
-                           String rawRepositoryName,
-                           String rawWorkspaceName,
-                           String path,
-                           int depth ) throws RepositoryException {
+    public RestItem item( HttpServletRequest request,
+                          String rawRepositoryName,
+                          String rawWorkspaceName,
+                          String path,
+                          int depth ) throws RepositoryException {
         Session session = getSession(request, rawRepositoryName, rawWorkspaceName);
         Item item = itemAtPath(path, session);
         return createRestItem(request, depth, session, item);
@@ -70,7 +71,7 @@ public class RestItemHandler extends ItemHandler {
                              String rawRepositoryName,
                              String rawWorkspaceName,
                              String path,
-                             String requestBody) throws JSONException, RepositoryException {
+                             String requestBody ) throws JSONException, RepositoryException {
         assert rawRepositoryName != null;
         assert rawWorkspaceName != null;
         assert path != null;
@@ -81,7 +82,7 @@ public class RestItemHandler extends ItemHandler {
         String newNodeName = lastSlashInd == -1 ? path : path.substring(lastSlashInd + 1);
 
         Session session = getSession(request, rawRepositoryName, rawWorkspaceName);
-        Node parentNode = (Node) session.getItem(parentAbsPath);
+        Node parentNode = (Node)session.getItem(parentAbsPath);
         Node newNode = addNode(parentNode, newNodeName, requestBodyJSON);
 
         session.save();
@@ -118,5 +119,9 @@ public class RestItemHandler extends ItemHandler {
         session.save();
 
         return createRestItem(request, 0, session, jcrItem);
+    }
+
+    private JSONObject requestBodyJSON( String requestBody ) throws JSONException {
+        return StringUtil.isBlank(requestBody) ? new JSONObject() : new JSONObject(requestBody);
     }
 }

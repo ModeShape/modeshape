@@ -27,6 +27,7 @@ package org.modeshape.web.jcr.rest.output;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.Provider;
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.modeshape.web.jcr.rest.model.JSONAble;
 
@@ -37,11 +38,14 @@ import org.modeshape.web.jcr.rest.model.JSONAble;
 @Produces( { MediaType.TEXT_PLAIN } )
 public class TextBodyWriter extends JSONBodyWriter {
 
-    protected String getString(JSONAble jsonAble) {
-        try {
-            return jsonAble.toJSON().toString(2);
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
-        }
+    private static final int TEXT_INDENT_FACTOR = 2;
+
+    protected String getString( JSONAble jsonAble ) throws JSONException {
+        return jsonAble.toJSON().toString(TEXT_INDENT_FACTOR);
+    }
+
+    @Override
+    protected String getString( JSONArray array ) throws JSONException {
+        return array.toString(2);
     }
 }

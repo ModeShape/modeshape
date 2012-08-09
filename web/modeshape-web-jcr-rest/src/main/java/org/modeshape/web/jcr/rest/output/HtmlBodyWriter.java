@@ -27,7 +27,12 @@ package org.modeshape.web.jcr.rest.output;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.Provider;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
 import org.modeshape.web.jcr.rest.model.JSONAble;
+import org.modeshape.web.jcr.rest.model.RestException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Horia Chiorean
@@ -36,19 +41,59 @@ import org.modeshape.web.jcr.rest.model.JSONAble;
 @Produces( { MediaType.TEXT_HTML } )
 public class HtmlBodyWriter extends TextBodyWriter {
 
-    protected String getString(JSONAble jsonAble) {
-        String indentedString = super.getString(jsonAble);
-        indentedString = indentedString.replaceAll("\\\\r\\\\n\\\\t", "<br/>")
-                                       .replaceAll("\r\n\t", "<br/>")
-                                       .replaceAll("\r\n", "<br/>")
-                                       .replaceAll("\n", "<br/>")
-                                       .replaceAll("\r", "<br/>")
-                                       .replaceAll("\t", "<br/>")
-                                       .replaceAll("\\\\", "")
-                                       .replaceAll("\\s", "&nbsp;");
-        indentedString = indentedString.replaceAll("\\{\"", "\\{<br/>\"");
-        String urlPattern = "\"(?:(?:https?|file)://)[^\"\\r\\n]+\"";
-        indentedString = indentedString.replaceAll(urlPattern, "<a href=$0>$0</a>");
-        return "<code>" + indentedString + "</code>";
+    protected String getString(JSONAble jsonAble) throws JSONException {
+        String text = super.getString(jsonAble);
+        return jsonAble instanceof RestException ? replaceSpaces(replaceLineTerminators(text)) : htmlString(text);
+    }
+
+    @Override
+    protected String getString( JSONArray array ) throws JSONException {
+        return htmlString(super.getString(array));
+    }
+
+    private String htmlString( String jsonString ) {
+        jsonString = replaceLineTerminators(jsonString);
+        jsonString = replaceSpaces(jsonString);
+        jsonString = createURLs(jsonString);
+        return "<code>" + jsonString + "</code>";
+    }
+
+//    private String addColor( String jsonString ) {
+//        jsonString = jsonString.replaceAll("(\\{?\")([A-Z\\:a-z_]+)(\"\\:)", "$1<font color=\"#0000FF;\">$2</font>$3");
+//        jsonString = jsonString.replaceAll("(\\:\\s*)([A-Za-z_&&[^https?|file]]+)(\\,?)", "$1<font color=\"#008000;\">$2</font>$3");
+//        return jsonString;
+//    }
+
+    private String createURLs( String jsonString ) {
+        String urlPattern = "(?:(?:https?|file)://)[^\"\\r\\n]+";
+        jsonString = jsonString.replaceAll(urlPattern, "<a href=$0>$0</a>");
+        return jsonString;
+    }
+
+    private String replaceSpaces( String jsonString ) {
+        Pattern pattern = Pattern.compile("(\\s*)");
+        Matcher matcher = pattern.matcher(jsonString);
+        StringBuffer buffer = new StringBuffer();
+        while (matcher.find()) {
+            String spaces = matcher.group(1);
+            StringBuilder nbspBuffer = new StringBuilder(spaces.length());
+            for (int i = 0; i < spaces.length(); i++) {
+                nbspBuffer.append("&nbsp;");
+            }
+            matcher.appendReplacement(buffer, nbspBuffer.toString());
+        }
+        matcher.appendTail(buffer);
+        return buffer.toString();
+    }
+
+    private String replaceLineTerminators( String jsonString ) {
+        jsonString = jsonString.replaceAll("\\\\r\\\\n\\\\t", "<br/>")
+                               .replaceAll("\r\n\t", "<br/>")
+                               .replaceAll("\r\n", "<br/>")
+                               .replaceAll("\n", "<br/>")
+                               .replaceAll("\r", "<br/>")
+                               .replaceAll("\t", "<br/>")
+                               .replaceAll("\\\\", "");
+        return jsonString;
     }
 }

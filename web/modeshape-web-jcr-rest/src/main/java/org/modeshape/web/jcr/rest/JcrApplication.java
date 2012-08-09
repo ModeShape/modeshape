@@ -34,14 +34,14 @@ import org.modeshape.web.jcr.rest.output.TextBodyWriter;
 
 /**
  * Implementation of the JAX-RS {@code Application} class to identify all JAX-RS providers and classes in the application.
- * 
+ *
  * @see Application
  */
 public class JcrApplication extends Application {
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @see Application#getClasses()
      */
     @Override
@@ -58,7 +58,9 @@ public class JcrApplication extends Application {
                 ExceptionMappers.NoSuchRepositoryExceptionMapper.class,
                 ExceptionMappers.RepositoryExceptionMapper.class,
                 ExceptionMappers.InvalidQueryExceptionMapper.class,
-        })); 
+                ExceptionMappers.NoSuchNodeTypeExceptionMapper.class,
+                ExceptionMappers.IllegalArgumentExceptionMapper.class
+        }));
     }
 
 }

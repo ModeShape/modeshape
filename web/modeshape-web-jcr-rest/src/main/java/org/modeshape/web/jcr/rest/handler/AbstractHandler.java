@@ -10,17 +10,13 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.servlet.http.HttpServletRequest;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.Logger;
 import org.modeshape.web.jcr.RepositoryManager;
 import org.modeshape.web.jcr.WebLogger;
-import static org.modeshape.web.jcr.rest.ModeShapeRestService.BINARY_METHOD_NAME;
-import static org.modeshape.web.jcr.rest.ModeShapeRestService.ITEMS_METHOD_NAME;
-import static org.modeshape.web.jcr.rest.ModeShapeRestService.QUERY_METHOD_NAME;
 import org.modeshape.web.jcr.rest.RestHelper;
+import static org.modeshape.web.jcr.rest.RestHelper.BINARY_METHOD_NAME;
+import static org.modeshape.web.jcr.rest.RestHelper.ITEMS_METHOD_NAME;
 import org.modeshape.web.jcr.rest.model.RestItem;
 import org.modeshape.web.jcr.rest.model.RestNode;
 import org.modeshape.web.jcr.rest.model.RestProperty;
@@ -186,24 +182,9 @@ public abstract class AbstractHandler {
                                        int depth,
                                        Session session,
                                        Item item ) throws RepositoryException {
-        String baseUrl = baseUrl(request);
-        return item instanceof Node ? createRestNode(session, (Node)item, baseUrl, depth) : createRestProperty(session,
-                                                                                                               (Property)item,
-                                                                                                               baseUrl);
-    }
-
-    protected String baseUrl( HttpServletRequest request ) {
-        StringBuffer requestURL = request.getRequestURL();
-        int delimiterSegmentIdx = requestURL.length();
-        if (requestURL.indexOf(ITEMS_METHOD_NAME) != -1) {
-            delimiterSegmentIdx = requestURL.indexOf(ITEMS_METHOD_NAME);
-        } else if (requestURL.indexOf(BINARY_METHOD_NAME) != -1) {
-            delimiterSegmentIdx = requestURL.indexOf(BINARY_METHOD_NAME);
-        } else if (requestURL.indexOf(QUERY_METHOD_NAME) != -1) {
-            delimiterSegmentIdx = requestURL.indexOf(QUERY_METHOD_NAME);
-        }
-
-        return requestURL.substring(0, delimiterSegmentIdx);
+        String baseUrl = RestHelper.repositoryUrl(request);
+        return item instanceof Node ? createRestNode(session, (Node)item, baseUrl, depth)
+                : createRestProperty(session, (Property)item, baseUrl);
     }
 
     private RestNode createRestNode( Session session,
@@ -242,9 +223,5 @@ public abstract class AbstractHandler {
         String url = RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, property.getPath());
         String parentUrl = RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, property.getParent().getPath());
         return new RestProperty(property.getName(), url, parentUrl, values);
-    }
-
-    protected JSONObject requestBodyJSON( String requestBody ) throws JSONException {
-        return StringUtil.isBlank(requestBody) ? new JSONObject() : new JSONObject(requestBody);
     }
 }
