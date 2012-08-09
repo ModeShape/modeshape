@@ -38,7 +38,6 @@ import javax.jcr.query.RowIterator;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.UriInfo;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.web.jcr.rest.ModeShapeRestService;
 import org.modeshape.web.jcr.rest.RestHelper;
 import org.modeshape.web.jcr.rest.model.RestQueryResult;
 import java.util.HashMap;
@@ -75,7 +74,7 @@ public class RestQueryHandler extends QueryHandler {
         String[] columnNames = result.getColumnNames();
         setColumns(result, restQueryResult, columnNames);
 
-        String baseUrl = baseUrl(request);
+        String baseUrl = RestHelper.repositoryUrl(request);
 
         setRows(offset, limit, session, result, restQueryResult, columnNames, baseUrl);
 
@@ -114,14 +113,14 @@ public class RestQueryHandler extends QueryHandler {
                                            RestQueryResult.RestRow restRow ) throws RepositoryException {
         String defaultPath = resultRow.getPath();
         if (!StringUtil.isBlank(defaultPath)) {
-            restRow.addValue(MODE_URI, RestHelper.urlFrom(baseUrl, ModeShapeRestService.ITEMS_METHOD_NAME,
+            restRow.addValue(MODE_URI, RestHelper.urlFrom(baseUrl, RestHelper.ITEMS_METHOD_NAME,
                                                           defaultPath));
         }
         for (String selectorName : result.getSelectorNames()) {
             String selectorPath = resultRow.getPath(selectorName);
             if (!StringUtil.isBlank(defaultPath) && !selectorPath.equals(defaultPath)) {
                 restRow.addValue(MODE_URI + "-" + selectorName, RestHelper.urlFrom(baseUrl,
-                                                                                   ModeShapeRestService.ITEMS_METHOD_NAME,
+                                                                                   RestHelper.ITEMS_METHOD_NAME,
                                                                                    selectorPath));
             }
         }

@@ -39,6 +39,8 @@ import org.modeshape.jcr.api.Logger;
 import org.modeshape.web.jcr.WebLogger;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Utility class for the rest services.
@@ -49,6 +51,14 @@ public final class RestHelper {
 
     public static final UrlEncoder URL_ENCODER = new UrlEncoder();
 
+    public static final String BINARY_METHOD_NAME = "binary";
+    public static final String ITEMS_METHOD_NAME = "items";
+    public static final String QUERY_METHOD_NAME = "query";
+    public static final String NODE_TYPES_METHOD_NAME = "nodetypes";
+
+    private static final List<String> ALL_METHODS = Arrays.asList(BINARY_METHOD_NAME, ITEMS_METHOD_NAME, QUERY_METHOD_NAME,
+                                                                  NODE_TYPES_METHOD_NAME);
+
     private static final Logger LOGGER = WebLogger.getLogger(RestHelper.class);
 
     private RestHelper() {
@@ -58,7 +68,7 @@ public final class RestHelper {
      * @deprecated since 3.0, dedicated writers are used for the output
      */
     public static String responseString( Object object,
-                                            HttpServletRequest request ) throws JSONException {
+                                         HttpServletRequest request ) throws JSONException {
         String acceptHeader = request.getHeader("Accept");
         if (StringUtil.isBlank(acceptHeader)) {
             return responseAsText(object);
@@ -74,10 +84,9 @@ public final class RestHelper {
 
     private static String responseAsText( Object object ) throws JSONException {
         if (object instanceof JSONObject) {
-            return ((JSONObject) object).toString(2);
-        }
-        else if (object instanceof JSONArray) {
-            return ((JSONArray) object).toString(1);
+            return ((JSONObject)object).toString(2);
+        } else if (object instanceof JSONArray) {
+            return ((JSONArray)object).toString(1);
         }
         return object.toString();
     }
@@ -90,6 +99,18 @@ public final class RestHelper {
         String indentedString = responseAsText(object);
         indentedString = indentedString.replaceAll("\n", "<br/>").replaceAll("\\\\", "").replaceAll("\\s", "&nbsp;");
         return "<code>" + indentedString + "</code>";
+    }
+
+    public static String repositoryUrl( HttpServletRequest request ) {
+        StringBuffer requestURL = request.getRequestURL();
+        int delimiterSegmentIdx = requestURL.length();
+        for (String methodName : ALL_METHODS) {
+            if (requestURL.indexOf(methodName) != -1) {
+                delimiterSegmentIdx = requestURL.indexOf(methodName);
+                break;
+            }
+        }
+        return requestURL.substring(0, delimiterSegmentIdx);
     }
 
     public static String urlFrom( HttpServletRequest request,
@@ -123,7 +144,6 @@ public final class RestHelper {
      *
      * @param value the property value; may not be null
      * @return the string representation of the value
-     *
      * @deprecated since 3.0 binary values are handled via URLs
      */
     public static String jsonEncodedStringFor( Value value ) {

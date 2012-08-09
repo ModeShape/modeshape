@@ -42,4 +42,10 @@ public class FileUploadForm {
     public void setFileData( InputStream fileData ) {
         this.fileData = fileData;
     }
+
+    public void validate() {
+        if (fileData == null) {
+            throw new IllegalArgumentException("Please make sure the file is uploaded from an HTML element with the name \"file\"");
+        }
+    }
 }

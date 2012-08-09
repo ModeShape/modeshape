@@ -500,7 +500,7 @@
                         <configuration>
                             <properties>
                                 <cargo.logging>high</cargo.logging>
-                                <cargo.servlet.users>dnauser:password:connect,readwrite|unauthorized:password:bogus</cargo.servlet.users>
+                                <cargo.servlet.users>dnauser:password:connect,readwrite,admin|unauthorized:password:bogus</cargo.servlet.users>
                                 <cargo.servlet.port>8090</cargo.servlet.port>
                             </properties>
                         </configuration>
