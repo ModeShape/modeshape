@@ -24,8 +24,10 @@
 
 package org.modeshape.web.jcr.rest;
 
+import javax.jcr.Binary;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
+import javax.jcr.query.Query;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -40,24 +42,24 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import org.codehaus.jettison.json.JSONException;
 import org.jboss.resteasy.annotations.providers.multipart.MultipartForm;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.api.Binary;
 import org.modeshape.web.jcr.rest.form.FileUploadForm;
-import org.modeshape.web.jcr.rest.handler.BinaryHandler;
-import org.modeshape.web.jcr.rest.handler.QueryHandler;
+import org.modeshape.web.jcr.rest.handler.RestBinaryHandler;
 import org.modeshape.web.jcr.rest.handler.RestItemHandler;
+import org.modeshape.web.jcr.rest.handler.RestQueryHandler;
 import org.modeshape.web.jcr.rest.handler.RestRepositoryHandler;
 import org.modeshape.web.jcr.rest.handler.RestServerHandler;
+import org.modeshape.web.jcr.rest.model.RestException;
 import org.modeshape.web.jcr.rest.model.RestItem;
-import org.modeshape.web.jcr.rest.model.RestProperty;
+import org.modeshape.web.jcr.rest.model.RestQueryResult;
 import org.modeshape.web.jcr.rest.model.RestRepositories;
 import org.modeshape.web.jcr.rest.model.RestWorkspaces;
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 /**
@@ -74,17 +76,11 @@ public final class ModeShapeRestService {
     public static final String MIME_TYPE_PARAM_NAME = "mimeType";
     public static final String CONTENT_DISPOSITION_PARAM_NAME = "contentDisposition";
 
-    /**
-     * This is a duplicate of the FullTextSearchParser.LANGUAGE field, but it is split out here to avoid adding a dependency on
-     * the modeshape-jcr package.
-     */
-    private final static String SEARCH_LANGUAGE = "Search";
-
     private RestServerHandler serverHandler = new RestServerHandler();
     private RestRepositoryHandler repositoryHandler = new RestRepositoryHandler();
     private RestItemHandler itemHandler = new RestItemHandler();
-    private QueryHandler queryHandler = new QueryHandler();
-    private BinaryHandler binaryHandler = new BinaryHandler();
+    private RestQueryHandler queryHandler = new RestQueryHandler();
+    private RestBinaryHandler binaryHandler = new RestBinaryHandler();
 
     /**
      * @see JcrResources#getRepositories(javax.servlet.http.HttpServletRequest)
@@ -133,7 +129,7 @@ public final class ModeShapeRestService {
                                @QueryParam( CONTENT_DISPOSITION_PARAM_NAME ) String contentDisposition )
             throws RepositoryException {
         Property binaryProperty = binaryHandler.getBinaryProperty(request, repositoryName, workspaceName, path);
-        Binary binary = (Binary)binaryProperty.getBinary();
+        Binary binary = binaryProperty.getBinary();
         if (StringUtil.isBlank(mimeType)) {
             mimeType = binaryHandler.getDefaultMimeType(binaryProperty);
         }
@@ -146,24 +142,11 @@ public final class ModeShapeRestService {
     }
 
     /**
-     * Adds the content of the request as a node (or subtree of nodes) at the location specified by {@code path}.
-     * <p>
-     * The primary type and mixin type(s) may optionally be specified through the {@code jcr:primaryType} and
-     * {@code jcr:mixinTypes} properties.
-     * </p>
-     *
-     * @param request the servlet request; may not be null or unauthenticated
-     * @param rawRepositoryName the URL-encoded repository name
-     * @param rawWorkspaceName the URL-encoded workspace name
-     * @param path the path to the item
-     * @param requestContent the JSON-encoded representation of the node or nodes to be added
-     * @return the JSON-encoded representation of the top node that was added.
-     * @throws JSONException if there is an error encoding the node
-     * @throws RepositoryException if any other error occurs
+     * @see JcrResources#postItem(javax.servlet.http.HttpServletRequest, String, String, String, String, String)
      */
     @POST
     @Path( "{repositoryName}/{workspaceName}/" + ITEMS_METHOD_NAME + "{path:.*}" )
-    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
+    @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN, MediaType.TEXT_HTML } )
     public Response postItem( @Context HttpServletRequest request,
                               @PathParam( "repositoryName" ) String rawRepositoryName,
                               @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -178,16 +161,7 @@ public final class ModeShapeRestService {
     }
 
     /**
-     * Deletes the item at {@code path}.
-     *
-     * @param request the servlet request; may not be null or unauthenticated
-     * @param rawRepositoryName the URL-encoded repository name
-     * @param rawWorkspaceName the URL-encoded workspace name
-     * @param path the path to the item
-     * @return a http 204 code (No Content) if the deletion was successful, or an error code otherwise
-     * @throws org.jboss.resteasy.spi.NotFoundException if no item exists at {@code path}
-     * @throws org.jboss.resteasy.spi.UnauthorizedException if the user does not have the access required to delete the item at this path
-     * @throws RepositoryException if any other error occurs
+     * @see JcrResources#deleteItem(javax.servlet.http.HttpServletRequest, String, String, String)
      */
     @DELETE
     @Path( "{repositoryName}/{workspaceName}/" + ITEMS_METHOD_NAME + "/{path:.*}" )
@@ -201,28 +175,12 @@ public final class ModeShapeRestService {
     }
 
     /**
-     * Updates the properties at the path.
-     * <p>
-     * If path points to a property, this method expects the request content to be either a JSON array or a JSON string. The array
-     * or string will become the values or value of the property. If path points to a node, this method expects the request
-     * content to be a JSON object. The keys of the objects correspond to property names that will be set and the values for the
-     * keys correspond to the values that will be set on the properties.
-     * </p>
-     *
-     * @param request the servlet request; may not be null or unauthenticated
-     * @param rawRepositoryName the URL-encoded repository name
-     * @param rawWorkspaceName the URL-encoded workspace name
-     * @param path the path to the item
-     * @param requestContent the JSON-encoded representation of the values and, possibly, properties to be set
-     * @return a {@link RestItem} instance representing the item that was changed by this operation.
-
-     * @throws JSONException if there is an error encoding the node
-     * @throws RepositoryException if any other error occurs
+     * @see JcrResources#putItem(javax.servlet.http.HttpServletRequest, String, String, String, String)
      */
     @PUT
     @Path( "{repositoryName}/{workspaceName}/" + ITEMS_METHOD_NAME + "{path:.*}" )
     @Consumes( MediaType.APPLICATION_JSON )
-    @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
+    @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN, MediaType.TEXT_HTML } )
     public RestItem putItem( @Context HttpServletRequest request,
                            @PathParam( "repositoryName" ) String rawRepositoryName,
                            @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -233,7 +191,7 @@ public final class ModeShapeRestService {
 
     @POST
     @Path( "{repositoryName}/{workspaceName}/" + BINARY_METHOD_NAME + "{path:.+}" )
-    @Produces( { MediaType.TEXT_HTML, MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON } )
+    @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN, MediaType.TEXT_HTML } )
     public Response postBinary( @Context HttpServletRequest request,
                                     @PathParam( "repositoryName" ) String repositoryName,
                                     @PathParam( "workspaceName" ) String workspaceName,
@@ -245,7 +203,7 @@ public final class ModeShapeRestService {
 
     @PUT
     @Path( "{repositoryName}/{workspaceName}/" + BINARY_METHOD_NAME + "{path:.+}" )
-    @Produces( { MediaType.TEXT_HTML, MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON } )
+    @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN, MediaType.TEXT_HTML } )
     public Response putBinary( @Context HttpServletRequest request,
                                    @PathParam( "repositoryName" ) String repositoryName,
                                    @PathParam( "workspaceName" ) String workspaceName,
@@ -257,7 +215,7 @@ public final class ModeShapeRestService {
 
     @POST
     @Path( "{repositoryName}/{workspaceName}/" + BINARY_METHOD_NAME + "{path:.+}" )
-    @Produces( { MediaType.TEXT_HTML, MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON } )
+    @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN, MediaType.TEXT_HTML } )
     @Consumes( MediaType.MULTIPART_FORM_DATA )
     public Response postBinaryMultipart( @Context HttpServletRequest request,
                                     @PathParam( "repositoryName" ) String repositoryName,
@@ -266,10 +224,105 @@ public final class ModeShapeRestService {
                                     @MultipartForm FileUploadForm form)
             throws RepositoryException {
         if (form.getFileData() == null) {
-            return ExceptionMappers.exceptionResponse(new IllegalArgumentException("Please make sure the file is uploaded from an HTML element with the name \"file\""),
-                                                      Response.Status.BAD_REQUEST);
+            return Response.status(Response.Status.BAD_REQUEST).entity(
+                    new RestException("Please make sure the file is uploaded from an HTML element with the name \"file\"")).build();
         }
-        return binaryHandler.updateBinary(request, repositoryName, workspaceName, path,
-                                          form.getFileData(), true);
+        return binaryHandler.updateBinary(request, repositoryName, workspaceName, path, form.getFileData(), true);
+    }
+
+    /**
+     * @see JcrResources#postXPathQuery(javax.servlet.http.HttpServletRequest, String, String, long, long, javax.ws.rs.core.UriInfo, String)
+     */
+    @POST
+    @Path( "{repositoryName}/{workspaceName}/query" )
+    @Consumes( "application/jcr+xpath" )
+    @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN } )
+    public RestQueryResult postXPathQuery( @Context HttpServletRequest request,
+                                           @PathParam( "repositoryName" ) String rawRepositoryName,
+                                           @PathParam( "workspaceName" ) String rawWorkspaceName,
+                                           @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
+                                           @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
+                                           @Context UriInfo uriInfo,
+                                           String requestContent ) throws RepositoryException {
+        return queryHandler.executeQuery(request,
+                                         rawRepositoryName,
+                                         rawWorkspaceName,
+                                         Query.XPATH,
+                                         requestContent,
+                                         offset,
+                                         limit,
+                                         uriInfo);
+    }
+
+    /**
+     * @see JcrResources#postJcrSqlQuery(javax.servlet.http.HttpServletRequest, String, String, long, long, javax.ws.rs.core.UriInfo, String)
+     */
+    @POST
+    @Path( "{repositoryName}/{workspaceName}/query" )
+    @Consumes( "application/jcr+sql" )
+    @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN } )
+    public RestQueryResult postJcrSqlQuery( @Context HttpServletRequest request,
+                                            @PathParam( "repositoryName" ) String rawRepositoryName,
+                                            @PathParam( "workspaceName" ) String rawWorkspaceName,
+                                            @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
+                                            @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
+                                            @Context UriInfo uriInfo,
+                                            String requestContent ) throws RepositoryException {
+        return queryHandler.executeQuery(request,
+                                         rawRepositoryName,
+                                         rawWorkspaceName,
+                                         Query.SQL,
+                                         requestContent,
+                                         offset,
+                                         limit,
+                                         uriInfo);
+    }
+
+    /**
+     * @see JcrResources#postJcrSql2Query(javax.servlet.http.HttpServletRequest, String, String, long, long, javax.ws.rs.core.UriInfo, String)
+     */
+    @POST
+    @Path( "{repositoryName}/{workspaceName}/query" )
+    @Consumes( "application/jcr+sql2" )
+    @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN, MediaType.TEXT_HTML } )
+    public RestQueryResult postJcrSql2Query( @Context HttpServletRequest request,
+                                             @PathParam( "repositoryName" ) String rawRepositoryName,
+                                             @PathParam( "workspaceName" ) String rawWorkspaceName,
+                                             @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
+                                             @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
+                                             @Context UriInfo uriInfo,
+                                             String requestContent ) throws RepositoryException {
+        return queryHandler.executeQuery(request,
+                                         rawRepositoryName,
+                                         rawWorkspaceName,
+                                         Query.JCR_SQL2,
+                                         requestContent,
+                                         offset,
+                                         limit,
+                                         uriInfo);
+    }
+
+    /**
+     * @see JcrResources#postJcrSearchQuery(javax.servlet.http.HttpServletRequest, String, String, long, long, javax.ws.rs.core.UriInfo, String)
+     */
+    @POST
+    @Path( "{repositoryName}/{workspaceName}/query" )
+    @Consumes( "application/jcr+search" )
+    @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN, MediaType.TEXT_HTML } )
+    public RestQueryResult postJcrSearchQuery( @Context HttpServletRequest request,
+                                               @PathParam( "repositoryName" ) String rawRepositoryName,
+                                               @PathParam( "workspaceName" ) String rawWorkspaceName,
+                                               @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
+                                               @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
+                                               @Context UriInfo uriInfo,
+                                               String requestContent ) throws RepositoryException {
+        return queryHandler.executeQuery(request,
+                                         rawRepositoryName,
+                                         rawWorkspaceName,
+                                         org.modeshape.jcr.api.query.Query.FULL_TEXT_SEARCH,
+                                         requestContent,
+                                         offset,
+                                         limit,
+                                         uriInfo);
     }
 }

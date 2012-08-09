@@ -1,17 +1,10 @@
 package org.modeshape.web.jcr.rest.handler;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
-import javax.jcr.query.InvalidQueryException;
+import javax.jcr.ValueFactory;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
@@ -23,19 +16,26 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.collection.Collections;
 import org.modeshape.web.jcr.rest.RestHelper;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Resource handler that implements REST methods for items.
+ *
+ * @deprecated since 3.0, use {@link RestQueryHandler}
  */
 @Immutable
 public class QueryHandler extends AbstractHandler {
 
-    private static final String[] SKIP_QUERY_PARAMETER_VALUES = {"offset", "limit"};
-    protected static final Set<String> SKIP_QUERY_PARAMETERS = Collections.unmodifiableSet(new HashSet<String>(
-                                                                                                               Arrays.asList(SKIP_QUERY_PARAMETER_VALUES)));
+    protected static final List<String> SKIP_QUERY_PARAMETERS = Arrays.asList("offset", "limit");
 
+    /**
+     * @deprecated since 3.0
+     */
     public String postItem( HttpServletRequest request,
                             String rawRepositoryName,
                             String rawWorkspaceName,
@@ -43,7 +43,7 @@ public class QueryHandler extends AbstractHandler {
                             String statement,
                             long offset,
                             long limit,
-                            UriInfo uriInfo ) throws InvalidQueryException, RepositoryException, JSONException {
+                            UriInfo uriInfo ) throws RepositoryException, JSONException {
 
         assert rawRepositoryName != null;
         assert rawWorkspaceName != null;
@@ -51,30 +51,9 @@ public class QueryHandler extends AbstractHandler {
         assert statement != null;
 
         Session session = getSession(request, rawRepositoryName, rawWorkspaceName);
-        QueryManager queryManager = session.getWorkspace().getQueryManager();
 
-        Query query = queryManager.createQuery(statement, language);
-
-        if (uriInfo != null) {
-            // Extract the query parameters and bind as variables ...
-            for (Map.Entry<String, List<String>> entry : uriInfo.getQueryParameters().entrySet()) {
-                String variableName = entry.getKey();
-                List<String> variableValues = entry.getValue();
-                if (variableValues == null) continue;
-                if (variableValues.isEmpty()) continue;
-                // We don't want to include the 'offset' and 'limit' query parameters in the variables ...
-                if (SKIP_QUERY_PARAMETERS.contains(variableName)) continue;
-                // Grab the first non-null value ...
-                Iterator<String> iter = variableValues.iterator();
-                String variableValue = null;
-                while (iter.hasNext() && variableValue == null) {
-                    variableValue = iter.next();
-                }
-                if (variableValue == null) continue;
-                // Bind the variable value to the variable name ...
-                query.bindValue(variableName, session.getValueFactory().createValue(variableValue));
-            }
-        }
+        Query query = createQuery(language, statement, session);
+        bindExtraVariables(uriInfo, session.getValueFactory(), query);
 
         QueryResult result = query.execute();
 
@@ -128,6 +107,41 @@ public class QueryHandler extends AbstractHandler {
 
         results.put("rows", new JSONArray(jsonRows));
         return RestHelper.responseString(results, request);
+    }
+
+    protected Query createQuery( String language,
+                               String statement,
+                               Session session ) throws RepositoryException {
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        return queryManager.createQuery(statement, language);
+    }
+
+    protected void bindExtraVariables( UriInfo uriInfo,
+                                       ValueFactory valueFactory,
+                                       Query query ) throws RepositoryException {
+        if (uriInfo == null) {
+            return;
+        }
+        // Extract the query parameters and bind as variables ...
+        for (Map.Entry<String, List<String>> entry : uriInfo.getQueryParameters().entrySet()) {
+            String variableName = entry.getKey();
+            List<String> variableValues = entry.getValue();
+            if (variableValues == null || variableValues.isEmpty() || SKIP_QUERY_PARAMETERS.contains(variableName)) {
+                continue;
+            }
+
+            // Grab the first non-null value ...
+            Iterator<String> valuesIterator = variableValues.iterator();
+            String variableValue = null;
+            while (valuesIterator.hasNext() && variableValue == null) {
+                variableValue = valuesIterator.next();
+            }
+            if (variableValue == null) {
+                continue;
+            }
+            // Bind the variable value to the variable name ...
+            query.bindValue(variableName, valueFactory.createValue(variableValue));
+        }
     }
 
 }

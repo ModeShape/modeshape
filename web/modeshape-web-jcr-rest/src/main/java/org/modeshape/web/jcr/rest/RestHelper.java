@@ -55,7 +55,7 @@ public final class RestHelper {
     }
 
     /**
-     * @deprecated since 3.x, dedicated writers are used for the output
+     * @deprecated since 3.0, dedicated writers are used for the output
      */
     public static String responseString( Object object,
                                             HttpServletRequest request ) throws JSONException {
@@ -124,7 +124,7 @@ public final class RestHelper {
      * @param value the property value; may not be null
      * @return the string representation of the value
      *
-     * @deprecated since 3.x binary values are handled via URLs
+     * @deprecated since 3.0 binary values are handled via URLs
      */
     public static String jsonEncodedStringFor( Value value ) {
         try {

@@ -91,7 +91,7 @@ public abstract class AbstractHandler {
                 return null;
             }
             if (values.length == 1) {
-                String value = valueToString(property, values[0], baseUrl, session);
+                String value = valueToString(property.getPath(), values[0], baseUrl, session);
                 if (value != null) {
                     result.add(value);
                 }
@@ -100,22 +100,22 @@ public abstract class AbstractHandler {
                     if (value == null) {
                         continue;
                     }
-                    String valueString = valueToString(property, value, baseUrl, session);
+                    String valueString = valueToString(property.getPath(), value, baseUrl, session);
                     if (valueString != null) {
                         result.add(valueString);
                     }
                 }
             }
         } else {
-            result.add(valueToString(property, property.getValue(), baseUrl, session));
+            result.add(valueToString(property.getPath(), property.getValue(), baseUrl, session));
         }
         return result;
     }
 
-    private String valueToString( Property property,
-                                  Value value,
-                                  String baseUrl,
-                                  Session session ) {
+    protected String valueToString( String absPropertyPath,
+                                    Value value,
+                                    String baseUrl,
+                                    Session session ) {
         if (value == null) {
             return null;
         }
@@ -123,7 +123,7 @@ public abstract class AbstractHandler {
             switch (value.getType()) {
                 case PropertyType.BINARY: {
                     assert baseUrl != null;
-                    return restValueForBinary(property, baseUrl);
+                    return restValueForBinary(absPropertyPath, baseUrl);
                 }
                 case PropertyType.REFERENCE:
                 case PropertyType.WEAKREFERENCE: {
@@ -153,14 +153,14 @@ public abstract class AbstractHandler {
         }
     }
 
-    private String restValueForBinary( Property property,
+    private String restValueForBinary( String absPropertyPath,
                                        String baseUrl ) throws RepositoryException, IOException {
-        if (property == null) {
+        if (absPropertyPath == null) {
             logger.warn("Cannot generate rest representation of a binary value, because the property is unknown");
             return null;
         }
         return RestHelper.urlFrom(baseUrl, BINARY_METHOD_NAME,
-                                  property.getPath());
+                                  absPropertyPath);
     }
 
     protected Node getParentNode( Property property ) throws RepositoryException {
@@ -207,9 +207,9 @@ public abstract class AbstractHandler {
     }
 
     private RestNode createRestNode( Session session,
-                                       Node node,
-                                       String baseUrl,
-                                       int depth ) throws RepositoryException {
+                                     Node node,
+                                     String baseUrl,
+                                     int depth ) throws RepositoryException {
         String nodeUrl = RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, node.getPath());
         boolean isRoot = node.getPath().equals("/");
         String parentUrl = isRoot ? RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, "..", "..")
@@ -236,8 +236,8 @@ public abstract class AbstractHandler {
     }
 
     private RestProperty createRestProperty( Session session,
-                                               Property property,
-                                               String baseUrl ) throws RepositoryException {
+                                             Property property,
+                                             String baseUrl ) throws RepositoryException {
         List<String> values = restPropertyValues(property, baseUrl, session);
         String url = RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, property.getPath());
         String parentUrl = RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, property.getParent().getPath());

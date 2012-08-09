@@ -42,7 +42,7 @@ import org.modeshape.web.jcr.rest.RestHelper;
 /**
  * Resource handler that implements REST methods for servers.
  *
- * @deprecated since 3.x, use {@link RestServerHandler} instead
+ * @deprecated since 3.0, use {@link RestServerHandler} instead
  */
 @Immutable
 public class ServerHandler extends AbstractHandler {
@@ -55,6 +55,8 @@ public class ServerHandler extends AbstractHandler {
      *         {@code depth})
      * @throws JSONException if there is an error encoding the node
      * @throws RepositoryException if any other error occurs
+     *
+     * @deprecated since 3.0
      */
     public String getRepositories( HttpServletRequest request ) throws JSONException, RepositoryException {
         assert request != null;
