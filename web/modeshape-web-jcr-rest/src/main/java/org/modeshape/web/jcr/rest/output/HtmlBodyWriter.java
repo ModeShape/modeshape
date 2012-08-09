@@ -41,8 +41,9 @@ public class HtmlBodyWriter extends TextBodyWriter {
         indentedString = indentedString.replaceAll("\\\\r\\\\n\\\\t", "<br/>")
                                        .replaceAll("\r\n\t", "<br/>")
                                        .replaceAll("\r\n", "<br/>")
-                                       .replaceAll("\r", "<br/>")
                                        .replaceAll("\n", "<br/>")
+                                       .replaceAll("\r", "<br/>")
+                                       .replaceAll("\t", "<br/>")
                                        .replaceAll("\\\\", "")
                                        .replaceAll("\\s", "&nbsp;");
         indentedString = indentedString.replaceAll("\\{\"", "\\{<br/>\"");

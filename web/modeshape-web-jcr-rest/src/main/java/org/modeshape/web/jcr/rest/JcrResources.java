@@ -139,7 +139,7 @@ import java.io.IOException;
  * </ul>
  * </p>
  *
- * @deprecated since 3.x, the default service is {@link ModeShapeRestService}
+ * @deprecated since 3.0, the default service is {@link ModeShapeRestService}
  */
 @Immutable
 @Path( "/" )

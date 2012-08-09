@@ -41,7 +41,7 @@ import java.io.InputStream;
 /**
  * @author Horia Chiorean
  */
-public final class BinaryHandler extends AbstractHandler {
+public final class RestBinaryHandler extends AbstractHandler {
 
     protected static final String DEFAULT_CONTENT_DISPOSITION = "attachment;filename=";
 
@@ -65,7 +65,8 @@ public final class BinaryHandler extends AbstractHandler {
 
     public String getDefaultMimeType( Property binaryProperty ) throws RepositoryException {
         try {
-            return ((org.modeshape.jcr.api.Binary)binaryProperty.getBinary()).getMimeType();
+            Binary binary = binaryProperty.getBinary();
+            return binary instanceof org.modeshape.jcr.api.Binary ? ((org.modeshape.jcr.api.Binary) binary).getMimeType() : MediaType.APPLICATION_OCTET_STREAM;
         } catch (IOException e) {
             logger.warn("Cannot determine default mime-type", e);
             return MediaType.APPLICATION_OCTET_STREAM;
@@ -73,11 +74,11 @@ public final class BinaryHandler extends AbstractHandler {
     }
 
     public Response updateBinary( HttpServletRequest request,
-                                      String repositoryName,
-                                      String workspaceName,
-                                      String path,
-                                      InputStream binaryStream,
-                                      boolean allowCreation) throws RepositoryException {
+                                  String repositoryName,
+                                  String workspaceName,
+                                  String path,
+                                  InputStream binaryStream,
+                                  boolean allowCreation ) throws RepositoryException {
         assert binaryStream != null;
 
         int lastSlashInd = path.lastIndexOf('/');

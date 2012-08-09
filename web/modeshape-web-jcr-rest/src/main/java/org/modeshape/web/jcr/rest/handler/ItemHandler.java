@@ -42,6 +42,8 @@ import java.util.Set;
 
 /**
  * Resource handler that implements REST methods for items.
+ *
+ * @deprecated since 3.0, use {@link RestItemHandler}
  */
 @Immutable
 public class ItemHandler extends AbstractHandler {
@@ -72,6 +74,8 @@ public class ItemHandler extends AbstractHandler {
      * @see #EMPTY_REPOSITORY_NAME
      * @see #EMPTY_WORKSPACE_NAME
      * @see Session#getItem(String)
+     *
+     * @deprecated since 3.0
      */
     public String getItem( HttpServletRequest request,
                            String rawRepositoryName,

@@ -11,7 +11,7 @@ import org.modeshape.web.jcr.rest.RestHelper;
 /**
  * Resource handler that implements REST methods for repositories and workspaces.
  *
- * @deprecated since 3.x, use {@link RestRepositoryHandler}
+ * @deprecated since 3.0, use {@link RestRepositoryHandler}
  */
 @Immutable
 public class RepositoryHandler extends AbstractHandler {
@@ -24,6 +24,8 @@ public class RepositoryHandler extends AbstractHandler {
      * @return the list of workspaces available to this user within the named repository.
      * @throws JSONException if there is an error encoding the response
      * @throws RepositoryException if there is any other error accessing the list of available workspaces for the repository
+     *
+     * @deprecated since 3.0
      */
     public String getWorkspaces( HttpServletRequest request,
                           String rawRepositoryName ) throws JSONException, RepositoryException {
