@@ -142,7 +142,7 @@ import java.io.IOException;
  * @deprecated since 3.0, the default service is {@link ModeShapeRestService}
  */
 @Immutable
-@Path( "/" )
+@Path( "/v1" )
 public class JcrResources {
 
     /**
@@ -181,7 +181,7 @@ public class JcrResources {
      * @throws RepositoryException if there is any other error accessing the list of available workspaces for the repository
      */
     @GET
-    @Path( "/{repositoryName}" )
+    @Path( "{repositoryName}" )
     @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
     public String getWorkspaces( @Context HttpServletRequest request,
                                  @PathParam( "repositoryName" ) String rawRepositoryName )
@@ -213,7 +213,7 @@ public class JcrResources {
      * @see Session#getItem(String)
      */
     @GET
-    @Path( "/{repositoryName}/{workspaceName}/items{path:.*}" )
+    @Path( "{repositoryName}/{workspaceName}/items{path:.*}" )
     @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
     public String getItem( @Context HttpServletRequest request,
                            @PathParam( "repositoryName" ) String rawRepositoryName,
@@ -249,7 +249,7 @@ public class JcrResources {
      * @throws RepositoryException if any other error occurs
      */
     @POST
-    @Path( "/{repositoryName}/{workspaceName}/items/{path:.*}" )
+    @Path( "{repositoryName}/{workspaceName}/items/{path:.*}" )
     @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
     public Response postItem( @Context HttpServletRequest request,
                               @PathParam( "repositoryName" ) String rawRepositoryName,
@@ -278,7 +278,7 @@ public class JcrResources {
      * @throws RepositoryException if any other error occurs
      */
     @DELETE
-    @Path( "/{repositoryName}/{workspaceName}/items{path:.*}" )
+    @Path( "{repositoryName}/{workspaceName}/items{path:.*}" )
     public void deleteItem( @Context HttpServletRequest request,
                             @PathParam( "repositoryName" ) String rawRepositoryName,
                             @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -309,7 +309,7 @@ public class JcrResources {
      * @throws IOException if there is a problem reading the value
      */
     @PUT
-    @Path( "/{repositoryName}/{workspaceName}/items{path:.*}" )
+    @Path( "{repositoryName}/{workspaceName}/items{path:.*}" )
     @Consumes( MediaType.APPLICATION_JSON )
     @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
     public String putItem( @Context HttpServletRequest request,
@@ -344,7 +344,7 @@ public class JcrResources {
      */
     @SuppressWarnings( "deprecation" )
     @POST
-    @Path( "/{repositoryName}/{workspaceName}/query" )
+    @Path( "{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+xpath" )
     @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
     public String postXPathQuery( @Context HttpServletRequest request,
@@ -388,7 +388,7 @@ public class JcrResources {
      */
     @SuppressWarnings( "deprecation" )
     @POST
-    @Path( "/{repositoryName}/{workspaceName}/query" )
+    @Path( "{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+sql" )
     @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
     public String postJcrSqlQuery( @Context HttpServletRequest request,
@@ -431,7 +431,7 @@ public class JcrResources {
      * @throws RepositoryException if any other error occurs
      */
     @POST
-    @Path( "/{repositoryName}/{workspaceName}/query" )
+    @Path( "{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+sql2" )
     @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
     public String postJcrSql2Query( @Context HttpServletRequest request,
@@ -474,7 +474,7 @@ public class JcrResources {
      * @throws RepositoryException if any other error occurs
      */
     @POST
-    @Path( "/{repositoryName}/{workspaceName}/query" )
+    @Path( "{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+search" )
     @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
     public String postJcrSearchQuery( @Context HttpServletRequest request,

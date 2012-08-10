@@ -82,7 +82,7 @@ public final class RestWorkspaces implements JSONAble {
             JSONObject result = new JSONObject();
             result.put("name", name);
             result.put("repository", repositoryUrl);
-            result.put("edit", itemsUrl);
+            result.put("items", itemsUrl);
             result.put("query", queryUrl);
             result.put("binary", binaryUrl);
             result.put("nodeTypes", nodeTypesUrl);

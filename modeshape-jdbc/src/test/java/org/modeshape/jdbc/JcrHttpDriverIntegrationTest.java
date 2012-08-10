@@ -122,7 +122,7 @@ public class JcrHttpDriverIntegrationTest  {
 
     protected String getContextPathUrl() {
         //must match Cargo's configuration
-        return "localhost:8090/modeshape";
+        return "localhost:8090/modeshape/v1";
     }
 
     protected String getRepositoryName() {

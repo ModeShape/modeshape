@@ -29,11 +29,21 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.Response;
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.jboss.resteasy.spi.NotFoundException;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.web.jcr.rest.model.RestItem;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * @author Horia Chiorean
@@ -58,8 +68,8 @@ public class RestItemHandler extends ItemHandler {
      * </p>
      *
      * @param request the servlet request; may not be null or unauthenticated
-     * @param rawRepositoryName the URL-encoded repository name
-     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param repositoryName the URL-encoded repository name
+     * @param workspaceName the URL-encoded workspace name
      * @param path the path to the item
      * @param requestBody the JSON-encoded representation of the node or nodes to be added
      * @return the JSON-encoded representation of the node or nodes that were added. This will differ from {@code requestBody}
@@ -68,26 +78,32 @@ public class RestItemHandler extends ItemHandler {
      * @throws RepositoryException if any other error occurs while interacting with the repository
      */
     public Response addItem( HttpServletRequest request,
-                             String rawRepositoryName,
-                             String rawWorkspaceName,
+                             String repositoryName,
+                             String workspaceName,
                              String path,
                              String requestBody ) throws JSONException, RepositoryException {
-        assert rawRepositoryName != null;
-        assert rawWorkspaceName != null;
-        assert path != null;
+        JSONObject requestBodyJSON = stringToJSONObject(requestBody);
 
-        JSONObject requestBodyJSON = requestBodyJSON(requestBody);
-        int lastSlashInd = path.lastIndexOf('/');
-        String parentAbsPath = lastSlashInd == -1 ? "/" : "/" + path.substring(0, lastSlashInd);
-        String newNodeName = lastSlashInd == -1 ? path : path.substring(lastSlashInd + 1);
+        String parentAbsPath = parentPath(path);
+        String newNodeName = newNodeName(path);
 
-        Session session = getSession(request, rawRepositoryName, rawWorkspaceName);
+        Session session = getSession(request, repositoryName, workspaceName);
         Node parentNode = (Node)session.getItem(parentAbsPath);
         Node newNode = addNode(parentNode, newNodeName, requestBodyJSON);
 
         session.save();
         RestItem restNewNode = createRestItem(request, 0, session, newNode);
         return Response.status(Response.Status.CREATED).entity(restNewNode).build();
+    }
+
+    private String newNodeName( String path ) {
+        int lastSlashInd = path.lastIndexOf('/');
+        return lastSlashInd == -1 ? path : path.substring(lastSlashInd + 1);
+    }
+
+    private String parentPath( String path ) {
+        int lastSlashInd = path.lastIndexOf('/');
+        return lastSlashInd == -1 ? "/" : "/" + path.substring(0, lastSlashInd);
     }
 
     /**
@@ -115,13 +131,118 @@ public class RestItemHandler extends ItemHandler {
                                 String requestContent ) throws JSONException, RepositoryException {
         Session session = getSession(request, rawRepositoryName, rawWorkspaceName);
         Item item = itemAtPath(path, session);
-        Item jcrItem = updateItem(item, requestBodyJSON(requestContent));
+        item = updateItem(item, stringToJSONObject(requestContent));
         session.save();
 
-        return createRestItem(request, 0, session, jcrItem);
+        return createRestItem(request, 0, session, item);
     }
 
-    private JSONObject requestBodyJSON( String requestBody ) throws JSONException {
+    private JSONObject stringToJSONObject( String requestBody ) throws JSONException {
         return StringUtil.isBlank(requestBody) ? new JSONObject() : new JSONObject(requestBody);
+    }
+
+    private JSONArray stringToJSONArray( String requestBody ) throws JSONException {
+        return StringUtil.isBlank(requestBody) ? new JSONArray() : new JSONArray(requestBody);
+    }
+
+    public Response addItems( HttpServletRequest request,
+                              String repositoryName,
+                              String workspaceName,
+                              String requestContent ) throws JSONException, RepositoryException {
+        JSONObject requestBody = stringToJSONObject(requestContent);
+        if (requestBody.length() == 0) {
+            return Response.ok().build();
+        }
+        Session session = getSession(request, repositoryName, workspaceName);
+        TreeMap<String, JSONObject> nodesByPath = createNodesByPathMap(requestBody);
+        return addMultipleNodes(request, nodesByPath, session);
+    }
+
+    public Response updateItems( HttpServletRequest request,
+                                 String repositoryName,
+                                 String workspaceName,
+                                 String requestContent ) throws JSONException, RepositoryException {
+        JSONObject requestBody = stringToJSONObject(requestContent);
+        if (requestBody.length() == 0) {
+            return Response.ok().build();
+        }
+        Session session = getSession(request, repositoryName, workspaceName);
+        Map<String, JSONObject> nodesByPath = createNodesByPathMap(requestBody);
+        List<RestItem> result = updateMultipleNodes(request, session, nodesByPath);
+        return createOkResponse(result);
+    }
+
+    public Response deleteItems( HttpServletRequest request,
+                                 String repositoryName,
+                                 String workspaceName,
+                                 String requestContent) throws JSONException, RepositoryException {
+        JSONArray requestArray = stringToJSONArray(requestContent);
+        if (requestArray.length() == 0) {
+            return Response.ok().build();
+        }
+
+        Session session = getSession(request, repositoryName, workspaceName);
+        TreeSet<String> pathsInOrder = new TreeSet<String>();
+        for (int i = 0; i < requestArray.length(); i++) {
+            pathsInOrder.add(requestArray.get(i).toString());
+        }
+        List<String> pathsInOrderList = new ArrayList<String>(pathsInOrder);
+        Collections.reverse(pathsInOrderList);
+        for (String path : pathsInOrderList) {
+            try {
+                doDelete(path, session);
+            } catch (NotFoundException e) {
+                logger.info("Node at path {0} already deleted", path);
+            }
+        }
+        session.save();
+        return Response.status(Response.Status.NO_CONTENT).build();
+    }
+
+    private List<RestItem> updateMultipleNodes( HttpServletRequest request,
+                                                Session session,
+                                                Map<String, JSONObject> nodesByPath ) throws RepositoryException, JSONException {
+        List<RestItem> result = new ArrayList<RestItem>();
+        for (String nodePath : nodesByPath.keySet()) {
+            Item item = session.getItem(nodePath);
+            item = updateItem(item, nodesByPath.get(nodePath));
+            result.add(createRestItem(request, 0, session, item));
+        }
+        session.save();
+        return result;
+    }
+
+    private TreeMap<String, JSONObject> createNodesByPathMap(JSONObject requestBodyJSON) throws JSONException {
+        TreeMap<String, JSONObject> nodesByPath = new TreeMap<String, JSONObject>();
+        for (Iterator<?> iterator = requestBodyJSON.keys(); iterator.hasNext(); ) {
+            String nodePath = iterator.next().toString();
+            JSONObject nodeJSON = requestBodyJSON.getJSONObject(nodePath);
+            nodesByPath.put(nodePath, nodeJSON);
+        }
+        return nodesByPath;
+    }
+
+    private Response addMultipleNodes( HttpServletRequest request,
+                                       TreeMap<String, JSONObject> nodesByPath,
+                                       Session session ) throws RepositoryException, JSONException {
+        List<RestItem> result = new ArrayList<RestItem>();
+
+        for (String nodePath : nodesByPath.keySet()) {
+            String parentAbsPath = parentPath(nodePath);
+            String newNodeName = newNodeName(nodePath);
+
+            Node parentNode = (Node)session.getItem(parentAbsPath);
+            Node newNode = addNode(parentNode, newNodeName, nodesByPath.get(nodePath));
+            RestItem restNewNode = createRestItem(request, 0, session, newNode);
+            result.add(restNewNode);
+        }
+
+        session.save();
+        return createOkResponse(result);
+    }
+
+    private Response createOkResponse( final List<RestItem> result ) {
+        GenericEntity<List<RestItem>> entity = new GenericEntity<List<RestItem>>(result){};
+        return Response.ok().entity(entity).build();
     }
 }

@@ -115,7 +115,7 @@ public final class ExceptionMappers {
     public static class NoSuchNodeTypeExceptionMapper implements ExceptionMapper<NoSuchNodeTypeException> {
         @Override
         public Response toResponse( NoSuchNodeTypeException exception ) {
-            return exceptionResponse(exception, Response.Status.NOT_FOUND);
+            return exceptionResponse(exception, Response.Status.BAD_REQUEST);
         }
     }
 
