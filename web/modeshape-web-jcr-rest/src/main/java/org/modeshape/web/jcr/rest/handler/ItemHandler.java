@@ -62,19 +62,18 @@ public class ItemHandler extends AbstractHandler {
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param path the path to the item
      * @param depth the depth of the node graph that should be returned if {@code path} refers to a node. @{code 0} means return
-     *        the requested node only. A negative value indicates that the full subgraph under the node should be returned. This
-     *        parameter defaults to {@code 0} and is ignored if {@code path} refers to a property.
+     * the requested node only. A negative value indicates that the full subgraph under the node should be returned. This
+     * parameter defaults to {@code 0} and is ignored if {@code path} refers to a property.
      * @return the JSON-encoded version of the item (and, if the item is a node, its subgraph, depending on the value of
      *         {@code depth})
      * @throws NotFoundException if the named repository does not exists, the named workspace does not exist, or the user does not
-     *         have access to the named workspace
+     * have access to the named workspace
      * @throws JSONException if there is an error encoding the node
      * @throws UnauthorizedException if the given login information is invalid
      * @throws RepositoryException if any other error occurs
      * @see #EMPTY_REPOSITORY_NAME
      * @see #EMPTY_WORKSPACE_NAME
      * @see Session#getItem(String)
-     *
      * @deprecated since 3.0
      */
     public String getItem( HttpServletRequest request,
@@ -148,7 +147,9 @@ public class ItemHandler extends AbstractHandler {
             valueObject = encoded ? RestHelper.jsonEncodedStringFor(value) : value.getString();
         }
         String propertyName = property.getName();
-        if (encoded) propertyName = propertyName + BASE64_ENCODING_SUFFIX;
+        if (encoded) {
+            propertyName = propertyName + BASE64_ENCODING_SUFFIX;
+        }
         JSONObject jsonProperty = new JSONObject();
         jsonProperty.put(propertyName, valueObject);
         return jsonProperty;
@@ -169,7 +170,7 @@ public class ItemHandler extends AbstractHandler {
 
         JSONObject properties = new JSONObject();
 
-        for (PropertyIterator iter = node.getProperties(); iter.hasNext();) {
+        for (PropertyIterator iter = node.getProperties(); iter.hasNext(); ) {
             Property prop = iter.nextProperty();
             String propName = prop.getName();
 
@@ -184,7 +185,9 @@ public class ItemHandler extends AbstractHandler {
                         break;
                     }
                 }
-                if (encoded) propName = propName + BASE64_ENCODING_SUFFIX;
+                if (encoded) {
+                    propName = propName + BASE64_ENCODING_SUFFIX;
+                }
                 JSONArray array = new JSONArray();
                 for (int i = 0; i < values.length; i++) {
                     array.put(encoded ? RestHelper.jsonEncodedStringFor(values[i]) : values[i].getString());
@@ -194,7 +197,9 @@ public class ItemHandler extends AbstractHandler {
             } else {
                 Value value = prop.getValue();
                 encoded = value.getType() == PropertyType.BINARY;
-                if (encoded) propName = propName + BASE64_ENCODING_SUFFIX;
+                if (encoded) {
+                    propName = propName + BASE64_ENCODING_SUFFIX;
+                }
                 properties.put(propName, encoded ? RestHelper.jsonEncodedStringFor(value) : value.getString());
             }
 
@@ -206,7 +211,7 @@ public class ItemHandler extends AbstractHandler {
         if (toDepth == 0) {
             List<String> children = new ArrayList<String>();
 
-            for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
+            for (NodeIterator iter = node.getNodes(); iter.hasNext(); ) {
                 Node child = iter.nextNode();
 
                 String name = child.getIndex() == 1 ? child.getName() : child.getName() + "[" + child.getIndex() + "]";
@@ -219,7 +224,7 @@ public class ItemHandler extends AbstractHandler {
         } else {
             JSONObject children = new JSONObject();
 
-            for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
+            for (NodeIterator iter = node.getNodes(); iter.hasNext(); ) {
                 Node child = iter.nextNode();
 
                 String name = child.getIndex() == 1 ? child.getName() : child.getName() + "[" + child.getIndex() + "]";
@@ -246,7 +251,7 @@ public class ItemHandler extends AbstractHandler {
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param path the path to the item
      * @param fullNodeInResponse if true, indicates that a representation of the created node (including all properties and
-     *        children) should be returned; otherwise, only the path to the new node will be returned
+     * children) should be returned; otherwise, only the path to the new node will be returned
      * @param requestContent the JSON-encoded representation of the node or nodes to be added
      * @return the JSON-encoded representation of the node or nodes that were added. This will differ from {@code requestContent}
      *         in that auto-created and protected properties (e.g., jcr:uuid) will be populated.
@@ -261,7 +266,7 @@ public class ItemHandler extends AbstractHandler {
                               String path,
                               boolean fullNodeInResponse,
                               String requestContent )
-        throws NotFoundException, UnauthorizedException, RepositoryException, JSONException {
+            throws NotFoundException, UnauthorizedException, RepositoryException, JSONException {
 
         assert rawRepositoryName != null;
         assert rawWorkspaceName != null;
@@ -315,17 +320,19 @@ public class ItemHandler extends AbstractHandler {
             newNode = parentNode.addNode(nodeName);
         }
 
-        for (Iterator<?> iter = properties.keys(); iter.hasNext();) {
+        for (Iterator<?> iter = properties.keys(); iter.hasNext(); ) {
             String key = (String)iter.next();
 
-            if (PRIMARY_TYPE_PROPERTY.equals(key)) continue;
+            if (PRIMARY_TYPE_PROPERTY.equals(key)) {
+                continue;
+            }
             setPropertyOnNode(newNode, key, properties.get(key));
         }
 
         if (jsonNode.has(CHILD_NODE_HOLDER)) {
             JSONObject children = jsonNode.getJSONObject(CHILD_NODE_HOLDER);
 
-            for (Iterator<?> iter = children.keys(); iter.hasNext();) {
+            for (Iterator<?> iter = children.keys(); iter.hasNext(); ) {
                 String childName = (String)iter.next();
                 JSONObject child = children.getJSONObject(childName);
 
@@ -349,7 +356,9 @@ public class ItemHandler extends AbstractHandler {
             throw new RepositoryException(ioe);
         } finally {
             try {
-                if (stream != null) stream.close();
+                if (stream != null) {
+                    stream.close();
+                }
             } catch (IOException e) {
                 // Error accessing the value, so throw this ...
                 throw new RepositoryException(e);
@@ -369,8 +378,8 @@ public class ItemHandler extends AbstractHandler {
      * @throws JSONException if {@code value} cannot be decoded
      */
     protected void setPropertyOnNode( Node node,
-                                    String propName,
-                                    Object value ) throws RepositoryException, JSONException {
+                                      String propName,
+                                      Object value ) throws RepositoryException, JSONException {
         // Are the property values encoded ?
         boolean encoded = propName.endsWith(BASE64_ENCODING_SUFFIX);
         if (encoded) {
@@ -395,9 +404,9 @@ public class ItemHandler extends AbstractHandler {
         } else {
             String strValue = (String)value;
             if (encoded) {
-                values = new Value[] {decodeValue(strValue, valueFactory)};
+                values = new Value[] { decodeValue(strValue, valueFactory) };
             } else {
-                values = new Value[] {valueFactory.createValue(strValue)};
+                values = new Value[] { valueFactory.createValue(strValue) };
             }
         }
 
@@ -455,6 +464,12 @@ public class ItemHandler extends AbstractHandler {
 
         Session session = getSession(request, rawRepositoryName, rawWorkspaceName);
 
+        doDelete(path, session);
+        session.save();
+    }
+
+    protected void doDelete( String path,
+                           Session session ) throws RepositoryException {
         Item item;
         try {
             item = session.getItem(path);
@@ -462,7 +477,6 @@ public class ItemHandler extends AbstractHandler {
             throw new NotFoundException(pnfe.getMessage(), pnfe);
         }
         item.remove();
-        session.save();
     }
 
     /**
@@ -508,8 +522,8 @@ public class ItemHandler extends AbstractHandler {
             }
         }
 
-        Item  updatedItem = updateItem(item, new JSONObject(requestContent));
-        Node node = updatedItem instanceof Property ? updatedItem.getParent() : (Node) updatedItem;
+        Item updatedItem = updateItem(item, new JSONObject(requestContent));
+        Node node = updatedItem instanceof Property ? updatedItem.getParent() : (Node)updatedItem;
         node.getSession().save();
         return jsonFor(node, 0).toString();
     }
@@ -524,17 +538,16 @@ public class ItemHandler extends AbstractHandler {
      * @throws RepositoryException if any other error occurs
      */
     protected Item updateItem( Item item,
-                             JSONObject jsonItem ) throws RepositoryException, JSONException {
+                               JSONObject jsonItem ) throws RepositoryException, JSONException {
         if (item instanceof Node) {
             return updateNode((Node)item, jsonItem);
-        }
-        else {
+        } else {
             return updateProperty((Property)item, jsonItem);
         }
     }
 
     private Property updateProperty( Property property,
-                                       JSONObject jsonItem ) throws RepositoryException, JSONException {
+                                     JSONObject jsonItem ) throws RepositoryException, JSONException {
         String propertyName = property.getName();
         String jsonPropertyName = jsonItem.has(propertyName) ? propertyName : propertyName + BASE64_ENCODING_SUFFIX;
         Node node = property.getParent();
@@ -543,7 +556,7 @@ public class ItemHandler extends AbstractHandler {
     }
 
     private Node updateNode( Node node,
-                               JSONObject jsonItem ) throws RepositoryException, JSONException {
+                             JSONObject jsonItem ) throws RepositoryException, JSONException {
         VersionableChanges changes = new VersionableChanges(node.getSession());
         try {
             node = updateNode(node, jsonItem, changes);
@@ -572,8 +585,8 @@ public class ItemHandler extends AbstractHandler {
      * @throws RepositoryException if any other error occurs
      */
     protected Node updateNode( Node node,
-                             JSONObject jsonNode,
-                             VersionableChanges changes ) throws RepositoryException, JSONException {
+                               JSONObject jsonNode,
+                               VersionableChanges changes ) throws RepositoryException, JSONException {
         // If the JSON object has a properties holder, then this is likely a subgraph ...
         JSONObject properties = jsonNode;
         if (jsonNode.has(PROPERTIES_HOLDER)) {
@@ -582,9 +595,11 @@ public class ItemHandler extends AbstractHandler {
 
         changes.checkout(node);
 
-        for (Iterator<?> iter = properties.keys(); iter.hasNext();) {
+        for (Iterator<?> iter = properties.keys(); iter.hasNext(); ) {
             String key = (String)iter.next();
-            if (PRIMARY_TYPE_PROPERTY.equals(key)) continue; // can't change the primary type
+            if (PRIMARY_TYPE_PROPERTY.equals(key)) {
+                continue; // can't change the primary type
+            }
             setPropertyOnNode(node, key, properties.get(key));
         }
 
@@ -601,7 +616,7 @@ public class ItemHandler extends AbstractHandler {
                 existingChildNames.put(nameOf(child), child);
             }
 
-            for (Iterator<?> iter = children.keys(); iter.hasNext();) {
+            for (Iterator<?> iter = children.keys(); iter.hasNext(); ) {
                 String childName = (String)iter.next();
                 JSONObject child = children.getJSONObject(childName);
                 // Find the existing node ...
@@ -655,7 +670,9 @@ public class ItemHandler extends AbstractHandler {
         }
 
         public void checkin() throws RepositoryException {
-            if (this.changedVersionableNodes.isEmpty()) return;
+            if (this.changedVersionableNodes.isEmpty()) {
+                return;
+            }
             session.save();
             RepositoryException first = null;
             for (String path : this.changedVersionableNodes) {
@@ -664,14 +681,20 @@ public class ItemHandler extends AbstractHandler {
                         versionManager.checkin(path);
                     }
                 } catch (RepositoryException e) {
-                    if (first == null) first = e;
+                    if (first == null) {
+                        first = e;
+                    }
                 }
             }
-            if (first != null) throw first;
+            if (first != null) {
+                throw first;
+            }
         }
 
         public void abort() throws RepositoryException {
-            if (this.changedVersionableNodes.isEmpty()) return;
+            if (this.changedVersionableNodes.isEmpty()) {
+                return;
+            }
             // Throw out all the changes ...
             session.refresh(false);
             RepositoryException first = null;
@@ -681,10 +704,14 @@ public class ItemHandler extends AbstractHandler {
                         versionManager.checkin(path);
                     }
                 } catch (RepositoryException e) {
-                    if (first == null) first = e;
+                    if (first == null) {
+                        first = e;
+                    }
                 }
             }
-            if (first != null) throw first;
+            if (first != null) {
+                throw first;
+            }
         }
     }
 

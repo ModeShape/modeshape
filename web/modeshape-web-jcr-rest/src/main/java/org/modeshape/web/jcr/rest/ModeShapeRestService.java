@@ -45,8 +45,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import org.codehaus.jettison.json.JSONException;
 import org.jboss.resteasy.annotations.providers.multipart.MultipartForm;
-import org.jboss.resteasy.spi.NotFoundException;
-import org.jboss.resteasy.spi.UnauthorizedException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.web.jcr.rest.form.FileUploadForm;
@@ -68,7 +66,7 @@ import java.io.InputStream;
  * @author Horia Chiorean
  */
 @Immutable
-@Path( "/v2" )
+@Path( "/" )
 public final class ModeShapeRestService {
 
     private RestServerHandler serverHandler = new RestServerHandler();
@@ -178,7 +176,7 @@ public final class ModeShapeRestService {
      * @see JcrResources#postItem(javax.servlet.http.HttpServletRequest, String, String, String, String, String)
      */
     @POST
-    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME + "{path:.*}" )
+    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME + "/{path:.*}" )
     @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN, MediaType.TEXT_HTML } )
     public Response postItem( @Context HttpServletRequest request,
                               @PathParam( "repositoryName" ) String rawRepositoryName,
@@ -187,6 +185,17 @@ public final class ModeShapeRestService {
                               String requestContent )
             throws RepositoryException, JSONException {
         return itemHandler.addItem(request, rawRepositoryName, rawWorkspaceName, path, requestContent);
+    }
+
+    @POST
+    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME)
+    @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN, MediaType.TEXT_HTML } )
+    public Response postItems( @Context HttpServletRequest request,
+                              @PathParam( "repositoryName" ) String rawRepositoryName,
+                              @PathParam( "workspaceName" ) String rawWorkspaceName,
+                              String requestContent )
+            throws RepositoryException, JSONException {
+        return itemHandler.addItems(request, rawRepositoryName, rawWorkspaceName, requestContent);
     }
 
     /**
@@ -198,16 +207,26 @@ public final class ModeShapeRestService {
                                 @PathParam( "repositoryName" ) String rawRepositoryName,
                                 @PathParam( "workspaceName" ) String rawWorkspaceName,
                                 @PathParam( "path" ) String path )
-            throws NotFoundException, UnauthorizedException, RepositoryException {
+            throws RepositoryException {
         itemHandler.deleteItem(request, rawRepositoryName, rawWorkspaceName, path);
         return Response.noContent().build();
+    }
+
+    @DELETE
+    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME )
+    public Response deleteItems( @Context HttpServletRequest request,
+                                 @PathParam( "repositoryName" ) String rawRepositoryName,
+                                 @PathParam( "workspaceName" ) String rawWorkspaceName,
+                                 String requestContent )
+            throws RepositoryException, JSONException {
+        return itemHandler.deleteItems(request, rawRepositoryName, rawWorkspaceName, requestContent);
     }
 
     /**
      * @see JcrResources#putItem(javax.servlet.http.HttpServletRequest, String, String, String, String)
      */
     @PUT
-    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME + "{path:.*}" )
+    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME + "/{path:.*}" )
     @Consumes( MediaType.APPLICATION_JSON )
     @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN } )
     public RestItem putItem( @Context HttpServletRequest request,
@@ -216,6 +235,17 @@ public final class ModeShapeRestService {
                              @PathParam( "path" ) String path,
                              String requestContent ) throws JSONException, RepositoryException {
         return itemHandler.updateItem(request, rawRepositoryName, rawWorkspaceName, path, requestContent);
+    }
+
+    @PUT
+    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME )
+    @Consumes( MediaType.APPLICATION_JSON )
+    @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN } )
+    public Response putItems( @Context HttpServletRequest request,
+                              @PathParam( "repositoryName" ) String rawRepositoryName,
+                              @PathParam( "workspaceName" ) String rawWorkspaceName,
+                              String requestContent ) throws JSONException, RepositoryException {
+        return itemHandler.updateItems(request, rawRepositoryName, rawWorkspaceName, requestContent);
     }
 
     @POST

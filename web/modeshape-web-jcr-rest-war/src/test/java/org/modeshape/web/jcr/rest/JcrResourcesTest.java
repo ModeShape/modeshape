@@ -58,7 +58,7 @@ public class JcrResourcesTest {
      * "org.modeshape.jcr.JCR_URL" parameter in the "web.xml" file.
      */
     private static final String REPOSITORY_NAME = "repo";
-    private static final String SERVER_CONTEXT = "/resources";
+    private static final String SERVER_CONTEXT = "/resources/v1";
     private static final String SERVER_URL = "http://localhost:8090" + SERVER_CONTEXT;
 
     @Before
@@ -550,7 +550,7 @@ public class JcrResourcesTest {
     }
 
     @Test
-    public void shouldDeleteExtantNode() throws Exception {
+    public void shouldDeleteExistingNode() throws Exception {
 
         // Create the node
         HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/nodeForDeletion");

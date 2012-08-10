@@ -33,7 +33,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.Response;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.StringUtil;
 import org.modeshape.web.jcr.rest.RestHelper;
 import org.modeshape.web.jcr.rest.model.RestNodeType;
 import java.io.IOException;
