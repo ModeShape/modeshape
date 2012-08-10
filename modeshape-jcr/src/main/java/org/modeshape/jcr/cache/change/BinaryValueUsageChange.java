@@ -21,21 +21,43 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr;
+package org.modeshape.jcr.cache.change;
 
-import org.junit.Before;
+import org.modeshape.jcr.value.BinaryKey;
 
 /**
- * Support class for performance testing of various operations over subtrees of the content graph
+ * An event signalizing that the usages have changed for a binary value with a specific key.
  */
+public abstract class BinaryValueUsageChange extends Change {
 
-public abstract class AbstractJcrAccessTest extends SingleUseAbstractTest {
+    private final BinaryKey key;
 
-    @Override
-    @Before
-    public void beforeEach() throws Exception {
-        super.beforeEach();
-        session.getWorkspace().getNamespaceRegistry().registerNamespace(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
+    protected BinaryValueUsageChange( BinaryKey key ) {
+        this.key = key;
+        assert this.key != null;
     }
 
+    /**
+     * Get the binary key.
+     * 
+     * @return the key; never null
+     */
+    public BinaryKey getKey() {
+        return key;
+    }
+
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj == this) return true;
+        if (obj instanceof BinaryValueUsageChange) {
+            BinaryValueUsageChange that = (BinaryValueUsageChange)obj;
+            return this.getKey().equals(that.getKey()) && this.getClass().equals(that.getClass());
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return key.hashCode();
+    }
 }

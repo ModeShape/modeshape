@@ -76,6 +76,7 @@ class RepositoryQueryManager {
     private final Lock engineInitLock = new ReentrantLock();
     @GuardedBy( "engineInitLock" )
     private volatile LuceneQueryEngine queryEngine;
+    private final Logger logger = Logger.getLogger(getClass());
 
     RepositoryQueryManager( RunningState runningState,
                             QuerySystem querySystem,
@@ -155,6 +156,31 @@ class RepositoryQueryManager {
     }
 
     /**
+     * Crawl and index all of the repository content.
+     */
+    protected void reindexContent() {
+        // The node type schemata changes every time a node type is (un)registered, so get the snapshot that we'll use throughout
+        NodeTypeSchemata schemata = runningState.nodeTypeManager().getRepositorySchemata();
+        RepositoryCache repoCache = runningState.repositoryCache();
+
+        // Index the system content ...
+        logger.debug("Starting reindex of system content in '{0}' repository.", runningState.name());
+        NodeCache nodeCache = repoCache.getWorkspaceCache(repoCache.getSystemWorkspaceName());
+        CachedNode rootNode = nodeCache.getNode(nodeCache.getRootKey());
+        reindexSystemContent(rootNode, Integer.MAX_VALUE, schemata);
+        logger.debug("Completed reindex of system content in '{0}' repository.", runningState.name());
+
+        // Index the non-system workspaces ...
+        for (String workspaceName : repoCache.getWorkspaceNames()) {
+            nodeCache = repoCache.getWorkspaceCache(workspaceName);
+            rootNode = nodeCache.getNode(nodeCache.getRootKey());
+            logger.debug("Starting reindex of workspace '{0}' content in '{1}' repository.", runningState.name(), workspaceName);
+            reindexContent(workspaceName, schemata, nodeCache, rootNode, Integer.MAX_VALUE, true);
+            logger.debug("Completed reindex of workspace '{0}' content in '{1}' repository.", runningState.name(), workspaceName);
+        }
+    }
+
+    /**
      * Crawl and index the content in the named workspace.
      * 
      * @param workspace the workspace
@@ -200,7 +226,6 @@ class RepositoryQueryManager {
             // It's just a regular node in the workspace ...
             reindexContent(workspaceName, schemata, cache, node, depth, path.isRoot());
         }
-
     }
 
     protected void reindexContent( final String workspaceName,

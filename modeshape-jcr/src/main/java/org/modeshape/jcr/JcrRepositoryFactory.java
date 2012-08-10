@@ -243,6 +243,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
                     // ignore and let if fail ...
                 }
                 break;
+            case RESTORING:
             case RUNNING:
             case STARTING:
                 // do nothing ...
@@ -435,6 +436,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
                         LOG.error(JcrI18n.engineAtJndiLocationIsNotRunning, jndiName);
                         return null;
                     case RUNNING:
+                    case RESTORING:
                     case STARTING:
                         break; // continue
                 }

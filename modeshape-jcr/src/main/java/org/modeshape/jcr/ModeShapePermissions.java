@@ -102,19 +102,30 @@ public interface ModeShapePermissions {
 
     /**
      * The {@link #MONITOR monitor} permission allows the user the ability to
-     * {@link org.modeshape.jcr.api.Workspace#getRepositoryMonitor() monitor the repository}.
+     * {@link org.modeshape.jcr.api.RepositoryManager#getRepositoryMonitor() monitor the repository}.
      */
     public static final String MONITOR = "monitor";
-    /*
+    /**
      * The {@link #INDEX_WORKSPACE index_workspace} permission allows the user the ability to
-     * {@link org.modeshape.jcr.api.Workspace#reindex(String) reindex all or part of a workspaces}.
+     * {@link org.modeshape.jcr.api.Workspace#reindex() re-index all or part of a workspace}.
      */
     public static final String INDEX_WORKSPACE = "index_workspace";
+    /**
+     * The {@link #BACKUP backup} permission allows the user the ability to
+     * {@link org.modeshape.jcr.api.RepositoryManager#backupRepository(java.io.File) initiate a backup of the entire repository}.
+     */
+    public static final String BACKUP = "backup";
+    /**
+     * The {@link #RESTORE store} permission allows the user the ability to
+     * {@link org.modeshape.jcr.api.RepositoryManager#restoreRepository(java.io.File) initiate a restore of the entire repository}
+     * .
+     */
+    public static final String RESTORE = "restore";
 
     static final String[] ALL_CHANGE_PERMISSIONS = new String[] {REGISTER_NAMESPACE, REGISTER_TYPE, UNLOCK_ANY, ADD_NODE,
-        SET_PROPERTY, REMOVE, CREATE_WORKSPACE, DELETE_WORKSPACE, INDEX_WORKSPACE};
+        SET_PROPERTY, REMOVE, CREATE_WORKSPACE, DELETE_WORKSPACE, INDEX_WORKSPACE, BACKUP, RESTORE};
 
     static final String[] ALL_PERMISSIONS = new String[] {REGISTER_NAMESPACE, REGISTER_TYPE, UNLOCK_ANY, ADD_NODE, SET_PROPERTY,
-        REMOVE, READ, CREATE_WORKSPACE, DELETE_WORKSPACE, INDEX_WORKSPACE, MONITOR};
+        REMOVE, READ, CREATE_WORKSPACE, DELETE_WORKSPACE, INDEX_WORKSPACE, MONITOR, BACKUP, RESTORE};
 
 }

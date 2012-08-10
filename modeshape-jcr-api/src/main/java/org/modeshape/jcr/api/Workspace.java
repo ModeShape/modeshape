@@ -26,7 +26,6 @@ package org.modeshape.jcr.api;
 import java.util.concurrent.Future;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.RepositoryException;
-import org.modeshape.jcr.api.monitor.RepositoryMonitor;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.query.QueryManager;
 
@@ -35,11 +34,35 @@ import org.modeshape.jcr.api.query.QueryManager;
  */
 public interface Workspace extends javax.jcr.Workspace {
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method returns the ModeShape-specific specialization of the standard {@link javax.jcr.nodetype.NodeTypeManager}
+     * interface.
+     * </p>
+     */
     @Override
     NodeTypeManager getNodeTypeManager() throws RepositoryException;
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method returns the ModeShape-specific specialization of the standard {@link javax.jcr.query.QueryManager} interface.
+     * </p>
+     */
     @Override
     public QueryManager getQueryManager() throws RepositoryException;
+
+    /**
+     * Return a {@link RepositoryManager} that can be used to administer the Repository instance through which this workspace's
+     * session was acquired.
+     * 
+     * @return the {@link RepositoryManager} instance.
+     * @throws AccessDeniedException if the caller does not have authorization to obtain the manager.
+     * @throws RepositoryException if another error occurred.
+     * @since 3.0
+     */
+    RepositoryManager getRepositoryManager() throws AccessDeniedException, RepositoryException;
 
     /**
      * Crawl and re-index the content in this workspace. This method blocks until the indexing is completed.
@@ -90,20 +113,5 @@ public interface Workspace extends javax.jcr.Workspace {
      * @see #reindexAsync()
      */
     Future<Boolean> reindexAsync( String path ) throws RepositoryException;
-
-    /**
-     * A <code>RepositoryMonitor</code> object represents a monitoring view of the Session's Repository instance. This is useful
-     * for applications that embed a JCR repository and need a way to monitor the health, status and performance of that
-     * Repository instance. Each <code>RepositoryMonitor</code> object is associated one-to-one with a <code>Session</code> object
-     * and is defined by the authorization settings of that session object.
-     * <p>
-     * The <code>RepositoryMonitor</code> object can be acquired using a {@link Session} by calling
-     * <code>Session.getWorkspace().getRepositoryMonitor()</code> on a session object.
-     * </p>
-     * 
-     * @return the repository monitor; never null
-     * @throws RepositoryException if there is a problem obtaining the monitory
-     */
-    RepositoryMonitor getRepositoryMonitor() throws RepositoryException;
 
 }

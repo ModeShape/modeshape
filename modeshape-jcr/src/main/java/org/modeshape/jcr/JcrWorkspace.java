@@ -54,7 +54,6 @@ import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
-import org.modeshape.jcr.api.monitor.RepositoryMonitor;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.MutableCachedNode;
@@ -87,8 +86,8 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     private JcrNamespaceRegistry workspaceRegistry;
     private JcrVersionManager versionManager;
     private JcrQueryManager queryManager;
-    private JcrRepositoryMonitor monitor;
     private JcrObservationManager observationManager;
+    private JcrRepositoryManager repositoryManager;
 
     JcrWorkspace( JcrSession session,
                   String workspaceName ) {
@@ -540,6 +539,24 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     }
 
     @Override
+    public JcrRepositoryManager getRepositoryManager() throws AccessDeniedException, RepositoryException {
+        session.checkLive();
+        return repositoryManager();
+    }
+
+    final JcrRepositoryManager repositoryManager() {
+        if (repositoryManager == null) {
+            try {
+                lock.lock();
+                if (repositoryManager == null) repositoryManager = new JcrRepositoryManager(this);
+            } finally {
+                lock.unlock();
+            }
+        }
+        return repositoryManager;
+    }
+
+    @Override
     public ContentHandler getImportContentHandler( String parentAbsPath,
                                                    int uuidBehavior )
         throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, AccessDeniedException,
@@ -743,21 +760,6 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         } catch (ValueFormatException e) {
             throw new RepositoryException(e.getMessage());
         }
-    }
-
-    @Override
-    public RepositoryMonitor getRepositoryMonitor() throws RepositoryException {
-        if (monitor == null) {
-            try {
-                lock.lock();
-                if (monitor == null) {
-                    monitor = new JcrRepositoryMonitor(session);
-                }
-            } finally {
-                lock.unlock();
-            }
-        }
-        return monitor;
     }
 
 }

@@ -250,6 +250,26 @@ public class Json {
     }
 
     /**
+     * Return a {@link DocumentSequence} that can be used to pull multiple documents from the stream.
+     * 
+     * @param stream the input stream; may not be null
+     * @return the sequence that can be used to get one or more Document instances from a single input
+     */
+    public static DocumentSequence readMultiple( InputStream stream ) {
+        return SHARED_READER.readMultiple(stream);
+    }
+
+    /**
+     * Return a {@link DocumentSequence} that can be used to pull multiple documents from the stream.
+     * 
+     * @param reader the IO reader; may not be null
+     * @return the sequence that can be used to get one or more Document instances from a single input
+     */
+    public static DocumentSequence readMultiple( Reader reader ) {
+        return SHARED_READER.readMultiple(reader);
+    }
+
+    /**
      * Return the modified JSON representation for the supplied in-memory {@link Document}. The resulting JSON will have no
      * embedded line feeds or extra spaces.
      * <p>

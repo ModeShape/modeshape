@@ -181,6 +181,11 @@ public class RecordingChanges implements Changes, ChangeSet {
     }
 
     @Override
+    public void binaryValueNowUsed( BinaryKey key ) {
+        events.add(new BinaryValueUsed(key));
+    }
+
+    @Override
     public int size() {
         return events.size();
     }

@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.infinispan.schematic.document.Bson.BinaryType;
 import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.DocumentSequence;
 import org.infinispan.schematic.document.Immutable;
 import org.infinispan.schematic.document.Json;
 import org.infinispan.schematic.document.NotThreadSafe;
@@ -219,6 +220,60 @@ public class JsonReader {
     public Document read( String json,
                           boolean introspectStringValues ) throws ParsingException {
         return read(new StringReader(json), introspectStringValues);
+    }
+
+    /**
+     * Return a {@link DocumentSequence} that can be used to pull multiple documents from the stream.
+     * 
+     * @param stream the input stream; may not be null
+     * @return the sequence that can be used to get one or more Document instances from a single input
+     */
+    public DocumentSequence readMultiple( InputStream stream ) {
+        return readMultiple(stream, DEFAULT_INTROSPECT);
+    }
+
+    /**
+     * Return a {@link DocumentSequence} that can be used to pull multiple documents from the stream.
+     * 
+     * @param stream the input stream; may not be null
+     * @param introspectStringValues true if the string values should be examined for common patterns, or false otherwise
+     * @return the sequence that can be used to get one or more Document instances from a single input
+     */
+    public DocumentSequence readMultiple( InputStream stream,
+                                          boolean introspectStringValues ) {
+        return readMultiple(new InputStreamReader(stream), introspectStringValues);
+    }
+
+    /**
+     * Return a {@link DocumentSequence} that can be used to pull multiple documents from the stream.
+     * 
+     * @param reader the IO reader; may not be null
+     * @return the sequence that can be used to get one or more Document instances from a single input
+     */
+    public DocumentSequence readMultiple( Reader reader ) {
+        return readMultiple(reader, DEFAULT_INTROSPECT);
+    }
+
+    /**
+     * Return a {@link DocumentSequence} that can be used to pull multiple documents from the stream.
+     * 
+     * @param reader the IO reader; may not be null
+     * @param introspectStringValues true if the string values should be examined for common patterns, or false otherwise
+     * @return the sequence that can be used to get one or more Document instances from a single input
+     */
+    public DocumentSequence readMultiple( Reader reader,
+                                          boolean introspectStringValues ) {
+        // Create an object so that this reader is thread safe ...
+        final Tokenizer tokenizer = new Tokenizer(reader);
+        ValueMatcher matcher = introspectStringValues ? DATE_VALUE_MATCHER : SIMPLE_VALUE_MATCHER;
+        final Parser parser = new Parser(tokenizer, VALUE_FACTORY, matcher);
+        return new DocumentSequence() {
+            @Override
+            public Document nextDocument() throws ParsingException {
+                if (tokenizer.isFinished()) return null;
+                return parser.parseDocument();
+            }
+        };
     }
 
     /**

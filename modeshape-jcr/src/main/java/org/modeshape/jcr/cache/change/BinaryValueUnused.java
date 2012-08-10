@@ -26,39 +26,12 @@ package org.modeshape.jcr.cache.change;
 import org.modeshape.jcr.value.BinaryKey;
 
 /**
- * An event signalizing that the binary value with a specific key is no longer used.
+ * An event signalizing that there are no more usages for the binary value with a specific key.
  */
-public class BinaryValueUnused extends Change {
-
-    private final BinaryKey key;
+public class BinaryValueUnused extends BinaryValueUsageChange {
 
     public BinaryValueUnused( BinaryKey key ) {
-        this.key = key;
-        assert this.key != null;
-    }
-
-    /**
-     * Get the binary key.
-     * 
-     * @return the key; never null
-     */
-    public BinaryKey getKey() {
-        return key;
-    }
-
-    @Override
-    public boolean equals( Object obj ) {
-        if (obj == this) return true;
-        if (obj instanceof BinaryValueUnused) {
-            BinaryValueUnused that = (BinaryValueUnused)obj;
-            return this.getKey().equals(that.getKey());
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return key.hashCode();
+        super(key);
     }
 
     @Override

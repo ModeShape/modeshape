@@ -25,6 +25,7 @@ package org.modeshape.jcr.cache.document;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.UUID;
 import org.modeshape.common.annotation.Immutable;
@@ -193,5 +194,15 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
 
     @Override
     public abstract SessionNode mutable( NodeKey key );
+
+    @Override
+    public Iterator<NodeKey> getAllNodeKeys() {
+        return getAllNodeKeysAtAndBelow(getRootKey());
+    }
+
+    @Override
+    public Iterator<NodeKey> getAllNodeKeysAtAndBelow( NodeKey startingKey ) {
+        return new NodeCacheIterator(this, startingKey);
+    }
 
 }

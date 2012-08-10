@@ -291,6 +291,11 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
         return new ObservableDocumentEditor(mutableMetadata(), FieldPath.METADATA, getDelta(), null);
     }
 
+    @Override
+    public Document asDocument() {
+        return value;
+    }
+
     /**
      * The {@link org.infinispan.marshall.Externalizer Externalizer} for {@link SchematicEntryLiteral} instances.
      */

@@ -75,6 +75,7 @@ public class ModeShapeEngine implements Repositories {
         NOT_RUNNING,
         STARTING,
         RUNNING,
+        RESTORING,
         STOPPING;
     }
 
@@ -179,6 +180,7 @@ public class ModeShapeEngine implements Repositories {
                         case NOT_RUNNING:
                         case STOPPING:
                             break;
+                        case RESTORING:
                         case RUNNING:
                         case STARTING:
                             // This repository is still running, so fail
