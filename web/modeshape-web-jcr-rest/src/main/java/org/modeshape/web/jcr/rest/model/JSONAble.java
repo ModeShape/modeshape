@@ -28,7 +28,9 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 /**
- * @author Horia Chiorean
+ * An interface which should be implemented by objects that provide a JSON (currently Jettison) implementation.
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public interface JSONAble {
     public JSONObject toJSON() throws JSONException;

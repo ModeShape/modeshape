@@ -31,21 +31,22 @@ import org.modeshape.web.jcr.rest.RestHelper;
 import org.modeshape.web.jcr.rest.model.RestWorkspaces;
 
 /**
- * @author Horia Chiorean
+ * An extension of the {@link RepositoryHandler} which returns POJO-based rest model instances.
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class RestRepositoryHandler extends AbstractHandler {
+public final class RestRepositoryHandler extends AbstractHandler {
 
     /**
      * @see RepositoryHandler#getWorkspaces(javax.servlet.http.HttpServletRequest, String)
      */
-    public RestWorkspaces getWorkspaces(HttpServletRequest request,
-                                     String rawRepositoryName ) throws RepositoryException {
-
+    public RestWorkspaces getWorkspaces( HttpServletRequest request,
+                                         String repositoryName ) throws RepositoryException {
         assert request != null;
-        assert rawRepositoryName != null;
+        assert repositoryName != null;
 
         RestWorkspaces workspaces = new RestWorkspaces();
-        Session session = getSession(request, rawRepositoryName, null);
+        Session session = getSession(request, repositoryName, null);
         for (String workspaceName : session.getWorkspace().getAccessibleWorkspaceNames()) {
             String repositoryUrl = RestHelper.urlFrom(request);
             workspaces.addWorkspace(workspaceName, repositoryUrl);

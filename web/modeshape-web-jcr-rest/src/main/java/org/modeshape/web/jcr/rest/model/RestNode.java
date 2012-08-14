@@ -30,7 +30,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author Horia Chiorean
+ * A REST representation of a {@link javax.jcr.Node}
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public final class RestNode extends RestItem {
 

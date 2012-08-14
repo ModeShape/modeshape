@@ -38,7 +38,10 @@ import org.modeshape.web.jcr.NoSuchRepositoryException;
 import org.modeshape.web.jcr.rest.model.RestException;
 
 /**
+ * Class which holds all the RestEASY {@link ExceptionMapper} implementations used by the ModeShape's REST services.
+ *
  * @author Horia Chiorean
+ * @see {@link JcrApplication} for the mechanism via which these mappers are registered.
  */
 public final class ExceptionMappers {
 

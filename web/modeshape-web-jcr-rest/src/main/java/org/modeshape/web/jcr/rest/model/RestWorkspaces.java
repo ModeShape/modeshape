@@ -32,7 +32,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author Horia Chiorean
+ * A REST representation of a collection of {@link Workspace workspaces}
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public final class RestWorkspaces implements JSONAble {
 

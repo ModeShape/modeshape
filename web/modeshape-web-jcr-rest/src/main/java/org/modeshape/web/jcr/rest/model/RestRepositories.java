@@ -33,7 +33,9 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * @author Horia Chiorean
+ * A REST representation of a collection of {@link Repository repositories}
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public final class RestRepositories implements JSONAble {
 

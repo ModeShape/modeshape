@@ -32,7 +32,9 @@ import org.codehaus.jettison.json.JSONException;
 import org.modeshape.web.jcr.rest.model.JSONAble;
 
 /**
- * @author Horia Chiorean
+ * Extension of {@link JSONBodyWriter} which produces text output for {@link JSONAble} objects.
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
 @Provider
 @Produces( { MediaType.TEXT_PLAIN } )

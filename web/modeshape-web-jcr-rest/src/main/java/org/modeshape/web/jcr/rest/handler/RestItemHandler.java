@@ -46,16 +46,33 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
- * @author Horia Chiorean
+ * An extension to the {@link ItemHandler} which is used by {@link org.modeshape.web.jcr.rest.ModeShapeRestService} to interact
+ * with properties and nodes.
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class RestItemHandler extends ItemHandler {
+public final class RestItemHandler extends ItemHandler {
 
+    /**
+     * Retrieves the JCR {@link Item} at the given path, returning its rest representation.
+     *
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param repositoryName the URL-encoded repository name
+     * @param workspaceName the URL-encoded workspace name
+     * @param path the path to the item
+     * @param depth the depth of the node graph that should be returned if {@code path} refers to a node. @{code 0} means return
+     * the requested node only. A negative value indicates that the full subgraph under the node should be returned. This
+     * parameter defaults to {@code 0} and is ignored if {@code path} refers to a property.
+     *
+     * @return a the rest representation of the item, as a {@link RestItem} instance.
+     * @throws RepositoryException
+     */
     public RestItem item( HttpServletRequest request,
-                          String rawRepositoryName,
-                          String rawWorkspaceName,
+                          String repositoryName,
+                          String workspaceName,
                           String path,
                           int depth ) throws RepositoryException {
-        Session session = getSession(request, rawRepositoryName, rawWorkspaceName);
+        Session session = getSession(request, repositoryName, workspaceName);
         Item item = itemAtPath(path, session);
         return createRestItem(request, depth, session, item);
     }
@@ -114,17 +131,7 @@ public class RestItemHandler extends ItemHandler {
         return lastSlashInd == -1 ? path : path.substring(lastSlashInd + 1);
     }
 
-    private String parentPath( String path ) {
-        int lastSlashInd = path.lastIndexOf('/');
-        if (lastSlashInd == -1) {
-            return "/";
-        } else {
-            String subPath = path.substring(0, lastSlashInd);
-            return subPath.startsWith("/") ? subPath : "/" + subPath;
-        }
-    }
-
-    /**
+   /**
      * Updates the properties at the path.
      * <p>
      * If path points to a property, this method expects the request content to be either a JSON array or a JSON string. The array
@@ -163,6 +170,13 @@ public class RestItemHandler extends ItemHandler {
         return StringUtil.isBlank(requestBody) ? new JSONArray() : new JSONArray(requestBody);
     }
 
+
+    /**
+     * Performs a bulk creation of items, using a single {@link Session}. If any of the items cannot be created for whatever reason,
+     * the entire operation fails.
+     *
+     * @see RestItemHandler#addItem(javax.servlet.http.HttpServletRequest, String, String, String, String)
+     */
     public Response addItems( HttpServletRequest request,
                               String repositoryName,
                               String workspaceName,
@@ -176,6 +190,12 @@ public class RestItemHandler extends ItemHandler {
         return addMultipleNodes(request, nodesByPath, session);
     }
 
+    /**
+     * Performs a bulk updating of items, using a single {@link Session}. If any of the items cannot be updated for whatever reason,
+     * the entire operation fails.
+     *
+     * @see RestItemHandler#updateItem(javax.servlet.http.HttpServletRequest, String, String, String, String)
+     */
     public Response updateItems( HttpServletRequest request,
                                  String repositoryName,
                                  String workspaceName,
@@ -190,6 +210,12 @@ public class RestItemHandler extends ItemHandler {
         return createOkResponse(result);
     }
 
+    /**
+     * Performs a bulk deletion of items, using a single {@link Session}. If any of the items cannot be deleted for whatever reason,
+     * the entire operation fails.
+     *
+     * @see RestItemHandler#deleteItem(javax.servlet.http.HttpServletRequest, String, String, String)
+     */
     public Response deleteItems( HttpServletRequest request,
                                  String repositoryName,
                                  String workspaceName,
