@@ -495,7 +495,7 @@ public class Database {
         private String varchar(int size) {
             switch (databaseType) {
                 case ORACLE:
-                    return "VARCHAR2(" + size + " char)";
+                    return "VARCHAR2(" + size + ")";
                 default:
                     return "VARCHAR(" + size + ")";
             }
