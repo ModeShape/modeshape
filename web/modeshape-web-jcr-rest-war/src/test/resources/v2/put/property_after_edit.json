@@ -1,0 +1,6 @@
+{
+    "testProperty":"some_new_value",
+    "self":"http://localhost:8090/resources/repo/default/items/testNode/testProperty",
+    "up":"http://localhost:8090/resources/repo/default/items/testNode"
+}
+

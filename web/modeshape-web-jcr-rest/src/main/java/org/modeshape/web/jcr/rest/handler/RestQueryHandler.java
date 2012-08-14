@@ -117,11 +117,15 @@ public class RestQueryHandler extends QueryHandler {
                                                           defaultPath));
         }
         for (String selectorName : result.getSelectorNames()) {
-            String selectorPath = resultRow.getPath(selectorName);
-            if (!StringUtil.isBlank(defaultPath) && !selectorPath.equals(defaultPath)) {
-                restRow.addValue(MODE_URI + "-" + selectorName, RestHelper.urlFrom(baseUrl,
-                                                                                   RestHelper.ITEMS_METHOD_NAME,
-                                                                                   selectorPath));
+            try {
+                String selectorPath = resultRow.getPath(selectorName);
+                if (!StringUtil.isBlank(defaultPath) && !selectorPath.equals(defaultPath)) {
+                    restRow.addValue(MODE_URI + "-" + selectorName, RestHelper.urlFrom(baseUrl,
+                                                                                       RestHelper.ITEMS_METHOD_NAME,
+                                                                                       selectorPath));
+                }
+            } catch (RepositoryException e) {
+                logger.debug(e, e.getMessage());
             }
         }
     }

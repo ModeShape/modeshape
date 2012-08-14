@@ -1,0 +1,9 @@
+{
+    "self":"http://localhost:8090/resources/repo/default/items/testNode",
+    "up":"http://localhost:8090/resources/repo/default/items/",
+    "jcr:primaryType":"{http://www.jcp.org/jcr/nt/1.0}unstructured",
+    "testProperty":"testValue",
+    "jcr:mixinTypes":"{http://www.jcp.org/jcr/mix/1.0}referenceable",
+    "jcr:uuid":"3c7829e8-05f1-4976-aa4e-6bdb300e6951"
+}
+
