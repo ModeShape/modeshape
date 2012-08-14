@@ -35,7 +35,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @author Horia Chiorean
+ * Extension of {@link JSONBodyWriter} which produces HTML output for {@link JSONAble} objects.
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
 @Provider
 @Produces( { MediaType.TEXT_HTML } )

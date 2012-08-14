@@ -43,7 +43,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Utility class for the rest services.
+ * Utility class for the rest services and supporting classes.
  *
  * @author Horia Chiorean
  */
@@ -144,6 +144,7 @@ public final class RestHelper {
      *
      * @param value the property value; may not be null
      * @return the string representation of the value
+     *
      * @deprecated since 3.0 binary values are handled via URLs
      */
     public static String jsonEncodedStringFor( Value value ) {

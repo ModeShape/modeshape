@@ -41,20 +41,49 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author Horia Chiorean
+ * Class which handles {@link NodeType} operations for incoming http requests on {@link org.modeshape.web.jcr.rest.ModeShapeRestService}
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class RestNodeTypeHandler extends AbstractHandler {
+public final class RestNodeTypeHandler extends AbstractHandler {
 
-    public RestNodeType getNodeType(HttpServletRequest request,
-                                    String repositoryName,
-                                    String workspaceName,
-                                    String nodeTypeName) throws RepositoryException {
+    /**
+     * HTTP response code for "Not Implemented"
+     */
+    private static final int HTTP_NOT_IMPLEMENTED = 501;
+
+    /**
+     * Retrieves the {@link RestNodeType rest node type representation} of the {@link NodeType} with the given name.
+     *
+     * @param request a non-null {@link HttpServletRequest}
+     * @param repositoryName a non-null, URL encoded {@link String} representing the name of a repository
+     * @param workspaceName a non-null, URL encoded {@link String} representing the name of a workspace
+     * @param nodeTypeName a non-null, URL encoded {@link String} representing the name of type
+     * @return a {@link RestNodeType} instance.
+     * @throws RepositoryException if any JCR related operation fails, including if the node type cannot be found.
+     */
+    public RestNodeType getNodeType( HttpServletRequest request,
+                                     String repositoryName,
+                                     String workspaceName,
+                                     String nodeTypeName ) throws RepositoryException {
         Session session = getSession(request, repositoryName, workspaceName);
         NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
         NodeType nodeType = nodeTypeManager.getNodeType(nodeTypeName);
         return new RestNodeType(nodeType, RestHelper.repositoryUrl(request));
     }
 
+    /**
+     * Imports a CND file into the repository, providing that the repository's {@link NodeTypeManager} is a valid ModeShape
+     * node type manager.
+     *
+     * @param request a non-null {@link HttpServletRequest}
+     * @param repositoryName a non-null, URL encoded {@link String} representing the name of a repository
+     * @param workspaceName a non-null, URL encoded {@link String} representing the name of a workspace
+     * @param allowUpdate a flag which indicates whether existing types should be updated or not.
+     * @param cndInputStream a {@link InputStream} which is expected to be the input stream of a CND file.
+     * @return a non-null {@link Response} instance
+     * @throws RepositoryException if any JCR related operation fails
+     */
     public Response importCND( HttpServletRequest request,
                                String repositoryName,
                                String workspaceName,
@@ -63,11 +92,11 @@ public class RestNodeTypeHandler extends AbstractHandler {
         CheckArg.isNotNull(cndInputStream, "request body");
         Session session = getSession(request, repositoryName, workspaceName);
         NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
-        if (! (nodeTypeManager instanceof org.modeshape.jcr.api.nodetype.NodeTypeManager)) {
-            //not implemented
-            return Response.status(Response.Status.fromStatusCode(501)).build();
+        if (!(nodeTypeManager instanceof org.modeshape.jcr.api.nodetype.NodeTypeManager)) {
+            //501 = not implemented
+            return Response.status(Response.Status.fromStatusCode(HTTP_NOT_IMPLEMENTED)).build();
         }
-        org.modeshape.jcr.api.nodetype.NodeTypeManager modeshapeTypeManager = (org.modeshape.jcr.api.nodetype.NodeTypeManager) nodeTypeManager;
+        org.modeshape.jcr.api.nodetype.NodeTypeManager modeshapeTypeManager = (org.modeshape.jcr.api.nodetype.NodeTypeManager)nodeTypeManager;
         try {
             List<RestNodeType> registeredTypes = registerCND(request, allowUpdate, cndInputStream, modeshapeTypeManager);
             return createOkResponse(registeredTypes);
@@ -77,7 +106,8 @@ public class RestNodeTypeHandler extends AbstractHandler {
     }
 
     private Response createOkResponse( final List<RestNodeType> registeredTypes ) {
-        GenericEntity<List<RestNodeType>> entity = new GenericEntity<List<RestNodeType>>(registeredTypes){};
+        GenericEntity<List<RestNodeType>> entity = new GenericEntity<List<RestNodeType>>(registeredTypes) {
+        };
         return Response.ok().entity(entity).build();
     }
 

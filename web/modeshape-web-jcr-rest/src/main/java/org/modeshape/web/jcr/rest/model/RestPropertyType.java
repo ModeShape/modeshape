@@ -33,9 +33,11 @@ import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.util.StringUtil;
 
 /**
- * @author Horia Chiorean
+ * A REST representation of a {@link PropertyDefinition}
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class RestPropertyType implements JSONAble {
+public final class RestPropertyType implements JSONAble {
 
     private final String declaringNodeTypeName;
     private final boolean isAutoCreated;

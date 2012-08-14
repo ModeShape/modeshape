@@ -187,6 +187,16 @@ public abstract class AbstractHandler {
                 : createRestProperty(session, (Property)item, baseUrl);
     }
 
+    protected String parentPath( String path ) {
+        int lastSlashInd = path.lastIndexOf('/');
+        if (lastSlashInd == -1) {
+            return "/";
+        } else {
+            String subPath = path.substring(0, lastSlashInd);
+            return subPath.startsWith("/") ? subPath : "/" + subPath;
+        }
+    }
+
     private RestNode createRestNode( Session session,
                                      Node node,
                                      String baseUrl,

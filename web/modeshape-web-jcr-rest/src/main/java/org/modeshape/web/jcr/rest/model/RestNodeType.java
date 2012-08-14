@@ -34,9 +34,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author Horia Chiorean
+ * A REST representation of a {@link NodeType}
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class RestNodeType implements JSONAble {
+public final class RestNodeType implements JSONAble {
 
     private final List<String> superTypesLinks;
     private final List<String> subTypesLinks;

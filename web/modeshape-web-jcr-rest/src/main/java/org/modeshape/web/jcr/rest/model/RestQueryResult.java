@@ -34,9 +34,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author Horia Chiorean
+ * A REST representation of a {@link javax.jcr.query.QueryResult}
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class RestQueryResult implements JSONAble {
+public final class RestQueryResult implements JSONAble {
     private final Map<String, String> columns;
     private final List<RestRow> rows;
 

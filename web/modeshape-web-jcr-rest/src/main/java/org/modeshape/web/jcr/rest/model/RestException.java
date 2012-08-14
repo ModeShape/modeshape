@@ -30,16 +30,14 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 /**
- * @author Horia Chiorean
+ * A representation of an {@link Exception} which is used by the REST service to signal clients that a server-side exception
+ * has occurred.
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class RestException implements JSONAble {
+public final class RestException implements JSONAble {
     private final String message;
     private final String stackTrace;
-
-    public RestException(String message) {
-        this.message = message;
-        this.stackTrace = null;
-    }
 
     public RestException(Exception e) {
         this.message = e.getMessage();

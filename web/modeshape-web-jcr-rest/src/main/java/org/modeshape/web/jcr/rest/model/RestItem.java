@@ -25,7 +25,9 @@
 package org.modeshape.web.jcr.rest.model;
 
 /**
- * @author Horia Chiorean
+ * A REST representation of a {@link javax.jcr.Item}
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public abstract class RestItem implements JSONAble {
 

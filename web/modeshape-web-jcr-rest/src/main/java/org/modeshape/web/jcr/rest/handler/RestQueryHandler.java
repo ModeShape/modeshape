@@ -44,27 +44,46 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author Horia Chiorean
+ * An extension of the {@link QueryHandler} which allows executing queries against a repository and returns rest representations
+ * of the query results.
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class RestQueryHandler extends QueryHandler {
+public final class RestQueryHandler extends QueryHandler {
 
     private static final String MODE_URI = "mode:uri";
     private static final String UNKNOWN_TYPE = "unknown-type";
 
+    /**
+     * Executes a the given query string (based on the language information) against a JCR repository, returning a rest model based
+     * result.
+     *
+     * @param request a non-null {@link HttpServletRequest}
+     * @param repositoryName a non-null, URL encoded {@link String} representing the name of a repository
+     * @param workspaceName a non-null, URL encoded {@link String} representing the name of a workspace
+     * @param language a non-null String which should be a valid query language, as recognized by the {@link javax.jcr.query.QueryManager}
+     * @param statement a non-null String which should be a valid query string in the above language.
+     * @param offset a numeric value which indicates the index in the result set from where results should be returned.
+     * @param limit a numeric value indicating the maximum number of rows to return.
+     * @param uriInfo a non-null {@link UriInfo} object which is provided by RestEASY, allowing extra request parameters to be
+     * retrieved.
+     * @return a {@link RestQueryHandler} instance
+     * @throws RepositoryException if any operation fails at the JCR level
+     */
     public RestQueryResult executeQuery( HttpServletRequest request,
-                                         String rawRepositoryName,
-                                         String rawWorkspaceName,
+                                         String repositoryName,
+                                         String workspaceName,
                                          String language,
                                          String statement,
                                          long offset,
                                          long limit,
                                          UriInfo uriInfo ) throws RepositoryException {
-        assert rawRepositoryName != null;
-        assert rawWorkspaceName != null;
+        assert repositoryName != null;
+        assert workspaceName != null;
         assert language != null;
         assert statement != null;
 
-        Session session = getSession(request, rawRepositoryName, rawWorkspaceName);
+        Session session = getSession(request, repositoryName, workspaceName);
         Query query = createQuery(language, statement, session);
         bindExtraVariables(uriInfo, session.getValueFactory(), query);
 

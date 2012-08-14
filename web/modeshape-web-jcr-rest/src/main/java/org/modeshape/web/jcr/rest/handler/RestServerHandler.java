@@ -34,7 +34,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author Horia Chiorean
+ * An extension of {@link RepositoryHandler} which returns POJO-based rest model instances.
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class RestServerHandler extends AbstractHandler {
 
@@ -44,25 +46,31 @@ public class RestServerHandler extends AbstractHandler {
     public RestRepositories getRepositories( HttpServletRequest request ) {
         RestRepositories repositories = new RestRepositories();
         for (String repositoryName : RepositoryManager.getJcrRepositoryNames()) {
-            RestRepositories.Repository repository = repositories.addRepository(repositoryName, RestHelper.urlFrom(request,
-                                                                                                                   repositoryName));
-            try {
-                Repository jcrRepository = RepositoryManager.getRepository(repositoryName);
-                for (String metadataKey : jcrRepository.getDescriptorKeys()) {
-                    Value[] descriptorValues = jcrRepository.getDescriptorValues(metadataKey);
-                    if (descriptorValues != null) {
-                        List<String> values = new ArrayList<String>(descriptorValues.length);
-                        for (Value descriptorValue : descriptorValues) {
-                            values.add(descriptorValue.getString());
-                        }
-                        repository.addMetadata(metadataKey, values);
-                    }
-                }
-            } catch (Exception e) {
-                logger.error(e, e.getMessage());
-            }
+            addRepository(request, repositories, repositoryName);
         }
         return repositories;
+    }
+
+    private void addRepository( HttpServletRequest request,
+                                RestRepositories repositories,
+                                String repositoryName ) {
+        RestRepositories.Repository repository = repositories.addRepository(repositoryName, RestHelper.urlFrom(request,
+                                                                                                               repositoryName));
+        try {
+            Repository jcrRepository = RepositoryManager.getRepository(repositoryName);
+            for (String metadataKey : jcrRepository.getDescriptorKeys()) {
+                Value[] descriptorValues = jcrRepository.getDescriptorValues(metadataKey);
+                if (descriptorValues != null) {
+                    List<String> values = new ArrayList<String>(descriptorValues.length);
+                    for (Value descriptorValue : descriptorValues) {
+                        values.add(descriptorValue.getString());
+                    }
+                    repository.addMetadata(metadataKey, values);
+                }
+            }
+        } catch (Exception e) {
+            logger.error(e, e.getMessage());
+        }
     }
 
 }

@@ -40,55 +40,101 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * @author Horia Chiorean
+ * Class which handles incoming requests related to {@link Binary binary values}
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public final class RestBinaryHandler extends AbstractHandler {
 
-    protected static final String DEFAULT_CONTENT_DISPOSITION = "attachment;filename=";
+    /**
+     * The default content disposition prefix, used when serving binary content.
+     */
+    private static final String DEFAULT_CONTENT_DISPOSITION_PREFIX = "attachment;filename=";
 
-
+    /**
+     * Returns a binary {@link Property} for the given repository, workspace and path.
+     *
+     * @param request a non-null {@link HttpServletRequest} request
+     * @param repositoryName a non-null {@link String} representing the name of a repository.
+     * @param workspaceName a non-null {@link String} representing the name of a workspace.
+     * @param binaryAbsPath a non-null {@link String} representing the absolute path to a binary property.
+     * @return the {@link Property} instance which is located at the given path. If such a property is not located, an exception
+     *         is thrown.
+     * @throws RepositoryException if any JCR related operation fails, including the case when the path to the property isn't valid.
+     */
     public Property getBinaryProperty( HttpServletRequest request,
                                        String repositoryName,
                                        String workspaceName,
-                                       String binaryPath ) throws RepositoryException {
+                                       String binaryAbsPath ) throws RepositoryException {
         Session session = getSession(request, repositoryName, workspaceName);
-        return session.getProperty(binaryPath);
+        return session.getProperty(binaryAbsPath);
     }
 
+    /**
+     * Returns a default Content-Disposition {@link String} for a given binary property.
+     *
+     * @param binaryProperty a non-null {@link Property}
+     * @return a non-null String which represents a valid Content-Disposition.
+     * @throws RepositoryException if any JCR related operation involving the binary property fail.
+     */
     public String getDefaultContentDisposition( Property binaryProperty ) throws RepositoryException {
         Node parentNode = getParentNode(binaryProperty);
         String parentName = parentNode.getName();
         if (StringUtil.isBlank(parentName)) {
             parentName = "binary";
         }
-        return DEFAULT_CONTENT_DISPOSITION + parentName;
+        return DEFAULT_CONTENT_DISPOSITION_PREFIX + parentName;
     }
 
+    /**
+     * Returns the default mime-type of a given binary property.
+     *
+     * @param binaryProperty a non-null {@link Property}
+     * @return a non-null String which represents the mime-type of the binary property.
+     * @throws RepositoryException if any JCR related operation involving the binary property fail.
+     */
     public String getDefaultMimeType( Property binaryProperty ) throws RepositoryException {
         try {
             Binary binary = binaryProperty.getBinary();
-            return binary instanceof org.modeshape.jcr.api.Binary ? ((org.modeshape.jcr.api.Binary) binary).getMimeType() : MediaType.APPLICATION_OCTET_STREAM;
+            return binary instanceof org.modeshape.jcr.api.Binary ? ((org.modeshape.jcr.api.Binary)binary)
+                    .getMimeType() : MediaType.APPLICATION_OCTET_STREAM;
         } catch (IOException e) {
             logger.warn("Cannot determine default mime-type", e);
             return MediaType.APPLICATION_OCTET_STREAM;
         }
     }
 
+    /**
+     * Updates the {@link Property property} at the given path with the content from the given {@link InputStream}.
+     *
+     * @param request a non-null {@link HttpServletRequest} request
+     * @param repositoryName a non-null {@link String} representing the name of a repository.
+     * @param workspaceName a non-null {@link String} representing the name of a workspace.
+     * @param binaryPropertyAbsPath a non-null {@link String} representing the absolute path to a binary property.
+     * @param binaryStream an {@link InputStream} which represents the new content of the binary property.
+     * @param allowCreation a {@link boolean} flag which indicates what the behavior should be in case such a property does
+     * not exist on its parent node: if the flag is {@code true}, the property will be created, otherwise a response code indicating
+     * the absence is returned.
+     * @return a {@link Response} object, which is either OK and contains the rest representation of the binary property, or is
+     *         NOT_FOUND.
+     * @throws RepositoryException if any JCR related operations fail
+     * @throws IllegalArgumentException if the given input stream is {@code null}
+     */
     public Response updateBinary( HttpServletRequest request,
                                   String repositoryName,
                                   String workspaceName,
-                                  String path,
+                                  String binaryPropertyAbsPath,
                                   InputStream binaryStream,
                                   boolean allowCreation ) throws RepositoryException {
         //TODO author=Horia Chiorean date=8/9/12 description=We don't have a way (without changing the API) to set the mime-type on a binary
         CheckArg.isNotNull(binaryStream, "request body");
 
-        int lastSlashInd = path.lastIndexOf('/');
-        String parentPath = lastSlashInd == -1 ? "/" : "/" + path.substring(0, lastSlashInd);
+        String parentPath = parentPath(binaryPropertyAbsPath);
         Session session = getSession(request, repositoryName, workspaceName);
         Node parent = (Node)itemAtPath(parentPath, session);
 
-        String propertyName = lastSlashInd == -1 ? path : path.substring(lastSlashInd + 1);
+        int lastSlashInd = binaryPropertyAbsPath.lastIndexOf('/');
+        String propertyName = lastSlashInd == -1 ? binaryPropertyAbsPath : binaryPropertyAbsPath.substring(lastSlashInd + 1);
         try {
             Property binaryProperty = null;
             try {

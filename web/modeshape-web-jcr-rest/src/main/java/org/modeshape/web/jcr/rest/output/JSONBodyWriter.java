@@ -44,7 +44,10 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 
 /**
- * @author Horia Chiorean
+ * Implementation of {@link MessageBodyWriter} which writes a {@link JSONAble} or a {@link Collection<JSONAble>} instances to
+ * a response, producing {@link MediaType#APPLICATION_JSON}.
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
 @Provider
 @Produces( { MediaType.APPLICATION_JSON } )

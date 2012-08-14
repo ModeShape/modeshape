@@ -28,9 +28,12 @@ import javax.ws.rs.FormParam;
 import java.io.InputStream;
 
 /**
- * @author Horia Chiorean
+ * POJO which leverages RestEasy's support for HTML forms, containing one element {@link FileUploadForm#fileData}, which is
+ * populated by RestEasy when an HTML form with the html element with the name {@code file} is submitted.
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class FileUploadForm {
+public final class FileUploadForm {
 
     private InputStream fileData;
 
@@ -38,11 +41,20 @@ public class FileUploadForm {
         return fileData;
     }
 
+    /**
+     * Sets the {@link InputStream} which corresponds to the HTML element named {@code file}. RestEASY will call this method.
+     * @param fileData a {@link InputStream} or {@code null} if there isn't an HTML field with the {@code file} name.
+     */
     @FormParam("file")
     public void setFileData( InputStream fileData ) {
         this.fileData = fileData;
     }
 
+    /**
+     * Validates that the {@link FileUploadForm#fileData} field is not null.
+     *
+     * @throws IllegalArgumentException if the fileData field is null.
+     */
     public void validate() {
         if (fileData == null) {
             throw new IllegalArgumentException("Please make sure the file is uploaded from an HTML element with the name \"file\"");
