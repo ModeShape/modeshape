@@ -1,0 +1,15 @@
+{
+    "properties":{
+        "jcr:primaryType":"nt:nodeType",
+        "jcr:nodeTypeName":"nt:base",
+        "jcr:isAbstract":"true",
+        "jcr:hasOrderableChildNodes":"false",
+        "jcr:isQueryable":"true",
+        "jcr:isMixin":"false",
+        "jcr:supertypes":[]
+    },
+    "children":[
+        "jcr:primaryType",
+        "jcr:mixinTypes"
+    ]
+}

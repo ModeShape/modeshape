@@ -3283,10 +3283,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public String toString() {
         try {
             PropertyIterator iter = this.getProperties();
-            StringBuffer propertyBuff = new StringBuffer();
+            StringBuilder propertyBuff = new StringBuilder();
             while (iter.hasNext()) {
                 AbstractJcrProperty prop = (AbstractJcrProperty)iter.nextProperty();
-                propertyBuff.append(prop).append(", ");
+                propertyBuff.append(prop);
+                if (iter.hasNext()) {
+                    propertyBuff.append(", ");
+                }
             }
             return this.getPath() + " {" + propertyBuff.toString() + "}";
         } catch (Exception e) {

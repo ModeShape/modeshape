@@ -126,7 +126,7 @@ public final class ModeShapeRestService {
     public RestNodeType getNodeType( @Context HttpServletRequest request,
                                      @PathParam( "repositoryName" ) String rawRepositoryName,
                                      @PathParam( "workspaceName" ) String rawWorkspaceName,
-                                     @PathParam( "nodeTypeName" ) @DefaultValue( "nt:base" )String nodeTypeName )
+                                     @PathParam( "nodeTypeName" ) @DefaultValue( "nt:base" ) String nodeTypeName )
             throws RepositoryException {
         return nodeTypeHandler.getNodeType(request, rawRepositoryName, rawWorkspaceName, nodeTypeName);
     }
@@ -188,12 +188,12 @@ public final class ModeShapeRestService {
     }
 
     @POST
-    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME)
+    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME )
     @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN, MediaType.TEXT_HTML } )
     public Response postItems( @Context HttpServletRequest request,
-                              @PathParam( "repositoryName" ) String rawRepositoryName,
-                              @PathParam( "workspaceName" ) String rawWorkspaceName,
-                              String requestContent )
+                               @PathParam( "repositoryName" ) String rawRepositoryName,
+                               @PathParam( "workspaceName" ) String rawWorkspaceName,
+                               String requestContent )
             throws RepositoryException, JSONException {
         return itemHandler.addItems(request, rawRepositoryName, rawWorkspaceName, requestContent);
     }

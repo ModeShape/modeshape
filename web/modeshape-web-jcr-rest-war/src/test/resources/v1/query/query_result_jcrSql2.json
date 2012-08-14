@@ -1,0 +1,46 @@
+{
+    "types":{
+        "nt:unstructured.jcr:primaryType":"STRING",
+        "nt:unstructured.jcr:mixinTypes":"STRING",
+        "nt:unstructured.jcr:path":"STRING",
+        "nt:unstructured.jcr:name":"STRING",
+        "nt:unstructured.jcr:score":"DOUBLE",
+        "nt:unstructured.mode:localName":"STRING",
+        "nt:unstructured.mode:depth":"LONG"
+    },
+    "rows":[
+        {
+            "nt:unstructured.jcr:primaryType":"nt:unstructured",
+            "nt:unstructured.jcr:path":"/testNode/child",
+            "nt:unstructured.jcr:name":"child",
+            "nt:unstructured.jcr:score":"1.2111306190490723",
+            "nt:unstructured.mode:localName":"child",
+            "nt:unstructured.mode:depth":"2"
+        },
+        {
+            "nt:unstructured.jcr:primaryType":"nt:unstructured",
+            "nt:unstructured.jcr:path":"/testNode/child[2]",
+            "nt:unstructured.jcr:name":"child",
+            "nt:unstructured.jcr:score":"1.2111306190490723",
+            "nt:unstructured.mode:localName":"child",
+            "nt:unstructured.mode:depth":"2"
+        },
+        {
+            "nt:unstructured.jcr:primaryType":"nt:unstructured",
+            "nt:unstructured.jcr:path":"/testNode/child[3]",
+            "nt:unstructured.jcr:name":"child",
+            "nt:unstructured.jcr:score":"1.2111306190490723",
+            "nt:unstructured.mode:localName":"child",
+            "nt:unstructured.mode:depth":"2"
+        },
+        {
+            "nt:unstructured.jcr:primaryType":"nt:unstructured",
+            "nt:unstructured.jcr:path":"/testNode/child[4]",
+            "nt:unstructured.jcr:name":"child",
+            "nt:unstructured.jcr:score":"1.2111306190490723",
+            "nt:unstructured.mode:localName":"child",
+            "nt:unstructured.mode:depth":"2"
+        }
+    ]
+}
+

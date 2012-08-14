@@ -1,0 +1,9 @@
+{"default":{
+    "workspace":{
+        "name":"default",
+        "resources":{
+            "query":"/resources/v1/repo/default/query",
+            "items":"/resources/v1/repo/default/items"
+        }
+    }
+}}
