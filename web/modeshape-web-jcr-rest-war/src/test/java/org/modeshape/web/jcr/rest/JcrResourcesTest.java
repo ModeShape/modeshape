@@ -25,33 +25,38 @@ package org.modeshape.web.jcr.rest;
 
 import javax.ws.rs.core.MediaType;
 import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
+import org.junit.After;
+import org.junit.Assert;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Test;
-import org.modeshape.common.util.Base64;
-import org.modeshape.jcr.JcrI18n;
-import org.modeshape.jcr.api.Repository;
+import org.modeshape.common.util.IoUtil;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Authenticator;
 import java.net.HttpURLConnection;
 import java.net.PasswordAuthentication;
 import java.net.URL;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Test of the ModeShape JCR REST resource. Note that this test case uses a very low-level API to construct requests and
  * deconstruct the responses. Users are encouraged to use a higher-level library to communicate with the REST server (e.g., Apache
  * HTTP Commons).
+ *
+ * @author ?
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class JcrResourcesTest {
+
+    private static final List<String> JSON_PROPERTIES_IGNORE_EQUALS = Arrays.asList("jcr:uuid", "jcr:score");
 
     /**
      * The name of the repository is dictated by the "repository-config.json" configuration file loaded by the
@@ -59,26 +64,538 @@ public class JcrResourcesTest {
      */
     private static final String REPOSITORY_NAME = "repo";
     private static final String SERVER_CONTEXT = "/resources/v1";
-    private static final String SERVER_URL = "http://localhost:8090" + SERVER_CONTEXT;
+    private static final String SERVER_URL = "http://localhost:8090";
+
+    private static final String TEST_NODE = "testNode";
+
+    private HttpURLConnection connection;
 
     @Before
     public void beforeEach() {
+        setDefaultAuthenticator("dnauser", "password");
+    }
 
-        // Configured in pom
-        final String login = "dnauser";
-        final String password = "password";
-
+    private void setDefaultAuthenticator( final String username,
+                                          final String password ) {
         Authenticator.setDefault(new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(login, password.toCharArray());
+                return new PasswordAuthentication(username, password.toCharArray());
             }
         });
     }
 
-    private String getResponseFor( HttpURLConnection connection ) throws IOException {
-        StringBuffer buff = new StringBuffer();
+    @After
+    public void afterEach() throws Exception {
+        doDelete(itemsUrl(TEST_NODE)).submit();
+        if (connection != null) {
+            connection.disconnect();
+        }
+    }
 
+    @Test
+    public void shouldNotServeContentToUnauthorizedUser() throws Exception {
+        setDefaultAuthenticator("dnauser", "invalidpassword");
+        doGet().isUnauthorized();
+    }
+
+    @Test
+    public void shouldNotServeContentToUserWithoutConnectRole() throws Exception {
+        setDefaultAuthenticator("unauthorizeduser", "password");
+        doGet().isUnauthorized();
+    }
+
+    @Test
+    public void shouldServeContentAtRoot() throws Exception {
+        //http://localhost:8090/resources/v1
+        doGet().isOk().hasBodyLikeFile(contentRoot());
+    }
+
+    protected String contentRoot() {
+        return "v1/get/root.json";
+    }
+
+    @Test
+    public void shouldServeListOfWorkspacesForValidRepository() throws Exception {
+        //http://localhost:8090/resources/v1/repo
+        doGet(REPOSITORY_NAME).isOk().hasBodyLikeFile(workspaces());
+    }
+
+    protected String workspaces() {
+        return "v1/get/workspaces.json";
+    }
+
+    @Test
+    public void shouldReturnErrorForInvalidRepository() throws Exception {
+        //http://localhost:8090/resources/v1/XX
+        doGet("XXX").isNotFound().isJSON();
+    }
+
+    @Test
+    public void shouldRetrieveRootNodeForValidRepository() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default
+        doGet(itemsUrl()).isOk().hasBodyLikeFile(rootNode());
+    }
+
+    protected String rootNode() {
+        return "v1/get/root_node.json";
+    }
+
+    @Test
+    public void shouldRetrieveRoottestNodendChildrenWhenDepthSet() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items?depth=1
+        doGet(itemsUrl() + "?depth=1").isOk().hasBodyLikeFile(rootNodeDepthOne());
+    }
+
+    @Test
+    public void shouldRetrieveRoottestNodendChildrenWhenDeprecatedDepthSet() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items?mode:depth=1
+        doGet(itemsUrl() + "?mode:depth=1").isOk().hasBodyLikeFile(rootNodeDepthOne());
+    }
+
+    protected String rootNodeDepthOne() {
+        return "v1/get/root_node_depth1.json";
+    }
+
+    @Test
+    public void shouldRetrieveSystemtestNodendChildrenWithDepthOne() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/jcr:system?depth=1
+        doGet(itemsUrl("jcr:system") + "?depth=1").isOk().hasBodyLikeFile(systemNodeDepthOne());
+    }
+
+    protected String systemNodeDepthOne() {
+        return "v1/get/system_node_depth1.json";
+    }
+
+    @Test
+    public void shouldRetrieveNtBaseNodeType() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/jcr:system/jcr:nodeTypes/nt:base
+        doGet(itemsUrl("jcr:system/jcr:nodeTypes/nt:base")).isOk().hasBodyLikeFile(ntBaseNodeType());
+    }
+
+    protected String ntBaseNodeType() {
+        return "v1/get/nt_base.json";
+    }
+
+    @Test
+    public void shouldRetrieveNtBaseDepthFour() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/jcr:system/jcr:nodeTypes/nt:base?depth=4
+        doGet(itemsUrl("jcr:system/jcr:nodeTypes/nt:base") + "?depth=4").isOk().hasBodyLikeFile(ntBaseDepthFour());
+    }
+
+    protected String ntBaseDepthFour() {
+        return "v1/get/nt_base_depth4.json";
+    }
+
+    @Test
+    public void shouldNotRetrieveNonExistentNode() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/foo
+        doGet(itemsUrl("foo")).isNotFound().isJSON();
+    }
+
+    @Test
+    public void shouldNotRetrieveNonExistentProperty() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/jcr:system/foobar
+        doGet(itemsUrl("jcr:system/foobar")).isNotFound().isJSON();
+    }
+
+    @Test
+    public void shouldRetrieveProperty() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/jcr:system/jcr:primaryType
+        doGet(itemsUrl("jcr:system/jcr:primaryType")).isOk().hasBodyLikeFile(systemPrimaryTypeProperty());
+    }
+
+    protected String systemPrimaryTypeProperty() throws Exception {
+        return "v1/get/system_primaryType_property.json";
+    }
+
+    @Test
+    public void shouldPostNodeToValidPathWithPrimaryType() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/testNode
+        doPost(nodeWithPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isCreated().hasBodyLikeFile(nodeWithPrimaryTypeResponse());
+    }
+
+    protected String nodeWithPrimaryTypeRequest() {
+        return "v1/post/node_with_primaryType_request.json";
+    }
+
+    protected String nodeWithPrimaryTypeResponse() {
+        return "v1/post/node_with_primaryType_response.json";
+    }
+
+    @Test
+    public void shouldPostNodeToValidPathWithoutPrimaryType() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/testNode
+        doPost(nodeWithoutPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isCreated().hasBodyLikeFile(
+                nodeWithoutPrimaryTypeResponse());
+    }
+
+    protected String nodeWithoutPrimaryTypeRequest() {
+        return "v1/post/node_without_primaryType_request.json";
+    }
+
+    protected String nodeWithoutPrimaryTypeResponse() {
+        return "v1/post/node_without_primaryType_response.json";
+    }
+
+    @Test
+    public void shouldPostNodeToValidPathWithMixinTypes() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/testNode
+        doPost(nodeWithMixinRequest(), itemsUrl(TEST_NODE)).isCreated().hasBodyLikeFile(nodeWithMixinResponse());
+        doGet(itemsUrl(TEST_NODE)).isOk().hasBodyLikeFile(nodeWithMixinResponse());
+    }
+
+    protected String nodeWithMixinRequest() {
+        return "v1/post/node_with_mixin_request.json";
+    }
+
+    protected String nodeWithMixinResponse() {
+        return "v1/post/node_with_mixin_response.json";
+    }
+
+    @Test
+    public void shouldNotPosttestNodetInvalidParentPath() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/foo/bar
+        doPost(null, itemsUrl("foo/bar")).isBadRequest();
+    }
+
+    @Test
+    public void shouldNotPostNodeWithInvalidPrimaryType() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/testNode
+        doPost(nodeInvalidPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isBadRequest();
+        doGet(itemsUrl(TEST_NODE)).isNotFound();
+    }
+
+    protected String nodeInvalidPrimaryTypeRequest() {
+        return "v1/post/node_invalid_primaryType_request.json";
+    }
+
+    @Test
+    public void shouldPostNodeHierarchy() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/testNode
+        doPost(nodeHierarchyRequest(), itemsUrl(TEST_NODE)).isCreated();
+
+        // Make sure that we can retrieve the node with a GET
+        doGet(itemsUrl(TEST_NODE) + "?depth=1").isOk().hasBodyLikeFile(nodeHierarchyResponse());
+    }
+
+    protected String nodeHierarchyRequest() {
+        return "v1/post/node_hierarchy_request.json";
+    }
+
+    protected String nodeHierarchyResponse() {
+        return "v1/post/node_hierarchy_response.json";
+    }
+
+    @Test
+    public void shouldFailWholeTransactionIfOneNodeIsBad() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/testNode
+        doPost(nodeHierarchyInvalidTypeRequest(), itemsUrl(TEST_NODE)).isBadRequest();
+        doGet(itemsUrl(TEST_NODE) + "?depth=1").isNotFound();
+    }
+
+    protected String nodeHierarchyInvalidTypeRequest() {
+        return "v1/post/node_hierarchy_invalidType_request.json";
+    }
+
+    @Test
+    public void shouldNotDeleteNonExistentItem() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/invalidItemForDelete
+        doDelete(itemsUrl("invalidItemForDelete")).isNotFound();
+    }
+
+    @Test
+    public void shouldDeleteExistingNode() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/testNode
+        doPost(nodeWithoutPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isCreated();
+        doGet(itemsUrl(TEST_NODE)).isOk();
+        doDelete(itemsUrl(TEST_NODE)).isDeleted();
+        doGet(itemsUrl(TEST_NODE)).isNotFound();
+    }
+
+    @Test
+    public void shouldDeleteExistingProperty() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/testNode
+        doPost(nodeWithProperty(), itemsUrl(TEST_NODE)).isCreated();
+        doGet(itemsUrl(TEST_NODE, propertyName())).isOk();
+        doDelete(itemsUrl(TEST_NODE, propertyName())).isDeleted();
+        doGet(itemsUrl(TEST_NODE, propertyName())).isNotFound();
+        doGet(itemsUrl(TEST_NODE)).isOk().hasBodyLikeFile(nodeWithoutProperty());
+    }
+
+    protected String propertyName() {
+        return "testProperty";
+    }
+
+    protected String nodeWithProperty() {
+        return "v1/put/node_with_property.json";
+    }
+
+    protected String nodeWithoutProperty() {
+        return "v1/put/node_without_property.json";
+    }
+
+    @Test
+    public void shouldNotBeAbleToPutAtInvalidPath() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/nonexistantNode
+        doPut(propertyEdit(), itemsUrl("nonexistantNode")).isNotFound();
+    }
+
+    protected String propertyEdit() {
+        return "v1/put/property_edit.json";
+    }
+
+    @Test
+    public void shouldBeAbleToPutValueToProperty() throws Exception {
+        doPost(nodeWithProperty(), itemsUrl(TEST_NODE)).isCreated();
+        doPut(propertyEdit(), itemsUrl(TEST_NODE, propertyName())).isOk().hasBodyLikeFile(nodeWithPropertyAfterEdit());
+    }
+
+    protected String nodeWithPropertyAfterEdit() {
+        return "v1/put/node_with_property_after_edit.json";
+    }
+
+    @Test
+    public void shouldBeAbleToPutBinaryValueToProperty() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/testNode
+        doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
+        doPut(binaryPropertyEdit(), itemsUrl(TEST_NODE, binaryPropertyName())).isOk();
+        doGet(itemsUrl(TEST_NODE)).isOk().hasBodyLikeFile(nodeBinaryPropertyAfterEdit());
+    }
+
+    protected String nodeWithBinaryProperty() {
+        return "v1/put/node_with_binary_property.json";
+    }
+
+    protected String binaryPropertyEdit() {
+        return "v1/put/binary_property_edit.json";
+    }
+
+    protected String binaryPropertyName() {
+        return "testProperty";
+    }
+
+    protected String nodeBinaryPropertyAfterEdit() {
+        return "v1/put/node_with_binary_property_after_edit.json";
+    }
+
+    @Test
+    public void shouldBeAbleToPutPropertiesToNode() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/testNode
+        doPost(nodeWithProperties(), itemsUrl(TEST_NODE)).isCreated();
+        doPut(propertiesEdit(), itemsUrl(TEST_NODE)).isOk();
+        doGet(itemsUrl(TEST_NODE)).isOk().hasBodyLikeFile(nodeWithPropertiesAfterEdit());
+    }
+
+    protected String nodeWithProperties() {
+        return "v1/put/node_with_properties.json";
+    }
+
+    protected String nodeWithPropertiesAfterEdit() {
+        return "v1/put/node_with_properties_after_edit.json";
+    }
+
+    protected String propertiesEdit() {
+        return "v1/put/properties_edit.json";
+    }
+
+    @Test
+    public void shouldBeAbleToAddAndRemoveMixinTypes() throws Exception {
+        //http://localhost:8090/resources/v1/repo/default/items/testNode
+        doPost(nodeWithProperties(), itemsUrl(TEST_NODE)).isCreated();
+        doPut(addMixin(), itemsUrl(TEST_NODE)).isOk().hasBodyLikeFile(nodeWithMixin());
+        doPut(removeMixins(), itemsUrl(TEST_NODE)).isOk().hasBodyLikeFile(nodeWithProperties());
+    }
+
+    protected String addMixin() {
+        return "v1/put/add_mixin.json";
+    }
+
+    protected String removeMixins() {
+        return "v1/put/remove_mixins.json";
+    }
+
+    protected String nodeWithMixin() {
+        return "v1/put/node_with_mixin.json";
+    }
+
+    @Test
+    public void shouldRetrieveDataFromXPathQuery() throws Exception {
+        doPost(queryNode(), itemsUrl(TEST_NODE)).isCreated();
+        xpathQuery("//" + TEST_NODE, queryUrl()).isOk().isJSON().hasBodyLikeFile(singleNodeXPath());
+    }
+
+    protected String queryNode() {
+        return "v1/query/query_node.json";
+    }
+
+    protected String singleNodeXPath() {
+        return "v1/query/single_node_xpath.json";
+    }
+
+    @Test
+    public void shouldRespectQueryOffsetAndLimit() throws Exception {
+        doPost(queryNode(), itemsUrl(TEST_NODE)).isCreated();
+        doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
+        doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
+        doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
+        doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
+
+        String query = "//element(child) order by @foo";
+        xpathQuery(query, queryUrl() + "?offset=1&limit=2").isOk().isJSON().hasBodyLikeFile(queryResultOffsetAndLimit());
+    }
+
+    protected String queryResultOffsetAndLimit() {
+        return "v1/query/query_result_offset_and_limit.json";
+    }
+
+    @Test
+    public void shouldAllowJcrSql2Query() throws Exception {
+        doPost(queryNode(), itemsUrl(TEST_NODE)).isCreated();
+        doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
+        doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
+        doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
+        doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
+
+        String query = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/" + TEST_NODE + "')";
+        jcrSQL2Query(query, queryUrl()).isOk().isJSON().hasBodyLikeFile(jcrSQL2Result());
+    }
+
+    protected String jcrSQL2Result() throws Exception {
+        return "v1/query/query_result_jcrSql2.json";
+    }
+
+    protected String itemsUrl( String... additionalPathSegments ) {
+        return RestHelper.urlFrom(REPOSITORY_NAME + "/default/items", additionalPathSegments);
+    }
+
+    protected String queryUrl( String... additionalPathSegments ) {
+        return RestHelper.urlFrom(REPOSITORY_NAME + "/default/query", additionalPathSegments);
+    }
+
+    protected Response doGet() throws Exception {
+        return new Response(newConnection("GET", null));
+    }
+
+    protected Response doGet( String url ) throws Exception {
+        return new Response(newConnection("GET", null, url));
+    }
+
+    protected Response doPost( String payloadFile,
+                               String url ) throws Exception {
+        InputStream is = null;
+        if (payloadFile != null) {
+            is = getClass().getClassLoader().getResourceAsStream(payloadFile);
+            assertNotNull(is);
+        }
+        return postStream(is, url, MediaType.APPLICATION_JSON);
+    }
+
+    protected Response xpathQuery( String query,
+                                   String url ) throws Exception {
+        return postStream(new ByteArrayInputStream(query.getBytes()), url, "application/jcr+xpath");
+    }
+
+    protected Response jcrSQL2Query( String query,
+                                     String url ) throws Exception {
+        return postStream(new ByteArrayInputStream(query.getBytes()), url, "application/jcr+sql2");
+    }
+
+    protected Response postStream( InputStream is,
+                                   String url,
+                                   String mediaType ) throws Exception {
+        HttpURLConnection connection = newConnection("POST", mediaType, url);
+        if (is != null) {
+            connection.getOutputStream().write(IoUtil.readBytes(is));
+        }
+        return new Response(connection);
+    }
+
+    protected Response doPut( String payloadFile,
+                              String url ) throws Exception {
+        HttpURLConnection connection = newConnection("PUT", MediaType.APPLICATION_JSON, url);
+        if (payloadFile != null) {
+            String fileContent = IoUtil.read(getClass().getClassLoader().getResourceAsStream(payloadFile));
+            connection.getOutputStream().write(fileContent.getBytes());
+        }
+        return new Response(connection);
+    }
+
+    protected Response doDelete( String url ) throws Exception {
+       return new Response(newConnection("DELETE", null, url));
+    }
+
+    private HttpURLConnection newConnection( String method,
+                                             String contentType,
+                                             String... pathSegments ) throws IOException {
+        if (connection != null) {
+            connection.disconnect();
+        }
+
+        String serviceUrl = getServerUrl() + getServerContext();
+        StringBuilder urlBuilder = new StringBuilder(serviceUrl);
+        for (String pathSegment : pathSegments) {
+            if (!pathSegment.startsWith("/")) {
+                urlBuilder.append("/");
+            }
+            urlBuilder.append(pathSegment);
+        }
+        URL postUrl = new URL(urlBuilder.toString());
+        connection = (HttpURLConnection)postUrl.openConnection();
+
+        connection.setDoOutput(true);
+        connection.setRequestMethod(method);
+        if (contentType != null) {
+            connection.setRequestProperty("Content-Type", contentType);
+        }
+        connection.setRequestProperty("Accept", MediaType.APPLICATION_JSON);
+        return connection;
+    }
+
+    private void assertJSON( Object expected,
+                             Object actual ) throws JSONException {
+        if (expected instanceof JSONObject) {
+            assert (actual instanceof JSONObject);
+            JSONObject expectedJSON = (JSONObject)expected;
+            JSONObject actualJSON = (JSONObject)actual;
+
+            for (Iterator<?> keyIterator = expectedJSON.keys(); keyIterator.hasNext(); ) {
+                String key = keyIterator.next().toString();
+                assertTrue("Actual JSON object does not contain key: " + key, actualJSON.has(key));
+
+                Object expectedValueAtKey = expectedJSON.get(key);
+                Object actualValueAtKey = actualJSON.get(key);
+
+                if (shouldNotAssertEquality(key)) {
+                    assertNotNull(actualValueAtKey);
+                } else {
+                    assertJSON(expectedValueAtKey, actualValueAtKey);
+                }
+            }
+        } else if (expected instanceof JSONArray) {
+            assert (actual instanceof JSONArray);
+            JSONArray expectedArray = (JSONArray)expected;
+            JSONArray actualArray = (JSONArray)actual;
+            Assert.assertEquals("Arrays don't have the same length ", expectedArray.length(), actualArray.length());
+            for (int i = 0; i < expectedArray.length(); i++) {
+                assertJSON(expectedArray.get(i), actualArray.get(i));
+            }
+        } else {
+            assertEquals("Values don't match", expected.toString(), actual.toString());
+        }
+    }
+
+    private boolean shouldNotAssertEquality( String propertyName ) {
+        for (String propertyToIgnore : JSON_PROPERTIES_IGNORE_EQUALS) {
+            if (propertyName.toLowerCase().contains(propertyToIgnore.toLowerCase())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String responseString( HttpURLConnection connection ) throws IOException {
+        StringBuilder buff = new StringBuilder();
         InputStream stream = connection.getInputStream();
         int bytesRead;
         byte[] bytes = new byte[1024];
@@ -89,861 +606,91 @@ public class JcrResourcesTest {
         return buff.toString();
     }
 
-    @Test
-    public void shouldNotServeContentToUnauthorizedUser() throws Exception {
-
-        final String login = "dnauser";
-        final String password = "invalidpassword";
-
-        Authenticator.setDefault(new Authenticator() {
-            @Override
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(login, password.toCharArray());
-            }
-        });
-
-        HttpURLConnection connection = newConnection("GET", null);
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_UNAUTHORIZED));
-        connection.disconnect();
-
+    protected JSONObject responseObject( HttpURLConnection connection ) throws Exception {
+        return new JSONObject(responseString(connection));
     }
 
-    @Test
-    public void shouldNotServeContentToUserWithoutConnectRole() throws Exception {
-
-        // Configured in pom
-        final String login = "unauthorizeduser";
-        final String password = "password";
-
-        Authenticator.setDefault(new Authenticator() {
-            @Override
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(login, password.toCharArray());
-            }
-        });
-        HttpURLConnection connection = newConnection("GET", null);
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_UNAUTHORIZED));
-        connection.disconnect();
+    protected String getServerContext() {
+        return SERVER_CONTEXT;
     }
 
-    @Test
-    public void shouldServeContentAtRoot() throws Exception {
-        HttpURLConnection connection = newConnection("GET", null);
-
-        String body = getResponseFor(connection);
-
-        JSONObject objFromResponse = new JSONObject(body);
-        JSONObject modeRepository = (JSONObject)objFromResponse.get(REPOSITORY_NAME);
-        JSONObject repository = (JSONObject)modeRepository.get("repository");
-        JSONObject metadata = (JSONObject)repository.get("metadata");
-        JSONObject expected = new JSONObject("{\"" + REPOSITORY_NAME + "\":{\"repository\":{\"name\":\"" + REPOSITORY_NAME
-                                             + "\",\"resources\":{\"workspaces\":\"" + SERVER_CONTEXT + "/" + REPOSITORY_NAME
-                                             + "\"}}}}");
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        if (metadata != null) {
-            // put the metadata inside the expected value ...
-            ((JSONObject)((JSONObject)expected.get(REPOSITORY_NAME)).get("repository")).put("metadata", metadata);
-        }
-        assertThat(objFromResponse.toString(), is(expected.toString()));
-
-        if (metadata != null) {
-            assertThat(metadata.get(Repository.SPEC_NAME_DESC), is((Object)JcrI18n.SPEC_NAME_DESC.text()));
-            assertThat(metadata.get(Repository.SPEC_VERSION_DESC), is((Object)"2.0"));
-            assertThat(metadata.get(Repository.REP_NAME_DESC), is((Object)"ModeShape"));
-            // assertThat(metadata.get(Repository.REP_VENDOR_DESC),is((Object)"JBoss, a division of Red Hat"));
-            assertThat(metadata.get(Repository.REP_VENDOR_URL_DESC), is((Object)"http://www.modeshape.org"));
-            assertThat(metadata.get(Repository.REP_VERSION_DESC).toString().startsWith("3."), is(true));
-            assertThat(metadata.get(Repository.OPTION_VERSIONING_SUPPORTED), is((Object)"true"));
-        }
-        connection.disconnect();
+    protected String getServerUrl() {
+        return SERVER_URL;
     }
 
-    @Test
-    public void shouldServeListOfWorkspacesForValidRepository() throws Exception {
-        HttpURLConnection connection = newConnection("GET", null, REPOSITORY_NAME);
+    protected final class Response {
 
-        String body = getResponseFor(connection);
+        private final HttpURLConnection connection;
 
-        JSONObject objFromResponse = new JSONObject(body);
-        JSONObject expected = new JSONObject("{\"default\":{\"workspace\":{\"name\":\"default\",\"resources\":{\"query\":\""
-                                             + SERVER_CONTEXT + "/" + REPOSITORY_NAME + "/default/query\",\"items\":\""
-                                             + SERVER_CONTEXT + "/" + REPOSITORY_NAME + "/default/items\"}}}}");
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        assertThat(connection.getHeaderField("Content-Type"), is(MediaType.APPLICATION_JSON));
-
-        assertThat(objFromResponse.toString(), is(expected.toString()));
-        connection.disconnect();
-    }
-
-    @Test
-    public void shouldReturnErrorForInvalidRepository() throws Exception {
-        HttpURLConnection connection = newConnection("GET", null, "XXX");
-
-        if (connection.getResponseCode() != HttpURLConnection.HTTP_NOT_FOUND) {
-            fail(connection.getResponseMessage());
-        }
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_NOT_FOUND));
-        assertThat(connection.getHeaderField("Content-Type"), is(MediaType.APPLICATION_JSON));
-        connection.disconnect();
-    }
-
-    @Test
-    public void shouldRetrieveRootNodeForValidRepository() throws Exception {
-        HttpURLConnection connection = newConnection("GET", null, REPOSITORY_NAME, "default/items/");
-
-        JSONObject body = new JSONObject(getResponseFor(connection));
-        assertThat(body.length(), is(2));
-
-        JSONObject properties = body.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-        assertThat(properties.length(), is(2));
-        assertThat(properties.getString("jcr:primaryType"), is("mode:root"));
-        assertThat(properties.get("jcr:uuid"), is(notNullValue()));
-
-        JSONArray children = body.getJSONArray("children");
-        assertThat(children.length(), is(1));
-        assertThat(children.getString(0), is("jcr:system"));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        assertThat(connection.getHeaderField("Content-Type"), is(MediaType.APPLICATION_JSON));
-        connection.disconnect();
-    }
-
-    @Test
-    public void shouldRetrieveRootNodeAndChildrenWhenDepthSet() throws Exception {
-        HttpURLConnection connection = newConnection("GET", null, REPOSITORY_NAME, "default/items?mode:depth=1");
-
-        JSONObject body = new JSONObject(getResponseFor(connection));
-        assertThat(body.length(), is(2));
-
-        JSONObject properties = body.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-        assertThat(properties.length(), is(2));
-        assertThat(properties.getString("jcr:primaryType"), is("mode:root"));
-        assertThat(properties.get("jcr:uuid"), is(notNullValue()));
-
-        JSONObject children = body.getJSONObject("children");
-        assertThat(children.length(), is(1));
-
-        JSONObject system = children.getJSONObject("jcr:system");
-        assertThat(system.length(), is(2));
-
-        properties = system.getJSONObject("properties");
-        assertThat(properties.length(), is(1));
-        assertThat(properties.getString("jcr:primaryType"), is("mode:system"));
-
-        JSONArray namespaces = system.getJSONArray("children");
-        assertThat(namespaces.length(), is(4));
-        assertThat(namespaces.getString(0), is("jcr:nodeTypes"));
-        assertThat(namespaces.getString(1), is("jcr:versionStorage"));
-        assertThat(namespaces.getString(2), is("mode:namespaces"));
-        assertThat(namespaces.getString(3), is("mode:locks"));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        assertThat(connection.getHeaderField("Content-Type"), is(MediaType.APPLICATION_JSON));
-        connection.disconnect();
-    }
-
-    @Test
-    public void shouldRetrieveNodeAndChildrenWhenDepthSet() throws Exception {
-        HttpURLConnection connection = newConnection("GET", null, REPOSITORY_NAME, "default/items/jcr:system?mode:depth=1");
-
-        JSONObject body = new JSONObject(getResponseFor(connection));
-        assertThat(body.length(), is(2));
-
-        JSONObject properties = body.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-        assertThat(properties.length(), is(1));
-        assertThat(properties.getString("jcr:primaryType"), is("mode:system"));
-
-        JSONObject children = body.getJSONObject("children");
-        assertThat(children.length(), is(4));
-
-        JSONObject namespaces = children.getJSONObject("mode:namespaces");
-        assertThat(namespaces.length(), is(2));
-        JSONObject locks = children.getJSONObject("mode:locks");
-        assertThat(locks.length(), is(1));
-        JSONObject versionStorage = children.getJSONObject("jcr:versionStorage");
-        assertThat(versionStorage.length(), is(1));
-
-        properties = namespaces.getJSONObject("properties");
-        assertThat(properties.length(), is(1));
-        assertThat(properties.getString("jcr:primaryType"), is("mode:namespaces"));
-
-        JSONArray namespace = namespaces.getJSONArray("children");
-        String[] expectedNamespaces = new String[] {"mode", "jcr", "nt", "mix", "sv", "xml", "xmlns", "xsi", "xs"};
-        assertThat(namespace.length(), is(expectedNamespaces.length));
-        Set<String> prefixes = new HashSet<String>(namespace.length());
-
-        for (int i = 0; i < namespace.length(); i++) {
-            prefixes.add(namespace.getString(i));
+        private Response( HttpURLConnection connection ) {
+            this.connection = connection;
         }
 
-        for (int i = 0; i < expectedNamespaces.length; i++) {
-            assertTrue(prefixes.contains(expectedNamespaces[i]));
+        private Response hasCode( int responseCode ) throws Exception {
+            assertEquals(responseCode, connection.getResponseCode());
+            return this;
         }
 
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        assertThat(connection.getHeaderField("Content-Type"), is(MediaType.APPLICATION_JSON));
-        connection.disconnect();
-    }
-
-    @Test
-    public void shouldRetrieveNodeTypeFromJcrSystemBranchIncludingSameNameSiblingChildren() throws Exception {
-        HttpURLConnection connection = newConnection("GET", null, REPOSITORY_NAME, "default/items/jcr:system/jcr:nodeTypes/nt:base");
-
-        JSONObject body = new JSONObject(getResponseFor(connection));
-        connection.disconnect();
-
-        JSONArray children = body.getJSONArray("children");
-        assertThat(children.length(), is(2));
-        assertThat(children.getString(0), is("jcr:primaryType"));
-        assertThat(children.getString(1), is("jcr:mixinTypes"));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        assertThat(connection.getHeaderField("Content-Type"), is(MediaType.APPLICATION_JSON));
-    }
-
-    @Test
-    public void shouldRetrieveNodeTypeSubgraphFromJcrSystemBranchIncludingSameNameSiblingChildren() throws Exception {
-        HttpURLConnection connection = newConnection("GET", null, REPOSITORY_NAME, "/default/items/jcr:system/jcr:nodeTypes/nt:base?mode:depth=4");
-
-        JSONObject body = new JSONObject(getResponseFor(connection));
-        connection.disconnect();
-
-        JSONObject children = body.getJSONObject("children");
-        JSONObject propDefn1 = children.getJSONObject("jcr:primaryType");
-        JSONObject propDefn2 = children.getJSONObject("jcr:mixinTypes");
-        assertThat(propDefn1, is(notNullValue()));
-        assertThat(propDefn2, is(notNullValue()));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        assertThat(connection.getHeaderField("Content-Type"), is(MediaType.APPLICATION_JSON));
-    }
-
-    @Test
-    public void shouldNotRetrieveNonExistentNode() throws Exception {
-        HttpURLConnection connection = newConnection("GET", null, REPOSITORY_NAME, "/default/items/foo");
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_NOT_FOUND));
-        assertThat(connection.getHeaderField("Content-Type"), is(MediaType.APPLICATION_JSON));
-
-        connection.disconnect();
-    }
-
-    @Test
-    public void shouldNotRetrieveNonExistentProperty() throws Exception {
-        HttpURLConnection connection = newConnection("GET", null, REPOSITORY_NAME, "/default/items/jcr:system/foobar");
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_NOT_FOUND));
-        assertThat(connection.getHeaderField("Content-Type"), is(MediaType.APPLICATION_JSON));
-
-        connection.disconnect();
-    }
-
-    @Test
-    public void shouldRetrieveProperty() throws Exception {
-        HttpURLConnection connection = newConnection("GET", null, REPOSITORY_NAME, "/default/items/jcr:system/jcr:primaryType");
-
-        String body = getResponseFor(connection);
-        assertThat(body, is("{\"jcr:primaryType\":\"mode:system\"}"));
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        assertThat(connection.getHeaderField("Content-Type"), is(MediaType.APPLICATION_JSON));
-
-        connection.disconnect();
-    }
-
-    @Test
-    public void shouldPostNodeToValidPathWithPrimaryType() throws Exception {
-        HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/nodeA");
-
-        String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\", \"testProperty\": \"testValue\", \"multiValuedProperty\": [\"value1\", \"value2\"]}}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        JSONObject body = new JSONObject(getResponseFor(connection));
-        assertThat(body.length(), is(1));
-
-        JSONObject properties = body.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-        assertThat(properties.length(), is(3));
-        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
-        assertThat(properties.getString("testProperty"), is("testValue"));
-        assertThat(properties.get("multiValuedProperty"), instanceOf(JSONArray.class));
-
-        JSONArray values = properties.getJSONArray("multiValuedProperty");
-        assertThat(values, is(notNullValue()));
-        assertThat(values.length(), is(2));
-        assertThat(values.getString(0), is("value1"));
-        assertThat(values.getString(1), is("value2"));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
-        connection.disconnect();
-    }
-
-    @Test
-    public void shouldPostNodeToValidPathWithoutPrimaryType() throws Exception {
-        HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/noPrimaryType");
-
-        String payload = "{}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        JSONObject body = new JSONObject(getResponseFor(connection));
-        assertThat(body.length(), is(1));
-
-        JSONObject properties = body.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-        assertThat(properties.length(), is(1));
-        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
-        connection.disconnect();
-    }
-
-    @Test
-    public void shouldPostNodeToValidPathWithMixinTypes() throws Exception {
-        HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/withMixinType");
-
-        String payload = "{ \"properties\": {\"jcr:mixinTypes\": \"mix:referenceable\"}}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        JSONObject body = new JSONObject(getResponseFor(connection));
-        assertThat(body.length(), is(1));
-
-        JSONObject properties = body.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-        assertThat(properties.length(), is(3));
-        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
-        assertThat(properties.getString("jcr:uuid"), is(notNullValue()));
-
-        JSONArray values = properties.getJSONArray("jcr:mixinTypes");
-        assertThat(values, is(notNullValue()));
-        assertThat(values.length(), is(1));
-        assertThat(values.getString(0), is("mix:referenceable"));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
-        connection.disconnect();
-
-        // Make sure that we can retrieve the node with a GET
-        connection = newConnection("GET", null, REPOSITORY_NAME, "/default/items/withMixinType");
-        body = new JSONObject(getResponseFor(connection));
-
-        assertThat(body.length(), is(1));
-
-        properties = body.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-        assertThat(properties.length(), is(3));
-        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
-        assertThat(properties.getString("jcr:uuid"), is(notNullValue()));
-
-        values = properties.getJSONArray("jcr:mixinTypes");
-        assertThat(values, is(notNullValue()));
-        assertThat(values.length(), is(1));
-        assertThat(values.getString(0), is("mix:referenceable"));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        connection.disconnect();
-
-    }
-
-    @Test
-    public void shouldNotPostNodeAtInvalidParentPath() throws Exception {
-        HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/foo/bar");
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_BAD_REQUEST));
-        connection.disconnect();
-    }
-
-    @Test
-    public void shouldNotPostNodeWithInvalidPrimaryType() throws Exception {
-        HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/invalidPrimaryType");
-
-        String payload = "{ \"properties\": {\"jcr:primaryType\": \"invalidType\", \"testProperty\": \"testValue\", \"multiValuedProperty\": [\"value1\", \"value2\"]}}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_BAD_REQUEST));
-        connection.disconnect();
-
-        connection = newConnection("GET", null, REPOSITORY_NAME, "/default/items/invalidPrimaryType");
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_NOT_FOUND));
-        connection.disconnect();
-
-    }
-
-    @Test
-    public void shouldPostNodeHierarchy() throws Exception {
-        HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/nestedPost");
-
-        String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\", \"testProperty\": \"testValue\", \"multiValuedProperty\": [\"value1\", \"value2\"]},"
-                         + " \"children\": { \"childNode\" : { \"properties\": {\"nestedProperty\": \"nestedValue\"}}}}";
-
-        connection.getOutputStream().write(payload.getBytes());
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
-        connection.disconnect();
-
-        // Make sure that we can retrieve the node with a GET
-        connection = newConnection("GET", null, REPOSITORY_NAME, "/default/items/nestedPost?mode:depth=1");
-        JSONObject body = new JSONObject(getResponseFor(connection));
-
-        assertThat(body.length(), is(2));
-
-        JSONObject properties = body.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-        assertThat(properties.length(), is(3));
-        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
-        assertThat(properties.getString("testProperty"), is("testValue"));
-        assertThat(properties.get("multiValuedProperty"), instanceOf(JSONArray.class));
-
-        JSONArray values = properties.getJSONArray("multiValuedProperty");
-        assertThat(values, is(notNullValue()));
-        assertThat(values.length(), is(2));
-        assertThat(values.getString(0), is("value1"));
-        assertThat(values.getString(1), is("value2"));
-
-        JSONObject children = body.getJSONObject("children");
-        assertThat(children, is(notNullValue()));
-        assertThat(children.length(), is(1));
-
-        JSONObject child = children.getJSONObject("childNode");
-        assertThat(child, is(notNullValue()));
-        assertThat(child.length(), is(1));
-
-        properties = child.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-        assertThat(properties.length(), is(2));
-        // Parent primary type is nt:unstructured, so this should default to nt:unstructured primary type
-        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
-        assertThat(properties.getString("nestedProperty"), is("nestedValue"));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        connection.disconnect();
-
-    }
-
-    @Test
-    public void shouldFailWholeTransactionIfOneNodeIsBad() throws Exception {
-        HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/invalidNestedPost");
-
-        String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\", \"testProperty\": \"testValue\", \"multiValuedProperty\": [\"value1\", \"value2\"]},"
-                         + " \"children\": { \"childNode\" : { \"properties\": {\"jcr:primaryType\": \"invalidType\"}}}}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_BAD_REQUEST));
-        connection.disconnect();
-
-        // Make sure that we can retrieve the node with a GET
-        connection = newConnection("GET", null, REPOSITORY_NAME, "/default/items/invalidNestedPost?mode:depth=1");
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_NOT_FOUND));
-        connection.disconnect();
-
-    }
-
-    @Test
-    public void shouldNotDeleteNonExistentItem() throws Exception {
-        HttpURLConnection connection = newConnection("DELETE", null, REPOSITORY_NAME, "/default/items/invalidItemForDelete");
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_NOT_FOUND));
-        connection.disconnect();
-    }
-
-    @Test
-    public void shouldDeleteExistingNode() throws Exception {
-
-        // Create the node
-        HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/nodeForDeletion");
-
-        String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\", \"testProperty\": \"testValue\", \"multiValuedProperty\": [\"value1\", \"value2\"]}}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        JSONObject body = new JSONObject(getResponseFor(connection));
-        assertThat(body.length(), is(1));
-
-        JSONObject properties = body.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-        assertThat(properties.length(), is(3));
-        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
-        assertThat(properties.getString("testProperty"), is("testValue"));
-        assertThat(properties.get("multiValuedProperty"), instanceOf(JSONArray.class));
-
-        JSONArray values = properties.getJSONArray("multiValuedProperty");
-        assertThat(values, is(notNullValue()));
-        assertThat(values.length(), is(2));
-        assertThat(values.getString(0), is("value1"));
-        assertThat(values.getString(1), is("value2"));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
-        connection.disconnect();
-
-        // Confirm that it exists
-        connection = newConnection("GET", null, REPOSITORY_NAME, "/default/items/nodeForDeletion");
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        connection.disconnect();
-
-        // Delete the node
-        connection = newConnection("DELETE", null, REPOSITORY_NAME, "/default/items/nodeForDeletion");
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_NO_CONTENT));
-        connection.disconnect();
-
-        // Confirm that it no longer exists
-        connection = newConnection("GET", null, REPOSITORY_NAME, "/default/items/nodeForDeletion");
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_NOT_FOUND));
-        connection.disconnect();
-    }
-
-    @Test
-    public void shouldDeleteExistantProperty() throws Exception {
-        HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/propertyForDeletion");
-
-        String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\", \"testProperty\": \"testValue\", \"multiValuedProperty\": [\"value1\", \"value2\"]}}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
-        connection.disconnect();
-
-        // Confirm that it exists
-        connection = newConnection("GET", null, REPOSITORY_NAME, "/default/items/propertyForDeletion");
-
-        JSONObject body = new JSONObject(getResponseFor(connection));
-        assertThat(body.length(), is(1));
-
-        JSONObject properties = body.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-        assertThat(properties.length(), is(3));
-        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
-        assertThat(properties.getString("testProperty"), is("testValue"));
-        assertThat(properties.get("multiValuedProperty"), instanceOf(JSONArray.class));
-
-        JSONArray values = properties.getJSONArray("multiValuedProperty");
-        assertThat(values, is(notNullValue()));
-        assertThat(values.length(), is(2));
-        assertThat(values.getString(0), is("value1"));
-        assertThat(values.getString(1), is("value2"));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        connection.disconnect();
-
-        // Delete the property
-        connection = newConnection("DELETE", null, REPOSITORY_NAME, "/default/items/propertyForDeletion/multiValuedProperty");
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_NO_CONTENT));
-        connection.disconnect();
-
-        // Confirm that it no longer exists
-        connection = newConnection("GET", null, REPOSITORY_NAME, "/default/items/propertyForDeletion");
-        body = new JSONObject(getResponseFor(connection));
-        assertThat(body.length(), is(1));
-
-        properties = body.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-        assertThat(properties.length(), is(2));
-        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
-        assertThat(properties.getString("testProperty"), is("testValue"));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        connection.disconnect();
-
-    }
-
-    @Test
-    public void shouldNotBeAbleToPutAtInvalidPath() throws Exception {
-        HttpURLConnection connection = newConnection("PUT", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/nonexistantNode");
-
-        String payload = "{ \"firstProperty\": \"someValue\" }";
-        connection.getOutputStream().write(payload.getBytes());
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_NOT_FOUND));
-        connection.disconnect();
-    }
-
-    @Test
-    public void shouldBeAbleToPutValueToProperty() throws Exception {
-        HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/nodeForPutProperty");
-
-        String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\", \"testProperty\": \"testValue\" }}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
-        connection.disconnect();
-
-        connection = newConnection("PUT", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/nodeForPutProperty/testProperty");
-
-        payload = "{\"testProperty\":\"someOtherValue\"}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        JSONObject body = new JSONObject(getResponseFor(connection));
-        assertThat(body.length(), is(1));
-
-        JSONObject properties = body.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-        assertThat(properties.length(), is(2));
-        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
-        assertThat(properties.getString("testProperty"), is("someOtherValue"));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        connection.disconnect();
-
-    }
-
-    @Test
-    public void shouldBeAbleToPutBinaryValueToProperty() throws Exception {
-        HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/nodeForPutBinaryProperty");
-
-        // Base64-encode a value ...
-        String encodedValue = Base64.encodeBytes("propertyValue".getBytes("UTF-8"));
-
-        String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\", \"testProperty/base64/\": \""
-                         + encodedValue + "\" }}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
-        connection.disconnect();
-
-        connection = newConnection("PUT", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/nodeForPutBinaryProperty/testProperty");
-
-        String otherValue = "someOtherValue";
-        payload = "{\"testProperty/base64/\":\"" + Base64.encodeBytes(otherValue.getBytes("UTF-8")) + "\"}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        JSONObject body = new JSONObject(getResponseFor(connection));
-        assertThat(body.length(), is(1));
-
-        JSONObject properties = body.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-        assertThat(properties.length(), is(2));
-        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
-        String responseEncodedValue = properties.getString("testProperty/base64/");
-        String decodedValue = new String(Base64.decode(responseEncodedValue), "UTF-8");
-        assertThat(decodedValue, is(otherValue));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        connection.disconnect();
-
-        // Try putting a non-binary value ...
-        connection = newConnection("PUT", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/nodeForPutBinaryProperty/testProperty");
-
-        String anotherValue = "yetAnotherValue";
-        payload = "{\"testProperty\":\"" + anotherValue + "\",\"otherProp\" : \"" + anotherValue + "\" }";
-        connection.getOutputStream().write(payload.getBytes());
-
-        body = new JSONObject(getResponseFor(connection));
-        assertThat(body.length(), is(1));
-
-        properties = body.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-        assertThat(properties.length(), is(2));
-        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
-        responseEncodedValue = properties.getString("testProperty/base64/");
-        decodedValue = new String(Base64.decode(responseEncodedValue), "UTF-8");
-        assertThat(decodedValue, is(anotherValue));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        connection.disconnect();
-    }
-
-    @Test
-    public void shouldBeAbleToPutPropertiesToNode() throws Exception {
-        HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/nodeForPutProperties");
-
-        String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\" }}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
-        connection.disconnect();
-
-        connection = newConnection("PUT", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/nodeForPutProperties");
-        payload = "{\"testProperty\": \"testValue\", \"multiValuedProperty\": [\"value1\", \"value2\"]}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        JSONObject body = new JSONObject(getResponseFor(connection));
-        assertThat(body.length(), is(1));
-
-        JSONObject properties = body.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-        assertThat(properties.length(), is(3));
-        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
-        assertThat(properties.getString("testProperty"), is("testValue"));
-        assertThat(properties.get("multiValuedProperty"), instanceOf(JSONArray.class));
-
-        JSONArray values = properties.getJSONArray("multiValuedProperty");
-        assertThat(values, is(notNullValue()));
-        assertThat(values.length(), is(2));
-        assertThat(values.getString(0), is("value1"));
-        assertThat(values.getString(1), is("value2"));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        connection.disconnect();
-
-    }
-
-    @Test
-    public void shouldBeAbleToAddAndRemoveMixinTypes() throws Exception {
-        HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/nodeWithNoMixins");
-
-        String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\" }}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
-        connection.disconnect();
-
-        connection = newConnection("PUT", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/nodeWithNoMixins");
-
-        payload = "{\"jcr:mixinTypes\": \"mix:referenceable\"}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        JSONObject body = new JSONObject(getResponseFor(connection));
-        assertThat(body.length(), is(1));
-
-        JSONObject properties = body.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-
-        assertThat(properties.length(), is(3));
-        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
-        JSONArray mixinTypes = properties.getJSONArray("jcr:mixinTypes");
-        assertThat(mixinTypes, is(notNullValue()));
-        assertThat(mixinTypes.length(), is(1));
-        assertThat(mixinTypes.getString(0), is("mix:referenceable"));
-        assertThat(properties.getString("jcr:uuid"), is(notNullValue()));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        connection.disconnect();
-
-        connection = newConnection("PUT", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items/nodeWithNoMixins");
-
-        payload = "{\"jcr:mixinTypes\": []}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        body = new JSONObject(getResponseFor(connection));
-        assertThat(body.length(), is(1));
-
-        properties = body.getJSONObject("properties");
-        assertThat(properties, is(notNullValue()));
-        assertThat(properties.length(), is(2));
-        assertThat(properties.getString("jcr:primaryType"), is("nt:unstructured"));
-
-        // removeMixin doesn't currently null out this value
-        mixinTypes = properties.getJSONArray("jcr:mixinTypes");
-        assertThat(mixinTypes, is(notNullValue()));
-        assertThat(mixinTypes.length(), is(0));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        connection.disconnect();
-
-    }
-
-    @Test
-    public void shouldRetrieveDataFromXPathQuery() throws Exception {
-        final String NODE_PATH = "/nodeForQuery";
-        HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items", NODE_PATH);
-
-        String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\" }}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
-        connection.disconnect();
-
-        connection = newConnection("POST", "application/jcr+xpath", REPOSITORY_NAME, "/default/query");
-        payload = "//nodeForQuery";
-        connection.getOutputStream().write(payload.getBytes());
-        JSONObject queryResult = new JSONObject(getResponseFor(connection));
-        JSONArray results = (JSONArray)queryResult.get("rows");
-
-        assertThat(results.length(), is(1));
-
-        JSONObject result = (JSONObject)results.get(0);
-        assertThat(result, is(notNullValue()));
-        assertThat((String)result.get("jcr:path"), is(NODE_PATH));
-        assertThat((String)result.get("jcr:primaryType"), is("nt:unstructured"));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        assertThat(connection.getHeaderField("Content-Type"), is(MediaType.APPLICATION_JSON));
-
-    }
-
-    private void createNode( String path,
-                             int index ) throws Exception {
-        HttpURLConnection connection = newConnection("POST", MediaType.APPLICATION_JSON, REPOSITORY_NAME, "/default/items", path);
-        String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\", \"foo\": \"" + index + "\" }}";
-        connection.getOutputStream().write(payload.getBytes());
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
-
-        connection.disconnect();
-    }
-
-    @Test
-    public void shouldRespectQueryOffsetAndLimit() throws Exception {
-        final String NODE_PATH = "nodeForOffsetAndLimitTest";
-
-        createNode("/" + NODE_PATH, 1);
-        createNode("/" + NODE_PATH, 2);
-        createNode("/" + NODE_PATH, 3);
-        createNode("/" + NODE_PATH, 4);
-
-        HttpURLConnection connection = newConnection("POST", "application/jcr+xpath", REPOSITORY_NAME, "/default/query?offset=1&limit=2");
-        String payload = "//element(" + NODE_PATH + ") order by @foo";
-
-        connection.getOutputStream().write(payload.getBytes());
-        JSONObject queryResult = new JSONObject(getResponseFor(connection));
-        JSONArray results = (JSONArray)queryResult.get("rows");
-
-        assertThat(results.length(), is(2));
-
-        JSONObject result = (JSONObject)results.get(0);
-        assertThat(result, is(notNullValue()));
-        assertThat((String)result.get("jcr:path"), is("/" + NODE_PATH + "[2]"));
-
-        result = (JSONObject)results.get(1);
-        assertThat(result, is(notNullValue()));
-        assertThat((String)result.get("jcr:path"), is("/" + NODE_PATH + "[3]"));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        assertThat(connection.getHeaderField("Content-Type"), is(MediaType.APPLICATION_JSON));
-    }
-
-    @Test
-    public void shouldAllowJcrSql2Query() throws Exception {
-        final String NODE_PATH = "nodeForJcrSql2QueryTest";
-
-        createNode("/" + NODE_PATH, 1);
-
-        createNode("/" + NODE_PATH + "/child", 1);
-        createNode("/" + NODE_PATH + "/child", 2);
-        createNode("/" + NODE_PATH + "/child", 3);
-        createNode("/" + NODE_PATH + "/child", 4);
-
-        HttpURLConnection connection = newConnection("POST", "application/jcr+sql2", REPOSITORY_NAME, "/default/query");
-        String payload = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/" + NODE_PATH + "')";
-
-        connection.getOutputStream().write(payload.getBytes());
-        JSONObject queryResult = new JSONObject(getResponseFor(connection));
-        JSONArray results = (JSONArray)queryResult.get("rows");
-
-        assertThat(results.length(), is(4));
-
-        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
-        assertThat(connection.getHeaderField("Content-Type"), is(MediaType.APPLICATION_JSON));
-    }
-
-    private HttpURLConnection newConnection(String method, String contentType, String...pathSegments) throws IOException {
-        StringBuilder urlBuilder = new StringBuilder(SERVER_URL);
-        for (String pathSegment : pathSegments) {
-            if (!pathSegment.startsWith("/")) {
-                urlBuilder.append("/");
-            }
-            urlBuilder.append(pathSegment);
+        private Response hasHeader( String name,
+                                    String value ) {
+            assertEquals(value, connection.getHeaderField(name));
+            return this;
         }
-        URL postUrl = new URL(urlBuilder.toString());
-        HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
 
-        connection.setDoOutput(true);
-        connection.setRequestMethod(method);
-        if (contentType != null) {
-            connection.setRequestProperty("Content-Type", contentType);
+        private Response submit() throws IOException {
+            //just trigger the request, ignore the result
+            connection.getResponseCode();
+            return this;
         }
-        connection.setRequestProperty("Accept", MediaType.APPLICATION_JSON);
-        return connection;
+
+        protected Response isOk() throws Exception {
+            return hasCode(HttpURLConnection.HTTP_OK);
+        }
+
+        protected Response isCreated() throws Exception {
+            return hasCode(HttpURLConnection.HTTP_CREATED);
+        }
+
+        protected Response isDeleted() throws Exception {
+            return hasCode(HttpURLConnection.HTTP_NO_CONTENT);
+        }
+
+        protected Response isNotFound() throws Exception {
+            return hasCode(HttpURLConnection.HTTP_NOT_FOUND);
+        }
+
+        protected Response isUnauthorized() throws Exception {
+            return hasCode(HttpURLConnection.HTTP_UNAUTHORIZED);
+        }
+
+        protected Response isBadRequest() throws Exception {
+            return hasCode(HttpURLConnection.HTTP_BAD_REQUEST);
+        }
+
+        protected Response isJSON() throws Exception {
+            return hasHeader("Content-Type", MediaType.APPLICATION_JSON);
+        }
+
+        protected Response hasBodyLikeFile( String pathToExpectedJSON ) throws Exception {
+            isJSON();
+            String expectedJSONString = IoUtil.read(getClass().getClassLoader().getResourceAsStream(pathToExpectedJSON));
+            JSONObject expectedObject = new JSONObject(expectedJSONString);
+
+            JSONObject responseObject = bodyJSON();
+            assertJSON(expectedObject, responseObject);
+
+            return this;
+        }
+
+        protected Response hasBodyLikeObject( JSONObject expectedObject ) throws Exception {
+            isJSON();
+            JSONObject body = bodyJSON();
+            assertJSON(expectedObject, body);
+            return this;
+        }
+
+        protected JSONObject bodyJSON() throws Exception {
+            return responseObject(connection);
+        }
     }
 }

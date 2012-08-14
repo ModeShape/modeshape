@@ -1,0 +1,20 @@
+{
+    "types":{
+        "jcr:path":"STRING",
+        "jcr:score":"DOUBLE",
+        "foo":"STRING"
+    },
+    "rows":[
+        {
+            "jcr:path":"/testNode/child[2]",
+            "jcr:score":"0.8575897812843323",
+            "foo":"value"
+        },
+        {
+            "jcr:path":"/testNode/child[3]",
+            "jcr:score":"0.8575897812843323",
+            "foo":"value"
+        }
+    ]
+}
+

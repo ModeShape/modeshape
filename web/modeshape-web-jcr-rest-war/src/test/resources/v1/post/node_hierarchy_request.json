@@ -1,0 +1,13 @@
+{ "properties":{
+    "jcr:primaryType":"nt:unstructured",
+    "testProperty":"testValue",
+    "multiValuedProperty":["value1", "value2"]
+    },
+    "children":{
+        "childNode":{
+            "properties":{
+                "nestedProperty":"nestedValue"
+            }
+        }
+    }
+}

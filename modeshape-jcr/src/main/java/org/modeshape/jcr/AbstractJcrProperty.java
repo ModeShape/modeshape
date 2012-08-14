@@ -359,28 +359,30 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
             if (isMultiple()) {
                 sb.append('[');
                 Iterator<?> iter = property.iterator();
-                if (iter.hasNext()) {
+                while (iter.hasNext()) {
                     Object value = iter.next();
-                    if (value instanceof javax.jcr.Binary) {
-                        sb.append("**binary-value-not-shown**");
-                    } else {
-                        sb.append(stringFactory.create(value));
-                    }
+                    appendValueToString(stringFactory, sb, value);
                     if (iter.hasNext()) sb.append(',');
                 }
                 sb.append(']');
             } else {
                 Object value = property.getFirstValue();
-                if (value instanceof javax.jcr.Binary) {
-                    sb.append("**binary-value-not-shown**");
-                } else {
-                    sb.append(stringFactory.create(value));
-                }
+                appendValueToString(stringFactory, sb, value);
             }
         } catch (RepositoryException e) {
             // The node likely does not exist ...
-            sb.append(" on deleted node " + node.key());
+            sb.append(" on deleted node ").append(node.key());
         }
         return sb.toString();
+    }
+
+    private void appendValueToString( ValueFactory<String> stringFactory,
+                                      StringBuilder sb,
+                                      Object value ) {
+        if (value instanceof javax.jcr.Binary) {
+            sb.append("**binary-value-not-shown**");
+        } else {
+            sb.append(stringFactory.create(value));
+        }
     }
 }

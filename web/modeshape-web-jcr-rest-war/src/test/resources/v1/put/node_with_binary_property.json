@@ -1,0 +1,7 @@
+{
+    "properties":{
+        "jcr:primaryType":"nt:unstructured",
+        "testProperty/base64/":"dGVzdFZhbHVl",
+        "multiValuedProperty":["value1", "value2"]
+    }
+}

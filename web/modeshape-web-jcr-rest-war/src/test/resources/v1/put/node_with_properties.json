@@ -1,0 +1,6 @@
+{
+    "properties":{
+        "jcr:primaryType":"nt:unstructured",
+        "testProperty":"testValue"
+    }
+}

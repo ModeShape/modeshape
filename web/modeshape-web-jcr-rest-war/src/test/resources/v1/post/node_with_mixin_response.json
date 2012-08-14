@@ -1,0 +1,5 @@
+{"properties":{
+    "jcr:primaryType":"nt:unstructured",
+    "jcr:mixinTypes":["mix:referenceable"],
+    "jcr:uuid":"41e666ff-0997-4ee0-9eb8-b41319f9f403"
+}}

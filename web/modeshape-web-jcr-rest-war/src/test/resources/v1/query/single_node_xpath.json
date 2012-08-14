@@ -1,0 +1,15 @@
+{
+    "types":{
+        "jcr:path":"STRING",
+        "jcr:score":"DOUBLE",
+        "jcr:primaryType":"STRING"
+    },
+    "rows":[
+        {
+            "jcr:path":"/testNode",
+            "jcr:score":"1.1125043630599976",
+            "jcr:primaryType":"nt:unstructured"
+        }
+    ]
+}
+
