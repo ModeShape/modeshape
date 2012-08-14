@@ -63,7 +63,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * @author Horia Chiorean
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
 @Immutable
 @Path( "/" )
@@ -176,7 +176,8 @@ public final class ModeShapeRestService {
      * @see JcrResources#postItem(javax.servlet.http.HttpServletRequest, String, String, String, String, String)
      */
     @POST
-    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME + "/{path:.*}" )
+    @Consumes( MediaType.APPLICATION_JSON )
+    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME + "{path:.+}" )
     @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN, MediaType.TEXT_HTML } )
     public Response postItem( @Context HttpServletRequest request,
                               @PathParam( "repositoryName" ) String rawRepositoryName,
@@ -188,6 +189,7 @@ public final class ModeShapeRestService {
     }
 
     @POST
+    @Consumes( MediaType.APPLICATION_JSON )
     @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME )
     @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN, MediaType.TEXT_HTML } )
     public Response postItems( @Context HttpServletRequest request,
@@ -202,7 +204,7 @@ public final class ModeShapeRestService {
      * @see JcrResources#deleteItem(javax.servlet.http.HttpServletRequest, String, String, String)
      */
     @DELETE
-    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME + "/{path:.*}" )
+    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME + "{path:.+}" )
     public Response deleteItem( @Context HttpServletRequest request,
                                 @PathParam( "repositoryName" ) String rawRepositoryName,
                                 @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -213,6 +215,7 @@ public final class ModeShapeRestService {
     }
 
     @DELETE
+    @Consumes( MediaType.APPLICATION_JSON )
     @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME )
     public Response deleteItems( @Context HttpServletRequest request,
                                  @PathParam( "repositoryName" ) String rawRepositoryName,
@@ -226,7 +229,7 @@ public final class ModeShapeRestService {
      * @see JcrResources#putItem(javax.servlet.http.HttpServletRequest, String, String, String, String)
      */
     @PUT
-    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME + "/{path:.*}" )
+    @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME + "{path:.+}" )
     @Consumes( MediaType.APPLICATION_JSON )
     @Produces( { MediaType.APPLICATION_JSON, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN } )
     public RestItem putItem( @Context HttpServletRequest request,

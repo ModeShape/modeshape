@@ -1,0 +1,6 @@
+{
+    "jcr:primaryType":"{http://www.modeshape.org/1.0}system",
+    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:primaryType",
+    "up":"http://localhost:8090/resources/repo/default/items/jcr:system"
+}
+

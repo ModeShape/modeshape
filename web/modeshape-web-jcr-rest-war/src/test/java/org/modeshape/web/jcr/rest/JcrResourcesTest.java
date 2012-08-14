@@ -35,6 +35,8 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.util.IoUtil;
+import sun.net.www.protocol.http.AuthCacheImpl;
+import sun.net.www.protocol.http.AuthCacheValue;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -77,6 +79,8 @@ public class JcrResourcesTest {
 
     private void setDefaultAuthenticator( final String username,
                                           final String password ) {
+        //the next line is a workaround for: http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6626700
+        AuthCacheValue.setAuthCache(new AuthCacheImpl());
         Authenticator.setDefault(new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
@@ -142,13 +146,13 @@ public class JcrResourcesTest {
     }
 
     @Test
-    public void shouldRetrieveRoottestNodendChildrenWhenDepthSet() throws Exception {
+    public void shouldRetrieveRootNodeWhenDepthSet() throws Exception {
         //http://localhost:8090/resources/v1/repo/default/items?depth=1
         doGet(itemsUrl() + "?depth=1").isOk().hasBodyLikeFile(rootNodeDepthOne());
     }
 
     @Test
-    public void shouldRetrieveRoottestNodendChildrenWhenDeprecatedDepthSet() throws Exception {
+    public void shouldRetrieveRootNodeWhenDeprecatedDepthSet() throws Exception {
         //http://localhost:8090/resources/v1/repo/default/items?mode:depth=1
         doGet(itemsUrl() + "?mode:depth=1").isOk().hasBodyLikeFile(rootNodeDepthOne());
     }
@@ -158,7 +162,7 @@ public class JcrResourcesTest {
     }
 
     @Test
-    public void shouldRetrieveSystemtestNodendChildrenWithDepthOne() throws Exception {
+    public void shouldRetrieveSystemNodeWithDepthOne() throws Exception {
         //http://localhost:8090/resources/v1/repo/default/items/jcr:system?depth=1
         doGet(itemsUrl("jcr:system") + "?depth=1").isOk().hasBodyLikeFile(systemNodeDepthOne());
     }
@@ -254,9 +258,9 @@ public class JcrResourcesTest {
     }
 
     @Test
-    public void shouldNotPosttestNodetInvalidParentPath() throws Exception {
+    public void shouldNotPostNodeWithInvalidParentPath() throws Exception {
         //http://localhost:8090/resources/v1/repo/default/items/foo/bar
-        doPost(null, itemsUrl("foo/bar")).isBadRequest();
+        doPost(nodeWithoutPrimaryTypeRequest(), itemsUrl("foo/bar")).isNotFound();
     }
 
     @Test
@@ -404,7 +408,7 @@ public class JcrResourcesTest {
         //http://localhost:8090/resources/v1/repo/default/items/testNode
         doPost(nodeWithProperties(), itemsUrl(TEST_NODE)).isCreated();
         doPut(addMixin(), itemsUrl(TEST_NODE)).isOk().hasBodyLikeFile(nodeWithMixin());
-        doPut(removeMixins(), itemsUrl(TEST_NODE)).isOk().hasBodyLikeFile(nodeWithProperties());
+        doPut(removeMixins(), itemsUrl(TEST_NODE)).isOk().hasBodyLikeFile(nodeWithoutMixins());
     }
 
     protected String addMixin() {
@@ -417,6 +421,10 @@ public class JcrResourcesTest {
 
     protected String nodeWithMixin() {
         return "v1/put/node_with_mixin.json";
+    }
+
+    protected String nodeWithoutMixins() {
+        return "v1/put/node_with_properties.json";
     }
 
     @Test
@@ -461,7 +469,7 @@ public class JcrResourcesTest {
         jcrSQL2Query(query, queryUrl()).isOk().isJSON().hasBodyLikeFile(jcrSQL2Result());
     }
 
-    protected String jcrSQL2Result() throws Exception {
+    protected String jcrSQL2Result() {
         return "v1/query/query_result_jcrSql2.json";
     }
 

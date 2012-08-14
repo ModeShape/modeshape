@@ -1,0 +1,12 @@
+{
+    "self":"http://localhost:8090/resources/repo/default/items/",
+    "up":"http://localhost:8090/resources/repo",
+    "jcr:primaryType":"{http://www.modeshape.org/1.0}root",
+    "jcr:uuid":"32a6fcb7505d64/",
+    "children":{
+        "jcr:system":{
+            "self":"http://localhost:8090/resources/repo/default/items/jcr:system",
+            "up":"http://localhost:8090/resources/repo/default/items/"
+        }
+    }
+}

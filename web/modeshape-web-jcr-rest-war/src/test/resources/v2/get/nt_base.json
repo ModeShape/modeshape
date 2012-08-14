@@ -1,0 +1,21 @@
+{
+    "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base",
+    "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes",
+    "jcr:primaryType":"{http://www.jcp.org/jcr/nt/1.0}nodeType",
+    "jcr:nodeTypeName":"{http://www.jcp.org/jcr/nt/1.0}base",
+    "jcr:isAbstract":"true",
+    "jcr:hasOrderableChildNodes":"false",
+    "jcr:isQueryable":"true",
+    "jcr:isMixin":"false",
+    "children":{
+        "jcr:primaryType":{
+            "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base/jcr:primaryType",
+            "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base"
+        },
+        "jcr:mixinTypes":{
+            "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base/jcr:mixinTypes",
+            "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base"
+        }
+    }
+}
+

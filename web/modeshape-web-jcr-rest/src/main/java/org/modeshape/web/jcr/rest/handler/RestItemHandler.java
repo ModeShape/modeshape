@@ -96,6 +96,19 @@ public class RestItemHandler extends ItemHandler {
         return Response.status(Response.Status.CREATED).entity(restNewNode).build();
     }
 
+    @Override
+    protected JSONObject getProperties( JSONObject jsonNode ) throws JSONException {
+        JSONObject properties = new JSONObject();
+        for (Iterator<?> keysIterator = jsonNode.keys(); keysIterator.hasNext(); ) {
+            String key = keysIterator.next().toString();
+            if (CHILD_NODE_HOLDER.equalsIgnoreCase(key)) {
+                continue;
+            }
+            properties.put(key, jsonNode.get(key));
+        }
+        return properties;
+    }
+
     private String newNodeName( String path ) {
         int lastSlashInd = path.lastIndexOf('/');
         return lastSlashInd == -1 ? path : path.substring(lastSlashInd + 1);
@@ -103,7 +116,12 @@ public class RestItemHandler extends ItemHandler {
 
     private String parentPath( String path ) {
         int lastSlashInd = path.lastIndexOf('/');
-        return lastSlashInd == -1 ? "/" : "/" + path.substring(0, lastSlashInd);
+        if (lastSlashInd == -1) {
+            return "/";
+        } else {
+            String subPath = path.substring(0, lastSlashInd);
+            return subPath.startsWith("/") ? subPath : "/" + subPath;
+        }
     }
 
     /**

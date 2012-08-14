@@ -1,0 +1,13 @@
+{
+    "workspaces":[
+        {
+            "name":"default",
+            "repository":"http://localhost:8090/resources/repo",
+            "items":"http://localhost:8090/resources/repo/default/items",
+            "query":"http://localhost:8090/resources/repo/default/query",
+            "binary":"http://localhost:8090/resources/repo/default/binary",
+            "nodeTypes":"http://localhost:8090/resources/repo/default/nodetypes"
+        }
+    ]
+}
+

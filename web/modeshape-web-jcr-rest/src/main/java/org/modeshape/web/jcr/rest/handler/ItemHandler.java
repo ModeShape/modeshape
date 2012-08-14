@@ -311,7 +311,7 @@ public class ItemHandler extends AbstractHandler {
                             JSONObject jsonNode ) throws RepositoryException, JSONException {
         Node newNode;
 
-        JSONObject properties = jsonNode.has(PROPERTIES_HOLDER) ? jsonNode.getJSONObject(PROPERTIES_HOLDER) : new JSONObject();
+        JSONObject properties = getProperties(jsonNode);
 
         if (properties.has(PRIMARY_TYPE_PROPERTY)) {
             String primaryType = properties.getString(PRIMARY_TYPE_PROPERTY);
@@ -329,8 +329,8 @@ public class ItemHandler extends AbstractHandler {
             setPropertyOnNode(newNode, key, properties.get(key));
         }
 
-        if (jsonNode.has(CHILD_NODE_HOLDER)) {
-            JSONObject children = jsonNode.getJSONObject(CHILD_NODE_HOLDER);
+        if (hasChildren(jsonNode)) {
+            JSONObject children = getChildren(jsonNode);
 
             for (Iterator<?> iter = children.keys(); iter.hasNext(); ) {
                 String childName = (String)iter.next();
@@ -341,6 +341,18 @@ public class ItemHandler extends AbstractHandler {
         }
 
         return newNode;
+    }
+
+    protected JSONObject getChildren( JSONObject jsonNode ) throws JSONException {
+        return jsonNode.getJSONObject(CHILD_NODE_HOLDER);
+    }
+
+    protected boolean hasChildren( JSONObject jsonNode ) {
+        return jsonNode.has(CHILD_NODE_HOLDER);
+    }
+
+    protected JSONObject getProperties( JSONObject jsonNode ) throws JSONException {
+        return jsonNode.has(PROPERTIES_HOLDER) ? jsonNode.getJSONObject(PROPERTIES_HOLDER) : new JSONObject();
     }
 
     private Value decodeValue( String encodedValue,
@@ -604,9 +616,9 @@ public class ItemHandler extends AbstractHandler {
         }
 
         // If the JSON object has a children holder, then we need to update the list of children and child nodes ...
-        if (jsonNode.has(CHILD_NODE_HOLDER)) {
+        if (hasChildren(jsonNode)) {
             Node parent = node;
-            JSONObject children = jsonNode.getJSONObject(CHILD_NODE_HOLDER);
+            JSONObject children = getChildren(jsonNode);
 
             // Get the existing children ...
             Map<String, Node> existingChildNames = new LinkedHashMap<String, Node>();
