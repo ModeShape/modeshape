@@ -205,7 +205,7 @@ public final class RestItemHandler extends ItemHandler {
             return Response.ok().build();
         }
         Session session = getSession(request, repositoryName, workspaceName);
-        Map<String, JSONObject> nodesByPath = createNodesByPathMap(requestBody);
+        TreeMap<String, JSONObject> nodesByPath = createNodesByPathMap(requestBody);
         List<RestItem> result = updateMultipleNodes(request, session, nodesByPath);
         return createOkResponse(result);
     }
@@ -228,7 +228,7 @@ public final class RestItemHandler extends ItemHandler {
         Session session = getSession(request, repositoryName, workspaceName);
         TreeSet<String> pathsInOrder = new TreeSet<String>();
         for (int i = 0; i < requestArray.length(); i++) {
-            pathsInOrder.add(requestArray.get(i).toString());
+            pathsInOrder.add(absPath(requestArray.get(i).toString()));
         }
         List<String> pathsInOrderList = new ArrayList<String>(pathsInOrder);
         Collections.reverse(pathsInOrderList);
@@ -240,12 +240,12 @@ public final class RestItemHandler extends ItemHandler {
             }
         }
         session.save();
-        return Response.status(Response.Status.NO_CONTENT).build();
+        return Response.ok().build();
     }
 
     private List<RestItem> updateMultipleNodes( HttpServletRequest request,
                                                 Session session,
-                                                Map<String, JSONObject> nodesByPath ) throws RepositoryException, JSONException {
+                                                TreeMap<String, JSONObject> nodesByPath ) throws RepositoryException, JSONException {
         List<RestItem> result = new ArrayList<RestItem>();
         for (String nodePath : nodesByPath.keySet()) {
             Item item = session.getItem(nodePath);
@@ -259,8 +259,9 @@ public final class RestItemHandler extends ItemHandler {
     private TreeMap<String, JSONObject> createNodesByPathMap(JSONObject requestBodyJSON) throws JSONException {
         TreeMap<String, JSONObject> nodesByPath = new TreeMap<String, JSONObject>();
         for (Iterator<?> iterator = requestBodyJSON.keys(); iterator.hasNext(); ) {
-            String nodePath = iterator.next().toString();
-            JSONObject nodeJSON = requestBodyJSON.getJSONObject(nodePath);
+            String key = iterator.next().toString();
+            String nodePath = absPath(key);
+            JSONObject nodeJSON = requestBodyJSON.getJSONObject(key);
             nodesByPath.put(nodePath, nodeJSON);
         }
         return nodesByPath;

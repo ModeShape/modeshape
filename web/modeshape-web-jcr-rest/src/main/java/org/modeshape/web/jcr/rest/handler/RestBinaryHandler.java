@@ -42,14 +42,15 @@ import java.io.InputStream;
 /**
  * Class which handles incoming requests related to {@link Binary binary values}
  *
- * @author Horia Chiorean (hchiorea@redhat.com)
+ * @author Horia Chiorean
  */
 public final class RestBinaryHandler extends AbstractHandler {
 
     /**
      * The default content disposition prefix, used when serving binary content.
      */
-    private static final String DEFAULT_CONTENT_DISPOSITION_PREFIX = "attachment;filename=";
+    public static final String DEFAULT_CONTENT_DISPOSITION_PREFIX = "attachment;filename=";
+    private static final String DEFAULT_MIME_TYPE = MediaType.APPLICATION_OCTET_STREAM;
 
     /**
      * Returns a binary {@link Property} for the given repository, workspace and path.
@@ -97,10 +98,10 @@ public final class RestBinaryHandler extends AbstractHandler {
         try {
             Binary binary = binaryProperty.getBinary();
             return binary instanceof org.modeshape.jcr.api.Binary ? ((org.modeshape.jcr.api.Binary)binary)
-                    .getMimeType() : MediaType.APPLICATION_OCTET_STREAM;
+                    .getMimeType() : DEFAULT_MIME_TYPE;
         } catch (IOException e) {
             logger.warn("Cannot determine default mime-type", e);
-            return MediaType.APPLICATION_OCTET_STREAM;
+            return DEFAULT_MIME_TYPE;
         }
     }
 
@@ -135,6 +136,7 @@ public final class RestBinaryHandler extends AbstractHandler {
 
         int lastSlashInd = binaryPropertyAbsPath.lastIndexOf('/');
         String propertyName = lastSlashInd == -1 ? binaryPropertyAbsPath : binaryPropertyAbsPath.substring(lastSlashInd + 1);
+        boolean createdNewValue = false;
         try {
             Property binaryProperty = null;
             try {
@@ -149,10 +151,12 @@ public final class RestBinaryHandler extends AbstractHandler {
                 // create a new binary property
                 Binary binary = session.getValueFactory().createBinary(binaryStream);
                 binaryProperty = parent.setProperty(propertyName, binary);
+                createdNewValue = true;
             }
             session.save();
             RestProperty restItem = (RestProperty)createRestItem(request, 0, session, binaryProperty);
-            return Response.ok().entity(restItem).build();
+            return createdNewValue ? Response.status(Response.Status.CREATED).entity(restItem).build() :
+                    Response.ok().entity(restItem).build();
         } finally {
             try {
                 binaryStream.close();

@@ -1,0 +1,22 @@
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+
+// ------------------------------------------------------------------------
+//                             Pre-defined Node Types
+// ------------------------------------------------------------------------
+
+[nt:base] abstract
+  - jcr:primaryType (name) mandatory autocreated 
+      protected compute 
+  - jcr:mixinTypes (name) protected multiple compute
+  
+[nt:unstructured] 
+  orderable 
+  - * (undefined) multiple 
+  - * (undefined) 
+  + * (nt:base) = nt:unstructured sns version 
+
+[mix:created] mixin 
+  - jcr:created (date) protected  
+  - jcr:createdBy (string) protected

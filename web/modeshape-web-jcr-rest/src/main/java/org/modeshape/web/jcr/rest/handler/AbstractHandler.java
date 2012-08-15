@@ -193,8 +193,12 @@ public abstract class AbstractHandler {
             return "/";
         } else {
             String subPath = path.substring(0, lastSlashInd);
-            return subPath.startsWith("/") ? subPath : "/" + subPath;
+            return absPath(subPath);
         }
+    }
+
+    protected String absPath( String pathString ) {
+        return pathString.startsWith("/") ? pathString : "/" + pathString;
     }
 
     private RestNode createRestNode( Session session,

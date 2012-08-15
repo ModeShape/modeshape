@@ -1,0 +1,19 @@
+{
+    "testNode/child/subChild" : {
+        "testProperty":"testValue1",
+        "multiValuedProperty":["valueA", "valueB"]
+    },
+    "testNode/child" : {
+        "testProperty":"testValue1",
+        "multiValuedProperty":["valueA", "valueB"]
+    },
+    "testNode/otherChild" : {
+        "testProperty":"testValue1",
+        "multiValuedProperty":["valueA", "valueB"],
+        "children":{
+            "otherSubChild":{
+                "nestedProperty":"nestedValueA"
+            }
+        }
+    }
+}
