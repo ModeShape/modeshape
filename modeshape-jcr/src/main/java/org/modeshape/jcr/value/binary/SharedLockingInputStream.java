@@ -41,12 +41,13 @@ import org.modeshape.jcr.value.BinaryKey;
  */
 public final class SharedLockingInputStream extends InputStream {
 
-    protected final BinaryKey key;
-    protected final File file;
-    protected final NamedLocks lockManager;
-    protected InputStream stream;
-    protected Lock processLock;
-    protected FileLocks.WrappedLock fileLock;
+    private final BinaryKey key;
+    private final File file;
+    private final NamedLocks lockManager;
+    private InputStream stream;
+    private Lock processLock;
+    private FileLocks.WrappedLock fileLock;
+    private boolean eofReached;
 
     /**
      * Create a self-closing, (shared) locking {@link InputStream} to read the content of the supplied {@link File file}.
@@ -83,6 +84,7 @@ public final class SharedLockingInputStream extends InputStream {
                     SharedLockingInputStream.this.stream = new BufferedInputStream(
                                                                                    new FileInputStream(file),
                                                                                    AbstractBinaryStore.bestBufferSize(file.length()));
+                    SharedLockingInputStream.this.eofReached = false;
                 }
                 return null;
             }
@@ -94,6 +96,9 @@ public final class SharedLockingInputStream extends InputStream {
         return doOperation(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
+                if (eofReached) {
+                    return 0;
+                }
                 open();
                 return stream.available();
             }
@@ -179,8 +184,16 @@ public final class SharedLockingInputStream extends InputStream {
         return doOperation(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
+                if (eofReached) {
+                    return -1;
+                }
                 open();
-                return stream.read(b, off, len);
+                int result = stream.read(b, off, len);
+                if (result == -1) {
+                    eofReached = true;
+                    close();
+                }
+                return result;
             }
         });
     }
@@ -190,8 +203,16 @@ public final class SharedLockingInputStream extends InputStream {
         return doOperation(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
+                if (eofReached) {
+                    return -1;
+                }
                 open();
-                return stream.read(b);
+                int result = stream.read(b);
+                if (result == -1) {
+                   eofReached = true;
+                   close();
+                }
+                return result;
             }
         });
     }
@@ -201,8 +222,16 @@ public final class SharedLockingInputStream extends InputStream {
         return doOperation(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
+                if (eofReached) {
+                    return -1;
+                }
                 open();
-                return stream.read();
+                int result = stream.read();
+                if (result == -1) {
+                    eofReached = true;
+                    close(); //without this, there might be locks
+                }
+                return result;
             }
         });
     }

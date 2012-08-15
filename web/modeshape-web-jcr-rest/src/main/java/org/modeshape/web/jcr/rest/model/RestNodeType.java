@@ -32,6 +32,8 @@ import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.web.jcr.rest.RestHelper;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * A REST representation of a {@link NodeType}
@@ -40,8 +42,8 @@ import java.util.List;
  */
 public final class RestNodeType implements JSONAble {
 
-    private final List<String> superTypesLinks;
-    private final List<String> subTypesLinks;
+    private final Set<String> superTypesLinks;
+    private final Set<String> subTypesLinks;
     private final List<RestPropertyType> propertyTypes;
 
     private final String name;
@@ -57,13 +59,13 @@ public final class RestNodeType implements JSONAble {
         this.isQueryable = nodeType.isQueryable();
         this.hasOrderableChildNodes = nodeType.hasOrderableChildNodes();
 
-        this.superTypesLinks = new ArrayList<String>();
+        this.superTypesLinks = new TreeSet<String>();
         for (NodeType superType : nodeType.getDeclaredSupertypes()) {
             String superTypeLink = RestHelper.urlFrom(baseUrl, RestHelper.NODE_TYPES_METHOD_NAME, superType.getName());
             this.superTypesLinks.add(superTypeLink);
         }
 
-        this.subTypesLinks = new ArrayList<String>();
+        this.subTypesLinks = new TreeSet<String>();
         for (NodeTypeIterator subTypeIterator = nodeType.getDeclaredSubtypes(); subTypeIterator.hasNext(); ) {
             String subTypeLink = RestHelper.urlFrom(baseUrl, RestHelper.NODE_TYPES_METHOD_NAME,
                                                     subTypeIterator.nextNodeType().getName());

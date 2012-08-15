@@ -24,7 +24,16 @@
 
 package org.modeshape.web.jcr.rest;
 
+import javax.ws.rs.core.MediaType;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Ignore;
+import org.junit.Test;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.web.jcr.rest.handler.RestBinaryHandler;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 
 /**
  * Unit test for the v2 version of the rest service: {@link ModeShapeRestService}
@@ -159,6 +168,11 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     }
 
     @Override
+    protected String binaryPropertyName() {
+        return "testProperty";
+    }
+
+    @Override
     protected String nodeBinaryPropertyAfterEdit() {
         return "v2/put/node_with_binary_property_after_edit.json";
     }
@@ -219,7 +233,177 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     }
 
     @Override
-    @Ignore("Ignored because the deprecated parameter isn't supported anymore")
+    @Ignore( "Ignored because the deprecated parameter isn't supported anymore" )
     public void shouldRetrieveRootNodeWhenDeprecatedDepthSet() throws Exception {
+    }
+
+    @Test
+    public void shouldRetrieveBinaryPropertyValue() throws Exception {
+        doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        doGet(binaryUrl(TEST_NODE, binaryPropertyName()))
+                .isOk()
+                .hasMimeType(MediaType.TEXT_PLAIN)
+                .hasContentDisposition(RestBinaryHandler.DEFAULT_CONTENT_DISPOSITION_PREFIX + TEST_NODE)
+                .copyInputStream(bos);
+        assertTrue(bos.size() > 0);
+        assertEquals("testValue", new String(bos.toByteArray()));
+    }
+
+    private String newBinaryProperty() {
+        return "v2/post/new_binary_property_response.json";
+    }
+
+    @Test
+    public void shouldRetrieveBinaryPropertyValueWithMimeTypeAndContentDisposition() throws Exception {
+        doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
+        String mimeType = MediaType.TEXT_XML;
+        String contentDisposition = "inline;filename=TestFile.txt";
+        String urlParams = "?mimeType=" + RestHelper.URL_ENCODER.encode(mimeType) + "&contentDisposition=" + RestHelper
+                .URL_ENCODER.encode(contentDisposition);
+        doGet(binaryUrl(TEST_NODE, binaryPropertyName()) + urlParams)
+                .isOk()
+                .hasMimeType(mimeType)
+                .hasContentDisposition(contentDisposition);
+    }
+
+    @Test
+    public void shouldReturnNotFoundForInvalidBinaryProperty() throws Exception {
+        doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
+        doGet(binaryUrl(TEST_NODE, "invalid")).isNotFound();
+    }
+
+    @Test
+    public void shouldReturnNotFoundForNonBinaryProperty() throws Exception {
+        doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
+        doGet(binaryUrl(TEST_NODE, "jcr:primaryType")).isNotFound();
+    }
+
+    @Test
+    public void shouldCreateBinaryProperty() throws Exception {
+        doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
+        doPost(fileStream("v2/post/binary.pdf"), binaryUrl(TEST_NODE, binaryPropertyName()))
+                .isCreated()
+                .isJSONObjectLikeFile(newBinaryProperty());
+        ByteArrayOutputStream actualBinaryContent = new ByteArrayOutputStream();
+        doGet(binaryUrl(TEST_NODE, binaryPropertyName()))
+                .isOk()
+                .copyInputStream(actualBinaryContent);
+
+        byte[] expectedBinaryContent = IoUtil.readBytes(fileStream("v2/post/binary.pdf"));
+        assertArrayEquals(expectedBinaryContent, actualBinaryContent.toByteArray());
+    }
+
+    @Test
+    public void shouldUpdateBinaryPropertyViaPost() throws Exception {
+        doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
+
+        String otherBinaryValue = String.valueOf(System.currentTimeMillis());
+        doPost(new ByteArrayInputStream(otherBinaryValue.getBytes()), binaryUrl(TEST_NODE, binaryPropertyName())).isOk();
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        doGet(binaryUrl(TEST_NODE, binaryPropertyName())).isOk().copyInputStream(bos);
+        assertEquals(otherBinaryValue, new String(bos.toByteArray()));
+    }
+
+    @Test
+    public void shouldUpdateBinaryPropertyViaPut() throws Exception {
+        doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
+
+        String otherBinaryValue = String.valueOf(System.currentTimeMillis());
+        doPut(new ByteArrayInputStream(otherBinaryValue.getBytes()), binaryUrl(TEST_NODE, binaryPropertyName())).isOk();
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        doGet(binaryUrl(TEST_NODE, binaryPropertyName())).isOk().copyInputStream(bos);
+        assertEquals(otherBinaryValue, new String(bos.toByteArray()));
+    }
+
+    @Test
+    public void shouldNotUpdateNonExistingBinaryPropertyViaPut() throws Exception {
+        doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
+
+        String otherBinaryValue = String.valueOf(System.currentTimeMillis());
+        doPut(new ByteArrayInputStream(otherBinaryValue.getBytes()), binaryUrl(TEST_NODE, "invalidProp")).isNotFound();
+    }
+
+    @Test
+    public void shouldCreateBinaryValueViaMultiPartRequest() throws Exception {
+        doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
+        doPostMultiPart(fileStream("v2/post/binary.pdf"), "file", binaryUrl(TEST_NODE, binaryPropertyName()),
+                        MediaType.APPLICATION_OCTET_STREAM)
+                .isCreated()
+                .isJSONObjectLikeFile(newBinaryProperty());
+    }
+
+    @Test
+    public void shouldRetrieveNtBaseNodeType() throws Exception {
+        doGet(nodeTypesUrl("nt:base")).isOk().isJSONObjectLikeFile("v2/get/nt_base_nodeType_response.json");
+    }
+
+    @Test
+    public void shouldReturnNotFoundIfNodeTypeMissing() throws Exception {
+        doGet(nodeTypesUrl("invalidNodeType")).isNotFound();
+    }
+
+    @Test
+    public void shouldImportCNDFile() throws Exception {
+        doPost(fileStream(nodeTypesCND()), nodeTypesUrl())
+                .isOk()
+                .isJSONArrayLikeFile(cndImportResponse());
+    }
+
+    private String cndImportResponse() {
+        return "v2/post/cnd_import_response.json";
+    }
+
+    private String nodeTypesCND() {
+        return "v2/post/node_types.cnd";
+    }
+
+    @Test
+    public void shouldImportCNDFileViaMultiPartRequest() throws Exception {
+        doPostMultiPart(fileStream(nodeTypesCND()), "file", nodeTypesUrl(), MediaType.TEXT_PLAIN)
+                .isOk()
+                .isJSONArrayLikeFile(cndImportResponse());
+    }
+
+    @Test
+    public void importingCNDViaWrongHTMLElementNameShouldFail() throws Exception {
+        doPostMultiPart(fileStream(nodeTypesCND()), "invalidHTML", nodeTypesUrl(), MediaType.TEXT_PLAIN)
+                .isBadRequest();
+    }
+
+    @Test
+    public void shouldCreateMultipleNodes() throws Exception {
+        doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
+        doPost("v2/post/multiple_nodes_request.json", itemsUrl())
+                .isOk()
+                .isJSONArrayLikeFile("v2/post/multiple_nodes_response.json");
+    }
+
+    @Test
+    public void shouldEditMultipleNodes() throws Exception {
+        doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
+        doPost("v2/post/multiple_nodes_request.json", itemsUrl()).isOk();
+        doPut("v2/put/multiple_nodes_edit_request.json", itemsUrl())
+                .isOk()
+                .isJSONArrayLikeFile("v2/put/multiple_nodes_edit_response.json");
+    }
+
+    @Test
+    @Ignore("A limitation of HTTPUrlConnection prevents this test from running. Consider enabling it if/when switching to Http Client")
+    public void shouldDeleteMultipleNodes() throws Exception {
+        doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
+        doPost("v2/post/multiple_nodes_request.json", itemsUrl()).isOk();
+        doDelete("v2/delete/multiple_nodes_delete.json", itemsUrl()).isOk();
+        doGet(itemsUrl(TEST_NODE)).isJSONObjectLikeFile(nodeWithoutPrimaryTypeRequest());
+    }
+
+    private String binaryUrl( String... additionalPathSegments ) {
+        return RestHelper.urlFrom(REPOSITORY_NAME + "/default/" + RestHelper.BINARY_METHOD_NAME, additionalPathSegments);
+    }
+
+    private String nodeTypesUrl( String... additionalPathSegments ) {
+        return RestHelper.urlFrom(REPOSITORY_NAME + "/default/" + RestHelper.NODE_TYPES_METHOD_NAME, additionalPathSegments);
     }
 }

@@ -1,0 +1,6 @@
+{
+    "testProperty":"http://localhost:8090/resources/repo/default/binary/testNode/testProperty",
+    "self":"http://localhost:8090/resources/repo/default/items/testNode/testProperty",
+    "up":"http://localhost:8090/resources/repo/default/items/testNode"
+}
+

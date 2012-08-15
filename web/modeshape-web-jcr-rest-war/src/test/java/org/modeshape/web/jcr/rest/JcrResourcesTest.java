@@ -35,11 +35,15 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.StringUtil;
 import sun.net.www.protocol.http.AuthCacheImpl;
 import sun.net.www.protocol.http.AuthCacheValue;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.Authenticator;
 import java.net.HttpURLConnection;
 import java.net.PasswordAuthentication;
@@ -64,11 +68,11 @@ public class JcrResourcesTest {
      * The name of the repository is dictated by the "repository-config.json" configuration file loaded by the
      * "org.modeshape.jcr.JCR_URL" parameter in the "web.xml" file.
      */
-    private static final String REPOSITORY_NAME = "repo";
+    protected static final String REPOSITORY_NAME = "repo";
+    protected static final String TEST_NODE = "testNode";
+
     private static final String SERVER_CONTEXT = "/resources/v1";
     private static final String SERVER_URL = "http://localhost:8090";
-
-    private static final String TEST_NODE = "testNode";
 
     private HttpURLConnection connection;
 
@@ -112,7 +116,7 @@ public class JcrResourcesTest {
     @Test
     public void shouldServeContentAtRoot() throws Exception {
         //http://localhost:8090/resources/v1
-        doGet().isOk().hasBodyLikeFile(contentRoot());
+        doGet().isOk().isJSONObjectLikeFile(contentRoot());
     }
 
     protected String contentRoot() {
@@ -122,7 +126,7 @@ public class JcrResourcesTest {
     @Test
     public void shouldServeListOfWorkspacesForValidRepository() throws Exception {
         //http://localhost:8090/resources/v1/repo
-        doGet(REPOSITORY_NAME).isOk().hasBodyLikeFile(workspaces());
+        doGet(REPOSITORY_NAME).isOk().isJSONObjectLikeFile(workspaces());
     }
 
     protected String workspaces() {
@@ -138,7 +142,7 @@ public class JcrResourcesTest {
     @Test
     public void shouldRetrieveRootNodeForValidRepository() throws Exception {
         //http://localhost:8090/resources/v1/repo/default
-        doGet(itemsUrl()).isOk().hasBodyLikeFile(rootNode());
+        doGet(itemsUrl()).isOk().isJSONObjectLikeFile(rootNode());
     }
 
     protected String rootNode() {
@@ -148,13 +152,13 @@ public class JcrResourcesTest {
     @Test
     public void shouldRetrieveRootNodeWhenDepthSet() throws Exception {
         //http://localhost:8090/resources/v1/repo/default/items?depth=1
-        doGet(itemsUrl() + "?depth=1").isOk().hasBodyLikeFile(rootNodeDepthOne());
+        doGet(itemsUrl() + "?depth=1").isOk().isJSONObjectLikeFile(rootNodeDepthOne());
     }
 
     @Test
     public void shouldRetrieveRootNodeWhenDeprecatedDepthSet() throws Exception {
         //http://localhost:8090/resources/v1/repo/default/items?mode:depth=1
-        doGet(itemsUrl() + "?mode:depth=1").isOk().hasBodyLikeFile(rootNodeDepthOne());
+        doGet(itemsUrl() + "?mode:depth=1").isOk().isJSONObjectLikeFile(rootNodeDepthOne());
     }
 
     protected String rootNodeDepthOne() {
@@ -164,7 +168,7 @@ public class JcrResourcesTest {
     @Test
     public void shouldRetrieveSystemNodeWithDepthOne() throws Exception {
         //http://localhost:8090/resources/v1/repo/default/items/jcr:system?depth=1
-        doGet(itemsUrl("jcr:system") + "?depth=1").isOk().hasBodyLikeFile(systemNodeDepthOne());
+        doGet(itemsUrl("jcr:system") + "?depth=1").isOk().isJSONObjectLikeFile(systemNodeDepthOne());
     }
 
     protected String systemNodeDepthOne() {
@@ -172,9 +176,9 @@ public class JcrResourcesTest {
     }
 
     @Test
-    public void shouldRetrieveNtBaseNodeType() throws Exception {
+    public void shouldRetrieveNtBaseItems() throws Exception {
         //http://localhost:8090/resources/v1/repo/default/items/jcr:system/jcr:nodeTypes/nt:base
-        doGet(itemsUrl("jcr:system/jcr:nodeTypes/nt:base")).isOk().hasBodyLikeFile(ntBaseNodeType());
+        doGet(itemsUrl("jcr:system/jcr:nodeTypes/nt:base")).isOk().isJSONObjectLikeFile(ntBaseNodeType());
     }
 
     protected String ntBaseNodeType() {
@@ -184,7 +188,7 @@ public class JcrResourcesTest {
     @Test
     public void shouldRetrieveNtBaseDepthFour() throws Exception {
         //http://localhost:8090/resources/v1/repo/default/items/jcr:system/jcr:nodeTypes/nt:base?depth=4
-        doGet(itemsUrl("jcr:system/jcr:nodeTypes/nt:base") + "?depth=4").isOk().hasBodyLikeFile(ntBaseDepthFour());
+        doGet(itemsUrl("jcr:system/jcr:nodeTypes/nt:base") + "?depth=4").isOk().isJSONObjectLikeFile(ntBaseDepthFour());
     }
 
     protected String ntBaseDepthFour() {
@@ -206,7 +210,7 @@ public class JcrResourcesTest {
     @Test
     public void shouldRetrieveProperty() throws Exception {
         //http://localhost:8090/resources/v1/repo/default/items/jcr:system/jcr:primaryType
-        doGet(itemsUrl("jcr:system/jcr:primaryType")).isOk().hasBodyLikeFile(systemPrimaryTypeProperty());
+        doGet(itemsUrl("jcr:system/jcr:primaryType")).isOk().isJSONObjectLikeFile(systemPrimaryTypeProperty());
     }
 
     protected String systemPrimaryTypeProperty() throws Exception {
@@ -216,7 +220,8 @@ public class JcrResourcesTest {
     @Test
     public void shouldPostNodeToValidPathWithPrimaryType() throws Exception {
         //http://localhost:8090/resources/v1/repo/default/items/testNode
-        doPost(nodeWithPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isCreated().hasBodyLikeFile(nodeWithPrimaryTypeResponse());
+        doPost(nodeWithPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isCreated().isJSONObjectLikeFile(
+                nodeWithPrimaryTypeResponse());
     }
 
     protected String nodeWithPrimaryTypeRequest() {
@@ -230,7 +235,7 @@ public class JcrResourcesTest {
     @Test
     public void shouldPostNodeToValidPathWithoutPrimaryType() throws Exception {
         //http://localhost:8090/resources/v1/repo/default/items/testNode
-        doPost(nodeWithoutPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isCreated().hasBodyLikeFile(
+        doPost(nodeWithoutPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isCreated().isJSONObjectLikeFile(
                 nodeWithoutPrimaryTypeResponse());
     }
 
@@ -245,8 +250,8 @@ public class JcrResourcesTest {
     @Test
     public void shouldPostNodeToValidPathWithMixinTypes() throws Exception {
         //http://localhost:8090/resources/v1/repo/default/items/testNode
-        doPost(nodeWithMixinRequest(), itemsUrl(TEST_NODE)).isCreated().hasBodyLikeFile(nodeWithMixinResponse());
-        doGet(itemsUrl(TEST_NODE)).isOk().hasBodyLikeFile(nodeWithMixinResponse());
+        doPost(nodeWithMixinRequest(), itemsUrl(TEST_NODE)).isCreated().isJSONObjectLikeFile(nodeWithMixinResponse());
+        doGet(itemsUrl(TEST_NODE)).isOk().isJSONObjectLikeFile(nodeWithMixinResponse());
     }
 
     protected String nodeWithMixinRequest() {
@@ -266,7 +271,7 @@ public class JcrResourcesTest {
     @Test
     public void shouldNotPostNodeWithInvalidPrimaryType() throws Exception {
         //http://localhost:8090/resources/v1/repo/default/items/testNode
-        doPost(nodeInvalidPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isBadRequest();
+        doPost(nodeInvalidPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isNotFound();
         doGet(itemsUrl(TEST_NODE)).isNotFound();
     }
 
@@ -280,7 +285,7 @@ public class JcrResourcesTest {
         doPost(nodeHierarchyRequest(), itemsUrl(TEST_NODE)).isCreated();
 
         // Make sure that we can retrieve the node with a GET
-        doGet(itemsUrl(TEST_NODE) + "?depth=1").isOk().hasBodyLikeFile(nodeHierarchyResponse());
+        doGet(itemsUrl(TEST_NODE) + "?depth=1").isOk().isJSONObjectLikeFile(nodeHierarchyResponse());
     }
 
     protected String nodeHierarchyRequest() {
@@ -294,7 +299,7 @@ public class JcrResourcesTest {
     @Test
     public void shouldFailWholeTransactionIfOneNodeIsBad() throws Exception {
         //http://localhost:8090/resources/v1/repo/default/items/testNode
-        doPost(nodeHierarchyInvalidTypeRequest(), itemsUrl(TEST_NODE)).isBadRequest();
+        doPost(nodeHierarchyInvalidTypeRequest(), itemsUrl(TEST_NODE)).isNotFound();
         doGet(itemsUrl(TEST_NODE) + "?depth=1").isNotFound();
     }
 
@@ -324,7 +329,7 @@ public class JcrResourcesTest {
         doGet(itemsUrl(TEST_NODE, propertyName())).isOk();
         doDelete(itemsUrl(TEST_NODE, propertyName())).isDeleted();
         doGet(itemsUrl(TEST_NODE, propertyName())).isNotFound();
-        doGet(itemsUrl(TEST_NODE)).isOk().hasBodyLikeFile(nodeWithoutProperty());
+        doGet(itemsUrl(TEST_NODE)).isOk().isJSONObjectLikeFile(nodeWithoutProperty());
     }
 
     protected String propertyName() {
@@ -352,7 +357,7 @@ public class JcrResourcesTest {
     @Test
     public void shouldBeAbleToPutValueToProperty() throws Exception {
         doPost(nodeWithProperty(), itemsUrl(TEST_NODE)).isCreated();
-        doPut(propertyEdit(), itemsUrl(TEST_NODE, propertyName())).isOk().hasBodyLikeFile(nodeWithPropertyAfterEdit());
+        doPut(propertyEdit(), itemsUrl(TEST_NODE, propertyName())).isOk().isJSONObjectLikeFile(nodeWithPropertyAfterEdit());
     }
 
     protected String nodeWithPropertyAfterEdit() {
@@ -364,7 +369,7 @@ public class JcrResourcesTest {
         //http://localhost:8090/resources/v1/repo/default/items/testNode
         doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
         doPut(binaryPropertyEdit(), itemsUrl(TEST_NODE, binaryPropertyName())).isOk();
-        doGet(itemsUrl(TEST_NODE)).isOk().hasBodyLikeFile(nodeBinaryPropertyAfterEdit());
+        doGet(itemsUrl(TEST_NODE)).isOk().isJSONObjectLikeFile(nodeBinaryPropertyAfterEdit());
     }
 
     protected String nodeWithBinaryProperty() {
@@ -388,7 +393,7 @@ public class JcrResourcesTest {
         //http://localhost:8090/resources/v1/repo/default/items/testNode
         doPost(nodeWithProperties(), itemsUrl(TEST_NODE)).isCreated();
         doPut(propertiesEdit(), itemsUrl(TEST_NODE)).isOk();
-        doGet(itemsUrl(TEST_NODE)).isOk().hasBodyLikeFile(nodeWithPropertiesAfterEdit());
+        doGet(itemsUrl(TEST_NODE)).isOk().isJSONObjectLikeFile(nodeWithPropertiesAfterEdit());
     }
 
     protected String nodeWithProperties() {
@@ -407,8 +412,8 @@ public class JcrResourcesTest {
     public void shouldBeAbleToAddAndRemoveMixinTypes() throws Exception {
         //http://localhost:8090/resources/v1/repo/default/items/testNode
         doPost(nodeWithProperties(), itemsUrl(TEST_NODE)).isCreated();
-        doPut(addMixin(), itemsUrl(TEST_NODE)).isOk().hasBodyLikeFile(nodeWithMixin());
-        doPut(removeMixins(), itemsUrl(TEST_NODE)).isOk().hasBodyLikeFile(nodeWithoutMixins());
+        doPut(addMixin(), itemsUrl(TEST_NODE)).isOk().isJSONObjectLikeFile(nodeWithMixin());
+        doPut(removeMixins(), itemsUrl(TEST_NODE)).isOk().isJSONObjectLikeFile(nodeWithoutMixins());
     }
 
     protected String addMixin() {
@@ -430,7 +435,7 @@ public class JcrResourcesTest {
     @Test
     public void shouldRetrieveDataFromXPathQuery() throws Exception {
         doPost(queryNode(), itemsUrl(TEST_NODE)).isCreated();
-        xpathQuery("//" + TEST_NODE, queryUrl()).isOk().isJSON().hasBodyLikeFile(singleNodeXPath());
+        xpathQuery("//" + TEST_NODE, queryUrl()).isOk().isJSON().isJSONObjectLikeFile(singleNodeXPath());
     }
 
     protected String queryNode() {
@@ -450,7 +455,7 @@ public class JcrResourcesTest {
         doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
 
         String query = "//element(child) order by @foo";
-        xpathQuery(query, queryUrl() + "?offset=1&limit=2").isOk().isJSON().hasBodyLikeFile(queryResultOffsetAndLimit());
+        xpathQuery(query, queryUrl() + "?offset=1&limit=2").isOk().isJSON().isJSONObjectLikeFile(queryResultOffsetAndLimit());
     }
 
     protected String queryResultOffsetAndLimit() {
@@ -466,7 +471,7 @@ public class JcrResourcesTest {
         doPost(queryNode(), itemsUrl(TEST_NODE, "child")).isCreated();
 
         String query = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/" + TEST_NODE + "')";
-        jcrSQL2Query(query, queryUrl()).isOk().isJSON().hasBodyLikeFile(jcrSQL2Result());
+        jcrSQL2Query(query, queryUrl()).isOk().isJSON().isJSONObjectLikeFile(jcrSQL2Result());
     }
 
     protected String jcrSQL2Result() {
@@ -474,11 +479,11 @@ public class JcrResourcesTest {
     }
 
     protected String itemsUrl( String... additionalPathSegments ) {
-        return RestHelper.urlFrom(REPOSITORY_NAME + "/default/items", additionalPathSegments);
+        return RestHelper.urlFrom(REPOSITORY_NAME + "/default/" + RestHelper.ITEMS_METHOD_NAME, additionalPathSegments);
     }
 
     protected String queryUrl( String... additionalPathSegments ) {
-        return RestHelper.urlFrom(REPOSITORY_NAME + "/default/query", additionalPathSegments);
+        return RestHelper.urlFrom(REPOSITORY_NAME + "/default/" + RestHelper.QUERY_METHOD_NAME, additionalPathSegments);
     }
 
     protected Response doGet() throws Exception {
@@ -493,10 +498,19 @@ public class JcrResourcesTest {
                                String url ) throws Exception {
         InputStream is = null;
         if (payloadFile != null) {
-            is = getClass().getClassLoader().getResourceAsStream(payloadFile);
+            is = fileStream(payloadFile);
             assertNotNull(is);
         }
         return postStream(is, url, MediaType.APPLICATION_JSON);
+    }
+
+    protected Response doPost( InputStream is,
+                               String url ) throws Exception {
+        return postStream(is, url, null);
+    }
+
+    protected InputStream fileStream( String file ) {
+        return getClass().getClassLoader().getResourceAsStream(file);
     }
 
     protected Response xpathQuery( String query,
@@ -514,7 +528,43 @@ public class JcrResourcesTest {
                                    String mediaType ) throws Exception {
         HttpURLConnection connection = newConnection("POST", mediaType, url);
         if (is != null) {
-            connection.getOutputStream().write(IoUtil.readBytes(is));
+            OutputStream outputStream = connection.getOutputStream();
+            outputStream.write(IoUtil.readBytes(is));
+            outputStream.flush();
+        }
+        return new Response(connection);
+    }
+
+    protected Response doPostMultiPart(InputStream is, String elementName, String url, String mediaType) throws IOException {
+        if (StringUtil.isBlank(mediaType)) {
+            mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        }
+        String boundary = Long.toHexString(System.currentTimeMillis()); //random
+        String lineSeparator = "\r\n";
+
+        HttpURLConnection connection = newConnection("POST", "multipart/form-data; boundary=" + boundary, url);
+        PrintWriter writer = null;
+        try {
+            OutputStream output = connection.getOutputStream();
+            writer = new PrintWriter(new OutputStreamWriter(output), true);
+            writer.append("--").append(boundary).append(lineSeparator);
+            writer.append("Content-Disposition: form-data; name=").append(elementName).append(lineSeparator);
+            writer.append("Content-Type: ").append(mediaType).append(lineSeparator);
+            writer.append("Content-Transfer-Encoding: binary").append(lineSeparator);
+            writer.append(lineSeparator).flush();
+            try {
+                byte[] buffer = new byte[1024];
+                for (int length = 0; (length = is.read(buffer)) > 0;) {
+                    output.write(buffer, 0, length);
+                }
+                output.flush();
+            } finally {
+                if (is != null) try { is.close(); } catch (IOException ignore) {}
+            }
+            writer.append(lineSeparator).flush(); // lineSeparator is important! It indicates end of binary boundary.
+            writer.append("--").append(boundary).append("--").append(lineSeparator);
+        } finally {
+            if (writer != null) writer.close();
         }
         return new Response(connection);
     }
@@ -523,14 +573,30 @@ public class JcrResourcesTest {
                               String url ) throws Exception {
         HttpURLConnection connection = newConnection("PUT", MediaType.APPLICATION_JSON, url);
         if (payloadFile != null) {
-            String fileContent = IoUtil.read(getClass().getClassLoader().getResourceAsStream(payloadFile));
+            String fileContent = IoUtil.read(fileStream(payloadFile));
             connection.getOutputStream().write(fileContent.getBytes());
         }
         return new Response(connection);
     }
 
+    protected Response doPut( InputStream is,
+                              String url ) throws Exception {
+        HttpURLConnection connection = newConnection("PUT", MediaType.APPLICATION_JSON, url);
+        connection.getOutputStream().write(IoUtil.readBytes(is));
+        return new Response(connection);
+    }
+
     protected Response doDelete( String url ) throws Exception {
        return new Response(newConnection("DELETE", null, url));
+    }
+
+    protected Response doDelete( String payloadFile, String url ) throws Exception {
+        HttpURLConnection connection = newConnection("DELETE", null, url);
+        if (payloadFile != null) {
+            String fileContent = IoUtil.read(fileStream(payloadFile));
+            connection.getOutputStream().write(fileContent.getBytes());
+        }
+        return new Response(connection);
     }
 
     private HttpURLConnection newConnection( String method,
@@ -541,14 +607,9 @@ public class JcrResourcesTest {
         }
 
         String serviceUrl = getServerUrl() + getServerContext();
-        StringBuilder urlBuilder = new StringBuilder(serviceUrl);
-        for (String pathSegment : pathSegments) {
-            if (!pathSegment.startsWith("/")) {
-                urlBuilder.append("/");
-            }
-            urlBuilder.append(pathSegment);
-        }
-        URL postUrl = new URL(urlBuilder.toString());
+        String url = RestHelper.urlFrom(serviceUrl, pathSegments);
+
+        URL postUrl = new URL(url);
         connection = (HttpURLConnection)postUrl.openConnection();
 
         connection.setDoOutput(true);
@@ -614,10 +675,6 @@ public class JcrResourcesTest {
         return buff.toString();
     }
 
-    protected JSONObject responseObject( HttpURLConnection connection ) throws Exception {
-        return new JSONObject(responseString(connection));
-    }
-
     protected String getServerContext() {
         return SERVER_CONTEXT;
     }
@@ -651,6 +708,16 @@ public class JcrResourcesTest {
             return this;
         }
 
+        protected Response hasMimeType(String mimeType) {
+            hasHeader("Content-Type", mimeType);
+            return this;
+        }
+
+        protected Response hasContentDisposition( String contentDisposition ) {
+            hasHeader("Content-Disposition", contentDisposition);
+            return this;
+        }
+
         protected Response isOk() throws Exception {
             return hasCode(HttpURLConnection.HTTP_OK);
         }
@@ -679,26 +746,32 @@ public class JcrResourcesTest {
             return hasHeader("Content-Type", MediaType.APPLICATION_JSON);
         }
 
-        protected Response hasBodyLikeFile( String pathToExpectedJSON ) throws Exception {
+        protected Response isJSONObjectLikeFile( String pathToExpectedJSON ) throws Exception {
             isJSON();
-            String expectedJSONString = IoUtil.read(getClass().getClassLoader().getResourceAsStream(pathToExpectedJSON));
+            String expectedJSONString = IoUtil.read(fileStream(pathToExpectedJSON));
             JSONObject expectedObject = new JSONObject(expectedJSONString);
 
-            JSONObject responseObject = bodyJSON();
+            JSONObject responseObject = new JSONObject(responseString(connection));
             assertJSON(expectedObject, responseObject);
 
             return this;
         }
 
-        protected Response hasBodyLikeObject( JSONObject expectedObject ) throws Exception {
+        protected Response isJSONArrayLikeFile( String pathToExpectedJSON ) throws Exception {
             isJSON();
-            JSONObject body = bodyJSON();
-            assertJSON(expectedObject, body);
+            String expectedJSONString = IoUtil.read(fileStream(pathToExpectedJSON));
+            JSONArray expectedArray = new JSONArray(expectedJSONString);
+
+            JSONArray responseObject = new JSONArray(responseString(connection));
+            assertJSON(expectedArray, responseObject);
+
             return this;
         }
 
-        protected JSONObject bodyJSON() throws Exception {
-            return responseObject(connection);
+        protected Response copyInputStream (OutputStream destination) throws IOException {
+            assert destination != null;
+            IoUtil.write(connection.getInputStream(), destination);
+            return this;
         }
     }
 }

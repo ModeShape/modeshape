@@ -609,7 +609,7 @@ public class ItemHandler extends AbstractHandler {
 
         for (Iterator<?> iter = properties.keys(); iter.hasNext(); ) {
             String key = (String)iter.next();
-            if (PRIMARY_TYPE_PROPERTY.equals(key)) {
+            if (PRIMARY_TYPE_PROPERTY.equals(key) || CHILD_NODE_HOLDER.equals(key)) {
                 continue; // can't change the primary type
             }
             setPropertyOnNode(node, key, properties.get(key));

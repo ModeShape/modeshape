@@ -26,6 +26,7 @@ package org.modeshape.web.jcr.rest;
 
 import javax.jcr.Binary;
 import javax.jcr.Property;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
 import javax.servlet.http.HttpServletRequest;
@@ -54,6 +55,7 @@ import org.modeshape.web.jcr.rest.handler.RestNodeTypeHandler;
 import org.modeshape.web.jcr.rest.handler.RestQueryHandler;
 import org.modeshape.web.jcr.rest.handler.RestRepositoryHandler;
 import org.modeshape.web.jcr.rest.handler.RestServerHandler;
+import org.modeshape.web.jcr.rest.model.RestException;
 import org.modeshape.web.jcr.rest.model.RestItem;
 import org.modeshape.web.jcr.rest.model.RestNodeType;
 import org.modeshape.web.jcr.rest.model.RestQueryResult;
@@ -171,7 +173,7 @@ public final class ModeShapeRestService {
      * @param mimeType an optional {@link String} representing the "already-known" mime-type of the binary. Can be {@code null}
      * @param contentDisposition an optional {@link String} representing the client-preferred content disposition of the respose.
      * Can be {@code null}
-     * @return the binary stream of the requested binary property
+     * @return the binary stream of the requested binary property or NOT_FOUND if either the property isn't found or it isn't a binary
      * @throws RepositoryException if any JCR related operation fails, including the case when the path to the property isn't valid.
      */
     @GET
@@ -185,6 +187,10 @@ public final class ModeShapeRestService {
                                @QueryParam( "contentDisposition" ) String contentDisposition )
             throws RepositoryException {
         Property binaryProperty = binaryHandler.getBinaryProperty(request, repositoryName, workspaceName, path);
+        if (binaryProperty.getType() != PropertyType.BINARY) {
+            return Response.status(Response.Status.NOT_FOUND).entity(new RestException(
+                    "The property " + binaryProperty.getPath() + " is not a binary")).build();
+        }
         Binary binary = binaryProperty.getBinary();
         if (StringUtil.isBlank(mimeType)) {
             mimeType = binaryHandler.getDefaultMimeType(binaryProperty);
@@ -192,6 +198,10 @@ public final class ModeShapeRestService {
         if (StringUtil.isBlank(contentDisposition)) {
             contentDisposition = binaryHandler.getDefaultContentDisposition(binaryProperty);
         }
+        /**
+         * TODO author=Horia Chiorean date=8/15/12 description=There is nasty RestEASY bug: https://issues.jboss.org/browse/RESTEASY-741
+         * so we need to be aware that with the current version the stream won't be closed.
+         */
         Response.ResponseBuilder responseBuilder = Response.ok(binary.getStream(), mimeType);
         responseBuilder.header("Content-Disposition", contentDisposition);
         return responseBuilder.build();

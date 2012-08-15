@@ -1,0 +1,22 @@
+{
+    "testNode/child/subChild" : {
+        "jcr:primaryType":"nt:unstructured",
+        "testProperty":"testValue",
+        "multiValuedProperty":["value1", "value2"]
+    },
+    "testNode/child" : {
+        "jcr:primaryType":"nt:unstructured",
+        "testProperty":"testValue",
+        "multiValuedProperty":["value1", "value2"]
+    },
+    "testNode/otherChild" : {
+        "jcr:primaryType":"nt:unstructured",
+        "testProperty":"testValue",
+        "multiValuedProperty":["value1", "value2"],
+        "children":{
+            "otherSubChild":{
+                "nestedProperty":"nestedValue"
+            }
+        }
+    }
+}
