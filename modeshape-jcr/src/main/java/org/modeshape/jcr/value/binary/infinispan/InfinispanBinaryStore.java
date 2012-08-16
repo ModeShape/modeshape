@@ -199,7 +199,6 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
 
     @Override
     public void markAsUnused( Iterable<BinaryKey> keys ) throws BinaryStoreException {
-        // todo as further optimization for DIST caches a distributed callable could be used
         for(BinaryKey binaryKey : keys){
             Lock lock = lockFactory.writeLock(binaryKey.toString());
             try {
@@ -248,46 +247,50 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             });
             Map<String, String> result = task.execute();
             for(String key : result.values()){
-                removeBinaryValue(key);
+                InfinispanBinaryStore.Lock lock = lockFactory.writeLock(key);
+                try {
+                    removeBinaryValue(metadataCache, blobCache, key);
+                } finally {
+                    lock.unlock();
+                }
             }
         } else {
             // local / repl cache
             // todo in case of eviction enabled and/or preload disabled, keySet() is insufficient. We need to query also the CacheStore.
             long now = System.currentTimeMillis();
-            Iterator<Map.Entry<String, Metadata>> it = metadataCache.entrySet().iterator();
             for (String key : new ArrayList<String>(metadataCache.keySet())){
                 // todo maybe small sleep between loops to avoid GC slowing down app too much?
                 Metadata metadata = metadataCache.get(key);
                 if(metadata != null && metadata.isUnused() && now - metadata.unusedSince() > minimumAgeInMS){
-                    removeBinaryValue(key);
+                    InfinispanBinaryStore.Lock lock = lockFactory.writeLock(key);
+                    try {
+                        removeBinaryValue(metadataCache, blobCache, key);
+                    } finally {
+                        lock.unlock();
+                    }
                 }
             }
         }
     }
 
-    private void removeBinaryValue(String key) throws BinaryStoreException {
-        // need to be locked to avoid problems e.g. when parallel the same binary data are stored
-        InfinispanBinaryStore.Lock lock = lockFactory.writeLock(key);
-        try {
-            Metadata metadata = metadataCache.get(key);
-            // double check != null
-            if(metadata != null && metadata.isUnused()){
-                // remove chunks (if any)
-                if(metadata.getNumberChunks() > 0){
-                    for(int chunkIndex = 0; chunkIndex < metadata.getNumberChunks(); chunkIndex++){
-                        blobCache.remove(key+"-"+chunkIndex);
-                    }
-                }
-                if(metadata.getNumberTextChunks() > 0){
-                    for(int chunkIndex = 0; chunkIndex < metadata.getNumberTextChunks(); chunkIndex++){
-                        blobCache.remove(key+"-text-"+chunkIndex);
-                    }
-                }
-                // now the metadata entry itself
-                metadataCache.remove(key);
+    static void removeBinaryValue(final Cache<String, Metadata> metadataCache, final Cache<String, byte[]> blobCache, final String key) throws BinaryStoreException {
+        Metadata metadata = metadataCache.get(key);
+        // double check != null
+        if(metadata == null || !metadata.isUnused()){
+            return;
+        }
+        // the metadata entry itself
+        metadataCache.remove(key);
+        // remove chunks (if any)
+        if(metadata.getNumberChunks() > 0){
+            for(int chunkIndex = 0; chunkIndex < metadata.getNumberChunks(); chunkIndex++){
+                blobCache.remove(key+"-"+chunkIndex);
             }
-        } finally {
-            lock.unlock();
+        }
+        if(metadata.getNumberTextChunks() > 0){
+            for(int chunkIndex = 0; chunkIndex < metadata.getNumberTextChunks(); chunkIndex++){
+                blobCache.remove(key+"-text-"+chunkIndex);
+            }
         }
     }
 

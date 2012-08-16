@@ -53,22 +53,16 @@ class DistributedRemoval implements DistributedCallable<String, Metadata, Object
         long now = System.currentTimeMillis();
         InfinispanBinaryStore.LockFactory lockFactory = new InfinispanBinaryStore.LockFactory(metadataCache);
         // todo in case of eviction enabled, keySet() is insufficient. We need to query also the CacheStore.
+        // todo if store is shared query only from coordinator node
         for(String keyString : metadataCache.keySet()){
             // need to be locked to avoid problems e.g. when parallel the same binary data are stored
             InfinispanBinaryStore.Lock lock = lockFactory.writeLock(keyString);
             try {
+                InfinispanBinaryStore.removeBinaryValue(metadataCache, blobCache, keyString);
                 Metadata metadata = metadataCache.get(keyString);
                 // double check != null
                 if(metadata != null && metadata.isUnused() && now - metadata.unusedSince() > minimumAgeInMS){
-                    // remove chunks (if any)
-                    if(metadata.getLength() > 0){
-
-                        for(int chunkIndex = 0; chunkIndex < metadata.getNumberChunks(); chunkIndex++){
-                            blobCache.remove(keyString+"-"+chunkIndex);
-                        }
-                    }
-                    // now the metadata entry itself
-                    metadataCache.remove(keyString);
+                    InfinispanBinaryStore.removeBinaryValue(metadataCache, blobCache, keyString);
                 }
             } finally {
                 lock.unlock();
