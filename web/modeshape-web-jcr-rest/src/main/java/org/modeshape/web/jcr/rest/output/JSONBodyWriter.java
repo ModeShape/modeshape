@@ -54,7 +54,7 @@ import java.util.Collection;
 public class JSONBodyWriter implements MessageBodyWriter<Object> {
 
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings( "unchecked" )
     public long getSize( Object object,
                          Class<?> type,
                          Type genericType,
@@ -62,9 +62,9 @@ public class JSONBodyWriter implements MessageBodyWriter<Object> {
                          MediaType mediaType ) {
         try {
             if (isJSONAble(type)) {
-                return getString((JSONAble) object).getBytes().length;
+                return getString((JSONAble)object).getBytes().length;
             } else if (isJSONAbleCollection(type, genericType)) {
-                return getString((Collection<JSONAble>) object).getBytes().length;
+                return getString((Collection<JSONAble>)object).getBytes().length;
             }
             return 0;
         } catch (JSONException e) {
@@ -80,13 +80,13 @@ public class JSONBodyWriter implements MessageBodyWriter<Object> {
         return isJSONAble(type) || isJSONAbleCollection(type, genericType);
     }
 
-    private boolean isJSONAble(Class<?> type) {
+    private boolean isJSONAble( Class<?> type ) {
         return JSONAble.class.isAssignableFrom(type);
     }
 
-    private boolean isJSONAbleCollection(Class<?> type, Type genericType) {
-        if ((Collection.class.isAssignableFrom(type) || type.isArray()) && genericType != null)
-        {
+    private boolean isJSONAbleCollection( Class<?> type,
+                                          Type genericType ) {
+        if ((Collection.class.isAssignableFrom(type) || type.isArray()) && genericType != null) {
             Class baseType = Types.getCollectionBaseType(type, genericType);
             return baseType != null && JSONAble.class.isAssignableFrom(baseType);
         }
@@ -94,7 +94,7 @@ public class JSONBodyWriter implements MessageBodyWriter<Object> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings( "unchecked" )
     public void writeTo( Object object,
                          Class<?> type,
                          Type genericType,
@@ -120,19 +120,19 @@ public class JSONBodyWriter implements MessageBodyWriter<Object> {
         printWriter.flush();
     }
 
-    protected String getString(JSONAble jsonAble) throws JSONException {
+    protected String getString( JSONAble jsonAble ) throws JSONException {
         return jsonAble.toJSON().toString();
     }
 
-    protected String getString(JSONArray array) throws JSONException {
+    protected String getString( JSONArray array ) throws JSONException {
         return array.toString();
     }
 
-    private String getString(Collection<JSONAble> collection) throws JSONException {
+    private String getString( Collection<JSONAble> collection ) throws JSONException {
         return getString(toArray(collection));
     }
 
-    private JSONArray toArray(Collection<JSONAble> collection) throws JSONException {
+    private JSONArray toArray( Collection<JSONAble> collection ) throws JSONException {
         JSONArray array = new JSONArray();
         for (JSONAble jsonAble : collection) {
             array.put(jsonAble.toJSON());

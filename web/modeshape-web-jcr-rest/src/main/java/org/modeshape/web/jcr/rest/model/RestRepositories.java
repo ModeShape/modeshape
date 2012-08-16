@@ -45,7 +45,8 @@ public final class RestRepositories implements JSONAble {
         repositories = new ArrayList<Repository>();
     }
 
-    public Repository addRepository(String name, String url) {
+    public Repository addRepository( String name,
+                                     String url ) {
         Repository repository = new Repository(name, url);
         repositories.add(repository);
         return repository;
@@ -67,13 +68,15 @@ public final class RestRepositories implements JSONAble {
         private final String url;
         private final Map<String, List<String>> metadata;
 
-        private Repository( String name, String url ) {
+        private Repository( String name,
+                            String url ) {
             this.name = name;
             this.url = url;
             this.metadata = new TreeMap<String, List<String>>();
         }
 
-        public void addMetadata(String key, List<String> value) {
+        public void addMetadata( String key,
+                                 List<String> value ) {
             if (key != null && value != null && !value.isEmpty()) {
                 metadata.put(key, value);
             }
@@ -89,8 +92,7 @@ public final class RestRepositories implements JSONAble {
                 List<String> values = this.metadata.get(metadataKey);
                 if (values.size() == 1) {
                     metadata.put(metadataKey, values.get(0));
-                }
-                else {
+                } else {
                     metadata.put(metadataKey, values);
                 }
             }

@@ -481,7 +481,7 @@ public class ItemHandler extends AbstractHandler {
     }
 
     protected void doDelete( String path,
-                           Session session ) throws RepositoryException {
+                             Session session ) throws RepositoryException {
         Item item;
         try {
             item = session.getItem(path);

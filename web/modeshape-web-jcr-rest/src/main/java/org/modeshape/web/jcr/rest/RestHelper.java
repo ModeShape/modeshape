@@ -144,7 +144,6 @@ public final class RestHelper {
      *
      * @param value the property value; may not be null
      * @return the string representation of the value
-     *
      * @deprecated since 3.0 binary values are handled via URLs
      */
     public static String jsonEncodedStringFor( Value value ) {

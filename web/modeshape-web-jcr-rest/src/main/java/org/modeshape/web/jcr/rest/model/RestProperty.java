@@ -63,8 +63,7 @@ public final class RestProperty extends RestItem {
         JSONObject object = new JSONObject();
         if (isMultiValue()) {
             object.put("values", values);
-        }
-        else if (getValue() != null) {
+        } else if (getValue() != null) {
             object.put(name, getValue());
         }
         object.put("self", url);

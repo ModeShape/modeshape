@@ -18,17 +18,16 @@ public class RepositoryHandler extends AbstractHandler {
 
     /**
      * Returns the list of workspaces available to this user within the named repository.
-     * 
+     *
      * @param rawRepositoryName the name of the repository; may not be null
      * @param request the servlet request; may not be null
      * @return the list of workspaces available to this user within the named repository.
      * @throws JSONException if there is an error encoding the response
      * @throws RepositoryException if there is any other error accessing the list of available workspaces for the repository
-     *
      * @deprecated since 3.0
      */
     public String getWorkspaces( HttpServletRequest request,
-                          String rawRepositoryName ) throws JSONException, RepositoryException {
+                                 String rawRepositoryName ) throws JSONException, RepositoryException {
 
         assert request != null;
         assert rawRepositoryName != null;

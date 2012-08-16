@@ -43,9 +43,10 @@ public final class FileUploadForm {
 
     /**
      * Sets the {@link InputStream} which corresponds to the HTML element named {@code file}. RestEASY will call this method.
+     *
      * @param fileData a {@link InputStream} or {@code null} if there isn't an HTML field with the {@code file} name.
      */
-    @FormParam("file")
+    @FormParam( "file" )
     public void setFileData( InputStream fileData ) {
         this.fileData = fileData;
     }
@@ -57,7 +58,8 @@ public final class FileUploadForm {
      */
     public void validate() {
         if (fileData == null) {
-            throw new IllegalArgumentException("Please make sure the file is uploaded from an HTML element with the name \"file\"");
+            throw new IllegalArgumentException(
+                    "Please make sure the file is uploaded from an HTML element with the name \"file\"");
         }
     }
 }

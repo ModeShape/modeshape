@@ -47,14 +47,15 @@ public final class RestQueryResult implements JSONAble {
         rows = new ArrayList<RestRow>();
     }
 
-    public RestQueryResult addColumn(String name, String type) {
+    public RestQueryResult addColumn( String name,
+                                      String type ) {
         if (!StringUtil.isBlank(name)) {
             columns.put(name, type);
         }
         return this;
     }
 
-    public RestQueryResult addRow(RestRow row) {
+    public RestQueryResult addRow( RestRow row ) {
         rows.add(row);
         return this;
     }
@@ -82,7 +83,8 @@ public final class RestQueryResult implements JSONAble {
             this.values = new LinkedHashMap<String, String>();
         }
 
-        public void addValue(String name, String value) {
+        public void addValue( String name,
+                              String value ) {
             if (!StringUtil.isBlank(name) && !StringUtil.isBlank(value)) {
                 values.put(name, value);
             }

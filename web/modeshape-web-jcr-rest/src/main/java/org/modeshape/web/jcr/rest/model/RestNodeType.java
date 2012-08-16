@@ -52,7 +52,8 @@ public final class RestNodeType implements JSONAble {
     private final boolean isAbstract;
     private final boolean isQueryable;
 
-    public RestNodeType(NodeType nodeType, String baseUrl) {
+    public RestNodeType( NodeType nodeType,
+                         String baseUrl ) {
         this.name = nodeType.getName();
         this.isMixin = nodeType.isMixin();
         this.isAbstract = nodeType.isAbstract();

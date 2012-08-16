@@ -66,7 +66,9 @@ public class QueryHandler extends AbstractHandler {
             resultRows.skip(offset);
         }
 
-        if (limit < 0) limit = Long.MAX_VALUE;
+        if (limit < 0) {
+            limit = Long.MAX_VALUE;
+        }
 
         while (resultRows.hasNext() && limit > 0) {
             limit--;
@@ -110,8 +112,8 @@ public class QueryHandler extends AbstractHandler {
     }
 
     protected Query createQuery( String language,
-                               String statement,
-                               Session session ) throws RepositoryException {
+                                 String statement,
+                                 Session session ) throws RepositoryException {
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         return queryManager.createQuery(statement, language);
     }
