@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -63,7 +62,6 @@ public final class RestItemHandler extends ItemHandler {
      * @param depth the depth of the node graph that should be returned if {@code path} refers to a node. @{code 0} means return
      * the requested node only. A negative value indicates that the full subgraph under the node should be returned. This
      * parameter defaults to {@code 0} and is ignored if {@code path} refers to a property.
-     *
      * @return a the rest representation of the item, as a {@link RestItem} instance.
      * @throws RepositoryException
      */
@@ -131,7 +129,7 @@ public final class RestItemHandler extends ItemHandler {
         return lastSlashInd == -1 ? path : path.substring(lastSlashInd + 1);
     }
 
-   /**
+    /**
      * Updates the properties at the path.
      * <p>
      * If path points to a property, this method expects the request content to be either a JSON array or a JSON string. The array
@@ -219,7 +217,7 @@ public final class RestItemHandler extends ItemHandler {
     public Response deleteItems( HttpServletRequest request,
                                  String repositoryName,
                                  String workspaceName,
-                                 String requestContent) throws JSONException, RepositoryException {
+                                 String requestContent ) throws JSONException, RepositoryException {
         JSONArray requestArray = stringToJSONArray(requestContent);
         if (requestArray.length() == 0) {
             return Response.ok().build();
@@ -256,7 +254,7 @@ public final class RestItemHandler extends ItemHandler {
         return result;
     }
 
-    private TreeMap<String, JSONObject> createNodesByPathMap(JSONObject requestBodyJSON) throws JSONException {
+    private TreeMap<String, JSONObject> createNodesByPathMap( JSONObject requestBodyJSON ) throws JSONException {
         TreeMap<String, JSONObject> nodesByPath = new TreeMap<String, JSONObject>();
         for (Iterator<?> iterator = requestBodyJSON.keys(); iterator.hasNext(); ) {
             String key = iterator.next().toString();
@@ -287,7 +285,8 @@ public final class RestItemHandler extends ItemHandler {
     }
 
     private Response createOkResponse( final List<RestItem> result ) {
-        GenericEntity<List<RestItem>> entity = new GenericEntity<List<RestItem>>(result){};
+        GenericEntity<List<RestItem>> entity = new GenericEntity<List<RestItem>>(result) {
+        };
         return Response.ok().entity(entity).build();
     }
 }

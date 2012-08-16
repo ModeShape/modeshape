@@ -23,14 +23,14 @@
  */
 package org.modeshape.web.jcr.rest;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import javax.ws.rs.core.Application;
 import org.modeshape.web.jcr.rest.form.FileUploadForm;
 import org.modeshape.web.jcr.rest.output.HtmlBodyWriter;
 import org.modeshape.web.jcr.rest.output.JSONBodyWriter;
 import org.modeshape.web.jcr.rest.output.TextBodyWriter;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Implementation of the JAX-RS {@code Application} class to identify all JAX-RS providers and classes in the application.

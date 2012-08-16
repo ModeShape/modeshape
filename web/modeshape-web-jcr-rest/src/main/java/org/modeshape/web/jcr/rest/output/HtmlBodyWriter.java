@@ -43,7 +43,7 @@ import java.util.regex.Pattern;
 @Produces( { MediaType.TEXT_HTML } )
 public class HtmlBodyWriter extends TextBodyWriter {
 
-    protected String getString(JSONAble jsonAble) throws JSONException {
+    protected String getString( JSONAble jsonAble ) throws JSONException {
         String text = super.getString(jsonAble);
         return jsonAble instanceof RestException ? replaceSpaces(replaceLineTerminators(text)) : htmlString(text);
     }
@@ -60,11 +60,11 @@ public class HtmlBodyWriter extends TextBodyWriter {
         return "<code>" + jsonString + "</code>";
     }
 
-//    private String addColor( String jsonString ) {
-//        jsonString = jsonString.replaceAll("(\\{?\")([A-Z\\:a-z_]+)(\"\\:)", "$1<font color=\"#0000FF;\">$2</font>$3");
-//        jsonString = jsonString.replaceAll("(\\:\\s*)([A-Za-z_&&[^https?|file]]+)(\\,?)", "$1<font color=\"#008000;\">$2</font>$3");
-//        return jsonString;
-//    }
+    //    private String addColor( String jsonString ) {
+    //        jsonString = jsonString.replaceAll("(\\{?\")([A-Z\\:a-z_]+)(\"\\:)", "$1<font color=\"#0000FF;\">$2</font>$3");
+    //        jsonString = jsonString.replaceAll("(\\:\\s*)([A-Za-z_&&[^https?|file]]+)(\\,?)", "$1<font color=\"#008000;\">$2</font>$3");
+    //        return jsonString;
+    //    }
 
     private String createURLs( String jsonString ) {
         String urlPattern = "(?:(?:https?|file)://)[^\"\\r\\n]+";

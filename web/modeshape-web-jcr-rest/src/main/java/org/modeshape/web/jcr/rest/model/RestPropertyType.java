@@ -49,7 +49,7 @@ public final class RestPropertyType implements JSONAble {
     private final boolean isFullTextSearchable;
     private final String requiredType;
 
-    public RestPropertyType(PropertyDefinition definition) {
+    public RestPropertyType( PropertyDefinition definition ) {
         this.name = definition.getName();
         this.requiredType = PropertyType.nameFromValue(definition.getRequiredType());
         NodeType declaringNodeType = definition.getDeclaringNodeType();

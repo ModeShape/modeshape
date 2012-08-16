@@ -33,6 +33,7 @@ import java.util.List;
 
 /**
  * A REST representation of a collection of {@link Workspace workspaces}
+ *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public final class RestWorkspaces implements JSONAble {
@@ -43,7 +44,8 @@ public final class RestWorkspaces implements JSONAble {
         this.workspaces = new ArrayList<Workspace>();
     }
 
-    public Workspace addWorkspace(String name, String repositoryUrl) {
+    public Workspace addWorkspace( String name,
+                                   String repositoryUrl ) {
         Workspace workspace = new Workspace(name, repositoryUrl);
         workspaces.add(workspace);
         return workspace;

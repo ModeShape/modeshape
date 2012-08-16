@@ -44,7 +44,7 @@ public final class RestException implements JSONAble {
         this.stackTrace = null;
     }
 
-    public RestException(Exception e) {
+    public RestException( Exception e ) {
         this.message = e.getMessage();
         StringWriter stringWriter = new StringWriter();
         e.printStackTrace(new PrintWriter(stringWriter));

@@ -307,37 +307,37 @@ public final class ModeShapeRestService {
      *
      * The format of the JSON request must be an object of the form:
      * <ul>
-     *     <li>
+     * <li>
      * {
-     *   "node1_path" : {
-     *       node1_body
-     *   },
-     *   "node2_path": {
-     *       node2_body
-     *   }
-     *   ...
+     * "node1_path" : {
+     * node1_body
+     * },
+     * "node2_path": {
+     * node2_body
      * }
-     *     </li>
-     *     <li>
-     *      {
-     *   "property1_path" : {
-     *       property1_body
-     *   },
-     *   "property2_path": {
-     *       property2_body
-     *   }
-     *   ...
+     * ...
      * }
-     *     </li>
-     *     <li>
-     *       {
-     *   "property1_path" : {
-     *       property1_body
-     *   },
-     *   "node1_path": {
-     *       node1_body
-     *   }
-     *   ...
+     * </li>
+     * <li>
+     * {
+     * "property1_path" : {
+     * property1_body
+     * },
+     * "property2_path": {
+     * property2_body
+     * }
+     * ...
+     * }
+     * </li>
+     * <li>
+     * {
+     * "property1_path" : {
+     * property1_body
+     * },
+     * "node1_path": {
+     * node1_body
+     * }
+     * ...
      * }
      * </li>
      * </ul>
@@ -380,11 +380,11 @@ public final class ModeShapeRestService {
      *
      * The format of the JSON request must an array of the form:
      * <ul>
-     *     <li>["node1_path", "node2_path",...]</li>
-     *     <li>["property1_path", "property2_path",...]</li>
-     *     <li>["property1_path", "node1_path",...]</li>
+     * <li>["node1_path", "node2_path",...]</li>
+     * <li>["property1_path", "property2_path",...]</li>
+     * <li>["property1_path", "node1_path",...]</li>
      * </ul>
-
+     *
      * @see {@link ModeShapeRestService#deleteItem(javax.servlet.http.HttpServletRequest, String, String, String)}
      */
     @DELETE
@@ -412,43 +412,44 @@ public final class ModeShapeRestService {
                              String requestContent ) throws JSONException, RepositoryException {
         return itemHandler.updateItem(request, rawRepositoryName, rawWorkspaceName, path, requestContent);
     }
+
     /**
      * Performs a bulk update of items via a single session, using the body of the request,
      * which is expected to be a valid JSON object.
      *
      * The format of the JSON request must be an object of the form:
      * <ul>
-     *     <li>
+     * <li>
      * {
-     *   "node1_path" : {
-     *       node1_body
-     *   },
-     *   "node2_path": {
-     *       node2_body
-     *   }
-     *   ...
+     * "node1_path" : {
+     * node1_body
+     * },
+     * "node2_path": {
+     * node2_body
      * }
-     *     </li>
-     *     <li>
-     *      {
-     *   "property1_path" : {
-     *       property1_body
-     *   },
-     *   "property2_path": {
-     *       property2_body
-     *   }
-     *   ...
+     * ...
      * }
-     *     </li>
-     *     <li>
-     *       {
-     *   "property1_path" : {
-     *       property1_body
-     *   },
-     *   "node1_path": {
-     *       node1_body
-     *   }
-     *   ...
+     * </li>
+     * <li>
+     * {
+     * "property1_path" : {
+     * property1_body
+     * },
+     * "property2_path": {
+     * property2_body
+     * }
+     * ...
+     * }
+     * </li>
+     * <li>
+     * {
+     * "property1_path" : {
+     * property1_body
+     * },
+     * "node1_path": {
+     * node1_body
+     * }
+     * ...
      * }
      * </li>
      * </ul>
@@ -480,7 +481,6 @@ public final class ModeShapeRestService {
      * @param requestBodyInputStream a non-null {@link InputStream} stream which represents the body of the request, where
      * the binary content is expected.
      * @return a representation of the binary property that was created/updated.
-     *
      * @throws RepositoryException if any JCR related operation fails.
      */
     @POST
@@ -506,7 +506,6 @@ public final class ModeShapeRestService {
      * @param requestBodyInputStream a non-null {@link InputStream} stream which represents the body of the request, where
      * the binary content is expected.
      * @return a representation of the binary property that was updated.
-     *
      * @throws RepositoryException if any JCR related operation fails.
      */
     @PUT

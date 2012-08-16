@@ -39,18 +39,20 @@ public final class RestNode extends RestItem {
     private final List<RestProperty> properties;
     private final List<RestNode> children;
 
-    public RestNode( String name, String url, String parentUrl ) {
+    public RestNode( String name,
+                     String url,
+                     String parentUrl ) {
         super(name, url, parentUrl);
         properties = new ArrayList<RestProperty>();
         children = new ArrayList<RestNode>();
     }
 
-    public RestNode addChild(RestNode child) {
+    public RestNode addChild( RestNode child ) {
         children.add(child);
         return this;
     }
 
-    public RestNode addProperty(RestProperty property) {
+    public RestNode addProperty( RestProperty property ) {
         properties.add(property);
         return this;
     }

@@ -98,18 +98,18 @@ import java.io.IOException;
  * <p>
  * For example, if the "jcr:data" property contains a single binary value of "propertyValue", then the JSON object representing
  * that property will be:
- * 
+ *
  * <pre>
  *   &quot;jcr:data/base64/&quot; : &quot;cHJvcGVydHlWYWx1ZQ==&quot;
  * </pre>
- * 
+ *
  * Likewise, if the "jcr:data" property contains two binary values each being "propertyValue", then the JSON object representing
  * that property will be:
- * 
+ *
  * <pre>
  *   &quot;jcr:data/base64/&quot; : [ &quot;cHJvcGVydHlWYWx1ZQ==&quot;, &quot;cHJvcGVydHlWYWx1ZQ==&quot; ]
  * </pre>
- * 
+ *
  * Note that JCR 1.0.1 does not allow property names to and with a '/' character (among others), while JCR 2.0 does not allow
  * property names to contain an unescaped or unencoded '/' character. Therefore, the "/{encoding}/" suffix can never appear in a
  * valid JCR property name, and will always identify an encoded property.
@@ -158,7 +158,7 @@ public class JcrResources {
 
     /**
      * Returns the list of JCR repositories available on this server
-     * 
+     *
      * @param request the servlet request; may not be null
      * @return the list of JCR repositories available on this server
      * @throws JSONException if there is an error encoding the node
@@ -166,14 +166,14 @@ public class JcrResources {
      */
     @GET
     @Path( "/" )
-    @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public String getRepositories( @Context HttpServletRequest request ) throws JSONException, RepositoryException {
         return serverHandler.getRepositories(request);
     }
 
     /**
      * Returns the list of workspaces available to this user within the named repository.
-     * 
+     *
      * @param rawRepositoryName the name of the repository; may not be null
      * @param request the servlet request; may not be null
      * @return the list of workspaces available to this user within the named repository.
@@ -182,29 +182,29 @@ public class JcrResources {
      */
     @GET
     @Path( "{repositoryName}" )
-    @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public String getWorkspaces( @Context HttpServletRequest request,
                                  @PathParam( "repositoryName" ) String rawRepositoryName )
-        throws JSONException, RepositoryException {
+            throws JSONException, RepositoryException {
         return repositoryHandler.getWorkspaces(request, rawRepositoryName);
     }
 
     /**
      * Handles GET requests for an item in a workspace.
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param path the path to the item
      * @param deprecatedDepth the old depth parameter ("mode:depth"). This version is deprecated and should use the "depth" query
-     *        parameter instead.
+     * parameter instead.
      * @param depth the depth of the node graph that should be returned if {@code path} refers to a node. @{code 0} means return
-     *        the requested node only. A negative value indicates that the full subgraph under the node should be returned. This
-     *        parameter defaults to {@code 0} and is ignored if {@code path} refers to a property.
+     * the requested node only. A negative value indicates that the full subgraph under the node should be returned. This
+     * parameter defaults to {@code 0} and is ignored if {@code path} refers to a property.
      * @return the JSON-encoded version of the item (and, if the item is a node, its subgraph, depending on the value of
      *         {@code depth})
      * @throws NotFoundException if the named repository does not exists, the named workspace does not exist, or the user does not
-     *         have access to the named workspace
+     * have access to the named workspace
      * @throws JSONException if there is an error encoding the node
      * @throws UnauthorizedException if the given login information is invalid
      * @throws RepositoryException if any other error occurs
@@ -214,15 +214,17 @@ public class JcrResources {
      */
     @GET
     @Path( "{repositoryName}/{workspaceName}/items{path:.*}" )
-    @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public String getItem( @Context HttpServletRequest request,
                            @PathParam( "repositoryName" ) String rawRepositoryName,
                            @PathParam( "workspaceName" ) String rawWorkspaceName,
                            @PathParam( "path" ) String path,
                            @QueryParam( "mode:depth" ) @DefaultValue( "0" ) int deprecatedDepth,
                            @QueryParam( "depth" ) @DefaultValue( "0" ) int depth )
-        throws JSONException, UnauthorizedException, RepositoryException {
-        if (depth == 0 && deprecatedDepth != 0) depth = deprecatedDepth;
+            throws JSONException, UnauthorizedException, RepositoryException {
+        if (depth == 0 && deprecatedDepth != 0) {
+            depth = deprecatedDepth;
+        }
         return itemHandler.getItem(request, rawRepositoryName, rawWorkspaceName, path, depth);
     }
 
@@ -232,14 +234,14 @@ public class JcrResources {
      * The primary type and mixin type(s) may optionally be specified through the {@code jcr:primaryType} and
      * {@code jcr:mixinTypes} properties.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param path the path to the item
      * @param fullNodeInResponse if {@code fullNodeInResponse == null || Boolean.valueOf(fullNodeInResponse)}, indicates that a
-     *        representation of the created node (including all properties and children) should be returned; otherwise, only the
-     *        path to the new node will be returned
+     * representation of the created node (including all properties and children) should be returned; otherwise, only the
+     * path to the new node will be returned
      * @param requestContent the JSON-encoded representation of the node or nodes to be added
      * @return the JSON-encoded representation of the node or nodes that were added. This will differ from {@code requestContent}
      *         in that auto-created and protected properties (e.g., jcr:uuid) will be populated.
@@ -250,14 +252,14 @@ public class JcrResources {
      */
     @POST
     @Path( "{repositoryName}/{workspaceName}/items/{path:.*}" )
-    @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public Response postItem( @Context HttpServletRequest request,
                               @PathParam( "repositoryName" ) String rawRepositoryName,
                               @PathParam( "workspaceName" ) String rawWorkspaceName,
                               @PathParam( "path" ) String path,
                               @QueryParam( "mode:includeNode" ) String fullNodeInResponse,
                               String requestContent )
-        throws NotFoundException, UnauthorizedException, RepositoryException, JSONException {
+            throws NotFoundException, UnauthorizedException, RepositoryException, JSONException {
         return itemHandler.postItem(request,
                                     rawRepositoryName,
                                     rawWorkspaceName,
@@ -268,7 +270,7 @@ public class JcrResources {
 
     /**
      * Deletes the item at {@code path}.
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -283,7 +285,7 @@ public class JcrResources {
                             @PathParam( "repositoryName" ) String rawRepositoryName,
                             @PathParam( "workspaceName" ) String rawWorkspaceName,
                             @PathParam( "path" ) String path )
-        throws NotFoundException, UnauthorizedException, RepositoryException {
+            throws NotFoundException, UnauthorizedException, RepositoryException {
         itemHandler.deleteItem(request, rawRepositoryName, rawWorkspaceName, path);
     }
 
@@ -295,7 +297,7 @@ public class JcrResources {
      * content to be a JSON object. The keys of the objects correspond to property names that will be set and the values for the
      * keys correspond to the values that will be set on the properties.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -311,7 +313,7 @@ public class JcrResources {
     @PUT
     @Path( "{repositoryName}/{workspaceName}/items{path:.*}" )
     @Consumes( MediaType.APPLICATION_JSON )
-    @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public String putItem( @Context HttpServletRequest request,
                            @PathParam( "repositoryName" ) String rawRepositoryName,
                            @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -325,16 +327,16 @@ public class JcrResources {
      * <p>
      * The query results will be JSON-encoded in the response body.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
-     *        records will be returned. If this value is less than 0, results will be returned starting from the first record in
-     *        the result set.
+     * records will be returned. If this value is less than 0, results will be returned starting from the first record in
+     * the result set.
      * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
-     *        entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
-     *        results are counted from the record specified in the offset parameter.
+     * entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
+     * results are counted from the record specified in the offset parameter.
      * @param uriInfo the information about the URI (from which the other query parameters will be obtained)
      * @param requestContent the query expression
      * @return the JSON-encoded representation of the query results.
@@ -346,7 +348,7 @@ public class JcrResources {
     @POST
     @Path( "{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+xpath" )
-    @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public String postXPathQuery( @Context HttpServletRequest request,
                                   @PathParam( "repositoryName" ) String rawRepositoryName,
                                   @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -369,16 +371,16 @@ public class JcrResources {
      * <p>
      * The query results will be JSON-encoded in the response body.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
-     *        records will be returned. If this value is less than 0, results will be returned starting from the first record in
-     *        the result set.
+     * records will be returned. If this value is less than 0, results will be returned starting from the first record in
+     * the result set.
      * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
-     *        entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
-     *        results are counted from the record specified in the offset parameter.
+     * entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
+     * results are counted from the record specified in the offset parameter.
      * @param uriInfo the information about the URI (from which the other query parameters will be obtained)
      * @param requestContent the query expression
      * @return the JSON-encoded representation of the query results.
@@ -390,7 +392,7 @@ public class JcrResources {
     @POST
     @Path( "{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+sql" )
-    @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public String postJcrSqlQuery( @Context HttpServletRequest request,
                                    @PathParam( "repositoryName" ) String rawRepositoryName,
                                    @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -413,16 +415,16 @@ public class JcrResources {
      * <p>
      * The query results will be JSON-encoded in the response body.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
-     *        records will be returned. If this value is less than 0, results will be returned starting from the first record in
-     *        the result set.
+     * records will be returned. If this value is less than 0, results will be returned starting from the first record in
+     * the result set.
      * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
-     *        entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
-     *        results are counted from the record specified in the offset parameter.
+     * entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
+     * results are counted from the record specified in the offset parameter.
      * @param uriInfo the information about the URI (from which the other query parameters will be obtained)
      * @param requestContent the query expression
      * @return the JSON-encoded representation of the query results.
@@ -433,7 +435,7 @@ public class JcrResources {
     @POST
     @Path( "{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+sql2" )
-    @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public String postJcrSql2Query( @Context HttpServletRequest request,
                                     @PathParam( "repositoryName" ) String rawRepositoryName,
                                     @PathParam( "workspaceName" ) String rawWorkspaceName,
@@ -456,16 +458,16 @@ public class JcrResources {
      * <p>
      * The query results will be JSON-encoded in the response body.
      * </p>
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
-     *        records will be returned. If this value is less than 0, results will be returned starting from the first record in
-     *        the result set.
+     * records will be returned. If this value is less than 0, results will be returned starting from the first record in
+     * the result set.
      * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
-     *        entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
-     *        results are counted from the record specified in the offset parameter.
+     * entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
+     * results are counted from the record specified in the offset parameter.
      * @param uriInfo the information about the URI (from which the other query parameters will be obtained)
      * @param requestContent the query expression
      * @return the JSON-encoded representation of the query results.
@@ -476,7 +478,7 @@ public class JcrResources {
     @POST
     @Path( "{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+search" )
-    @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
+    @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML } )
     public String postJcrSearchQuery( @Context HttpServletRequest request,
                                       @PathParam( "repositoryName" ) String rawRepositoryName,
                                       @PathParam( "workspaceName" ) String rawWorkspaceName,
