@@ -79,7 +79,7 @@ import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.DatabaseBinaryStore;
 import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
-import org.modeshape.jcr.value.binary.InfinispanBinaryStore;
+import org.modeshape.jcr.value.binary.infinispan.InfinispanBinaryStore;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
 
 /**
@@ -958,14 +958,20 @@ public class RepositoryConfiguration {
                     store = new DatabaseBinaryStore(dataSourceJndi);
                 }
             } else if (type.equalsIgnoreCase("cache")) {
-                String cacheName = binaryStorage.getString(FieldName.CACHE_NAME, getName());
+                String metadataCacheName = binaryStorage.getString(FieldName.METADATA_CACHE_NAME, getName());
+                String blobCacheName = binaryStorage.getString(FieldName.DATA_CACHE_NAME, getName());
                 String cacheConfiguration = binaryStorage.getString(FieldName.CACHE_CONFIGURATION); // may be null
-                if (cacheConfiguration == null) cacheConfiguration = getCacheConfiguration();
+                boolean dedicatedCacheContainer = false;
+                if (cacheConfiguration == null) {
+                    cacheConfiguration = getCacheConfiguration();
+                } else {
+                    dedicatedCacheContainer = true;
+                }
                 CacheContainer cacheContainer = getCacheContainer(cacheConfiguration);
 
                 // String cacheTransactionManagerLookupClass = binaryStorage.getString(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP,
                 // Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
-                store = new InfinispanBinaryStore(cacheName, cacheContainer);
+                store = new InfinispanBinaryStore(cacheContainer, dedicatedCacheContainer, metadataCacheName, blobCacheName);
             }
             if (store == null) store = TransientBinaryStore.get();
             store.setMinimumBinarySizeInBytes(getMinimumBinarySizeInBytes());

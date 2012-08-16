@@ -25,8 +25,6 @@ package org.modeshape.jcr.value;
 
 import java.io.Serializable;
 import java.security.NoSuchAlgorithmException;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.SecureHash;
@@ -39,12 +37,9 @@ import org.modeshape.common.util.StringUtil;
 public class BinaryKey implements Serializable, Comparable<BinaryKey> {
     private static final long serialVersionUID = 1L;
 
-    protected static final Set<String> ALGORITHMS_NOT_FOUND_AND_LOGGED = new CopyOnWriteArraySet<String>();
-    private static final SecureHash.Algorithm ALGORITHM = SecureHash.Algorithm.SHA_1;
-
     public static BinaryKey keyFor( byte[] content ) {
         try {
-            byte[] hash = SecureHash.getHash(ALGORITHM, content);
+            byte[] hash = SecureHash.getHash(SecureHash.Algorithm.SHA_1, content);
             return new BinaryKey(hash);
         } catch (NoSuchAlgorithmException e) {
             throw new SystemFailureException(e);
@@ -60,7 +55,7 @@ public class BinaryKey implements Serializable, Comparable<BinaryKey> {
     }
 
     public BinaryKey( byte[] hash ) {
-        this.key = StringUtil.getHexString(hash);
+        this(StringUtil.getHexString(hash));
     }
 
     /**
