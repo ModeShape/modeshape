@@ -33,36 +33,51 @@ import org.modeshape.jcr.value.BinaryKey;
 
 /**
  * Helper class for manipulation with database.
- *
+ * 
  * @author kulikov
  */
 public class Database {
-    //connection to a database
-    private Connection connection;
-    //table name prefix
+    // connection to a database
+    protected final Connection connection;
+    // table name prefix
     private String prefix;
 
-    private Type databaseType;
+    protected Type databaseType;
 
-    //SQLBuilder
+    // SQLBuilder
     private SQLBuilder sqlBuilder = new SQLBuilder();
     private SQLType sqlType = new SQLType();
 
     public enum Type {
-        MYSQL, POSTGRES, DERBY, HSQL, H2, SQLITE, DB2, DB2_390,INFORMIX,
-        INTERBASE, FIREBIRD, SQL_SERVER, ACCESS, ORACLE, SYBASE, UNKNOWN;
+        MYSQL,
+        POSTGRES,
+        DERBY,
+        HSQL,
+        H2,
+        SQLITE,
+        DB2,
+        DB2_390,
+        INFORMIX,
+        INTERBASE,
+        FIREBIRD,
+        SQL_SERVER,
+        ACCESS,
+        ORACLE,
+        SYBASE,
+        UNKNOWN;
     }
 
     /**
      * Creates new instance of the database.
-     *
+     * 
      * @param connection connection to a database
+     * @throws BinaryStoreException if the database type cannot be determined
      */
-    public Database(Connection connection) throws BinaryStoreException {
+    public Database( Connection connection ) throws BinaryStoreException {
         this.connection = connection;
         databaseType = determineType();
     }
-    
+
     /**
      * Shows type of this database.
      * 
@@ -74,10 +89,10 @@ public class Database {
 
     /**
      * Modifies database type.
-     *
+     * 
      * @param databaseType new database type identifier.
      */
-    protected void setDatabaseType(Type databaseType) {
+    protected void setDatabaseType( Type databaseType ) {
         this.databaseType = databaseType;
     }
 
@@ -86,13 +101,13 @@ public class Database {
      * 
      * @param prefix table name prefix.
      */
-    public void setPrefix(String prefix) {
+    public void setPrefix( String prefix ) {
         this.prefix = prefix;
     }
 
     /**
      * Convergence table name including prefix if configured.
-     *
+     * 
      * @return table name.
      */
     private String tableName() {
@@ -101,7 +116,7 @@ public class Database {
 
     /**
      * Current time.
-     *
+     * 
      * @return current time in milliseconds
      */
     private long now() {
@@ -110,19 +125,20 @@ public class Database {
 
     /**
      * Create statement for store content.
-     *
+     * 
      * @param key unique content identifier
      * @param stream content to store
      * @return SQL statement.
      * @throws BinaryStoreException
      */
-    public PreparedStatement insertContentSQL(BinaryKey key, InputStream stream) throws BinaryStoreException {
+    public PreparedStatement insertContentSQL( BinaryKey key,
+                                               InputStream stream ) throws BinaryStoreException {
         try {
-            PreparedStatement sql = sqlBuilder
-                    .insert().into(tableName())
-                    .columns("cid", "usage_time", "payload", "usage")
-                    .values("?","?","?", "1")
-                    .build();
+            PreparedStatement sql = sqlBuilder.insert()
+                                              .into(tableName())
+                                              .columns("cid", "usage_time", "payload", "usage")
+                                              .values("?", "?", "?", "1")
+                                              .build();
             sql.setString(1, key.toString());
             sql.setTimestamp(2, new java.sql.Timestamp(now()));
             sql.setBinaryStream(3, stream);
@@ -134,18 +150,21 @@ public class Database {
 
     /**
      * Generates SQL statement for content retrieve.
-     *
+     * 
      * @param key content id
      * @return executable SQL statement
      * @throws BinaryStoreException
      */
-    public PreparedStatement retrieveContentSQL(BinaryKey key) throws BinaryStoreException {
+    public PreparedStatement retrieveContentSQL( BinaryKey key ) throws BinaryStoreException {
         try {
-            PreparedStatement sql = sqlBuilder
-                    .select().columns("payload").from(tableName())
-                    .where().condition("cid", sqlType.integer(), "=", "?")
-                    .and().condition("usage", sqlType.integer(), "=", "1")
-                    .build();
+            PreparedStatement sql = sqlBuilder.select()
+                                              .columns("payload")
+                                              .from(tableName())
+                                              .where()
+                                              .condition("cid", sqlType.integer(), "=", "?")
+                                              .and()
+                                              .condition("usage", sqlType.integer(), "=", "1")
+                                              .build();
             sql.setString(1, key.toString());
             return sql;
         } catch (SQLException e) {
@@ -155,19 +174,19 @@ public class Database {
 
     /**
      * Generates SQL statement which marks content as not used.
-     *
+     * 
      * @param key the content id.
      * @return SQL statement.
      * @throws BinaryStoreException
      */
-    public PreparedStatement markUnusedSQL(BinaryKey key) throws BinaryStoreException {
+    public PreparedStatement markUnusedSQL( BinaryKey key ) throws BinaryStoreException {
         try {
-            PreparedStatement sql = sqlBuilder
-                    .update(tableName())
-                    .set("usage", "?")
-                    .set("usage_time", "?")
-                    .where().condition("cid", sqlType.integer(), "=", "?")
-                    .build();
+            PreparedStatement sql = sqlBuilder.update(tableName())
+                                              .set("usage", "?")
+                                              .set("usage_time", "?")
+                                              .where()
+                                              .condition("cid", sqlType.integer(), "=", "?")
+                                              .build();
             sql.setInt(1, 0);
             sql.setTimestamp(2, new java.sql.Timestamp(now()));
             sql.setString(3, key.toString());
@@ -179,17 +198,18 @@ public class Database {
 
     /**
      * Generates SQL statement which removes expired content.
-     *
+     * 
      * @param deadline expire time
      * @return SQL statement.
      * @throws BinaryStoreException
      */
-    public PreparedStatement removeExpiredContentSQL(long deadline) throws BinaryStoreException {
+    public PreparedStatement removeExpiredContentSQL( long deadline ) throws BinaryStoreException {
         try {
-            PreparedStatement sql = sqlBuilder
-                    .delete().from(tableName())
-                    .where().condition("usage_time", sqlType.timestamp(), "<", "?")
-                    .build();
+            PreparedStatement sql = sqlBuilder.delete()
+                                              .from(tableName())
+                                              .where()
+                                              .condition("usage_time", sqlType.timestamp(), "<", "?")
+                                              .build();
             sql.setTimestamp(1, new java.sql.Timestamp(deadline));
             return sql;
         } catch (SQLException e) {
@@ -199,16 +219,19 @@ public class Database {
 
     /**
      * Generates SQL statement for mime type retrieve.
-     *
+     * 
      * @param key content id
      * @return SQL statement.
      * @throws BinaryStoreException
      */
-    public PreparedStatement retrieveMimeTypeSQL(BinaryKey key) throws BinaryStoreException {
+    public PreparedStatement retrieveMimeTypeSQL( BinaryKey key ) throws BinaryStoreException {
         try {
-            PreparedStatement sql = sqlBuilder
-                    .select().columns("mime_type").from(tableName())
-                    .where().condition("cid", sqlType.integer(), "=", "?").build();
+            PreparedStatement sql = sqlBuilder.select()
+                                              .columns("mime_type")
+                                              .from(tableName())
+                                              .where()
+                                              .condition("cid", sqlType.integer(), "=", "?")
+                                              .build();
             sql.setString(1, key.toString());
             return sql;
         } catch (SQLException e) {
@@ -218,18 +241,20 @@ public class Database {
 
     /**
      * Generates SQL statement which modifies mime type value.
-     *
+     * 
      * @param key content id
      * @param mimeType the new value for mime type
      * @return SQL statement
      * @throws BinaryStoreException
      */
-    public PreparedStatement updateMimeTypeSQL(BinaryKey key, String mimeType) throws BinaryStoreException {
+    public PreparedStatement updateMimeTypeSQL( BinaryKey key,
+                                                String mimeType ) throws BinaryStoreException {
         try {
-            PreparedStatement sql = sqlBuilder
-                    .update(tableName())
-                    .set("mime_type", "?")
-                    .where().condition("cid", sqlType.integer(), "=", "?").build();
+            PreparedStatement sql = sqlBuilder.update(tableName())
+                                              .set("mime_type", "?")
+                                              .where()
+                                              .condition("cid", sqlType.integer(), "=", "?")
+                                              .build();
             sql.setString(1, mimeType);
             sql.setString(2, key.toString());
             return sql;
@@ -240,16 +265,19 @@ public class Database {
 
     /**
      * Generate SQL statement which returns extracted text.
-     *
+     * 
      * @param key content id
      * @return SQL statement
      * @throws BinaryStoreException
      */
-    public PreparedStatement retrieveExtTextSQL(BinaryKey key) throws BinaryStoreException {
+    public PreparedStatement retrieveExtTextSQL( BinaryKey key ) throws BinaryStoreException {
         try {
-            PreparedStatement sql = sqlBuilder
-                    .select().columns("ext_text").from(tableName())
-                    .where().condition("cid", sqlType.integer(), "=", "?").build();
+            PreparedStatement sql = sqlBuilder.select()
+                                              .columns("ext_text")
+                                              .from(tableName())
+                                              .where()
+                                              .condition("cid", sqlType.integer(), "=", "?")
+                                              .build();
             sql.setString(1, key.toString());
             return sql;
         } catch (SQLException e) {
@@ -259,18 +287,20 @@ public class Database {
 
     /**
      * Generates SQL statement which updates extracted text field.
-     *
+     * 
      * @param key content id
      * @param text new value for the extracted text
      * @return SQL statement
      * @throws BinaryStoreException
      */
-    public PreparedStatement updateExtTextSQL(BinaryKey key, String text) throws BinaryStoreException {
+    public PreparedStatement updateExtTextSQL( BinaryKey key,
+                                               String text ) throws BinaryStoreException {
         try {
-            PreparedStatement sql = sqlBuilder
-                    .update(tableName())
-                    .set("ext_text", "?")
-                    .where().condition("cid", sqlType.integer(), "=", "?").build();
+            PreparedStatement sql = sqlBuilder.update(tableName())
+                                              .set("ext_text", "?")
+                                              .where()
+                                              .condition("cid", sqlType.integer(), "=", "?")
+                                              .build();
             sql.setString(1, text);
             sql.setString(2, key.toString());
             return sql;
@@ -281,11 +311,11 @@ public class Database {
 
     /**
      * Executes specifies statement.
-     *
+     * 
      * @param sql the statement to execute
      * @throws BinaryStoreException
      */
-    public static void execute(PreparedStatement sql) throws BinaryStoreException {
+    public static void execute( PreparedStatement sql ) throws BinaryStoreException {
         try {
             sql.execute();
         } catch (SQLException e) {
@@ -295,12 +325,12 @@ public class Database {
 
     /**
      * Runs SQL statement
-     *
+     * 
      * @param sql SQL statement
      * @return result of statement execution
      * @throws BinaryStoreException
      */
-    public static ResultSet executeQuery(PreparedStatement sql) throws BinaryStoreException {
+    public static ResultSet executeQuery( PreparedStatement sql ) throws BinaryStoreException {
         try {
             return sql.executeQuery();
         } catch (SQLException e) {
@@ -310,11 +340,11 @@ public class Database {
 
     /**
      * Executes specifies update statement.
-     *
+     * 
      * @param sql the statement to execute
      * @throws BinaryStoreException
      */
-    public static void executeUpdate(PreparedStatement sql) throws BinaryStoreException {
+    public static void executeUpdate( PreparedStatement sql ) throws BinaryStoreException {
         try {
             sql.executeUpdate();
         } catch (SQLException e) {
@@ -324,12 +354,12 @@ public class Database {
 
     /**
      * Provides access to query data
-     *
+     * 
      * @param rs retrieved single value
      * @return result as input stream.
      * @throws BinaryStoreException
      */
-    public static InputStream asStream(ResultSet rs) throws BinaryStoreException {
+    public static InputStream asStream( ResultSet rs ) throws BinaryStoreException {
         try {
             boolean hasRaw = rs.first();
             if (!hasRaw) {
@@ -343,12 +373,12 @@ public class Database {
 
     /**
      * Provides access to query data
-     *
+     * 
      * @param rs retrieved query result
      * @return result as string.
      * @throws BinaryStoreException
      */
-    public static String asString(ResultSet rs) throws BinaryStoreException {
+    public static String asString( ResultSet rs ) throws BinaryStoreException {
         try {
             boolean hasRaw = rs.first();
             if (!hasRaw) {
@@ -362,7 +392,7 @@ public class Database {
 
     /**
      * Checks database for CONTENT_STORE table
-     *
+     * 
      * @return true if table exists
      * @throws BinaryStoreException
      */
@@ -378,19 +408,17 @@ public class Database {
 
     /**
      * Creates table for storage.
-     *
+     * 
      * @throws BinaryStoreException
      */
     public void createTable() throws BinaryStoreException {
         try {
-            PreparedStatement sql = connection.prepareStatement("create table " + tableName() + " ("
-                    + "cid " + sqlType.varchar(255) + " not null,"
-                    + "mime_type " + sqlType.varchar(255)+ ", "
-                    + "ext_text " + sqlType.varchar(1000) + ","
-                    + "usage " + sqlType.integer() +","
-                    + "usage_time " + sqlType.timestamp() +","
-                    + "payload " + sqlType.blob() + ","
-                    + "primary key(cid))");
+            PreparedStatement sql = connection.prepareStatement("create table " + tableName() + " (" + "cid "
+                                                                + sqlType.varchar(255) + " not null," + "mime_type "
+                                                                + sqlType.varchar(255) + ", " + "ext_text "
+                                                                + sqlType.varchar(1000) + "," + "usage " + sqlType.integer()
+                                                                + "," + "usage_time " + sqlType.timestamp() + "," + "payload "
+                                                                + sqlType.blob() + "," + "primary key(cid))");
             Database.execute(sql);
         } catch (Exception e) {
             throw new BinaryStoreException(e);
@@ -437,6 +465,7 @@ public class Database {
             throw new BinaryStoreException(e);
         }
     }
+
     /**
      * Closes connection with database.
      */
@@ -454,8 +483,12 @@ public class Database {
      */
     private class SQLType {
 
+        protected SQLType() {
+        }
+
         /**
          * Integer type.
+         * 
          * @return integer type descriptor.
          */
         public String integer() {
@@ -464,6 +497,7 @@ public class Database {
 
         /**
          * Timestamp type.
+         * 
          * @return timestamp type descriptor.
          */
         public String timestamp() {
@@ -472,9 +506,10 @@ public class Database {
 
         /**
          * BLOB type.
+         * 
          * @return BLOB type descriptor.
          */
-        private String blob() {
+        protected String blob() {
             switch (databaseType) {
                 case SQL_SERVER:
                 case SYBASE:
@@ -488,11 +523,11 @@ public class Database {
 
         /**
          * VARCHAR type.
-         *
+         * 
          * @param size size in characters.
          * @return VACRCHAR type descriptor.
          */
-        private String varchar(int size) {
+        protected String varchar( int size ) {
             switch (databaseType) {
                 case ORACLE:
                     return "VARCHAR2(" + size + ")";
@@ -508,12 +543,12 @@ public class Database {
     public class SQLBuilder {
         private boolean set = false;
 
-        //inner buffer for building sql string
+        // inner buffer for building sql string
         private StringBuilder sql;
 
         /**
          * Generates prepared statement.
-         *
+         * 
          * @return prepared statement
          * @throws SQLException
          */
@@ -523,7 +558,7 @@ public class Database {
 
         /**
          * Shows built statement as text.
-         *
+         * 
          * @return build statement as text.
          */
         public String getSQL() {
@@ -532,7 +567,7 @@ public class Database {
 
         /**
          * Appends 'insert' keyword to the statement.
-         *
+         * 
          * @return this builder instance.
          */
         public SQLBuilder insert() {
@@ -544,7 +579,7 @@ public class Database {
 
         /**
          * Appends 'select' keyword to the statement.
-         *
+         * 
          * @return this builder instance.
          */
         public SQLBuilder select() {
@@ -556,7 +591,7 @@ public class Database {
 
         /**
          * Appends 'delete' keyword to the statement.
-         *
+         * 
          * @return this builder instance.
          */
         public SQLBuilder delete() {
@@ -568,11 +603,11 @@ public class Database {
 
         /**
          * Appends 'update' keyword with table name to the statement.
-         *
+         * 
          * @param tableName the name of the table to update
          * @return this builder instance.
          */
-        public SQLBuilder update(String tableName) {
+        public SQLBuilder update( String tableName ) {
             set = false;
             sql = new StringBuilder();
             sql.append("UPDATE ");
@@ -587,7 +622,8 @@ public class Database {
          * @param val new value
          * @return this builder instance
          */
-        public SQLBuilder set(String col, String val) {
+        public SQLBuilder set( String col,
+                               String val ) {
             if (!set) {
                 sql.append(" SET ");
                 set = true;
@@ -602,10 +638,11 @@ public class Database {
 
         /**
          * Appends 'into 'keyword and open bracket to the statement.
-         *
+         * 
+         * @param tableName the name of the table; may not be null
          * @return this builder instance.
          */
-        public SQLBuilder into(String tableName) {
+        public SQLBuilder into( String tableName ) {
             sql.append("INTO ");
             sql.append(tableName);
             sql.append(" (");
@@ -614,11 +651,11 @@ public class Database {
 
         /**
          * Appends comma separated list of specified column names.
-         *
-         * @param  columns list of column names
+         * 
+         * @param columns list of column names
          * @return this builder instance.
          */
-        public SQLBuilder columns(String... columns) {
+        public SQLBuilder columns( String... columns ) {
             sql.append(columns[0]);
 
             for (int i = 1; i < columns.length; i++) {
@@ -631,12 +668,12 @@ public class Database {
 
         /**
          * Appends closed bracket and 'value(...)' of sql statement.
-         *
-         * @param  columns list of values
+         * 
+         * @param columns list of values
          * @return this builder instance.
          */
 
-        public SQLBuilder values(String... columns) {
+        public SQLBuilder values( String... columns ) {
             sql.append(") VALUES (");
             sql.append(columns[0]);
 
@@ -651,10 +688,11 @@ public class Database {
 
         /**
          * Appends 'from' keyword.
-         *
+         * 
+         * @param tableName the name of the table; may not be null
          * @return this builder instance.
          */
-        public SQLBuilder from(String tableName) {
+        public SQLBuilder from( String tableName ) {
             sql.append(" FROM ");
             sql.append(tableName);
             return this;
@@ -662,7 +700,7 @@ public class Database {
 
         /**
          * Appends 'where' keyword.
-         *
+         * 
          * @return this builder instance.
          */
         public SQLBuilder where() {
@@ -672,7 +710,7 @@ public class Database {
 
         /**
          * Appends 'and' keyword.
-         *
+         * 
          * @return this builder instance.
          */
         public SQLBuilder and() {
@@ -682,32 +720,35 @@ public class Database {
 
         /**
          * Builds database specific condition statement.
-         *
-         * @param column  column name used in left hand side of condition
+         * 
+         * @param column column name used in left hand side of condition
          * @param colType type of the column
          * @param sign sign between lhs and rhs
          * @param value right hand side of the condition
          * @return this builder instance.
          */
-        public SQLBuilder condition(String column, String colType, String sign, String value) {
+        public SQLBuilder condition( String column,
+                                     String colType,
+                                     String sign,
+                                     String value ) {
             sql.append(column);
             sql.append(sign);
             switch (databaseType) {
-                case SYBASE :
+                case SYBASE:
                     sql.append("convert(");
                     sql.append(colType);
                     sql.append(",");
                     sql.append(value);
                     sql.append(")");
                     break;
-                case POSTGRES :
+                case POSTGRES:
                     sql.append("cast(");
                     sql.append(value);
                     sql.append(" as ");
                     sql.append(colType);
                     sql.append(")");
                     break;
-                default :
+                default:
                     sql.append(value);
             }
             return this;

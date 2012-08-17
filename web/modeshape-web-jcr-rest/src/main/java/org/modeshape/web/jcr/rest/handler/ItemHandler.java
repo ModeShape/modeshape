@@ -1,5 +1,17 @@
 package org.modeshape.web.jcr.rest.handler;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import javax.jcr.Binary;
 import javax.jcr.Item;
 import javax.jcr.Node;
@@ -27,25 +39,14 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.Base64;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.web.jcr.rest.RestHelper;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Resource handler that implements REST methods for items.
- *
+ * 
  * @deprecated since 3.0, use {@link RestItemHandler}
  */
 @Immutable
+@Deprecated
 public class ItemHandler extends AbstractHandler {
 
     protected static final String PRIMARY_TYPE_PROPERTY = JcrConstants.JCR_PRIMARY_TYPE;
@@ -53,21 +54,20 @@ public class ItemHandler extends AbstractHandler {
     protected static final String PROPERTIES_HOLDER = "properties";
     protected static final String CHILD_NODE_HOLDER = "children";
 
-
     /**
      * Handles GET requests for an item in a workspace.
-     *
+     * 
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param path the path to the item
      * @param depth the depth of the node graph that should be returned if {@code path} refers to a node. @{code 0} means return
-     * the requested node only. A negative value indicates that the full subgraph under the node should be returned. This
-     * parameter defaults to {@code 0} and is ignored if {@code path} refers to a property.
+     *        the requested node only. A negative value indicates that the full subgraph under the node should be returned. This
+     *        parameter defaults to {@code 0} and is ignored if {@code path} refers to a property.
      * @return the JSON-encoded version of the item (and, if the item is a node, its subgraph, depending on the value of
      *         {@code depth})
      * @throws NotFoundException if the named repository does not exists, the named workspace does not exist, or the user does not
-     * have access to the named workspace
+     *         have access to the named workspace
      * @throws JSONException if there is an error encoding the node
      * @throws UnauthorizedException if the given login information is invalid
      * @throws RepositoryException if any other error occurs
@@ -76,6 +76,7 @@ public class ItemHandler extends AbstractHandler {
      * @see Session#getItem(String)
      * @deprecated since 3.0
      */
+    @Deprecated
     public String getItem( HttpServletRequest request,
                            String rawRepositoryName,
                            String rawWorkspaceName,
@@ -111,7 +112,7 @@ public class ItemHandler extends AbstractHandler {
      * However, if no values are binary, then all values will simply be the {@link Value#getString() string} representation of the
      * value.
      * </p>
-     *
+     * 
      * @param property the property to be encoded
      * @return the JSON-encoded version of the property
      * @throws JSONException if there is an error encoding the node
@@ -157,7 +158,7 @@ public class ItemHandler extends AbstractHandler {
 
     /**
      * Recursively returns the JSON-encoding of a node and its children to depth {@code toDepth}.
-     *
+     * 
      * @param node the node to be encoded
      * @param toDepth the depth to which the recursion should extend; {@code 0} means no further recursion should occur.
      * @return the JSON-encoding of a node and its children to depth {@code toDepth}.
@@ -170,7 +171,7 @@ public class ItemHandler extends AbstractHandler {
 
         JSONObject properties = new JSONObject();
 
-        for (PropertyIterator iter = node.getProperties(); iter.hasNext(); ) {
+        for (PropertyIterator iter = node.getProperties(); iter.hasNext();) {
             Property prop = iter.nextProperty();
             String propName = prop.getName();
 
@@ -211,7 +212,7 @@ public class ItemHandler extends AbstractHandler {
         if (toDepth == 0) {
             List<String> children = new ArrayList<String>();
 
-            for (NodeIterator iter = node.getNodes(); iter.hasNext(); ) {
+            for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
                 Node child = iter.nextNode();
 
                 String name = child.getIndex() == 1 ? child.getName() : child.getName() + "[" + child.getIndex() + "]";
@@ -224,7 +225,7 @@ public class ItemHandler extends AbstractHandler {
         } else {
             JSONObject children = new JSONObject();
 
-            for (NodeIterator iter = node.getNodes(); iter.hasNext(); ) {
+            for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
                 Node child = iter.nextNode();
 
                 String name = child.getIndex() == 1 ? child.getName() : child.getName() + "[" + child.getIndex() + "]";
@@ -245,13 +246,13 @@ public class ItemHandler extends AbstractHandler {
      * The primary type and mixin type(s) may optionally be specified through the {@code jcr:primaryType} and
      * {@code jcr:mixinTypes} properties.
      * </p>
-     *
+     * 
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param path the path to the item
      * @param fullNodeInResponse if true, indicates that a representation of the created node (including all properties and
-     * children) should be returned; otherwise, only the path to the new node will be returned
+     *        children) should be returned; otherwise, only the path to the new node will be returned
      * @param requestContent the JSON-encoded representation of the node or nodes to be added
      * @return the JSON-encoded representation of the node or nodes that were added. This will differ from {@code requestContent}
      *         in that auto-created and protected properties (e.g., jcr:uuid) will be populated.
@@ -266,7 +267,7 @@ public class ItemHandler extends AbstractHandler {
                               String path,
                               boolean fullNodeInResponse,
                               String requestContent )
-            throws NotFoundException, UnauthorizedException, RepositoryException, JSONException {
+        throws NotFoundException, UnauthorizedException, RepositoryException, JSONException {
 
         assert rawRepositoryName != null;
         assert rawWorkspaceName != null;
@@ -297,7 +298,7 @@ public class ItemHandler extends AbstractHandler {
 
     /**
      * Adds the node described by {@code jsonNode} with name {@code nodeName} to the existing node {@code parentNode}.
-     *
+     * 
      * @param parentNode the parent of the node to be added
      * @param nodeName the name of the node to be added
      * @param jsonNode the JSON-encoded representation of the node or nodes to be added.
@@ -320,7 +321,7 @@ public class ItemHandler extends AbstractHandler {
             newNode = parentNode.addNode(nodeName);
         }
 
-        for (Iterator<?> iter = properties.keys(); iter.hasNext(); ) {
+        for (Iterator<?> iter = properties.keys(); iter.hasNext();) {
             String key = (String)iter.next();
 
             if (PRIMARY_TYPE_PROPERTY.equals(key)) {
@@ -332,7 +333,7 @@ public class ItemHandler extends AbstractHandler {
         if (hasChildren(jsonNode)) {
             JSONObject children = getChildren(jsonNode);
 
-            for (Iterator<?> iter = children.keys(); iter.hasNext(); ) {
+            for (Iterator<?> iter = children.keys(); iter.hasNext();) {
                 String childName = (String)iter.next();
                 JSONObject child = children.getJSONObject(childName);
 
@@ -382,7 +383,7 @@ public class ItemHandler extends AbstractHandler {
      * Sets the named property on the given node. This method expects {@code value} to be either a JSON string or a JSON array of
      * JSON strings. If {@code value} is a JSON array, {@code Node#setProperty(String, String[]) the multi-valued property setter}
      * will be used.
-     *
+     * 
      * @param node the node on which the property is to be set
      * @param propName the name of the property to set
      * @param value the JSON-encoded values to be set
@@ -416,9 +417,9 @@ public class ItemHandler extends AbstractHandler {
         } else {
             String strValue = (String)value;
             if (encoded) {
-                values = new Value[] { decodeValue(strValue, valueFactory) };
+                values = new Value[] {decodeValue(strValue, valueFactory)};
             } else {
-                values = new Value[] { valueFactory.createValue(strValue) };
+                values = new Value[] {valueFactory.createValue(strValue)};
             }
         }
 
@@ -456,7 +457,7 @@ public class ItemHandler extends AbstractHandler {
 
     /**
      * Deletes the item at {@code path}.
-     *
+     * 
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -499,7 +500,7 @@ public class ItemHandler extends AbstractHandler {
      * content to be a JSON object. The keys of the objects correspond to property names that will be set and the values for the
      * keys correspond to the values that will be set on the properties.
      * </p>
-     *
+     * 
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
@@ -542,7 +543,7 @@ public class ItemHandler extends AbstractHandler {
 
     /**
      * Updates the existing item based upon the supplied JSON content.
-     *
+     * 
      * @param item the node or property to be updated
      * @param jsonItem the JSON of the item(s) to be updated
      * @return the node that was updated; never null
@@ -553,9 +554,8 @@ public class ItemHandler extends AbstractHandler {
                                JSONObject jsonItem ) throws RepositoryException, JSONException {
         if (item instanceof Node) {
             return updateNode((Node)item, jsonItem);
-        } else {
-            return updateProperty((Property)item, jsonItem);
         }
+        return updateProperty((Property)item, jsonItem);
     }
 
     private Property updateProperty( Property property,
@@ -588,7 +588,7 @@ public class ItemHandler extends AbstractHandler {
 
     /**
      * Updates the existing node with the properties (and optionally children) as described by {@code jsonNode}.
-     *
+     * 
      * @param node the node to be updated
      * @param jsonNode the JSON-encoded representation of the node or nodes to be updated.
      * @param changes the versionable changes; may not be null
@@ -607,7 +607,7 @@ public class ItemHandler extends AbstractHandler {
 
         changes.checkout(node);
 
-        for (Iterator<?> iter = properties.keys(); iter.hasNext(); ) {
+        for (Iterator<?> iter = properties.keys(); iter.hasNext();) {
             String key = (String)iter.next();
             if (PRIMARY_TYPE_PROPERTY.equals(key) || CHILD_NODE_HOLDER.equals(key)) {
                 continue; // can't change the primary type
@@ -628,7 +628,7 @@ public class ItemHandler extends AbstractHandler {
                 existingChildNames.put(nameOf(child), child);
             }
 
-            for (Iterator<?> iter = children.keys(); iter.hasNext(); ) {
+            for (Iterator<?> iter = children.keys(); iter.hasNext();) {
                 String childName = (String)iter.next();
                 JSONObject child = children.getJSONObject(childName);
                 // Find the existing node ...

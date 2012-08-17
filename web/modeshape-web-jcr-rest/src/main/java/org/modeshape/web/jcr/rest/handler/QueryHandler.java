@@ -1,5 +1,10 @@
 package org.modeshape.web.jcr.rest.handler;
 
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -17,18 +22,14 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.web.jcr.rest.RestHelper;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Resource handler that implements REST methods for items.
- *
+ * 
  * @deprecated since 3.0, use {@link RestQueryHandler}
  */
 @Immutable
+@Deprecated
 public class QueryHandler extends AbstractHandler {
 
     protected static final List<String> SKIP_QUERY_PARAMETERS = Arrays.asList("offset", "limit");
@@ -36,6 +37,7 @@ public class QueryHandler extends AbstractHandler {
     /**
      * @deprecated since 3.0
      */
+    @Deprecated
     public String postItem( HttpServletRequest request,
                             String rawRepositoryName,
                             String rawWorkspaceName,
