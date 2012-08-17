@@ -207,4 +207,11 @@ public interface Changes {
      * @param key the key for the now-unused binary value; may not be null
      */
     void binaryValueNoLongerUsed( BinaryKey key );
+
+    /**
+     * Create an event that signals that the (stored) binary value with the supplied key is now used.
+     * 
+     * @param key the key for the now-used binary value; may not be null
+     */
+    void binaryValueNowUsed( BinaryKey key );
 }

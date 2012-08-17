@@ -21,21 +21,17 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr;
-
-import org.junit.Before;
+package org.infinispan.schematic.document;
 
 /**
- * Support class for performance testing of various operations over subtrees of the content graph
+ * An abstraction of a sequence of 0 or more {@link Document} instances.
  */
-
-public abstract class AbstractJcrAccessTest extends SingleUseAbstractTest {
-
-    @Override
-    @Before
-    public void beforeEach() throws Exception {
-        super.beforeEach();
-        session.getWorkspace().getNamespaceRegistry().registerNamespace(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
-    }
-
+public interface DocumentSequence {
+    /**
+     * Get the next document.
+     * 
+     * @return the next document, or null if there are no more
+     * @throws ParsingException if there was a problem reading from the stream
+     */
+    Document nextDocument() throws ParsingException;
 }

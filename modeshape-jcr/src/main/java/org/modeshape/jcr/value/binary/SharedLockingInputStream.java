@@ -41,13 +41,13 @@ import org.modeshape.jcr.value.BinaryKey;
  */
 public final class SharedLockingInputStream extends InputStream {
 
-    private final BinaryKey key;
-    private final File file;
-    private final NamedLocks lockManager;
-    private InputStream stream;
-    private Lock processLock;
-    private FileLocks.WrappedLock fileLock;
-    private boolean eofReached;
+    protected final BinaryKey key;
+    protected final File file;
+    protected final NamedLocks lockManager;
+    protected InputStream stream;
+    protected Lock processLock;
+    protected FileLocks.WrappedLock fileLock;
+    protected boolean eofReached;
 
     /**
      * Create a self-closing, (shared) locking {@link InputStream} to read the content of the supplied {@link File file}.
@@ -209,8 +209,8 @@ public final class SharedLockingInputStream extends InputStream {
                 open();
                 int result = stream.read(b);
                 if (result == -1) {
-                   eofReached = true;
-                   close();
+                    eofReached = true;
+                    close();
                 }
                 return result;
             }
@@ -229,7 +229,7 @@ public final class SharedLockingInputStream extends InputStream {
                 int result = stream.read();
                 if (result == -1) {
                     eofReached = true;
-                    close(); //without this, there might be locks
+                    close(); // without this, there might be locks
                 }
                 return result;
             }

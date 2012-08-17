@@ -28,6 +28,7 @@ import java.util.Set;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.cache.change.BinaryValueUnused;
+import org.modeshape.jcr.cache.change.BinaryValueUsed;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
@@ -36,12 +37,12 @@ import org.modeshape.jcr.value.BinaryKey;
 /**
  * 
  */
-public class UnusedBinaryChangeSetListener implements ChangeSetListener {
+public class BinaryUsageChangeSetListener implements ChangeSetListener {
 
     private final BinaryStore store;
     private final Logger logger;
 
-    public UnusedBinaryChangeSetListener( BinaryStore store ) {
+    public BinaryUsageChangeSetListener( BinaryStore store ) {
         this.store = store;
         assert this.store != null;
         this.logger = Logger.getLogger(getClass());
@@ -50,11 +51,26 @@ public class UnusedBinaryChangeSetListener implements ChangeSetListener {
     @Override
     public void notify( ChangeSet changeSet ) {
         Set<BinaryKey> unusedKeys = null;
+        Set<BinaryKey> usedKeys = null;
         for (Change change : changeSet) {
             if (change instanceof BinaryValueUnused) {
                 BinaryValueUnused unused = (BinaryValueUnused)change;
+                BinaryKey key = unused.getKey();
+                if (usedKeys != null && usedKeys.remove(key)) {
+                    // This change set had marked it as used, but now is unused again. We've removed it from the used.
+                    break;
+                }
                 if (unusedKeys == null) unusedKeys = new HashSet<BinaryKey>();
-                unusedKeys.add(unused.getKey());
+                unusedKeys.add(key);
+            } else if (change instanceof BinaryValueUsed) {
+                BinaryValueUsed used = (BinaryValueUsed)change;
+                BinaryKey key = used.getKey();
+                if (unusedKeys != null && unusedKeys.remove(key)) {
+                    // This change set had marked it as unused, but now is used again. We've removed it from the unused.
+                    break;
+                }
+                if (usedKeys == null) usedKeys = new HashSet<BinaryKey>();
+                usedKeys.add(key);
             }
         }
         if (unusedKeys != null && !unusedKeys.isEmpty()) {
@@ -68,6 +84,20 @@ public class UnusedBinaryChangeSetListener implements ChangeSetListener {
             }
             if (logger.isDebugEnabled()) {
                 logger.debug("Finished marking binary values as unused: ", unusedKeys);
+            }
+        }
+        if (usedKeys != null && !usedKeys.isEmpty()) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Marking binary values as used: ", unusedKeys);
+            }
+            // TODO: Do we need to record this in the binary store?
+            // try {
+            // store.markAsUsed(unusedKeys);
+            // } catch (BinaryStoreException e) {
+            // logger.error(JcrI18n.errorMarkingBinaryValuesUsed, e.getMessage());
+            // }
+            if (logger.isDebugEnabled()) {
+                logger.debug("Finished marking binary values as used: ", unusedKeys);
             }
         }
     }

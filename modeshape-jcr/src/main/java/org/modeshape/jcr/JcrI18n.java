@@ -39,6 +39,10 @@ public final class JcrI18n {
     public static I18n couldNotStartEngine;
     public static I18n engineStopping;
     public static I18n engineStopped;
+    public static I18n repositoryCannotBeRestored;
+    public static I18n repositoryCannotBeRestartedAfterRestore;
+    public static I18n repositoryIsCurrentlyBeingRestored;
+    public static I18n repositoryIsBeingRestoredAndCannotBeStarted;
     public static I18n repositoryReferencesNonExistantSource;
     public static I18n indexRebuildingStarted;
     public static I18n indexRebuildingComplete;
@@ -75,6 +79,16 @@ public final class JcrI18n {
     public static I18n unableToFindResourceOnClasspathOrFileOrUrl;
     public static I18n unableToImportInitialContent;
     public static I18n fileMustExistAndBeReadable;
+    public static I18n existsAndMustBeWritableDirectory;
+    public static I18n problemInitializingBackupArea;
+    public static I18n problemsWritingDocumentToBackup;
+    public static I18n problemsWritingBinaryToBackup;
+    public static I18n problemsReadingBinaryFromBackup;
+    public static I18n problemsRestoringBinaryFromBackup;
+    public static I18n interruptedWhilePerformingBackup;
+    public static I18n problemObtainingDocumentsToBackup;
+    public static I18n backupOperationWasCancelled;
+    public static I18n problemsClosingBackupFiles;
     public static I18n invalidJcrUrl;
     public static I18n unableToInitializeAuthenticationProvider;
     public static I18n errorInAuthenticationProvider;
@@ -377,6 +391,7 @@ public final class JcrI18n {
 
     public static I18n errorDuringGarbageCollection;
     public static I18n errorMarkingBinaryValuesUnused;
+    public static I18n errorMarkingBinaryValuesUsed;
 
     public static I18n unableToReadTemporaryDirectory;
     public static I18n unableToWriteTemporaryDirectory;

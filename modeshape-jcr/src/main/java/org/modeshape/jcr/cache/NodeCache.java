@@ -23,6 +23,8 @@
  */
 package org.modeshape.jcr.cache;
 
+import java.util.Iterator;
+
 /**
  * 
  */
@@ -60,4 +62,19 @@ public interface NodeCache {
      * @return the cached node to which the reference points, or null if the child reference no longer points to a valid node
      */
     CachedNode getNode( ChildReference reference );
+
+    /**
+     * Get an iterator over all node keys within this cache. The order of the keys is not defined.
+     * 
+     * @return an iterator over all the cache's node keys; never null
+     */
+    Iterator<NodeKey> getAllNodeKeys();
+
+    /**
+     * Get an iterator over all keys for the supplied node and all its descendants. The order of the keys is not defined.
+     * 
+     * @param startingKey the key for the node to start; may not be null
+     * @return an iterator over all the cache's node keys; never null
+     */
+    Iterator<NodeKey> getAllNodeKeysAtAndBelow( NodeKey startingKey );
 }

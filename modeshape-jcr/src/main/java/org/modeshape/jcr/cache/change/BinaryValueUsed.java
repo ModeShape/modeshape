@@ -21,21 +21,22 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr;
+package org.modeshape.jcr.cache.change;
 
-import org.junit.Before;
+import org.modeshape.jcr.value.BinaryKey;
 
 /**
- * Support class for performance testing of various operations over subtrees of the content graph
+ * An event signalizing that there are no more usages for the binary value with a specific key.
  */
+public class BinaryValueUsed extends BinaryValueUsageChange {
 
-public abstract class AbstractJcrAccessTest extends SingleUseAbstractTest {
+    public BinaryValueUsed( BinaryKey key ) {
+        super(key);
+    }
 
     @Override
-    @Before
-    public void beforeEach() throws Exception {
-        super.beforeEach();
-        session.getWorkspace().getNamespaceRegistry().registerNamespace(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
+    public String toString() {
+        return "Unused binary value '" + this.getKey() + "'";
     }
 
 }

@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.cache.document;
 
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.infinispan.schematic.SchematicDb;
@@ -182,6 +183,16 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
     public CachedNode getNode( ChildReference reference ) {
         checkNotClosed();
         return getNode(reference.getKey());
+    }
+
+    @Override
+    public Iterator<NodeKey> getAllNodeKeys() {
+        return getAllNodeKeysAtAndBelow(getRootKey());
+    }
+
+    @Override
+    public Iterator<NodeKey> getAllNodeKeysAtAndBelow( NodeKey startingKey ) {
+        return new NodeCacheIterator(this, startingKey);
     }
 
     @Override

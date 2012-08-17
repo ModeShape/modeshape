@@ -24,6 +24,9 @@
 
 package org.modeshape.web.jcr.rest.handler;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -35,21 +38,19 @@ import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.web.jcr.RepositoryManager;
 import org.modeshape.web.jcr.rest.RestHelper;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * Resource handler that implements REST methods for servers.
- *
+ * 
  * @deprecated since 3.0, use {@link RestServerHandler} instead
  */
 @Immutable
+@Deprecated
 public class ServerHandler extends AbstractHandler {
 
     /**
      * Returns the list of JCR repositories available on this server
-     *
+     * 
      * @param request the servlet request; may not be null
      * @return the JSON-encoded version of the item (and, if the item is a node, its subgraph, depending on the value of
      *         {@code depth})
@@ -57,6 +58,7 @@ public class ServerHandler extends AbstractHandler {
      * @throws RepositoryException if any other error occurs
      * @deprecated since 3.0
      */
+    @Deprecated
     public String getRepositories( HttpServletRequest request ) throws JSONException, RepositoryException {
         assert request != null;
 
@@ -100,7 +102,7 @@ public class ServerHandler extends AbstractHandler {
         return RestHelper.responseString(jsonRepositories, request);
     }
 
-    protected JSONObject getRepositoryMetadata( Session session ) throws JSONException, RepositoryException {
+    protected JSONObject getRepositoryMetadata( Session session ) throws JSONException {
         JSONObject metadata = new JSONObject();
         Repository repository = session.getRepository();
         for (String key : repository.getDescriptorKeys()) {

@@ -36,6 +36,7 @@ import org.infinispan.schematic.SchemaLibrary.Results;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
+import org.infinispan.schematic.SchematicEntry.FieldName;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.JsonSchema;
@@ -257,6 +258,27 @@ public class CacheSchematicDb implements SchematicDb {
     }
 
     @Override
+    public SchematicEntry put( Document entryDocument ) {
+        Document metadata = entryDocument.getDocument(FieldName.METADATA);
+        Object content = entryDocument.getDocument(FieldName.CONTENT);
+        if (metadata == null || content == null) {
+            throw new IllegalArgumentException("The supplied document is not of the required format");
+        }
+        String key = metadata.getString(FieldName.ID);
+        if (key == null) {
+            throw new IllegalArgumentException("The supplied document is not of the required format");
+        }
+        SchematicEntry newEntry = new SchematicEntryLiteral();
+        if (content instanceof Document) {
+            newEntry.setContent((Document)content, metadata, defaultContentTypeForDocument);
+        } else {
+            newEntry.setContent((Binary)content, metadata, defaultContentTypeForBinary);
+        }
+        SchematicEntry oldValue = store.put(key, newEntry);
+        return oldValue != null ? removedResult(key, oldValue) : null;
+    }
+
+    @Override
     public SchematicEntry putIfAbsent( String key,
                                        Document document,
                                        Document metadata ) {
@@ -273,6 +295,28 @@ public class CacheSchematicDb implements SchematicDb {
                                        Document metadata ) {
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key);
         newEntry.setContent(binaryContent, metadata, defaultContentTypeForBinary);
+        SchematicEntry existingEntry = store.putIfAbsent(key, newEntry);
+        if (existingEntry == null) return null;
+        return proxy(key, existingEntry);
+    }
+
+    @Override
+    public SchematicEntry putIfAbsent( Document entryDocument ) {
+        Document metadata = entryDocument.getDocument(FieldName.METADATA);
+        Object content = entryDocument.getDocument(FieldName.CONTENT);
+        if (metadata == null || content == null) {
+            throw new IllegalArgumentException("The supplied document is not of the required format");
+        }
+        String key = metadata.getString(FieldName.ID);
+        if (key == null) {
+            throw new IllegalArgumentException("The supplied document is not of the required format");
+        }
+        SchematicEntry newEntry = new SchematicEntryLiteral();
+        if (content instanceof Document) {
+            newEntry.setContent((Document)content, metadata, defaultContentTypeForDocument);
+        } else {
+            newEntry.setContent((Binary)content, metadata, defaultContentTypeForBinary);
+        }
         SchematicEntry existingEntry = store.putIfAbsent(key, newEntry);
         if (existingEntry == null) return null;
         return proxy(key, existingEntry);

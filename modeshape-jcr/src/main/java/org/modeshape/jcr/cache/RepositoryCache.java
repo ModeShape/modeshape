@@ -149,6 +149,15 @@ public class RepositoryCache implements Observable {
         return context.getValueFactories().getNameFactory().create(name);
     }
 
+    /**
+     * Get the identifier of the repository's metadata document.
+     * 
+     * @return the cache key for the repository's metadata document; never null
+     */
+    public NodeKey getRepositoryMetadataDocumentKey() {
+        return systemMetadataKey;
+    }
+
     @Override
     public boolean register( ChangeSetListener observer ) {
         return changeBus.register(observer);
@@ -221,7 +230,8 @@ public class RepositoryCache implements Observable {
             if (workspaceName != null) {
                 for (WorkspaceCache cache : workspaces()) {
                     if (!cache.getWorkspaceName().equalsIgnoreCase(workspaceName)) {
-                        //the workspace which triggered the event should've already processed the changeset, so we don't want to do it
+                        // the workspace which triggered the event should've already processed the changeset, so we don't want to
+                        // do it
                         cache.notify(changeSet);
                     }
                 }

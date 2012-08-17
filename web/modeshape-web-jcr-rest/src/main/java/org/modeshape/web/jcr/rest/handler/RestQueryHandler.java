@@ -24,6 +24,8 @@
 
 package org.modeshape.web.jcr.rest.handler;
 
+import java.util.HashMap;
+import java.util.Map;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
@@ -40,13 +42,11 @@ import javax.ws.rs.core.UriInfo;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.web.jcr.rest.RestHelper;
 import org.modeshape.web.jcr.rest.model.RestQueryResult;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * An extension of the {@link QueryHandler} which allows executing queries against a repository and returns rest representations
  * of the query results.
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public final class RestQueryHandler extends QueryHandler {
@@ -55,21 +55,23 @@ public final class RestQueryHandler extends QueryHandler {
     private static final String UNKNOWN_TYPE = "unknown-type";
 
     /**
-     * Executes a the given query string (based on the language information) against a JCR repository, returning a rest model based
-     * result.
-     *
+     * Executes a the given query string (based on the language information) against a JCR repository, returning a rest model
+     * based result.
+     * 
      * @param request a non-null {@link HttpServletRequest}
      * @param repositoryName a non-null, URL encoded {@link String} representing the name of a repository
      * @param workspaceName a non-null, URL encoded {@link String} representing the name of a workspace
-     * @param language a non-null String which should be a valid query language, as recognized by the {@link javax.jcr.query.QueryManager}
+     * @param language a non-null String which should be a valid query language, as recognized by the
+     *        {@link javax.jcr.query.QueryManager}
      * @param statement a non-null String which should be a valid query string in the above language.
      * @param offset a numeric value which indicates the index in the result set from where results should be returned.
      * @param limit a numeric value indicating the maximum number of rows to return.
      * @param uriInfo a non-null {@link UriInfo} object which is provided by RestEASY, allowing extra request parameters to be
-     * retrieved.
+     *        retrieved.
      * @return a {@link RestQueryHandler} instance
      * @throws RepositoryException if any operation fails at the JCR level
      */
+    @SuppressWarnings( "deprecation" )
     public RestQueryResult executeQuery( HttpServletRequest request,
                                          String repositoryName,
                                          String workspaceName,
@@ -132,16 +134,14 @@ public final class RestQueryHandler extends QueryHandler {
                                            RestQueryResult.RestRow restRow ) throws RepositoryException {
         String defaultPath = resultRow.getPath();
         if (!StringUtil.isBlank(defaultPath)) {
-            restRow.addValue(MODE_URI, RestHelper.urlFrom(baseUrl, RestHelper.ITEMS_METHOD_NAME,
-                                                          defaultPath));
+            restRow.addValue(MODE_URI, RestHelper.urlFrom(baseUrl, RestHelper.ITEMS_METHOD_NAME, defaultPath));
         }
         for (String selectorName : result.getSelectorNames()) {
             try {
                 String selectorPath = resultRow.getPath(selectorName);
                 if (!StringUtil.isBlank(defaultPath) && !selectorPath.equals(defaultPath)) {
-                    restRow.addValue(MODE_URI + "-" + selectorName, RestHelper.urlFrom(baseUrl,
-                                                                                       RestHelper.ITEMS_METHOD_NAME,
-                                                                                       selectorPath));
+                    restRow.addValue(MODE_URI + "-" + selectorName,
+                                     RestHelper.urlFrom(baseUrl, RestHelper.ITEMS_METHOD_NAME, selectorPath));
                 }
             } catch (RepositoryException e) {
                 logger.debug(e, e.getMessage());
@@ -164,7 +164,7 @@ public final class RestQueryHandler extends QueryHandler {
                 continue;
             }
             String propertyPath = null;
-            //because we generate links for binary properties, we need the path of the property which has the value
+            // because we generate links for binary properties, we need the path of the property which has the value
             if (value.getType() == PropertyType.BINARY) {
                 if (binaryPropertyPaths == null) {
                     binaryPropertyPaths = binaryPropertyPaths(resultRow, result.getSelectorNames());
@@ -197,7 +197,7 @@ public final class RestQueryHandler extends QueryHandler {
 
     private Map<Value, String> binaryPropertyPaths( Node node ) throws RepositoryException {
         Map<Value, String> result = new HashMap<Value, String>();
-        for (PropertyIterator propertyIterator = node.getProperties(); propertyIterator.hasNext(); ) {
+        for (PropertyIterator propertyIterator = node.getProperties(); propertyIterator.hasNext();) {
             Property property = propertyIterator.nextProperty();
             if (property.getType() == PropertyType.BINARY) {
                 result.put(property.getValue(), property.getPath());

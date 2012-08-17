@@ -191,4 +191,11 @@ public interface SchematicEntry extends Cloneable {
      * @see #editMetadata()
      */
     EditableDocument editDocumentContent();
+    
+    /**
+     * Get the representation of this entry as a document, which will include the {@link #getMetadata() metadata} and {@link #getContent() content}
+     * as nested documents.
+     * @return the entry's representation as a document
+     */
+    Document asDocument();
 }

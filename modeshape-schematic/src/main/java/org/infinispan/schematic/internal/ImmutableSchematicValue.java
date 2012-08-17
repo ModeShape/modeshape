@@ -88,4 +88,9 @@ public class ImmutableSchematicValue implements SchematicEntry {
    public EditableDocument editMetadata() {
       throw new UnsupportedOperationException("This SchematicValue is read only");
    }
+
+   @Override
+    public Document asDocument() {
+        return delegate.asDocument();
+    }
 }

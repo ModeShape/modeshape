@@ -21,21 +21,24 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr;
-
-import org.junit.Before;
+package org.modeshape.jcr.api;
 
 /**
- * Support class for performance testing of various operations over subtrees of the content graph
+ * 
  */
+public interface Problems extends Iterable<Problem> {
 
-public abstract class AbstractJcrAccessTest extends SingleUseAbstractTest {
+    /**
+     * Get the number of problems.
+     * 
+     * @return the number of problems.
+     */
+    int size();
 
-    @Override
-    @Before
-    public void beforeEach() throws Exception {
-        super.beforeEach();
-        session.getWorkspace().getNamespaceRegistry().registerNamespace(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
-    }
-
+    /**
+     * Determine if there are any problems.
+     * 
+     * @return true if there is at least one problem, or false otherwise
+     */
+    boolean hasProblems();
 }

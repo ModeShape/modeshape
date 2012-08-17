@@ -142,6 +142,17 @@ public interface SchematicDb extends Lifecycle {
     /**
      * Store the supplied document and metadata at the given key.
      * 
+     * @param entryDocument the document that contains the metadata document, content document, and key
+     * @return the entry previously stored at this key, or null if there was no entry with the supplied key
+     * @see #put(String, Binary, Document)
+     * @see #putIfAbsent(String, Binary, Document)
+     * @see #putIfAbsent(String, Document, Document)
+     */
+    SchematicEntry put( Document entryDocument );
+
+    /**
+     * Store the supplied document and metadata at the given key.
+     * 
      * @param key the key or identifier for the document
      * @param document the document that is to be stored
      * @param metadata the metadata that is to be stored; may be null if there is no metadata
@@ -162,6 +173,17 @@ public interface SchematicDb extends Lifecycle {
     SchematicEntry putIfAbsent( String key,
                                 Binary binaryContent,
                                 Document metadata );
+
+    /**
+     * Store the supplied document and metadata at the given key.
+     * 
+     * @param entryDocument the document that contains the metadata document, content document, and key
+     * @return the existing entry for the supplied key, or null if there was no entry and the put was successful
+     * @see #put(String, Binary, Document)
+     * @see #putIfAbsent(String, Binary, Document)
+     * @see #putIfAbsent(String, Document, Document)
+     */
+    SchematicEntry putIfAbsent( Document entryDocument );
 
     /**
      * Replace the existing document and metadata at the given key with the document that is supplied. This method does nothing if

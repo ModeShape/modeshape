@@ -110,9 +110,8 @@ public class DatabaseBinaryStoreTest {
 
         assertThat("Content distortion", msg, is(testMessage));
 
-
         //put into garbage and mark as unused
-        ArrayList<BinaryKey> garbage = new ArrayList();
+        ArrayList<BinaryKey> garbage = new ArrayList<BinaryKey>();
         garbage.add(ref.getKey());
         store.markAsUnused(garbage);
 

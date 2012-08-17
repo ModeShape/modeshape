@@ -24,6 +24,10 @@
 
 package org.modeshape.web.jcr.rest;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -37,14 +41,10 @@ import org.modeshape.common.util.Base64;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.Logger;
 import org.modeshape.web.jcr.WebLogger;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Utility class for the rest services and supporting classes.
- *
+ * 
  * @author Horia Chiorean
  */
 public final class RestHelper {
@@ -56,7 +56,9 @@ public final class RestHelper {
     public static final String QUERY_METHOD_NAME = "query";
     public static final String NODE_TYPES_METHOD_NAME = "nodetypes";
 
-    private static final List<String> ALL_METHODS = Arrays.asList(BINARY_METHOD_NAME, ITEMS_METHOD_NAME, QUERY_METHOD_NAME,
+    private static final List<String> ALL_METHODS = Arrays.asList(BINARY_METHOD_NAME,
+                                                                  ITEMS_METHOD_NAME,
+                                                                  QUERY_METHOD_NAME,
                                                                   NODE_TYPES_METHOD_NAME);
 
     private static final Logger LOGGER = WebLogger.getLogger(RestHelper.class);
@@ -65,8 +67,13 @@ public final class RestHelper {
     }
 
     /**
+     * @param object the object to be converted to a response string
+     * @param request the servlet request
+     * @return the response string
+     * @throws JSONException if the JSON representation cannot be generated
      * @deprecated since 3.0, dedicated writers are used for the output
      */
+    @Deprecated
     public static String responseString( Object object,
                                          HttpServletRequest request ) throws JSONException {
         String acceptHeader = request.getHeader("Accept");
@@ -138,14 +145,15 @@ public final class RestHelper {
     }
 
     /**
-     * Return the JSON-compatible string representation of the given property value. If the value is a {@link javax.jcr.PropertyType#BINARY
-     * binary} value, then this method returns the Base-64 encoding of that value. Otherwise, it just returns the string
-     * representation of the value.
-     *
+     * Return the JSON-compatible string representation of the given property value. If the value is a
+     * {@link javax.jcr.PropertyType#BINARY binary} value, then this method returns the Base-64 encoding of that value. Otherwise,
+     * it just returns the string representation of the value.
+     * 
      * @param value the property value; may not be null
      * @return the string representation of the value
      * @deprecated since 3.0 binary values are handled via URLs
      */
+    @Deprecated
     public static String jsonEncodedStringFor( Value value ) {
         try {
             if (value.getType() != PropertyType.BINARY) {
@@ -171,6 +179,5 @@ public final class RestHelper {
             return null;
         }
     }
-
 
 }

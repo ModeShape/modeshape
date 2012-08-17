@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -94,6 +95,7 @@ import org.modeshape.jcr.RepositoryConfiguration.TransactionMode;
 import org.modeshape.jcr.Sequencers.SequencingWorkItem;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.api.Repository;
+import org.modeshape.jcr.api.RepositoryManager;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.api.monitor.ValueMetric;
@@ -136,8 +138,8 @@ import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStore;
+import org.modeshape.jcr.value.binary.BinaryUsageChangeSetListener;
 import org.modeshape.jcr.value.binary.InfinispanBinaryStore;
-import org.modeshape.jcr.value.binary.UnusedBinaryChangeSetListener;
 
 /**
  * 
@@ -251,13 +253,14 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     /**
      * Get the component that can be used to obtain statistics for this repository.
      * <p>
-     * Note that this provides un-checked access to the statistics, unlike {@link Workspace#getRepositoryMonitor()} in the public
-     * API which only exposes the statistics if the session's user has administrative privileges.
+     * Note that this provides un-checked access to the statistics, unlike {@link RepositoryManager#getRepositoryMonitor()} in the
+     * public API which only exposes the statistics if the session's user has administrative privileges.
      * </p>
      * 
      * @return the statistics component; never null
      * @throws IllegalStateException if the repository is not {@link #getState() running}
-     * @see Workspace#getRepositoryMonitor()
+     * @see Workspace#getRepositoryManager()
+     * @see RepositoryManager#getRepositoryMonitor()
      */
     public RepositoryStatistics getRepositoryStatistics() {
         return statistics();
@@ -339,6 +342,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     protected final RunningState doStart() throws IOException, NamingException {
         try {
             stateLock.lock();
+            if (this.state.get() == State.RESTORING) {
+                throw new IllegalStateException(JcrI18n.repositoryIsBeingRestoredAndCannotBeStarted.text(getName()));
+            }
             RunningState state = this.runningState.get();
             if (state == null) {
                 // start the repository by creating the running state ...
@@ -470,6 +476,32 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return runningState().txnManager();
     }
 
+    protected final void prepareToRestore() throws RepositoryException {
+        logger.debug("Preparing to restore '{0}' repository; setting state to RESTORING", getName());
+        if (getState() == State.RESTORING) {
+            throw new RepositoryException(JcrI18n.repositoryIsCurrentlyBeingRestored.text(getName()));
+        }
+        state.set(State.RESTORING);
+    }
+
+    protected final void completeRestore() throws ExecutionException, IOException, NamingException {
+        if (getState() == State.RESTORING) {
+            logger.debug("Shutting down '{0}' after content has been restored", getName());
+            Future<Boolean> future = shutdown();
+            try {
+                future.get();
+            } catch (InterruptedException e) {
+                Thread.interrupted();
+            }
+            logger.debug("Starting '{0}' after content has been restored", getName());
+            start();
+            logger.debug("Started '{0}' after content has been restored; beginning indexing of content", getName());
+            // Reindex all content ...
+            queryManager().reindexContent();
+            logger.debug("Completed reindexing all content in '{0}' after restore.", getName());
+        }
+    }
+
     /**
      * Get the immutable configuration for this repository.
      * 
@@ -583,6 +615,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 }
             } else {
                 throw new RepositoryException(JcrI18n.repositoryIsNotRunningOrHasBeenShutDown.text(repoName));
+            }
+        } else {
+            if (this.state.get() == State.RESTORING) {
+                throw new RepositoryException(JcrI18n.repositoryIsBeingRestoredAndCannotBeStarted.text(getName()));
             }
         }
 
@@ -916,6 +952,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final ExecutorService changeDispatchingQueue;
         private final boolean useXaSessions;
         private final MimeTypeDetectors mimeTypeDetector;
+        private final BackupService backupService;
 
         protected RunningState() throws IOException, NamingException {
             this(null, null);
@@ -1041,7 +1078,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.cache.register(this.lockManager);
 
                 // Set up the unused binary value listener ...
-                this.cache.register(new UnusedBinaryChangeSetListener(binaryStore));
+                this.cache.register(new BinaryUsageChangeSetListener(binaryStore));
 
                 // Refresh several of the components information from the repository cache ...
                 this.persistentRegistry.refreshFromSystem();
@@ -1163,6 +1200,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 }
             }
 
+            // Set up the backup service and executor ...
+            this.backupService = new BackupService(this);
         }
 
         protected Transactions createTransactions( TransactionMode mode,
@@ -1294,6 +1333,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return config.getQuery().fullTextSearchEnabled();
         }
 
+        protected final BackupService backupService() {
+            return backupService;
+        }
+
         private AuthenticationProviders createAuthenticationProviders( AtomicBoolean useAnonymouOnFailedLogins ) {
             // Prepare to create the authenticators and authorizers ...
             AuthenticationProviders authenticators = new AuthenticationProviders();
@@ -1409,6 +1452,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             if (statistics != null) {
                 statistics.stop();
+            }
+
+            if (backupService != null) {
+                backupService.shutdown();
             }
 
             this.context().terminateAllPools(30, TimeUnit.SECONDS);

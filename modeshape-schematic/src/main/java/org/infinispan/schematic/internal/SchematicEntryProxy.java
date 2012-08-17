@@ -220,6 +220,12 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
     }
 
     @Override
+    public Document asDocument() {
+        SchematicEntryLiteral value = getDeltaValueForRead();
+        return value.asDocument();
+    }
+
+    @Override
     public String toString() {
         return "SchematicValueProxy{" + "key=" + key + '}';
     }

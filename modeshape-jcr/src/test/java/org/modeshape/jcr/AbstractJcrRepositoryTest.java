@@ -28,9 +28,11 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -40,6 +42,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import org.junit.Before;
+import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
@@ -212,5 +215,158 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
                 print(children.nextNode(), includeSystem);
             }
         }
+    }
+
+    private static String getRandomString( int length ) {
+        StringBuffer buff = new StringBuffer(length);
+
+        for (int i = 0; i < length; i++) {
+            buff.append((char)((Math.random() * 26) + 'a'));
+        }
+
+        return buff.toString();
+    }
+
+    private static int createChildren( Node parent,
+                                       int numProperties,
+                                       int width,
+                                       int depth ) throws Exception {
+        if (depth < 1) {
+            return 0;
+
+        }
+
+        int count = width;
+
+        for (int i = 0; i < width; i++) {
+            Node newNode = parent.addNode(getRandomString(9), "nt:unstructured");
+
+            for (int j = 0; j < numProperties; j++) {
+                newNode.setProperty(getRandomString(8), getRandomString(16));
+            }
+
+            count += createChildren(newNode, numProperties, width, depth - 1);
+        }
+        return count;
+    }
+
+    protected static int createSubgraph( JcrSession session,
+                                         String initialPath,
+                                         int depth,
+                                         int numberOfChildrenPerNode,
+                                         int numberOfPropertiesPerNode,
+                                         boolean oneBatch,
+                                         Stopwatch stopwatch,
+                                         PrintStream output,
+                                         String description ) throws Exception {
+        // Calculate the number of nodes that we'll created, but subtract 1 since it doesn't create the root
+        long totalNumber = calculateTotalNumberOfNodesInTree(numberOfChildrenPerNode, depth, false);
+        if (initialPath == null) initialPath = "";
+        if (description == null) {
+            description = "" + numberOfChildrenPerNode + "x" + depth + " tree with " + numberOfPropertiesPerNode
+                          + " properties per node";
+        }
+
+        if (output != null) output.println(description + " (" + totalNumber + " nodes):");
+        long totalNumberCreated = 0;
+
+        Node parentNode = session.getNode(initialPath);
+
+        if (stopwatch != null) stopwatch.start();
+
+        totalNumberCreated += createChildren(parentNode, numberOfPropertiesPerNode, numberOfChildrenPerNode, depth);
+
+        assertThat(totalNumberCreated, is(totalNumber));
+
+        session.save();
+
+        if (stopwatch != null) {
+            stopwatch.stop();
+            if (output != null) {
+                output.println("    " + getTotalAndAverageDuration(stopwatch, totalNumberCreated));
+            }
+        }
+        return (int)totalNumberCreated;
+
+    }
+
+    protected static int traverseSubgraph( JcrSession session,
+                                           String initialPath,
+                                           int depth,
+                                           int numberOfChildrenPerNode,
+                                           int numberOfPropertiesPerNode,
+                                           boolean oneBatch,
+                                           Stopwatch stopwatch,
+                                           PrintStream output,
+                                           String description ) throws Exception {
+        // Calculate the number of nodes that we'll created, but subtract 1 since it doesn't create the root
+        long totalNumber = calculateTotalNumberOfNodesInTree(numberOfChildrenPerNode, depth, false);
+        if (initialPath == null) initialPath = "";
+        if (description == null) {
+            description = "" + numberOfChildrenPerNode + "x" + depth + " tree with " + numberOfPropertiesPerNode
+                          + " properties per node";
+        }
+
+        if (output != null) output.println(description + " (" + totalNumber + " nodes):");
+        long totalNumberTraversed = 0;
+
+        Node parentNode = session.getNode(initialPath);
+
+        if (stopwatch != null) stopwatch.start();
+
+        totalNumberTraversed += traverseChildren(parentNode);
+
+        assertThat(totalNumberTraversed, is(totalNumber));
+
+        session.save();
+
+        if (stopwatch != null) {
+            stopwatch.stop();
+            if (output != null) {
+                output.println("    " + getTotalAndAverageDuration(stopwatch, totalNumberTraversed));
+            }
+        }
+        return (int)totalNumberTraversed;
+
+    }
+
+    protected static int traverseChildren( Node parentNode ) throws Exception {
+
+        int childCount = 0;
+        NodeIterator children = parentNode.getNodes();
+
+        while (children.hasNext()) {
+            childCount++;
+
+            childCount += traverseChildren(children.nextNode());
+        }
+
+        return childCount;
+    }
+
+    protected static String getTotalAndAverageDuration( Stopwatch stopwatch,
+                                                        long numNodes ) {
+        long totalDurationInMilliseconds = TimeUnit.NANOSECONDS.toMillis(stopwatch.getTotalDuration().longValue());
+        if (numNodes == 0) numNodes = 1;
+        long avgDuration = totalDurationInMilliseconds / numNodes;
+        String units = " millisecond(s)";
+        if (avgDuration < 1L) {
+            long totalDurationInMicroseconds = TimeUnit.NANOSECONDS.toMicros(stopwatch.getTotalDuration().longValue());
+            avgDuration = totalDurationInMicroseconds / numNodes;
+            units = " microsecond(s)";
+        }
+        return "total = " + stopwatch.getTotalDuration() + "; avg = " + avgDuration + units;
+    }
+
+    protected static int calculateTotalNumberOfNodesInTree( int numberOfChildrenPerNode,
+                                                            int depth,
+                                                            boolean countRoot ) {
+        assert depth > 0;
+        assert numberOfChildrenPerNode > 0;
+        int totalNumber = 0;
+        for (int i = 0; i <= depth; ++i) {
+            totalNumber += (int)Math.pow(numberOfChildrenPerNode, i);
+        }
+        return countRoot ? totalNumber : totalNumber - 1;
     }
 }
