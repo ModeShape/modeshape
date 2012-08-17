@@ -611,23 +611,19 @@ public class ModelAttributes {
     };
     
     public static final AttributeDefinition[] FILE_BINARY_STORAGE_ATTRIBUTES = {
-        BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE, 
-        PATH, RELATIVE_TO,
+        MINIMUM_BINARY_SIZE, PATH, RELATIVE_TO,
     };
     
     public static final AttributeDefinition[] CACHE_BINARY_STORAGE_ATTRIBUTES = {
-        BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
-        DATA_CACHE_NAME, METADATA_CACHE_NAME, CACHE_CONTAINER,
+        MINIMUM_BINARY_SIZE,DATA_CACHE_NAME, METADATA_CACHE_NAME, CACHE_CONTAINER,
     };
     
     public static final AttributeDefinition[] DATABASE_BINARY_STORAGE_ATTRIBUTES = {
-        BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
-        DATA_SOURCE_JNDI_NAME,
+        MINIMUM_BINARY_SIZE, DATA_SOURCE_JNDI_NAME,
     };
     
     public static final AttributeDefinition[] CUSTOM_BINARY_STORAGE_ATTRIBUTES = {
-        BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
-        CLASSNAME, MODULE,
+        MINIMUM_BINARY_SIZE, CLASSNAME, MODULE,
     };
     
     

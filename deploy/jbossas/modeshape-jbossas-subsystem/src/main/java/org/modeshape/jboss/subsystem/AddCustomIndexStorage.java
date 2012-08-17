@@ -25,6 +25,7 @@ package org.modeshape.jboss.subsystem;
 
 import org.infinispan.schematic.document.EditableDocument;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
@@ -54,6 +55,12 @@ public class AddCustomIndexStorage extends AbstractAddIndexStorage {
             }
             indexStorage.set(key, value);
         }
+    }
+    
+    @Override
+    protected void populateModel( ModelNode operation,
+                                  ModelNode model ) throws OperationFailedException {
+        populate(operation, model, ModelKeys.CUSTOM_INDEX_STORAGE, ModelAttributes.CUSTOM_INDEX_STORAGE_ATTRIBUTES);
     }
 
 }

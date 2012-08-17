@@ -59,4 +59,13 @@ public class AddCustomBinaryStorage extends AbstractAddBinaryStorage {
             binaries.set(name, property.getValue());
         }
     }
+    
+    @Override
+    protected void populateModel( ModelNode operation,
+                                  ModelNode model ) throws OperationFailedException {
+        populate(operation, model, ModelKeys.CUSTOM_BINARY_STORAGE, ModelAttributes.CUSTOM_BINARY_STORAGE_ATTRIBUTES);
+    }
+    
+    
+    
 }

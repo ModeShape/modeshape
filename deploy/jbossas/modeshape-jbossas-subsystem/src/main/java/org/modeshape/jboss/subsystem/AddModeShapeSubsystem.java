@@ -23,6 +23,7 @@
 package org.modeshape.jboss.subsystem;
 
 import java.util.List;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -38,7 +39,6 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.modeshape.common.naming.SingletonInitialContextFactory;
 import org.modeshape.jboss.lifecycle.JBossLifeCycleListener;
 import org.modeshape.jboss.service.EngineService;
 import org.modeshape.jboss.service.ReferenceFactoryService;
@@ -50,9 +50,6 @@ class AddModeShapeSubsystem extends AbstractAddStepHandler {
 
     // Jcr Engine
     EngineService engine;
-
-    SingletonInitialContextFactory scf = new SingletonInitialContextFactory();
-    final JBossLifeCycleListener shutdownListener = new JBossLifeCycleListener();//todo why defined here and then again inside initializeModeShapeEngine
 
     @Override
     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {

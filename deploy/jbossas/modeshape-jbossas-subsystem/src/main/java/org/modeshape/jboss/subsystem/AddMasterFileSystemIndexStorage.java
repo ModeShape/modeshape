@@ -83,4 +83,11 @@ public class AddMasterFileSystemIndexStorage extends AbstractAddFileSystemIndexS
         indexStorage.set(FieldName.INDEX_STORAGE_REFRESH_IN_SECONDS, refresh);
         indexStorage.set(FieldName.INDEX_STORAGE_SOURCE_LOCATION, sourcePath);
     }
+    
+    @Override
+    protected void populateModel( ModelNode operation,
+                                  ModelNode model ) throws OperationFailedException {
+        populate(operation, model, ModelKeys.MASTER_FILE_INDEX_STORAGE, ModelAttributes.MASTER_FILE_INDEX_STORAGE_ATTRIBUTES);
+    }
+    
 }

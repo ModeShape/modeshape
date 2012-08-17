@@ -35,13 +35,20 @@ import org.jboss.as.controller.registry.AttributeAccess;
  */
 public class BinaryStorageWriteAttributeHandler extends AbstractRepositoryConfigWriteAttributeHandler {
 
-    static final BinaryStorageWriteAttributeHandler INSTANCE = new BinaryStorageWriteAttributeHandler(
-                                                                                                      ModelAttributes.FILE_BINARY_STORAGE_ATTRIBUTES,
-                                                                                                      ModelAttributes.CACHE_BINARY_STORAGE_ATTRIBUTES,
-                                                                                                      ModelAttributes.DATABASE_BINARY_STORAGE_ATTRIBUTES,
-                                                                                                      ModelAttributes.CUSTOM_BINARY_STORAGE_ATTRIBUTES);
-
+    static final BinaryStorageWriteAttributeHandler FILE_BINARY_STORAGE_INSTANCE = new BinaryStorageWriteAttributeHandler(
+                                                                                                      ModelAttributes.FILE_BINARY_STORAGE_ATTRIBUTES);
+    
+    static final BinaryStorageWriteAttributeHandler CACHE_BINARY_STORAGE_INSTANCE = new BinaryStorageWriteAttributeHandler(
+            ModelAttributes.CACHE_BINARY_STORAGE_ATTRIBUTES);
+    
+    static final BinaryStorageWriteAttributeHandler DATABASE_BINARY_STORAGE_INSTANCE = new BinaryStorageWriteAttributeHandler(
+            ModelAttributes.DATABASE_BINARY_STORAGE_ATTRIBUTES);
+    
+    static final BinaryStorageWriteAttributeHandler CUSTOM_BINARY_STORAGE_INSTANCE = new BinaryStorageWriteAttributeHandler(
+            ModelAttributes.CUSTOM_BINARY_STORAGE_ATTRIBUTES);
+    
     private BinaryStorageWriteAttributeHandler( AttributeDefinition[]... modelAttributesArrays ) {
-        super(allBut(unique(modelAttributesArrays), ModelKeys.BINARY_STORAGE_TYPE));
+        super((unique(modelAttributesArrays)));
     }
+    
 }

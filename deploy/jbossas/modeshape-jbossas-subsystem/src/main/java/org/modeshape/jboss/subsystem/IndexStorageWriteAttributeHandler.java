@@ -35,13 +35,23 @@ import org.jboss.as.controller.registry.AttributeAccess;
  */
 public class IndexStorageWriteAttributeHandler extends AbstractRepositoryConfigWriteAttributeHandler {
 
-    static final IndexStorageWriteAttributeHandler INSTANCE = new IndexStorageWriteAttributeHandler(
-                                                                                                    ModelAttributes.RAM_INDEX_STORAGE_ATTRIBUTES,
-                                                                                                    ModelAttributes.LOCAL_FILE_INDEX_STORAGE_ATTRIBUTES,
-                                                                                                    ModelAttributes.MASTER_FILE_INDEX_STORAGE_ATTRIBUTES,
-                                                                                                    ModelAttributes.SLAVE_FILE_INDEX_STORAGE_ATTRIBUTES,
-                                                                                                    ModelAttributes.CACHE_INDEX_STORAGE_ATTRIBUTES,
-                                                                                                    ModelAttributes.CUSTOM_INDEX_STORAGE_ATTRIBUTES);
+    static final IndexStorageWriteAttributeHandler RAM_INDEX_STORAGE_INSTANCE = new IndexStorageWriteAttributeHandler(
+            ModelAttributes.RAM_INDEX_STORAGE_ATTRIBUTES);
+    
+    static final IndexStorageWriteAttributeHandler LOCAL_FILE_STORAGE_INSTANCE = new IndexStorageWriteAttributeHandler(
+            ModelAttributes.LOCAL_FILE_INDEX_STORAGE_ATTRIBUTES);
+    
+    static final IndexStorageWriteAttributeHandler MASTER_FILE_STORAGE_INSTANCE = new IndexStorageWriteAttributeHandler(
+            ModelAttributes.MASTER_FILE_INDEX_STORAGE_ATTRIBUTES);
+    
+    static final IndexStorageWriteAttributeHandler SLAVE_FILE_STORAGE_INSTANCE = new IndexStorageWriteAttributeHandler(
+            ModelAttributes.SLAVE_FILE_INDEX_STORAGE_ATTRIBUTES);
+    
+    static final IndexStorageWriteAttributeHandler CACHE_INDEX_STORAGE_INSTANCE = new IndexStorageWriteAttributeHandler(
+            ModelAttributes.CACHE_INDEX_STORAGE_ATTRIBUTES);
+    
+    static final IndexStorageWriteAttributeHandler CUSTOM_INDEX_STORAGE_INSTANCE = new IndexStorageWriteAttributeHandler(
+            ModelAttributes.CUSTOM_INDEX_STORAGE_ATTRIBUTES);
 
     private IndexStorageWriteAttributeHandler( AttributeDefinition[]... modelAttributes ) {
         super(allBut(unique(modelAttributes), ModelKeys.INDEX_STORAGE_TYPE));

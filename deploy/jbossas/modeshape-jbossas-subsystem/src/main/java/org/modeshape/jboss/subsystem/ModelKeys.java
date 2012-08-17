@@ -41,6 +41,7 @@ public class ModelKeys {
     static final String ASYNC_THREAD_POOL_SIZE = "indexing-async-thread-pool-size";
     static final String BATCH_SIZE = "indexing-batch-size";
     static final String BINARY_STORAGE_TYPE = "binary-storage-type";
+    static final String STORAGE_TYPE = "storage-type";
     static final String CACHE_CONTAINER = "cache-container";
     static final String CACHE_CONTAINER_JNDI_NAME = "cache-container-jndi-name";
     static final String CACHE_NAME = "cache-name";
@@ -86,33 +87,22 @@ public class ModelKeys {
     static final String AUTHENTICATORS = "authenticators";
 
     static final String BINARY_STORAGE = "binary-storage";
-    static final String BINARY_STORAGE_NAME = "BINARIES";
     static final String FILE_BINARY_STORAGE = "file-binary-storage";
     static final String DB_BINARY_STORAGE = "db-binary-storage";
     static final String CACHE_BINARY_STORAGE = "cache-binary-storage";
     static final String CUSTOM_BINARY_STORAGE = "custom-binary-storage";
-    static final String ADD_FILE_BINARY_STORAGE = "add-file-binary-storage";
-    static final String ADD_DB_BINARY_STORAGE = "add-db-binary-storage";
-    static final String ADD_CACHE_BINARY_STORAGE = "add-cache-binary-storage";
-    static final String ADD_CUSTOM_BINARY_STORAGE = "add-custom-binary-storage";
     static final String REMOVE_BINARY_STORAGE = "remove-binary-storage";
 
     static final String SEQUENCER = "sequencer";
 
+    static final String CONFIGURATION = "configuration";
     static final String INDEX_STORAGE = "index-storage";
-    static final String INDEX_STORAGE_NAME = "INDEXES";
     static final String RAM_INDEX_STORAGE = "ram-index-storage";
     static final String LOCAL_FILE_INDEX_STORAGE = "local-file-index-storage";
     static final String MASTER_FILE_INDEX_STORAGE = "master-file-index-storage";
     static final String SLAVE_FILE_INDEX_STORAGE = "slave-file-index-storage";
     static final String CACHE_INDEX_STORAGE = "cache-index-storage";
     static final String CUSTOM_INDEX_STORAGE = "custom-index-storage";
-    static final String ADD_RAM_INDEX_STORAGE = "add-ram-index-storage";
-    static final String ADD_LOCAL_FILE_INDEX_STORAGE = "add-local-file-index-storage";
-    static final String ADD_MASTER_FILE_INDEX_STORAGE = "add-master-file-index-storage";
-    static final String ADD_SLAVE_FILE_INDEX_STORAGE = "add-slave-file-index-storage";
-    static final String ADD_CACHE_INDEX_STORAGE = "add-cache-index-storage";
-    static final String ADD_CUSTOM_INDEX_STORAGE = "add-custom-index-storage";
     static final String REMOVE_INDEX_STORAGE = "remove-index-storage";
 
 }

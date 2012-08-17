@@ -62,6 +62,12 @@ public class TestModeShapeConfiguration extends AbstractSubsystemBaseTest {
     public void testMinimalConfigurationWithOneMinimalRepository() throws Exception {
         standardSubsystemTest("minimal");
     }
+    
+    @Test
+    public void testOutputPersistanceOfConfigurationWithFileBinaryStorage() throws Exception {
+        parse(readResource("modeshape-file-binary-storage.xml"));
+    }
+    
     /* // todo replace with dmr format not json
     @Test
     public void testOutputPersistance() throws Exception {

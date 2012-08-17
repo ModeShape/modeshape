@@ -61,4 +61,10 @@ public class AddLocalFileSystemIndexStorage extends AbstractAddFileSystemIndexSt
         indexStorage.set(FieldName.INDEX_STORAGE_LOCKING_STRATEGY, locking.toLowerCase());
         indexStorage.set(FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE, accessType.toLowerCase());
     }
+    
+    @Override
+    protected void populateModel( ModelNode operation,
+                                  ModelNode model ) throws OperationFailedException {
+        populate(operation, model, ModelKeys.LOCAL_FILE_INDEX_STORAGE, ModelAttributes.LOCAL_FILE_INDEX_STORAGE_ATTRIBUTES);
+    }
 }

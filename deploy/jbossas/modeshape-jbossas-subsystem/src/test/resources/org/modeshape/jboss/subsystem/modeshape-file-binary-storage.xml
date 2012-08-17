@@ -7,11 +7,6 @@
               anonymous-roles="readonly readwrite admin connect" 
               anonymous-username="&lt;anonymous&gt;" 
               use-anonymous-upon-failed-authentication="false">
-    <workspaces default-workspace="default" allow-workspace-creation="true">
-      <workspace name="predefinedWorkspace1" />
-      <workspace name="predefinedWorkspace2" />
-      <workspace name="predefinedWorkspace3" />
-    </workspaces>
     <file-binary-storage min-value-size="5000" 
                          path="modeshape/sample/binaries" 
                          relative-to="jboss.server.data.dir" />
