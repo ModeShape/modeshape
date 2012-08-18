@@ -97,7 +97,7 @@ public abstract class AbstractBinaryStoreTest {
     }
 
     @Test
-    public void testMarkAndRemoveUnused() throws BinaryStoreException, IOException {
+    public void testMarkAndRemoveUnused() throws BinaryStoreException {
         getBinaryStore().storeValue(new ByteArrayInputStream(SMALL_DATA));
         List<BinaryKey> keys = new ArrayList<BinaryKey>();
         keys.add(SMALL_KEY);
@@ -146,7 +146,7 @@ public abstract class AbstractBinaryStoreTest {
         public static final String DEFAULT_TYPE = "application/foobar";
 
         @Override
-        public String mimeTypeOf(String name, Binary binaryValue) throws RepositoryException, IOException {
+        public String mimeTypeOf(String name, Binary binaryValue) {
             return DEFAULT_TYPE;
         }
     }

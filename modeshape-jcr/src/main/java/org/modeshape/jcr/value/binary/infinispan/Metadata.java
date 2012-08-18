@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr.value.binary.infinispan;
 
-
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -38,12 +37,10 @@ public class Metadata implements Externalizable {
     protected String mimeType;
     protected int numberTextChunks;
 
-    public Metadata(){}
+    public Metadata() {
+    }
 
-    /**
-     * Copy c'tor
-     */
-    public Metadata(Metadata metadata){
+    public Metadata( Metadata metadata ) {
         length = metadata.length;
         numberChunks = metadata.numberChunks;
         modificationTime = metadata.modificationTime;
@@ -52,7 +49,7 @@ public class Metadata implements Externalizable {
         numberTextChunks = metadata.numberTextChunks;
     }
 
-    public Metadata copy(){
+    public Metadata copy() {
         return new Metadata(this);
     }
 
@@ -60,7 +57,7 @@ public class Metadata implements Externalizable {
         return length;
     }
 
-    public void setLength(long length) {
+    public void setLength( long length ) {
         this.length = length;
     }
 
@@ -68,7 +65,7 @@ public class Metadata implements Externalizable {
         return modificationTime;
     }
 
-    public void setModificationTime(long modificationTime) {
+    public void setModificationTime( long modificationTime ) {
         this.modificationTime = modificationTime;
     }
 
@@ -76,7 +73,7 @@ public class Metadata implements Externalizable {
         return mimeType;
     }
 
-    public void setMimeType(String mimeType) {
+    public void setMimeType( String mimeType ) {
         this.mimeType = mimeType;
     }
 
@@ -84,7 +81,7 @@ public class Metadata implements Externalizable {
         return numberTextChunks;
     }
 
-    public void setNumberTextChunks(int numberTextChunks) {
+    public void setNumberTextChunks( int numberTextChunks ) {
         this.numberTextChunks = numberTextChunks;
     }
 
@@ -92,7 +89,7 @@ public class Metadata implements Externalizable {
         return numberChunks;
     }
 
-    public void setNumberChunks(int numberChunks) {
+    public void setNumberChunks( int numberChunks ) {
         this.numberChunks = numberChunks;
     }
 
@@ -103,7 +100,7 @@ public class Metadata implements Externalizable {
     /**
      * @return unused time in MS or 0 if still in use
      */
-    public long unusedSince(){
+    public long unusedSince() {
         return unusedSince;
     }
 
@@ -111,19 +108,19 @@ public class Metadata implements Externalizable {
         unusedSince = System.currentTimeMillis();
     }
 
-    public void setUsed(){
+    public void setUsed() {
         unusedSince = 0;
     }
 
     @Override
-    public void writeExternal(ObjectOutput out) throws IOException {
+    public void writeExternal( ObjectOutput out ) throws IOException {
         out.writeShort(1); // take 1st value as version number (maybe data format changes in future)
         out.writeLong(length);
         out.writeInt(numberChunks);
         out.writeLong(modificationTime);
         out.writeLong(unusedSince);
         out.writeInt(numberTextChunks);
-        if(mimeType != null){
+        if (mimeType != null) {
             out.writeBoolean(true);
             out.writeUTF(mimeType);
         } else {
@@ -132,14 +129,14 @@ public class Metadata implements Externalizable {
     }
 
     @Override
-    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+    public void readExternal( ObjectInput in ) throws IOException {
         in.readShort(); // ignore, no additional version ATM
         length = in.readLong();
         numberChunks = in.readInt();
         modificationTime = in.readLong();
         unusedSince = in.readLong();
         numberTextChunks = in.readInt();
-        if(in.readBoolean()){
+        if (in.readBoolean()) {
             mimeType = in.readUTF();
         }
     }

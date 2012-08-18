@@ -23,13 +23,12 @@
  */
 package org.modeshape.jcr.value.binary.infinispan;
 
+import java.io.IOException;
 import org.modeshape.common.logging.Logger;
 
-import java.io.IOException;
-
 /**
- * Infinispan operation can fail e.g. due view changes of the cluster (transactions fails in these cases for example).
- * In such cases it make sense to repeat the operation to avoid unnecessary errors reported to the user.
+ * Infinispan operation can fail e.g. due view changes of the cluster (transactions fails in these cases for example). In such
+ * cases it make sense to repeat the operation to avoid unnecessary errors reported to the user.
  */
 abstract class RetryOperation {
 
@@ -50,7 +49,7 @@ abstract class RetryOperation {
             try {
                 call();
                 return;
-            } catch(IOException ex){
+            } catch (IOException ex) {
                 lastException = ex;
             } catch (Exception ex) {
                 lastException = new IOException(ex);
@@ -68,6 +67,7 @@ abstract class RetryOperation {
                 }
             }
         }
+        assert lastException != null;
         throw lastException;
     }
 

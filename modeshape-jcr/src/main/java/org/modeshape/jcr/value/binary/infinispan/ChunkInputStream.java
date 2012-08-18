@@ -108,7 +108,7 @@ class ChunkInputStream extends InputStream {
         return n;
     }
 
-    private void fillBuffer() throws IOException {
+    private void fillBuffer() {
 
         buffer = nextChunk();
         if(buffer == null){
@@ -119,7 +119,7 @@ class ChunkInputStream extends InputStream {
         }
     }
 
-    protected byte[] nextChunk() throws IOException {
+    protected byte[] nextChunk() {
         String chunkKey = key+"-"+chunkNumber++;
         logger.debug("Read chunk {0}", chunkKey);
         return blobCache.get(chunkKey);
