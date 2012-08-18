@@ -961,6 +961,24 @@ public class JcrResultSet implements ResultSet {
 
     /**
      * {@inheritDoc}
+     *
+     * @see java.sql.ResultSet#getObject(int, Class)
+     */
+    public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see java.sql.ResultSet#getObject(String, Class)
+     */
+    public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+    }
+
+    /**
+     * {@inheritDoc}
      * 
      * @see java.sql.ResultSet#getRef(int)
      */

@@ -35,6 +35,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.Map;
 import java.util.TimeZone;
 
 import javax.jcr.query.QueryResult;
@@ -1070,7 +1071,7 @@ public class JcrResultSetTest {
      */
     @Test( expected = SQLFeatureNotSupportedException.class )
     public void featureNotSupportedCallingGetObjectIdxMap() throws SQLException {
-        resultSet.getObject(1, null);
+        resultSet.getObject(1, (Map)null);
     }
 
     /**
@@ -1078,7 +1079,23 @@ public class JcrResultSetTest {
      */
     @Test( expected = SQLFeatureNotSupportedException.class )
     public void featureNotSupportedCallingGetObjectColNameMap() throws SQLException {
-        resultSet.getObject("colname", null);
+        resultSet.getObject("colname", (Map)null);
+    }
+
+    /**
+     * @throws SQLException
+     */
+    @Test( expected = SQLFeatureNotSupportedException.class )
+    public void featureNotSupportedCallingGetObjectIdxClass() throws SQLException {
+        resultSet.getObject(1, (Class<?>)null);
+    }
+
+    /**
+     * @throws SQLException
+     */
+    @Test( expected = SQLFeatureNotSupportedException.class )
+    public void featureNotSupportedCallingGetObjectColNameClass() throws SQLException {
+        resultSet.getObject("colname", (Class<?>)null);
     }
 
     /**

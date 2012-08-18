@@ -603,4 +603,20 @@ class JcrStatement implements Statement {
         return iface.cast(this);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @see java.sql.Statement#closeOnCompletion()
+     */
+    public void closeOnCompletion() throws SQLException {
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see java.sql.Statement#isCloseOnCompletion()
+     */
+    public boolean isCloseOnCompletion() throws SQLException {
+        return true;
+    }
 }
