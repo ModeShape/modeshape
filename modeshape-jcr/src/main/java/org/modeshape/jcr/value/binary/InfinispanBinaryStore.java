@@ -144,4 +144,9 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
                                     String extractedText ) /*throws BinaryStoreException*/{
         throw new UnsupportedOperationException("Not implemented");
     }
+
+    @Override
+    public Iterable<BinaryKey> getAllBinaryKeys() throws BinaryStoreException {
+        throw new BinaryStoreException("Not implemented");
+    }
 }

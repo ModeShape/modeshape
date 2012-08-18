@@ -34,6 +34,8 @@ import java.io.RandomAccessFile;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -475,5 +477,41 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
                                                      String suffix ) {
         String extractTextKeyContent = sourceKey.toString() + suffix;
         return BinaryKey.keyFor(extractTextKeyContent.getBytes());
+    }
+
+    @Override
+    public Iterable<BinaryKey> getAllBinaryKeys() {
+        // We could do this lazily, but doing so is more complicated than just grabbing them all at once.
+        // So we'll implement the simple approach now ...
+        Set<BinaryKey> keys = new HashSet<BinaryKey>();
+
+        // Iterate over all of the files in the directory structure (excluding trash) and assemble the results ...
+        if (isReadableDir(directory)) {
+            for (File first : directory.listFiles()) {
+                if (isReadableDir(first)) {
+                    for (File second : first.listFiles()) {
+                        if (isReadableDir(second)) {
+                            for (File third : second.listFiles()) {
+                                if (isReadableDir(third)) {
+                                    for (File file : third.listFiles()) {
+                                        if (!file.canRead() || !file.isFile()) continue;
+                                        String filename = file.getName();
+                                        // SHA-1s should be 40 characters ...
+                                        if (filename.length() != 40) continue;
+                                        BinaryKey key = new BinaryKey(file.getName());
+                                        keys.add(key);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return keys;
+    }
+
+    private boolean isReadableDir( File file ) {
+        return directory != null && directory.isDirectory() && directory.canRead();
     }
 }

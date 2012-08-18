@@ -445,10 +445,18 @@ public class BackupService {
 
                 // PHASE 3:
                 // Perform the backup of the binary store ...
-                // TODO: Get all binary keys from the BinaryStore ...
-                // for (BinaryKey binaryKey : binaryStore.getBinaryKeys()) {
-                // writeToContentArea(binaryKey, binaryStore.getInputStream(binaryKey));
-                // }
+                try {
+                    for (BinaryKey binaryKey : binaryStore.getAllBinaryKeys()) {
+                        try {
+                            writeToContentArea(binaryKey, binaryStore.getInputStream(binaryKey));
+                        } catch (BinaryStoreException e) {
+                            problems.addError(JcrI18n.problemsWritingBinaryToBackup, binaryKey, backupLocation(), e.getMessage());
+                        }
+                    }
+                } catch (BinaryStoreException e) {
+                    I18n msg = JcrI18n.problemsGettingBinaryKeysFromBinaryStore;
+                    problems.addError(msg, repositoryName(), backupLocation(), e.getMessage());
+                }
 
                 // PHASE 4:
                 // Write all of the binary files that were added during the changes made while we worked ...
@@ -528,9 +536,13 @@ public class BackupService {
         public void removeExistingBinaryFiles() {
             // simply mark all of the existing binary values as unused; if an unused binary value is restored,
             // it will simply be kept without having store it ...
-            // TODO: Get all binary keys from the BinaryStore ...
-            // Iterable<BinaryKey> keys = binaryStore.getBinaryKeys();
-            // binaryStore.markAsUnused(keys);
+            try {
+                Iterable<BinaryKey> keys = binaryStore.getAllBinaryKeys();
+                binaryStore.markAsUnused(keys);
+            } catch (BinaryStoreException e) {
+                I18n msg = JcrI18n.problemsGettingBinaryKeysFromBinaryStore;
+                problems.addError(msg, repositoryName(), backupLocation(), e.getMessage());
+            }
         }
 
         public void removeExistingDocuments() {
@@ -608,7 +620,7 @@ public class BackupService {
 
         protected BinaryKey binaryKeyFor( File binaryFile ) {
             String filename = binaryFile.getName();
-            String sha1 = filename.replaceFirst("//" + BINARY_EXTENSION + "$", "");
+            String sha1 = filename.replace(BINARY_EXTENSION, "");
             return new BinaryKey(sha1);
         }
 

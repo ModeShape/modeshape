@@ -57,10 +57,13 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
     @Before
     @Override
     public void beforeEach() throws Exception {
-        super.beforeEach();
-        backupDirectory = new File("target/backupArea/repoBackups");
-        FileUtil.delete(backupDirectory);
+        File backupArea = new File("target/backupArea");
+        backupDirectory = new File(backupArea, "repoBackups");
+        FileUtil.delete(backupArea);
         backupDirectory.mkdirs();
+        new File(backupArea, "backRepo").mkdirs();
+        new File(backupArea, "restoreRepo").mkdirs();
+        super.beforeEach();
     }
 
     @Test
