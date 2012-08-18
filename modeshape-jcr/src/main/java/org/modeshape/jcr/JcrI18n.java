@@ -393,6 +393,9 @@ public final class JcrI18n {
     public static I18n errorDuringGarbageCollection;
     public static I18n errorMarkingBinaryValuesUnused;
     public static I18n errorMarkingBinaryValuesUsed;
+    public static I18n errorStoringMimeType;
+    public static I18n errorStoringExtractedText;
+    public static I18n errorReadingExtractedText;
 
     public static I18n unableToReadTemporaryDirectory;
     public static I18n unableToWriteTemporaryDirectory;
@@ -401,6 +404,9 @@ public final class JcrI18n {
     public static I18n unableToFindBinaryValue;
     public static I18n tempDirectorySystemPropertyMustBeSet;
     public static I18n tempDirectoryLocation;
+    public static I18n errorReadingBinaryValue;
+    public static I18n errorStoringBinaryValue;
+    public static I18n errorLockingBinaryValue;
 
     public static I18n errorKillingRepository;
     public static I18n errorKillingEngine;
