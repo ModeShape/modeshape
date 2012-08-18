@@ -28,6 +28,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Set;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.value.BinaryKey;
 
@@ -303,6 +304,27 @@ public class Database {
                                               .build();
             sql.setString(1, text);
             sql.setString(2, key.toString());
+            return sql;
+        } catch (SQLException e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    /**
+     * Generates SQL statement for retrieving the binary keys in the store.
+     * 
+     * @param keys the container into which the keys should be placed
+     * @return executable SQL statement
+     * @throws BinaryStoreException
+     */
+    public PreparedStatement retrieveBinaryKeys( Set<BinaryKey> keys ) throws BinaryStoreException {
+        try {
+            PreparedStatement sql = sqlBuilder.select()
+                                              .columns("cid")
+                                              .from(tableName())
+                                              .where()
+                                              .condition("usage", sqlType.integer(), "=", "1")
+                                              .build();
             return sql;
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
