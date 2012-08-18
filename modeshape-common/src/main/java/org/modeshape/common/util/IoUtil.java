@@ -23,7 +23,20 @@
  */
 package org.modeshape.common.util;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -150,13 +163,14 @@ public class IoUtil {
     /**
      * Read and return the entire contents of the supplied {@link InputStream}. This method always closes the stream when finished
      * reading.
-     *
+     * 
      * @param stream the streamed contents; may be null
      * @param charset charset of the stream data; may not be null
      * @return the contents, or an empty string if the supplied stream is null
      * @throws IOException if there is an error reading the content
      */
-    public static String read( InputStream stream, String charset ) throws IOException {
+    public static String read( InputStream stream,
+                               String charset ) throws IOException {
         return stream == null ? "" : read(new InputStreamReader(stream, charset));
     }
 
@@ -509,14 +523,16 @@ public class IoUtil {
 
     /**
      * Closes the closable silently. Any exceptions are ignored.
+     * 
+     * @param closeable the closeable instance; may be null
      */
-    public static void closeQuietly(Closeable closeable){
-        if(closeable == null){
+    public static void closeQuietly( Closeable closeable ) {
+        if (closeable == null) {
             return;
         }
         try {
             closeable.close();
-        } catch (Throwable t){
+        } catch (Throwable t) {
             LOGGER.debug(t, "Ignored error at closing stream");
         }
     }

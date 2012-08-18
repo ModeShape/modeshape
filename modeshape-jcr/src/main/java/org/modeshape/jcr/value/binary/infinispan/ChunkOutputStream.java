@@ -35,15 +35,15 @@ import java.io.OutputStream;
  */
 class ChunkOutputStream extends OutputStream {
 
-    private final Logger logger;
+    protected final Logger logger;
 
     public static final int CHUNKSIZE = 1024 * 1024 * 1; // 1 MB
 
-    private final Cache<String, byte[]> blobCache;
-    private final String keyPrefix;
+    protected final Cache<String, byte[]> blobCache;
+    protected final String keyPrefix;
     private ByteArrayOutputStream chunkBuffer;
     private boolean closed;
-    private int chunkIndex;
+    protected int chunkIndex;
 
     public ChunkOutputStream(Cache<String, byte[]> blobCache, String keyPrefix) {
         logger = Logger.getLogger(getClass());
@@ -97,7 +97,7 @@ class ChunkOutputStream extends OutputStream {
         final byte[] chunk = chunkBuffer.toByteArray();
         new RetryOperation(){
             @Override
-            protected void call() throws IOException {
+            protected void call() {
                 String chunkKey = keyPrefix +"-"+chunkIndex;
                 logger.debug("Store chunk {0}", chunkKey);
                 blobCache.put(chunkKey, chunk);

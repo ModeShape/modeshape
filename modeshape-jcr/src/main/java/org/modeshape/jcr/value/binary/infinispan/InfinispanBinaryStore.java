@@ -23,11 +23,21 @@
  */
 package org.modeshape.jcr.value.binary.infinispan;
 
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 import org.infinispan.distexec.mapreduce.Collector;
@@ -49,7 +59,10 @@ import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
-import org.modeshape.jcr.value.binary.*;
+import org.modeshape.jcr.value.binary.AbstractBinaryStore;
+import org.modeshape.jcr.value.binary.BinaryStoreException;
+import org.modeshape.jcr.value.binary.NamedLocks;
+import org.modeshape.jcr.value.binary.StoredBinaryValue;
 
 /**
  * A {@link org.modeshape.jcr.value.binary.BinaryStore} implementation that uses Infinispan for persisting binary values.
@@ -61,7 +74,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     private LockFactory lockFactory;
     private CacheContainer cacheContainer;
     private boolean dedicatedCacheContainer;
-    private Cache<String, Metadata> metadataCache;
+    protected Cache<String, Metadata> metadataCache;
     private Cache<String, byte[]> blobCache;
 
     private String metadataCacheName;
@@ -74,7 +87,6 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
      * @param metadataCacheName name of the cache used for metadata
      * @param blobCacheName name of the cache used for store of chunked binary values
      */
-    @SuppressWarnings("unchecked")
     public InfinispanBinaryStore(CacheContainer cacheContainer, boolean dedicatedCacheContainer, String metadataCacheName, String blobCacheName){
         logger = Logger.getLogger(getClass());
         this.cacheContainer = cacheContainer;
@@ -146,7 +158,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
                         checkMetadata.setUsed();
                         new RetryOperation(){
                             @Override
-                            protected void call() throws IOException {
+                            protected void call() {
                                 metadataCache.put(binaryKey.toString(), checkMetadata);
                             }
                         }.doTry();
@@ -165,7 +177,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
                 metadata.setLength(tmpFile.length());
                 new RetryOperation(){
                     @Override
-                    protected void call() throws IOException {
+                    protected void call() {
                         metadataCache.put(binaryKey.toString(), metadata);
                     }
                 }.doTry();
@@ -195,9 +207,8 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         }
         if(metadata.getLength() == 0){
             return new ByteArrayInputStream(new byte[0]);
-        } else {
-            return new ChunkInputStream(blobCache, binaryKey.toString());
         }
+            return new ChunkInputStream(blobCache, binaryKey.toString());
     }
 
     @Override
@@ -217,7 +228,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
 
                 new RetryOperation(){
                     @Override
-                    protected void call() throws IOException {
+                    protected void call() {
                         metadataCache.put(binaryKey1.toString(), metadata);
                     }
                 }.doTry();
@@ -230,7 +241,6 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void removeValuesUnusedLongerThan( long minimumAge,
                                               TimeUnit unit ) throws BinaryStoreException {
@@ -256,12 +266,13 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         }
 
         long minimumAgeInMS = unit.toMillis(minimumAge);
-        Set processedKeys = new HashSet();
+        Set<Object> processedKeys = new HashSet<Object>();
         if(metadataCache.getCacheConfiguration().clustering().cacheMode().isDistributed() && metadataCache.getCacheManager().isCoordinator()){
             // distributed mapper finds unused...
             MapReduceTask<String, Metadata, String, String> task = new MapReduceTask<String, Metadata, String, String>(metadataCache);
             task.mappedWith(new UnusedMapper(minimumAgeInMS));
             task.reducedWith(new Reducer<String, String>() {
+                private static final long serialVersionUID = 1L;
                 @Override
                 public String reduce(String s, Iterator<String> stringIterator) {
                     return s;
@@ -322,7 +333,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         return System.currentTimeMillis() - metadata.unusedSince() > minimumAgeInMS;
     }
 
-    static void removeBinaryValue(final Cache<String, Metadata> metadataCache, final Cache<String, byte[]> blobCache, final String key) throws BinaryStoreException {
+    static void removeBinaryValue(final Cache<String, Metadata> metadataCache, final Cache<String, byte[]> blobCache, final String key) {
         Metadata metadata = metadataCache.get(key);
         // double check != null
         if(metadata == null || !metadata.isUnused()){
@@ -344,7 +355,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     }
 
     private static class UnusedMapper implements Mapper<String, Metadata, String, String> {
-
+        private static final long serialVersionUID = 1L;
         private long minimumAgeInMS;
 
         public UnusedMapper(long minimumAgeInMS){
@@ -381,7 +392,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             metadata.setMimeType(mimeType);
             new RetryOperation(){
                 @Override
-                protected void call() throws IOException {
+                protected void call() {
                     metadataCache.put(binary.getKey().toString(), metadata);
                 }
             }.doTry();
@@ -425,7 +436,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             metadata.setNumberTextChunks(chunkOutputStream.getNumberChunks());
             new RetryOperation(){
                 @Override
-                protected void call() throws IOException {
+                protected void call() {
                     metadataCache.put(binary.getKey().toString(), metadata);
                 }
             }.doTry();
@@ -449,16 +460,16 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
 
         private final NamedLocks namedLocks;
         private final boolean infinispanLocks;
-        private final Cache metadataCache;
+        private final Cache<String, Metadata> metadataCache;
         private final Lock DUMMY_LOCK = new Lock() {
             @Override
             public void unlock() {
             }
         };
 
-        public LockFactory(Cache metadataCache){
+        public LockFactory(Cache<String, Metadata> metadataCache){
             this.metadataCache = metadataCache;
-            if(metadataCache != null){
+            if(this.metadataCache != null){
                 infinispanLocks = metadataCache.getCacheConfiguration().transaction().transactionMode() != TransactionMode.NON_TRANSACTIONAL &&
                         metadataCache.getCacheConfiguration().transaction().lockingMode() == LockingMode.PESSIMISTIC;
                 namedLocks = !infinispanLocks && !metadataCache.getCacheConfiguration().clustering().cacheMode().isClustered() ? new NamedLocks() : null;
@@ -504,10 +515,10 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
 
         private class ISPNLock implements Lock {
 
-            private final Cache cache;
+            private final Cache<String, Metadata> cache;
             private final String key;
 
-            public ISPNLock(Cache cache, String key) throws BinaryStoreException {
+            public ISPNLock(Cache<String, Metadata> cache, String key) throws BinaryStoreException {
                 this.cache = cache;
                 this.key = key;
                 try {
