@@ -50,6 +50,7 @@ import java.util.TreeSet;
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
+@SuppressWarnings( "deprecation" )
 public final class RestItemHandler extends ItemHandler {
 
     /**

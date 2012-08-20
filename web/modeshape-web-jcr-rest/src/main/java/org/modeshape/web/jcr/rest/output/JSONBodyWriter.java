@@ -36,7 +36,6 @@ import org.jboss.resteasy.spi.WriterException;
 import org.jboss.resteasy.util.Types;
 import org.modeshape.web.jcr.rest.model.JSONAble;
 import java.io.BufferedOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
@@ -44,7 +43,7 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 
 /**
- * Implementation of {@link MessageBodyWriter} which writes a {@link JSONAble} or a {@link Collection<JSONAble>} instances to
+ * Implementation of {@link MessageBodyWriter} which writes a {@link JSONAble} or a {@link Collection Collection<JSONAble>} instances to
  * a response, producing {@link MediaType#APPLICATION_JSON}.
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
@@ -87,7 +86,7 @@ public class JSONBodyWriter implements MessageBodyWriter<Object> {
     private boolean isJSONAbleCollection( Class<?> type,
                                           Type genericType ) {
         if ((Collection.class.isAssignableFrom(type) || type.isArray()) && genericType != null) {
-            Class baseType = Types.getCollectionBaseType(type, genericType);
+            Class<?> baseType = Types.getCollectionBaseType(type, genericType);
             return baseType != null && JSONAble.class.isAssignableFrom(baseType);
         }
         return false;
@@ -101,7 +100,7 @@ public class JSONBodyWriter implements MessageBodyWriter<Object> {
                          Annotation[] annotations,
                          MediaType mediaType,
                          MultivaluedMap<String, Object> httpHeaders,
-                         OutputStream entityStream ) throws IOException, WebApplicationException {
+                         OutputStream entityStream ) throws WebApplicationException {
         String content;
         try {
             if (isJSONAble(type)) {
@@ -124,6 +123,7 @@ public class JSONBodyWriter implements MessageBodyWriter<Object> {
         return jsonAble.toJSON().toString();
     }
 
+    @SuppressWarnings( "unused" )
     protected String getString( JSONArray array ) throws JSONException {
         return array.toString();
     }

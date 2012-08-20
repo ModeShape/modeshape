@@ -35,6 +35,19 @@ public class QueryHandler extends AbstractHandler {
     protected static final List<String> SKIP_QUERY_PARAMETERS = Arrays.asList("offset", "limit");
 
     /**
+     * @param request the request
+     * @param rawRepositoryName the name of the repository; may not be null
+     * @param rawWorkspaceName the name of the workspace; may not be null
+     * @param language the name of the query language; may not be null
+     * @param statement the query statement; may not be null
+     * @param offset the 0-based value that specifies the row number in the raw results that should be
+     * returned as the first row
+     * @param limit the number of rows that should be included in the results
+     * @param uriInfo the URI information with the extra parameters; may be null if there are no query (bind) parameters
+     * @return the JSON response
+     * @throws RepositoryException if there is a problem accessing the named repository and/or workspace
+     * @throws JSONException if there is a problem marshalling the result into a JSON response
+     * 
      * @deprecated since 3.0
      */
     @Deprecated

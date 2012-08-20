@@ -43,6 +43,7 @@ import java.util.regex.Pattern;
 @Produces( { MediaType.TEXT_HTML } )
 public class HtmlBodyWriter extends TextBodyWriter {
 
+    @Override
     protected String getString( JSONAble jsonAble ) throws JSONException {
         String text = super.getString(jsonAble);
         return jsonAble instanceof RestException ? replaceSpaces(replaceLineTerminators(text)) : htmlString(text);

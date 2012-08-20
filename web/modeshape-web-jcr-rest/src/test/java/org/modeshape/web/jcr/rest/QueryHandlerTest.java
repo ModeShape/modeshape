@@ -37,6 +37,7 @@ import org.modeshape.web.jcr.RepositoryManager;
 import org.modeshape.web.jcr.rest.handler.QueryHandler;
 
 @Ignore
+@SuppressWarnings( "deprecation" )
 // TODO: Query
 public class QueryHandlerTest {
 
@@ -93,7 +94,6 @@ public class QueryHandlerTest {
         deployer.contextDestroyed(event);
     }
 
-    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldReturnAllResultsWhenNoOffsetOrLimitProvided() throws Exception {
 
@@ -119,7 +119,6 @@ public class QueryHandlerTest {
         }
     }
 
-    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldLimitResultsWhenLimitIsProvided() throws Exception {
         final int LIMIT = 3;
@@ -145,7 +144,6 @@ public class QueryHandlerTest {
         }
     }
 
-    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldLimitResultsFromProvidedOffset() throws Exception {
         final int OFFSET = 5;
@@ -169,7 +167,6 @@ public class QueryHandlerTest {
         }
     }
 
-    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldFilterResultsFromProvidedOffsetAndLimit() throws Exception {
         final int OFFSET = 5;
@@ -193,7 +190,6 @@ public class QueryHandlerTest {
         }
     }
 
-    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldReturnNoResultsForHighOffset() throws Exception {
         final int OFFSET = 10;
@@ -210,7 +206,6 @@ public class QueryHandlerTest {
         assertThat(results.length(), is(0));
     }
 
-    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldReturnAllResultsForHighLimit() throws Exception {
 
@@ -236,7 +231,6 @@ public class QueryHandlerTest {
         }
     }
 
-    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBindQueryParametersAsVariables() throws Exception {
         URI absoluteUri = uri("query?var1=value1&var2=value2&var3=value3&limit=100");

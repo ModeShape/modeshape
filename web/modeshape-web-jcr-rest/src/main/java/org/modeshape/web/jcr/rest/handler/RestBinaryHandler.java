@@ -113,7 +113,7 @@ public final class RestBinaryHandler extends AbstractHandler {
      * @param workspaceName a non-null {@link String} representing the name of a workspace.
      * @param binaryPropertyAbsPath a non-null {@link String} representing the absolute path to a binary property.
      * @param binaryStream an {@link InputStream} which represents the new content of the binary property.
-     * @param allowCreation a {@link boolean} flag which indicates what the behavior should be in case such a property does
+     * @param allowCreation a boolean flag which indicates what the behavior should be in case such a property does
      * not exist on its parent node: if the flag is {@code true}, the property will be created, otherwise a response code indicating
      * the absence is returned.
      * @return a {@link Response} object, which is either OK and contains the rest representation of the binary property, or is
