@@ -101,19 +101,36 @@ public class JcrMetaData implements DatabaseMetaData {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @see java.sql.DatabaseMetaData#getPseudoColumns(String, String, String, String)
+     * This method always returns an emtpy result set. *
+     * <p>
+     * <em>Note:</em> This method is part of the JDBC API in JDK 1.7.
+     * </p>
+     * 
+     * @param catalog
+     * @param schemaPattern
+     * @param tableNamePattern
+     * @param columnNamePattern
+     * @return the pseudo columns
+     * @throws SQLException
      */
-    public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
+    // TODO: JDK 1.7 - add @Override and remove JavaDoc
+    public ResultSet getPseudoColumns( String catalog,
+                                       String schemaPattern,
+                                       String tableNamePattern,
+                                       String columnNamePattern ) throws SQLException {
         return new JcrResultSet();
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @see java.sql.DatabaseMetaData#generatedKeyAlwaysReturned()
+     * This method always returns true. *
+     * <p>
+     * <em>Note:</em> This method is part of the JDBC API in JDK 1.7.
+     * </p>
+     * 
+     * @return true
+     * @throws SQLException
      */
+    // TODO: JDK 1.7 - add @Override and remove JavaDoc
     public boolean generatedKeyAlwaysReturned() throws SQLException {
         return true;
     }
@@ -440,7 +457,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                  String tableNamePattern,
                                  String columnNamePattern ) throws SQLException {
         LocalJcrDriver.logger.debug("getcolumns: " + catalog + ":" + schemaPattern + ":" + tableNamePattern + ":"
-                                              + columnNamePattern);
+                                    + columnNamePattern);
 
         // Get all tables if tableNamePattern is null
         if (tableNamePattern == null) tableNamePattern = WILDCARD;
@@ -607,11 +624,14 @@ public class JcrMetaData implements DatabaseMetaData {
 
                     JcrType jcrtype = JcrType.typeInfo(propDefn.getRequiredType());
 
-                    Integer nullable = propDefn
-                            .isMandatory() ? ResultsMetadataConstants.NULL_TYPES.NOT_NULL : ResultsMetadataConstants.NULL_TYPES.NULLABLE;
+                    Integer nullable = propDefn.isMandatory() ? ResultsMetadataConstants.NULL_TYPES.NOT_NULL : ResultsMetadataConstants.NULL_TYPES.NULLABLE;
 
-                    List<Object> currentRow = loadCurrentRow(type.getName(), propDefn.getName(), jcrtype, nullable,
-                                                             propDefn.isMandatory(), ordinal);
+                    List<Object> currentRow = loadCurrentRow(type.getName(),
+                                                             propDefn.getName(),
+                                                             jcrtype,
+                                                             nullable,
+                                                             propDefn.isMandatory(),
+                                                             ordinal);
 
                     // add the current row to the list of records.
                     records.add(currentRow);
@@ -621,8 +641,12 @@ public class JcrMetaData implements DatabaseMetaData {
                 // if columns where added and if Teiid Support is requested, then add the mode:properties to the list of columns
                 if (ordinal > 0 && this.connection.getRepositoryDelegate().getConnectionInfo().isTeiidSupport()) {
                     if (this.connection.getRepositoryDelegate().getConnectionInfo().isTeiidSupport()) {
-                        List<Object> currentRow = loadCurrentRow(type.getName(), "mode:properties", JcrType.typeInfo(
-                                PropertyType.STRING), ResultsMetadataConstants.NULL_TYPES.NULLABLE, false, ordinal);
+                        List<Object> currentRow = loadCurrentRow(type.getName(),
+                                                                 "mode:properties",
+                                                                 JcrType.typeInfo(PropertyType.STRING),
+                                                                 ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                                 false,
+                                                                 ordinal);
 
                         records.add(currentRow);
                     }
@@ -1496,8 +1520,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                 String tableNamePattern,
                                 String[] types ) throws SQLException {
 
-        LocalJcrDriver.logger.debug("getTables: " + catalog + ":" + schemaPattern + ":" + tableNamePattern + ":"
-                                              + types);
+        LocalJcrDriver.logger.debug("getTables: " + catalog + ":" + schemaPattern + ":" + tableNamePattern + ":" + types);
 
         // Get all tables if tableNamePattern is null
         if (tableNamePattern == null) {

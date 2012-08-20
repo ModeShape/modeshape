@@ -23,7 +23,11 @@
  */
 package org.modeshape.jdbc;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.DriverPropertyInfo;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 import java.util.Set;
 import javax.jcr.Repository;
@@ -249,10 +253,15 @@ public class LocalJcrDriver implements java.sql.Driver {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @see java.sql.Driver#getParentLogger() 
+     * This method always throws {@link SQLFeatureNotSupportedException}.
+     * <p>
+     * <em>Note:</em> This method is part of the JDBC API in JDK 1.7.
+     * </p>
+     * 
+     * @return the parent logger
+     * @throws SQLFeatureNotSupportedException
      */
+    // TODO: JDK 1.7 - add @Override and remove JavaDoc
     public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
         throw new SQLFeatureNotSupportedException();
     }

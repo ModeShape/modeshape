@@ -604,18 +604,27 @@ class JcrStatement implements Statement {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @see java.sql.Statement#closeOnCompletion()
+     * This method does nothing.
+     * <p>
+     * <em>Note:</em> This method is part of the JDBC API in JDK 1.7.
+     * </p>
+     * 
+     * @throws SQLException
      */
+    // TODO: JDK 1.7 - add @Override and remove JavaDoc
     public void closeOnCompletion() throws SQLException {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @see java.sql.Statement#isCloseOnCompletion()
+     * This method always returns <code>true</code>
+     * <p>
+     * <em>Note:</em> This method is part of the JDBC API in JDK 1.7.
+     * </p>
+     * 
+     * @return true
+     * @throws SQLException
      */
+    // TODO: JDK 1.7 - add @Override and remove JavaDoc
     public boolean isCloseOnCompletion() throws SQLException {
         return true;
     }
