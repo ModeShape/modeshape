@@ -23,9 +23,12 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.NodeType;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -38,9 +41,11 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
     private static final String[] MIXINS = new String[] {MIXIN1, MIXIN2};
 
     private static final String HIERARCHY_NODE_TYPE = "nt:hierarchyNode";
+    private static final String NT_FILE_NODE_TYPE = "nt:file";
+    private static final String NT_FOLDER_NODE_TYPE = "nt:folder";
 
-    private static final String SUBTYPE1 = "nt:folder"; // subtype of HIERARCHY_NODE_TYPE
-    private static final String SUBTYPE2 = "nt:file"; // subtype of HIERARCHY_NODE_TYPE
+    private static final String SUBTYPE1 = NT_FILE_NODE_TYPE; // subtype of HIERARCHY_NODE_TYPE
+    private static final String SUBTYPE2 = NT_FOLDER_NODE_TYPE; // subtype of HIERARCHY_NODE_TYPE
     private static final String[] SUBTYPES = new String[] {SUBTYPE1, SUBTYPE2};
 
     private static final String NO_MATCH_TYPE = "nt:query";
@@ -125,5 +130,11 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
     public void shouldReturnFalseForHasNodeTypeWithNonexistantNodeTypeName() throws Exception {
         assertFalse(nodeTypeMgr.hasNodeType("someArgleBargle"));
         assertFalse(nodeTypeMgr.hasNodeType(HIERARCHY_NODE_TYPE + "x"));
+    }
+
+    @Test
+    public void shouldVerifyNtFileHasPrimaryItem() throws Exception {
+        NodeType ntFile = nodeTypeMgr.getNodeType(NT_FILE_NODE_TYPE);
+        assertThat(ntFile.getPrimaryItemName(), is("jcr:content"));
     }
 }

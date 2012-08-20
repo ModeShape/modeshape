@@ -1,10 +1,25 @@
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertThat;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Binary;
 import javax.jcr.Credentials;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.InvalidItemStateException;
+import javax.jcr.Item;
 import javax.jcr.LoginException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -38,21 +53,8 @@ import javax.jcr.version.VersionManager;
 import junit.framework.Test;
 import org.apache.jackrabbit.test.AbstractJCRTest;
 import org.apache.jackrabbit.test.api.ShareableNodeTest;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.JcrTools;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Additional ModeShape tests that check for JCR compliance.
@@ -72,7 +74,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     public static Test suite() {
-      return JcrTckSuites.someTestsInline(ModeShapeTckTest.class);
+        return JcrTckSuites.someTestsInline(ModeShapeTckTest.class);
     }
 
     @Override
@@ -2353,6 +2355,37 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         }
     }
 
+    @SuppressWarnings( "unused" )
+    public void testShouldVerifyNtFileNodesHavePrimaryItem() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        LockManager lm1 = session1.getWorkspace().getLockManager();
+
+        // Create node structure
+        Node root1 = getTestRoot(session1);
+        Node folder1 = root1.addNode("folder1", "nt:folder");
+        String fileName = "simple.json";
+        String filePath = folder1.getPath() + "/" + fileName;
+        new JcrTools().uploadFile(session1, filePath, getClass().getResourceAsStream("/data/" + fileName));
+        session1.save();
+
+        // Find the primary item ...
+        Node file1 = folder1.getNode(fileName);
+        Node content = file1.getNode("jcr:content");
+        assertNotNull(file1);
+        Item primary = file1.getPrimaryItem();
+        assertThat(primary, is(sameInstance((Item)content)));
+
+        // Change the primary type of the "jcr:content" node to "nt:unstructured" ...
+        content.setPrimaryType("nt:unstructured");
+        session1.save();
+
+        // Find the primary item (again) ...
+        Node content2 = file1.getNode("jcr:content");
+        assertNotNull(file1);
+        Item primary2 = file1.getPrimaryItem();
+        assertThat(primary2, is(sameInstance((Item)content2)));
+    }
+
     boolean isVersionable( VersionManager vm,
                            Node node ) throws RepositoryException {
         try {
@@ -2625,7 +2658,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         Session session = testRootNode.getSession();
         List<String> rootNodesPaths = new ArrayList<String>();
         rootNodesPaths.add(session.getRootNode().getPath());
-        for (NodeIterator it  = session.getRootNode().getNodes(); it.hasNext(); ) {
+        for (NodeIterator it = session.getRootNode().getNodes(); it.hasNext();) {
             rootNodesPaths.add(it.nextNode().getPath());
         }
 
@@ -2633,7 +2666,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         javax.jcr.query.QueryManager queryManager = session.getWorkspace().getQueryManager();
         QueryResult result = queryManager.createQuery(query, Query.JCR_SQL2).execute();
 
-        for (NodeIterator it = result.getNodes(); it.hasNext(); ) {
+        for (NodeIterator it = result.getNodes(); it.hasNext();) {
             Node queryNode = it.nextNode();
             String queryNodePath = queryNode.getPath();
             assertTrue(queryNodePath + " not part of the original nodes list", rootNodesPaths.remove(queryNodePath));
