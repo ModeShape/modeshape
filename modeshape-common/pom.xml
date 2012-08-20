@@ -19,7 +19,7 @@
     <!--
          Define the dependencies. Note that all version and scopes default to
          those defined in the dependencyManagement section of the parent pom.
-     -->
+     -->    
     <dependencies>
         <!--
         Testing (note the scope)

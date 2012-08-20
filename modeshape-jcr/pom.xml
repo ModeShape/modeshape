@@ -68,6 +68,12 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Mongo DB Java driver -->
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-java-driver</artifactId>
+        </dependency>
+        
         <!--  Used in tests -->
         <dependency>
             <groupId>org.modeshape</groupId>

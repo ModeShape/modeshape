@@ -1348,8 +1348,8 @@
             <dependency>
                 <groupId>org.mongodb</groupId>
                 <artifactId>mongo-java-driver</artifactId>
+                <scope>provided</scope>
                 <version>${mongo.driver.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>com.googlecode.json-simple</groupId>
