@@ -23,10 +23,7 @@
  */
 package org.modeshape.jdbc;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.DriverPropertyInfo;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Properties;
 import java.util.Set;
 import javax.jcr.Repository;
@@ -249,6 +246,15 @@ public class LocalJcrDriver implements java.sql.Driver {
 
     protected final DriverInfo getDriverInfo() {
         return driverInfo;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see java.sql.Driver#getParentLogger() 
+     */
+    public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**

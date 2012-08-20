@@ -43,7 +43,7 @@ public class HashCode {
      * @return the hash code
      */
     public static int compute( Object... objects ) {
-        return compute(0, objects);
+        return _compute(0, objects);
     }
 
     /**
@@ -53,8 +53,8 @@ public class HashCode {
      * @param objects the objects that should be used to compute the hash code
      * @return the hash code
      */
-    protected static int compute( int seed,
-                                  Object... objects ) {
+    protected static int _compute(int seed,
+                                  Object... objects) {
         if (objects == null || objects.length == 0) {
             return seed * HashCode.PRIME;
         }

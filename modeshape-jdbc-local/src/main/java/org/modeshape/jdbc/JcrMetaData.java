@@ -102,6 +102,24 @@ public class JcrMetaData implements DatabaseMetaData {
 
     /**
      * {@inheritDoc}
+     *
+     * @see java.sql.DatabaseMetaData#getPseudoColumns(String, String, String, String)
+     */
+    public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
+        return new JcrResultSet();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see java.sql.DatabaseMetaData#generatedKeyAlwaysReturned()
+     */
+    public boolean generatedKeyAlwaysReturned() throws SQLException {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
      * 
      * @see java.sql.DatabaseMetaData#getDriverMajorVersion()
      */
