@@ -24,18 +24,18 @@
 
 package org.modeshape.web.jcr.rest.model;
 
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-import org.modeshape.common.util.StringUtil;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+import org.modeshape.common.util.StringUtil;
 
 /**
  * A REST representation of a {@link javax.jcr.query.QueryResult}
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public final class RestQueryResult implements JSONAble {
@@ -52,7 +52,7 @@ public final class RestQueryResult implements JSONAble {
 
     /**
      * Adds a new column to this result.
-     *
+     * 
      * @param name a {@code non-null} string, the name of the column
      * @param type a {@code non-null} string, the type of the column
      * @return this instance
@@ -67,7 +67,7 @@ public final class RestQueryResult implements JSONAble {
 
     /**
      * Adds a new row to this result
-     *
+     * 
      * @param row a {@code non-null} {@link RestRow}
      * @return this instance
      */
@@ -107,7 +107,7 @@ public final class RestQueryResult implements JSONAble {
         }
 
         @Override
-        public JSONObject toJSON() throws JSONException {
+        public JSONObject toJSON() {
             return new JSONObject(values);
         }
     }

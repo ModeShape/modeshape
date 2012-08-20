@@ -39,9 +39,9 @@ import org.modeshape.web.jcr.rest.model.RestException;
 
 /**
  * Class which holds all the RestEASY {@link ExceptionMapper} implementations used by the ModeShape's REST services.
- *
+ * 
  * @author Horia Chiorean
- * @see {@link JcrApplication} for the mechanism via which these mappers are registered.
+ * @see JcrApplication for the mechanism via which these mappers are registered.
  */
 public final class ExceptionMappers {
 
@@ -132,6 +132,7 @@ public final class ExceptionMappers {
 
     /**
      * Creates a new {@link Response} which has the expected status code, based on the given exception.
+     * 
      * @param e a {@code non-null} {@link Exception}
      * @param status a {@code non-null} {@link Response.Status} which will be returned as the code of the response.
      * @return a {@code non-null} {@link Response}

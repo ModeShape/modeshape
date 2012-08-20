@@ -78,7 +78,7 @@ public final class RestRepositories implements JSONAble {
         private final String url;
         private final Map<String, List<String>> metadata;
 
-        private Repository( String name,
+        protected Repository( String name,
                             String url ) {
             this.name = name;
             this.url = url;

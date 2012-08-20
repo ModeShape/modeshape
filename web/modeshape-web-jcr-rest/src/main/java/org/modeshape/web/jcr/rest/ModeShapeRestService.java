@@ -416,6 +416,7 @@ public final class ModeShapeRestService {
      * @return a {@code non-null} {@link Response} instance.
      * @throws RepositoryException if any other error occurs
      */
+    @SuppressWarnings( "deprecation" )
     @DELETE
     @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME + "{path:.+}" )
     public Response deleteItem( @Context HttpServletRequest request,
@@ -445,7 +446,7 @@ public final class ModeShapeRestService {
      * @return a {@code non-null} {@link Response} instance.
      * @throws JSONException if there is an error reading the request body as a valid JSON object.
      * @throws RepositoryException if any other error occurs
-     * @see {@link ModeShapeRestService#deleteItem(javax.servlet.http.HttpServletRequest, String, String, String)}
+     * @see ModeShapeRestService#deleteItem(javax.servlet.http.HttpServletRequest, String, String, String)
      */
     @DELETE
     @Consumes( MediaType.APPLICATION_JSON )
@@ -646,6 +647,7 @@ public final class ModeShapeRestService {
      * @return a {@code non-null} {@link RestQueryResult} instance.
      * @throws RepositoryException if any JCR error occurs
      */
+    @SuppressWarnings( "deprecation" )
     @POST
     @Path( "{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+xpath" )
@@ -686,6 +688,7 @@ public final class ModeShapeRestService {
      * @return a {@code non-null} {@link RestQueryResult} instance.
      * @throws RepositoryException if any JCR error occurs
      */
+    @SuppressWarnings( "deprecation" )
     @POST
     @Path( "{repositoryName}/{workspaceName}/query" )
     @Consumes( "application/jcr+sql" )

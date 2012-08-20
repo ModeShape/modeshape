@@ -33,15 +33,16 @@ import org.modeshape.web.jcr.rest.model.JSONAble;
 
 /**
  * Extension of {@link JSONBodyWriter} which produces text output for {@link JSONAble} objects.
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 @Provider
-@Produces( { MediaType.TEXT_PLAIN } )
+@Produces( {MediaType.TEXT_PLAIN} )
 public class TextBodyWriter extends JSONBodyWriter {
 
     private static final int TEXT_INDENT_FACTOR = 2;
 
+    @Override
     protected String getString( JSONAble jsonAble ) throws JSONException {
         return jsonAble.toJSON().toString(TEXT_INDENT_FACTOR);
     }

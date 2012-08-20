@@ -49,6 +49,7 @@ import org.modeshape.web.jcr.rest.model.RestQueryResult;
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
+@SuppressWarnings( "deprecation" )
 public final class RestQueryHandler extends QueryHandler {
 
     private static final String MODE_URI = "mode:uri";
@@ -71,7 +72,6 @@ public final class RestQueryHandler extends QueryHandler {
      * @return a {@link RestQueryHandler} instance
      * @throws RepositoryException if any operation fails at the JCR level
      */
-    @SuppressWarnings( "deprecation" )
     public RestQueryResult executeQuery( HttpServletRequest request,
                                          String repositoryName,
                                          String workspaceName,
