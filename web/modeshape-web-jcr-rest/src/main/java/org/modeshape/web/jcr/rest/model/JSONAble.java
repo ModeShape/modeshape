@@ -33,5 +33,11 @@ import org.codehaus.jettison.json.JSONObject;
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public interface JSONAble {
+    /**
+     * Returns the JSON representation of this object.
+     *
+     * @return a {@code non-null} {@link JSONObject}
+     * @throws JSONException if conversion to JSON is not possible.
+     */
     public JSONObject toJSON() throws JSONException;
 }

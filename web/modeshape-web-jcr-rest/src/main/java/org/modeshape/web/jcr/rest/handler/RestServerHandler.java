@@ -41,7 +41,10 @@ import java.util.List;
 public class RestServerHandler extends AbstractHandler {
 
     /**
-     * @see ServerHandler#getRepositories(javax.servlet.http.HttpServletRequest)
+     * Returns the list of JCR repositories available on this server
+     *
+     * @param request the servlet request; may not be null
+     * @return a list of available JCR repositories, as a {@link RestRepositories} instance.
      */
     public RestRepositories getRepositories( HttpServletRequest request ) {
         RestRepositories repositories = new RestRepositories();

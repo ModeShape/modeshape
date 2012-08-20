@@ -1,9 +1,5 @@
 package org.modeshape.web.jcr.rest.handler;
 
-import static org.modeshape.web.jcr.rest.RestHelper.BINARY_METHOD_NAME;
-import static org.modeshape.web.jcr.rest.RestHelper.ITEMS_METHOD_NAME;
-import java.util.ArrayList;
-import java.util.List;
 import javax.jcr.Item;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -19,10 +15,17 @@ import org.modeshape.jcr.api.Logger;
 import org.modeshape.web.jcr.RepositoryManager;
 import org.modeshape.web.jcr.WebLogger;
 import org.modeshape.web.jcr.rest.RestHelper;
+import static org.modeshape.web.jcr.rest.RestHelper.BINARY_METHOD_NAME;
+import static org.modeshape.web.jcr.rest.RestHelper.ITEMS_METHOD_NAME;
 import org.modeshape.web.jcr.rest.model.RestItem;
 import org.modeshape.web.jcr.rest.model.RestNode;
 import org.modeshape.web.jcr.rest.model.RestProperty;
+import java.util.ArrayList;
+import java.util.List;
 
+/**
+ * Base class for the different rest handler implementations, to which the rest services delegate operations.
+ */
 public abstract class AbstractHandler {
 
     protected static final String BASE64_ENCODING_SUFFIX = "/base64/";
@@ -41,7 +44,7 @@ public abstract class AbstractHandler {
 
     /**
      * Returns an active session for the given workspace name in the named repository.
-     * 
+     *
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded name of the repository in which the session is created
      * @param rawWorkspaceName the URL-encoded name of the workspace to which the session should be connected
@@ -208,12 +211,12 @@ public abstract class AbstractHandler {
                                                                                                                         .getPath());
         RestNode restNode = new RestNode(node.getName(), nodeUrl, parentUrl);
 
-        for (PropertyIterator propertyIterator = node.getProperties(); propertyIterator.hasNext();) {
+        for (PropertyIterator propertyIterator = node.getProperties(); propertyIterator.hasNext(); ) {
             Property property = propertyIterator.nextProperty();
             restNode.addProperty(createRestProperty(session, property, baseUrl));
         }
 
-        for (NodeIterator nodeIterator = node.getNodes(); nodeIterator.hasNext();) {
+        for (NodeIterator nodeIterator = node.getNodes(); nodeIterator.hasNext(); ) {
             Node childNode = nodeIterator.nextNode();
             RestNode restChild = null;
             if (depth != 0) {

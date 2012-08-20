@@ -38,7 +38,13 @@ import org.modeshape.web.jcr.rest.model.RestWorkspaces;
 public final class RestRepositoryHandler extends AbstractHandler {
 
     /**
-     * @see RepositoryHandler#getWorkspaces(javax.servlet.http.HttpServletRequest, String)
+     * Returns the list of workspaces available to this user within the named repository.
+     *
+     * @param request the servlet request; may not be null
+     * @param repositoryName the name of the repository; may not be null
+     * @return the list of workspaces available to this user within the named repository, as a {@link RestWorkspaces} object
+     *
+     * @throws RepositoryException if there is any other error accessing the list of available workspaces for the repository
      */
     public RestWorkspaces getWorkspaces( HttpServletRequest request,
                                          String repositoryName ) throws RepositoryException {

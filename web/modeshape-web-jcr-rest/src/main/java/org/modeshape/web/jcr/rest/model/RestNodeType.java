@@ -52,6 +52,12 @@ public final class RestNodeType implements JSONAble {
     private final boolean isAbstract;
     private final boolean isQueryable;
 
+    /**
+     * Creates a new rest node type.
+     *
+     * @param nodeType the {@code non-null} JCR {@link NodeType}.
+     * @param baseUrl the {@code non-null} root url, which is used to construct urls to the children and properties of the node type
+     */
     public RestNodeType( NodeType nodeType,
                          String baseUrl ) {
         this.name = nodeType.getName();

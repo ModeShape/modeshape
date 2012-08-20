@@ -130,6 +130,12 @@ public final class ExceptionMappers {
         }
     }
 
+    /**
+     * Creates a new {@link Response} which has the expected status code, based on the given exception.
+     * @param e a {@code non-null} {@link Exception}
+     * @param status a {@code non-null} {@link Response.Status} which will be returned as the code of the response.
+     * @return a {@code non-null} {@link Response}
+     */
     public static Response exceptionResponse( Exception e,
                                               Response.Status status ) {
         return Response.status(status).entity(new RestException(e)).build();

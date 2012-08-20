@@ -24,10 +24,6 @@
 
 package org.modeshape.web.jcr.rest;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.List;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -41,10 +37,14 @@ import org.modeshape.common.util.Base64;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.Logger;
 import org.modeshape.web.jcr.WebLogger;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Utility class for the rest services and supporting classes.
- * 
+ *
  * @author Horia Chiorean
  */
 public final class RestHelper {
@@ -108,6 +108,12 @@ public final class RestHelper {
         return "<code>" + indentedString + "</code>";
     }
 
+    /**
+     * Determines the absolute URL to a repository/workspace from the given request, by trimming known service methods.
+     *
+     * @param request a {@code non-null} {@link HttpServletRequest}
+     * @return a string representing an absolute-url
+     */
     public static String repositoryUrl( HttpServletRequest request ) {
         StringBuffer requestURL = request.getRequestURL();
         int delimiterSegmentIdx = requestURL.length();
@@ -120,11 +126,25 @@ public final class RestHelper {
         return requestURL.substring(0, delimiterSegmentIdx);
     }
 
+    /**
+     * Creates an absolute url using the given request's url as base and appending optional segments.
+     *
+     * @param request a {@code non-null} {@link HttpServletRequest}
+     * @param pathSegments an option array of segments
+     * @return a string representing an absolute-url
+     */
     public static String urlFrom( HttpServletRequest request,
                                   String... pathSegments ) {
         return urlFrom(request.getRequestURL().toString(), pathSegments);
     }
 
+    /**
+     * Creates an absolute url using base url and appending optional segments.
+     *
+     * @param baseUrl a {@code non-null} string which will act as a base.
+     * @param pathSegments an option array of segments
+     * @return a string representing an absolute-url
+     */
     public static String urlFrom( String baseUrl,
                                   String... pathSegments ) {
         StringBuilder urlBuilder = new StringBuilder(baseUrl);
@@ -148,7 +168,7 @@ public final class RestHelper {
      * Return the JSON-compatible string representation of the given property value. If the value is a
      * {@link javax.jcr.PropertyType#BINARY binary} value, then this method returns the Base-64 encoding of that value. Otherwise,
      * it just returns the string representation of the value.
-     * 
+     *
      * @param value the property value; may not be null
      * @return the string representation of the value
      * @deprecated since 3.0 binary values are handled via URLs

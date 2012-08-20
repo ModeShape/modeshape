@@ -63,7 +63,7 @@ public final class RestItemHandler extends ItemHandler {
      * the requested node only. A negative value indicates that the full subgraph under the node should be returned. This
      * parameter defaults to {@code 0} and is ignored if {@code path} refers to a property.
      * @return a the rest representation of the item, as a {@link RestItem} instance.
-     * @throws RepositoryException
+     * @throws RepositoryException if any JCR operations fail.
      */
     public RestItem item( HttpServletRequest request,
                           String repositoryName,
@@ -168,10 +168,18 @@ public final class RestItemHandler extends ItemHandler {
         return StringUtil.isBlank(requestBody) ? new JSONArray() : new JSONArray(requestBody);
     }
 
-
     /**
      * Performs a bulk creation of items, using a single {@link Session}. If any of the items cannot be created for whatever reason,
      * the entire operation fails.
+     *
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param repositoryName the URL-encoded repository name
+     * @param workspaceName the URL-encoded workspace name
+     * @param requestContent the JSON-encoded representation of the nodes and, possibly, properties to be added
+     *
+     * @return a {@code non-null} {@link Response}
+     * @throws JSONException if the body of the request is not a valid JSON object
+     * @throws RepositoryException if any of the JCR operations fail
      *
      * @see RestItemHandler#addItem(javax.servlet.http.HttpServletRequest, String, String, String, String)
      */
@@ -192,6 +200,16 @@ public final class RestItemHandler extends ItemHandler {
      * Performs a bulk updating of items, using a single {@link Session}. If any of the items cannot be updated for whatever reason,
      * the entire operation fails.
      *
+     *
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param repositoryName the URL-encoded repository name
+     * @param workspaceName the URL-encoded workspace name
+     * @param requestContent the JSON-encoded representation of the values and, possibly, properties to be set
+     *
+     * @return a {@code non-null} {@link Response}
+     * @throws JSONException if the body of the request is not a valid JSON object
+     * @throws RepositoryException if any of the JCR operations fail
+     *
      * @see RestItemHandler#updateItem(javax.servlet.http.HttpServletRequest, String, String, String, String)
      */
     public Response updateItems( HttpServletRequest request,
@@ -211,6 +229,15 @@ public final class RestItemHandler extends ItemHandler {
     /**
      * Performs a bulk deletion of items, using a single {@link Session}. If any of the items cannot be deleted for whatever reason,
      * the entire operation fails.
+     *
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param repositoryName the URL-encoded repository name
+     * @param workspaceName the URL-encoded workspace name
+     * @param requestContent the JSON-encoded array of the nodes to remove
+     *
+     * @return a {@code non-null} {@link Response}
+     * @throws JSONException if the body of the request is not a valid JSON array
+     * @throws RepositoryException if any of the JCR operations fail
      *
      * @see RestItemHandler#deleteItem(javax.servlet.http.HttpServletRequest, String, String, String)
      */

@@ -37,6 +37,10 @@ public final class FileUploadForm {
 
     private InputStream fileData;
 
+    /**
+     * Returns the input stream of the file submitted from an HTML form, or null.
+     * @return an {@link InputStream} instance, or {@code null}
+     */
     public InputStream getFileData() {
         return fileData;
     }
