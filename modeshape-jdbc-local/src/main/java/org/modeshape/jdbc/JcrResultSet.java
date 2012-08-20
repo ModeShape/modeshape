@@ -960,19 +960,35 @@ public class JcrResultSet implements ResultSet {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @see java.sql.ResultSet#getObject(int, Class)
+     * This method always throws {@link SQLFeatureNotSupportedException}.
+     * <p>
+     * <em>Note:</em> This method is part of the JDBC API in JDK 1.7.
+     * </p>
+     * 
+     * @param columnIndex
+     * @param type
+     * @param <T> the type class
+     * @return the object
+     * @throws SQLException
      */
+    // TODO: JDK 1.7 - add @Override and remove JavaDoc
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @see java.sql.ResultSet#getObject(String, Class)
+     * This method always throws {@link SQLFeatureNotSupportedException}.
+     * <p>
+     * <em>Note:</em> This method is part of the JDBC API in JDK 1.7.
+     * </p>
+     * 
+     * @param columnLabel
+     * @param type
+     * @param <T> the type class
+     * @return the object
+     * @throws SQLException
      */
+    // TODO: JDK 1.7 - add @Override and remove JavaDoc
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }

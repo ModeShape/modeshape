@@ -1071,7 +1071,7 @@ public class JcrResultSetTest {
      */
     @Test( expected = SQLFeatureNotSupportedException.class )
     public void featureNotSupportedCallingGetObjectIdxMap() throws SQLException {
-        resultSet.getObject(1, (Map)null);
+        resultSet.getObject(1, (Map<String,Class<?>>)null);
     }
 
     /**
@@ -1079,7 +1079,7 @@ public class JcrResultSetTest {
      */
     @Test( expected = SQLFeatureNotSupportedException.class )
     public void featureNotSupportedCallingGetObjectColNameMap() throws SQLException {
-        resultSet.getObject("colname", (Map)null);
+        resultSet.getObject("colname", (Map<String,Class<?>>)null);
     }
 
     /**
