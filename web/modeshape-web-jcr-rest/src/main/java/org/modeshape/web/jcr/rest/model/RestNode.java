@@ -39,6 +39,13 @@ public final class RestNode extends RestItem {
     private final List<RestProperty> properties;
     private final List<RestNode> children;
 
+    /**
+     * Creates a new rest node
+     *
+     * @param name a {@code non-null} string, representing the name
+     * @param url a {@code non-null} string, representing the url to this node
+     * @param parentUrl a {@code non-null} string, representing the url to this node's parent
+     */
     public RestNode( String name,
                      String url,
                      String parentUrl ) {
@@ -47,11 +54,23 @@ public final class RestNode extends RestItem {
         children = new ArrayList<RestNode>();
     }
 
+    /**
+     * Adds a new child to this node.
+     *
+     * @param child a {@code non-null} {@link RestNode}
+     * @return this rest node.
+     */
     public RestNode addChild( RestNode child ) {
         children.add(child);
         return this;
     }
 
+    /**
+     * Adds a new property to this node.
+     *
+     * @param property a {@code non-null} {@link RestProperty}
+     * @return this rest node.
+     */
     public RestNode addProperty( RestProperty property ) {
         properties.add(property);
         return this;

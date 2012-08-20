@@ -40,10 +40,20 @@ public final class RestWorkspaces implements JSONAble {
 
     private final List<Workspace> workspaces;
 
+    /**
+     * Creates an empty instance.
+     */
     public RestWorkspaces() {
         this.workspaces = new ArrayList<Workspace>();
     }
 
+    /**
+     * Adds a new workspace to the list of workspaces.
+     *
+     * @param name a {@code non-null} string, the name of a workspace.
+     * @param repositoryUrl a {@code non-null} string, the absolute url to the repository to which the workspace belongs.
+     * @return a {@link Workspace} instance
+     */
     public Workspace addWorkspace( String name,
                                    String repositoryUrl ) {
         Workspace workspace = new Workspace(name, repositoryUrl);

@@ -61,7 +61,6 @@ import org.modeshape.web.jcr.rest.model.RestNodeType;
 import org.modeshape.web.jcr.rest.model.RestQueryResult;
 import org.modeshape.web.jcr.rest.model.RestRepositories;
 import org.modeshape.web.jcr.rest.model.RestWorkspaces;
-import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -142,7 +141,10 @@ public final class ModeShapeRestService {
     private RestNodeTypeHandler nodeTypeHandler = new RestNodeTypeHandler();
 
     /**
-     * @see JcrResources#getRepositories(javax.servlet.http.HttpServletRequest)
+     * Returns the list of JCR repositories available on this server
+     *
+     * @param request the servlet request; may not be null
+     * @return the list of JCR repositories available on this server, as a {@link RestRepositories} instance.
      */
     @GET
     @Path( "/" )
@@ -152,7 +154,12 @@ public final class ModeShapeRestService {
     }
 
     /**
-     * @see JcrResources#getWorkspaces(javax.servlet.http.HttpServletRequest, String)
+     * Returns the list of workspaces available to this user within the named repository.
+     *
+     * @param rawRepositoryName the name of the repository; may not be null
+     * @param request the servlet request; may not be null
+     * @return the list of workspaces available to this user within the named repository, as a {@link RestWorkspaces} instance.
+     * @throws RepositoryException if there is any other error accessing the list of available workspaces for the repository
      */
     @GET
     @Path( "{repositoryName}" )
@@ -235,6 +242,7 @@ public final class ModeShapeRestService {
      * @param repositoryName a non-null {@link String} representing the name of a repository.
      * @param workspaceName a non-null {@link String} representing the name of a workspace.
      * @param allowUpdate an optional parameter which indicates whether existing node types should be updated (overridden) or not.
+     * @param requestBodyInputStream a {@code non-null} {@link InputStream} instance, representing the body of the request.
      * @return a list with the registered node types if the operation was successful, or an appropriate error code otherwise.
      * @throws RepositoryException if any JCR related operation fails.
      */
@@ -246,7 +254,7 @@ public final class ModeShapeRestService {
                              @PathParam( "workspaceName" ) String workspaceName,
                              @QueryParam( "allowUpdate" ) @DefaultValue( "true" ) boolean allowUpdate,
                              InputStream requestBodyInputStream )
-            throws JSONException, RepositoryException {
+            throws RepositoryException {
         return nodeTypeHandler.importCND(request, repositoryName, workspaceName, allowUpdate, requestBodyInputStream);
     }
 
@@ -254,7 +262,14 @@ public final class ModeShapeRestService {
      * Imports a single CND file into the repository, using a {@link MediaType#MULTIPART_FORM_DATA} request. The CND file
      * is expected to be submitted from an HTML element with the name <i>file</i>
      *
-     * @see ModeShapeRestService#postCND(javax.servlet.http.HttpServletRequest, String, String, boolean, java.io.InputStream)
+     * @param request a non-null {@link HttpServletRequest} request
+     * @param repositoryName a non-null {@link String} representing the name of a repository.
+     * @param workspaceName a non-null {@link String} representing the name of a workspace.
+     * @param allowUpdate an optional parameter which indicates whether existing node types should be updated (overridden) or not.
+     * @param form a {@link FileUploadForm} instance representing the HTML form from which the cnd was submitted
+     * @return a {@code non-null} {@link Response}
+     * @throws RepositoryException if any JCR operations fail
+     * @throws IllegalArgumentException if the submitted form does not contain an HTML element named "file".
      */
     @POST
     @Path( "{repositoryName}/{workspaceName}/" + RestHelper.NODE_TYPES_METHOD_NAME )
@@ -265,13 +280,24 @@ public final class ModeShapeRestService {
                                     @PathParam( "workspaceName" ) String workspaceName,
                                     @QueryParam( "allowUpdate" ) @DefaultValue( "true" ) boolean allowUpdate,
                                     @MultipartForm FileUploadForm form )
-            throws JSONException, RepositoryException, IOException {
+            throws RepositoryException {
         form.validate();
         return nodeTypeHandler.importCND(request, repositoryName, workspaceName, allowUpdate, form.getFileData());
     }
 
     /**
-     * @see JcrResources#getItem(javax.servlet.http.HttpServletRequest, String, String, String, int, int)
+     * Retrieves an item from a workspace
+     *
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param path the path to the item
+     * @param depth the depth of the node graph that should be returned if {@code path} refers to a node. @{code 0} means return
+     * the requested node only. A negative value indicates that the full subgraph under the node should be returned. This
+     * parameter defaults to {@code 0} and is ignored if {@code path} refers to a property.
+     * @return a {@code non-null} {@link RestItem}
+     * @throws RepositoryException if any JCR error occurs
+     * @see javax.jcr.Session#getItem(String)
      */
     @GET
     @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME + "{path:.*}" )
@@ -281,12 +307,25 @@ public final class ModeShapeRestService {
                              @PathParam( "workspaceName" ) String rawWorkspaceName,
                              @PathParam( "path" ) String path,
                              @QueryParam( "depth" ) @DefaultValue( "0" ) int depth )
-            throws JSONException, RepositoryException {
+            throws RepositoryException {
         return itemHandler.item(request, rawRepositoryName, rawWorkspaceName, path, depth);
     }
 
     /**
-     * @see JcrResources#postItem(javax.servlet.http.HttpServletRequest, String, String, String, String, String)
+     * Adds the content of the request as a node (or subtree of nodes) at the location specified by {@code path}.
+     * <p>
+     * The primary type and mixin type(s) may optionally be specified through the {@code jcr:primaryType} and
+     * {@code jcr:mixinTypes} properties as request attributes.
+     * </p>
+     *
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param path the path to the item
+     * @param requestContent the JSON-encoded representation of the node or nodes to be added
+     * @return a {@code non-null} {@link Response} instance which either contains the node or an error code.
+     * @throws JSONException if there is an error reading the request body as a valid JSON object.
+     * @throws RepositoryException if any other error occurs
      */
     @POST
     @Consumes( MediaType.APPLICATION_JSON )
@@ -346,6 +385,13 @@ public final class ModeShapeRestService {
      * where each body (either of a property or of a node) is expected to be a JSON object which has the same format as
      * the one used when creating a single item.
      *
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param requestContent the JSON-encoded representation of the node or nodes to be added
+     * @return a {@code non-null} {@link Response} instance which either contains the item or an error code.
+     * @throws JSONException if there is an error reading the request body as a valid JSON object.
+     * @throws RepositoryException if any other error occurs
      * @see ModeShapeRestService#postItem(javax.servlet.http.HttpServletRequest, String, String, String, String)
      */
     @POST
@@ -361,7 +407,14 @@ public final class ModeShapeRestService {
     }
 
     /**
-     * @see JcrResources#deleteItem(javax.servlet.http.HttpServletRequest, String, String, String)
+     * Deletes the item at {@code path}.
+     *
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param path the path to the item
+     * @return a {@code non-null} {@link Response} instance.
+     * @throws RepositoryException if any other error occurs
      */
     @DELETE
     @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME + "{path:.+}" )
@@ -385,6 +438,13 @@ public final class ModeShapeRestService {
      * <li>["property1_path", "node1_path",...]</li>
      * </ul>
      *
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param requestContent the JSON-encoded representation of the node or nodes to be added
+     * @return a {@code non-null} {@link Response} instance.
+     * @throws JSONException if there is an error reading the request body as a valid JSON object.
+     * @throws RepositoryException if any other error occurs
      * @see {@link ModeShapeRestService#deleteItem(javax.servlet.http.HttpServletRequest, String, String, String)}
      */
     @DELETE
@@ -399,7 +459,22 @@ public final class ModeShapeRestService {
     }
 
     /**
-     * @see JcrResources#putItem(javax.servlet.http.HttpServletRequest, String, String, String, String)
+     * Updates the node or property at the path.
+     * <p>
+     * If path points to a property, this method expects the request content to be either a JSON array or a JSON string. The array
+     * or string will become the values or value of the property. If path points to a node, this method expects the request
+     * content to be a JSON object. The keys of the objects correspond to property names that will be set and the values for the
+     * keys correspond to the values that will be set on the properties.
+     * </p>
+     *
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param path the path to the item
+     * @param requestContent the JSON-encoded representation of the values and, possibly, properties to be set
+     * @return a {@link RestItem} instance representing the modified item.
+     * @throws JSONException if there is an error reading the request body as a valid JSON object.
+     * @throws RepositoryException if any other error occurs
      */
     @PUT
     @Path( "{repositoryName}/{workspaceName}/" + RestHelper.ITEMS_METHOD_NAME + "{path:.+}" )
@@ -457,6 +532,13 @@ public final class ModeShapeRestService {
      * where each body (either of a property or of a node) is expected to be a JSON object which has the same format as
      * the one used when updating a single item.
      *
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param requestContent the JSON-encoded representation of the values and, possibly, properties to be set
+     * @return a {@code non-null} {@link Response}
+     * @throws JSONException if there is an error reading the request body as a valid JSON object.
+     * @throws RepositoryException if any other error occurs
      * @see ModeShapeRestService#putItem(javax.servlet.http.HttpServletRequest, String, String, String, String)
      */
     @PUT
@@ -521,9 +603,16 @@ public final class ModeShapeRestService {
     }
 
     /**
-     * Creates/updates a binary file into the repository, using a {@link MediaType#MULTIPART_FORM_DATA} request. The binary file
-     * is expected to be submitted from an HTML element with the name <i>file</i>
+     * Creates/updates a binary file into the repository, using a {@link MediaType#MULTIPART_FORM_DATA} request, at {@code path}.
+     * The binary file is expected to be submitted from an HTML element with the name <i>file</i>
      *
+     * @param request a non-null {@link HttpServletRequest} request
+     * @param repositoryName a non-null {@link String} representing the name of a repository.
+     * @param workspaceName a non-null {@link String} representing the name of a workspace.
+     * @param path the path to the binary property
+     * @param form a {@link FileUploadForm} instance representing the HTML form from which the binary was submitted
+     * @return a {@code non-null} {@link Response}
+     * @throws RepositoryException if any JCR related operation fails.
      * @see ModeShapeRestService#postBinary(javax.servlet.http.HttpServletRequest, String, String, String, java.io.InputStream)
      */
     @POST
@@ -541,7 +630,21 @@ public final class ModeShapeRestService {
     }
 
     /**
-     * @see JcrResources#postXPathQuery(javax.servlet.http.HttpServletRequest, String, String, long, long, javax.ws.rs.core.UriInfo, String)
+     * Executes the XPath query contained in the body of the request against the give repository and workspace.
+     *
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
+     * records will be returned. If this value is less than 0, results will be returned starting from the first record in
+     * the result set.
+     * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
+     * entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
+     * results are counted from the record specified in the offset parameter.
+     * @param uriInfo the information about the URI (from which the other query parameters will be obtained)
+     * @param requestContent the query expression
+     * @return a {@code non-null} {@link RestQueryResult} instance.
+     * @throws RepositoryException if any JCR error occurs
      */
     @POST
     @Path( "{repositoryName}/{workspaceName}/query" )
@@ -564,7 +667,24 @@ public final class ModeShapeRestService {
     }
 
     /**
-     * @see JcrResources#postJcrSqlQuery(javax.servlet.http.HttpServletRequest, String, String, long, long, javax.ws.rs.core.UriInfo, String)
+     * Executes the JCR-SQL query contained in the body of the request against the give repository and workspace.
+     * <p>
+     * The query results will be JSON-encoded in the response body.
+     * </p>
+     *
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
+     * records will be returned. If this value is less than 0, results will be returned starting from the first record in
+     * the result set.
+     * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
+     * entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
+     * results are counted from the record specified in the offset parameter.
+     * @param uriInfo the information about the URI (from which the other query parameters will be obtained)
+     * @param requestContent the query expression
+     * @return a {@code non-null} {@link RestQueryResult} instance.
+     * @throws RepositoryException if any JCR error occurs
      */
     @POST
     @Path( "{repositoryName}/{workspaceName}/query" )
@@ -588,7 +708,24 @@ public final class ModeShapeRestService {
     }
 
     /**
-     * @see JcrResources#postJcrSql2Query(javax.servlet.http.HttpServletRequest, String, String, long, long, javax.ws.rs.core.UriInfo, String)
+     * Executes the JCR-SQL2 query contained in the body of the request against the give repository and workspace.
+     * <p>
+     * The query results will be JSON-encoded in the response body.
+     * </p>
+     *
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
+     * records will be returned. If this value is less than 0, results will be returned starting from the first record in
+     * the result set.
+     * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
+     * entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
+     * results are counted from the record specified in the offset parameter.
+     * @param uriInfo the information about the URI (from which the other query parameters will be obtained)
+     * @param requestContent the query expression
+     * @return a {@code non-null} {@link RestQueryResult} instance.
+     * @throws RepositoryException if any JCR error occurs
      */
     @POST
     @Path( "{repositoryName}/{workspaceName}/query" )
@@ -612,7 +749,24 @@ public final class ModeShapeRestService {
     }
 
     /**
-     * @see JcrResources#postJcrSearchQuery(javax.servlet.http.HttpServletRequest, String, String, long, long, javax.ws.rs.core.UriInfo, String)
+     * Executes the JCR-SQL query contained in the body of the request against the give repository and workspace.
+     * <p>
+     * The query results will be JSON-encoded in the response body.
+     * </p>
+     *
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
+     * records will be returned. If this value is less than 0, results will be returned starting from the first record in
+     * the result set.
+     * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
+     * entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
+     * results are counted from the record specified in the offset parameter.
+     * @param uriInfo the information about the URI (from which the other query parameters will be obtained)
+     * @param requestContent the query expression
+     * @return a {@code non-null} {@link RestQueryResult} instance.
+     * @throws RepositoryException if any JCR error occurs
      */
     @POST
     @Path( "{repositoryName}/{workspaceName}/query" )

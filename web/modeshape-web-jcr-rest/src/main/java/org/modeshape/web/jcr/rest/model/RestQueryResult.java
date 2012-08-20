@@ -42,11 +42,21 @@ public final class RestQueryResult implements JSONAble {
     private final Map<String, String> columns;
     private final List<RestRow> rows;
 
+    /**
+     * Creates an empty instance
+     */
     public RestQueryResult() {
         columns = new LinkedHashMap<String, String>();
         rows = new ArrayList<RestRow>();
     }
 
+    /**
+     * Adds a new column to this result.
+     *
+     * @param name a {@code non-null} string, the name of the column
+     * @param type a {@code non-null} string, the type of the column
+     * @return this instance
+     */
     public RestQueryResult addColumn( String name,
                                       String type ) {
         if (!StringUtil.isBlank(name)) {
@@ -55,6 +65,12 @@ public final class RestQueryResult implements JSONAble {
         return this;
     }
 
+    /**
+     * Adds a new row to this result
+     *
+     * @param row a {@code non-null} {@link RestRow}
+     * @return this instance
+     */
     public RestQueryResult addRow( RestRow row ) {
         rows.add(row);
         return this;

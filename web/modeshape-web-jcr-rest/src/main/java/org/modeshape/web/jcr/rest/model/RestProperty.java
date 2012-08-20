@@ -38,6 +38,14 @@ public final class RestProperty extends RestItem {
 
     private final List<String> values;
 
+    /**
+     * Creates a new rest property instance.
+     *
+     * @param name a {@code non-null} string, the name of the property
+     * @param url a {@code non-null} string, the absolute url to this property
+     * @param parentUrl a {@code non-null} string, the absolute url to this property's parent
+     * @param values a list of possible values for the property, may be {@code null}
+     */
     public RestProperty( String name,
                          String url,
                          String parentUrl,
