@@ -95,6 +95,10 @@
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-cachestore-jdbc</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-java-driver</artifactId>
+        </dependency>
         
         <!--
         These following are defined as 'provided' in the parent POM, since ModeShape
