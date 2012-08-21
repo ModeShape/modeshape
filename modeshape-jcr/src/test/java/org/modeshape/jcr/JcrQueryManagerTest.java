@@ -512,6 +512,62 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, allColumnNames("nt:base"));
     }
 
+    @FixFor( "MODE-1095" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderByUsingPseudoColumnWithSelectStar() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT * FROM [car:Car] WHERE [car:year] < 2009 ORDER BY [jcr:path]", Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 13);
+        assertResultsHaveColumns(result, carColumnNames("car:Car"));
+    }
+
+    @FixFor( "MODE-1095" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderByUsingColumnWithSelectStar() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT * FROM [car:Car] WHERE [car:year] < 2009 ORDER BY [car:year]", Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 13);
+        assertResultsHaveColumns(result, carColumnNames("car:Car"));
+    }
+
+    @FixFor( "MODE-1095" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderByUsingColumnNotInSelect() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT [car:model], [car:maker] FROM [car:Car] WHERE [car:year] <= 2012 ORDER BY [car:year] DESC",
+                                          Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 13);
+        assertResultsHaveColumns(result, "car:model", "car:maker", "car:year");
+    }
+
+    @FixFor( "MODE-1095" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinCriteriaOnColumnsNotInSelect() throws RepositoryException {
+        String sql = "SELECT x.*, y.* FROM [nt:unstructured] AS x INNER JOIN [nt:unstructured] AS y ON x.somethingElse = y.propC ORDER BY x.propC";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1);
+        assertResultsHaveColumns(result, allOf(allColumnNames("x"), allColumnNames("y"), new String[] {"x.propC"}));
+        RowIterator rows = result.getRows();
+        Row row1 = rows.nextRow();
+        assertThat(row1.getNode("x").getPath(), is("/Other/NodeA"));
+        assertThat(row1.getNode("y").getPath(), is("/Other/NodeA[2]"));
+    }
+
     @FixFor( "MODE-1055" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllNodesWithCriteria() throws RepositoryException {

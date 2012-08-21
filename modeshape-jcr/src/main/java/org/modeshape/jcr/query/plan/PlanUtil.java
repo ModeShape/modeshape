@@ -234,12 +234,12 @@ public class PlanUtil {
         return types;
     }
 
-    protected static class RequiredColumnVisitor extends AbstractVisitor {
+    public static class RequiredColumnVisitor extends AbstractVisitor {
         private final Set<SelectorName> names;
         private final List<Column> columns = new LinkedList<Column>();
         private final Set<String> requiredColumnNames = new HashSet<String>();
 
-        protected RequiredColumnVisitor( Set<SelectorName> names ) {
+        public RequiredColumnVisitor( Set<SelectorName> names ) {
             this.names = names;
         }
 

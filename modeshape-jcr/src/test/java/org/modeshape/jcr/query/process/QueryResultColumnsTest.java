@@ -84,6 +84,13 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
         results = new QueryResults(columns, statistics, context.getProblems());
     }
 
+    protected String columnNameFor( Column column ) {
+        if (column.getColumnName().equals(column.getPropertyName())) {
+            return column.getSelectorName() + "." + column.getColumnName();
+        }
+        return column.getColumnName();
+    }
+
     @Test
     public void shouldReturnSameColumnsPassedIntoConstructor() {
         assertThat(results.getColumns(), is(sameInstance(columns)));
@@ -139,7 +146,7 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
             Object[] tuple = expectedIter.next();
             // Check the column values by column name and index ...
             for (Column column : results.getColumns().getColumns()) {
-                String columnName = column.getColumnName();
+                String columnName = columnNameFor(column);
                 int columnIndex = columns.getColumnIndexForName(columnName);
                 assertThat(cursor.getValue(columnName), is(tuple[columnIndex]));
                 assertThat(cursor.getValue(columnIndex), is(tuple[columnIndex]));
