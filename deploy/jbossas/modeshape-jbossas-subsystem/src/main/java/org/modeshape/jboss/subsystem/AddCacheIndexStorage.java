@@ -56,5 +56,11 @@ public class AddCacheIndexStorage extends AbstractAddIndexStorage {
         indexStorage.set(FieldName.INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES, chunkSize);
         indexStorage.set(FieldName.INDEX_STORAGE_INFINISPAN_CONTAINER, containerJndiName);
     }
+    
+    @Override
+    protected void populateModel( ModelNode operation,
+                                  ModelNode model ) throws OperationFailedException {
+        populate(operation, model, ModelKeys.CACHE_INDEX_STORAGE, ModelAttributes.CACHE_INDEX_STORAGE_ATTRIBUTES);
+    }
 
 }
