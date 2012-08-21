@@ -248,7 +248,7 @@
         <xs:documentation>The name of the authenticator.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
-    <xs:anyAttribute />
+    <xs:anyAttribute namespace="##any" processContents="lax"/>
   </xs:complexType>
 
   <xs:complexType name="sequencers">
@@ -265,7 +265,7 @@
     <xs:sequence minOccurs="0" maxOccurs="unbounded">
       <xs:element name="path-expression" minOccurs="0" maxOccurs="unbounded">
         <xs:annotation>
-          <xs:documentation>The definition of a sequencer.</xs:documentation>
+          <xs:documentation>An expression specifying the pattern for the input path of the properties to be sequenced and the resulting output location.</xs:documentation>
         </xs:annotation>
         <xs:simpleType>
           <xs:restriction base="xs:string" />
@@ -283,7 +283,7 @@
         <xs:documentation>The description of the sequencer.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
-    <xs:anyAttribute />
+    <xs:anyAttribute namespace="##any" processContents="lax"/>
   </xs:complexType>
 
   <xs:complexType name="text-extractors">
@@ -303,12 +303,12 @@
         <xs:documentation>The name of the extractor.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
-    <xs:anyAttribute/>
+    <xs:anyAttribute namespace="##any" processContents="lax"/>
   </xs:complexType>
 
   <xs:complexType name="indexing">
     <xs:attributeGroup ref="indexing-attributes" />
-    <xs:anyAttribute />
+    <xs:anyAttribute namespace="##any" processContents="lax"/>
   </xs:complexType>
 
   <xs:complexType name="local-file-index-storage">
@@ -401,7 +401,7 @@
   <xs:complexType name="custom-index-storage">
     <xs:attributeGroup ref="persisted-indexing-attributes" />
     <xs:attributeGroup ref="implementation-class-attributes" />
-    <xs:anyAttribute />
+    <xs:anyAttribute namespace="##any" processContents="lax"/>
   </xs:complexType>
 
   <xs:complexType name="file-binary-storage">
@@ -446,7 +446,7 @@
   <xs:complexType name="custom-binary-storage">
     <xs:attributeGroup ref="implementation-class-attributes" />
     <xs:attributeGroup ref="binary-storage-attributes" />
-    <xs:anyAttribute />
+    <xs:anyAttribute namespace="##any" processContents="lax"/>
   </xs:complexType>
 
   <!-- Global attribute groups -->

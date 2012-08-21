@@ -1,36 +1,40 @@
 /*
- * JBoss, Home of Professional Open Source.
+ * ModeShape (http://www.modeshape.org)
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * 
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * 
- * This library is distributed in the hope that it will be useful,
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301 USA.
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.modeshape.jboss.subsystem;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import java.util.List;
+import java.util.Properties;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceVerificationHandler;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceBuilder;
@@ -43,8 +47,6 @@ import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
-import java.util.List;
-import java.util.Properties;
 
 public class AddTextExtractor extends AbstractAddStepHandler {
 
@@ -93,7 +95,8 @@ public class AddTextExtractor extends AbstractAddStepHandler {
             }
             ModelNode node = operation.get(key);
             if (!node.isDefined()) continue;
-            if (key.equals(ModelKeys.TEXT_EXTRACTOR_CLASSNAME) && ModelAttributes.TEXT_EXTRACTOR_CLASSNAME.isMarshallable(operation)) {
+            if (key.equals(ModelKeys.TEXT_EXTRACTOR_CLASSNAME)
+                && ModelAttributes.TEXT_EXTRACTOR_CLASSNAME.isMarshallable(operation)) {
                 props.put(FieldName.CLASSNAME, node.asString());
             } else if (key.equals(ModelKeys.MODULE) && ModelAttributes.MODULE.isMarshallable(operation)) {
                 props.put(FieldName.CLASSLOADER, node.asString());
@@ -107,7 +110,8 @@ public class AddTextExtractor extends AbstractAddStepHandler {
 
         ServiceName serviceName = ModeShapeServiceNames.textExtractorServiceName(repositoryName, extractorName);
         ServiceBuilder<JcrRepository> extractorBuilder = target.addService(serviceName, extractorService);
-        extractorBuilder.addDependency(ModeShapeServiceNames.ENGINE, ModeShapeEngine.class,
+        extractorBuilder.addDependency(ModeShapeServiceNames.ENGINE,
+                                       ModeShapeEngine.class,
                                        extractorService.getModeShapeEngineInjector());
         extractorBuilder.addDependency(ModeShapeServiceNames.repositoryServiceName(repositoryName),
                                        JcrRepository.class,
@@ -118,21 +122,23 @@ public class AddTextExtractor extends AbstractAddStepHandler {
     }
 
     private void ensureClassLoadingPropertyIsSet( Properties properties ) {
-        //could be already set if the "module" element is present in the xml
+        // could be already set if the "module" element is present in the xml
         if (properties.containsKey(FieldName.CLASSLOADER)) {
             return;
         }
         String textExtractorClassName = properties.getProperty(FieldName.CLASSNAME);
         if (StringUtil.isBlank(textExtractorClassName)) {
-            LOG.warnv("Required property: {0} not found among the text extractor properties: {1}", FieldName.CLASSNAME, properties);
+            LOG.warnv("Required property: {0} not found among the text extractor properties: {1}",
+                      FieldName.CLASSNAME,
+                      properties);
             return;
         }
-        //try to see if an alias is configured
+        // try to see if an alias is configured
         String fqExtractorClass = RepositoryConfiguration.getBuiltInTextExtractorClassName(textExtractorClassName);
         if (fqExtractorClass == null) {
             fqExtractorClass = textExtractorClassName;
         }
-        //set the classloader to the package name of the sequencer class
+        // set the classloader to the package name of the sequencer class
         String extractorModuleName = fqExtractorClass.substring(0, fqExtractorClass.lastIndexOf("."));
         properties.setProperty(FieldName.CLASSLOADER, extractorModuleName);
     }

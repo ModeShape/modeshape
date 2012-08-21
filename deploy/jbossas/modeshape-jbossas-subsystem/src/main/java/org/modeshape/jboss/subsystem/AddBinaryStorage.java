@@ -24,7 +24,6 @@
 package org.modeshape.jboss.subsystem;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -37,9 +36,8 @@ public class AddBinaryStorage extends AbstractAddStepHandler {
     private AddBinaryStorage() {
     }
 
-	@Override
-	protected void populateModel(ModelNode operation, ModelNode model)
-			throws OperationFailedException {
-	}
+    @Override
+    protected void populateModel( ModelNode operation,
+                                  ModelNode model ) {
+    }
 }
-

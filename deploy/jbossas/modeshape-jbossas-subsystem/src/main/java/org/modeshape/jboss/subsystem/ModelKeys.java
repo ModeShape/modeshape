@@ -69,6 +69,8 @@ public class ModelKeys {
     static final String PATH = "path";
     static final String PATH_EXPRESSION = "path-expression";
     static final String PATH_EXPRESSIONS = "path-expressions";
+    static final String PROPERTY = "property";
+    static final String PROPERTIES = "properties";
     static final String PREDEFINED_WORKSPACE_NAME = "predefined-workspace-name";
     static final String PREDEFINED_WORKSPACE_NAMES = "predefined-workspace-names";
     static final String QUEUE_JNDI_NAME = "queue-jndi-name";
@@ -96,6 +98,7 @@ public class ModelKeys {
     static final String REMOVE_BINARY_STORAGE = "remove-binary-storage";
 
     static final String SEQUENCER = "sequencer";
+    static final String TEXT_EXTRACTOR = "text-extractor";
 
     static final String CONFIGURATION = "configuration";
     static final String INDEX_STORAGE = "index-storage";

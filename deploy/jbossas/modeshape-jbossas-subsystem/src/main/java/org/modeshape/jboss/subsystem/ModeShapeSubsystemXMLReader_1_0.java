@@ -1,38 +1,37 @@
 /*
- * JBoss, Home of Professional Open Source.
+ * ModeShape (http://www.modeshape.org)
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301 USA.
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.modeshape.jboss.subsystem;
 
+import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
-
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
@@ -147,6 +146,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         ModelNode indexStorage = null;
         ModelNode binaryStorage = null;
         List<ModelNode> sequencers = new ArrayList<ModelNode>();
+        List<ModelNode> textExtractors = new ArrayList<ModelNode>();
         while (reader.hasNext() && (reader.nextTag() != XMLStreamConstants.END_ELEMENT)) {
             Element element = Element.forName(reader.getLocalName());
             switch (element) {
@@ -159,51 +159,45 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
 
                 // Index storage ...
                 case RAM_INDEX_STORAGE:
-                	addIndexStorageConfiguration(repositories, repositoryName);
+                    addIndexStorageConfiguration(repositories, repositoryName);
                     indexStorage = parseRamIndexStorage(reader, repositoryName);
                     break;
                 case LOCAL_FILE_INDEX_STORAGE:
-                	addIndexStorageConfiguration(repositories, repositoryName);
-                    indexStorage = parseFileIndexStorage(reader,
-                                                         repositoryName,
-                                                         ModelKeys.LOCAL_FILE_INDEX_STORAGE);
+                    addIndexStorageConfiguration(repositories, repositoryName);
+                    indexStorage = parseFileIndexStorage(reader, repositoryName, ModelKeys.LOCAL_FILE_INDEX_STORAGE);
                     break;
                 case MASTER_FILE_INDEX_STORAGE:
-                	addIndexStorageConfiguration(repositories, repositoryName);
-                    indexStorage = parseFileIndexStorage(reader,
-                                                         repositoryName,
-                                                         ModelKeys.MASTER_FILE_INDEX_STORAGE);
+                    addIndexStorageConfiguration(repositories, repositoryName);
+                    indexStorage = parseFileIndexStorage(reader, repositoryName, ModelKeys.MASTER_FILE_INDEX_STORAGE);
                     break;
                 case SLAVE_FILE_INDEX_STORAGE:
-                	addIndexStorageConfiguration(repositories, repositoryName);
-                    indexStorage = parseFileIndexStorage(reader,
-                                                         repositoryName,
-                                                         ModelKeys.SLAVE_FILE_INDEX_STORAGE);
+                    addIndexStorageConfiguration(repositories, repositoryName);
+                    indexStorage = parseFileIndexStorage(reader, repositoryName, ModelKeys.SLAVE_FILE_INDEX_STORAGE);
                     break;
                 case CACHE_INDEX_STORAGE:
-                	addIndexStorageConfiguration(repositories, repositoryName);
+                    addIndexStorageConfiguration(repositories, repositoryName);
                     indexStorage = parseCacheIndexStorage(reader, repositoryName);
                     break;
                 case CUSTOM_INDEX_STORAGE:
-                	addIndexStorageConfiguration(repositories, repositoryName);
+                    addIndexStorageConfiguration(repositories, repositoryName);
                     indexStorage = parseCustomIndexStorage(reader, repositoryName);
                     break;
 
                 // Binary storage ...
                 case FILE_BINARY_STORAGE:
-                	addBinaryStorageConfiguration(repositories, repositoryName);
-                	binaryStorage = parseFileBinaryStorage(reader, repositoryName);
+                    addBinaryStorageConfiguration(repositories, repositoryName);
+                    binaryStorage = parseFileBinaryStorage(reader, repositoryName);
                     break;
                 case DB_BINARY_STORAGE:
-                	addBinaryStorageConfiguration(repositories, repositoryName);
+                    addBinaryStorageConfiguration(repositories, repositoryName);
                     binaryStorage = parseDatabaseBinaryStorage(reader, repositoryName);
                     break;
                 case CACHE_BINARY_STORAGE:
-                	addBinaryStorageConfiguration(repositories, repositoryName);
+                    addBinaryStorageConfiguration(repositories, repositoryName);
                     binaryStorage = parseCacheBinaryStorage(reader, repositoryName);
                     break;
                 case CUSTOM_BINARY_STORAGE:
-                	addBinaryStorageConfiguration(repositories, repositoryName);
+                    addBinaryStorageConfiguration(repositories, repositoryName);
                     binaryStorage = parseCustomBinaryStorage(reader, repositoryName);
                     break;
 
@@ -216,6 +210,12 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                 case SEQUENCERS:
                     sequencers = parseSequencers(reader, address, repositoryName);
                     break;
+
+                // Text extracting ...
+                case TEXT_EXTRACTORS:
+                    textExtractors = parseTextExtracting(reader, repositoryName);
+                    break;
+
                 default:
                     throw ParseUtils.unexpectedElement(reader);
             }
@@ -224,30 +224,30 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         if (indexStorage != null) repositories.add(indexStorage);
         if (binaryStorage != null) repositories.add(binaryStorage);
         repositories.addAll(sequencers);
-
+        repositories.addAll(textExtractors);
     }
 
-	private void addBinaryStorageConfiguration(final List<ModelNode> repositories,
-			String repositoryName) {
-		ModelNode configuration = new ModelNode();
-		configuration.get(OP).set(ADD);
-		configuration.get(OP_ADDR).
-		add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME).
-		add(ModelKeys.REPOSITORY, repositoryName).
-		add(ModelKeys.CONFIGURATION,ModelKeys.BINARY_STORAGE);
-		repositories.add(configuration);
-	}
-	
-	private void addIndexStorageConfiguration(final List<ModelNode> repositories,
-			String repositoryName) {
-		ModelNode configuration = new ModelNode();
-		configuration.get(OP).set(ADD);
-		configuration.get(OP_ADDR).
-		add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME).
-		add(ModelKeys.REPOSITORY, repositoryName).
-		add(ModelKeys.CONFIGURATION,ModelKeys.INDEX_STORAGE);
-		repositories.add(configuration);
-	}
+    private void addBinaryStorageConfiguration( final List<ModelNode> repositories,
+                                                String repositoryName ) {
+        ModelNode configuration = new ModelNode();
+        configuration.get(OP).set(ADD);
+        configuration.get(OP_ADDR)
+                     .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                     .add(ModelKeys.REPOSITORY, repositoryName)
+                     .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE);
+        repositories.add(configuration);
+    }
+
+    private void addIndexStorageConfiguration( final List<ModelNode> repositories,
+                                               String repositoryName ) {
+        ModelNode configuration = new ModelNode();
+        configuration.get(OP).set(ADD);
+        configuration.get(OP_ADDR)
+                     .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                     .add(ModelKeys.REPOSITORY, repositoryName)
+                     .add(ModelKeys.CONFIGURATION, ModelKeys.INDEX_STORAGE);
+        repositories.add(configuration);
+    }
 
     private void parseWorkspaces( final XMLExtendedStreamReader reader,
                                   final ModelNode parentAddress,
@@ -329,6 +329,9 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                     case MODE:
                         ModelAttributes.MODE.parseAndSetParameter(attrValue, repository, reader);
                         break;
+                    case SYSTEM_CONTENT_MODE:
+                        ModelAttributes.SYSTEM_CONTENT_MODE.parseAndSetParameter(attrValue, repository, reader);
+                        break;
                     case ASYNC_THREAD_POOL_SIZE:
                         ModelAttributes.ASYNC_THREAD_POOL_SIZE.parseAndSetParameter(attrValue, repository, reader);
                         break;
@@ -357,13 +360,13 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
 
     private ModelNode parseRamIndexStorage( final XMLExtendedStreamReader reader,
                                             final String repositoryName ) throws XMLStreamException {
-    	 final ModelNode storageType = new ModelNode();
-         storageType.get(OP).set(ADD);
-         storageType.get(OP_ADDR)
-         .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-         .add(ModelKeys.REPOSITORY, repositoryName)
-         .add(ModelKeys.CONFIGURATION, ModelKeys.INDEX_STORAGE)
-         .add(ModelKeys.STORAGE_TYPE, ModelKeys.RAM_INDEX_STORAGE);
+        final ModelNode storageType = new ModelNode();
+        storageType.get(OP).set(ADD);
+        storageType.get(OP_ADDR)
+                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                   .add(ModelKeys.REPOSITORY, repositoryName)
+                   .add(ModelKeys.CONFIGURATION, ModelKeys.INDEX_STORAGE)
+                   .add(ModelKeys.STORAGE_TYPE, ModelKeys.RAM_INDEX_STORAGE);
 
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -410,13 +413,13 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
     private ModelNode parseFileIndexStorage( final XMLExtendedStreamReader reader,
                                              final String repositoryName,
                                              String name ) throws XMLStreamException {
-    	 final ModelNode storageType = new ModelNode();
-         storageType.get(OP).set(ADD);
-         storageType.get(OP_ADDR)
-         .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-         .add(ModelKeys.REPOSITORY, repositoryName)
-         .add(ModelKeys.CONFIGURATION, ModelKeys.INDEX_STORAGE)
-         .add(ModelKeys.STORAGE_TYPE, name);
+        final ModelNode storageType = new ModelNode();
+        storageType.get(OP).set(ADD);
+        storageType.get(OP_ADDR)
+                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                   .add(ModelKeys.REPOSITORY, repositoryName)
+                   .add(ModelKeys.CONFIGURATION, ModelKeys.INDEX_STORAGE)
+                   .add(ModelKeys.STORAGE_TYPE, name);
 
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -500,13 +503,13 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
 
     private ModelNode parseCacheIndexStorage( final XMLExtendedStreamReader reader,
                                               final String repositoryName ) throws XMLStreamException {
-    	final ModelNode storageType = new ModelNode();
+        final ModelNode storageType = new ModelNode();
         storageType.get(OP).set(ADD);
         storageType.get(OP_ADDR)
-        .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-        .add(ModelKeys.REPOSITORY, repositoryName)
-        .add(ModelKeys.CONFIGURATION, ModelKeys.INDEX_STORAGE)
-        .add(ModelKeys.STORAGE_TYPE, ModelKeys.CACHE_INDEX_STORAGE);
+                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                   .add(ModelKeys.REPOSITORY, repositoryName)
+                   .add(ModelKeys.CONFIGURATION, ModelKeys.INDEX_STORAGE)
+                   .add(ModelKeys.STORAGE_TYPE, ModelKeys.CACHE_INDEX_STORAGE);
 
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -542,13 +545,13 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
 
     private ModelNode parseCustomIndexStorage( final XMLExtendedStreamReader reader,
                                                final String repositoryName ) throws XMLStreamException {
-    	final ModelNode storageType = new ModelNode();
+        final ModelNode storageType = new ModelNode();
         storageType.get(OP).set(ADD);
         storageType.get(OP_ADDR)
-        .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-        .add(ModelKeys.REPOSITORY, repositoryName)
-        .add(ModelKeys.CONFIGURATION, ModelKeys.INDEX_STORAGE)
-        .add(ModelKeys.STORAGE_TYPE, ModelKeys.CUSTOM_INDEX_STORAGE);
+                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                   .add(ModelKeys.REPOSITORY, repositoryName)
+                   .add(ModelKeys.CONFIGURATION, ModelKeys.INDEX_STORAGE)
+                   .add(ModelKeys.STORAGE_TYPE, ModelKeys.CUSTOM_INDEX_STORAGE);
 
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -606,17 +609,16 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
     }
 
     private ModelNode parseFileBinaryStorage( final XMLExtendedStreamReader reader,
-    										  final String repositoryName ) throws XMLStreamException {
-        
-    	final ModelNode storageType = new ModelNode();
+                                              final String repositoryName ) throws XMLStreamException {
+
+        final ModelNode storageType = new ModelNode();
         storageType.get(OP).set(ADD);
         storageType.get(OP_ADDR)
-        .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-        .add(ModelKeys.REPOSITORY, repositoryName)
-        .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE)
-        .add(ModelKeys.STORAGE_TYPE, ModelKeys.FILE_BINARY_STORAGE);
-        
-        
+                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                   .add(ModelKeys.REPOSITORY, repositoryName)
+                   .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE)
+                   .add(ModelKeys.STORAGE_TYPE, ModelKeys.FILE_BINARY_STORAGE);
+
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
                 String attrName = reader.getAttributeLocalName(i);
@@ -648,10 +650,10 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         final ModelNode storageType = new ModelNode();
         storageType.get(OP).set(ADD);
         storageType.get(OP_ADDR)
-        .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-        .add(ModelKeys.REPOSITORY, repositoryName)
-        .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE)
-        .add(ModelKeys.STORAGE_TYPE, ModelKeys.CACHE_BINARY_STORAGE);
+                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                   .add(ModelKeys.REPOSITORY, repositoryName)
+                   .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE)
+                   .add(ModelKeys.STORAGE_TYPE, ModelKeys.CACHE_BINARY_STORAGE);
 
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -678,19 +680,19 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
             }
         }
         requireNoElements(reader);
-        
+
         return storageType;
     }
 
     private ModelNode parseDatabaseBinaryStorage( final XMLExtendedStreamReader reader,
                                                   final String repositoryName ) throws XMLStreamException {
-    	 final ModelNode storageType = new ModelNode();
-         storageType.get(OP).set(ADD);
-         storageType.get(OP_ADDR)
-         .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-         .add(ModelKeys.REPOSITORY, repositoryName)
-         .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE)
-         .add(ModelKeys.STORAGE_TYPE, ModelKeys.DB_BINARY_STORAGE);
+        final ModelNode storageType = new ModelNode();
+        storageType.get(OP).set(ADD);
+        storageType.get(OP_ADDR)
+                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                   .add(ModelKeys.REPOSITORY, repositoryName)
+                   .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE)
+                   .add(ModelKeys.STORAGE_TYPE, ModelKeys.DB_BINARY_STORAGE);
 
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -717,13 +719,13 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
 
     private ModelNode parseCustomBinaryStorage( final XMLExtendedStreamReader reader,
                                                 final String repositoryName ) throws XMLStreamException {
-    	 final ModelNode storageType = new ModelNode();
-         storageType.get(OP).set(ADD);
-         storageType.get(OP_ADDR)
-         .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-         .add(ModelKeys.REPOSITORY, repositoryName)
-         .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE)
-         .add(ModelKeys.STORAGE_TYPE, ModelKeys.CUSTOM_BINARY_STORAGE);
+        final ModelNode storageType = new ModelNode();
+        storageType.get(OP).set(ADD);
+        storageType.get(OP_ADDR)
+                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                   .add(ModelKeys.REPOSITORY, repositoryName)
+                   .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE)
+                   .add(ModelKeys.STORAGE_TYPE, ModelKeys.CUSTOM_BINARY_STORAGE);
 
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -852,7 +854,9 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                         ModelAttributes.MODULE.parseAndSetParameter(attrValue, sequencer, reader);
                         break;
                     default:
-                        throw ParseUtils.unexpectedAttribute(reader, i);
+                        // extra attributes are allowed to set sequencer-specific properties ...
+                        sequencer.get(ModelKeys.PROPERTIES).add(attrName, attrValue);
+                        break;
                 }
             }
         }
@@ -874,6 +878,67 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                  .add(ModelKeys.REPOSITORY, repositoryName)
                  .add(ModelKeys.SEQUENCER, name);
 
+    }
+
+    private List<ModelNode> parseTextExtracting( final XMLExtendedStreamReader reader,
+                                                 final String repositoryName ) throws XMLStreamException {
+        requireNoAttributes(reader);
+
+        List<ModelNode> extractors = new ArrayList<ModelNode>();
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case TEXT_EXTRACTOR:
+                    parseTextExtractor(reader, repositoryName, extractors);
+                    break;
+                default:
+                    throw ParseUtils.unexpectedElement(reader);
+            }
+        }
+
+        return extractors;
+    }
+
+    private void parseTextExtractor( XMLExtendedStreamReader reader,
+                                     String repositoryName,
+                                     final List<ModelNode> extractors ) throws XMLStreamException {
+
+        final ModelNode extractor = new ModelNode();
+        extractor.get(OP).set(ADD);
+        String name = null;
+
+        extractors.add(extractor);
+
+        if (reader.getAttributeCount() > 0) {
+            for (int i = 0; i < reader.getAttributeCount(); i++) {
+                String attrName = reader.getAttributeLocalName(i);
+                String attrValue = reader.getAttributeValue(i);
+                Attribute attribute = Attribute.forName(attrName);
+                switch (attribute) {
+                    case NAME:
+                        name = attrValue;
+                        break;
+                    case CLASSNAME:
+                        ModelAttributes.TEXT_EXTRACTOR_CLASSNAME.parseAndSetParameter(attrValue, extractor, reader);
+                        if (name == null) name = attrValue;
+                        break;
+                    case MODULE:
+                        ModelAttributes.MODULE.parseAndSetParameter(attrValue, extractor, reader);
+                        break;
+                    default:
+                        // extra attributes are allowed to set extractor-specific properties ...
+                        extractor.get(ModelKeys.PROPERTIES).add(attrName, attrValue);
+                        break;
+                }
+            }
+        }
+
+        extractor.get(OP_ADDR)
+                 .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                 .add(ModelKeys.REPOSITORY, repositoryName)
+                 .add(ModelKeys.TEXT_EXTRACTOR, name);
+
+        requireNoElements(reader);
     }
 
     /**

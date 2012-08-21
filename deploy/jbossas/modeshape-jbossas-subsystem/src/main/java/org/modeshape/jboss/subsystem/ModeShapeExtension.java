@@ -1,30 +1,30 @@
 /*
- * JBoss, Home of Professional Open Source.
+ * ModeShape (http://www.modeshape.org)
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301 USA.
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.modeshape.jboss.subsystem;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-
 import java.util.List;
-
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.PathElement;
@@ -44,32 +44,42 @@ public class ModeShapeExtension implements Extension {
     private static final int MANAGEMENT_API_MINOR_VERSION = 2;
 
     private static final String RESOURCE_NAME = ModeShapeExtension.class.getPackage().getName() + ".LocalDescriptions";
-    static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM,SUBSYSTEM_NAME);
+    static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
     static final PathElement REPOSITORY_PATH = PathElement.pathElement(ModelKeys.REPOSITORY);
     static final PathElement SEQUENCER_PATH = PathElement.pathElement(ModelKeys.SEQUENCER);
-    
-    //Index storage PathElements
+    static final PathElement TEXT_EXTRACTOR_PATH = PathElement.pathElement(ModelKeys.TEXT_EXTRACTOR);
+
+    // Index storage PathElements
     static final PathElement INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.CONFIGURATION, ModelKeys.INDEX_STORAGE);
     static final PathElement RAM_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE, ModelKeys.RAM_INDEX_STORAGE);
-    static final PathElement LOCAL_FILE_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE, ModelKeys.LOCAL_FILE_INDEX_STORAGE);
-    static final PathElement MASTER_FILE_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE, ModelKeys.MASTER_FILE_INDEX_STORAGE);
-    static final PathElement SLAVE_FILE_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE, ModelKeys.SLAVE_FILE_INDEX_STORAGE);
-    static final PathElement CACHE_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE, ModelKeys.CACHE_INDEX_STORAGE);
-    static final PathElement CUSTOM_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE, ModelKeys.CUSTOM_INDEX_STORAGE);
-    
-    //Binary storage PathElements
-    static final PathElement BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE);
-    static final PathElement FILE_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE, ModelKeys.FILE_BINARY_STORAGE);
-    static final PathElement CACHE_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE, ModelKeys.CACHE_BINARY_STORAGE);
-    static final PathElement DB_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE, ModelKeys.DB_BINARY_STORAGE);
-    static final PathElement CUSTOM_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE, ModelKeys.CUSTOM_BINARY_STORAGE);
+    static final PathElement LOCAL_FILE_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
+                                                                                     ModelKeys.LOCAL_FILE_INDEX_STORAGE);
+    static final PathElement MASTER_FILE_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
+                                                                                      ModelKeys.MASTER_FILE_INDEX_STORAGE);
+    static final PathElement SLAVE_FILE_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
+                                                                                     ModelKeys.SLAVE_FILE_INDEX_STORAGE);
+    static final PathElement CACHE_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
+                                                                                ModelKeys.CACHE_INDEX_STORAGE);
+    static final PathElement CUSTOM_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
+                                                                                 ModelKeys.CUSTOM_INDEX_STORAGE);
 
-    static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefix) {
+    // Binary storage PathElements
+    static final PathElement BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE);
+    static final PathElement FILE_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
+                                                                                ModelKeys.FILE_BINARY_STORAGE);
+    static final PathElement CACHE_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
+                                                                                 ModelKeys.CACHE_BINARY_STORAGE);
+    static final PathElement DB_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE, ModelKeys.DB_BINARY_STORAGE);
+    static final PathElement CUSTOM_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
+                                                                                  ModelKeys.CUSTOM_BINARY_STORAGE);
+
+    static StandardResourceDescriptionResolver getResourceDescriptionResolver( final String... keyPrefix ) {
         StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);
         for (String kp : keyPrefix) {
             prefix.append('.').append(kp);
         }
-        return new StandardResourceDescriptionResolver(prefix.toString(), RESOURCE_NAME, ModeShapeExtension.class.getClassLoader(), true, false);
+        return new StandardResourceDescriptionResolver(prefix.toString(), RESOURCE_NAME,
+                                                       ModeShapeExtension.class.getClassLoader(), true, false);
     }
 
     @Override
@@ -87,6 +97,8 @@ public class ModeShapeExtension implements Extension {
         // Sequencer submodel
         repositorySubmodel.registerSubModel(ModeShapeSequencerResource.INSTANCE);
 
+        // Text extractor submodel
+        repositorySubmodel.registerSubModel(ModeShapeTextExtractorResource.INSTANCE);
 
         // Index storage submodel
         final ManagementResourceRegistration indexStorageSubmodel = repositorySubmodel.registerSubModel(ModeShapeIndexStorageResource.INSTANCE);
@@ -103,7 +115,7 @@ public class ModeShapeExtension implements Extension {
         binaryStorageSubmodel.registerSubModel(ModeShapeCacheBinaryStorageResource.INSTANCE);
         binaryStorageSubmodel.registerSubModel(ModeShapeDatabaseBinaryStorageResource.INSTANCE);
         binaryStorageSubmodel.registerSubModel(ModeShapeCustomBinaryStorageResource.INSTANCE);
-        
+
     }
 
     @Override

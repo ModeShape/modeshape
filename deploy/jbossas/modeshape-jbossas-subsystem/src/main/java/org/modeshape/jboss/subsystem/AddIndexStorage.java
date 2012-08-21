@@ -24,7 +24,6 @@
 package org.modeshape.jboss.subsystem;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -37,11 +36,11 @@ public class AddIndexStorage extends AbstractAddStepHandler {
     private AddIndexStorage() {
     }
 
-	@Override
-	protected void populateModel(ModelNode operation, ModelNode model)
-			throws OperationFailedException {
-		// TODO Auto-generated method stub
-		
-	}
-    
+    @Override
+    protected void populateModel( ModelNode operation,
+                                  ModelNode model ) {
+        // TODO Auto-generated method stub
+
+    }
+
 }

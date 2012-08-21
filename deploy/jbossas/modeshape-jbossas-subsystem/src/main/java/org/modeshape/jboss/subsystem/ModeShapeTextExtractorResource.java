@@ -26,21 +26,18 @@ package org.modeshape.jboss.subsystem;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
-/**
- * 
- */
-public class ModeShapeLocalFileIndexStorageResource extends SimpleResourceDefinition {
-    protected final static ModeShapeLocalFileIndexStorageResource INSTANCE = new ModeShapeLocalFileIndexStorageResource();
+public class ModeShapeTextExtractorResource extends SimpleResourceDefinition {
+    protected final static ModeShapeTextExtractorResource INSTANCE = new ModeShapeTextExtractorResource();
 
-    private ModeShapeLocalFileIndexStorageResource() {
-        super(ModeShapeExtension.LOCAL_FILE_INDEX_STORAGE_PATH,
-              ModeShapeExtension.getResourceDescriptionResolver(ModelKeys.REPOSITORY, ModelKeys.LOCAL_FILE_INDEX_STORAGE),
-              AddLocalFileSystemIndexStorage.INSTANCE, RemoveIndexStorage.INSTANCE);
+    private ModeShapeTextExtractorResource() {
+        super(ModeShapeExtension.TEXT_EXTRACTOR_PATH,
+              ModeShapeExtension.getResourceDescriptionResolver(ModelKeys.REPOSITORY, ModelKeys.TEXT_EXTRACTOR),
+              AddTextExtractor.INSTANCE, RemoveTextExtractor.INSTANCE);
     }
 
     @Override
     public void registerAttributes( ManagementResourceRegistration resourceRegistration ) {
         super.registerAttributes(resourceRegistration);
-        IndexStorageWriteAttributeHandler.LOCAL_FILE_INDEX_STORAGE_INSTANCE.registerAttributes(resourceRegistration);
+        TextExtractorWriteAttributeHandler.INSTANCE.registerAttributes(resourceRegistration);
     }
 }

@@ -1,5 +1,26 @@
 package org.modeshape.jboss.subsystem;
 
+import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 import junit.framework.Assert;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -14,30 +35,7 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
-import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import static junit.framework.Assert.assertEquals;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-import static org.junit.Assert.fail;
-
-@SuppressWarnings("nls")
+@SuppressWarnings( "nls" )
 public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
 
     public ModeShapeConfigurationTest() {
@@ -50,10 +48,9 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Override
-    protected String getSubsystemXml(String configId) throws IOException {
+    protected String getSubsystemXml( String configId ) throws IOException {
         if ("minimal".equals(configId)) {
-            return "<subsystem xmlns=\"urn:jboss:domain:modeshape:1.0\">\n"
-                    + " <repository name=\"repo1\" />\n</subsystem>";
+            return "<subsystem xmlns=\"urn:jboss:domain:modeshape:1.0\">\n" + " <repository name=\"repo1\" />\n</subsystem>";
         }
         return getSubsystemXml();
     }
@@ -62,122 +59,123 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     public void testMinimalConfigurationWithOneMinimalRepository() throws Exception {
         standardSubsystemTest("minimal");
     }
-    
+
     @Test
     public void testOutputPersistanceOfConfigurationWithLocalFileIndexStorage() throws Exception {
-    	parse(readResource("modeshape-local-file-index-storage.xml"));
+        parse(readResource("modeshape-local-file-index-storage.xml"));
     }
 
     @Test
     public void testOutputPersistanceOfConfigurationWithCacheIndexStorage() throws Exception {
-    	parse(readResource("modeshape-cache-index-storage.xml"));
+        parse(readResource("modeshape-cache-index-storage.xml"));
     }
 
     @Test
     public void testOutputPersistanceOfConfigurationWithFileBinaryStorage() throws Exception {
-    	parse(readResource("modeshape-file-binary-storage.xml"));
+        parse(readResource("modeshape-file-binary-storage.xml"));
     }
 
     @Test
     public void testOutputPersistanceOfConfigurationWithCacheBinaryStorage() throws Exception {
-    	parse(readResource("modeshape-cache-binary-storage.xml"));
+        parse(readResource("modeshape-cache-binary-storage.xml"));
     }
 
-    
-    
     /* // todo replace with dmr format not json
-@Test
-public void testOutputPersistance() throws Exception {
-String subsystemXml = readResource("modeshape-sample-config.xml");
+    @Test
+    public void testOutputPersistance() throws Exception {
+    String subsystemXml = readResource("modeshape-sample-config.xml");
 
-String json = readResource("modeshape-sample-config.json");
-ModelNode testModel = filterValues(ModelNode.fromJSONString(json));
-String triggered = outputModel(testModel);
+    String json = readResource("modeshape-sample-config.json");
+    ModelNode testModel = filterValues(ModelNode.fromJSONString(json));
+    String triggered = outputModel(testModel);
 
-KernelServices services = super.installInController(AdditionalInitialization.MANAGEMENT, subsystemXml);
+    KernelServices services = super.installInController(AdditionalInitialization.MANAGEMENT, subsystemXml);
 
-// Get the model and the persisted xml from the controller
-ModelNode model = services.readWholeModel();
-String marshalled = services.getPersistedSubsystemXml();
+    // Get the model and the persisted xml from the controller
+    ModelNode model = services.readWholeModel();
+    String marshalled = services.getPersistedSubsystemXml();
 
-compare(testModel, model);
-Assert.assertEquals(triggered, marshalled);
-Assert.assertEquals(normalizeXML(triggered), normalizeXML(marshalled));
-}
+    compare(testModel, model);
+    Assert.assertEquals(triggered, marshalled);
+    Assert.assertEquals(normalizeXML(triggered), normalizeXML(marshalled));
+    }
+    */
+    /*
+    @Test
+    public void testOutputPersistanceOfRelativelyThoroughConfiguration() throws Exception {
+        String subsystemXml = readResource("modeshape-full-config.xml");
 
-@Test
-public void testOutputPersistanceOfRelativelyThoroughConfiguration() throws Exception {
-String subsystemXml = readResource("modeshape-full-config.xml");
+        String json = readResource("modeshape-full-config.json");
+        ModelNode testModel = filterValues(ModelNode.fromJSONString(json));
+        String triggered = outputModel(testModel);
 
-String json = readResource("modeshape-full-config.json");
-ModelNode testModel = filterValues(ModelNode.fromJSONString(json));
-String triggered = outputModel(testModel);
+        KernelServices services = super.installInController(AdditionalInitialization.MANAGEMENT, subsystemXml);
 
-KernelServices services = super.installInController(AdditionalInitialization.MANAGEMENT, subsystemXml);
+        // Get the model and the persisted xml from the controller
+        ModelNode model = services.readWholeModel();
+        String marshalled = services.getPersistedSubsystemXml();
 
-// Get the model and the persisted xml from the controller
-ModelNode model = services.readWholeModel();
-String marshalled = services.getPersistedSubsystemXml();
+        compare(ModelNode.fromJSONString(json), model);
+        compare(testModel, model);
+        Assert.assertEquals(normalizeXML(triggered), normalizeXML(marshalled));
+        // The input XML contains some default values, and the marshalled value doesn't contain the defaults;
+        // therefore we cannot compare them directly (though they are equivalent) ...
+        // Assert.assertEquals(normalizeXML(subsystemXml), normalizeXML(marshalled));
+    }
+    */
 
-compare(ModelNode.fromJSONString(json), model);
-compare(testModel, model);
-Assert.assertEquals(normalizeXML(triggered), normalizeXML(marshalled));
-// The input XML contains some default values, and the marshalled value doesn't contain the defaults;
-// therefore we cannot compare them directly (though they are equivalent) ...
-// Assert.assertEquals(normalizeXML(subsystemXml), normalizeXML(marshalled));
-}
+    /*
+        @Test
+        public void testOutputPersistanceOfConfigurationWithLocalFileIndexStorage() throws Exception {
+        roundTrip("modeshape-local-file-index-storage.xml", "modeshape-local-file-index-storage.json");
+        }
 
-@Test
-public void testOutputPersistanceOfConfigurationWithLocalFileIndexStorage() throws Exception {
-roundTrip("modeshape-local-file-index-storage.xml", "modeshape-local-file-index-storage.json");
-}
+        @Test
+        public void testOutputPersistanceOfConfigurationWithCacheIndexStorage() throws Exception {
+        roundTrip("modeshape-cache-index-storage.xml", "modeshape-cache-index-storage.json");
+        }
 
-@Test
-public void testOutputPersistanceOfConfigurationWithCacheIndexStorage() throws Exception {
-roundTrip("modeshape-cache-index-storage.xml", "modeshape-cache-index-storage.json");
-}
+        @Test
+        public void testOutputPersistanceOfConfigurationWithFileBinaryStorage() throws Exception {
+        roundTrip("modeshape-file-binary-storage.xml", "modeshape-file-binary-storage.json");
+        }
 
-@Test
-public void testOutputPersistanceOfConfigurationWithFileBinaryStorage() throws Exception {
-roundTrip("modeshape-file-binary-storage.xml", "modeshape-file-binary-storage.json");
-}
+        @Test
+        public void testOutputPersistanceOfConfigurationWithCacheBinaryStorage() throws Exception {
+        roundTrip("modeshape-cache-binary-storage.xml", "modeshape-cache-binary-storage.json");
+        }
 
-@Test
-public void testOutputPersistanceOfConfigurationWithCacheBinaryStorage() throws Exception {
-roundTrip("modeshape-cache-binary-storage.xml", "modeshape-cache-binary-storage.json");
-}
+        @Test
+        public void testOutputPersistanceOfConfigurationWithClustering() throws Exception {
+        roundTrip("modeshape-clustered-config.xml", "modeshape-clustered-config.json");
+        }
 
-@Test
-public void testOutputPersistanceOfConfigurationWithClustering() throws Exception {
-roundTrip("modeshape-clustered-config.xml", "modeshape-clustered-config.json");
-}
+        @Test
+        public void testOutputPersistanceOfConfigurationWithMinimalRepository() throws Exception {
+        roundTrip("modeshape-minimal-config.xml", "modeshape-minimal-config.json");
+        }
 
-@Test
-public void testOutputPersistanceOfConfigurationWithMinimalRepository() throws Exception {
-roundTrip("modeshape-minimal-config.xml", "modeshape-minimal-config.json");
-}
+        protected void roundTrip( String filenameOfInputXmlConfig,
+        String filenameOfExpectedJson ) throws Exception {
+        String subsystemXml = readResource(filenameOfInputXmlConfig);
 
-protected void roundTrip( String filenameOfInputXmlConfig,
-String filenameOfExpectedJson ) throws Exception {
-String subsystemXml = readResource(filenameOfInputXmlConfig);
+        String json = readResource(filenameOfExpectedJson);
+        ModelNode testModel = filterValues(ModelNode.fromJSONString(json));
+        String triggered = outputModel(testModel);
 
-String json = readResource(filenameOfExpectedJson);
-ModelNode testModel = filterValues(ModelNode.fromJSONString(json));
-String triggered = outputModel(testModel);
+        KernelServices services = super.installInController(AdditionalInitialization.MANAGEMENT, subsystemXml);
 
-KernelServices services = super.installInController(AdditionalInitialization.MANAGEMENT, subsystemXml);
+        // Get the model and the persisted xml from the controller
+        ModelNode model = services.readWholeModel();
+        String marshalled = services.getPersistedSubsystemXml();
 
-// Get the model and the persisted xml from the controller
-ModelNode model = services.readWholeModel();
-String marshalled = services.getPersistedSubsystemXml();
-
-compare(ModelNode.fromJSONString(json), model);
-compare(testModel, model);
-Assert.assertEquals(normalizeXML(triggered), normalizeXML(marshalled));
-// The input XML contains some default values, and the marshalled value doesn't contain the defaults;
-// therefore we cannot compare them directly (though they are equivalent) ...
-// Assert.assertEquals(normalizeXML(subsystemXml), normalizeXML(marshalled));
-}*/
+        compare(ModelNode.fromJSONString(json), model);
+        compare(testModel, model);
+        Assert.assertEquals(normalizeXML(triggered), normalizeXML(marshalled));
+        // The input XML contains some default values, and the marshalled value doesn't contain the defaults;
+        // therefore we cannot compare them directly (though they are equivalent) ...
+        // Assert.assertEquals(normalizeXML(subsystemXml), normalizeXML(marshalled));
+        }*/
 
     @Test
     public void testSchema() throws Exception {
@@ -194,7 +192,7 @@ Assert.assertEquals(normalizeXML(triggered), normalizeXML(marshalled));
         validate(marshalled);
     }
 
-    private void validate(String marshalled) throws SAXException, IOException {
+    private void validate( String marshalled ) throws SAXException, IOException {
         URL xsdURL = Thread.currentThread().getContextClassLoader().getResource("schema/modeshape_1_0.xsd");
         // System.out.println(marshalled);
 
@@ -206,26 +204,25 @@ Assert.assertEquals(normalizeXML(triggered), normalizeXML(marshalled));
         validator.setErrorHandler(new ErrorHandler() {
 
             @Override
-            public void warning(SAXParseException exception) {
+            public void warning( SAXParseException exception ) {
                 fail(exception.getMessage());
             }
 
             @Override
-            public void fatalError(SAXParseException exception) {
+            public void fatalError( SAXParseException exception ) {
                 fail(exception.getMessage());
             }
 
             @Override
-            public void error(SAXParseException exception) {
-                if (!exception.getMessage().contains("cvc-enumeration-valid") && !exception.getMessage().contains("cvc-type")) {
-                    fail(exception.getMessage());
-                }
+            public void error( SAXParseException exception ) {
+                if (exception.getMessage().contains("cvc-enumeration-valid")) return;
+                if (exception.getMessage().contains("cvc-type")) return;
+                fail(exception.getMessage());
             }
         });
 
         validator.validate(source);
     }
-
 
     @Ignore
     @Test
@@ -273,11 +270,15 @@ Assert.assertEquals(normalizeXML(triggered), normalizeXML(marshalled));
         return services;
     }
 
-    private static List<String> getList(ModelNode operationResult) {
-        if (!operationResult.hasDefined("result")) { return Collections.emptyList(); }
+    private static List<String> getList( ModelNode operationResult ) {
+        if (!operationResult.hasDefined("result")) {
+            return Collections.emptyList();
+        }
 
         List<ModelNode> nodeList = operationResult.get("result").asList();
-        if (nodeList.isEmpty()) { return Collections.emptyList(); }
+        if (nodeList.isEmpty()) {
+            return Collections.emptyList();
+        }
 
         List<String> list = new ArrayList<String>(nodeList.size());
         for (ModelNode node : nodeList) {
@@ -350,14 +351,14 @@ Assert.assertEquals(normalizeXML(triggered), normalizeXML(marshalled));
     // }
 
     /**
-* When JSON strings are parsed into ModelNode structures, any integer values are parsed into org.jboss.dmr.BigIntegerValue
-* instances rather than org.jboss.dmr.IntegerValue instances. This method converts all BigIntegerValue instances into a
-* IntegerValue instance.
-*
-* @param node the model
-* @return the updated model
-*/
-    protected ModelNode filterValues(ModelNode node) {
+     * When JSON strings are parsed into ModelNode structures, any integer values are parsed into org.jboss.dmr.BigIntegerValue
+     * instances rather than org.jboss.dmr.IntegerValue instances. This method converts all BigIntegerValue instances into a
+     * IntegerValue instance.
+     * 
+     * @param node the model
+     * @return the updated model
+     */
+    protected ModelNode filterValues( ModelNode node ) {
         ModelNode result = new ModelNode();
         switch (node.getType()) {
             case OBJECT:

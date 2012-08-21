@@ -45,6 +45,7 @@ public enum Element {
     LOCAL_FILE_INDEX_STORAGE("local-file-index-storage"),
     MASTER_FILE_INDEX_STORAGE("master-file-index-storage"),
     PATH_EXPRESSION("path-expression"),
+    PROPERTY("property"),
     RAM_INDEX_STORAGE("ram-index-storage"),
     REPOSITORY("repository"),
     SEQUENCER("sequencer"),
