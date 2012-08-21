@@ -1,0 +1,61 @@
+{
+    "deployment" : null,
+    "subsystem" : {"modeshape" : {"repository" : {"sample" : {
+        "allow-workspace-creation" : true,
+        "anonymous-roles" : [
+            "readonly",
+            "readwrite",
+            "admin",
+            "connect"
+        ],
+        "anonymous-username" : "<anonymous>",
+        "binary-storage" : null,
+        "cache-container" : "modeshape",
+        "cache-name" : "sample",
+        "cluster-name" : null,
+        "cluster-stack" : null,
+        "default-workspace" : "default",
+        "enable-monitoring" : true,
+        "indexing-analyzer-classname" : "org.apache.lucene.analysis.standard.StandardAnalyzer",
+        "indexing-analyzer-module" : "something",
+        "indexing-async-max-queue-size" : 1,
+        "indexing-async-thread-pool-size" : 1,
+        "indexing-batch-size" : -1,
+        "indexing-mode" : "SYNC",
+        "indexing-reader-strategy" : "SHARED",
+        "indexing-thread-pool" : "modeshape-workers",
+        "jndi-name" : "jcr/local/sample",
+        "minimum-binary-size" : 4096,
+        "predefined-workspace-names" : [
+            "predefinedWorkspace1",
+            "predefinedWorkspace2",
+            "predefinedWorkspace3"
+        ],
+        "rebuild-indexes-upon-startup" : "IF_MISSING",
+        "security-domain" : "modeshape-security",
+        "system-content-indexing-mode" : "DISABLED",
+        "text-extractor" : null,
+        "use-anonymous-upon-failed-authentication" : false,
+        "index-storage" : {"INDEXES" : {
+            "cache-container-jndi-name" : "modeshape",
+            "chunk-size" : null,
+            "data-cache-name" : "sample-index-data",
+            "index-format" : "LUCENE_CURRENT",
+            "index-storage-type" : "cache-index-storage",
+            "lock-cache-name" : "sample-index-locks",
+            "metadata-cache-name" : "sample-index-metadata"
+        }},
+        "sequencer" : {
+            "modeshape-sequencer-ddl" : {
+                "classname" : "ddl",
+                "module" : null,
+                "path-expressions" : ["//a/b"]
+            },
+            "modeshape-sequencer-java" : {
+                "classname" : "java",
+                "module" : null,
+                "path-expressions" : ["//a/b"]
+            }
+        }
+    }}}}
+}

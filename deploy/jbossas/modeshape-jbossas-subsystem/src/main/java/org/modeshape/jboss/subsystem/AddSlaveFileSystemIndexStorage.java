@@ -86,4 +86,10 @@ public class AddSlaveFileSystemIndexStorage extends AbstractAddFileSystemIndexSt
         indexStorage.set(FieldName.INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS, retryPeriod);
         indexStorage.set(FieldName.INDEX_STORAGE_RETRY_MARKER_LOOKUP, retryLookup);
     }
+    
+    @Override
+    protected void populateModel( ModelNode operation,
+                                  ModelNode model ) throws OperationFailedException {
+        populate(operation, model, ModelKeys.SLAVE_FILE_INDEX_STORAGE, ModelAttributes.SLAVE_FILE_INDEX_STORAGE_ATTRIBUTES);
+    }
 }

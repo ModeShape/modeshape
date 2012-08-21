@@ -21,9 +21,10 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+
 import java.util.List;
+
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.EditableDocument;
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -44,21 +45,6 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
     protected AbstractAddBinaryStorage() {
     }
 
-    @Override
-    protected void populateModel( ModelNode operation,
-                                  ModelNode model ) throws OperationFailedException {
-        String opName = operation.get(OP).asString();
-        if (ModelKeys.ADD_FILE_BINARY_STORAGE.equals(opName)) {
-            populate(operation, model, ModelKeys.FILE_BINARY_STORAGE, ModelAttributes.FILE_BINARY_STORAGE_ATTRIBUTES);
-        } else if (ModelKeys.ADD_CACHE_BINARY_STORAGE.equals(opName)) {
-            populate(operation, model, ModelKeys.CACHE_BINARY_STORAGE, ModelAttributes.CACHE_BINARY_STORAGE_ATTRIBUTES);
-        } else if (ModelKeys.ADD_DB_BINARY_STORAGE.equals(opName)) {
-            populate(operation, model, ModelKeys.DB_BINARY_STORAGE, ModelAttributes.DATABASE_BINARY_STORAGE_ATTRIBUTES);
-        } else if (ModelKeys.ADD_CUSTOM_BINARY_STORAGE.equals(opName)) {
-            populate(operation, model, ModelKeys.CUSTOM_BINARY_STORAGE, ModelAttributes.CUSTOM_BINARY_STORAGE_ATTRIBUTES);
-        }
-    }
-
     static void populate( ModelNode operation,
                           ModelNode model,
                           String modelName,
@@ -66,8 +52,6 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
         for (AttributeDefinition attribute : attributes) {
             attribute.validateAndSet(operation, model);
         }
-        // Set the binary storage type last (overwriting any value that they've manually added) ...
-        model.get(ModelKeys.BINARY_STORAGE_TYPE).set(modelName);
     }
 
     @Override
@@ -98,7 +82,7 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
         builder.setInitialMode(ServiceController.Mode.ACTIVE);
         newControllers.add(builder.install());
 
-    }
+    } 
 
     protected abstract void writeBinaryStorageConfiguration( String repositoryName,
                                                              OperationContext context,

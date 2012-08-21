@@ -4,6 +4,7 @@
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
         <version>9</version>
+        <relativePath></relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -240,8 +241,9 @@
         <hibernate.search.snappy.version>1.0.1-rc3</hibernate.search.snappy.version>
         <hibernate.search.module.slot>4.1</hibernate.search.module.slot>
         <infinispan.version>5.1.2.FINAL</infinispan.version>
+        <infinispan.version>5.1.4.FINAL</infinispan.version>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
-        <jgroups.version>3.0.6.Final</jgroups.version>
+        <jgroups.version>3.0.9.Final</jgroups.version>
         <sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
         <jdbc.mysql.version>5.0.7</jdbc.mysql.version>
         <jdbc.derby.version>10.8.1.2</jdbc.derby.version>
@@ -583,11 +585,16 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <includes>
+                    <!--<includes>
                         <include>**/*TestCase.java</include>
                         <include>**/*Test.java</include>
                     </includes>
                     <systemProperties combine.children="append">
+                    </includes>-->
+                    <!--
+                             excludes> <exclude>**/Abstract*TestCase.java</exclude>
+                             <exclude>**/Abstract*Test.java</exclude> </excludes -->
+                    <systemProperties>
                         <property>
                             <name>java.io.tmpdir</name>
                             <value>${basedir}/target</value>
@@ -823,6 +830,16 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-core</artifactId>
                 <version>${infinispan.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.codehaus.woodstox</groupId>
+                        <artifactId>woodstox-core-asl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.woodstox</groupId>
+                        <artifactId>stax2-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
@@ -1713,6 +1730,13 @@
                 <groupId>org.jboss.as</groupId>
                 <artifactId>jboss-as-controller</artifactId>
                 <version>${jbossas-version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.as</groupId>
+                <artifactId>jboss-as-naming</artifactId>
+                <version>${jbossas-version}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.as</groupId>
@@ -1764,15 +1788,29 @@
                 <artifactId>jboss-logging</artifactId>
                 <version>${jboss.logging.version}</version>
             </dependency>
+            <dependency><!-- todo this is no longer used -->
+                <groupId>org.jboss.logging</groupId>
+                <artifactId>jboss-logging-generator</artifactId>
+                <version>${jboss.logging-generator.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency><!-- todo this is no longer used -->
+                <groupId>org.jboss.logging</groupId>
+                <artifactId>jboss-logging-spi</artifactId>
+                <version>${jboss.logging-spi.version}</version>
+                <scope>provided</scope>
+            </dependency>
             <dependency>
                 <groupId>org.jboss.as</groupId>
                 <artifactId>jboss-as-clustering-jgroups</artifactId>
                 <version>${jbossas-version}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.as</groupId>
                 <artifactId>jboss-as-subsystem-test</artifactId>
                 <version>${jbossas-version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>net.sourceforge.saxon</groupId>
