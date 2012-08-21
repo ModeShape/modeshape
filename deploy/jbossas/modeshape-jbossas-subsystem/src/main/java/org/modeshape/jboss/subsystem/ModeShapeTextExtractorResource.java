@@ -21,16 +21,23 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jboss.lifecycle;
+package org.modeshape.jboss.subsystem;
 
-public interface ContainerLifeCycleListener {
-    boolean isShutdownInProgress();
+import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
-    void addListener( LifeCycleEventListener listener );
+public class ModeShapeTextExtractorResource extends SimpleResourceDefinition {
+    protected final static ModeShapeTextExtractorResource INSTANCE = new ModeShapeTextExtractorResource();
 
-    public static interface LifeCycleEventListener {
-        void onStartupFinish();
+    private ModeShapeTextExtractorResource() {
+        super(ModeShapeExtension.TEXT_EXTRACTOR_PATH,
+              ModeShapeExtension.getResourceDescriptionResolver(ModelKeys.REPOSITORY, ModelKeys.TEXT_EXTRACTOR),
+              AddTextExtractor.INSTANCE, RemoveTextExtractor.INSTANCE);
+    }
 
-        void onShutdownStart();
+    @Override
+    public void registerAttributes( ManagementResourceRegistration resourceRegistration ) {
+        super.registerAttributes(resourceRegistration);
+        TextExtractorWriteAttributeHandler.INSTANCE.registerAttributes(resourceRegistration);
     }
 }

@@ -41,6 +41,7 @@ public class ModelKeys {
     static final String ASYNC_THREAD_POOL_SIZE = "indexing-async-thread-pool-size";
     static final String BATCH_SIZE = "indexing-batch-size";
     static final String BINARY_STORAGE_TYPE = "binary-storage-type";
+    static final String STORAGE_TYPE = "storage-type";
     static final String CACHE_CONTAINER = "cache-container";
     static final String CACHE_CONTAINER_JNDI_NAME = "cache-container-jndi-name";
     static final String CACHE_NAME = "cache-name";
@@ -68,6 +69,8 @@ public class ModelKeys {
     static final String PATH = "path";
     static final String PATH_EXPRESSION = "path-expression";
     static final String PATH_EXPRESSIONS = "path-expressions";
+    static final String PROPERTY = "property";
+    static final String PROPERTIES = "properties";
     static final String PREDEFINED_WORKSPACE_NAME = "predefined-workspace-name";
     static final String PREDEFINED_WORKSPACE_NAMES = "predefined-workspace-names";
     static final String QUEUE_JNDI_NAME = "queue-jndi-name";
@@ -88,22 +91,17 @@ public class ModelKeys {
     static final String AUTHENTICATORS = "authenticators";
 
     static final String BINARY_STORAGE = "binary-storage";
-    static final String BINARY_STORAGE_NAME = "BINARIES";
     static final String FILE_BINARY_STORAGE = "file-binary-storage";
     static final String DB_BINARY_STORAGE = "db-binary-storage";
     static final String CACHE_BINARY_STORAGE = "cache-binary-storage";
     static final String CUSTOM_BINARY_STORAGE = "custom-binary-storage";
-    static final String ADD_FILE_BINARY_STORAGE = "add-file-binary-storage";
-    static final String ADD_DB_BINARY_STORAGE = "add-db-binary-storage";
-    static final String ADD_CACHE_BINARY_STORAGE = "add-cache-binary-storage";
-    static final String ADD_CUSTOM_BINARY_STORAGE = "add-custom-binary-storage";
     static final String REMOVE_BINARY_STORAGE = "remove-binary-storage";
 
     static final String SEQUENCER = "sequencer";
     static final String TEXT_EXTRACTOR = "text-extractor";
 
+    static final String CONFIGURATION = "configuration";
     static final String INDEX_STORAGE = "index-storage";
-    static final String INDEX_STORAGE_NAME = "INDEXES";
     static final String RAM_INDEX_STORAGE = "ram-index-storage";
     static final String LOCAL_FILE_INDEX_STORAGE = "local-file-index-storage";
     static final String MASTER_FILE_INDEX_STORAGE = "master-file-index-storage";

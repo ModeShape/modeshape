@@ -28,6 +28,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
@@ -401,13 +402,15 @@ public class ModelAttributes {
                                                                                                                                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                                .build();
 
-    public static final SimpleAttributeDefinition SYSTEM_CONTENT_MODE = new MappedAttributeDefinitionBuilder(ModelKeys.SYSTEM_CONTENT_MODE, ModelType.STRING).setXmlName(Attribute.SYSTEM_CONTENT_MODE.getLocalName())
-                                                                                                                               .setAllowExpression(true)
-                                                                                                                               .setAllowNull(true)
-                                                                                                                               .setDefaultValue(new ModelNode().set(IndexingMode.DISABLED.toString()))
-                                                                                                                               .setValidator(INDEXING_MODE_VALIDATOR)
-                                                                                                                               .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                                                                                                                               .build();
+    public static final SimpleAttributeDefinition SYSTEM_CONTENT_MODE = new MappedAttributeDefinitionBuilder(
+                                                                                                             ModelKeys.SYSTEM_CONTENT_MODE,
+                                                                                                             ModelType.STRING).setXmlName(Attribute.SYSTEM_CONTENT_MODE.getLocalName())
+                                                                                                                              .setAllowExpression(true)
+                                                                                                                              .setAllowNull(true)
+                                                                                                                              .setDefaultValue(new ModelNode().set(IndexingMode.DISABLED.toString()))
+                                                                                                                              .setValidator(INDEXING_MODE_VALIDATOR)
+                                                                                                                              .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                              .build();
 
     public static final SimpleAttributeDefinition MODULE = new MappedAttributeDefinitionBuilder(ModelKeys.MODULE,
                                                                                                 ModelType.STRING).setXmlName(Attribute.MODULE.getLocalName())
@@ -457,6 +460,12 @@ public class ModelAttributes {
                                                                                                                                                          FieldName.PREDEFINED)
                                                                                                                   .build();
 
+    public static final SimpleAttributeDefinition PROPERTY = new SimpleAttributeDefinition(ModelKeys.PROPERTY,
+                                                                                           ModelType.PROPERTY, true);
+    public static final SimpleListAttributeDefinition PROPERTIES = SimpleListAttributeDefinition.Builder.of(ModelKeys.PROPERTIES,
+                                                                                                            PROPERTY)
+                                                                                                        .setAllowNull(true)
+                                                                                                        .build();
     public static final SimpleAttributeDefinition QUEUE_JNDI_NAME = new MappedAttributeDefinitionBuilder(
                                                                                                          ModelKeys.QUEUE_JNDI_NAME,
                                                                                                          ModelType.STRING).setXmlName(Attribute.QUEUE_JNDI_NAME.getLocalName())
@@ -537,16 +546,16 @@ public class ModelAttributes {
                                                                                                                               .build();
 
     public static final SimpleAttributeDefinition TEXT_EXTRACTOR_CLASSNAME = new MappedAttributeDefinitionBuilder(
-                                                                                                             ModelKeys.TEXT_EXTRACTOR_CLASSNAME,
-                                                                                                             ModelType.STRING).setXmlName(Attribute.CLASSNAME.getLocalName())
-                                                                                                                              .setAllowExpression(false)
-                                                                                                                              .setAllowNull(true)
-                                                                                                                              .setFlags(AttributeAccess.Flag.RESTART_NONE)
-                                                                                                                              .setFieldPathInRepositoryConfiguration(FieldName.QUERY,
-                                                                                                                                                                     FieldName.TEXT_EXTRACTING,
-                                                                                                                                                                     FieldName.EXTRACTORS,
-                                                                                                                                                                     FieldName.CLASSNAME)
-                                                                                                                              .build();
+                                                                                                                  ModelKeys.TEXT_EXTRACTOR_CLASSNAME,
+                                                                                                                  ModelType.STRING).setXmlName(Attribute.CLASSNAME.getLocalName())
+                                                                                                                                   .setAllowExpression(false)
+                                                                                                                                   .setAllowNull(true)
+                                                                                                                                   .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                   .setFieldPathInRepositoryConfiguration(FieldName.QUERY,
+                                                                                                                                                                          FieldName.TEXT_EXTRACTING,
+                                                                                                                                                                          FieldName.EXTRACTORS,
+                                                                                                                                                                          FieldName.CLASSNAME)
+                                                                                                                                   .build();
 
     public static final SimpleAttributeDefinition SECURITY_DOMAIN = new MappedAttributeDefinitionBuilder(
                                                                                                          ModelKeys.SECURITY_DOMAIN,
@@ -601,8 +610,8 @@ public class ModelAttributes {
     public static final AttributeDefinition[] REPOSITORY_ATTRIBUTES = {CACHE_NAME, CACHE_CONTAINER, JNDI_NAME, ENABLE_MONITORING,
         SECURITY_DOMAIN, ANONYMOUS_ROLES, ANONYMOUS_USERNAME, USE_ANONYMOUS_IF_AUTH_FAILED, DEFAULT_WORKSPACE,
         PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, MINIMUM_BINARY_SIZE, THREAD_POOL, BATCH_SIZE, READER_STRATEGY,
-        MODE, SYSTEM_CONTENT_MODE, ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME, ANALYZER_MODULE, REBUILD_INDEXES_UPON_STARTUP,
-        CLUSTER_NAME, CLUSTER_STACK,};
+        MODE, SYSTEM_CONTENT_MODE, ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME, ANALYZER_MODULE,
+        REBUILD_INDEXES_UPON_STARTUP, CLUSTER_NAME, CLUSTER_STACK,};
 
     public static final AttributeDefinition[] RAM_INDEX_STORAGE_ATTRIBUTES = {INDEX_STORAGE_TYPE,};
 
@@ -635,6 +644,6 @@ public class ModelAttributes {
     public static final AttributeDefinition[] CUSTOM_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
         CLASSNAME, MODULE,};
 
-    public static final AttributeDefinition[] SEQUENCER_ATTRIBUTES = {PATH_EXPRESSIONS, SEQUENCER_CLASSNAME, MODULE};
-    public static final AttributeDefinition[] TEXT_EXTRACTOR_ATTRIBUTES = {TEXT_EXTRACTOR_CLASSNAME, MODULE};
+    public static final AttributeDefinition[] SEQUENCER_ATTRIBUTES = {PATH_EXPRESSIONS, SEQUENCER_CLASSNAME, MODULE, PROPERTIES};
+    public static final AttributeDefinition[] TEXT_EXTRACTOR_ATTRIBUTES = {TEXT_EXTRACTOR_CLASSNAME, MODULE, PROPERTIES};
 }

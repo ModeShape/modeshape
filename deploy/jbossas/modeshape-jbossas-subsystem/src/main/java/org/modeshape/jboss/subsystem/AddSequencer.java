@@ -1,23 +1,25 @@
 /*
- * JBoss, Home of Professional Open Source.
+ * ModeShape (http://www.modeshape.org)
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * 
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * 
- * This library is distributed in the hope that it will be useful,
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301 USA.
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.modeshape.jboss.subsystem;
 
@@ -41,8 +43,8 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jboss.service.SequencerService;
-import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.JcrRepository;
+import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
@@ -114,7 +116,9 @@ public class AddSequencer extends AbstractAddStepHandler {
         ServiceBuilder<JcrRepository> sequencerBuilder = target.addService(ModeShapeServiceNames.sequencerServiceName(repositoryName,
                                                                                                                       sequencerName),
                                                                            sequencerService);
-        sequencerBuilder.addDependency(ModeShapeServiceNames.ENGINE, ModeShapeEngine.class, sequencerService.getModeShapeEngineInjector());
+        sequencerBuilder.addDependency(ModeShapeServiceNames.ENGINE,
+                                       ModeShapeEngine.class,
+                                       sequencerService.getModeShapeEngineInjector());
         sequencerBuilder.addDependency(ModeShapeServiceNames.repositoryServiceName(repositoryName),
                                        JcrRepository.class,
                                        sequencerService.getJcrRepositoryInjector());
@@ -124,21 +128,23 @@ public class AddSequencer extends AbstractAddStepHandler {
     }
 
     private void ensureClassLoadingPropertyIsSet( Properties sequencerProperties ) {
-        //could be already set if the "module" element is present in the xml (AddSequencer)
+        // could be already set if the "module" element is present in the xml (AddSequencer)
         if (sequencerProperties.containsKey(FieldName.CLASSLOADER)) {
             return;
         }
         String sequencerClassName = sequencerProperties.getProperty(FieldName.CLASSNAME);
         if (StringUtil.isBlank(sequencerClassName)) {
-            LOG.warnv("Required property: {0} not found among the sequencer properties: {1}", FieldName.CLASSNAME, sequencerProperties);
+            LOG.warnv("Required property: {0} not found among the sequencer properties: {1}",
+                      FieldName.CLASSNAME,
+                      sequencerProperties);
             return;
         }
-        //try to see if an alias is configured
+        // try to see if an alias is configured
         String fullyQualifiedSequencerClass = RepositoryConfiguration.getBuiltInSequencerClassName(sequencerClassName);
         if (fullyQualifiedSequencerClass == null) {
             fullyQualifiedSequencerClass = sequencerClassName;
         }
-        //set the classloader to the package name of the sequencer class
+        // set the classloader to the package name of the sequencer class
         String sequencerModuleName = fullyQualifiedSequencerClass.substring(0, fullyQualifiedSequencerClass.lastIndexOf("."));
         sequencerProperties.setProperty(FieldName.CLASSLOADER, sequencerModuleName);
     }

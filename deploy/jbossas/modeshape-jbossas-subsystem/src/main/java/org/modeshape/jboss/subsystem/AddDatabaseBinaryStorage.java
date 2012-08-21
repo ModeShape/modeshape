@@ -53,5 +53,11 @@ public class AddDatabaseBinaryStorage extends AbstractAddBinaryStorage {
         String dataSource = ModelAttributes.DATA_SOURCE_JNDI_NAME.resolveModelAttribute(context, model).asString();
         binaries.set(FieldName.DATA_SOURCE_JNDI_NAME, dataSource);
     }
+    
+    @Override
+    protected void populateModel( ModelNode operation,
+                                  ModelNode model ) throws OperationFailedException {
+        populate(operation, model, ModelKeys.FILE_BINARY_STORAGE, ModelAttributes.FILE_BINARY_STORAGE_ATTRIBUTES);
+    }
 
 }

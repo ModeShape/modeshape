@@ -7,7 +7,7 @@
         <version>3.0-SNAPSHOT</version>
         <relativePath>../../../modeshape-parent/pom.xml</relativePath>
     </parent>
-    <!-- The groupId and version values are inherited from parent  -->
+    <!-- The groupId and version values are inherited from parent -->
     <artifactId>modeshape-jbossas-subsystem</artifactId>
     <name>ModeShape for JBoss AS</name>
     <description>ModeShape deployment as a subsystem within the JBoss Application Server</description>
@@ -51,8 +51,8 @@
         </dependency>
 
         <!--
-            More compile dependencies (defined _after_ the JBoss AS7 artifacts and Infinispan)
-        -->
+More compile dependencies (defined _after_ the JBoss AS7 artifacts and Infinispan)
+-->
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-search-infinispan</artifactId>
@@ -63,8 +63,8 @@
         </dependency>
 
         <!--
-            Testing (note the scope)
-        -->
+Testing (note the scope)
+-->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

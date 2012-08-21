@@ -21,16 +21,26 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jboss.lifecycle;
+package org.modeshape.jboss.subsystem;
 
-public interface ContainerLifeCycleListener {
-    boolean isShutdownInProgress();
+import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
-    void addListener( LifeCycleEventListener listener );
+/**
+ * 
+ */
+public class ModeShapeCacheBinaryStorageResource extends SimpleResourceDefinition {
+    protected final static ModeShapeCacheBinaryStorageResource INSTANCE = new ModeShapeCacheBinaryStorageResource();
 
-    public static interface LifeCycleEventListener {
-        void onStartupFinish();
+    private ModeShapeCacheBinaryStorageResource() {
+        super(ModeShapeExtension.CACHE_BINARY_STORAGE_PATH,
+              ModeShapeExtension.getResourceDescriptionResolver(ModelKeys.REPOSITORY, ModelKeys.CACHE_BINARY_STORAGE),
+              AddCacheBinaryStorage.INSTANCE, RemoveBinaryStorage.INSTANCE);
+    }
 
-        void onShutdownStart();
+    @Override
+    public void registerAttributes( ManagementResourceRegistration resourceRegistration ) {
+        super.registerAttributes(resourceRegistration);
+        BinaryStorageWriteAttributeHandler.CACHE_BINARY_STORAGE_INSTANCE.registerAttributes(resourceRegistration);
     }
 }

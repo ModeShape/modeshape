@@ -21,16 +21,26 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jboss.lifecycle;
+package org.modeshape.jboss.subsystem;
 
-public interface ContainerLifeCycleListener {
-    boolean isShutdownInProgress();
+import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
-    void addListener( LifeCycleEventListener listener );
+/**
+ * 
+ */
+public class ModeShapeLocalFileIndexStorageResource extends SimpleResourceDefinition {
+    protected final static ModeShapeLocalFileIndexStorageResource INSTANCE = new ModeShapeLocalFileIndexStorageResource();
 
-    public static interface LifeCycleEventListener {
-        void onStartupFinish();
+    private ModeShapeLocalFileIndexStorageResource() {
+        super(ModeShapeExtension.LOCAL_FILE_INDEX_STORAGE_PATH,
+              ModeShapeExtension.getResourceDescriptionResolver(ModelKeys.REPOSITORY, ModelKeys.LOCAL_FILE_INDEX_STORAGE),
+              AddLocalFileSystemIndexStorage.INSTANCE, RemoveIndexStorage.INSTANCE);
+    }
 
-        void onShutdownStart();
+    @Override
+    public void registerAttributes( ManagementResourceRegistration resourceRegistration ) {
+        super.registerAttributes(resourceRegistration);
+        IndexStorageWriteAttributeHandler.LOCAL_FILE_INDEX_STORAGE_INSTANCE.registerAttributes(resourceRegistration);
     }
 }

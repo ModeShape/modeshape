@@ -9,7 +9,6 @@
             "connect"
         ],
         "anonymous-username" : "<anonymous>",
-        "binary-storage" : null,
         "cache-container" : "modeshape",
         "cache-name" : "sample",
         "cluster-name" : null,

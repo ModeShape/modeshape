@@ -1,27 +1,28 @@
 /*
- * JBoss, Home of Professional Open Source.
+ * ModeShape (http://www.modeshape.org)
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * 
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * 
- * This library is distributed in the hope that it will be useful,
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301 USA.
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import java.util.List;
 import org.infinispan.schematic.Schematic;
@@ -44,21 +45,6 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
     protected AbstractAddBinaryStorage() {
     }
 
-    @Override
-    protected void populateModel( ModelNode operation,
-                                  ModelNode model ) throws OperationFailedException {
-        String opName = operation.get(OP).asString();
-        if (ModelKeys.ADD_FILE_BINARY_STORAGE.equals(opName)) {
-            populate(operation, model, ModelKeys.FILE_BINARY_STORAGE, ModelAttributes.FILE_BINARY_STORAGE_ATTRIBUTES);
-        } else if (ModelKeys.ADD_CACHE_BINARY_STORAGE.equals(opName)) {
-            populate(operation, model, ModelKeys.CACHE_BINARY_STORAGE, ModelAttributes.CACHE_BINARY_STORAGE_ATTRIBUTES);
-        } else if (ModelKeys.ADD_DB_BINARY_STORAGE.equals(opName)) {
-            populate(operation, model, ModelKeys.DB_BINARY_STORAGE, ModelAttributes.DATABASE_BINARY_STORAGE_ATTRIBUTES);
-        } else if (ModelKeys.ADD_CUSTOM_BINARY_STORAGE.equals(opName)) {
-            populate(operation, model, ModelKeys.CUSTOM_BINARY_STORAGE, ModelAttributes.CUSTOM_BINARY_STORAGE_ATTRIBUTES);
-        }
-    }
-
     static void populate( ModelNode operation,
                           ModelNode model,
                           String modelName,
@@ -66,8 +52,6 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
         for (AttributeDefinition attribute : attributes) {
             attribute.validateAndSet(operation, model);
         }
-        // Set the binary storage type last (overwriting any value that they've manually added) ...
-        model.get(ModelKeys.BINARY_STORAGE_TYPE).set(modelName);
     }
 
     @Override

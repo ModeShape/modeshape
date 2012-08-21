@@ -1,26 +1,30 @@
 /*
- * JBoss, Home of Professional Open Source.
+ * ModeShape (http://www.modeshape.org)
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301 USA.
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.modeshape.jboss.service;
 
+import java.util.ArrayList;
+import java.util.List;
 import javax.jcr.RepositoryException;
 import javax.transaction.TransactionManager;
 import org.infinispan.manager.CacheContainer;
@@ -55,8 +59,6 @@ import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
 import org.modeshape.jcr.RepositoryConfiguration.QueryRebuild;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * A <code>RepositoryService</code> instance is the service responsible for initializing a {@link JcrRepository} in the ModeShape
@@ -120,7 +122,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
                                        String... classpathEntries ) {
         List<ClassLoader> delegatingLoaders = new ArrayList<ClassLoader>();
         if (classpathEntries != null) {
-            //each classpath entry is interpreted as a module identifier
+            // each classpath entry is interpreted as a module identifier
             for (String moduleIdString : classpathEntries) {
                 if (!StringUtil.isBlank(moduleIdString)) {
                     try {
@@ -128,8 +130,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
                         delegatingLoaders.add(moduleLoader().loadModule(moduleIdentifier).getClassLoader());
                     } catch (IllegalArgumentException e) {
                         LOG.warnv("The string (classpath entry) is not a valid module identifier: {0}", moduleIdString);
-                    }
-                    catch (ModuleLoadException e) {
+                    } catch (ModuleLoadException e) {
                         LOG.warnv("Cannot load module from (from classpath entry) with identifier: {0}", moduleIdString);
                     }
                 }
@@ -137,11 +138,10 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
         }
         ClassLoader currentLoader = getClass().getClassLoader();
         if (fallbackLoader != null && !fallbackLoader.equals(currentLoader)) {
-            //if the parent of fallback is the same as the current loader, just use that
+            // if the parent of fallback is the same as the current loader, just use that
             if (fallbackLoader.getParent().equals(currentLoader)) {
                 currentLoader = fallbackLoader;
-            }
-            else {
+            } else {
                 delegatingLoaders.add(fallbackLoader);
             }
         }
@@ -246,7 +246,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
     /**
      * Immediately change and apply the specified field in the current repository configuration to the new value.
-     *
+     * 
      * @param defn the attribute definition for the value; may not be null
      * @param newValue the new string value
      * @throws RepositoryException if there is a problem obtaining the repository configuration or applying the change
@@ -283,7 +283,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
     /**
      * Immediately change and apply the specified sequencer field in the current repository configuration to the new value.
-     *
+     * 
      * @param defn the attribute definition for the value; may not be null
      * @param newValue the new string value
      * @param sequencerName the name of the sequencer
@@ -333,7 +333,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
     /**
      * Immediately change and apply the specified extractor field in the current repository configuration to the new value.
-     *
+     * 
      * @param defn the attribute definition for the value; may not be null
      * @param newValue the new string value
      * @param extractorName the name of the sequencer
