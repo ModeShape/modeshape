@@ -24,6 +24,7 @@
 package org.modeshape.jboss.subsystem;
 
 import java.util.List;
+
 import org.infinispan.schematic.document.EditableDocument;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -88,6 +89,12 @@ public class AddFileBinaryStorage extends AbstractAddBinaryStorage {
             // and add dependency on this path ...
             builder.addDependency(serviceName, String.class, service.getBinaryStorageBasePathInjector());
         }
+    }  
+
+    @Override
+    protected void populateModel( ModelNode operation,
+                                  ModelNode model ) throws OperationFailedException {
+        populate(operation, model, ModelKeys.FILE_BINARY_STORAGE, ModelAttributes.FILE_BINARY_STORAGE_ATTRIBUTES);
     }
 
 }

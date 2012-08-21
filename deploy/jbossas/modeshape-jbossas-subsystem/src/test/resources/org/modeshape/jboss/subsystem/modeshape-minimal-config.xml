@@ -1,0 +1,6 @@
+<subsystem xmlns="urn:jboss:domain:modeshape:1.0">
+  <repository name="sample" />
+</subsystem>
+
+
+                            

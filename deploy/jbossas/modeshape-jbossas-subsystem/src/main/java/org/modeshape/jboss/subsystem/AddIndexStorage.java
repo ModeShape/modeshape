@@ -23,31 +23,25 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import org.infinispan.schematic.document.EditableDocument;
-import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 
 /**
  * 
  */
-public class AddRamIndexStorage extends AbstractAddIndexStorage {
+public class AddIndexStorage extends AbstractAddStepHandler {
 
-    public static final AddRamIndexStorage INSTANCE = new AddRamIndexStorage();
+    public static final AddIndexStorage INSTANCE = new AddIndexStorage();
 
-    private AddRamIndexStorage() {
+    private AddIndexStorage() {
     }
 
-    @Override
-    protected void writeIndexStorageConfiguration( final OperationContext context,
-                                                   final ModelNode storage,
-                                                   EditableDocument indexStorage ) {
-
-    }
+	@Override
+	protected void populateModel(ModelNode operation, ModelNode model)
+			throws OperationFailedException {
+		// TODO Auto-generated method stub
+		
+	}
     
-    @Override
-    protected void populateModel( ModelNode operation,
-                                  ModelNode model ) throws OperationFailedException {
-        populate(operation, model, ModelKeys.RAM_INDEX_STORAGE, ModelAttributes.RAM_INDEX_STORAGE_ATTRIBUTES);
-    }
 }

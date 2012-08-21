@@ -1,0 +1,69 @@
+{
+    "deployment" : null,
+    "subsystem" : {"modeshape" : {"repository" : {"sample" : {
+        "allow-workspace-creation" : true,
+        "anonymous-roles" : [
+            "readonly",
+            "readwrite",
+            "admin",
+            "connect"
+        ],
+        "anonymous-username" : "<anonymous>",
+        "binary-storage" : null,
+        "cache-container" : "modeshape",
+        "cache-name" : "sample",
+        "cluster-name" : null,
+        "cluster-stack" : null,
+        "default-workspace" : "default",
+        "enable-monitoring" : true,
+        "indexing-analyzer-classname" : "org.apache.lucene.analysis.standard.StandardAnalyzer",
+        "indexing-analyzer-module" : "something",
+        "indexing-async-max-queue-size" : 1,
+        "indexing-async-thread-pool-size" : 1,
+        "indexing-batch-size" : -1,
+        "indexing-mode" : "SYNC",
+        "indexing-reader-strategy" : "SHARED",
+        "indexing-thread-pool" : "modeshape-workers",
+        "jndi-name" : "jcr/local/sample",
+        "minimum-binary-size" : 4096,
+        "predefined-workspace-names" : [
+            "predefinedWorkspace1",
+            "predefinedWorkspace2",
+            "predefinedWorkspace3"
+        ],
+        "rebuild-indexes-upon-startup" : "IF_MISSING",
+        "security-domain" : "modeshape-security",
+        "system-content-indexing-mode" : "ASYNC",
+        "use-anonymous-upon-failed-authentication" : false,
+        "index-storage" : {"INDEXES" : {
+            "access-type" : "AUTO",
+            "index-format" : "LUCENE_CURRENT",
+            "index-storage-type" : "local-file-index-storage",
+            "locking-strategy" : "NATIVE",
+            "path" : "modeshape/sample/indexes",
+            "relative-to" : "jboss.server.data.dir"
+        }},
+        "sequencer" : {
+            "modeshape-sequencer-ddl" : {
+                "classname" : "ddl",
+                "module" : null,
+                "path-expressions" : ["//a/b"]
+            },
+            "modeshape-sequencer-java" : {
+                "classname" : "java",
+                "module" : null,
+                "path-expressions" : ["//a/b"]
+            }
+        },
+        "text-extractor" : {
+            "tika-extractor1" : {
+                "classname" : "tika",
+                "module" : null
+            },
+            "tika-extractor2" : {
+                "classname" : "org.modeshape.extractor.tika.TikaTextExtractor",
+                "module" : null
+            }
+        }
+    }}}}
+}

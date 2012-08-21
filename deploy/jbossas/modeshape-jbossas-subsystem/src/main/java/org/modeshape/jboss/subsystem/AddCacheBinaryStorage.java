@@ -88,4 +88,10 @@ public class AddCacheBinaryStorage extends AbstractAddBinaryStorage {
         }
         // otherwise, we'll use the content cache container that the RepositoryService is already dependent upon ...
     }
+    
+    @Override
+    protected void populateModel( ModelNode operation,
+                                  ModelNode model ) throws OperationFailedException {
+        populate(operation, model, ModelKeys.CACHE_BINARY_STORAGE, ModelAttributes.CACHE_BINARY_STORAGE_ATTRIBUTES);
+    }
 }

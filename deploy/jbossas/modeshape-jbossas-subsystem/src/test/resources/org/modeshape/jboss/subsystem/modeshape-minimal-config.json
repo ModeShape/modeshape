@@ -1,0 +1,33 @@
+{
+    "deployment" : null,
+    "subsystem" : {"modeshape" : {"repository" : {"sample" : {
+        "allow-workspace-creation" : true,
+        "anonymous-roles" : null,
+        "anonymous-username" : "<anonymous>",
+        "binary-storage" : null,
+        "cache-container" : null,
+        "cache-name" : null,
+        "cluster-name" : null,
+        "cluster-stack" : null,
+        "default-workspace" : "default",
+        "enable-monitoring" : true,
+        "index-storage" : null,
+        "indexing-analyzer-classname" : "org.apache.lucene.analysis.standard.StandardAnalyzer",
+        "indexing-analyzer-module" : null,
+        "indexing-async-max-queue-size" : 0,
+        "indexing-async-thread-pool-size" : 1,
+        "indexing-batch-size" : -1,
+        "indexing-mode" : "SYNC",
+        "indexing-reader-strategy" : "SHARED",
+        "indexing-thread-pool" : "modeshape-workers",
+        "jndi-name" : null,
+        "minimum-binary-size" : 4096,
+        "predefined-workspace-names" : null,
+        "rebuild-indexes-upon-startup" : "IF_MISSING",
+        "security-domain" : "modeshape-security",
+        "sequencer" : null,
+        "system-content-indexing-mode" : "DISABLED",
+        "text-extractor" : null,
+        "use-anonymous-upon-failed-authentication" : false
+    }}}}
+}
