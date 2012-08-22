@@ -23,13 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.text.CharacterIterator;
-import java.text.StringCharacterIterator;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
@@ -49,6 +42,13 @@ import org.modeshape.jcr.value.ValueFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Implementation of {@link AbstractJcrExporter} that implements the document view mapping described in section 6.4.2 of the JCR
@@ -188,25 +188,28 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
             return;
         }
 
-        Value value;
+        Value value = null;
         if (prop instanceof JcrSingleValueProperty) {
             value = prop.getValue();
         } else {
             // Only output the first value of the multi-valued property.
             // This is acceptable as per JCR 1.0 Spec (section 6.4.2.5)
-            value = prop.getValues()[0];
+            Value[] values = prop.getValues();
+            value = values.length > 0 ? values[0] : null;
         }
 
-        String valueAsString;
-        if (PropertyType.BINARY == prop.getType()) {
-            try {
-                Base64.InputStream is = new Base64.InputStream(value.getBinary().getStream(), Base64.ENCODE);
-                valueAsString = IoUtil.read(is);
-            } catch (IOException ioe) {
-                throw new RepositoryException(ioe);
+        String valueAsString = "";
+        if (value != null) {
+            if (PropertyType.BINARY == prop.getType()) {
+                try {
+                    Base64.InputStream is = new Base64.InputStream(value.getBinary().getStream(), Base64.ENCODE);
+                    valueAsString = IoUtil.read(is);
+                } catch (IOException ioe) {
+                    throw new RepositoryException(ioe);
+                }
+            } else {
+                valueAsString = VALUE_ENCODER.encode(value.getString());
             }
-        } else {
-            valueAsString = VALUE_ENCODER.encode(value.getString());
         }
 
         atts.addAttribute(propName.getNamespaceUri(),

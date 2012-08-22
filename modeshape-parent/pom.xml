@@ -4,7 +4,6 @@
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
         <version>9</version>
-        <relativePath></relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -241,9 +240,8 @@
         <hibernate.search.snappy.version>1.0.1-rc3</hibernate.search.snappy.version>
         <hibernate.search.module.slot>4.1</hibernate.search.module.slot>
         <infinispan.version>5.1.2.FINAL</infinispan.version>
-        <infinispan.version>5.1.4.FINAL</infinispan.version>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
-        <jgroups.version>3.0.9.Final</jgroups.version>
+        <jgroups.version>3.0.6.Final</jgroups.version>
         <sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
         <jdbc.mysql.version>5.0.7</jdbc.mysql.version>
         <jdbc.derby.version>10.8.1.2</jdbc.derby.version>
@@ -271,7 +269,6 @@
         <poi.version>3.8</poi.version>
         <jcommander.version>1.5</jcommander.version>
         <wsdl4j.version>1.6.2</wsdl4j.version>
-        <jackrabbit.core.version>2.2.0</jackrabbit.core.version>
         <bson4jackson.version>1.1.2</bson4jackson.version>
         <mongo.driver.version>2.7.3</mongo.driver.version>
         <json.simple.version>1.1</json.simple.version>
@@ -311,17 +308,6 @@
         <javax.jta.version>1.1</javax.jta.version>
         <jbossas-version>7.1.1.Final</jbossas-version>
         <jboss.common.core.version>2.2.17.GA</jboss.common.core.version>
-        <jboss.staxmapper.version>1.1.0.Final</jboss.staxmapper.version>
-        <jboss.dmr.version>1.1.1.Final</jboss.dmr.version>
-        <jboss.msc.version>1.0.2.GA</jboss.msc.version>
-        <jboss.modules.version>1.1.2.GA</jboss.modules.version>
-        <jboss.vfs.version>3.1.0.Final</jboss.vfs.version>
-        <!-- If used an explicit dependency (JBoss AS) it must match the version required by ISPN -->
-        <jboss.logging.version>3.1.1.GA</jboss.logging.version>
-        <jboss.logging-generator.version>1.0.0.CR1</jboss.logging-generator.version>
-        <jboss.logging-spi.version>2.2.0.CR1</jboss.logging-spi.version>
-        <saxon.saxonhe.version>9.2.1.5</saxon.saxonhe.version>
-        <jboss.netty.version>3.2.3.Final</jboss.netty.version>
         <xjc.version>2.2</xjc.version>
 
         <!--
@@ -585,16 +571,7 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <!--<includes>
-                        <include>**/*TestCase.java</include>
-                        <include>**/*Test.java</include>
-                    </includes>
                     <systemProperties combine.children="append">
-                    </includes>-->
-                    <!--
-                             excludes> <exclude>**/Abstract*TestCase.java</exclude>
-                             <exclude>**/Abstract*Test.java</exclude> </excludes -->
-                    <systemProperties>
                         <property>
                             <name>java.io.tmpdir</name>
                             <value>${basedir}/target</value>
@@ -1345,15 +1322,6 @@
                 </exclusions>
             </dependency>
             <!--
-                TCK tests
-            -->
-            <dependency>
-                <groupId>org.apache.jackrabbit</groupId>
-                <artifactId>jackrabbit-core</artifactId>
-                <version>${jackrabbit.core.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <!--
                 Schematic dependencies
             -->
             <dependency>
@@ -1719,6 +1687,7 @@
                 <groupId>org.jboss</groupId>
                 <artifactId>jboss-common-core</artifactId>
                 <version>${jboss.common.core.version}</version>
+                <scope>test</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>org.jboss.logging</groupId>
@@ -1740,68 +1709,6 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.as</groupId>
-                <artifactId>jboss-as-naming</artifactId>
-                <version>${jbossas-version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss</groupId>
-                <artifactId>staxmapper</artifactId>
-                <version>${jboss.staxmapper.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss</groupId>
-                <artifactId>jboss-dmr</artifactId>
-                <version>${jboss.dmr.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.msc</groupId>
-                <artifactId>jboss-msc</artifactId>
-                <version>${jboss.msc.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.modules</groupId>
-                <artifactId>jboss-modules</artifactId>
-                <version>${jboss.modules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss</groupId>
-                <artifactId>jboss-vfs</artifactId>
-                <version>${jboss.vfs.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.logging</groupId>
-                        <artifactId>jboss-logging</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.jboss.logging</groupId>
-                        <artifactId>jboss-logging-spi</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.picketbox</groupId>
-                <artifactId>picketbox</artifactId>
-                <version>${picketbox.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging</artifactId>
-                <version>${jboss.logging.version}</version>
-            </dependency>
-            <dependency><!-- todo this is no longer used -->
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging-generator</artifactId>
-                <version>${jboss.logging-generator.version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency><!-- todo this is no longer used -->
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging-spi</artifactId>
-                <version>${jboss.logging-spi.version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.as</groupId>
                 <artifactId>jboss-as-clustering-jgroups</artifactId>
                 <version>${jbossas-version}</version>
                 <scope>provided</scope>
@@ -1811,16 +1718,6 @@
                 <artifactId>jboss-as-subsystem-test</artifactId>
                 <version>${jbossas-version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>net.sourceforge.saxon</groupId>
-                <artifactId>saxonhe</artifactId>
-                <version>${saxon.saxonhe.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.netty</groupId>
-                <artifactId>netty</artifactId>
-                <version>${jboss.netty.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.xml.bind</groupId>
