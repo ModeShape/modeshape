@@ -175,6 +175,7 @@ public final class JcrI18n {
     public static I18n nodeHasAlreadyBeenRemovedFromThisSession;
     public static I18n unableToShareNodeWithinSubgraph;
     public static I18n unableToShareNodeWithinSameParent;
+    public static I18n shareAlreadyExistsWithinParent;
     public static I18n unableToMoveNodeDueToCycle;
 
     public static I18n typeNotFound;

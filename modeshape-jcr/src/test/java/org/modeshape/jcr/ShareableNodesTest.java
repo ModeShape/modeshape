@@ -23,17 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.HashSet;
-import java.util.Set;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -49,15 +38,26 @@ import javax.jcr.nodetype.NodeDefinitionTemplate;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.version.Version;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * A series of tests of the shareable nodes feature.
  */
-@Ignore
 public class ShareableNodesTest extends SingleUseAbstractTest {
 
     private static final String CAR_CARRIER_TYPENAME = "car:Carrier";
@@ -103,14 +103,8 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
         assertSharedSetIs(sharedNode, originalPath, sharedPath);
     }
 
-    /**
-     * Verify that it is possible to create a new shareable node and then clone it to create several shared nodes and a shared set
-     * of more than one node.
-     * 
-     * @throws RepositoryException
-     */
     @Test
-    public void shouldCreateMultipleSharedNode() throws RepositoryException {
+    public void shouldNotAllowMultipleSharesUnderTheSameParent() throws Exception {
         String originalPath = "/Cars/Utility";
         String sharedPath = "/NewArea/SharedUtility";
         // Make the original a shareable node ...
@@ -120,19 +114,13 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
         Node sharedNode1 = makeShare(originalPath, sharedPath);
         assertSharedSetIs(original, originalPath, sharedPath);
         assertSharedSetIs(sharedNode1, originalPath, sharedPath);
-        // Create another share ...
-        String sharedPath2 = "/NewArea/SharedUtility[2]";
-        Node sharedNode2 = makeShare(originalPath, sharedPath2);
-        assertSharedSetIs(original, originalPath, sharedPath, sharedPath2);
-        assertSharedSetIs(sharedNode1, originalPath, sharedPath, sharedPath2);
-        assertSharedSetIs(sharedNode2, originalPath, sharedPath, sharedPath2);
-        // Create another share ...
-        String sharedPath3 = "/NewSecondArea/SharedUtility";
-        Node sharedNode3 = makeShare(originalPath, sharedPath3);
-        assertSharedSetIs(original, originalPath, sharedPath, sharedPath2, sharedPath3);
-        assertSharedSetIs(sharedNode1, originalPath, sharedPath, sharedPath2, sharedPath3);
-        assertSharedSetIs(sharedNode2, originalPath, sharedPath, sharedPath2, sharedPath3);
-        assertSharedSetIs(sharedNode3, originalPath, sharedPath, sharedPath2, sharedPath3);
+        //Try to create another share under the same parent
+        try {
+            makeShare(originalPath, "/NewArea/SharedUtility[2]");
+            fail("Should not be allowed multiple shares under the same parent");
+        } catch (RepositoryException e) {
+            //expected
+        }
     }
 
     /**
@@ -160,9 +148,6 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
         assertSharedSetIs(original, originalPath, newPath);
         assertSharedSetIs(newSharedNode, originalPath, newPath);
         verifyShare(original, newSharedNode);
-
-        // Verify that the old node and new node have the same location ...
-        assertThat(sharedNode.getPath(), is(newSharedNode.getPath()));
     }
 
     /**
@@ -324,6 +309,15 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
         checkImportedContent(session2);
     }
 
+    private File createExportFile(String path) {
+        // Export the content ...
+        File exportFile = new File(path);
+        if (exportFile.exists()) {
+            exportFile.delete();
+        }
+        return exportFile;
+    }
+
     @Test
     public void shouldAllowingCreatingShareOfVersionedNode() throws RepositoryException {
         String originalPath = "/Cars/Utility";
@@ -369,34 +363,25 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
         Node sharedNode1 = makeShare(originalPath, sharedPath);
         assertSharedSetIs(original, originalPath, sharedPath);
         assertSharedSetIs(sharedNode1, originalPath, sharedPath);
+
         // Create another share ...
-        String sharedPath2 = "/NewArea/SharedUtility[2]";
+        String sharedPath2 = "/NewSecondArea/SharedUtility";
         Node sharedNode2 = makeShare(originalPath, sharedPath2);
-        assertSharedSetIs(original, originalPath, sharedPath, sharedPath2);
-        assertSharedSetIs(sharedNode1, originalPath, sharedPath, sharedPath2);
-        assertSharedSetIs(sharedNode2, originalPath, sharedPath, sharedPath2);
-        // Create another share ...
-        String sharedPath3 = "/NewSecondArea/SharedUtility";
-        Node sharedNode3 = makeShare(originalPath, sharedPath3);
-        assertSharedSetIs(original, originalPath, sharedPath, sharedPath2, sharedPath3);
-        assertSharedSetIs(sharedNode1, originalPath, sharedPath, sharedPath2, sharedPath3);
-        assertSharedSetIs(sharedNode2, originalPath, sharedPath, sharedPath2, sharedPath3);
-        assertSharedSetIs(sharedNode3, originalPath, sharedPath, sharedPath2, sharedPath3);
+        assertSharedSetIs(original, originalPath, sharedPath, sharedPath2, sharedPath2);
+        assertSharedSetIs(sharedNode1, originalPath, sharedPath, sharedPath2, sharedPath2);
+        assertSharedSetIs(sharedNode2, originalPath, sharedPath, sharedPath2, sharedPath2);
     }
 
     protected void checkImportedContent( Session session ) throws RepositoryException {
         String originalPath = "/Cars/Utility";
         String sharedPath = "/NewArea/SharedUtility";
-        String sharedPath2 = "/NewArea/SharedUtility[2]";
-        String sharedPath3 = "/NewSecondArea/SharedUtility";
+        String sharedPath2 = "/NewSecondArea/SharedUtility";
         Node original = session.getNode(originalPath);
         Node sharedNode1 = session.getNode(sharedPath);
         Node sharedNode2 = session.getNode(sharedPath2);
-        Node sharedNode3 = session.getNode(sharedPath3);
-        assertSharedSetIs(original, originalPath, sharedPath, sharedPath2, sharedPath3);
-        assertSharedSetIs(sharedNode1, originalPath, sharedPath, sharedPath2, sharedPath3);
-        assertSharedSetIs(sharedNode2, originalPath, sharedPath, sharedPath2, sharedPath3);
-        assertSharedSetIs(sharedNode3, originalPath, sharedPath, sharedPath2, sharedPath3);
+        assertSharedSetIs(original, originalPath, sharedPath, sharedPath2, sharedPath2);
+        assertSharedSetIs(sharedNode1, originalPath, sharedPath, sharedPath2, sharedPath2);
+        assertSharedSetIs(sharedNode2, originalPath, sharedPath, sharedPath2, sharedPath2);
     }
 
     protected String string( Object object ) {

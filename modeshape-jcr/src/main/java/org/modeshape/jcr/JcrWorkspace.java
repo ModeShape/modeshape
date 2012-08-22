@@ -23,16 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.AccessControlException;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Future;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.InvalidSerializedDataException;
@@ -70,6 +60,16 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.AccessControlException;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Future;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The ModeShape implementation of the {@link Workspace JCR Workspace}. This implementation is pretty lightweight, and only
@@ -310,7 +310,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 throw new LockException(srcAbsPath);
             }
 
-            if (sameWorkspace && sourceNode.isNodeType(JcrMixLexicon.SHAREABLE)) {
+            if (sameWorkspace && sourceNode.isShareable()) {
                 // cloning in the same workspace should produce a shareable node
                 assert !removeExisting;
 
@@ -323,6 +323,13 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 if (destParent.isSameAs(srcPath.getParent())) {
                     String msg = JcrI18n.unableToShareNodeWithinSameParent.text(srcAbsPath, destAbsPath, destParent);
                     throw new UnsupportedRepositoryOperationException(msg);
+                }
+                // We don't allow any more than 1 share under a given parent, for a shareable node
+                JcrSharedNodeCache.SharedSet sharedSet = sourceNode.sharedSet();
+                AbstractJcrNode existingShare = sharedSet.getSharedNodeAtOrBelow(destParent);
+                if (existingShare != null) {
+                    String msg = JcrI18n.shareAlreadyExistsWithinParent.text(destAbsPath, existingShare.getPath());
+                    throw new RepositoryException(msg);
                 }
                 parentNode.addSharedNode(sourceNode, newNodeName);
                 // save the changes in the clone session ...

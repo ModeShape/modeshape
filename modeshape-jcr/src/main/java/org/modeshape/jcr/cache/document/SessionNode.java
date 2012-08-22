@@ -23,26 +23,6 @@
  */
 package org.modeshape.jcr.cache.document;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.infinispan.util.concurrent.ConcurrentHashSet;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.text.Inflector;
@@ -68,6 +48,26 @@ import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * A node used within a {@link SessionCache session} when that node has (or may have) transient (unsaved) changes. This node is an
@@ -1852,7 +1852,7 @@ public class SessionNode implements MutableCachedNode {
          * The result of phase 1 will have either created the links correctly or will have add placeholders in the target tree
          * representing where the linked children should exist. Such placeholders will be handled in phase 2.
          * 
-         * @param targetNode the (empty) target node that should be made to loook like the supplied source node; may not be null
+         * @param targetNode the (empty) target node that should be made to look like the supplied source node; may not be null
          * @param sourceNode the original node that should be copied; may not be null
          */
         protected void doPhase1( MutableCachedNode targetNode,
@@ -1898,6 +1898,8 @@ public class SessionNode implements MutableCachedNode {
                                 continue;
                             }
                         }
+                    } else {
+                        newKey = childReference.getKey();
                     }
                     // The equivalent node already exists, so we can just link to it ...
                     targetNode.linkChild(targetCache, newKey, childReference.getName());
