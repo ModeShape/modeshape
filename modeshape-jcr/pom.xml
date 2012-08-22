@@ -133,11 +133,20 @@
             <artifactId>jbossjta</artifactId>
         </dependency>
         <!--
-        Used for Base64 testing.
+        Used for Base64 testing. This may overlap or vary with the JBoss AS7 integration, so we fully-specify the version
+        we want to use here. It's only to validate our Base64 functionality, so we can use an older version.
         -->
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jboss-common-core</artifactId>
+            <version>2.2.17.GA</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jboss.logging</groupId>
+                    <artifactId>jboss-logging-spi</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!--
         Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing)

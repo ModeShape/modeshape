@@ -13,7 +13,6 @@
   <description>Integration tests that use the ModeShape subsystem for JBoss AS7</description>
   <url>http://www.modeshape.org</url>
   <properties>
-    <jbossas-version>7.1.1.Final</jbossas-version>
     <arquillian.suspend>n</arquillian.suspend>
   </properties>
   <dependencyManagement>

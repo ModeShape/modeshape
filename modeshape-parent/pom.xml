@@ -251,6 +251,7 @@
         <log4j.version>1.2.16</log4j.version>
         <jcr.version>2.0</jcr.version>
         <jackrabbit.jcr.tck.version>2.5.1</jackrabbit.jcr.tck.version>
+        <jbossjta.version>4.16.2.Final</jbossjta.version>
         <picketbox.version>4.0.7.Final</picketbox.version>
         <byteman.version>1.5.1</byteman.version>
         <lucene.version>3.5.0</lucene.version>
@@ -287,7 +288,6 @@
         <javax.servlet.version>2.5</javax.servlet.version>
         <javax.jacc.version>1.0.0.Final</javax.jacc.version>
         <jboss.seam.version>2.2.2.Final</jboss.seam.version>
-        <jboss.common.core.version>2.2.17.GA</jboss.common.core.version>
         <webdav.servlet.version>2.0.1</webdav.servlet.version>
         <resteasy.version>2.3.2.Final</resteasy.version>
         <jettison.version>1.1</jettison.version>
@@ -301,7 +301,6 @@
         <bson4jackson.version>1.1.2</bson4jackson.version>
         <mongo.driver.version>2.7.3</mongo.driver.version>
         <json.simple.version>1.1</json.simple.version>
-        <jbossjta.version>4.16.2.Final</jbossjta.version>
         <aperture.version>1.1.0.Beta1</aperture.version>
         <logback.version>0.9.29</logback.version>
         <eclipse.equinox.common.version>3.3.0-v20070426</eclipse.equinox.common.version>
@@ -322,22 +321,27 @@
         <tika.version>1.1</tika.version>
 
         <!--
-            JBOSS AS
+            JBOSS AS 7.1.1.Final
         -->
-        <org.jboss.rhq.as5.version>1.2.0.GA</org.jboss.rhq.as5.version>
-        <org.rhq.version>1.3.0.GA</org.rhq.version>
-        <rhq.jboss.as5.plugin.version>1.4.0.B01</rhq.jboss.as5.plugin.version>
-        <java.persistence.api.version>1.0</java.persistence.api.version>
-        <jboss.embeddable.ejb3.hibernate.all.version>1.0.0.Alpha9</jboss.embeddable.ejb3.hibernate.all.version>
-        <commons.logging.version>1.1</commons.logging.version>
-        <commons.io.version>1.3.2</commons.io.version>
-        <mc4j.ems.version>1.2.6</mc4j.ems.version>
-        <jboss.profile.service.spi.version>5.1.0.CR2</jboss.profile.service.spi.version>
+        <jbossas-version>7.1.1.Final</jbossas-version>
         <javax.connector-api.version>1.5</javax.connector-api.version>
         <javax.jta.version>1.1</javax.jta.version>
-        <jbossas-version>7.1.1.Final</jbossas-version>
-        <jboss.common.core.version>2.2.17.GA</jboss.common.core.version>
-        <xjc.version>2.2</xjc.version>
+        <!--jboss.common.core.version>2.2.17.GA</jboss.common.core.version-->
+        <!--xjc.version>2.2</xjc.version-->
+
+        <!--
+            JBOSS AS 7.2
+        -->
+        <!--jbossas-version>7.2.0.Alpha1-SNAPSHOT</jbossas-version-->
+        <!--jboss.common.core.version>2.2.17.GA</jboss.common.core.version-->
+        <!--xjc.version>2.2</xjc.version-->
+
+        <!--
+            RHQ
+        -->
+        <!--org.jboss.rhq.as5.version>1.2.0.GA</org.jboss.rhq.as5.version>
+        <org.rhq.version>1.3.0.GA</org.rhq.version>
+        <rhq.jboss.as5.plugin.version>1.4.0.B01</rhq.jboss.as5.plugin.version-->
 
         <!--
           Maven plugin versions
@@ -1712,7 +1716,7 @@
                 <scope>provided</scope>
             </dependency>
 
-            <dependency>
+            <!--dependency>
                 <groupId>org.jboss</groupId>
                 <artifactId>jboss-common-core</artifactId>
                 <version>${jboss.common.core.version}</version>
@@ -1723,7 +1727,7 @@
                         <artifactId>jboss-logging-spi</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
+            </dependency-->
             <dependency>
                 <groupId>org.jboss.as</groupId>
                 <artifactId>jboss-as-controller</artifactId>
@@ -1748,7 +1752,7 @@
                 <version>${jbossas-version}</version>
                 <scope>test</scope>
             </dependency>
-            <dependency>
+            <!--dependency>
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-xjc</artifactId>
                 <version>${xjc.version}</version>
@@ -1758,7 +1762,7 @@
                         <artifactId>jaxb-api</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
+            </dependency-->
         </dependencies>
     </dependencyManagement>
 
