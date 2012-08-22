@@ -76,16 +76,6 @@
             <timezone>+2</timezone>
         </developer>
         <developer>
-            <name>John Verhaeg</name>
-            <id>johnny</id>
-            <email>jverhaeg@redhat.com</email>
-            <organization>JBoss, a division of Red Hat</organization>
-            <roles>
-                <role>Developer</role>
-            </roles>
-            <timezone>-6</timezone>
-        </developer>
-        <developer>
             <name>Dan Florian</name>
             <id>dan</id>
             <email>dflorian@redhat.com</email>
@@ -93,7 +83,7 @@
             <roles>
                 <role>Developer</role>
             </roles>
-            <timezone>-6</timezone>
+            <timezone>-5</timezone>
         </developer>
         <developer>
             <name>Stefano Maestri</name>
@@ -148,6 +138,45 @@
                 <role>Developer</role>
             </roles>
             <timezone>+1</timezone>
+        </developer>
+        <developer>
+            <name>Oleg Kulikov</name>
+            <id>okulikov</id>
+            <email>okulikov@redhat.com</email>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <timezone>+4</timezone>
+        </developer>
+        <developer>
+            <name>Ted Jones</name>
+            <id>tejones</id>
+            <email>tejones@redhat.com</email>
+            <organization>JBoss, a division of Red Hat</organization>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
+        <developer>
+            <name>Barry LaFond</name>
+            <id>blafond</id>
+            <email>blafond@redhat.com</email>
+            <organization>JBoss, a division of Red Hat</organization>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
+        <developer>
+            <name>John Verhaeg</name>
+            <id>jverhaeg</id>
+            <email>jverhaeg@redhat.com</email>
+            <organization>JBoss, a division of Red Hat</organization>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <timezone>-6</timezone>
         </developer>
     </developers>
 
