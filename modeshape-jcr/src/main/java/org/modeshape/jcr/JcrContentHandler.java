@@ -23,6 +23,16 @@
  */
 package org.modeshape.jcr;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import javax.jcr.Binary;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.ItemExistsException;
@@ -54,16 +64,6 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Content handler that provides SAX-based event handling that maps incoming documents to the repository based on the
@@ -110,9 +110,8 @@ class JcrContentHandler extends DefaultHandler {
     protected final List<AbstractJcrProperty> refPropsRequiringConstraintValidation = new LinkedList<AbstractJcrProperty>();
     protected final List<AbstractJcrNode> nodesForPostProcessing = new LinkedList<AbstractJcrNode>();
 
-    private final Map<String, NodeKey> uuidToNodeKeyMapping = new HashMap<String, NodeKey>();
-    private final Map<NodeKey, String> shareIdsToUUIDMap = new HashMap<NodeKey, String>();
-    private final List<NodeKey> sharesToPostProcess = new ArrayList<NodeKey>();
+    protected final Map<String, NodeKey> uuidToNodeKeyMapping = new HashMap<String, NodeKey>();
+    protected final Map<NodeKey, String> shareIdsToUUIDMap = new HashMap<NodeKey, String>();
 
     protected SessionCache cache;
 
@@ -175,7 +174,7 @@ class JcrContentHandler extends DefaultHandler {
         Map<Name, Integer> propertyTypesMap = new HashMap<Name, Integer>();
         JcrNodeType nodeType = nodeTypeFor(primaryTypeName);
         if (nodeType == null) {
-            //nt:share falls in this category
+            // nt:share falls in this category
             return propertyTypesMap;
         }
         for (JcrPropertyDefinition propertyDefinition : nodeType.getPropertyDefinitions()) {
@@ -275,18 +274,18 @@ class JcrContentHandler extends DefaultHandler {
                 // mix:share
                 // --------------------
                 if (node.isNodeType(ModeShapeLexicon.SHARE)) {
-                    //get the actual key of the shareable node
+                    // get the actual key of the shareable node
                     String shareableNodeUUID = shareIdsToUUIDMap.get(node.key());
                     assert shareableNodeUUID != null;
                     NodeKey shareableNodeKey = uuidToNodeKeyMapping.get(shareableNodeUUID);
                     assert shareableNodeKey != null;
 
-                    //unlink the current key from its parent references
+                    // unlink the current key from its parent references
                     NodeKey parentKey = mutable.getParentKey(cache);
                     MutableCachedNode parent = cache.mutable(parentKey);
                     parent.removeChild(cache, node.key());
 
-                    //re-link it with the correct key - that of the shareable node
+                    // re-link it with the correct key - that of the shareable node
                     parent.linkChild(cache, shareableNodeKey, node.name());
                 }
             }
@@ -735,9 +734,10 @@ class JcrContentHandler extends DefaultHandler {
                                 if (existingNode.isShareable()) {
                                     shareableNodeAlreadyExists = true;
                                 } else {
-                                    throw new ItemExistsException(
-                                            JcrI18n.itemAlreadyExistsWithUuid.text(key, session().workspace().getName(),
-                                                                                   existingNode.getPath()));
+                                    throw new ItemExistsException(JcrI18n.itemAlreadyExistsWithUuid.text(key,
+                                                                                                         session().workspace()
+                                                                                                                  .getName(),
+                                                                                                         existingNode.getPath()));
                                 }
                         }
                     } catch (ItemNotFoundException e) {
@@ -761,26 +761,26 @@ class JcrContentHandler extends DefaultHandler {
                         assert key != null;
                         assert uuid != null;
 
-                        //check if we already have the key of the shareable node
+                        // check if we already have the key of the shareable node
                         NodeKey shareableNodeKey = uuidToNodeKeyMapping.get(uuid);
                         if (shareableNodeKey != null) {
-                            //we already know the key of the shareable node, so we need to just link it and return
+                            // we already know the key of the shareable node, so we need to just link it and return
                             parent.mutable().linkChild(cache, shareableNodeKey, nodeName);
                             node = session().node(shareableNodeKey, null, parentKey);
                         } else {
-                            //we haven't processed the shareable node yet, so we need to make sure we process the share later.
+                            // we haven't processed the shareable node yet, so we need to make sure we process the share later.
                             parent.mutable().linkChild(cache, key, nodeName);
                             node = session().node(key, null, parentKey);
-                            //make sure we post-process the share and set the correct id
+                            // make sure we post-process the share and set the correct id
                             nodesForPostProcessing.add(node);
-                            //save the original UUID of the share to be able to track it back to the shareable node
+                            // save the original UUID of the share to be able to track it back to the shareable node
                             shareIdsToUUIDMap.put(key, uuid);
                         }
                         ignoreAllChildren = true;
                         return;
                     }
 
-                    //store the node key that we created for this UUID, so we can create shares
+                    // store the node key that we created for this UUID, so we can create shares
                     uuidToNodeKeyMapping.put(uuid, key);
 
                     if (shareableNodeAlreadyExists && key != null) {

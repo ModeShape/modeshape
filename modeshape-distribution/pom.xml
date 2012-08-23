@@ -336,33 +336,116 @@
                     <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
+
+                <!-- 
+                Hack: Need to include these 'provided' dependencies and force 'compile' scope, because of a JavaDoc plugin issue;
+                see http://jira.codehaus.org/browse/MJAVADOC-340 and other workarounds below
+                -->
+                <dependency>
+                  <groupId>org.mongodb</groupId>
+                  <artifactId>mongo-java-driver</artifactId>
+                  <version>${mongo.driver.version}</version>
+                  <scope>compile</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.as</groupId>
+                    <artifactId>jboss-as-controller</artifactId>
+                    <version>${jbossas-version}</version>
+                    <scope>compile</scope>
+                </dependency>
+                <dependency>
+                  <!-- Already compile scope, but needed for resolution of references in our code -->
+                  <groupId>org.semanticdesktop</groupId>
+                  <artifactId>aperture</artifactId>
+                </dependency>
             </dependencies>
             <build>
                 <plugins>
                     <plugin>
+                        <!-- 
+                        We're building JavaDoc in one pass, using dependencies of this module, versus building aggregates
+                        that involve forking a full JavaDoc build of all modules within this module. One pass is not only
+                        a lot faster, but it also is compatible with Mead builds for productization. The only issue is
+                        that some 'provided' dependencies need to be hacked (see above).
+                        -->
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <version>${version.javadoc.plugin}</version>
+                                
                         <configuration>
-                            <!-- Workaround for http://jira.codehaus.org/browse/MJAVADOC-268 and http://jira.codehaus.org/browse/MJAVADOC-286 -->
-                            <detectOfflineLinks>false</detectOfflineLinks>
-                            <!-- end of workaround -->
                             <includeDependencySources>true</includeDependencySources>
-                            <dependencySourceExcludes>
-                                <!-- place here any patterns for dependencies not to be included in the JavaDoc -->
-                                <dependencySourceExclude>org.modeshape.demo:*</dependencySourceExclude>
-                                <dependencySourceExclude>org.modeshape:modeshape-integration-tests:*</dependencySourceExclude>
-                            </dependencySourceExcludes>
+                            <failOnError>true</failOnError>
                             <dependencySourceIncludes>
-                                <!-- place here any patterns for dependencies not to be included in the JavaDoc -->
+                                <!-- We only want JavaDoc for the modules with a groupId of "org.modeshape" -->
                                 <dependencySourceInclude>org.modeshape:*</dependencySourceInclude>
                             </dependencySourceIncludes>
+                            <dependencySourceExcludes>
+                                <!-- But want to exclude modules like demos and tests -->
+                                <dependencySourceExclude>org.modeshape.demo:*</dependencySourceExclude>
+                                <dependencySourceExclude>org.modeshape:modeshape-integration-tests:*</dependencySourceExclude>
+                                <dependencySourceExclude>org.modeshape:modeshape-jbossas-integration-tests:*</dependencySourceExclude>
+                                <dependencySourceExclude>org.modeshape:*:test:*</dependencySourceExclude>
+                            </dependencySourceExcludes>
 
+                            <links>
+                              <link>http://docs.oracle.com/javase/6/docs/api/</link>
+                              <link>http://docs.oracle.com/javaee/6/api/</link>
+                              <link>http://www.slf4j.org/apidocs/</link>
+                              <link>http://www.day.com/maven/javax.jcr/javadocs/jcr-2.0/</link>
+                              <link>http://api.mongodb.org/java/${mongo.driver.version}/</link>
+                              <link>http://aperture.sourceforge.net/doc/javadoc/1.5.0/index.html</link>
+                            </links>
+                            <groups>
+                              <group>
+                                <title>ModeShape API (extends JCR API)</title>
+                                <packages>org.modeshape.jcr.api:org.modeshape.jcr.api.monitor*:org.modeshape.jcr.api.nodetype*:org.modeshape.jcr.api.observation*:org.modeshape.jcr.api.query*:org.modeshape.jcr.api.value*</packages>
+                              </group>
+                              <group>
+                                <title>ModeShape engine</title>
+                                <packages>org.modeshape.jcr*:org.modeshape.jcr.bus*:org.modeshape.jcr.cache*:org.modeshape.jcr.clustering*:org.modeshape.jcr.query*:org.modeshape.jcr.security*:org.modeshape.jcr.sequencer*:org.modeshape.jcr.text*:org.modeshape.jcr.value*</packages>
+                              </group>
+                              <group>
+                                <title>ModeShape SPI for Extensions</title>
+                                <packages>org.modeshape.jcr.api.sequencer*:org.modeshape.jcr.api.mimetype*:org.modeshape.jcr.api.text*</packages>
+                              </group>
+                              <group>
+                                <title>ModeShape JDBC Driver</title>
+                                <packages>org.modeshape.jdbc*</packages>
+                              </group>
+                              <group>
+                                <title>ModeShape Web services</title>
+                                <packages>org.modeshape.web*</packages>
+                              </group>
+                              <group>
+                                <title>ModeShape Subsystem for AS7</title>
+                                <packages>org.modeshape.jboss.subsystem*</packages>
+                              </group>
+                              <group>
+                                <title>ModeShape Provided Mime Type Detectors</title>
+                                <packages>org.modeshape.jcr.mimetype*</packages>
+                              </group>
+                              <group>
+                                <title>ModeShape Provided Text Extractors</title>
+                                <packages>org.modeshape.extractor*</packages>
+                              </group>
+                              <group>
+                                <title>ModeShape Provided Sequencers</title>
+                                <packages>org.modeshape.sequencer*</packages>
+                              </group>
+                              <group>
+                                <title>Schematic Document Storage</title>
+                                <packages>org.infinispan.schematic*</packages>
+                              </group>
+                            </groups>
+                            <excludePackageNames>org.modeshape.test*:org.modeshape.demo*</excludePackageNames>
+
+                            <!-- GraphViz: 
                             <doclet>org.jboss.apiviz.APIviz</doclet>
                             <docletArtifact>
                                 <groupId>org.jboss.apiviz</groupId>
                                 <artifactId>apiviz</artifactId>
                                 <version>1.3.0.GA</version>
                             </docletArtifact>
+                            -->
                             <attach>false</attach>
                             <useStandardDocletOptions>true</useStandardDocletOptions>
                             <charset>UTF-8</charset>
@@ -371,7 +454,7 @@
                             <locale>en_US</locale>
                             <breakiterator>true</breakiterator>
                             <version>true</version>
-                            <author>true</author>
+                            <author>false</author>
                             <keywords>true</keywords>
                             <overview>${basedir}/src/javadoc/overview.html</overview>
                             <maxmemory>1024m</maxmemory>
@@ -393,18 +476,20 @@
                                     <goal>javadoc</goal>
                                 </goals>
                                 <configuration>
-                                    <outputDirectory>${project.build.directory}/api-full</outputDirectory>
-                                    <reportOutputDirectory>${project.build.directory}/api-full</reportOutputDirectory>
-                                    <destDir>api-full</destDir>
+                                    <outputDirectory>${project.build.directory}/api</outputDirectory>
+                                    <reportOutputDirectory>${project.build.directory}/api</reportOutputDirectory>
+                                    <destDir>api</destDir>
                                     <doctitle>${project.name} Library Reference (${project.version})</doctitle>
                                     <windowtitle>${project.name} Library Reference (${project.version})</windowtitle>
+                                    <!--
                                     <excludePackageNames>org.modeshape.test*:org.modeshape.demo*</excludePackageNames>
                                     <additionalparam>
-                                        -link http://java.sun.com/javase/6/docs/api/
-                                        -link
-                                        http://java.sun.com/products/servlet/2.5/docs/servlet-2_5-mr2/
+                                        -link http://download.oracle.com/javase/1.5.0/docs/api/
+                                        -link http://docs.oracle.com/javaee/6/api/
                                         -link http://www.slf4j.org/apidocs/
                                         -link http://www.day.com/maven/javax.jcr/javadocs/jcr-2.0/
+                                        -link http://api.mongodb.org/java/${mongo.driver.version}/
+                                        -link http://aperture.sourceforge.net/doc/javadoc/1.5.0/index.html
 
                                         -group "ModeShape API (extends JCR API)" ${project.groupId}.jcr.api*
                                         -group "ModeShape engine" ${project.groupId}.jcr*:${project.groupId}.jcr.*:${project.groupId}.jcr.bus*:${project.groupId}.jcr.cache*:${project.groupId}.jcr.clustering*:${project.groupId}.jcr.query*:${project.groupId}.jcr.security*:${project.groupId}.jcr.value*
@@ -414,8 +499,14 @@
                                         -group "ModeShape Sequencers" ${project.groupId}.sequencer*
                                         -group "Schematic Documents" org.infinispan.schematic*
 
+                                    </additionalparam>
+                                    -->
+                                    <!-- GraphViz: Removed from end of "additionalParam":
+                                    <additionalparam>
                                         -nopackagediagram
                                     </additionalparam>
+                                    -->
+
                                     <detectOfflineLinks>false</detectOfflineLinks>
                                 </configuration>
                             </execution>

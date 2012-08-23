@@ -23,13 +23,18 @@
  */
 package org.modeshape.jcr.value.binary;
 
+import static org.junit.Assert.assertEquals;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-import org.junit.*;
-import static org.junit.Assert.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.modeshape.jcr.value.BinaryValue;
 
 /**
@@ -66,11 +71,8 @@ public class MongodbBinaryStoreTest {
     public void tearDown() {
     }
 
-
-    /**
-     * Test of storeValue method, of class MongodbBinaryStore.
-     */
-//    @Test
+    @Ignore
+    @Test
     public void testStoreAndRetriveValue() throws Exception {
         ByteArrayInputStream content = new ByteArrayInputStream("Test message".getBytes());
         BinaryValue bv = binaryStore.storeValue(content);
@@ -81,18 +83,19 @@ public class MongodbBinaryStoreTest {
         assertEquals("Test message", s);
     }
 
-//    @Test
+    @Ignore
+    @Test
     public void testExtractedText() throws Exception {
-        //store content
+        // store content
         ByteArrayInputStream content = new ByteArrayInputStream("Test message".getBytes());
         BinaryValue bv = binaryStore.storeValue(content);
 
-        //store text
+        // store text
         binaryStore.storeExtractedText(bv, "Text");
         assertEquals("Text", binaryStore.getExtractedText(bv));
     }
 
-    private String read(InputStream is) throws IOException {
+    private String read( InputStream is ) throws IOException {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         int b = 0;
         int len = 0;

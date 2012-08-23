@@ -23,6 +23,18 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.HashSet;
+import java.util.Set;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -38,22 +50,9 @@ import javax.jcr.nodetype.NodeDefinitionTemplate;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.version.Version;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * A series of tests of the shareable nodes feature.
@@ -114,12 +113,12 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
         Node sharedNode1 = makeShare(originalPath, sharedPath);
         assertSharedSetIs(original, originalPath, sharedPath);
         assertSharedSetIs(sharedNode1, originalPath, sharedPath);
-        //Try to create another share under the same parent
+        // Try to create another share under the same parent
         try {
             makeShare(originalPath, "/NewArea/SharedUtility[2]");
             fail("Should not be allowed multiple shares under the same parent");
         } catch (RepositoryException e) {
-            //expected
+            // expected
         }
     }
 
@@ -307,15 +306,6 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
         session2.importXML("/", new ByteArrayInputStream(baos.toByteArray()), ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
         session2.save();
         checkImportedContent(session2);
-    }
-
-    private File createExportFile(String path) {
-        // Export the content ...
-        File exportFile = new File(path);
-        if (exportFile.exists()) {
-            exportFile.delete();
-        }
-        return exportFile;
     }
 
     @Test

@@ -87,8 +87,8 @@
             <!--
                Gather into the distribution the JavaDoc for all projects
              -->
-            <directory>target/api-full</directory>
-            <outputDirectory>doc/api-full</outputDirectory>
+            <directory>target/api</directory>
+            <outputDirectory>doc/api</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>
