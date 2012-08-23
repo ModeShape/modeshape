@@ -1,6 +1,6 @@
 # Release Notes for ModeShape &version;
 
-The ModeShape &version; release is the second beta release of our new architecture, and is suitable
+The ModeShape &version; release is the third beta release of our new architecture, and is suitable
 only for testing and previewing features. APIs and storage formats are still subject to change.
 
 ## What's new
@@ -9,6 +9,8 @@ only for testing and previewing features. APIs and storage formats are still sub
 This release adds support for full-text search, text extraction, and shareable nodes, plus 
 it fixes quite a few bugs and issues. We've also improved the way binary values (and related 
 information such as MIME types and extract text) are handled and stored within the BinaryStore.
+This release also provides kits for installing ModeShape as a service into JBoss AS7.1.1.Final
+and AS7.2 (requires building from code, since it hasn't yet been released).
 
 Overall, ModeShape 3.0 has changed a lot since ModeShape 2.8.x:
 
@@ -46,7 +48,7 @@ detectors that use the filename extensions and the binary content.
 system. Storage of binary values in Infinispan and DBMSes will be added in upcoming releases.
 - API interfaces and methods that were deprecated in 2.7.0.Final (or later) have been removed.
 There weren't many of these; most of the ModeShape API remains the same.
-- Integration with JBoss AS 7.1. ModeShape runs as an integrated subsystem within AS7, and
+- Integration with JBoss AS 7. ModeShape runs as an integrated subsystem within AS7, and
 the AS7 tooling can be used to define and manage repositories independently of each other
 while the server is running.
 - Local and remote JDBC drivers for issuing JCR-SQL2 queries and getting database metadata via the JDBC API
