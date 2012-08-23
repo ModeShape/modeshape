@@ -469,8 +469,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
                         }
                     }
                 }
-                // At this point, warn about a missing repository name ...
-                LOG.warn(JcrI18n.missingRepositoryNameInUrlContainingJndiLocationOfEngine, jndiName, REPOSITORY_NAME_PARAM);
+                // Since we also have JndiRepositoryFactory, we can just return null without warning anyone ...
             } else if (ob instanceof Repositories) {
                 Repositories repos = (Repositories)ob;
                 try {
