@@ -18,7 +18,7 @@
             "option.journaled.observation.supported":"false",
             "option.lifecycle.supported":"false",
             "option.baselines.supported":"false",
-            "jcr.repository.version":"3.0-SNAPSHOT",
+            "jcr.repository.version":"${project.version}",
             "option.shareable.nodes.supported":"true",
             "query.xpath.pos.index":"false",
             "option.xml.import.supported":"true",

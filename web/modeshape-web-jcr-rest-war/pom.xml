@@ -52,6 +52,16 @@
     </dependencies>
     <build>
         <finalName>resources</finalName>
+        <!-- Filter the *.json files used for testing -->
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+            </testResource>
+        </testResources>
         <plugins>
             <!--Overwrite this plugin from parent, to avoid it requiring a MANIFEST.MF file -->
             <plugin>
