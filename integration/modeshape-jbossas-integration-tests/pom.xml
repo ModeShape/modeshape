@@ -217,7 +217,7 @@
                             <groupId>org.modeshape</groupId>
                             <artifactId>modeshape-distribution</artifactId>
                             <version>${project.version}</version>
-                            <classifier>jbossas-7-dist</classifier>
+                            <classifier>jbossas-${jbossas7.assembly.descriptor.version}-dist</classifier>
                             <type>zip</type>
                             <overWrite>false</overWrite>
                             <outputDirectory>${project.build.directory}/jboss-as-${jbossas-version}</outputDirectory>

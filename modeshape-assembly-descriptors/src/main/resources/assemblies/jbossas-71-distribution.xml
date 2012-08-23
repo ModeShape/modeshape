@@ -1,6 +1,6 @@
 <!--This script builds a zip for ModeShape server Installation -->
 <assembly>
-	<id>jbossas-7-dist</id>
+	<id>jbossas-71-dist</id>
 	<formats>
 		<format>zip</format>
 	</formats>
@@ -11,7 +11,7 @@
 
 		<!-- The files for the kit -->
 		<fileSet>
-			<directory>../deploy/jbossas/kit/jboss-as7</directory>
+			<directory>../deploy/jbossas/kit/jboss-as71</directory>
 			<outputDirectory>/</outputDirectory>
 			<filtered>true</filtered>
 		</fileSet>
