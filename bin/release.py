@@ -187,8 +187,8 @@ def copy_artifacts_to_archive_location(archive_path,version):
     os.makedirs(docs_path)
 
   # Copy the Full JavaDoc ...
-  from_path = os.path.join('modeshape-distribution','target','api-full')
-  copy_folder(from_path,os.path.join(docs_path,'api-full'))
+  from_path = os.path.join('modeshape-distribution','target','api')
+  copy_folder(from_path,os.path.join(docs_path,'api'))
 
   ## Copy the API JavaDoc ...
   #from_path = os.path.join('modeshape-distribution','target','api')
@@ -272,9 +272,8 @@ def upload_documentation(base_dir, version):
   os.chdir("%s/target/" % (base_dir))
   os.makedirs("docs/%s" % version)
 
-  # Move the 'api' and 'api-full' folders into the 'docs/<version>/' folder so we can rsync that '<version>' folder
-  #os.rename("%s/modeshape-distribution/target/api" % base_dir, "docs/%s/api" % version)
-  os.rename("%s/modeshape-distribution/target/api-full" % base_dir, "docs/%s/api-full" % version)
+  # Move the 'api' folder into the 'docs/<version>/' folder so we can rsync that '<version>' folder
+  os.rename("%s/modeshape-distribution/target/api" % base_dir, "docs/%s/api" % version)
 
   # Copy the readme files ...
   for readme in ['release.html','release.txt']:
