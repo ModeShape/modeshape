@@ -520,7 +520,9 @@
                             <descriptorRefs>
                                 <descriptorRef>binary-distribution</descriptorRef>
                                 <descriptorRef>source-distribution</descriptorRef>
-                                <descriptorRef>jbossas7-distribution</descriptorRef>
+                                <!-- Build both AS7 distributions -->
+                                <descriptorRef>jbossas-71-distribution</descriptorRef>
+                                <descriptorRef>jbossas-72-distribution</descriptorRef>
                             </descriptorRefs>
                         </configuration>
                     </plugin>
@@ -544,7 +546,9 @@
                         <configuration>
                             <finalName>modeshape-${project.version}</finalName>
                             <descriptorRefs>
-                                <descriptorRef>jbossas7-distribution</descriptorRef>
+                                <!-- Build both AS7 distributions -->
+                                <descriptorRef>jbossas-71-distribution</descriptorRef>
+                                <descriptorRef>jbossas-72-distribution</descriptorRef>
                             </descriptorRefs>
                         </configuration>
                     </plugin>
