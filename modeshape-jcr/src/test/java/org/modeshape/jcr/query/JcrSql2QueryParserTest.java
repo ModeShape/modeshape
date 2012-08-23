@@ -65,6 +65,7 @@ import org.modeshape.graph.query.model.Query;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.SameNodeJoinCondition;
 import org.modeshape.graph.query.model.SelectorName;
+import org.modeshape.graph.query.model.SetQuery;
 import org.modeshape.graph.query.model.Source;
 import org.modeshape.graph.query.model.StaticOperand;
 import org.modeshape.graph.query.model.TypeSystem;
@@ -520,6 +521,14 @@ public class JcrSql2QueryParserTest {
         // WHERE ...
         assertThat(query.constraint(), is(nullValue()));
     }
+    
+    @Test
+    @FixFor("MODE-1594")
+    public void shouldParseSetQuery() {
+    	parseSetQuery("SELECT nodes.col1, nodes.col2 FROM table1 AS nodes UNION SELECT edges.col3, edges.col4 FROM table2 AS edges");
+    	parseSetQuery("SELECT nodes.col1, nodes.col2 FROM table1 AS nodes INTERSECT SELECT edges.col3, edges.col4 FROM table2 AS edges");
+    	parseSetQuery("SELECT nodes.col1, nodes.col2 FROM table1 AS nodes EXCEPT SELECT edges.col3, edges.col4 FROM table2 AS edges");
+    }
 
     protected Join isJoin( Source source ) {
         assertThat(source, is(instanceOf(Join.class)));
@@ -604,6 +613,12 @@ public class JcrSql2QueryParserTest {
         QueryCommand command = parseCommand(query);
         assertThat(command, is(instanceOf(Query.class)));
         return (Query)command;
+    }
+
+    protected SetQuery parseSetQuery( String query ) {
+        QueryCommand command = parser.parseQuery(query, typeSystem);
+        assertThat(command, is(instanceOf(SetQuery.class)));
+        return (SetQuery)command;
     }
 
     protected QueryCommand parseCommand( String query ) {
