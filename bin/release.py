@@ -176,8 +176,8 @@ def copy_artifacts_to_archive_location(archive_path,version):
     pass
     
   # Copy the 'modeshape-distribution' artifacts ...
-  from_files = ['dist.zip', 'source.zip', 'jbossas-7-dist.zip']
-  to_files = ['dist.zip', 'source.zip', 'jbossas-7-dist.zip']
+  from_files = ['dist.zip', 'source.zip', 'jbossas-71-dist.zip', 'jbossas-72-dist.zip']
+  to_files = ['dist.zip', 'source.zip', 'jbossas-71-dist.zip', 'jbossas-72-dist.zip']
   for fsuffix,tsuffix in zip(from_files,to_files):
     shutil.copy("modeshape-distribution/target/modeshape-%s-%s" % (version,fsuffix), "%s/modeshape-%s-%s" % (archive_path,version,tsuffix))
   
@@ -247,8 +247,8 @@ def upload_artifacts(base_dir, version):
   os.makedirs("downloads/%s" % version)
 
   # Copy the 'modeshape-distribution' artifacts ...
-  from_files = ['dist.zip', 'source.zip', 'jbossas-7-dist.zip']
-  to_files = ['dist.zip', 'source.zip', 'jbossas-7-dist.zip']
+  from_files = ['dist.zip', 'source.zip', 'jbossas-71-dist.zip', 'jbossas-72-dist.zip']
+  to_files = ['dist.zip', 'source.zip', 'jbossas-71-dist.zip', 'jbossas-72-dist.zip']
   for fsuffix,tsuffix in zip(from_files,to_files):
     shutil.copy("%s/modeshape-distribution/target/modeshape-%s-%s" % (base_dir,version,fsuffix), "downloads/%s/modeshape-%s-%s" % (version,version,tsuffix))
   
