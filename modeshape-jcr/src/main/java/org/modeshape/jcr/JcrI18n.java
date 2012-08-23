@@ -377,7 +377,6 @@ public final class JcrI18n {
     public static I18n potentialClasspathErrorAtJndiLocation;
     public static I18n errorStartingRepository;
     public static I18n storageRelatedConfigurationChangesWillTakeEffectAfterShutdown;
-    public static I18n missingRepositoryNameInUrlContainingJndiLocationOfEngine;
     public static I18n errorShuttingDownJcrRepositoryFactory;
     public static I18n repositoryNameDoesNotMatchConfigurationName;
     public static I18n errorWhileShuttingDownRepositoryInJndi;
