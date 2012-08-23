@@ -25,15 +25,19 @@ package org.modeshape.test.integration.sequencer;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.NodeType;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import org.junit.After;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MSOfficeSequencerIntegrationTest extends AbstractSequencerTest {
     /**
@@ -82,7 +86,28 @@ public class MSOfficeSequencerIntegrationTest extends AbstractSequencerTest {
         uploadAndAssertSequencedNode("document_without_thumbnail.doc");
     }
 
-    private void uploadAndAssertSequencedNode(String fileName) throws RepositoryException, IOException, InterruptedException {
+    @Test
+    @FixFor("MODE-1559")
+    public void shouldAddDerivedMixinOnNode() throws Exception {
+        String fileName = "word.doc";
+        Node sequencedNode = uploadAndAssertSequencedNode(fileName);
+        //there is a word.doc/word.doc path based on how the sequencer is configured
+        Node docNode = sequencedNode.getNode(fileName);
+        assertNotNull(docNode);
+        assertTrue(mixinsForNode(docNode).contains("mode:derived"));
+        assertTrue(docNode.hasProperty("mode:derivedAt"));
+        assertTrue(docNode.hasProperty("mode:derivedFrom"));
+    }
+
+    private List<String> mixinsForNode(Node node) throws RepositoryException {
+        List<String> result = new ArrayList<String>();
+        for (NodeType nodeType : node.getMixinNodeTypes()) {
+            result.add(nodeType.getName());
+        }
+        return result;
+    }
+
+    private Node uploadAndAssertSequencedNode(String fileName) throws RepositoryException, IOException, InterruptedException {
         // print = true;
         uploadFile("sequencers/msoffice/" +  fileName, "/files/");
 
@@ -98,5 +123,7 @@ public class MSOfficeSequencerIntegrationTest extends AbstractSequencerTest {
         assertNotNull(node);
         printSubgraph(node);
         SequencedNodeValidator.validateSequencedNodeType(node);
+
+        return node;
     }
 }
