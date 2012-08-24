@@ -1,5 +1,6 @@
 package org.modeshape.test.integration.federation;
 
+import javax.jcr.Binary;
 import javax.jcr.NamespaceException;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -12,8 +13,13 @@ import static junit.framework.Assert.fail;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.JcrNodeTypeManager;
+import org.modeshape.jcr.JcrTools;
 import org.modeshape.test.ModeShapeSingleUseTest;
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.URL;
 
 /**
  * Integration test which uses a federation connector with 1 default workspace and several projections over different sources.
@@ -99,6 +105,28 @@ public class FederationMixedSourcesTest extends ModeShapeSingleUseTest {
         }
         folder.remove();
         session.save();
+    }
+
+    @Test
+    @FixFor( "MODE-1585" )
+    public void shouldAllowVersioningOperations() throws Exception {
+        String fileName = "testfile";
+
+        String filePath = "/jpa/" + fileName;
+        JcrTools tools = new JcrTools();
+        Node fileNode = tools.findOrCreateNode(session, filePath, "nt:folder", "nt:file");
+        Node resourceNode = fileNode.addNode("jcr:content", "nt:resource");
+        URL fileUrl = getClass().getClassLoader().getResource(getPathToDefaultConfiguration());
+        InputStream is = new FileInputStream(new File(fileUrl.toURI()));
+        Binary binaryValue = session.getValueFactory().createBinary(is);
+        resourceNode.setProperty("jcr:data", binaryValue);
+        resourceNode.addMixin("mix:versionable");
+        session.save();
+        session.getWorkspace().getVersionManager().checkin(resourceNode.getPath());
+
+        resourceNode = session.getNode(filePath + "/jcr:content");
+        session.getWorkspace().getVersionManager().checkout(resourceNode.getPath());
+        session.getWorkspace().getVersionManager().checkin(resourceNode.getPath());
     }
 
 }
