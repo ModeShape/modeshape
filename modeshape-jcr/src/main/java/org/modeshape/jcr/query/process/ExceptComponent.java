@@ -89,26 +89,30 @@ public class ExceptComponent extends SetOperationComponent {
                 if (comparison == 0) {
                     // Both match, so remove the tuple from 'tuples' and go on ...
                     tupleIter.remove();
-                    continue;
-                }
-                // No match, so leave tuple1 in 'tuples'
-                if (comparison < 0) {
+
+                    if (!tupleIter.hasNext()) {
+                        // This was the last one
+                        break;
+                    }
+                    tuple1 = tupleIter.next();
+                } else if (comparison < 0) {
+                    // No match, so leave tuple1 in 'tuples'
+
                     // tuple1 is less than tuple2, so advance tupleIter ...
                     if (!tupleIter.hasNext()) {
                         // The intersection results ('tuples') has no more tuples, so go to the next source ...
                         break;
                     }
                     tuple1 = tupleIter.next();
-                    continue;
+                } else {
+                    assert comparison > 0;
+                    // tuple1 is greater than tuple2, so advance nextIter ...
+                    if (!nextIter.hasNext()) {
+                        // The next source has no more tuples, so leave all remaining tuples, and go to the next source ...
+                        break;
+                    }
+                    tuple2 = nextIter.next();
                 }
-                assert comparison > 0;
-                // tuple1 is greater than tuple2, so advance nextIter ...
-                if (!nextIter.hasNext()) {
-                    // The next source has no more tuples, so leave all remaining tuples, and go to the next source ...
-                    break;
-                }
-                tuple2 = nextIter.next();
-                continue;
             }
         }
         // Remove duplicates if requested to ...
