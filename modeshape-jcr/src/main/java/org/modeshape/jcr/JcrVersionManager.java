@@ -590,10 +590,8 @@ final class JcrVersionManager implements VersionManager {
         org.modeshape.graph.property.Property predecessors = propFactory.create(JcrLexicon.PREDECESSORS, newPreds);
 
         Graph graph = workspace().graph();
-        Location location = Location.create(node.uuid());
-        graph.set(isCheckedOut, predecessors, multiValuedProps).on(location).and();
-
-        cache().refreshProperties(location);
+        graph.set(isCheckedOut, predecessors, multiValuedProps).on(node.location()).and();
+        cache().refreshProperties(node.location());
     }
 
     /**
