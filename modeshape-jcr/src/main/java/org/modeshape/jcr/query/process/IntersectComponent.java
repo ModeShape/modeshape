@@ -87,33 +87,36 @@ public class IntersectComponent extends SetOperationComponent {
             while (true) {
                 int comparison = comparator.compare(tuple1, tuple2);
                 if (comparison == 0) {
-                    // Both match, so leave the tuple in 'tuples' and go on ...
-                    continue;
-                }
-                // No match, so remove tuple1 from 'tuples'
-                tupleIter.remove();
-                if (comparison < 0) {
-                    // tuple1 is less than tuple2, so advance tupleIter ...
-                    if (!tupleIter.hasNext()) {
-                        // The intersection results ('tuples') has no more tuples, so go to the next source ...
+                    if (!tupleIter.hasNext() || !nextIter.hasNext()) {
                         break;
                     }
+                    // Both match, so leave the tuple in 'tuples' and advance to next comparison ...
                     tuple1 = tupleIter.next();
-                    continue;
-                }
-                assert comparison > 0;
-                // tuple1 is greater than tuple2, so advance nextIter ...
-                if (!nextIter.hasNext()) {
-                    // The next source has no more tuples, so remove all remaining tuples ...
-                    while (tupleIter.hasNext()) {
-                        tupleIter.next();
-                        tupleIter.remove();
+                    tuple2 = nextIter.next();
+                } else {
+                    // No match, so remove tuple1 from 'tuples'
+                    tupleIter.remove();
+                    if (comparison < 0) {
+                        // tuple1 is less than tuple2, so advance tupleIter ...
+                        if (!tupleIter.hasNext()) {
+                            // The intersection results ('tuples') has no more tuples, so go to the next source ...
+                            break;
+                        }
+                        tuple1 = tupleIter.next();
+                    } else {
+                        // tuple1 is greater than tuple2, so advance nextIter ...
+                        if (!nextIter.hasNext()) {
+                            // The next source has no more tuples, so remove all remaining tuples ...
+                            while (tupleIter.hasNext()) {
+                                tupleIter.next();
+                                tupleIter.remove();
+                            }
+                            // then go to the next source ...
+                            break;
+                        }
+                        tuple2 = nextIter.next();
                     }
-                    // then go to the next source ...
-                    break;
                 }
-                tuple2 = nextIter.next();
-                continue;
             }
         }
         // Remove duplicates if requested to ...
