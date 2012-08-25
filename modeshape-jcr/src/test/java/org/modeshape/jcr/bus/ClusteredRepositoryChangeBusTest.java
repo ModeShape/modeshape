@@ -61,7 +61,7 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         System.setProperty(Global.EXTERNAL_ADDR, localHost.getHostAddress());
     }
 
-    private static InetAddress getLocalHost() throws UnknownHostException {
+    public static InetAddress getLocalHost() throws UnknownHostException {
         String ipv6Prop = System.getProperty(Global.IPv6);
         boolean preferIpv6 = ipv6Prop != null && Boolean.TRUE.toString().equalsIgnoreCase(ipv6Prop);
 
