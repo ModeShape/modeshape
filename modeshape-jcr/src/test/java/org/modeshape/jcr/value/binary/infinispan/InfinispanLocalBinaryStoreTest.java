@@ -23,56 +23,27 @@
  */
 package org.modeshape.jcr.value.binary.infinispan;
 
-
-
 import org.infinispan.configuration.cache.CacheMode;
+import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.global.GlobalConfigurationBuilder;
-import org.infinispan.manager.DefaultCacheManager;
-import org.junit.After;
 import org.junit.Before;
-import org.modeshape.jcr.value.binary.AbstractBinaryStoreTest;
-import org.modeshape.jcr.value.binary.BinaryStore;
+import org.junit.BeforeClass;
 
-public class InfinispanLocalBinaryStoreTest extends AbstractBinaryStoreTest {
+public class InfinispanLocalBinaryStoreTest extends AbstractInfinispanStoreTest {
 
-    private DefaultCacheManager cacheManager;
-    private BinaryStore binaryStore;
-
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        cacheManager = InfinispanTestUtil.beforeClassStartup(false);
+    }
 
     @Before
     public void before(){
-        // setup ISPN
-        GlobalConfigurationBuilder globalConfigurationBuilder = new GlobalConfigurationBuilder();
-        globalConfigurationBuilder.transport().transport(null);
-
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.clustering().cacheMode(CacheMode.LOCAL);
+        Configuration blobConfiguration = configurationBuilder.build();
 
-        cacheManager = new DefaultCacheManager(globalConfigurationBuilder.build(), true);
+        Configuration metadataConfiguration = configurationBuilder.build();
 
-        // blob
-        cacheManager.defineConfiguration("blob", configurationBuilder.build());
-        cacheManager.startCache("blob");
-        // metadata
-        cacheManager.defineConfiguration("metadata", configurationBuilder.build());
-        cacheManager.startCache("metadata");
-
-        // start binary store
-        binaryStore = new InfinispanBinaryStore(cacheManager, false, "metadata", "blob");
-        binaryStore.setMimeTypeDetector(new DummyMimeTypeDetector());
-        ((InfinispanBinaryStore)binaryStore).start();
-    }
-
-    @After
-    public void after(){
-        if(cacheManager != null){
-            cacheManager.stop();
-        }
-    }
-
-    @Override
-    protected BinaryStore getBinaryStore() {
-        return binaryStore;
+        startBinaryStore(metadataConfiguration, blobConfiguration);
     }
 }

@@ -114,12 +114,13 @@ public abstract class AbstractBinaryStoreTest {
     }
 
     @Test(expected=BinaryStoreException.class)
-    public void testGetMimeTypeWithoutExistingValue() throws BinaryStoreException, IOException, RepositoryException {
+    public void testGetMimeTypeWithoutExistingValue() throws IOException, RepositoryException {
         getBinaryStore().getMimeType(new StoredBinaryValue(getBinaryStore(), new BinaryKey("nonsuch"), 0), "foobar.txt");
     }
 
     @Test
     public void testMimeType() throws RepositoryException, IOException {
+        getBinaryStore().setMimeTypeDetector(new DummyMimeTypeDetector());
         BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(SMALL_DATA));
         assertNull(((AbstractBinaryStore)getBinaryStore()).getStoredMimeType(binaryValue));
         // unclean stuff... a getter modifies silently data
@@ -141,7 +142,7 @@ public abstract class AbstractBinaryStoreTest {
         // TextExtractors have no interface and are final :-o ... how to test w/o repository? :-)
     }
 
-    public class DummyMimeTypeDetector extends MimeTypeDetector {
+    static class DummyMimeTypeDetector extends MimeTypeDetector {
 
         public static final String DEFAULT_TYPE = "application/foobar";
 
