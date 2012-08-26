@@ -23,10 +23,8 @@
  */
 package org.modeshape.jcr;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.io.Serializable;
+import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -36,11 +34,18 @@ import org.infinispan.Cache;
 import org.infinispan.distexec.DefaultExecutorService;
 import org.infinispan.distexec.DistributedCallable;
 import org.infinispan.distexec.DistributedExecutorService;
+import org.infinispan.loaders.CacheLoader;
+import org.infinispan.loaders.CacheLoaderException;
+import org.infinispan.loaders.CacheLoaderManager;
+import org.infinispan.util.concurrent.ConcurrentHashSet;
+import org.modeshape.common.logging.Logger;
 
 /**
  * A set of utility methods for Infinispan caches.
  */
 public class InfinispanUtil {
+
+    protected static final Logger LOGGER = Logger.getLogger(InfinispanUtil.class);
 
     private InfinispanUtil() {
         // prevent instantiation ...
@@ -54,16 +59,76 @@ public class InfinispanUtil {
      * @param cache the cache
      * @return the sequence that can be used to obtain the keys; never null
      */
-    public static <K, V> Sequence<K> getAllKeys( Cache<K, V> cache ) {
-        if (cache.getAdvancedCache().getRpcManager() == null) {
-            // This is not a distributed cache, so there's no choice but to use 'keySet()' even though
-            // it has limitations ...
-            return new IteratorSequence<K>(cache.keySet().iterator());
+    @SuppressWarnings("unchecked")
+    public static <K, V> Sequence<K> getAllKeys( Cache<K, V> cache ) throws CacheLoaderException, InterruptedException, ExecutionException {
+        LOGGER.debug("getAllKeys of {0}", cache.getName());
+        CacheLoader cacheLoader = null;
+
+        CacheLoaderManager cacheLoaderManager = cache.getAdvancedCache().getComponentRegistry().getComponent(CacheLoaderManager.class);
+        if(cacheLoaderManager != null){
+            cacheLoader = cacheLoaderManager.getCacheLoader();
         }
-        // Use a distributed executor to execute callables throughout the Infinispan cluster ...
-        DistributedExecutorService distributedExecutor = new DefaultExecutorService(cache);
-        final List<Future<Set<K>>> futures = distributedExecutor.submitEverywhere(new GetAllKeys<K, V>());
-        return new DistributedKeySequence<K>(futures);
+        Set<K> cacheKeys;
+        if(cacheLoader == null){
+            if(cache.getCacheConfiguration().clustering().cacheMode().isDistributed()){
+                LOGGER.debug("Use distributed call to fetch all keys");
+                // Use a distributed executor to execute callables throughout the Infinispan cluster ...
+                DistributedExecutorService distributedExecutor = new DefaultExecutorService(cache);
+                List<Future<Set<K>>> futures = distributedExecutor.submitEverywhere(new GetAllMemoryKeys<K, V>());
+                cacheKeys = mergeResults(futures);
+            } else {
+                cacheKeys = cache.keySet();
+            }
+        } else {
+            LOGGER.debug("Cache contains loader");
+            boolean shared = cache.getCacheConfiguration().loaders().shared();
+            if(cache.getCacheConfiguration().clustering().cacheMode().isDistributed()){
+                if(!shared){
+                    LOGGER.debug("Use distributed call to fetch all keys");
+                    // store is not shared so every node must return key list of the store
+                    DistributedExecutorService distributedExecutor = new DefaultExecutorService(cache);
+                    List<Future<Set<K>>> futures = distributedExecutor.submitEverywhere(new GetAllKeys<K, V>());
+                    cacheKeys = mergeResults(futures);
+                } else {
+                    LOGGER.debug("Load keys from loader");
+                    // load only these keys, which are not in memory
+                    cacheKeys = new HashSet<K>(cache.keySet());
+                    cacheKeys.addAll((Set<K>)cacheLoader.loadAllKeys((Set<Object>)cacheKeys));
+                }
+            } else {
+                LOGGER.debug("Load keys from loader");
+                cacheKeys = new HashSet<K>(cache.keySet());
+                cacheKeys.addAll((Set<K>)cacheLoader.loadAllKeys((Set<Object>)cacheKeys));
+            }
+        }
+        return new IteratorSequence<K>(cacheKeys.iterator());
+    }
+
+    /**
+     * Since keys can appear more than one time e.g. multiple owners in a distributed cache,
+     * they all must be merged into a Set.
+     */
+    private static <K> Set<K> mergeResults(List<Future<Set<K>>> futures) throws InterruptedException, ExecutionException {
+        // todo use ConcurrentHashSet and merge as the results appear
+        Set<K> allKeys = new HashSet<K>();
+        while (true) {
+            // Get the next future that is ready ...
+            Iterator<Future<Set<K>>> futureIter = futures.iterator();
+            while (futureIter.hasNext()) {
+                Future<Set<K>> future = futureIter.next();
+                try {
+                    // But done't wait too long for this future ...
+                    Set<K> keys = future.get(100, TimeUnit.MILLISECONDS);
+                    // We got some keys, so this future is done and should be removed from our list ...
+                    futureIter.remove();
+                    allKeys.addAll(keys);
+                } catch (TimeoutException e) {
+                    // continue;
+                }
+            }
+            if (futures.isEmpty()) break;
+        }
+        return allKeys;
     }
 
     /**
@@ -83,7 +148,7 @@ public class InfinispanUtil {
         T next() throws ExecutionException, CancellationException, InterruptedException;
     }
 
-    public static final class IteratorSequence<T> implements Sequence<T> {
+    private static final class IteratorSequence<T> implements Sequence<T> {
         private final Iterator<T> iterator;
 
         public IteratorSequence( Iterator<T> iterator ) {
@@ -97,82 +162,61 @@ public class InfinispanUtil {
     }
 
     /**
-     * A {@link DistributedCallable} implementation that returns the complete set of keys in an Infinispan cache.
+     * A {@link DistributedCallable} implementation that returns the set of keys in an Infinispan cache.
+     * The keys inside cache store are ignored.
      * 
      * @param <K> the type of key
      * @param <V> the type of value
      */
-    protected static final class GetAllKeys<K, V> implements DistributedCallable<K, V, Set<K>> {
-        private Set<K> keys;
+    private static final class GetAllMemoryKeys<K, V> implements DistributedCallable<K, V, Set<K>>, Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private Cache<K, V> cache;
 
         @Override
         public void setEnvironment( Cache<K, V> cache,
                                     Set<K> inputKeys ) {
-            this.keys = inputKeys;
+            this.cache = cache;
         }
 
         @Override
         public Set<K> call() throws Exception {
-            return keys;
+            return cache.keySet();
         }
     }
 
     /**
-     * A {@link Sequence} implementation that returns the keys returned by multiple futures that make take time to complete. This
-     * method attempts to use the futures as soon as they are completed.
-     * 
-     * @param <T> the key type
+     * A {@link DistributedCallable} implementation that returns the set of keys in an Infinispan cache which are stored in memory.
+     *
+     * @param <K> the type of key
+     * @param <V> the type of value
      */
-    protected static class DistributedKeySequence<T> implements Sequence<T> {
-        private final List<Future<Set<T>>> futures;
-        private Iterator<T> currentIter;
+    private static final class GetAllKeys<K, V> implements DistributedCallable<K, V, Set<K>>, Serializable {
+        private static final long serialVersionUID = 1L;
 
-        protected DistributedKeySequence( List<Future<Set<T>>> futures ) {
-            // Make a copy so that we can remove entries as we process ...
-            this.futures = new LinkedList<Future<Set<T>>>(futures);
+        private Cache<K, V> cache;
+
+        @Override
+        public void setEnvironment( Cache<K, V> cache,
+                                    Set<K> inputKeys ) {
+            this.cache = cache;
         }
 
         @Override
-        public T next() throws ExecutionException, CancellationException, InterruptedException {
-            while (true) {
-                if (futures.isEmpty()) {
-                    // No more futures, so we're done!
-                    return null;
-                }
-                if (currentIter == null) {
-                    // Wait until the next results are available ...
-                    while (true) {
-                        // Get the next future that is ready ...
-                        Iterator<Future<Set<T>>> futureIter = futures.iterator();
-                        while (futureIter.hasNext()) {
-                            Future<Set<T>> future = futureIter.next();
-                            try {
-                                // But done't wait too long for this future ...
-                                Set<T> keys = future.get(100, TimeUnit.MILLISECONDS);
-                                // We got some keys, so this future is done and should be removed from our list ...
-                                futureIter.remove();
-                                // And set the current iterator to these keys ...
-                                currentIter = keys.iterator();
-                            } catch (TimeoutException e) {
-                                // continue;
-                            }
-                        }
-                        if (futures.isEmpty()) break;
-                    }
-                    if (currentIter == null) {
-                        // No more futures, so we're done!
-                        return null;
-                    }
-                }
-                while (currentIter.hasNext()) {
-                    T key = currentIter.next();
-                    if (key != null) return key;
-                }
-                // We're done with this iterator ...
-                currentIter = null;
+        @SuppressWarnings("unchecked")
+        public Set<K> call() throws Exception {
+            CacheLoaderManager cacheLoaderManager = cache.getAdvancedCache().getComponentRegistry().getComponent(CacheLoaderManager.class);
+            if(cacheLoaderManager == null){
+                return cache.keySet();
             }
+            CacheLoader cacheLoader = cacheLoaderManager.getCacheLoader();
+            if(cacheLoader == null){
+                return cache.keySet();
+            }
+            // load only these keys, which are not already in memory
+            Set<K> cacheKeys = new HashSet<K>(cache.keySet());
+            cacheKeys.addAll((Set<K>)cacheLoader.loadAllKeys((Set<Object>)cacheKeys));
+            return cacheKeys;
         }
-
     }
-
 }

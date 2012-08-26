@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.jcr.RepositoryException;
 import org.infinispan.Cache;
+import org.infinispan.loaders.CacheLoaderException;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
@@ -135,7 +136,7 @@ public class BackupService {
                                                             long documentsPerFile,
                                                             boolean compress ) throws RepositoryException {
         // Create the activity ...
-        final BackupActivity backupActivity = createBackupActivity(backupDirectory, documentsPerFile, true);
+        final BackupActivity backupActivity = createBackupActivity(backupDirectory, documentsPerFile, compress);
 
         // Run the backup and return the problems ...
         return new JcrProblems(backupActivity.execute());
@@ -430,7 +431,9 @@ public class BackupService {
                     NodeKey metadataKey = repositoryCache.getRepositoryMetadataDocumentKey();
                     SchematicEntry entry = documentStore.get(metadataKey.toString());
                     writeToContentArea(entry);
-
+                } catch (Exception e){
+                    I18n msg = JcrI18n.problemObtainingDocumentsToBackup;
+                    this.problems.addError(msg, repositoryName(), backupLocation(), e.getMessage());
                 } finally {
                     // Now that we're done with the backup, unregister the listener ...
                     try {
@@ -487,9 +490,6 @@ public class BackupService {
                 this.problems.addError(msg, repositoryName(), backupLocation(), e.getMessage());
             } catch (CancellationException e) {
                 this.problems.addError(JcrI18n.backupOperationWasCancelled, repositoryName(), backupLocation(), e.getMessage());
-            } catch (ExecutionException e) {
-                I18n msg = JcrI18n.problemObtainingDocumentsToBackup;
-                this.problems.addError(msg, repositoryName(), backupLocation(), e.getMessage());
             } finally {
                 // PHASE 5:
                 // Close all open writers ...
@@ -568,6 +568,9 @@ public class BackupService {
                                            repositoryName(),
                                            backupLocation(),
                                            e2.getMessage());
+                } catch (CacheLoaderException e2){
+                    I18n msg = JcrI18n.problemObtainingDocumentsToBackup;
+                    this.problems.addError(msg, repositoryName(), backupLocation(), e2.getMessage());
                 } catch (ExecutionException e2) {
                     I18n msg = JcrI18n.problemObtainingDocumentsToBackup;
                     this.problems.addError(msg, repositoryName(), backupLocation(), e2.getMessage());
