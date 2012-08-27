@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -21,22 +21,18 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
- 
-//------------------------------------------------------------------------------
-// N A M E S P A C E S
-//------------------------------------------------------------------------------
+package org.modeshape.sequencer.teiid.lexicon;
 
-<nt  = "http://www.jcp.org/jcr/nt/1.0">
-<mix = "http://www.jcp.org/jcr/mix/1.0">
-<xmi = "http://www.omg.org/XMI">
+/**
+ * Constants relating to the Model Extension Definition (MED) namespace.
+ */
+public interface ModelExtensionDefinitionLexicon {
 
-//------------------------------------------------------------------------------
-// N O D E T Y P E S
-//------------------------------------------------------------------------------
-
-[xmi:referenceable] mixin
- - xmi:uuid (string) mandatory
-
-[xmi:model] > nt:unstructured, xmi:referenceable, mix:referenceable orderable
- - xmi:version (double) = '2.0'
-
+    /**
+     * MED namespace constants.
+     */
+    public interface Namespace {
+        String PREFIX = "modelExtensionDefinition";
+        String URI = "http://www.jboss.org/teiiddesigner/ext/2012";
+    }
+}

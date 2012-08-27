@@ -36,20 +36,16 @@ import org.modeshape.common.util.CheckArg;
  */
 public class VdbModel implements Comparable<VdbModel> {
 
-    public static final class ModelType {
-        // These are not the only valid model types, but they're the only ones we care about at the moment
-        public static final String PHYSICAL = "PHYSICAL";
-        public static final String VIRTUAL = "VIRTUAL";
-    }
-
     private String description;
-    private final String name;
-    private final String type;
-    private final String pathInVdb;
+    private String name;
+    private String type;
+    private String pathInVdb;
     private String sourceTranslator;
     private String sourceJndiName;
     private String sourceName;
     private boolean visible = true;
+    private boolean builtIn = false;
+    private long checksum;
     private final Set<String> imports = new HashSet<String>();
     private List<ValidationMarker> problems = new ArrayList<ValidationMarker>();
     private final Map<String, String> properties = new HashMap<String, String>();
@@ -102,7 +98,7 @@ public class VdbModel implements Comparable<VdbModel> {
     }
 
     /**
-     * @return <code>true</code> if model can be queried by user
+     * @return visible
      */
     public boolean isVisible() {
         return visible;
@@ -114,6 +110,35 @@ public class VdbModel implements Comparable<VdbModel> {
     public void setVisible( boolean visible ) {
         this.visible = visible;
     }
+
+    /**
+     * @return builtIn
+     */
+    public boolean isBuiltIn() {
+        return builtIn;
+    }
+
+    /**
+     * @param builtIn Sets builtIn to the specified value.
+     */
+    public void setBuiltIn( boolean builtIn ) {
+        this.builtIn = builtIn;
+    }
+
+    /**
+     * @return checksum
+     */
+    public long getChecksum() {
+        return checksum;
+    }
+
+    /**
+     * @param checksum Sets checksum to the specified value.
+     */
+    public void setChecksum( long checksum ) {
+        this.checksum = checksum;
+    }
+
 
     /**
      * @return the path in the VDB (never <code>null</code> or empty)
@@ -180,7 +205,7 @@ public class VdbModel implements Comparable<VdbModel> {
     }
 
     /**
-     * @return problems
+     * @return the validation markers (never <code>null</code>)
      */
     public List<ValidationMarker> getProblems() {
         return problems;

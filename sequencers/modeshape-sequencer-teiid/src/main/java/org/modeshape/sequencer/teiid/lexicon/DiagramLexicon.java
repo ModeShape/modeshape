@@ -34,4 +34,7 @@ public class DiagramLexicon {
         public static final String PREFIX = "diagram";
     }
 
+    public interface ModelTags {
+        String DIAGRAM_CONTAINER = "DiagramContainer";
+    }
 }

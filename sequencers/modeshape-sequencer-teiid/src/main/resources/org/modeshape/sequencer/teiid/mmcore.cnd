@@ -35,7 +35,7 @@
 // N O D E T Y P E S
 //------------------------------------------------------------------------------
 
-[mmcore:model] > xmi:referenceable, mode:hashed mixin
+[mmcore:model] > xmi:model, mode:hashed mixin
   - mmcore:modelType (string) = 'UNKNOWN' < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'
   - mmcore:primaryMetamodelUri (string)
   - mmcore:description (string)
@@ -47,11 +47,9 @@
   - mmcore:supportsOrderBy (boolean) = 'true'
   - mmcore:supportsOuterJoin (boolean) = 'true'
   - mmcore:supportsWhereAll (boolean) = 'true'
-  - mmcore:supportsDistinct (boolean) = 'true'
   - mmcore:producerName (string)
   - mmcore:producerVersion (string)
   - mmcore:originalFile (string)
-//  - mmcore:sha1 (string)
 
 [mmcore:import] > nt:unstructured, xmi:referenceable orderable
   - mmcore:modelType (string) = 'UNKNOWN' < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'

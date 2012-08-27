@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="ASCII"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:diagram="http://www.metamatrix.com/metamodels/Diagram" xmlns:mmcore="http://www.metamatrix.com/metamodels/Core" xmlns:relational="http://www.metamatrix.com/metamodels/Relational" xmlns:transformation="http://www.metamatrix.com/metamodels/Transformation">
+  <mmcore:ModelAnnotation xmi:uuid="mmuuid:9a7f4230-8b1d-4a1f-af20-66bcc3cac4c3" primaryMetamodelUri="http://www.metamatrix.com/metamodels/Relational" modelType="VIRTUAL" ProducerName="Teiid Designer" ProducerVersion="7.7.1.v20120601-2230-H68-Nightly-SOA">
+    <modelImports xmi:uuid="mmuuid:08c4d0d0-fa12-425c-993a-e64d4f6ae3f0" name="MyBooks" modelLocation="MyBooks.xmi" uuid="mmuuid:2e94b8b2-f0f7-4806-b09d-aff9722d86d5" modelType="PHYSICAL" primaryMetamodelUri="http://www.metamatrix.com/metamodels/Relational"/>
+    <modelImports xmi:uuid="mmuuid:b3efc7d7-de3e-4012-adb8-df228110d627" name="SimpleDatatypes-instance" modelLocation="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance" modelType="TYPE" primaryMetamodelUri="http://www.eclipse.org/xsd/2002/XSD"/>
+  </mmcore:ModelAnnotation>
+  <diagram:DiagramContainer xmi:uuid="mmuuid:80d22cf9-69ea-4ebe-ba6d-141be6a1f71a">
+    <diagram xmi:uuid="mmuuid:56520bb5-84fd-44f9-b39b-b4e9e7cea706" type="packageDiagramType" target="mmuuid/9a7f4230-8b1d-4a1f-af20-66bcc3cac4c3">
+      <diagramEntity xmi:uuid="mmuuid:ec479563-6fee-4270-8e16-8cff5efac6aa" modelObject="mmuuid/a8bce86d-90b5-4893-93cc-161310165508" xPosition="106" yPosition="37"/>
+    </diagram>
+    <diagram xmi:uuid="mmuuid:1fa60eb8-d312-493a-8e15-17579b81445d" type="transformationDiagramType" target="mmuuid/a8bce86d-90b5-4893-93cc-161310165508">
+      <diagramEntity xmi:uuid="mmuuid:84b834fb-9a09-4a47-81e7-770b76791618" modelObject="mmuuid/a8bce86d-90b5-4893-93cc-161310165508" xPosition="30" yPosition="50"/>
+      <diagramEntity xmi:uuid="mmuuid:9bdfa919-399a-4340-8bc2-ecd61d48eda7" name="T" modelObject="mmuuid/9a3d76d5-c42b-4ce6-87cf-8c8c289eeda9" xPosition="257" yPosition="50"/>
+      <diagramEntity xmi:uuid="mmuuid:a2fc7d9d-88d4-4f86-a166-56521d909f5e" xPosition="307" yPosition="50">
+        <modelObject href="MyBooks.xmi#mmuuid/dd443831-3f9b-4bc7-82c2-67406c1633af"/>
+      </diagramEntity>
+    </diagram>
+  </diagram:DiagramContainer>
+  <transformation:TransformationContainer xmi:uuid="mmuuid:1aeb5a8f-8943-4915-8430-af64e90e3572">
+    <transformationMappings xsi:type="transformation:SqlTransformationMappingRoot" xmi:uuid="mmuuid:9a3d76d5-c42b-4ce6-87cf-8c8c289eeda9" outputs="mmuuid/a8bce86d-90b5-4893-93cc-161310165508" target="mmuuid/a8bce86d-90b5-4893-93cc-161310165508">
+      <helper xsi:type="transformation:SqlTransformation" xmi:uuid="mmuuid:c9776d0a-1d86-495a-9bff-886983f98f58">
+        <nested xsi:type="transformation:SqlTransformation" xmi:uuid="mmuuid:bdb97e9d-051c-417f-8a1c-bd0523ef2871" selectSql="CREATE VIRTUAL PROCEDURE&#xa;BEGIN&#xa;&#x9;SELECT XMLELEMENT(NAME books, XMLAGG(XMLELEMENT(NAME book, XMLFOREST(MyBooks.BOOKS.ISBN, MyBooks.BOOKS.TITLE, MyBooks.BOOKS.SUBTITLE, MyBooks.BOOKS.PUBLISHER, MyBooks.BOOKS.PUBLISH_YEAR, MyBooks.BOOKS.EDITION, MyBooks.BOOKS.TYPE)))) AS result FROM MyBooks.BOOKS;&#xa;END"/>
+        <aliases xmi:uuid="mmuuid:dbc73dde-ba52-4f09-8b16-046a19082c76" alias="BOOKS">
+          <aliasedObject href="MyBooks.xmi#mmuuid/dd443831-3f9b-4bc7-82c2-67406c1633af"/>
+        </aliases>
+      </helper>
+      <nested xsi:type="transformation:TransformationMapping" xmi:uuid="mmuuid:493a038c-bd9d-4524-8433-d45ff5afd4d9" outputs="mmuuid/164a8d09-7aa6-4b55-b834-037affc685a1">
+        <inputs href="MyBooks.xmi#mmuuid/aff4fdf9-5ed9-4438-a460-0950656b88cc"/>
+        <inputs href="MyBooks.xmi#mmuuid/780c1390-eecd-457b-bce0-32820ad8af9a"/>
+        <inputs href="MyBooks.xmi#mmuuid/0537478b-2559-409d-b7bd-7c9d614f13fd"/>
+        <inputs href="MyBooks.xmi#mmuuid/d46cfb95-8c00-467b-80ab-9aee6252beb9"/>
+        <inputs href="MyBooks.xmi#mmuuid/2c70f6ce-36e1-4b06-b559-919d81c99992"/>
+        <inputs href="MyBooks.xmi#mmuuid/5ec123d4-101d-4119-be6e-508a325d401c"/>
+        <inputs href="MyBooks.xmi#mmuuid/5919f75e-6068-49fc-931c-3e2ad6c1e093"/>
+      </nested>
+      <inputs href="MyBooks.xmi#mmuuid/dd443831-3f9b-4bc7-82c2-67406c1633af"/>
+    </transformationMappings>
+  </transformation:TransformationContainer>
+  <mmcore:AnnotationContainer xmi:uuid="mmuuid:48e6a33e-9d7c-44bc-9572-fd14dfb03fd1">
+    <annotations xmi:uuid="mmuuid:cd6e2dcf-9d06-4502-bdc2-42be5b068df6" annotatedObject="mmuuid/9a7f4230-8b1d-4a1f-af20-66bcc3cac4c3">
+      <tags xmi:uuid="mmuuid:5eafe39a-d2dc-4ce0-8ee1-9ee3b7a2e9e2" key="modelExtensionDefinition:rest" value="rest"/>
+    </annotations>
+    <annotations xmi:uuid="mmuuid:b5fb2f2b-6cb2-4d5f-97a7-e1246f4359d8" annotatedObject="mmuuid/5eafe39a-d2dc-4ce0-8ee1-9ee3b7a2e9e2">
+      <tags xmi:uuid="mmuuid:859e66ff-6829-4cc7-8341-3831bb9edcff" key="metamodel" value="http://www.metamatrix.com/metamodels/Relational"/>
+      <tags xmi:uuid="mmuuid:c875a0ab-cbcf-4716-8cb6-89c44122d868" key="namespacePrefix" value="rest"/>
+      <tags xmi:uuid="mmuuid:3cb1624d-a178-40dd-9ecd-0157653dd872" key="namespaceUri" value="http://www.jboss.org/teiiddesigner/ext/rest/2012"/>
+      <tags xmi:uuid="mmuuid:067ce5b9-0bc0-4145-9239-1b2920d4a866" key="version" value="1"/>
+      <tags xmi:uuid="mmuuid:5fbce24d-868e-4093-b822-3ed5f30ff423" key="description" value="REST extended virtual procedure properties"/>
+      <tags xmi:uuid="mmuuid:f2cf70d3-38c0-45ff-9533-aa239e70fba2" key="modelTypes" value=""/>
+      <tags xmi:uuid="mmuuid:f46ea81e-65d0-4b95-b052-b5538fc37c0b" key="extendedMetaclass:com.metamatrix.metamodels.relational.impl.ProcedureImpl" value="com.metamatrix.metamodels.relational.impl.ProcedureImpl"/>
+    </annotations>
+    <annotations xmi:uuid="mmuuid:c81f4470-c10c-4eb6-a369-954da651ba93" annotatedObject="mmuuid/f2cf70d3-38c0-45ff-9533-aa239e70fba2">
+      <tags xmi:uuid="mmuuid:af211acb-1e55-4e87-aef5-8084912e5296" key="VIRTUAL" value=""/>
+    </annotations>
+    <annotations xmi:uuid="mmuuid:c882e235-7768-44b9-823d-8e7110926a9b" annotatedObject="mmuuid/f46ea81e-65d0-4b95-b052-b5538fc37c0b">
+      <tags xmi:uuid="mmuuid:50e66912-3891-42c8-85e0-1c6b37002130" key="propertyDefinition:restMethod" value="restMethod"/>
+      <tags xmi:uuid="mmuuid:251b7da6-3a16-4e5b-8f56-d26eab8434c2" key="propertyDefinition:uri" value="uri"/>
+    </annotations>
+    <annotations xmi:uuid="mmuuid:a20e5f07-e9a2-4a9f-af02-b07fa6cebee5" annotatedObject="mmuuid/50e66912-3891-42c8-85e0-1c6b37002130">
+      <tags xmi:uuid="mmuuid:7b8a3200-c3f8-4380-8baf-1116606eb7fe" key="advance" value="false"/>
+      <tags xmi:uuid="mmuuid:83b98707-ef52-4edd-b82e-11d2bfc6f27a" key="allowedValues" value=""/>
+      <tags xmi:uuid="mmuuid:dc8142ee-a628-42a1-a5f8-8770b97eacbb" key="displayName" value=""/>
+      <tags xmi:uuid="mmuuid:a66eda17-c78f-4831-8b77-3f89b5b38064" key="defaultValue" value=" "/>
+      <tags xmi:uuid="mmuuid:7e6c3a0c-0c98-4a75-b5dd-2a4fabe5549e" key="description" value=""/>
+      <tags xmi:uuid="mmuuid:a2f2f7ed-03d7-449b-8f76-db2b08f69b78" key="id" value="restMethod"/>
+      <tags xmi:uuid="mmuuid:f3fbfefc-d3e8-422f-8363-1c5728cf941d" key="index" value="false"/>
+      <tags xmi:uuid="mmuuid:6e4f5004-0b21-4a60-834b-c7584c9bbc32" key="modifiable" value="true"/>
+      <tags xmi:uuid="mmuuid:78edc17e-602b-41b4-b970-f0647f405689" key="masked" value="false"/>
+      <tags xmi:uuid="mmuuid:a82b9525-a837-45a9-b0a4-6392506dc265" key="required" value="false"/>
+      <tags xmi:uuid="mmuuid:eb432e93-135a-4b1c-af9e-7a218c097814" key="runtimeType" value="string"/>
+    </annotations>
+    <annotations xmi:uuid="mmuuid:b14a18e6-02d2-4700-b655-d6dbbcd59209" annotatedObject="mmuuid/83b98707-ef52-4edd-b82e-11d2bfc6f27a">
+      <tags xmi:uuid="mmuuid:5ce625e2-fe0b-476c-8f65-c3f1312bad3c" key="POST" value=""/>
+      <tags xmi:uuid="mmuuid:d53ceee0-d558-4ac1-8720-6537632294d7" key=" " value=""/>
+      <tags xmi:uuid="mmuuid:d3d84cec-7a3d-46ea-a05d-4335790f4f64" key="GET" value=""/>
+      <tags xmi:uuid="mmuuid:412bb459-9433-400e-8a4d-1f9e457f7c66" key="DELETE" value=""/>
+      <tags xmi:uuid="mmuuid:01eedd3e-bc22-489a-bf35-f5939c475f40" key="PUT" value=""/>
+    </annotations>
+    <annotations xmi:uuid="mmuuid:1953922d-781b-4190-8a04-c3a469bb0771" annotatedObject="mmuuid/dc8142ee-a628-42a1-a5f8-8770b97eacbb">
+      <tags xmi:uuid="mmuuid:97a49312-f71b-47a8-b288-3bc4ac7a3277" key="en_US" value="Rest Method"/>
+    </annotations>
+    <annotations xmi:uuid="mmuuid:cc29b95a-3d60-4c0b-8503-9d47b8d8da37" annotatedObject="mmuuid/7e6c3a0c-0c98-4a75-b5dd-2a4fabe5549e">
+      <tags xmi:uuid="mmuuid:733ddaef-c214-49a4-9e34-e40a1a9ebc10" key="en_US" value="The REST method to map this procedure to. Supported methods are&#xa;&#x9;&#x9;&#x9;&#x9;GET/PUT/POST/DELETE."/>
+    </annotations>
+    <annotations xmi:uuid="mmuuid:05e013a1-8e72-44cf-a749-cd6c076fef9b" annotatedObject="mmuuid/251b7da6-3a16-4e5b-8f56-d26eab8434c2">
+      <tags xmi:uuid="mmuuid:bb8aea4b-b005-4240-bf49-081c9c69ac14" key="advance" value="false"/>
+      <tags xmi:uuid="mmuuid:df696686-fe09-4364-bc52-d86da0f10918" key="displayName" value=""/>
+      <tags xmi:uuid="mmuuid:4227faf2-ce55-4b02-90d8-2d0e7cec6ac2" key="description" value=""/>
+      <tags xmi:uuid="mmuuid:724f6002-a2b4-465c-bf7f-eb3d1e090180" key="id" value="uri"/>
+      <tags xmi:uuid="mmuuid:6d2a750b-3555-41e0-892f-aa0ae3ee61a5" key="index" value="false"/>
+      <tags xmi:uuid="mmuuid:96983ac4-94ee-4cf9-817a-343d1ed73444" key="modifiable" value="true"/>
+      <tags xmi:uuid="mmuuid:10bd1cc5-cfb4-4632-ab82-684c304cebb5" key="masked" value="false"/>
+      <tags xmi:uuid="mmuuid:7bb215ee-aaf7-49cf-bd5b-4211a1af65ab" key="required" value="false"/>
+      <tags xmi:uuid="mmuuid:6f7e6d66-ab56-41ad-9ddc-6b816fc16ae5" key="runtimeType" value="string"/>
+    </annotations>
+    <annotations xmi:uuid="mmuuid:e918818b-d43c-4745-b67f-5114cf9b83d8" annotatedObject="mmuuid/df696686-fe09-4364-bc52-d86da0f10918">
+      <tags xmi:uuid="mmuuid:8df0a20b-4207-45f8-80ab-d588c6243885" key="en_US" value="URI"/>
+    </annotations>
+    <annotations xmi:uuid="mmuuid:7b04e580-51e4-49b3-a761-7eaf4104d56d" annotatedObject="mmuuid/4227faf2-ce55-4b02-90d8-2d0e7cec6ac2">
+      <tags xmi:uuid="mmuuid:d5c4c557-1d31-46e1-bc75-80762ae459e8" key="en_US" value="The relative URI to map this procedure to."/>
+    </annotations>
+    <annotations xmi:uuid="mmuuid:042e433f-b54f-43fc-aac5-0389a8d543d0" annotatedObject="mmuuid/a8bce86d-90b5-4893-93cc-161310165508">
+      <tags xmi:uuid="mmuuid:c54e6742-4037-4435-bef0-d786bbe7a3c1" key="rest:restMethod" value="GET"/>
+      <tags xmi:uuid="mmuuid:1cd1b948-503b-4ef0-8885-ea09c9f64987" key="rest:uri" value="books"/>
+    </annotations>
+  </mmcore:AnnotationContainer>
+  <relational:Procedure xmi:uuid="mmuuid:a8bce86d-90b5-4893-93cc-161310165508" name="getBooks">
+    <result xmi:uuid="mmuuid:d22c57e9-7e29-4731-9f88-d68784e834f4" name="NewProcedureResult">
+      <columns xmi:uuid="mmuuid:164a8d09-7aa6-4b55-b834-037affc685a1" name="result">
+        <type href="http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#XMLLiteral"/>
+      </columns>
+    </result>
+  </relational:Procedure>
+</xmi:XMI>

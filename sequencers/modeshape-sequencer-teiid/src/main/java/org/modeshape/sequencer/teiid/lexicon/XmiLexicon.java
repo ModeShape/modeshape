@@ -23,7 +23,6 @@
  */
 package org.modeshape.sequencer.teiid.lexicon;
 
-
 import static org.modeshape.sequencer.teiid.lexicon.XmiLexicon.Namespace.PREFIX;
 
 /**
@@ -36,10 +35,13 @@ public class XmiLexicon {
         public static final String PREFIX = "xmi";
     }
 
+    public interface ModelIds {
+        String UUID = "uuid";
+    }
+
     public static final String MODEL = PREFIX + ":model";
     public static final String XMI = PREFIX + ":xmi";
     public static final String VERSION = PREFIX + ":version";
-    public static final String UUID = PREFIX + ":uuid";
+    public static final String UUID = PREFIX + ':' + ModelIds.UUID;
     public static final String REFERENCEABLE = PREFIX + ":referenceable";
-
 }

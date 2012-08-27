@@ -42,6 +42,15 @@ public final class TeiidI18n {
     public static I18n errorReadingVdbFile;
     public static I18n errorClosingVdbFile;
 
+    public static I18n invalidNumberOfPropertyAttributes;
+    public static I18n missingDataRoleName;
+    public static I18n missingEntryPath;
+    public static I18n missingModelNameTypeOrPath;
+    public static I18n missingPermissionResourceName;
+    public static I18n missingPropertyNameOrValue;
+    public static I18n missingTranslatorNameOrType;
+    public static I18n missingVdbName;
+
     static {
         try {
             I18n.initialize(TeiidI18n.class);

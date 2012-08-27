@@ -7,10 +7,12 @@
         <version>3.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <groupId>org.modeshape</groupId>
+     <!-- The groupId and version values are inherited from parent -->
     <artifactId>modeshape-sequencer-teiid</artifactId>
+    <packaging>jar</packaging>
     <name>ModeShape Teiid Sequencer</name>
     <description>ModeShape Sequencer that processes Teiid models and VDBs</description>
+    <url>http://www.modeshape.org</url>
     <dependencies>
         <dependency>
             <groupId>com.beust</groupId>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="ASCII"?>
+<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:diagram="http://www.metamatrix.com/metamodels/Diagram" xmlns:jdbc="http://www.metamatrix.com/metamodels/JDBC" xmlns:mmcore="http://www.metamatrix.com/metamodels/Core" xmlns:relational="http://www.metamatrix.com/metamodels/Relational">
+  <mmcore:ModelAnnotation xmi:uuid="mmuuid:2e94b8b2-f0f7-4806-b09d-aff9722d86d5" primaryMetamodelUri="http://www.metamatrix.com/metamodels/Relational" modelType="PHYSICAL" ProducerName="Teiid Designer" ProducerVersion="7.7.1">
+    <modelImports xmi:uuid="mmuuid:8296b5c8-80e3-47b3-9848-7b98cc739332" name="XMLSchema" modelLocation="http://www.w3.org/2001/XMLSchema" modelType="TYPE" primaryMetamodelUri="http://www.eclipse.org/xsd/2002/XSD"/>
+  </mmcore:ModelAnnotation>
+  <relational:BaseTable xmi:uuid="mmuuid:dd443831-3f9b-4bc7-82c2-67406c1633af" name="BOOKS" nameInSource="`BOOKS`">
+    <columns xmi:uuid="mmuuid:2c70f6ce-36e1-4b06-b559-919d81c99992" name="ISBN" nameInSource="ISBN" nativeType="VARCHAR" length="255">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:d46cfb95-8c00-467b-80ab-9aee6252beb9" name="TITLE" nameInSource="TITLE" nativeType="VARCHAR" length="255">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:5919f75e-6068-49fc-931c-3e2ad6c1e093" name="SUBTITLE" nameInSource="SUBTITLE" nativeType="VARCHAR" length="255">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:0537478b-2559-409d-b7bd-7c9d614f13fd" name="PUBLISHER" nameInSource="PUBLISHER" nativeType="INT" fixedLength="true" precision="10" caseSensitive="false" searchability="ALL_EXCEPT_LIKE">
+      <type href="http://www.w3.org/2001/XMLSchema#int"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:780c1390-eecd-457b-bce0-32820ad8af9a" name="PUBLISH_YEAR" nameInSource="PUBLISH_YEAR" nativeType="INT" fixedLength="true" precision="10" caseSensitive="false" searchability="ALL_EXCEPT_LIKE">
+      <type href="http://www.w3.org/2001/XMLSchema#int"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:aff4fdf9-5ed9-4438-a460-0950656b88cc" name="EDITION" nameInSource="EDITION" nativeType="INT" fixedLength="true" precision="10" caseSensitive="false" searchability="ALL_EXCEPT_LIKE">
+      <type href="http://www.w3.org/2001/XMLSchema#int"/>
+    </columns>
+    <columns xmi:uuid="mmuuid:5ec123d4-101d-4119-be6e-508a325d401c" name="TYPE" nameInSource="TYPE" nativeType="VARCHAR" length="255">
+      <type href="http://www.w3.org/2001/XMLSchema#string"/>
+    </columns>
+  </relational:BaseTable>
+  <mmcore:AnnotationContainer xmi:uuid="mmuuid:e3a348b5-4cec-4969-952f-abdb5c795aa4">
+    <annotations xmi:uuid="mmuuid:0c1730f0-6f1e-41fd-b206-c9794b35ba8a" annotatedObject="mmuuid/2e94b8b2-f0f7-4806-b09d-aff9722d86d5">
+      <tags xmi:uuid="mmuuid:a0eff2ee-353b-463b-aaf4-a43d62c997b4" key="connection:driver-class" value="com.mysql.jdbc.Driver"/>
+      <tags xmi:uuid="mmuuid:7fdb0a0d-7bff-4232-8d48-30488ee6cfaf" key="connectionProfile:connectionProfileName" value="MySqlBooks"/>
+      <tags xmi:uuid="mmuuid:6961f291-bbcc-4a0a-8752-7e863a5034f4" key="connectionProfile:connectionProfileProviderId" value="org.eclipse.datatools.enablement.mysql.connectionProfile"/>
+      <tags xmi:uuid="mmuuid:4eaff0d4-ec3c-48fe-9963-9a2123e205bb" key="translator:name" value="mysql5"/>
+      <tags xmi:uuid="mmuuid:ce62632a-7830-4936-a3a4-fe71ef0cd637" key="connection:connection-url" value="jdbc:mysql://localhost:3306/books"/>
+      <tags xmi:uuid="mmuuid:a8840658-eb1e-4520-bd03-11433efb33d7" key="connectionProfile:connectionProfileInstanceID" value="8cb54f20-a6a6-11e1-9dc5-ad3825b1bda0"/>
+      <tags xmi:uuid="mmuuid:fe5987a0-74a2-419d-a619-f8e8d7fd48b3" key="connection:connectionProfileInstanceID" value="org.eclipse.datatools.enablement.mysql.connectionProfile"/>
+      <tags xmi:uuid="mmuuid:7b5da6c5-0969-4a94-9387-27fa763fc1fa" key="connectionProfile:connectionProfileDescription" value=""/>
+      <tags xmi:uuid="mmuuid:5603ee70-245f-4651-9afb-41e0363a7244" key="connection:user-name" value="tejones"/>
+      <tags xmi:uuid="mmuuid:cabba3b2-4670-42f3-b7da-a404ab738c7e" key="connectionProfile:connectionProfileCategory" value="org.eclipse.datatools.connectivity.db.category"/>
+    </annotations>
+  </mmcore:AnnotationContainer>
+  <diagram:DiagramContainer xmi:uuid="mmuuid:28cb4705-309e-4a0b-be3e-08888cd01911">
+    <diagram xmi:uuid="mmuuid:ab710f62-d5f0-4e7f-863d-a9fa08809154" type="packageDiagramType" target="mmuuid/2e94b8b2-f0f7-4806-b09d-aff9722d86d5">
+      <diagramEntity xmi:uuid="mmuuid:41fcd299-b9c3-4e23-b8e3-ba226173240b" modelObject="mmuuid/dd443831-3f9b-4bc7-82c2-67406c1633af" xPosition="10" yPosition="10"/>
+    </diagram>
+  </diagram:DiagramContainer>
+  <jdbc:JdbcSource xmi:uuid="mmuuid:c2a0af71-ec2d-4c87-8956-1ecdb7e1eb97" name="MySqlBooks" driverName="MySQL JDBC Driver" driverClass="com.mysql.jdbc.Driver" username="tejones" url="jdbc:mysql://localhost:3306/books">
+    <importSettings xmi:uuid="mmuuid:1680bed8-a2be-416d-84ac-960929ab17af" createCatalogsInModel="false" createSchemasInModel="false" includeIndexes="false" includeApproximateIndexes="false">
+      <includedCatalogPaths>/books</includedCatalogPaths>
+      <excludedObjectPaths>/books/TABLE/AUTHORS</excludedObjectPaths>
+      <excludedObjectPaths>/books/TABLE/BOOK_AUTHORS</excludedObjectPaths>
+      <excludedObjectPaths>/books/TABLE/PUBLISHERS</excludedObjectPaths>
+      <excludedObjectPaths>/books/TABLE/films</excludedObjectPaths>
+      <includedTableTypes>TABLE</includedTableTypes>
+    </importSettings>
+  </jdbc:JdbcSource>
+</xmi:XMI>

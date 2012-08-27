@@ -21,22 +21,9 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
- 
-//------------------------------------------------------------------------------
-// N A M E S P A C E S
-//------------------------------------------------------------------------------
+/**
+ * The classes that make up the Teiid model sequencer.
+ */
 
-<nt  = "http://www.jcp.org/jcr/nt/1.0">
-<mix = "http://www.jcp.org/jcr/mix/1.0">
-<xmi = "http://www.omg.org/XMI">
-
-//------------------------------------------------------------------------------
-// N O D E T Y P E S
-//------------------------------------------------------------------------------
-
-[xmi:referenceable] mixin
- - xmi:uuid (string) mandatory
-
-[xmi:model] > nt:unstructured, xmi:referenceable, mix:referenceable orderable
- - xmi:version (double) = '2.0'
+package org.modeshape.sequencer.teiid.model;
 

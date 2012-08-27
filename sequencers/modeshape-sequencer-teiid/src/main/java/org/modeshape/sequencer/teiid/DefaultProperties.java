@@ -135,7 +135,12 @@ public class DefaultProperties {
         if (instance == null) {
             Map<String, Map<String, Object>> defaultValues = new HashMap<String, Map<String, Object>>();
             try {
-                loadDefaultsFromCnd("/org/modeshape/sequencer/teiid/teiid.cnd", defaultValues);
+                loadDefaultsFromCnd("/org/modeshape/sequencer/teiid/xmi.cnd", defaultValues);
+                loadDefaultsFromCnd("/org/modeshape/sequencer/teiid/mmcore.cnd", defaultValues);
+                loadDefaultsFromCnd("/org/modeshape/sequencer/teiid/vdb.cnd", defaultValues);
+                loadDefaultsFromCnd("/org/modeshape/sequencer/teiid/jdbc.cnd", defaultValues);
+                loadDefaultsFromCnd("/org/modeshape/sequencer/teiid/relational.cnd", defaultValues);
+                loadDefaultsFromCnd("/org/modeshape/sequencer/teiid/transformation.cnd", defaultValues);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

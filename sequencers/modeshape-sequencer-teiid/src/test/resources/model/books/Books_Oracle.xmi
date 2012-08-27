@@ -97,7 +97,7 @@
   <jdbc:JdbcSource xmi:uuid="mmuuid:a0444c0c-35b3-4ddf-ace4-2b0ce2e5b931" name="Books Oracle" driverName="Oracle Thin Driver" driverClass="oracle.jdbc.OracleDriver" username="books" url="jdbc:oracle:thin:@englxdbs11.mm.atl2.redhat.com:1521:ORCL">
     <importSettings xmi:uuid="mmuuid:5c6e0cc1-400d-4e3b-aa8a-d4fdef6a3e36" includeIndexes="false" includeApproximateIndexes="false">
       <includedSchemaPaths>/BOOKS</includedSchemaPaths>
-      <includedSchemaPaths>/AUTHORS</includedSchemaPaths>
+      <includedSchemaPaths>/EBOOKS</includedSchemaPaths>
       <includedTableTypes>TABLE</includedTableTypes>
     </importSettings>
   </jdbc:JdbcSource>
