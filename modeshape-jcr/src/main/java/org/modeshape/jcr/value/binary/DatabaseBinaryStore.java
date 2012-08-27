@@ -48,6 +48,9 @@ import org.modeshape.jcr.value.BinaryValue;
  */
 @ThreadSafe
 public class DatabaseBinaryStore extends AbstractBinaryStore {
+    private static final boolean ALIVE = true;
+    private static final boolean UNUSED = false;
+
     private FileSystemBinaryStore cache;
 
     /** JDBC utility for working with the database. */
@@ -103,9 +106,19 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
             BinaryKey key = new BinaryKey(temp.getKey().toString());
 
             // check for duplicate content
+            if (this.contentExists(key, ALIVE)) {
+                return new StoredBinaryValue(this, key, temp.getSize());
+            }
+
+            //check unused content
+            if (this.contentExists(key, UNUSED)) {
+                PreparedStatement sql = database.restoreContentSQL(key);
+                Database.execute(sql);
+                return new StoredBinaryValue(this, key, temp.getSize());
+            }
+
             InputStream content = this.getInputStream(key);
             if (content != null && getContentLength(content) > 0) {
-                return new StoredBinaryValue(this, key, temp.getSize());
             }
 
             // store content
@@ -125,7 +138,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     @Override
     public InputStream getInputStream( BinaryKey key ) throws BinaryStoreException {
-        ResultSet rs = Database.executeQuery(database.retrieveContentSQL(key));
+        ResultSet rs = Database.executeQuery(database.retrieveContentSQL(key, true));
         if (rs == null) {
             throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.toString());
         }
@@ -224,6 +237,24 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         super.shutdown();
         if (database != null) {
             database.disconnect();
+        }
+    }
+
+    /**
+     * Test content for existence.
+     * 
+     * @param key content identifier
+     * @param alive true inside used content and false for checking within 
+     * content marked as unused.
+     * @return true if content found
+     * @throws BinaryStoreException 
+     */
+    private boolean contentExists(BinaryKey key, boolean alive) throws BinaryStoreException {
+        try {
+            ResultSet rs = Database.executeQuery(database.retrieveContentSQL(key, alive));
+            return rs != null && rs.next();
+        } catch (SQLException e) {
+            throw new BinaryStoreException(e);
         }
     }
 

@@ -156,7 +156,7 @@ public class Database {
      * @return executable SQL statement
      * @throws BinaryStoreException
      */
-    public PreparedStatement retrieveContentSQL( BinaryKey key ) throws BinaryStoreException {
+    public PreparedStatement retrieveContentSQL( BinaryKey key, boolean inUse ) throws BinaryStoreException {
         try {
             PreparedStatement sql = sqlBuilder.select()
                                               .columns("payload")
@@ -164,9 +164,14 @@ public class Database {
                                               .where()
                                               .condition("cid", sqlType.integer(), "=", "?")
                                               .and()
-                                              .condition("usage", sqlType.integer(), "=", "1")
+                                              .condition("usage", sqlType.integer(), "=", "?")
                                               .build();
             sql.setString(1, key.toString());
+            if (inUse) {
+                sql.setInt(2, 1);
+            } else {
+                sql.setInt(2, 0);
+            }
             return sql;
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
@@ -191,6 +196,28 @@ public class Database {
             sql.setInt(1, 0);
             sql.setTimestamp(2, new java.sql.Timestamp(now()));
             sql.setString(3, key.toString());
+            return sql;
+        } catch (SQLException e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    /**
+     * Generates SQL statement which marks content as used.
+     *
+     * @param key the content id.
+     * @return SQL statement.
+     * @throws BinaryStoreException
+     */
+    public PreparedStatement restoreContentSQL( BinaryKey key ) throws BinaryStoreException {
+        try {
+            PreparedStatement sql = sqlBuilder.update(tableName())
+                                              .set("usage", "?")
+                                              .where()
+                                              .condition("cid", sqlType.integer(), "=", "?")
+                                              .build();
+            sql.setInt(1, 1);
+            sql.setString(2, key.toString());
             return sql;
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
