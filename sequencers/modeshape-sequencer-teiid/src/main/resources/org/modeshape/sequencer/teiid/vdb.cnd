@@ -39,44 +39,44 @@
 [vdb:virtualDatabase] > nt:unstructured, mode:hashed
  - vdb:description (string) 
  - vdb:version (long) = '1'
+ - vdb:preview (boolean) = 'false'
  - vdb:originalFile (string) mandatory
  + vdb:translators (vdb:translators) copy
  + vdb:dataRoles (vdb:dataRoles) copy
  + vdb:entries (vdb:entries) copy
- + vdb:properties (vdb:properties) = vdb:properties copy
  
-//[vdb:model] > mmcore:model
-// - vdb:pathInVdb (string) mandatory
-// - vdb:visible (boolean) = 'true'
-// - vdb:sourceTranslator (string)
-// - vdb:sourceJndiName (string)
-// - vdb:sourceName (string)
-//  - * (string) multiple copy
-// + vdb:markers (vdb:markers) = vdb:markers copy
-// + vdb:properties (vdb:properties) copy
+[vdb:model] > mmcore:model
+ - vdb:description (string)
+ - vdb:visible (boolean) = 'true'
+ - vdb:checksum (long)
+ - vdb:builtIn (boolean) = 'false'
+ - vdb:pathInVdb (string) mandatory
+ - vdb:sourceTranslator (string)
+ - vdb:sourceJndiName (string)
+ - vdb:sourceName (string)
+ + vdb:markers (vdb:markers) = vdb:markers copy
 
-//[vdb:markers] > nt:unstructured
-// + vdb:marker (vdb:marker) = vdb:marker copy sns
+[vdb:markers] > nt:unstructured
+ + vdb:marker (vdb:marker) = vdb:marker copy sns
 
-//[vdb:marker] > nt:unstructured
-// - vdb:severity (string) = 'WARNING' < 'WARNING','ERROR','INFO'
-// - vdb:path (string) mandatory
-// - vdb:message (string) mandatory
+[vdb:marker] > nt:unstructured
+ - vdb:severity (string) = 'WARNING' < 'WARNING','ERROR','INFO'
+ - vdb:path (string) mandatory
+ - vdb:message (string) mandatory
  
 [vdb:translators] > nt:unstructured
- + vdb:translator (vdb:translator) copy sns
-  
+ + vdb:translator (vdb:translator) copy
+ 
+ // translator name is node name
 [vdb:translator] > nt:unstructured
- - vdb:name (string) mandatory
  - vdb:type (string) mandatory
  - vdb:description (string)
- + vdb:properties (vdb:properties) copy
  
 [vdb:dataRoles] > nt:unstructured
- + vdb:dataRole (vdb:dataRole) copy sns
- 
+ + vdb:dataRole (vdb:dataRole) copy
+
+// data role name is node name 
 [vdb:dataRole] > nt:unstructured
- - vdb:name (string) mandatory
  - vdb:description (string)
  - vdb:anyAuthenticated (boolean) = 'false'
  - vdb:allowCreateTemporaryTables (boolean) = 'false'
@@ -89,19 +89,15 @@
 [vdb:entry] > nt:unstructured
  - vdb:path (string) mandatory
  - vdb:description (string)
- + vdb:properties (vdb:properties) copy
 
 [vdb:permissions] > nt:unstructured
- + vdb:permission (vdb:permission) copy sns
+ + vdb:permission (vdb:permission) copy
 
+// permission resource path is node path
 [vdb:permission] > nt:unstructured
- - resourceName (string) mandatory
- - allowCreate (boolean) = 'false'
- - allowRead (boolean) = 'false'
- - allowUpdate (boolean) = 'false'
- - allowDelete (boolean) = 'false'
- - allowExecute (boolean) = 'false'
- - allowAlter (boolean) = 'false'
-
-[vdb:properties] > nt:unstructured
- - * (string) multiple
+ - vdb:allowCreate (boolean) = 'false'
+ - vdb:allowRead (boolean) = 'false'
+ - vdb:allowUpdate (boolean) = 'false'
+ - vdb:allowDelete (boolean) = 'false'
+ - vdb:allowExecute (boolean) = 'false'
+ - vdb:allowAlter (boolean) = 'false'

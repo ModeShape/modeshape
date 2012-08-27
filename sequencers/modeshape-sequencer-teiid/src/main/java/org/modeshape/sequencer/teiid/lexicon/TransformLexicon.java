@@ -23,7 +23,6 @@
  */
 package org.modeshape.sequencer.teiid.lexicon;
 
-
 import static org.modeshape.sequencer.teiid.lexicon.TransformLexicon.Namespace.PREFIX;
 
 /**
@@ -34,6 +33,30 @@ public class TransformLexicon {
     public static class Namespace {
         public static final String URI = "http://www.metamatrix.com/metamodels/Transformation";
         public static final String PREFIX = "transform";
+    }
+
+    public interface ModelIds {
+        String ALIAS = "alias";
+        String ALIASED_OBJECT = "aliasedObject";
+        String ALIASES = "aliases";
+        String DELETE_ALLOWED = "deleteAllowed";
+        String DELETE_SQL = "deleteSql";
+        String DELETE_SQL_DEFAULT = "deleteSql";
+        String HELPER = "helper";
+        String HREF = "href";
+        String INPUTS = "inputs";
+        String INSERT_ALLOWED = "insertAllowed";
+        String INSERT_SQL = "insertSql";
+        String INSERT_SQL_DEFAULT = "insertSql";
+        String NESTED = "nested";
+        String OUTPUTS = "outputs";
+        String SELECT_SQL = "selectSql";
+        String TARGET = "target";
+        String TRANSFORMATION_CONTAINER = "TransformationContainer";
+        String TRANSFORMATION_MAPPINGS = "transformationMappings";
+        String UPDATE_ALLOWED = "updateAllowed";
+        String UPDATE_SQL = "updateSql";
+        String UPDATE_SQL_DEFAULT = "updateSql";
     }
 
     public static final String SELECT_SQL = PREFIX + ":selectSql";

@@ -26,52 +26,20 @@ package org.modeshape.sequencer.teiid.lexicon;
 import static org.modeshape.sequencer.teiid.lexicon.VdbLexicon.Namespace.PREFIX;
 
 /**
- * 
+ * Constants used during sequencing the VDB manifest.
  */
-public class VdbLexicon {
-
-    public static class Namespace {
-        public static final String URI = "http://www.metamatrix.com/metamodels/VirtualDatabase";
-        public static final String PREFIX = "vdb";
-    }
-
-    public static final String VIRTUAL_DATABASE = PREFIX + ":virtualDatabase";
-    public static final String DESCRIPTION = PREFIX + ":description";
-    public static final String VERSION = PREFIX + ":version";
-    public static final String ORIGINAL_FILE = PREFIX + ":originalFile";
-    public static final String PROPERTIES = PREFIX + ":properties";
-
-    public interface Model {
-        String MODEL = PREFIX + ":model";
-        String VISIBLE = PREFIX + ":visible";
-        String PATH_IN_VDB = PREFIX + ":pathInVdb";
-        String SOURCE_TRANSLATOR = PREFIX + ":sourceTranslator";
-        String SOURCE_JNDI_NAME = PREFIX + ":sourceJndiName";
-        String SOURCE_NAME = PREFIX + ":sourceName";
-        String PROPERTIES = PREFIX + ":properties";
-    
-        public interface Marker {
-            String MARKERS = PREFIX + ":markers";
-            String MARKER = PREFIX + ":marker";
-            String SEVERITY = PREFIX + ":severity";
-            String PATH = PREFIX + ":path";
-            String MESSAGE = PREFIX + ":message";
-        }
-    }
+public interface VdbLexicon {
 
     public interface DataRole {
-        String DATA_ROLES = PREFIX + ":dataRoles";
         String DATA_ROLE = PREFIX + ":dataRole";
-        String NAME = PREFIX + ":name";
         String DESCRIPTION = PREFIX + ":description";
         String ANY_AUTHENTICATED = PREFIX + ":anyAuthenticated";
         String ALLOW_CREATE_TEMP_TABLES = PREFIX + ":allowCreateTemporaryTables";
         String MAPPED_ROLE_NAMES = PREFIX + ":mappedRoleNames";
+        String PERMISSIONS = PREFIX + ":permissions";
 
         public interface Permission {
-            String PERMISSIONS = PREFIX + ":permissions";
             String PERMISSION = PREFIX + ":permission";
-            String RESOURCE_NAME = PREFIX + ":resourceName";
             String ALLOW_ALTER = PREFIX + ":allowAlter";
             String ALLOW_CREATE = PREFIX + ":allowCreate";
             String ALLOW_DELETE = PREFIX + ":allowDelete";
@@ -81,20 +49,89 @@ public class VdbLexicon {
         }
     }
 
-    public interface Translator {
-        String TRANSLATORS = PREFIX + ":translators";
-        String TRANSLATOR = PREFIX + ":translator";
-        String NAME = PREFIX + ":name";
-        String TYPE = PREFIX + ":type";
-        String DESCRIPTION = PREFIX + ":description";
-        String PROPERTIES = PREFIX + ":properties";
-    }
-
     public interface Entry {
-        String ENTRIES = PREFIX + ":entries";
         String ENTRY = PREFIX + ":entry";
         String PATH = PREFIX + ":path";
         String DESCRIPTION = PREFIX + ":description";
-        String PROPERTIES = PREFIX + ":properties";
+    }
+
+    public interface ManifestIds {
+        String ANY_AUTHENTICATED = "any-authenticated";
+        String ALLOW_ALTER = "allow-alter";
+        String ALLOW_CREATE = "allow-create";
+        String ALLOW_CREATE_TEMP_TABLES = "allow-create-temporary-tables";
+        String ALLOW_DELETE = "allow-delete";
+        String ALLOW_EXECUTE = "allow-execute";
+        String ALLOW_READ = "allow-read";
+        String ALLOW_UPDATE = "allow-update";
+        String BUILT_IN = "builtIn";
+        String CHECKSUM = "checksum";
+        String DATA_ROLE = "data-role";
+        String DESCRIPTION = "description";
+        String ENTRY = "entry";
+        String IMPORTS = "imports";
+        String JNDI_NAME = "connection-jndi-name";
+        String MAPPED_ROLE_NAME = "mapped-role-name";
+        String MODEL = "model";
+        String NAME = "name";
+        String PATH = "path";
+        String PERMISSION = "permission";
+        String RESOURCE_NAME = "resource-name";
+        String PREVIEW = "preview";
+        String PROPERTY = "property";
+        String SEVERITY = "severity";
+        String SOURCE = "source";
+        String TRANSLATOR = "translator";
+        String TRANSLATOR_NAME = "translator-name";
+        String TYPE = "type";
+        String VDB = "vdb";
+        String VALIDATION_ERROR = "validation-error";
+        String VALUE = "value";
+        String VERSION = "version";
+        String VISIBLE = "visible";
+    }
+
+    public interface Model {
+        String BUILT_IN = PREFIX + ":builtIn";
+        String CHECKSUM = PREFIX + ":checksum";
+        String DESCRIPTION = PREFIX + ":description";
+        String MARKERS = PREFIX + ":markers";
+        String MODEL = PREFIX + ":model";
+        String PATH_IN_VDB = PREFIX + ":pathInVdb";
+        String SOURCE_TRANSLATOR = PREFIX + ":sourceTranslator";
+        String SOURCE_JNDI_NAME = PREFIX + ":sourceJndiName";
+        String SOURCE_NAME = PREFIX + ":sourceName";
+        String TYPE = PREFIX + ":type";
+        String VISIBLE = PREFIX + ":visible";
+
+        public interface Marker {
+            String MARKER = PREFIX + ":marker";
+            String SEVERITY = PREFIX + ":severity";
+            String PATH = PREFIX + ":path";
+            String MESSAGE = PREFIX + ":message";
+        }
+    }
+
+    public interface Namespace {
+        String URI = "http://www.metamatrix.com/metamodels/VirtualDatabase";
+        String PREFIX = "vdb";
+    }
+
+    public interface Translator {
+        String TRANSLATOR = PREFIX + ":translator";
+        String TYPE = PREFIX + ":type";
+        String DESCRIPTION = PREFIX + ":description";
+    }
+
+    public interface Vdb {
+        String VIRTUAL_DATABASE = PREFIX + ":virtualDatabase";
+        String DESCRIPTION = PREFIX + ":description";
+        String VERSION = PREFIX + ":version";
+        String PREVIEW = PREFIX + ":preview";
+        String ORIGINAL_FILE = PREFIX + ":originalFile";
+        String TRANSLATORS = PREFIX + ":translators";
+        String DATA_ROLES = PREFIX + ":dataRoles";
+        String ENTRIES = PREFIX + ":entries";
+        String MODEL = PREFIX + ":model";
     }
 }

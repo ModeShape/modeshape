@@ -10,7 +10,7 @@
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -21,9 +21,25 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+package org.modeshape.sequencer.teiid.model;
+
+import javax.jcr.Node;
+import org.modeshape.sequencer.teiid.xmi.XmiElement;
+
 /**
- * The package containing the Teiid VDB text extractor implementation.
+ * The model object handler for the {@link org.modeshape.sequencer.teiid.lexicon.DiagramLexicon.Namespace#URI diagram} namespace.
+ * Currently diagram objects are not sequenced.
  */
+public final class DiagramModelObjectHandler extends ModelObjectHandler {
 
-package org.modeshape.extractor.teiid;
-
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.sequencer.teiid.model.ModelObjectHandler#process(org.modeshape.sequencer.teiid.xmi.XmiElement, javax.jcr.Node)
+     */
+    @Override
+    protected void process( final XmiElement element,
+                            final Node node ) throws Exception {
+        // diagram objects are not being sequenced
+    }
+}

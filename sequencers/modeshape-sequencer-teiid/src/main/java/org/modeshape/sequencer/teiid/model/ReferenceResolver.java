@@ -21,19 +21,23 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.sequencer.teiid;
+package org.modeshape.sequencer.teiid.model;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
 import org.modeshape.common.collection.ArrayListMultimap;
 import org.modeshape.common.collection.Multimap;
-import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.api.ValueFactory;
-import org.modeshape.jcr.api.sequencer.Sequencer;
+import org.modeshape.sequencer.teiid.xmi.XmiAttribute;
+import org.modeshape.sequencer.teiid.xmi.XmiElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,7 +120,7 @@ public class ReferenceResolver {
                 dataTypesByUuid.put(uuid, name);
                 dataTypeUuidsByName.put(name, uuid);
             } catch (IllegalArgumentException e) {
-               LOGGER.error("UUID not valid", e);
+                LOGGER.error("UUID not valid", e);
             }
         }
 
@@ -135,37 +139,99 @@ public class ReferenceResolver {
         STANDARD_DATA_TYPE_UUIDS_BY_NAMES = Collections.unmodifiableMap(dataTypeUuidsByName);
     }
 
-    private final Multimap<Node, String> unresolved = ArrayListMultimap.create();
-    private final Map<String, Node> mmuuidToNode = new HashMap<String, Node>();
-    private final Map<String, String> mmuuidToNodeUuid = new HashMap<String, String>();
-    private ValueFactory valueFactory;
+    private final Multimap<Node, XmiAttribute> unresolved = ArrayListMultimap.create();
+    private final Map<String, Node> uuidToNode = new HashMap<String, Node>();
+    // private final Map<String, String> mmuuidToNodeUuid = new HashMap<String, String>();
+    private final Map<String, XmiElement> uuidToXmiElement = new HashMap<String, XmiElement>();
 
-    protected ReferenceResolver( Sequencer.Context context ) {
-        this.valueFactory = context.valueFactory();
-    }
+    // private ValueFactory valueFactory;
+    // private final Context context;
+
+    // protected ReferenceResolver( Context context ) {
+    // this.valueFactory = context.valueFactory();
+    // this.context = context;
+    // }
 
     public void clear() {
-        mmuuidToNode.clear();
-        mmuuidToNodeUuid.clear();
-        unresolved.clear();
+        this.uuidToNode.clear();
+        // mmuuidToNodeUuid.clear();
+        this.unresolved.clear();
+        this.uuidToXmiElement.clear();
     }
 
-    public void recordXmiUuid( String xmiUuid,
-                               Node node ) {
-        mmuuidToNode.put(xmiUuid, node);
-    }
+    public void record( String xmiUuid,
+                        final Node node ) {
+        final String prefix = "mmuuid:";
 
-    public void recordXmiUuidToJcrUuid( String xmiUuid,
-                                        String jcrUuid ) {
-        if (!StringUtil.isBlank(xmiUuid)) {
-            mmuuidToNodeUuid.put(xmiUuid, jcrUuid);
+        if (xmiUuid.startsWith(prefix)) {
+            xmiUuid = xmiUuid.substring(prefix.length() + 1);
         }
+
+        this.uuidToNode.put(xmiUuid, node);
+    }
+
+    void recordXmiUuid( final String xmiUuid,
+                        final XmiElement xmiElement ) {
+        this.uuidToXmiElement.put(xmiUuid, xmiElement);
+    }
+
+    Map<String, XmiElement> getUuidMappings() {
+        return this.uuidToXmiElement;
+    }
+
+    XmiElement getElement( final String uuid ) {
+        return this.uuidToXmiElement.get(uuid);
+    }
+
+    Node getNode( final String uuid ) {
+        return this.uuidToNode.get(uuid);
     }
 
     /**
-     * @return unresolved
+     * Extracts the "mmuuid" values from the property if the property is indeed an XMI reference to local objects.
+     * 
+     * @param property the property
+     * @return the list of mmuuid values, or null if this property does not contain any references; never empty
+     * @throws RepositoryException if error access property value(s)
      */
-    public Multimap<Node, String> getUnresolved() {
+    protected List<String> references( Property property ) throws RepositoryException {
+        List<String> result = new LinkedList<String>();
+        for (Value value : property.getValues()) {
+            String str = value.getString();
+
+            if (str.startsWith("mmuuid/")) {
+                // It is a local reference ...
+                String[] references = str.split("\\s");
+
+                for (String reference : references) {
+                    result.add(reference);
+
+                    if (!property.isMultiple() && references.length == 1) {
+                        // This is the only property value, and only one reference in it ...
+                        return result;
+                    }
+                }
+            } else {
+                assert result.isEmpty();
+                return null;
+            }
+        }
+
+        return result;
+    }
+
+    //
+    // public void recordXmiUuidToJcrUuid( String xmiUuid,
+    // String jcrUuid ) {
+    // if (!StringUtil.isBlank(xmiUuid)) {
+    // mmuuidToNodeUuid.put(xmiUuid, jcrUuid);
+    // }
+    // }
+
+    /**
+     * @return unresolved the unresolved references (never <code>null</code>)
+     */
+    public Multimap<Node, XmiAttribute> getUnresolved() {
         return unresolved;
     }
 
@@ -173,11 +239,13 @@ public class ReferenceResolver {
         if (href == null) {
             return null;
         }
+
         String mmuuid = null;
+
         if (href.startsWith(MMUUID)) {
             // It's a local reference ...
             try {
-                mmuuid = UUID.fromString(href.substring(7)).toString();
+                mmuuid = UUID.fromString(href.substring(MMUUID.length())).toString();
             } catch (IllegalArgumentException e) {
                 // ignore
             }
@@ -188,71 +256,85 @@ public class ReferenceResolver {
                 // ignore
             }
         }
+
         return mmuuid;
     }
-
-    public ResolvedReference resolve( Node ownerNode,
-                                      String attributeName,
-                                      String href ) {
-        if (href == null) {
-            return null;
-        }
-        // First check the standard data types ...
-        String name = STANDARD_DATA_TYPE_URLS_TO_NAMES.get(href);
-        if (name != null) {
-            // If the href contains a UUID, then extract it ...
-            int index = href.indexOf(MMUUID);
-            String id = null;
-            if (index != -1) {
-                id = href.substring(index + MMUUID.length());
-            } else {
-                id = STANDARD_DATA_TYPE_UUIDS_BY_NAMES.get(name);              
-            }
-            return new ResolvedReference(href, name, id);
-        }
-        String mmuuid = resolveInternalReference(href);
-        if (mmuuid == null) {
-            // Not an internal reference ...
-            int index = href.indexOf(MMUUID);
-            String id = null;
-            if (index != -1) {
-                id = href.substring(index + MMUUID.length());
-            }
-            mmuuid = id;
-            ResolvedReference result = resolve(ownerNode, attributeName, href, mmuuid);
-            if (result == null) {
-                return new ResolvedReference(href, null, null, id, null);
-            }
-        }
-        return resolve(ownerNode, attributeName, href, mmuuid);
-    }
-
-    public ResolvedReference resolve( Node ownerNode,
-                                      String attributeName,
-                                      String href,
-                                      String mmuuid ) {
-        if (mmuuid == null) {
-            return null;
-        }
-        Path path = mmuuidToNode.get(mmuuid);
-        Reference weakReference = referenceFactory.create(mmuuidToNodeUuid.get(mmuuid));
-        if (path == null && ownerPath != null && attributeName != null) {
-            // Record this unresolved reference for later resolution ...
-            Path propPath = pathFactory.create(ownerPath, attributeName);
-            unresolved.put(propPath, mmuuid);
-        }
-        if (path != null || weakReference != null) {
-            String resolvedName = path != null ? stringFactory.create(path.getLastSegment()) : null;
-            return new ResolvedReference(href, resolvedName, path, mmuuid.toString(), weakReference);
-        }
-        return null;
-    }
+//
+//    public ResolvedReference resolve( Node ownerNode,
+//                                      String attributeName,
+//                                      String href ) throws Exception {
+//        if (href == null) {
+//            return null;
+//        }
+//
+//        // First check the standard data types ...
+//        String name = STANDARD_DATA_TYPE_URLS_TO_NAMES.get(href);
+//
+//        if (name != null) {
+//            // If the href contains a UUID, then extract it ...
+//            int index = href.indexOf(MMUUID);
+//            String id = null;
+//            if (index != -1) {
+//                id = href.substring(index + MMUUID.length());
+//            } else {
+//                id = STANDARD_DATA_TYPE_UUIDS_BY_NAMES.get(name);
+//            }
+//            return new ResolvedReference(href, name, id);
+//        }
+//
+//        String mmuuid = resolveInternalReference(href);
+//
+//        if (mmuuid == null) {
+//            // Not an internal reference ...
+//            int index = href.indexOf(MMUUID);
+//            String id = null;
+//
+//            if (index != -1) {
+//                id = href.substring(index + MMUUID.length());
+//            }
+//
+//            mmuuid = id;
+//            ResolvedReference result = resolve(ownerNode, attributeName, href, mmuuid);
+//
+//            if (result == null) {
+//                return new ResolvedReference(href, null, null, id, null);
+//            }
+//        }
+//
+//        return resolve(ownerNode, attributeName, href, mmuuid);
+//    }
+//
+//    public ResolvedReference resolve( Node ownerNode,
+//                                      String attributeName,
+//                                      String href,
+//                                      String mmuuid ) throws Exception {
+//        if (mmuuid == null) {
+//            return null;
+//        }
+//
+//        Node path = getNode(mmuuid);
+//        String weakReference = path.getIdentifier(); // get JCR uuid
+//
+//        if ((path == null) && (ownerNode != null) && (attributeName != null)) {
+//            // Record this unresolved reference for later resolution ...
+//            String propPath = pathFactory.create(ownerPath, attributeName);
+//            this.unresolved.put(propPath, mmuuid);
+//        }
+//
+//        if ((path != null) || (weakReference != null)) {
+//            String resolvedName = path != null ? stringFactory.create(path.getLastSegment()) : null;
+//            return new ResolvedReference(href, resolvedName, path, mmuuid, weakReference);
+//        }
+//
+//        return null;
+//    }
 
     public static class ResolvedReference {
+
         private final String href;
-        private final Reference reference;
+        private final String reference;
         private final String name;
-        private final Path path;
+        private final Node path;
         private final String id;
         private final boolean standardDataType;
 
@@ -269,9 +351,9 @@ public class ReferenceResolver {
 
         public ResolvedReference( String href,
                                   String name,
-                                  Path path,
+                                  Node path,
                                   String id,
-                                  Reference reference ) {
+                                  String reference ) {
             this.href = href;
             this.standardDataType = false;
             this.name = name;
@@ -292,7 +374,7 @@ public class ReferenceResolver {
             return name;
         }
 
-        public Path getPath() {
+        public Node getPath() {
             return path;
         }
 
@@ -300,7 +382,7 @@ public class ReferenceResolver {
             return id;
         }
 
-        public Reference getWeakReferenceValue() {
+        public String getWeakReferenceValue() {
             return reference;
         }
     }
