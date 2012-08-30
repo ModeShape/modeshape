@@ -76,11 +76,8 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.clustering.DefaultChannelProvider;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
-import org.modeshape.jcr.value.binary.AbstractBinaryStore;
-import org.modeshape.jcr.value.binary.DatabaseBinaryStore;
-import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
+import org.modeshape.jcr.value.binary.*;
 import org.modeshape.jcr.value.binary.infinispan.InfinispanBinaryStore;
-import org.modeshape.jcr.value.binary.TransientBinaryStore;
 
 /**
  * A representation of the configuration for a {@link JcrRepository JCR Repository}.
@@ -934,7 +931,7 @@ public class RepositoryConfiguration {
             return binaryStorage.getLong(FieldName.MINIMUM_BINARY_SIZE_IN_BYTES, Default.MINIMUM_BINARY_SIZE_IN_BYTES);
         }
 
-        public AbstractBinaryStore getBinaryStore() throws NamingException, IOException {
+        public AbstractBinaryStore getBinaryStore() throws Exception {
             String type = binaryStorage.getString(FieldName.TYPE, "transient");
             AbstractBinaryStore store = null;
             if (type.equalsIgnoreCase("transient")) {
@@ -972,6 +969,8 @@ public class RepositoryConfiguration {
                 // String cacheTransactionManagerLookupClass = binaryStorage.getString(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP,
                 // Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
                 store = new InfinispanBinaryStore(cacheContainer, dedicatedCacheContainer, metadataCacheName, blobCacheName);
+            } else if (type.equalsIgnoreCase("custom")) {
+                store = CustomBinaryStore.newInstance(binaryStorage.toMap());
             }
             if (store == null) store = TransientBinaryStore.get();
             store.setMinimumBinarySizeInBytes(getMinimumBinarySizeInBytes());

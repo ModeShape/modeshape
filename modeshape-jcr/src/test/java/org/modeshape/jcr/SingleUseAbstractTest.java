@@ -231,13 +231,10 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
         if (changes.isEmpty()) return;
         try {
             repository.apply(changes);
-        } catch (NamingException e) {
+        } catch (Exception e) {
             throw new AssertionFailedError("Unexpected error while predefining the \"" + workspaceName + "\" workspace:"
                                            + e.getMessage());
-        } catch (IOException e) {
-            throw new AssertionFailedError("Unexpected error while predefining the \"" + workspaceName + "\" workspace:"
-                                           + e.getMessage());
-        }
+        } 
     }
 
     /**
