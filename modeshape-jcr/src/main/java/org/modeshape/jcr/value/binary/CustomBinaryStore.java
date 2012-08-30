@@ -25,7 +25,6 @@ package org.modeshape.jcr.value.binary;
 
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import org.modeshape.jcr.JcrI18n;
 
 /**
@@ -49,18 +48,12 @@ public abstract class CustomBinaryStore extends AbstractBinaryStore {
         
         Class cls = CustomBinaryStore.class.getClassLoader().loadClass(className);
         CustomBinaryStore store = (CustomBinaryStore) cls.newInstance();
-        store.configure(toProperties(conf));
-        return store;
-    }
 
-    private static Properties toProperties(Map<String, String> map) {
         Properties props = new Properties();
-        props.putAll(map);
-//        Set<String> keys = map.keySet();
-//        for (String key : keys) {
-//            props.setProperty(key, map.get(key));
-//        }
-        return props;
+        props.putAll(conf);
+
+        store.configure(props);
+        return store;
     }
 
     /**
