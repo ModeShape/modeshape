@@ -372,13 +372,10 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         } catch (RepositoryException err) {
             LOG.debug(err, "Unable to start repository for configuration file at '{0}': {1}", configUrl, err.getMessage());
             return null;
-        } catch (IOException err) {
+        } catch (Exception err) {
             LOG.debug(err, "Unable to start repository for configuration file at '{0}': {1}", configUrl, err.getMessage());
             return null;
-        } catch (NamingException err) {
-            LOG.debug(err, "Unable to start repository for configuration file at '{0}': {1}", configUrl, err.getMessage());
-            return null;
-        }
+        } 
     }
 
     private String classpathResource( URL url ) {

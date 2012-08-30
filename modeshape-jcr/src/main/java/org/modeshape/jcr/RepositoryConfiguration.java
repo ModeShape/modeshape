@@ -76,11 +76,8 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.clustering.DefaultChannelProvider;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
-import org.modeshape.jcr.value.binary.AbstractBinaryStore;
-import org.modeshape.jcr.value.binary.DatabaseBinaryStore;
-import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
+import org.modeshape.jcr.value.binary.*;
 import org.modeshape.jcr.value.binary.infinispan.InfinispanBinaryStore;
-import org.modeshape.jcr.value.binary.TransientBinaryStore;
 
 /**
  * A representation of the configuration for a {@link JcrRepository JCR Repository}.
@@ -924,17 +921,24 @@ public class RepositoryConfiguration {
      */
     @Immutable
     public class BinaryStorage {
+        private String classname;
+        private String classPath;
+
         private final Document binaryStorage;
+        private final Set<String> excludeList = new HashSet();
 
         protected BinaryStorage( Document binaryStorage ) {
             this.binaryStorage = binaryStorage != null ? binaryStorage : EMPTY;
+            excludeList.add(FieldName.TYPE);
+            excludeList.add(FieldName.CLASSNAME);
+            excludeList.add(FieldName.CLASSLOADER);
         }
 
         public long getMinimumBinarySizeInBytes() {
             return binaryStorage.getLong(FieldName.MINIMUM_BINARY_SIZE_IN_BYTES, Default.MINIMUM_BINARY_SIZE_IN_BYTES);
         }
 
-        public AbstractBinaryStore getBinaryStore() throws NamingException, IOException {
+        public AbstractBinaryStore getBinaryStore() throws Exception {
             String type = binaryStorage.getString(FieldName.TYPE, "transient");
             AbstractBinaryStore store = null;
             if (type.equalsIgnoreCase("transient")) {
@@ -972,10 +976,202 @@ public class RepositoryConfiguration {
                 // String cacheTransactionManagerLookupClass = binaryStorage.getString(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP,
                 // Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
                 store = new InfinispanBinaryStore(cacheContainer, dedicatedCacheContainer, metadataCacheName, blobCacheName);
+            } else if (type.equalsIgnoreCase("custom")) {
+                classname = binaryStorage.getString(FieldName.CLASSNAME);
+                classPath = binaryStorage.getString(FieldName.CLASSLOADER);
+
+                //class name is mandatory
+                if (StringUtil.isBlank(classname)) {
+                    throw new BinaryStoreException(JcrI18n.missingVariableValue.text("classname"));
+                }
+
+                store = createInstance();
+                setTypeFields(store, binaryStorage);
             }
             if (store == null) store = TransientBinaryStore.get();
             store.setMinimumBinarySizeInBytes(getMinimumBinarySizeInBytes());
             return store;
+        }
+
+        /*
+         * Instantiates custom binary store.
+         */
+        private AbstractBinaryStore createInstance() throws Exception {
+            ClassLoader classLoader = environment().getClassLoader(getClass().getClassLoader(), classPath);
+            return (AbstractBinaryStore) classLoader.loadClass(classname).newInstance();
+        }
+
+        private void setTypeFields( Object instance,
+                                    Document document ) {
+            for (Field field : document.fields()) {
+                String fieldName = field.getName();
+                Object fieldValue = field.getValue();
+                if (excludeList.contains(fieldName)) {
+                    continue;
+                }
+                try {
+                    // locate the field instance on which the value will be set
+                    java.lang.reflect.Field instanceField = findField(instance.getClass(), fieldName);
+                    if (instanceField == null) {
+                        Logger.getLogger(getClass()).warn(JcrI18n.missingFieldOnInstance, fieldName, classname);
+                        continue;
+                    }
+
+                    Object convertedFieldValue = convertValueToType(instanceField.getType(), fieldValue);
+
+                    // if the value is a document, means there is a nested bean
+                    if (convertedFieldValue instanceof Document) {
+                        // only no-arg constructors are supported
+                        Object innerInstance = instanceField.getType().newInstance();
+                        setTypeFields(innerInstance, (Document)convertedFieldValue);
+                        convertedFieldValue = innerInstance;
+                    }
+
+                    // this is very ! tricky because it does not throw an exception - ever
+                    ReflectionUtil.setValue(instance, fieldName, convertedFieldValue);
+                } catch (Throwable e) {
+                    Logger.getLogger(getClass()).error(e,
+                                                       JcrI18n.unableToSetFieldOnInstance,
+                                                       fieldName,
+                                                       fieldValue,
+                                                       classname);
+                }
+            }
+        }
+
+        /**
+         * Attempts "its best" to convert a generic Object value (coming from a Document) to a value which can be set on the field
+         * of a component. Note: thanks to type erasure, generics are not supported.
+         *
+         * @param expectedType the {@link Class} of the field on which the value should be set
+         * @param value a generic value coming from a document. Can be a simple value, another {@link Document} or {@link Array}
+         * @return the converted value, which should be compatible with the expected type.
+         * @throws Exception if anything will fail during the conversion process
+         */
+        private Object convertValueToType( Class<?> expectedType,
+                                           Object value ) throws Exception {
+            // lists are converted to ArrayList
+            if (List.class.isAssignableFrom(expectedType)) {
+                return valueToCollection(value, new ArrayList<Object>());
+            }
+            // sets are converted to HashSet
+            if (Set.class.isAssignableFrom(expectedType)) {
+                return valueToCollection(value, new HashSet<Object>());
+            }
+            // arrays are converted as-is
+            if (expectedType.isArray()) {
+                return valueToArray(expectedType.getComponentType(), value);
+            }
+
+            // maps are converted to hashmap
+            if (Map.class.isAssignableFrom(expectedType)) {
+                // only string keys are supported atm
+                return ((Document)value).toMap();
+            }
+
+            // Strings can be parsed into numbers ...
+            if (value instanceof String) {
+                String strValue = (String)value;
+                // Try the smallest ranges first ...
+                if (Short.TYPE.isAssignableFrom(expectedType) || Short.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Short.parseShort(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+                if (Integer.TYPE.isAssignableFrom(expectedType) || Integer.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Integer.parseInt(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+                if (Long.TYPE.isAssignableFrom(expectedType) || Long.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Long.parseLong(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+                if (Boolean.TYPE.isAssignableFrom(expectedType) || Boolean.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Boolean.parseBoolean(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+                if (Float.TYPE.isAssignableFrom(expectedType) || Float.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Float.parseFloat(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+                if (Double.TYPE.isAssignableFrom(expectedType) || Double.class.isAssignableFrom(expectedType)) {
+                    try {
+                        return Double.parseDouble(strValue);
+                    } catch (NumberFormatException e) {
+                        // ignore and continue ...
+                    }
+                }
+            }
+
+            // return value as it is
+            return value;
+        }
+
+        private Object valueToArray( Class<?> arrayComponentType,
+                                     Object value ) throws Exception {
+            if (value instanceof Array) {
+                Array valueArray = (Array)value;
+                int arraySize = valueArray.size();
+                Object newArray = java.lang.reflect.Array.newInstance(arrayComponentType, arraySize);
+                for (int i = 0; i < ((Array)value).size(); i++) {
+                    Object element = valueArray.get(i);
+                    element = convertValueToType(arrayComponentType, element);
+                    java.lang.reflect.Array.set(newArray, i, element);
+                }
+                return newArray;
+            } else if (value instanceof String) {
+                // Parse the string into a comma-separated set of values (this works if it's just a single value) ...
+                String strValue = (String)value;
+                if (strValue.length() > 0) {
+                    String[] stringValues = strValue.split(",");
+                    Object newArray = java.lang.reflect.Array.newInstance(arrayComponentType, stringValues.length);
+                    for (int i = 0; i < stringValues.length; i++) {
+                        Object element = convertValueToType(arrayComponentType, stringValues[i]);
+                        java.lang.reflect.Array.set(newArray, i, element);
+                    }
+                    return newArray;
+                }
+            }
+
+            // Otherwise, just initialize it to an empty array ...
+            return java.lang.reflect.Array.newInstance(arrayComponentType, 0);
+        }
+
+        private Collection<?> valueToCollection( Object value,
+                                                 Collection<Object> collection ) throws Exception {
+            if (value instanceof Array) {
+                collection.addAll((List<?>)value);
+            } else {
+                collection.add(value);
+            }
+            return collection;
+        }
+
+        public java.lang.reflect.Field findField( Class<?> typeClass,
+                                                   String fieldName ) {
+            java.lang.reflect.Field field = null;
+            if (typeClass != null) {
+                try {
+                    field = typeClass.getDeclaredField(fieldName);
+                } catch (NoSuchFieldException e) {
+                    field = findField(typeClass.getSuperclass(), fieldName);
+                }
+            }
+            return field;
         }
     }
 
@@ -1861,24 +2057,24 @@ public class RepositoryConfiguration {
             // Handle some of the built-in providers in a special way ...
             String classname = getClassname();
             if (AnonymousProvider.class.getName().equals(classname)) {
-                return createAnonymousProvider();
+                return (Type)createAnonymousProvider();
             } else if (JaasProvider.class.getName().equals(classname)) {
-                return createJaasProvider();
+                return (Type)createJaasProvider();
             }
             ClassLoader classLoader = environment().getClassLoader(fallbackLoader, classpath);
-            return createGenericComponent(classLoader);
+            return (Type)createGenericComponent(classLoader);
         }
 
         private <Type> Type createGenericComponent( ClassLoader classLoader ) {
             // Create the instance ...
-            Type instance = Util.getInstance(getClassname(), classLoader);
+            Type instance = (Type) Util.getInstance(getClassname(), classLoader);
             if (ReflectionUtil.getField("name", instance.getClass()) != null) {
                 // Always try to set the name (if there is such a field). The name may be set based upon
                 // the value in the document, but a name field in documents is not required ...
                 ReflectionUtil.setValue(instance, "name", getName());
             }
             setTypeFields(instance, getDocument());
-            return instance;
+            return (Type)instance;
         }
 
         @SuppressWarnings( "unchecked" )
