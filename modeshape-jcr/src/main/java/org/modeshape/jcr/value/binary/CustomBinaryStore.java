@@ -25,7 +25,9 @@ package org.modeshape.jcr.value.binary;
 
 import java.util.Map;
 import java.util.Properties;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.RepositoryConfiguration;
 
 /**
  *
@@ -41,12 +43,12 @@ public abstract class CustomBinaryStore extends AbstractBinaryStore {
      * @throws Exception if problem with underlying resource occurs
      */
     public static CustomBinaryStore newInstance(Map conf) throws Exception {
-        String className = (String) conf.get("classname");
+        String className = (String) conf.get(RepositoryConfiguration.FieldName.CLASSNAME);
         if (className == null) {
             throw new BinaryStoreException(JcrI18n.missingVariableValue.text("classname"));
         }
         
-        Class cls = CustomBinaryStore.class.getClassLoader().loadClass(className);
+        Class cls = classLoader(RepositoryConfiguration.FieldName.CLASSLOADER).loadClass(className);
         CustomBinaryStore store = (CustomBinaryStore) cls.newInstance();
 
         Properties props = new Properties();
@@ -54,6 +56,17 @@ public abstract class CustomBinaryStore extends AbstractBinaryStore {
 
         store.configure(props);
         return store;
+    }
+
+    /**
+     * Prepares class loaders
+     * @param name
+     * @return
+     * @throws Exception
+     */
+    private static ClassLoader classLoader(String name) throws Exception {
+        return StringUtil.isBlank(name) ? CustomBinaryStore.class.getClassLoader() :
+                CustomBinaryStore.class.getClassLoader().loadClass(name).getClassLoader();
     }
 
     /**
