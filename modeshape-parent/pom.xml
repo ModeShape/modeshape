@@ -223,6 +223,7 @@
 		<javax.servlet.version>2.5</javax.servlet.version>
 		<javax.jacc.version>1.0.0.Final</javax.jacc.version>
 		<jboss.seam.version>2.2.2.Final</jboss.seam.version>
+        <poi.version>3.8</poi.version>
 		<!--
 		Maven plugin versions
 		-->
@@ -1301,6 +1302,19 @@
                 <artifactId>contenttype</artifactId>
                 <version>3.2.100-v20070319</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-scratchpad</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+
 		</dependencies>
 
 	</dependencyManagement>

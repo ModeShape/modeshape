@@ -679,7 +679,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
             }
 
             logger().info(JcrI18n.registeringNodeTypesDefinedInConfiguration, repositoryName);
-            repository.getRepositoryTypeManager().registerNodeTypes(nodeTypesSubgraph, nodeTypesNode.getLocation(), false, true);
+            repository.getRepositoryTypeManager().registerNodeTypes(nodeTypesSubgraph, nodeTypesNode.getLocation(), false, !needToRefreshSubgraph);
             logger().info(JcrI18n.completedRegisteringNodeTypesDefinedInConfiguration, repositoryName);
         }
 

@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
 import org.modeshape.graph.JcrLexicon;
+import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.property.BinaryFactory;
 import org.modeshape.graph.property.DateTimeFactory;
 import org.modeshape.graph.property.Name;
@@ -111,6 +112,8 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
         }
 
         Path docNode = pathFactory.createRelativePath(docName);
+        //the next call registers the doc node with the output, so the derived properties will be set
+        output.setProperty(docNode, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
         Path metadataNode = pathFactory.create(docNode, MSOfficeMetadataLexicon.METADATA_NODE);
         output.setProperty(metadataNode, JcrLexicon.MIMETYPE, mimeType);
         // process PowerPoint specific metadata

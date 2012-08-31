@@ -479,11 +479,9 @@ public interface QueryResults extends Serializable {
          * 
          * @param planningNanos the number of nanoseconds required by planning
          * @return the new statistics object; never null
-         * @throws IllegalArgumentException if the time value is negative
          */
         public Statistics withPlanningTime( long planningNanos ) {
-            CheckArg.isNonNegative(planningNanos, "planningNanos");
-            return new Statistics(planningNanos, optimizationNanos, resultFormulationNanos, executionNanos);
+            return new Statistics(Math.abs(planningNanos), optimizationNanos, resultFormulationNanos, executionNanos);
         }
 
         /**
@@ -491,11 +489,9 @@ public interface QueryResults extends Serializable {
          * 
          * @param optimizationNanos the number of nanoseconds required by optimization
          * @return the new statistics object; never null
-         * @throws IllegalArgumentException if the time value is negative
          */
         public Statistics withOptimizationTime( long optimizationNanos ) {
-            CheckArg.isNonNegative(optimizationNanos, "optimizationNanos");
-            return new Statistics(planningNanos, optimizationNanos, resultFormulationNanos, executionNanos);
+            return new Statistics(planningNanos, Math.abs(optimizationNanos), resultFormulationNanos, executionNanos);
         }
 
         /**
@@ -503,11 +499,9 @@ public interface QueryResults extends Serializable {
          * 
          * @param resultFormulationNanos the number of nanoseconds required by result formulation
          * @return the new statistics object; never null
-         * @throws IllegalArgumentException if the time value is negative
          */
         public Statistics withResultsFormulationTime( long resultFormulationNanos ) {
-            CheckArg.isNonNegative(resultFormulationNanos, "resultFormulationNanos");
-            return new Statistics(planningNanos, optimizationNanos, resultFormulationNanos, executionNanos);
+            return new Statistics(planningNanos, optimizationNanos, Math.abs(resultFormulationNanos), executionNanos);
         }
 
         /**
@@ -515,11 +509,9 @@ public interface QueryResults extends Serializable {
          * 
          * @param executionNanos the number of nanoseconds required to execute the query
          * @return the new statistics object; never null
-         * @throws IllegalArgumentException if the time value is negative
          */
         public Statistics withExecutionTime( long executionNanos ) {
-            CheckArg.isNonNegative(executionNanos, "executionNanos");
-            return new Statistics(planningNanos, optimizationNanos, resultFormulationNanos, executionNanos);
+            return new Statistics(planningNanos, optimizationNanos, resultFormulationNanos, Math.abs(executionNanos));
         }
 
         /**
@@ -528,11 +520,11 @@ public interface QueryResults extends Serializable {
          * @param planning the time required to plan the query
          * @param unit the time unit
          * @return the new statistics object; never null
-         * @throws IllegalArgumentException if the unit is null or if the time value is negative
+         * @throws IllegalArgumentException if the unit is null
          */
         public Statistics withPlanningTime( long planning,
                                             TimeUnit unit ) {
-            CheckArg.isNonNegative(planning, "planning");
+            planning = Math.abs(planning);
             CheckArg.isNotNull(unit, "unit");
             long planningNanos = TimeUnit.NANOSECONDS.convert(planning, unit);
             return new Statistics(planningNanos, optimizationNanos, resultFormulationNanos, executionNanos);
@@ -544,11 +536,11 @@ public interface QueryResults extends Serializable {
          * @param optimization the time required by optimization
          * @param unit the time unit
          * @return the new statistics object; never null
-         * @throws IllegalArgumentException if the unit is null or if the time value is negative
+         * @throws IllegalArgumentException if the unit is null
          */
         public Statistics withOptimizationTime( long optimization,
                                                 TimeUnit unit ) {
-            CheckArg.isNonNegative(optimization, "optimization");
+            optimization = Math.abs(optimization);
             CheckArg.isNotNull(unit, "unit");
             long optimizationNanos = TimeUnit.NANOSECONDS.convert(optimization, unit);
             return new Statistics(planningNanos, optimizationNanos, resultFormulationNanos, executionNanos);
@@ -560,11 +552,11 @@ public interface QueryResults extends Serializable {
          * @param resultFormulation the time required to formulate the results
          * @param unit the time unit
          * @return the new statistics object; never null
-         * @throws IllegalArgumentException if the unit is null or if the time value is negative
+         * @throws IllegalArgumentException if the unit is null
          */
         public Statistics withResultsFormulationTime( long resultFormulation,
                                                       TimeUnit unit ) {
-            CheckArg.isNonNegative(resultFormulation, "resultFormulation");
+            resultFormulation = Math.abs(resultFormulation);
             CheckArg.isNotNull(unit, "unit");
             long resultFormulationNanos = TimeUnit.NANOSECONDS.convert(resultFormulation, unit);
             return new Statistics(planningNanos, optimizationNanos, resultFormulationNanos, executionNanos);
@@ -576,11 +568,11 @@ public interface QueryResults extends Serializable {
          * @param execution the time required to execute the query
          * @param unit the time unit
          * @return the new statistics object; never null
-         * @throws IllegalArgumentException if the unit is null or if the time value is negative
+         * @throws IllegalArgumentException if the unit is null
          */
         public Statistics withExecutionTime( long execution,
                                              TimeUnit unit ) {
-            CheckArg.isNonNegative(execution, "execution");
+            execution = Math.abs(execution);
             CheckArg.isNotNull(unit, "unit");
             long executionNanos = TimeUnit.NANOSECONDS.convert(execution, unit);
             return new Statistics(planningNanos, optimizationNanos, resultFormulationNanos, executionNanos);

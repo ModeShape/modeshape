@@ -39,7 +39,7 @@ public class JcrSetQuery extends SetQuery implements org.modeshape.jcr.api.query
 
     /**
      * Create a set query involving the supplied left- and right-hand-side queries.
-     * 
+     *
      * @param left the left-hand-side query being combined
      * @param operation the set operation
      * @param right the right-hand-side query being combined
@@ -50,7 +50,7 @@ public class JcrSetQuery extends SetQuery implements org.modeshape.jcr.api.query
                         Operation operation,
                         JcrQueryCommand right,
                         boolean all ) {
-        super(left, operation, right, all);
+        super(left, operation, right, all, null, JcrLimit.NONE);
     }
 
     /**
