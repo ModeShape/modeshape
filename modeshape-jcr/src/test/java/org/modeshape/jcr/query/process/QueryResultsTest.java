@@ -61,6 +61,13 @@ public class QueryResultsTest extends AbstractQueryResultsTest {
         columnsWithScores = new QueryResultColumns(columnList, columnTypes, true);
     }
 
+    protected String columnNameFor( Column column ) {
+        if (column.getColumnName().equals(column.getPropertyName())) {
+            return column.getSelectorName() + "." + column.getColumnName();
+        }
+        return column.getColumnName();
+    }
+
     @Test
     public void shouldHaveCorrectTupleSize() {
         assertThat(columnsWithScores.getTupleSize(), is(columnList.size() + 2 + 2));
@@ -70,12 +77,12 @@ public class QueryResultsTest extends AbstractQueryResultsTest {
     @Test
     public void shouldHaveCorrectTupleNames() {
         List<String> expected = new ArrayList<String>();
-        expected.add("colA");
-        expected.add("colB");
-        expected.add("colC");
+        expected.add("table1.colA");
+        expected.add("table1.colB");
+        expected.add("table1.colC");
         expected.add("colA2");
         expected.add("colB2");
-        expected.add("colX");
+        expected.add("table2.colX");
         expected.add("Location(table1)");
         expected.add("Location(table2)");
         assertThat(columnsWithoutScores.getTupleValueNames(), is(expected));
@@ -115,7 +122,7 @@ public class QueryResultsTest extends AbstractQueryResultsTest {
     public void shouldReturnColumnNames() {
         List<String> names = new ArrayList<String>();
         for (Column column : columnList) {
-            names.add(column.getColumnName());
+            names.add(columnNameFor(column));
         }
         assertThat(columnsWithScores.getColumnNames(), is(names));
         assertThat(columnsWithoutScores.getColumnNames(), is(names));
@@ -124,7 +131,7 @@ public class QueryResultsTest extends AbstractQueryResultsTest {
     @Test
     public void shouldReturnCorrectIndexOfColumnGivenColumnName() {
         for (Column column : columnList) {
-            assertThat(columnsWithoutScores.getColumnIndexForName(column.getColumnName()), is(columnList.indexOf(column)));
+            assertThat(columnsWithoutScores.getColumnIndexForName(columnNameFor(column)), is(columnList.indexOf(column)));
         }
     }
 
@@ -205,12 +212,12 @@ public class QueryResultsTest extends AbstractQueryResultsTest {
 
     @Test
     public void shouldReturnCorrectIndexOfLocationGivenColumnName() {
-        assertThat(columnsWithoutScores.getLocationIndexForColumn("colA"), is(columnList.size() + 0));
-        assertThat(columnsWithoutScores.getLocationIndexForColumn("colB"), is(columnList.size() + 0));
-        assertThat(columnsWithoutScores.getLocationIndexForColumn("colC"), is(columnList.size() + 0));
+        assertThat(columnsWithoutScores.getLocationIndexForColumn("table1.colA"), is(columnList.size() + 0));
+        assertThat(columnsWithoutScores.getLocationIndexForColumn("table1.colB"), is(columnList.size() + 0));
+        assertThat(columnsWithoutScores.getLocationIndexForColumn("table1.colC"), is(columnList.size() + 0));
         assertThat(columnsWithoutScores.getLocationIndexForColumn("colA2"), is(columnList.size() + 1));
         assertThat(columnsWithoutScores.getLocationIndexForColumn("colB2"), is(columnList.size() + 1));
-        assertThat(columnsWithoutScores.getLocationIndexForColumn("colX"), is(columnList.size() + 1));
+        assertThat(columnsWithoutScores.getLocationIndexForColumn("table2.colX"), is(columnList.size() + 1));
     }
 
     @Test( expected = NoSuchElementException.class )

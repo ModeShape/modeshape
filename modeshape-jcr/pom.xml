@@ -231,8 +231,6 @@
                                 <property>
                                     <name>known.issues</name>
                                     <value>
-                                        <!--// TODO author=Randall Hauch date=5/17/12 description=https://issues.apache.org/jira/browse/MODE-1095-->
-                                        org.apache.jackrabbit.test.api.query.qom.OrderingTest#testMultipleSelectors
                                         <!--// TODO author=Randall Hauch date=7/10/12 description=https://issues.apache.org/jira/browse/MODE-1552-->
                                         org.apache.jackrabbit.test.api.ShareableNodeTest#testModifyDescendantAndSave
                                         org.apache.jackrabbit.test.api.ShareableNodeTest#testModifyDescendantAndRemoveShareAndSave
