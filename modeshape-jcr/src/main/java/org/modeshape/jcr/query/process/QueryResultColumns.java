@@ -116,16 +116,18 @@ public class QueryResultColumns implements Columns {
         this.columnIndexByColumnName = new HashMap<String, Integer>();
         Set<String> selectors = new HashSet<String>();
         final int columnCount = this.columns.size();
-        Integer selectorIndex = new Integer(columnCount - 1);
         this.locationIndexBySelectorName = new HashMap<String, Integer>();
         this.locationIndexByColumnIndex = new HashMap<Integer, Integer>();
         this.locationIndexByColumnName = new HashMap<String, Integer>();
         this.selectorNameByColumnName = new HashMap<String, String>();
         this.columnIndexByPropertyNameBySelectorName = new HashMap<String, Map<String, Integer>>();
         this.propertyNameByColumnName = new HashMap<String, String>();
-        List<String> selectorNames = new ArrayList<String>(columnCount);
         List<String> names = new ArrayList<String>(columnCount);
+        List<String> selectorNames = new ArrayList<String>(columnCount);
         Set<Column> sameNameColumns = findColumnsWithSameNames(this.columns);
+
+        // Find all the selector names ...
+        Integer selectorIndex = new Integer(columnCount - 1);
         for (int i = 0, max = this.columns.size(); i != max; ++i) {
             Column column = this.columns.get(i);
             assert column != null;
@@ -135,7 +137,19 @@ public class QueryResultColumns implements Columns {
                 selectorIndex = new Integer(selectorIndex.intValue() + 1);
                 locationIndexBySelectorName.put(selectorName, selectorIndex);
             }
-            String columnName = columnNameFor(column, names, sameNameColumns);
+        }
+
+        // Now, find all of the column names ...
+        selectorIndex = new Integer(columnCount - 1);
+        Set<String> tempSelectors = new HashSet<String>();
+        for (int i = 0, max = this.columns.size(); i != max; ++i) {
+            Column column = this.columns.get(i);
+            assert column != null;
+            String selectorName = column.selectorName().name();
+            if (tempSelectors.add(selectorName)) {
+                selectorIndex = new Integer(selectorIndex.intValue() + 1);
+            }
+            String columnName = columnNameFor(column, names, sameNameColumns, selectors);
             assert columnName != null;
             propertyNameByColumnName.put(columnName, column.getPropertyName());
             selectorNameByColumnName.put(columnName, selectorName);
@@ -186,12 +200,22 @@ public class QueryResultColumns implements Columns {
         List<String> types = new ArrayList<String>(columns.size());
         List<String> names = new ArrayList<String>(columns.size());
         Set<Column> sameNameColumns = findColumnsWithSameNames(this.columns);
+
+        // Find all the selector names ...
         for (int i = 0, max = this.columns.size(); i != max; ++i) {
             Column column = this.columns.get(i);
             assert column != null;
             String selectorName = column.selectorName().name();
-            if (!selectorNames.contains(selectorName)) selectorNames.add(selectorName);
-            String columnName = columnNameFor(column, names, sameNameColumns);
+            if (!selectorNames.contains(selectorName)) {
+                selectorNames.add(selectorName);
+            }
+        }
+
+        for (int i = 0, max = this.columns.size(); i != max; ++i) {
+            Column column = this.columns.get(i);
+            assert column != null;
+            String selectorName = column.selectorName().name();
+            String columnName = columnNameFor(column, names, sameNameColumns, selectorNames);
             assert columnName != null;
             propertyNameByColumnName.put(columnName, column.getPropertyName());
             selectorNameByColumnName.put(columnName, selectorName);
@@ -471,11 +495,17 @@ public class QueryResultColumns implements Columns {
 
     protected static String columnNameFor( Column column,
                                            List<String> columnNames,
-                                           Set<Column> columnsWithDuplicateNames ) {
+                                           Set<Column> columnsWithDuplicateNames,
+                                           Collection<String> selectorNames ) {
         String columnName = column.getColumnName() != null ? column.getColumnName() : column.getPropertyName();
+        boolean qualified = columnName != null ? columnName.startsWith(column.getSelectorName() + ".") : false;
+        boolean aliased = columnName != null ? !columnName.equals(column.getPropertyName()) : false;
         if (column.getPropertyName() == null || columnNames.contains(columnName) || columnsWithDuplicateNames.contains(column)) {
             // Per section 6.7.39 of the JSR-283 specification, if the property name for a column is not given
             // then the name for the column in the result set must be "selectorName.propertyName" ...
+            columnName = column.selectorName() + "." + columnName;
+        } else if (!qualified && !aliased && selectorNames.size() > 1) {
+            // When there is more than one selector, all columns need to be named "selectorName.propertyName" ...
             columnName = column.selectorName() + "." + columnName;
         }
         columnNames.add(columnName);

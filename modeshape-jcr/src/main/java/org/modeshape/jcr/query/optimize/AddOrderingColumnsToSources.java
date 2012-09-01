@@ -23,23 +23,29 @@
  */
 package org.modeshape.jcr.query.optimize;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.Column;
-import org.modeshape.jcr.query.model.EquiJoinCondition;
-import org.modeshape.jcr.query.model.JoinCondition;
+import org.modeshape.jcr.query.model.Ordering;
+import org.modeshape.jcr.query.model.PropertyValue;
+import org.modeshape.jcr.query.model.ReferenceValue;
 import org.modeshape.jcr.query.model.SelectorName;
+import org.modeshape.jcr.query.model.Visitor;
+import org.modeshape.jcr.query.model.Visitors;
 import org.modeshape.jcr.query.plan.PlanNode;
 import org.modeshape.jcr.query.plan.PlanNode.Property;
 import org.modeshape.jcr.query.plan.PlanNode.Type;
 
 /**
- * An {@link OptimizerRule} that adds any missing columns required by the join conditions to the appropriate join source.
+ * An {@link OptimizerRule} that adds any missing columns required by the ordering specifications to the SORT node's PROJECT, and
+ * to the appropriate access nodes.
  */
-public class AddJoinConditionColumnsToSources implements OptimizerRule {
+public class AddOrderingColumnsToSources implements OptimizerRule {
 
-    public static final AddJoinConditionColumnsToSources INSTANCE = new AddJoinConditionColumnsToSources();
+    public static final AddOrderingColumnsToSources INSTANCE = new AddOrderingColumnsToSources();
 
     @Override
     public PlanNode execute( QueryContext context,
@@ -47,31 +53,37 @@ public class AddJoinConditionColumnsToSources implements OptimizerRule {
                              LinkedList<OptimizerRule> ruleStack ) {
         final boolean includeSourceName = context.getHints().qualifyExpandedColumnNames;
 
-        // For each of the JOIN nodes ...
-        for (PlanNode joinNode : plan.findAllAtOrBelow(Type.JOIN)) {
-            JoinCondition condition = joinNode.getProperty(Property.JOIN_CONDITION, JoinCondition.class);
-            if (condition instanceof EquiJoinCondition) {
-                EquiJoinCondition equiJoinCondition = (EquiJoinCondition)condition;
-                SelectorName selector1 = equiJoinCondition.selector1Name();
-                Column joinColumn1 = columnFor(equiJoinCondition.selector1Name(),
-                                               equiJoinCondition.getProperty1Name(),
-                                               includeSourceName);
-                Column joinColumn2 = columnFor(equiJoinCondition.selector2Name(),
-                                               equiJoinCondition.getProperty2Name(),
-                                               includeSourceName);
+        // For each of the SORT nodes ...
+        for (PlanNode sortNode : plan.findAllAtOrBelow(Type.SORT)) {
 
-                // Figure out which side of the join condition goes with which side of the plan nodes ...
-                PlanNode left = joinNode.getFirstChild();
-                PlanNode right = joinNode.getLastChild();
-                if (left.getSelectors().contains(selector1)) {
-                    addEquiJoinColumn(context, left, joinColumn1);
-                    addEquiJoinColumn(context, right, joinColumn2);
-                } else {
-                    addEquiJoinColumn(context, left, joinColumn2);
-                    addEquiJoinColumn(context, right, joinColumn1);
+            // Get the list of property and reference expressions that are used in the Ordering instances, using a visitor. Other
+            // kinds of
+            // dynamic operands in Ordering instances will not need to change the columns
+            final Set<Column> sortColumns = new HashSet<Column>();
+            Visitor columnVisitor = new Visitors.AbstractVisitor() {
+                @Override
+                public void visit( PropertyValue prop ) {
+                    sortColumns.add(columnFor(prop.selectorName(), prop.getPropertyName(), includeSourceName));
+                }
+
+                @Override
+                public void visit( ReferenceValue ref ) {
+                    sortColumns.add(columnFor(ref.selectorName(), ref.getPropertyName(), includeSourceName));
+                }
+            };
+            List<Object> orderBys = sortNode.getPropertyAsList(Property.SORT_ORDER_BY, Object.class);
+            if (orderBys != null && !orderBys.isEmpty()) {
+                for (Object ordering : orderBys) {
+                    if (ordering instanceof Ordering) {
+                        Visitors.visitAll((Ordering)ordering, columnVisitor);
+                    }
                 }
             }
 
+            // Add each of the sort columns to the appropriate PROJECT nodes in the subtrees of this plan ...
+            for (Column sortColumn : sortColumns) {
+                addSortColumn(context, sortNode, sortColumn);
+            }
         }
         return plan;
     }
@@ -82,16 +94,16 @@ public class AddJoinConditionColumnsToSources implements OptimizerRule {
      * 
      * @param context the query context; may not be null
      * @param node the query plan node
-     * @param joinColumn the column required by the join
+     * @param sortColumn the column required by the sort
      */
-    protected void addEquiJoinColumn( QueryContext context,
-                                      PlanNode node,
-                                      Column joinColumn ) {
-        if (node.getSelectors().contains(joinColumn.selectorName())) {
+    protected void addSortColumn( QueryContext context,
+                                  PlanNode node,
+                                  Column sortColumn ) {
+        if (node.getSelectors().contains(sortColumn.selectorName())) {
             // Get the existing projected columns ...
             List<Column> columns = node.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
             List<String> types = node.getPropertyAsList(Property.PROJECT_COLUMN_TYPES, String.class);
-            if (columns != null && addIfMissing(context, joinColumn, columns, types)) {
+            if (columns != null && addIfMissing(context, sortColumn, columns, types)) {
                 node.setProperty(Property.PROJECT_COLUMNS, columns);
                 node.setProperty(Property.PROJECT_COLUMN_TYPES, types);
             }
@@ -99,7 +111,7 @@ public class AddJoinConditionColumnsToSources implements OptimizerRule {
 
         // Apply recursively ...
         for (PlanNode child : node) {
-            addEquiJoinColumn(context, child, joinColumn);
+            addSortColumn(context, child, sortColumn);
         }
     }
 

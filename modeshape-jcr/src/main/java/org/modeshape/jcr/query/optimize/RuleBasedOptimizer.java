@@ -75,6 +75,7 @@ public class RuleBasedOptimizer implements Optimizer {
             ruleStack.addFirst(ChooseJoinAlgorithm.USE_ONLY_NESTED_JOIN_ALGORITHM);
             ruleStack.addFirst(RewriteIdentityJoins.INSTANCE);
         }
+        ruleStack.addFirst(AddOrderingColumnsToSources.INSTANCE);
         ruleStack.addFirst(PushProjects.INSTANCE);
         ruleStack.addFirst(PushSelectCriteria.INSTANCE);
         ruleStack.addFirst(AddAccessNodes.INSTANCE);

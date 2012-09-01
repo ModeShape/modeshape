@@ -743,7 +743,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode sort = new PlanNode(Type.SORT, selector("t1"));
         sort.setProperty(Property.SORT_ORDER_BY, orderings(ascending("t1", "c11"), descending("t1", "c12")));
         PlanNode project = new PlanNode(Type.PROJECT, sort, selector("t1"));
-        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1")));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1"), column("t1", "c12")));
         PlanNode join = new PlanNode(Type.JOIN, project, selector("t2"), selector("t1"));
         join.setProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.NESTED_LOOP);
         join.setProperty(Property.JOIN_TYPE, JoinType.INNER);
@@ -751,7 +751,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
         PlanNode leftAccess = new PlanNode(Type.ACCESS, join, selector("t1"));
         PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("t1"));
-        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1")));
+        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1"), column("t1", "c12")));
         PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("t1"));
         leftSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"),
                                                                          Operator.EQUAL_TO, new Literal("x")));
@@ -784,7 +784,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode sort = new PlanNode(Type.SORT, selector("t1"));
         sort.setProperty(Property.SORT_ORDER_BY, orderings(ascending("t1", "c11"), descending("t1", "c12")));
         PlanNode project = new PlanNode(Type.PROJECT, sort, selector("t1"));
-        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1")));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1"), column("t1", "c12")));
         PlanNode join = new PlanNode(Type.JOIN, project, selector("t2"), selector("t1"));
         join.setProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.NESTED_LOOP);
         join.setProperty(Property.JOIN_TYPE, JoinType.INNER);
@@ -792,7 +792,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
         PlanNode leftAccess = new PlanNode(Type.ACCESS, join, selector("t1"));
         PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("t1"));
-        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1")));
+        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11", "c1"), column("t1", "c12")));
         PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("t1"));
         leftSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"),
                                                                          Operator.EQUAL_TO, new Literal("x")));
@@ -866,7 +866,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode sort = new PlanNode(Type.SORT, selector("t1"));
         sort.setProperty(Property.SORT_ORDER_BY, orderings(ascending("t1", "c11"), ascending("t1", "c12")));
         PlanNode project = new PlanNode(Type.PROJECT, sort, selector("t1"));
-        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11")));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11"), column("t1", "c12")));
         PlanNode join = new PlanNode(Type.JOIN, project, selector("t2"), selector("t1"));
         join.setProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.NESTED_LOOP);
         join.setProperty(Property.JOIN_TYPE, JoinType.INNER);
@@ -874,7 +874,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
         PlanNode leftAccess = new PlanNode(Type.ACCESS, join, selector("t1"));
         PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("t1"));
-        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11")));
+        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11"), column("t1", "c12")));
         PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("t1"));
         leftSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"),
                                                                          Operator.EQUAL_TO, new Literal("x")));
@@ -907,7 +907,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode sort = new PlanNode(Type.SORT, selector("t1"));
         sort.setProperty(Property.SORT_ORDER_BY, orderings(ascending("t1", "c11"), ascending("t1", "c12")));
         PlanNode project = new PlanNode(Type.PROJECT, sort, selector("t1"));
-        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11")));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11"), column("t1", "c12")));
         PlanNode join = new PlanNode(Type.JOIN, project, selector("t2"), selector("t1"));
         join.setProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.NESTED_LOOP);
         join.setProperty(Property.JOIN_TYPE, JoinType.INNER);
@@ -915,7 +915,7 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
         PlanNode leftAccess = new PlanNode(Type.ACCESS, join, selector("t1"));
         PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("t1"));
-        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11")));
+        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11"), column("t1", "c12")));
         PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("t1"));
         leftSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"),
                                                                          Operator.EQUAL_TO, new Literal("x")));
