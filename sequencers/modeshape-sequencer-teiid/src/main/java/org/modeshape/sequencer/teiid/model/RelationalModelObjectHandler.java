@@ -616,16 +616,17 @@ public final class RelationalModelObjectHandler extends ModelObjectHandler {
                 // - relational:typeName (string)
                 setProperty(parentNode, JcrId.TYPE_NAME, typeName);
 
+                // TODO typeElement does not have a XMI UUID so there is not a way to look up node (if it even exists)
                 // - relational:type (weakreference)
                 final String uuid = ReferenceResolver.STANDARD_DATA_TYPE_UUIDS_BY_NAMES.get(typeName);
-                final Node typeNode = getResolver().getNode(uuid);
-
-                if (typeNode == null) {
-                    UnresolvedReference unresolved = getResolver().addUnresolvedReference(uuid);
-                    unresolved.addReferencerReference(typeElement.getUuid(), JcrId.TYPE);
-                } else {
-                    parentNode.setProperty(JcrId.TYPE, parentNode.getSession().getValueFactory().createValue(typeNode, true));
-                }
+//                final Node typeNode = getResolver().getNode(uuid);
+//
+//                if (typeNode == null) {
+//                    UnresolvedReference unresolved = getResolver().addUnresolvedReference(uuid);
+//                    unresolved.addReferencerReference(typeElement.getUuid(), JcrId.TYPE);
+//                } else {
+//                    parentNode.setProperty(JcrId.TYPE, parentNode.getSession().getValueFactory().createValue(typeNode, true));
+//                }
 
                 // - relational:typeXmiUuid (string)
                 setProperty(parentNode, JcrId.TYPE_XMI_UUID, uuid);
