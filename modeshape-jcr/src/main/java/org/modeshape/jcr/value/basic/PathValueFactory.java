@@ -289,7 +289,9 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         try {
             return new ChildPath(RootPath.INSTANCE, new BasicPathSegment(value));
         } catch (IllegalArgumentException e) {
-            throw new ValueFormatException(value, getPropertyType(), e);
+            throw new ValueFormatException(value, getPropertyType(),
+                                           GraphI18n.errorConvertingType.text(Name.class.getSimpleName(),
+                                                                              Path.class.getSimpleName(), value), e);
         }
     }
 
