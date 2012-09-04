@@ -55,7 +55,7 @@ public class VdbSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldSequencePartsSupplierVDB() throws Exception {
         createNodeWithContentFromFile("model/parts/PartsSupplierVDB.vdb", "model/parts/PartsSupplierVDB.vdb");
-        Node outputNode = getOutputNode(this.rootNode, "vdbs/PartsSupplierVDB.vdb", 7);
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/PartsSupplierVDB.vdb");
         assertNotNull(outputNode);
         assertEquals(VdbLexicon.Vdb.VIRTUAL_DATABASE, outputNode.getPrimaryNodeType().getName());
     }
@@ -63,7 +63,7 @@ public class VdbSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldSequenceBooksVDB() throws Exception {
         createNodeWithContentFromFile("BooksVDB.vdb", "model/books/BooksVDB.vdb");
-        Node outputNode = getOutputNode(this.rootNode, "vdbs/BooksVDB.vdb", 7);
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/BooksVDB.vdb");
         assertNotNull(outputNode);
         assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
 
@@ -264,7 +264,7 @@ public class VdbSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldSequenceVdbForQuickEmployees() throws Exception {
         createNodeWithContentFromFile("vdb/qe.vdb", "vdb/qe.vdb");
-        Node outputNode = getOutputNode(this.rootNode, "vdbs/qe.vdb", 7);
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/qe.vdb");
         assertNotNull(outputNode);
         assertEquals(VdbLexicon.Vdb.VIRTUAL_DATABASE, outputNode.getPrimaryNodeType().getName());
     }
@@ -274,7 +274,7 @@ public class VdbSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldSequenceVdbForQuickEmployeesWithVersionSpecifiedInFileName() throws Exception {
         createNodeWithContentFromFile("vdb/qe.2.vdb", "vdb/qe.2.vdb");
-        Node outputNode = getOutputNode(this.rootNode, "vdbs/qe.2.vdb", 7);
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/qe.2.vdb");
         assertNotNull(outputNode);
         assertEquals(VdbLexicon.Vdb.VIRTUAL_DATABASE, outputNode.getPrimaryNodeType().getName());
     }
@@ -284,7 +284,7 @@ public class VdbSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldSequenceVdbForPartsFromXml() throws Exception {
         createNodeWithContentFromFile("vdb/PartsFromXml.vdb", "vdb/PartsFromXml.vdb");
-        Node outputNode = getOutputNode(this.rootNode, "vdbs/PartsFromXml.vdb", 7);
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/PartsFromXml.vdb");
         assertNotNull(outputNode);
         assertEquals(VdbLexicon.Vdb.VIRTUAL_DATABASE, outputNode.getPrimaryNodeType().getName());
     }
@@ -294,7 +294,7 @@ public class VdbSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldSequenceVdbForYahooUdfTest() throws Exception {
         createNodeWithContentFromFile("vdb/YahooUdfTest.vdb", "vdb/YahooUdfTest.vdb");
-        Node outputNode = getOutputNode(this.rootNode, "vdbs/YahooUdfTest.vdb", 7);
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/YahooUdfTest.vdb");
         assertNotNull(outputNode);
         assertEquals(VdbLexicon.Vdb.VIRTUAL_DATABASE, outputNode.getPrimaryNodeType().getName());
     }

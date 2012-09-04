@@ -32,7 +32,7 @@ import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import org.modeshape.common.collection.Multimap;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.JcrMixLexicon;
+import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.sequencer.Sequencer.Context;
 import org.modeshape.sequencer.teiid.TeiidI18n;
 import org.modeshape.sequencer.teiid.VdbModel;
@@ -304,8 +304,8 @@ public final class ModelNodeWriter {
                 Multimap<String, String> refRefs = unresolved.getReferencerReferences();
 
                 for (final String propertyName : refRefs.keySet()) {
-                    if (!resolved.isNodeType(JcrMixLexicon.REFERENCEABLE.getString())) {
-                        resolved.addMixin(JcrMixLexicon.REFERENCEABLE.getString());
+                    if (!resolved.isNodeType(JcrConstants.MIX_REFERENCEABLE)) {
+                        resolved.addMixin(JcrConstants.MIX_REFERENCEABLE);
                     }
 
                     Value weakRef = valueFactory.createValue(resolved, true);

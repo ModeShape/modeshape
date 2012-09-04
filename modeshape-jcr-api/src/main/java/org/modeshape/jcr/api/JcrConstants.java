@@ -44,9 +44,11 @@ public final class JcrConstants {
     public static final String NT_RESOURCE = "nt:resource";
 
     public static final String MIX_LAST_MODIFIED = "mix:lastModified";
+    public static final String MIX_REFERENCEABLE = "mix:referenceable";
 
     public static final String MODE_LOCAL_NAME = "mode:localName";
     public static final String MODE_DEPTH = "mode:depth";
+    public static final String MODE_SHA1 = "mode:sha1";
 
     private JcrConstants() {
     }

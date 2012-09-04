@@ -46,7 +46,7 @@ public class ModelSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldSequencePartsSupplierSourceAModel() throws Exception {
         createNodeWithContentFromFile("PartsSupplier_SourceA.xmi", "model/parts/PartsSupplier_SourceA.xmi");
-        Node outputNode = getOutputNode(this.rootNode, "models/PartsSupplier_SourceA.xmi", 5);
+        Node outputNode = getOutputNode(this.rootNode, "models/PartsSupplier_SourceA.xmi");
         assertNotNull(outputNode);
 
         // model annotation
@@ -75,14 +75,14 @@ public class ModelSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldSequenceMyBooksViewModel() throws Exception {
         createNodeWithContentFromFile("MyBooksView.xmi", "model/books/MyBooksView.xmi");
-        Node outputNode = getOutputNode(this.rootNode, "models/MyBooksView.xmi", 5);
+        Node outputNode = getOutputNode(this.rootNode, "models/MyBooksView.xmi");
         assertNotNull(outputNode);
     }
 
     @Test
     public void shouldSequencePartsSupplierVirtualModel() throws Exception {
         createNodeWithContentFromFile("PartsVirtual.xmi", "model/parts/PartsVirtual.xmi");
-        Node outputNode = getOutputNode(this.rootNode, "models/PartsVirtual.xmi", 5);
+        Node outputNode = getOutputNode(this.rootNode, "models/PartsVirtual.xmi");
         assertNotNull(outputNode);
 
         // model annotation
@@ -462,56 +462,56 @@ public class ModelSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldSequenceOldBooksPhysicalRelationalModelForOracle() throws Exception {
         createNodeWithContentFromFile("BooksO.xmi", "model/old/BooksO.xmi");
-        Node outputNode = getOutputNode(this.rootNode, "models/BooksO.xmi", 5);
+        Node outputNode = getOutputNode(this.rootNode, "models/BooksO.xmi");
         assertNotNull(outputNode);
     }
 
     @Test
     public void shouldSequenceOldBooksPhysicalRelationalModelForSqlServer() throws Exception {
         createNodeWithContentFromFile("BooksS.xmi", "model/old/BooksS.xmi");
-        Node outputNode = getOutputNode(this.rootNode, "models/BooksS.xmi", 5);
+        Node outputNode = getOutputNode(this.rootNode, "models/BooksS.xmi");
         assertNotNull(outputNode);
     }
 
     @Test
     public void shouldSequenceNewBooksPhysicalRelationalModelForSourceA() throws Exception {
         createNodeWithContentFromFile("Books_SourceA.xmi", "model/books/Books_SourceA.xmi");
-        Node outputNode = getOutputNode(this.rootNode, "models/Books_SourceA.xmi", 5);
+        Node outputNode = getOutputNode(this.rootNode, "models/Books_SourceA.xmi");
         assertNotNull(outputNode);
     }
 
     @Test
     public void shouldSequenceNewBooksPhysicalRelationalModelForSourceB() throws Exception {
         createNodeWithContentFromFile("Books_SourceB.xmi", "model/books/Books_SourceB.xmi");
-        Node outputNode = getOutputNode(this.rootNode, "models/Books_SourceB.xmi", 5);
+        Node outputNode = getOutputNode(this.rootNode, "models/Books_SourceB.xmi");
         assertNotNull(outputNode);
     }
 
     @Test
     public void shouldSequencePartsSupplierPhysicalRelationalModelForSourceB() throws Exception {
         createNodeWithContentFromFile("PartSupplier_SourceB.xmi", "model/parts/PartSupplier_SourceB.xmi");
-        Node outputNode = getOutputNode(this.rootNode, "models/PartSupplier_SourceB.xmi", 5);
+        Node outputNode = getOutputNode(this.rootNode, "models/PartSupplier_SourceB.xmi");
         assertNotNull(outputNode);
     }
 
     @Test
     public void shouldSequenceYeeHaaPhysicalRelationalModelForProducts() throws Exception {
         createNodeWithContentFromFile("Products.xmi", "model/YeeHaa/Products.xmi");
-        Node outputNode = getOutputNode(this.rootNode, "models/Products.xmi", 5);
+        Node outputNode = getOutputNode(this.rootNode, "models/Products.xmi");
         assertNotNull(outputNode);
     }
 
     @Test
     public void shouldSequenceYeeHaaPhysicalRelationalModelForMarketData() throws Exception {
         createNodeWithContentFromFile("MarketData.xmi", "model/YeeHaa/MarketData.xmi");
-        Node outputNode = getOutputNode(this.rootNode, "models/MarketData.xmi", 5);
+        Node outputNode = getOutputNode(this.rootNode, "models/MarketData.xmi");
         assertNotNull(outputNode);
     }
 
     @Test
     public void shouldSequenceYeeHaaPhysicalRelationalModelForCustomerAccounts() throws Exception {
         createNodeWithContentFromFile("Customer_Accounts.xmi", "model/YeeHaa/Customer_Accounts.xmi");
-        Node outputNode = getOutputNode(this.rootNode, "models/Customer_Accounts.xmi", 5);
+        Node outputNode = getOutputNode(this.rootNode, "models/Customer_Accounts.xmi");
         assertNotNull(outputNode);
 
         Node tableNode = outputNode.getNode(("CUSTOMER"));
@@ -544,14 +544,14 @@ public class ModelSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldSequenceYeeHaaPhysicalRelationalModelForMyPortfolio() throws Exception {
         createNodeWithContentFromFile("MyPortfolio.xmi", "model/YeeHaa/MyPortfolio.xmi");
-        Node outputNode = getOutputNode(this.rootNode, "models/MyPortfolio.xmi", 5);
+        Node outputNode = getOutputNode(this.rootNode, "models/MyPortfolio.xmi");
         assertNotNull(outputNode);
     }
 
     @Test
     public void shouldSequenceRelationalModel() throws Exception {
         createNodeWithContentFromFile("RelationalModel.xmi", "model/relational/RelationalModel.xmi");
-        Node outputNode = getOutputNode(this.rootNode, "models/RelationalModel.xmi", 5);
+        Node outputNode = getOutputNode(this.rootNode, "models/RelationalModel.xmi");
         assertNotNull(outputNode);
 
         { // test model object annotation
@@ -593,14 +593,14 @@ public class ModelSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldSequenceRelationalModelUsingXmlFromSource() throws Exception {
         createNodeWithContentFromFile("PartsView.xmi", "model/XmlParts/PartsView.xmi");
-        Node outputNode = getOutputNode(this.rootNode, "models/PartsView.xmi", 5);
+        Node outputNode = getOutputNode(this.rootNode, "models/PartsView.xmi");
         assertNotNull(outputNode);
     }
 
     @Test
     public void shouldNotSequenceXmlDocumentModelForEmployees() throws Exception {
         createNodeWithContentFromFile("EmpDoc.xmi", "model/QuickEmployees/EmpDoc.xmi");
-        Node outputNode = getOutputNode(this.rootNode, "models/EmpDoc.xmi", 5);
+        Node outputNode = getOutputNode(this.rootNode, "models/EmpDoc.xmi");
         assertNull(outputNode);
     }
 
@@ -608,7 +608,7 @@ public class ModelSequencerTest extends AbstractSequencerTest {
     public void shouldSequenceBooksOracleModel() throws Exception {
         // this OLD model has schema object, and JDBC import settings
         createNodeWithContentFromFile("Books_Oracle.xmi", "model/books/Books_Oracle.xmi");
-        Node outputNode = getOutputNode(this.rootNode, "models/Books_Oracle.xmi", 5);
+        Node outputNode = getOutputNode(this.rootNode, "models/Books_Oracle.xmi");
         assertNotNull(outputNode);
 
         // model annotation

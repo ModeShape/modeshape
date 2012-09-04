@@ -38,8 +38,7 @@ import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.JcrMixLexicon;
-import org.modeshape.jcr.ModeShapeLexicon;
+import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.sequencer.teiid.VdbDataRole.Permission;
@@ -124,11 +123,10 @@ public class VdbSequencer extends Sequencer {
                     // Create the output node for the VDB ...
                     // Path vdbPath = pathFactory.createRelativePath(zipFileName);
                     outputNode.setPrimaryType(VdbLexicon.Vdb.VIRTUAL_DATABASE);
-                    outputNode.addMixin(JcrMixLexicon.REFERENCEABLE.getString());
+                    outputNode.addMixin(JcrConstants.MIX_REFERENCEABLE);
                     outputNode.setProperty(VdbLexicon.Vdb.VERSION, manifest.getVersion());
                     outputNode.setProperty(VdbLexicon.Vdb.ORIGINAL_FILE, outputNode.getPath());
-                    outputNode.setProperty(ModeShapeLexicon.SHA1.getString(),
-                                           ((org.modeshape.jcr.api.Binary)binaryValue).getHexHash());
+                    outputNode.setProperty(JcrConstants.MODE_SHA1, ((org.modeshape.jcr.api.Binary)binaryValue).getHexHash());
                     setProperty(outputNode, VdbLexicon.Vdb.DESCRIPTION, manifest.getDescription());
 
                     // create translator child nodes

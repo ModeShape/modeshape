@@ -31,7 +31,7 @@ import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.JcrMixLexicon;
+import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon.JcrId;
 import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon.ModelId;
 import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
@@ -84,9 +84,6 @@ public final class RelationalModelObjectHandler extends ModelObjectHandler {
         } else if (ModelId.FOREIGN_KEYS.equals(type)) {
             final Node foreignKeyNode = addNode(parentNode, element, URI, JcrId.FOREIGN_KEY);
             processForeignKey(element, foreignKeyNode);
-        } else if (ModelId.LOGICAL_RELATIONSHIP.equals(type)) {
-            // newNode = addNode(parentNode, element, URI, JcrId.LOGICAL_RELATIONSHIP);
-            // TODO finish
         } else if (ModelId.PRIMARY_KEY.equals(type)) {
             final Node primaryKeyNode = addNode(parentNode, element, URI, JcrId.PRIMARY_KEY);
             processUniqueKey(element, primaryKeyNode);
@@ -160,8 +157,8 @@ public final class RelationalModelObjectHandler extends ModelObjectHandler {
                     unresolved = resolver.addUnresolvedReference(accessPatternUuid);
                     unresolved.addReferencerReference(columnElement.getUuid(), JcrId.ACCESS_PATTERNS);
                 } else {
-                    if (!accessPatternNode.isNodeType(JcrMixLexicon.REFERENCEABLE.getString())) {
-                        accessPatternNode.addMixin(JcrMixLexicon.REFERENCEABLE.getString());
+                    if (!accessPatternNode.isNodeType(JcrConstants.MIX_REFERENCEABLE)) {
+                        accessPatternNode.addMixin(JcrConstants.MIX_REFERENCEABLE);
                     }
 
                     final Value weakReference = valueFactory.createValue(accessPatternNode, true);
@@ -332,8 +329,8 @@ public final class RelationalModelObjectHandler extends ModelObjectHandler {
                     unresolved = resolver.addUnresolvedReference(columnUuid);
                     unresolved.addReferencerReference(element.getUuid(), JcrId.COLUMNS);
                 } else {
-                    if (!columnNode.isNodeType(JcrMixLexicon.REFERENCEABLE.getString())) {
-                        columnNode.addMixin(JcrMixLexicon.REFERENCEABLE.getString());
+                    if (!columnNode.isNodeType(JcrConstants.MIX_REFERENCEABLE)) {
+                        columnNode.addMixin(JcrConstants.MIX_REFERENCEABLE);
                     }
 
                     final Value weakReference = valueFactory.createValue(columnNode, true);
@@ -411,8 +408,8 @@ public final class RelationalModelObjectHandler extends ModelObjectHandler {
                     unresolved = resolver.addUnresolvedReference(foreignKeyUuid);
                     unresolved.addReferencerReference(element.getUuid(), JcrId.FOREIGN_KEYS);
                 } else {
-                    if (!foreignKeyNode.isNodeType(JcrMixLexicon.REFERENCEABLE.getString())) {
-                        foreignKeyNode.addMixin(JcrMixLexicon.REFERENCEABLE.getString());
+                    if (!foreignKeyNode.isNodeType(JcrConstants.MIX_REFERENCEABLE)) {
+                        foreignKeyNode.addMixin(JcrConstants.MIX_REFERENCEABLE);
                     }
 
                     final Value weakReference = valueFactory.createValue(foreignKeyNode, true);
@@ -478,8 +475,8 @@ public final class RelationalModelObjectHandler extends ModelObjectHandler {
                     unresolved = resolver.addUnresolvedReference(indexUuid);
                     unresolved.addReferencerReference(columnElement.getUuid(), JcrId.INDEXES);
                 } else {
-                    if (!indexNode.isNodeType(JcrMixLexicon.REFERENCEABLE.getString())) {
-                        indexNode.addMixin(JcrMixLexicon.REFERENCEABLE.getString());
+                    if (!indexNode.isNodeType(JcrConstants.MIX_REFERENCEABLE)) {
+                        indexNode.addMixin(JcrConstants.MIX_REFERENCEABLE);
                     }
 
                     final Value weakReference = valueFactory.createValue(indexNode, true);
@@ -594,11 +591,6 @@ public final class RelationalModelObjectHandler extends ModelObjectHandler {
         // - relational:materialized (boolean) = 'false'
         setProperty(tableNode, JcrId.MATERIALIZED, tableElement.getAttributeValue(ModelId.MATERIALIZED, URI));
 
-        // TODO - relational:logicalRelationships (weakreference) multiple
-        // - relational:logicalRelationshipHrefs (string) multiple
-        // - relational:logicalRelationshipXmiUuids (string) multiple
-        // - relational:logicalRelationshipNames (string) multiple
-
         // + * (relational:primaryKey) = relational:primaryKey copy
         // + * (relational:foreignKey) = relational:foreignKey copy
         // + * (relational:accessPattern) = relational:accessPattern copy sns
@@ -626,7 +618,14 @@ public final class RelationalModelObjectHandler extends ModelObjectHandler {
 
                 // - relational:type (weakreference)
                 final String uuid = ReferenceResolver.STANDARD_DATA_TYPE_UUIDS_BY_NAMES.get(typeName);
-                // TODO setProperty(parentNode, JcrId.TYPE, weakreference);
+                final Node typeNode = getResolver().getNode(uuid);
+
+                if (typeNode == null) {
+                    UnresolvedReference unresolved = getResolver().addUnresolvedReference(uuid);
+                    unresolved.addReferencerReference(typeElement.getUuid(), JcrId.TYPE);
+                } else {
+                    parentNode.setProperty(JcrId.TYPE, parentNode.getSession().getValueFactory().createValue(typeNode, true));
+                }
 
                 // - relational:typeXmiUuid (string)
                 setProperty(parentNode, JcrId.TYPE_XMI_UUID, uuid);
@@ -675,8 +674,8 @@ public final class RelationalModelObjectHandler extends ModelObjectHandler {
                     unresolved = resolver.addUnresolvedReference(uniqueKeyUuid);
                     unresolved.addReferencerReference(element.getUuid(), JcrId.UNIQUE_KEYS);
                 } else {
-                    if (!uniqueKeyNode.isNodeType(JcrMixLexicon.REFERENCEABLE.getString())) {
-                        uniqueKeyNode.addMixin(JcrMixLexicon.REFERENCEABLE.getString());
+                    if (!uniqueKeyNode.isNodeType(JcrConstants.MIX_REFERENCEABLE)) {
+                        uniqueKeyNode.addMixin(JcrConstants.MIX_REFERENCEABLE);
                     }
 
                     final Value weakReference = valueFactory.createValue(uniqueKeyNode, true);

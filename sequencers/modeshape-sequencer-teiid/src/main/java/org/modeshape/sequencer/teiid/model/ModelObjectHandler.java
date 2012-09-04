@@ -28,7 +28,7 @@ import javax.jcr.Property;
 import javax.jcr.Value;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.JcrMixLexicon;
+import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.sequencer.Sequencer.Context;
 import org.modeshape.sequencer.teiid.VdbModel;
 import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
@@ -247,8 +247,8 @@ public abstract class ModelObjectHandler {
                         unresolved.addReferencerReference(node.getProperty(XmiLexicon.JcrId.UUID).getString(), propertyName);
                     } else {
                         // add weakreference
-                        if (!refNode.isNodeType(JcrMixLexicon.REFERENCEABLE.getString())) {
-                            refNode.addMixin(JcrMixLexicon.REFERENCEABLE.getString());
+                        if (!refNode.isNodeType(JcrConstants.MIX_REFERENCEABLE)) {
+                            refNode.addMixin(JcrConstants.MIX_REFERENCEABLE);
                         }
 
                         Value weakReference = node.getSession().getValueFactory().createValue(refNode, true);
