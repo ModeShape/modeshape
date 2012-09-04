@@ -39,6 +39,8 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.sequencer.Sequencer.Context;
 import org.modeshape.sequencer.teiid.VdbDataRole.Permission;
 import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The POJO for the vdb.xml file.
@@ -120,7 +122,8 @@ public class VdbManifest implements Comparable<VdbManifest> {
      *   property (property/0..M)  
      */
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
+    static final Logger LOGGER = LoggerFactory.getLogger(VdbManifest.class);
 
     public static VdbManifest read( final InputStream stream,
                                     final Context context ) throws Exception {
@@ -707,13 +710,13 @@ public class VdbManifest implements Comparable<VdbManifest> {
             // make sure there is a model name, type, and path
             final String name = attributes.get(VdbLexicon.ManifestIds.NAME);
             final String type = attributes.get(VdbLexicon.ManifestIds.TYPE);
-            final String path = attributes.get(VdbLexicon.ManifestIds.PATH);
+            String path = attributes.get(VdbLexicon.ManifestIds.PATH);
 
             if (StringUtil.isBlank(name) || StringUtil.isBlank(type) || StringUtil.isBlank(path)) {
                 throw new Exception(TeiidI18n.missingModelNameTypeOrPath.text());
             }
 
-            path.replaceFirst("^/", "");
+            path = path.replaceFirst("^/", "");
 
             // create model since name, type, path exist
             final VdbModel model = new VdbModel(attributes.get(VdbLexicon.ManifestIds.NAME),
@@ -961,7 +964,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
                     try {
                         manifest.setVersion(Integer.parseInt(version));
                     } catch (final NumberFormatException e) {
-                        // TODO log this
+                        LOGGER.error(TeiidI18n.invalidVdbVersion.text(name, version), e);
                     }
 
                     attributes.remove(VdbLexicon.ManifestIds.VERSION);

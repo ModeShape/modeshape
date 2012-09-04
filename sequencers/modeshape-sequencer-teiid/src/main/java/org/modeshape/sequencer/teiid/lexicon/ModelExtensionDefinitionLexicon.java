@@ -24,12 +24,12 @@
 package org.modeshape.sequencer.teiid.lexicon;
 
 /**
- * Constants relating to the Model Extension Definition (MED) namespace.
+ * Constants associated with the Model Extenension Definition (MED) namespace used in reading XMI models and writing JCR nodes.
  */
 public interface ModelExtensionDefinitionLexicon {
 
     /**
-     * MED namespace constants.
+     * The URI and prefix constants of the MED namespace.
      */
     public interface Namespace {
         String PREFIX = "modelExtensionDefinition";

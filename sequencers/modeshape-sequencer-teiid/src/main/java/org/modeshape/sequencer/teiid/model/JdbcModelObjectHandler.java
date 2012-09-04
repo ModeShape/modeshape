@@ -23,11 +23,11 @@
  */
 package org.modeshape.sequencer.teiid.model;
 
+import static org.modeshape.sequencer.teiid.lexicon.JdbcLexicon.Namespace.URI;
 import javax.jcr.Node;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.sequencer.teiid.lexicon.JdbcLexicon.JcrIds;
-import org.modeshape.sequencer.teiid.lexicon.JdbcLexicon.ModelIds;
-import org.modeshape.sequencer.teiid.lexicon.JdbcLexicon.Namespace;
+import org.modeshape.sequencer.teiid.lexicon.JdbcLexicon.JcrId;
+import org.modeshape.sequencer.teiid.lexicon.JdbcLexicon.ModelId;
 import org.modeshape.sequencer.teiid.xmi.XmiElement;
 import org.modeshape.sequencer.teiid.xmi.XmiPart;
 
@@ -44,20 +44,21 @@ public final class JdbcModelObjectHandler extends ModelObjectHandler {
     @Override
     protected String getQName( final XmiPart xmiPart ) {
         // transform model namespace prefix into the the JCR namespace prefix
-        return (JcrIds.NS_PREFIX + ':' + xmiPart.getName());
+        return (JcrId.NS_PREFIX + ':' + xmiPart.getName());
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.sequencer.teiid.model.ModelObjectHandler#process(org.modeshape.sequencer.teiid.xmi.XmiElement, javax.jcr.Node)
+     * @see org.modeshape.sequencer.teiid.model.ModelObjectHandler#process(org.modeshape.sequencer.teiid.xmi.XmiElement,
+     *      javax.jcr.Node)
      */
     @Override
     protected void process( final XmiElement element,
                             final Node parentNode ) throws Exception {
         CheckArg.isNotNull(element, "element");
         CheckArg.isNotNull(parentNode, "outputNode");
-        CheckArg.isEquals(element.getNamespaceUri(), "namespace URI", Namespace.URI, "JDBC URI");
+        CheckArg.isEquals(element.getNamespaceUri(), "namespace URI", URI, "JDBC URI");
 
         if (DEBUG) {
             debug("==== JdbcModelObjectHandler:process:element=" + element.getName());
@@ -66,23 +67,23 @@ public final class JdbcModelObjectHandler extends ModelObjectHandler {
         final String type = element.getName();
         Node newNode = null;
 
-        if (ModelIds.SOURCE.equals(type)) {
-            newNode = addNode(parentNode, element, Namespace.URI, JcrIds.SOURCE);
-        } else if (ModelIds.IMPORT_SETTINGS.equals(type)) {
-            newNode = addNode(parentNode, element, Namespace.URI, JcrIds.IMPORTED);
-        } else if (ModelIds.EXCLUDED_OBJECT_PATHS.equals(type)) {
-            addPropertyValue(parentNode, JcrIds.EXCLUDED_OBJECT_PATHS, element.getValue());
-        } else if (ModelIds.INCLUDED_CATALOG_PATHS.equals(type)) {
-            addPropertyValue(parentNode, JcrIds.INCLUDED_CATALOG_PATHS, element.getValue());
-        } else if (ModelIds.INCLUDED_SCHEMA_PATHS.equals(type)) {
-            addPropertyValue(parentNode, JcrIds.INCLUDED_SCHEMA_PATHS, element.getValue());
-        } else if (ModelIds.INCLUDED_TABLE_TYPES.equals(type)) {
-            addPropertyValue(parentNode, JcrIds.INCLUDED_TABLE_TYPES, element.getValue());
+        if (ModelId.SOURCE.equals(type)) {
+            newNode = addNode(parentNode, element, URI, JcrId.SOURCE);
+        } else if (ModelId.IMPORT_SETTINGS.equals(type)) {
+            newNode = addNode(parentNode, element, URI, JcrId.IMPORTED);
+        } else if (ModelId.EXCLUDED_OBJECT_PATHS.equals(type)) {
+            addPropertyValue(parentNode, JcrId.EXCLUDED_OBJECT_PATHS, element.getValue());
+        } else if (ModelId.INCLUDED_CATALOG_PATHS.equals(type)) {
+            addPropertyValue(parentNode, JcrId.INCLUDED_CATALOG_PATHS, element.getValue());
+        } else if (ModelId.INCLUDED_SCHEMA_PATHS.equals(type)) {
+            addPropertyValue(parentNode, JcrId.INCLUDED_SCHEMA_PATHS, element.getValue());
+        } else if (ModelId.INCLUDED_TABLE_TYPES.equals(type)) {
+            addPropertyValue(parentNode, JcrId.INCLUDED_TABLE_TYPES, element.getValue());
         }
 
         // process new node
         if (newNode != null) {
-            setProperties(newNode, element, Namespace.URI);
+            setProperties(newNode, element, URI);
 
             // process children
             for (final XmiElement kid : element.getChildren()) {

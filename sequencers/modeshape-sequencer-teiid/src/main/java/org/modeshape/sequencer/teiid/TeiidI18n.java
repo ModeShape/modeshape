@@ -42,7 +42,9 @@ public final class TeiidI18n {
     public static I18n errorReadingVdbFile;
     public static I18n errorClosingVdbFile;
 
+    public static I18n invalidModelNodeType;
     public static I18n invalidNumberOfPropertyAttributes;
+    public static I18n invalidVdbModelNodeType;
     public static I18n missingDataRoleName;
     public static I18n missingEntryPath;
     public static I18n missingModelNameTypeOrPath;
@@ -50,6 +52,10 @@ public final class TeiidI18n {
     public static I18n missingPropertyNameOrValue;
     public static I18n missingTranslatorNameOrType;
     public static I18n missingVdbName;
+
+    public static I18n illegalUnresolvedReference;
+    public static I18n namespaceUriNotFoundInRegistry;
+    public static I18n invalidVdbVersion;
 
     static {
         try {

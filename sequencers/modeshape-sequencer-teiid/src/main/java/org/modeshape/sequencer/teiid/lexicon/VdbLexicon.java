@@ -26,37 +26,56 @@ package org.modeshape.sequencer.teiid.lexicon;
 import static org.modeshape.sequencer.teiid.lexicon.VdbLexicon.Namespace.PREFIX;
 
 /**
- * Constants used during sequencing the VDB manifest.
+ * Constants associated with the VDB namespace used in reading VDB manifests and writing JCR nodes.
  */
 public interface VdbLexicon {
 
+    /**
+     * The URI and prefix constants of the VDB namespace.
+     */
+    public interface Namespace {
+        String PREFIX = "vdb";
+        String URI = "http://www.metamatrix.com/metamodels/VirtualDatabase";
+    }
+
+    /**
+     * JCR identifiers relating to VDB manifest data roles.
+     */
     public interface DataRole {
+        String ALLOW_CREATE_TEMP_TABLES = PREFIX + ":allowCreateTemporaryTables";
+        String ANY_AUTHENTICATED = PREFIX + ":anyAuthenticated";
         String DATA_ROLE = PREFIX + ":dataRole";
         String DESCRIPTION = PREFIX + ":description";
-        String ANY_AUTHENTICATED = PREFIX + ":anyAuthenticated";
-        String ALLOW_CREATE_TEMP_TABLES = PREFIX + ":allowCreateTemporaryTables";
         String MAPPED_ROLE_NAMES = PREFIX + ":mappedRoleNames";
         String PERMISSIONS = PREFIX + ":permissions";
 
+        /**
+         * JCR identifiers relating to VDB manifest data role permissions.
+         */
         public interface Permission {
-            String PERMISSION = PREFIX + ":permission";
             String ALLOW_ALTER = PREFIX + ":allowAlter";
             String ALLOW_CREATE = PREFIX + ":allowCreate";
             String ALLOW_DELETE = PREFIX + ":allowDelete";
             String ALLOW_EXECUTE = PREFIX + ":allowExecute";
             String ALLOW_READ = PREFIX + ":allowRead";
             String ALLOW_UPDATE = PREFIX + ":allowUpdate";
+            String PERMISSION = PREFIX + ":permission";
         }
     }
 
+    /**
+     * JCR identifiers relating to VDB manifest entries.
+     */
     public interface Entry {
+        String DESCRIPTION = PREFIX + ":description";
         String ENTRY = PREFIX + ":entry";
         String PATH = PREFIX + ":path";
-        String DESCRIPTION = PREFIX + ":description";
     }
 
+    /**
+     * Constants associated with the VDB namespace that identify VDB manifest identifiers.
+     */
     public interface ManifestIds {
-        String ANY_AUTHENTICATED = "any-authenticated";
         String ALLOW_ALTER = "allow-alter";
         String ALLOW_CREATE = "allow-create";
         String ALLOW_CREATE_TEMP_TABLES = "allow-create-temporary-tables";
@@ -64,6 +83,7 @@ public interface VdbLexicon {
         String ALLOW_EXECUTE = "allow-execute";
         String ALLOW_READ = "allow-read";
         String ALLOW_UPDATE = "allow-update";
+        String ANY_AUTHENTICATED = "any-authenticated";
         String BUILT_IN = "builtIn";
         String CHECKSUM = "checksum";
         String DATA_ROLE = "data-role";
@@ -76,21 +96,24 @@ public interface VdbLexicon {
         String NAME = "name";
         String PATH = "path";
         String PERMISSION = "permission";
-        String RESOURCE_NAME = "resource-name";
         String PREVIEW = "preview";
         String PROPERTY = "property";
+        String RESOURCE_NAME = "resource-name";
         String SEVERITY = "severity";
         String SOURCE = "source";
         String TRANSLATOR = "translator";
         String TRANSLATOR_NAME = "translator-name";
         String TYPE = "type";
-        String VDB = "vdb";
         String VALIDATION_ERROR = "validation-error";
         String VALUE = "value";
+        String VDB = "vdb";
         String VERSION = "version";
         String VISIBLE = "visible";
     }
 
+    /**
+     * JCR identifiers relating to VDB manifest models.
+     */
     public interface Model {
         String BUILT_IN = PREFIX + ":builtIn";
         String CHECKSUM = PREFIX + ":checksum";
@@ -98,40 +121,44 @@ public interface VdbLexicon {
         String MARKERS = PREFIX + ":markers";
         String MODEL = PREFIX + ":model";
         String PATH_IN_VDB = PREFIX + ":pathInVdb";
-        String SOURCE_TRANSLATOR = PREFIX + ":sourceTranslator";
         String SOURCE_JNDI_NAME = PREFIX + ":sourceJndiName";
         String SOURCE_NAME = PREFIX + ":sourceName";
+        String SOURCE_TRANSLATOR = PREFIX + ":sourceTranslator";
         String TYPE = PREFIX + ":type";
         String VISIBLE = PREFIX + ":visible";
 
+        /**
+         * JCR identifiers relating to VDB manifest model validation error markers.
+         */
         public interface Marker {
             String MARKER = PREFIX + ":marker";
-            String SEVERITY = PREFIX + ":severity";
-            String PATH = PREFIX + ":path";
             String MESSAGE = PREFIX + ":message";
+            String PATH = PREFIX + ":path";
+            String SEVERITY = PREFIX + ":severity";
         }
     }
 
-    public interface Namespace {
-        String URI = "http://www.metamatrix.com/metamodels/VirtualDatabase";
-        String PREFIX = "vdb";
-    }
-
+    /**
+     * JCR identifiers relating to VDB manifest translators.
+     */
     public interface Translator {
+        String DESCRIPTION = PREFIX + ":description";
         String TRANSLATOR = PREFIX + ":translator";
         String TYPE = PREFIX + ":type";
-        String DESCRIPTION = PREFIX + ":description";
     }
 
+    /**
+     * JCR identifiers relating to the VDB manifest.
+     */
     public interface Vdb {
-        String VIRTUAL_DATABASE = PREFIX + ":virtualDatabase";
-        String DESCRIPTION = PREFIX + ":description";
-        String VERSION = PREFIX + ":version";
-        String PREVIEW = PREFIX + ":preview";
-        String ORIGINAL_FILE = PREFIX + ":originalFile";
-        String TRANSLATORS = PREFIX + ":translators";
         String DATA_ROLES = PREFIX + ":dataRoles";
+        String DESCRIPTION = PREFIX + ":description";
         String ENTRIES = PREFIX + ":entries";
         String MODEL = PREFIX + ":model";
+        String ORIGINAL_FILE = PREFIX + ":originalFile";
+        String PREVIEW = PREFIX + ":preview";
+        String TRANSLATORS = PREFIX + ":translators";
+        String VERSION = PREFIX + ":version";
+        String VIRTUAL_DATABASE = PREFIX + ":virtualDatabase";
     }
 }

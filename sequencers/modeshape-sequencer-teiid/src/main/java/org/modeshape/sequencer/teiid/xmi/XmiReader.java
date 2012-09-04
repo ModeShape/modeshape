@@ -34,14 +34,14 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
 
 /**
  * A XMI file reader.
  */
 public class XmiReader {
 
-    protected static final boolean DEBUG = true;
-    protected static final String XMI_TAG = "XMI";
+    protected static final boolean DEBUG = false;
 
     protected static void debug( final String message ) {
         System.err.println(message);
@@ -262,7 +262,7 @@ public class XmiReader {
         // create attributes
         createAttributes(streamReader, element);
 
-        if (XMI_TAG.equals(streamReader.getLocalName())) {
+        if (XmiLexicon.ModelId.XMI_TAG.equals(streamReader.getLocalName())) {
             for (int i = 0, size = streamReader.getNamespaceCount(); i < size; ++i) {
                 final String nsPrefix = streamReader.getNamespacePrefix(i);
                 final String nsUri = streamReader.getNamespaceURI(i);

@@ -23,16 +23,16 @@
  */
 package org.modeshape.sequencer.teiid.model;
 
-import java.util.Map.Entry;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.Value;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.JcrMixLexicon;
 import org.modeshape.jcr.api.sequencer.Sequencer.Context;
-import org.modeshape.sequencer.teiid.DefaultProperties;
 import org.modeshape.sequencer.teiid.VdbModel;
 import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
+import org.modeshape.sequencer.teiid.model.ReferenceResolver.UnresolvedReference;
 import org.modeshape.sequencer.teiid.xmi.XmiAttribute;
 import org.modeshape.sequencer.teiid.xmi.XmiElement;
 import org.modeshape.sequencer.teiid.xmi.XmiPart;
@@ -42,7 +42,7 @@ import org.modeshape.sequencer.teiid.xmi.XmiPart;
  */
 public abstract class ModelObjectHandler {
 
-    protected static final boolean DEBUG = true;
+    protected static final boolean DEBUG = false;
 
     protected static void debug( final String message ) {
         System.err.println(message);
@@ -80,7 +80,7 @@ public abstract class ModelObjectHandler {
         }
 
         final Node newNode = parentNode.addNode(name, primaryNodeType);
-        setProperty(newNode, XmiLexicon.UUID, element.getUuid());
+        setProperty(newNode, XmiLexicon.JcrId.UUID, element.getUuid());
         this.resolver.record(element.getUuid(), newNode);
 
         if (DEBUG) {
@@ -99,19 +99,32 @@ public abstract class ModelObjectHandler {
     protected void addPropertyValue( final Node node,
                                      final String propertyName,
                                      final String newValue ) throws Exception {
+        CheckArg.isNotEmpty(newValue, "newValue");
+        addPropertyValue(node, propertyName, this.context.valueFactory().createValue(newValue));
+    }
+
+    /**
+     * @param node the node whose multi-valued property a value is being added to (cannot be <code>null</code>)
+     * @param propertyName the multi-valued property name (cannot be <code>null</code> or empty)
+     * @param newValue the value being added (cannot be <code>null</code> or empty)
+     * @throws Exception if there is a problem adding the property value
+     */
+    protected void addPropertyValue( final Node node,
+                                     final String propertyName,
+                                     final Value newValue ) throws Exception {
         CheckArg.isNotNull(node, "node");
         CheckArg.isNotEmpty(propertyName, "propertyName");
-        CheckArg.isNotEmpty(newValue, "newValue");
+        CheckArg.isNotNull(newValue, "newValue");
 
         if (node.hasProperty(propertyName)) {
             final Property property = node.getProperty(propertyName);
             final Value[] currentValues = property.getValues();
             final Value[] newValues = new Value[currentValues.length + 1];
             System.arraycopy(currentValues, 0, newValues, 0, currentValues.length);
-            newValues[currentValues.length] = this.context.valueFactory().createValue(newValue);
+            newValues[currentValues.length] = newValue;
             node.setProperty(propertyName, newValues);
         } else {
-            node.setProperty(propertyName, new String[] {newValue});
+            node.setProperty(propertyName, new Value[] {newValue});
         }
 
         if (DEBUG) {
@@ -175,26 +188,6 @@ public abstract class ModelObjectHandler {
     }
 
     /**
-     * Sets all properties to there default value if they currently do not have a value.
-     * 
-     * @param node the node whose properties are being set to default values (cannot be <code>null</code>)
-     * @throws Exception if there is a problem setting the properties
-     */
-    protected void setDefaultValues( final Node node ) throws Exception {
-        final DefaultProperties defaults = DefaultProperties.getDefaults();
-
-        for (final Entry<String, Object> defaultValue : defaults.getDefaultsFor(node.getPrimaryNodeType().getName()).entrySet()) {
-            if (!node.hasProperty(defaultValue.getKey())) {
-                setProperty(node, defaultValue.getKey(), defaultValue.getValue().toString()); // TODO verify this will always work
-
-                if (DEBUG) {
-                    debug("  " + defaultValue.getValue() + " is a default value");
-                }
-            }
-        }
-    }
-
-    /**
      * @param node the node whose properties are being set (cannot be <code>null</code>)
      * @param element the XMI element whose attributes are being used to set the properties (cannot be <code>null</code>)
      * @param nameAttributeUri the URI of the name attribute to use as the node name (can be <code>null</code> or empty)
@@ -210,15 +203,15 @@ public abstract class ModelObjectHandler {
 
         for (final XmiAttribute attribute : element.getAttributes()) {
             // don't set if name property as that is the node name
-            if (!attribute.equals(nameAttribute) && !XmiLexicon.UUID.equals(attribute.getQName())) {
+            if (!attribute.equals(nameAttribute) && !XmiLexicon.JcrId.UUID.equals(attribute.getQName())) {
                 setProperty(node, getQName(attribute), attribute.getValue());
             }
         }
-
-        setDefaultValues(node);
     }
 
     /**
+     * Sets the specified property only if the value is not <code>null</code> and not empty.
+     * 
      * @param node the node whose property is being set (cannot be <code>null</code>)
      * @param propertyName the name of the property being set (cannot be <code>null</code>)
      * @param propertyValue the proposed property value (can be <code>null</code> or empty)
@@ -231,10 +224,51 @@ public abstract class ModelObjectHandler {
         CheckArg.isNotEmpty(propertyName, "propertyName");
 
         if (!StringUtil.isBlank(propertyValue)) {
-            node.setProperty(propertyName, propertyValue);
+            boolean multiValued = false;
 
-            if (DEBUG) {
-                debug(node.getName() + ":setting " + propertyName + " = " + propertyValue);
+            if (node.hasProperty(propertyName)) {
+                if (node.getProperty(propertyName).isMultiple()) {
+                    multiValued = true;
+                }
+            } else {
+                // TODO need to get property definition here (get answer one time and cache)
+            }
+
+            if (this.resolver.isReference(propertyValue)) {
+                String[] refUuids = propertyValue.split("\\s"); // see if multi-valued
+
+                for (String refUuid : refUuids) {
+                    refUuid = this.resolver.resolveInternalReference(refUuid);
+                    Node refNode = this.resolver.getNode(refUuid);
+
+                    if (refNode == null) {
+                        // unresolved reference
+                        UnresolvedReference unresolved = this.resolver.addUnresolvedReference(refUuid);
+                        unresolved.addReferencerReference(node.getProperty(XmiLexicon.JcrId.UUID).getString(), propertyName);
+                    } else {
+                        // add weakreference
+                        if (!refNode.isNodeType(JcrMixLexicon.REFERENCEABLE.getString())) {
+                            refNode.addMixin(JcrMixLexicon.REFERENCEABLE.getString());
+                        }
+
+                        Value weakReference = node.getSession().getValueFactory().createValue(refNode, true);
+                        node.setProperty(propertyName, weakReference);
+                    }
+                }
+            } else {
+                if (multiValued) {
+                    addPropertyValue(node, propertyName, propertyValue);
+
+                    if (DEBUG) {
+                        debug(node.getName() + ":adding value " + propertyValue + " to multi-valued property " + propertyName);
+                    }
+                } else {
+                    node.setProperty(propertyName, propertyValue);
+
+                    if (DEBUG) {
+                        debug(node.getName() + ":setting " + propertyName + " = " + propertyValue);
+                    }
+                }
             }
         }
     }

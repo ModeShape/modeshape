@@ -23,18 +23,16 @@
  */
 package org.modeshape.sequencer.teiid.lexicon;
 
-
 /**
- * 
+ * Constants associated with the diagram namespace used in reading XMI models and writing JCR nodes.
  */
-public class DiagramLexicon {
+public interface DiagramLexicon {
 
-    public static class Namespace {
-        public static final String URI = "http://www.metamatrix.com/metamodels/Diagram";
-        public static final String PREFIX = "diagram";
-    }
-
-    public interface ModelTags {
-        String DIAGRAM_CONTAINER = "DiagramContainer";
+    /**
+     * The URI and prefix constants of the diagram namespace.
+     */
+    public interface Namespace {
+        String PREFIX = "diagram";
+        String URI = "http://www.metamatrix.com/metamodels/Diagram";
     }
 }

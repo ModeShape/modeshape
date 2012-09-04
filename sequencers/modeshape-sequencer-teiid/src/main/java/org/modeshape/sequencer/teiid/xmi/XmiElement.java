@@ -102,14 +102,28 @@ public class XmiElement extends XmiBasePart implements XmiDescendent {
 
     /**
      * @param childName the name of the child being requested (cannot be <code>null</code> or empty)
+     * @param namespaceUri the URI of the attribute being requested (can be <code>null</code> or empty)
      * @return the requested child element or <code>null</code> if not found
      */
-    public XmiElement findChild( final String childName ) {
+    public XmiElement findChild( final String childName,
+                                 final String namespaceUri ) {
         CheckArg.isNotEmpty(childName, "childName");
 
         for (final XmiElement kid : getChildren()) {
             if (childName.equals(kid.getName())) {
-                return kid;
+                // requested element should not have a namespace URI
+                if (StringUtil.isBlank(namespaceUri)) {
+                    if (StringUtil.isBlank(kid.getNamespaceUri())) {
+                        return kid;
+                    }
+
+                    continue;
+                }
+
+                // requested attribute should have a matching namespace URI
+                if (namespaceUri.equals(kid.getNamespaceUri())) {
+                    return kid;
+                }
             }
         }
 
@@ -269,7 +283,7 @@ public class XmiElement extends XmiBasePart implements XmiDescendent {
      * @return the XMI UUID or <code>null</code> if not set
      */
     public String getUuid() {
-        return getAttributeValue(XmiLexicon.ModelIds.UUID, XmiLexicon.Namespace.URI);
+        return getAttributeValue(XmiLexicon.ModelId.UUID, XmiLexicon.Namespace.URI);
     }
 
     /**
