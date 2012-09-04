@@ -41,16 +41,6 @@ public class ValueFormatException extends RuntimeException {
     /**
      * @param value the value that was not able to be converted
      * @param targetType the {@link PropertyType} to which the value was being converted
-     */
-    public ValueFormatException( Object value,
-                                 PropertyType targetType ) {
-        this.value = value;
-        this.targetType = targetType;
-    }
-
-    /**
-     * @param value the value that was not able to be converted
-     * @param targetType the {@link PropertyType} to which the value was being converted
      * @param message the message
      */
     public ValueFormatException( Object value,
@@ -62,16 +52,16 @@ public class ValueFormatException extends RuntimeException {
     }
 
     /**
-     * @param value the value that was not able to be converted
      * @param targetType the {@link PropertyType} to which the value was being converted
+     * @param message the message
      * @param cause the cause of the exception
      */
-    public ValueFormatException( Object value,
-                                 PropertyType targetType,
+    public ValueFormatException( PropertyType targetType,
+                                 String message,
                                  Throwable cause ) {
-        super(cause);
-        this.value = value;
+        super(message, cause);
         this.targetType = targetType;
+        this.value = null;
     }
 
     /**
@@ -90,16 +80,8 @@ public class ValueFormatException extends RuntimeException {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return super.toString();
-    }
-
-    /**
      * Get the {@link PropertyType} to which the {@link #getValue() value} was being converted.
-     * 
+     *
      * @return the target type
      */
     public PropertyType getTargetType() {
@@ -108,8 +90,8 @@ public class ValueFormatException extends RuntimeException {
 
     /**
      * Get the original value that was being converted.
-     * 
-     * @return the value
+     *
+     * @return the value, which can be {@code null} in certain cases (e.g. when streams cause this exception)
      */
     public Object getValue() {
         return value;

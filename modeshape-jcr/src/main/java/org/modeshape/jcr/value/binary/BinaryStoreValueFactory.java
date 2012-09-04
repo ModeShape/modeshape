@@ -221,7 +221,8 @@ public class BinaryStoreValueFactory extends AbstractValueFactory<BinaryValue> i
             // Store the value in the store ...
             return store.storeValue(new ByteArrayInputStream(value));
         } catch (BinaryStoreException e) {
-            throw new ValueFormatException(e, PropertyType.BINARY);
+            throw new ValueFormatException(PropertyType.BINARY, GraphI18n.errorConvertingType.text(
+                    byte[].class.getSimpleName(), BinaryValue.class.getSimpleName(), value), e);
         }
     }
 
@@ -232,7 +233,8 @@ public class BinaryStoreValueFactory extends AbstractValueFactory<BinaryValue> i
             // Store the value in the store ...
             return store.storeValue(stream);
         } catch (BinaryStoreException e) {
-            throw new ValueFormatException(e, PropertyType.BINARY);
+            throw new ValueFormatException(PropertyType.BINARY, GraphI18n.errorConvertingIo.text(
+                    InputStream.class.getSimpleName(), BinaryValue.class.getSimpleName()), e);
         }
     }
 

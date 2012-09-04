@@ -31,6 +31,7 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.query.Query;
+import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.JcrValueFactory;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.query.JcrTypeSystem;
@@ -48,13 +49,7 @@ public class JcrSql2QueryParser extends BasicSqlQueryParser {
 
     public static final String LANGUAGE = Query.JCR_SQL2;
 
-    public JcrSql2QueryParser() {
-        super();
-    }
-
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.jcr.query.parse.QueryParser#getLanguage()
      */
     @Override
@@ -63,8 +58,6 @@ public class JcrSql2QueryParser extends BasicSqlQueryParser {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.jcr.query.parse.BasicSqlQueryParser#literal(TypeSystem, Object)
      */
     @Override
@@ -97,7 +90,8 @@ public class JcrSql2QueryParser extends BasicSqlQueryParser {
             try {
                 jcrValue = factory.createValue((Node)value);
             } catch (RepositoryException e) {
-                throw new ValueFormatException(value, PropertyType.REFERENCE, e.getMessage());
+                throw new ValueFormatException(value, PropertyType.REFERENCE, GraphI18n.errorConvertingType.text(
+                        Node.class.getSimpleName(), Reference.class.getSimpleName(), value), e);
             }
         } else {
             jcrValue = factory.createValue(value.toString());
