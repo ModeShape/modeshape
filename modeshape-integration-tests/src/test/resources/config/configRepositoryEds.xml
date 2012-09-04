@@ -47,7 +47,7 @@
             mode:driverClassName="org.hsqldb.jdbcDriver"
             mode:username="sa"
             mode:password=""
-            mode:url="jdbc:hsqldb:target/database/ConfigurationTest/db"
+            mode:url="jdbc:hsqldb:mem:target"
             mode:maximumConnectionsInPool="2"
             mode:showSql="false"
             mode:creatingWorkspacesAllowed="true">
