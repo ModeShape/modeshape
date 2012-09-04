@@ -142,8 +142,9 @@ public final class TransformationModelObjectHandler extends ModelObjectHandler {
 
     private void processMappings( final XmiElement mappings ) throws Exception {
         assert (mappings != null);
-        assert (ModelId.INPUTS.equals(mappings.getName()));
+        assert (ModelId.TRANSFORMATION_MAPPINGS.equals(mappings.getName()));
 
+        System.err.println("========="+mappings.getName());
         final ReferenceResolver resolver = getResolver();
         final String targetUuid = mappings.getAttributeValue(ModelId.TARGET, URI);
         final String uuid = resolver.resolveInternalReference(targetUuid);
