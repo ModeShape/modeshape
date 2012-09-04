@@ -54,7 +54,7 @@ import org.modeshape.sequencer.teiid.model.ReferenceResolver;
  */
 public class VdbSequencer extends Sequencer {
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
     private static final String MANIFEST_FILE = "/META-INF/vdb.xml";
     private static final Pattern VERSION_REGEX = Pattern.compile("(.*)[.]\\s*[+-]?([0-9]+)\\s*$");
 
@@ -83,9 +83,9 @@ public class VdbSequencer extends Sequencer {
         return fileNameWithoutExtension.replaceAll("[.]*$", "");
     }
 
-    private ModelSequencer modelSequencer;
+    private ModelSequencer modelSequencer; // constructed during initialize method
 
-    private ReferenceResolver resolver;
+    private ReferenceResolver resolver; // constructed during initialize method
 
     /**
      * {@inheritDoc}
@@ -187,15 +187,14 @@ public class VdbSequencer extends Sequencer {
 
             return true;
         } catch (final Exception e) {
-            final String location = null; // TODO set location
-            getLogger().error(e, TeiidI18n.errorReadingVdbFile.text(location, e.getMessage()));
+            getLogger().error(e, TeiidI18n.errorReadingVdbFile.text(inputProperty.getPath(), e.getMessage()));
             return false;
         } finally {
             if (vdbStream != null) {
                 try {
                     vdbStream.close();
                 } catch (final Exception e) {
-                    getLogger().warn("Cannot close VDB zip input stream", e); // TODO i18n this
+                    getLogger().warn(TeiidI18n.errorClosingVdbFile.text(inputProperty.getPath(), e.getMessage()), e);
                 }
             }
         }
@@ -223,6 +222,11 @@ public class VdbSequencer extends Sequencer {
         this.modelSequencer.initialize(registry, nodeTypeManager);
     }
 
+    /**
+     * @param manifest the VDB manifest whose data roles are being sequenced (cannot be <code>null</code>)
+     * @param outputNode the VDB node (cannot be <code>null</code>)
+     * @throws Exception if an error occurs writing the data roles
+     */
     private void sequenceDataRoles( final VdbManifest manifest,
                                     final Node outputNode ) throws Exception {
         assert (manifest != null) : "manifest is null";
@@ -271,8 +275,8 @@ public class VdbSequencer extends Sequencer {
 
     /**
      * @param manifest the VDB manifest whose entries are being sequenced (cannot be <code>null</code>)
-     * @param outputNode the VDB node
-     * @throws Exception
+     * @param outputNode the VDB node (cannot be <code>null</code>)
+     * @throws Exception if an error occurs writing the VDB entries
      */
     private void sequenceEntries( final VdbManifest manifest,
                                   final Node outputNode ) throws Exception {
@@ -304,7 +308,7 @@ public class VdbSequencer extends Sequencer {
     /**
      * @param manifest the VDB manifest whose properties are being sequenced (cannot be <code>null</code>)
      * @param outputNode the VDB node where the properties will be added (cannot be <code>null</code>)
-     * @throws Exception if an error occurs setting properties
+     * @throws Exception if an error occurs writing the properties
      */
     private void sequenceProperties( final VdbManifest manifest,
                                      final Node outputNode ) throws Exception {

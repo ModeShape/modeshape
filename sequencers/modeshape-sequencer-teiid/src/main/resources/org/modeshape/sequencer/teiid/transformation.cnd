@@ -33,10 +33,10 @@
 //------------------------------------------------------------------------------
 
 [transform:transformed] mixin
- - transform:transformedFrom (weakreference)
- - transform:transformedFromHrefs (string)
- - transform:transformedFromXmiUuids (string)
- - transform:transformedFromNames (string)
+ - transform:transformedFrom (weakreference) multiple
+ - transform:transformedFromHrefs (string) multiple
+ - transform:transformedFromXmiUuids (string) multiple
+ - transform:transformedFromNames (string) multiple
 
 [transform:withSql] mixin
  - transform:selectSql (string) 

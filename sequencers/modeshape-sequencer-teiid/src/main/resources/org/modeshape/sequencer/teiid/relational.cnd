@@ -103,8 +103,6 @@
  - relational:foreignKeyXmiUuids (string) multiple 
  - relational:foreignKeyNames (string) multiple 
 
-[relational:uniqueConstraint] > relational:uniqueKey
-
 [relational:primaryKey] > relational:uniqueKey
 
 [relational:foreignKey] > relational:relationship
@@ -128,7 +126,10 @@
  - relational:columnNames (string) multiple 
 
 [relational:accessPattern] > nt:unstructured, relational:relationalEntity orderable
- - relational:columns (UNDEFINED) multiple 
+// - relational:columns (UNDEFINED) multiple 
+ - relational:columns (weakreference) multiple
+ - relational:columnXmiUuids (string) multiple 
+ - relational:columnNames (string) multiple 
 
 // -------------------------------------------
 // Tables and Views

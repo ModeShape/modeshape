@@ -26,22 +26,34 @@ package org.modeshape.sequencer.teiid.lexicon;
 import static org.modeshape.sequencer.teiid.lexicon.XmiLexicon.Namespace.PREFIX;
 
 /**
- * 
+ * Constants associated with the XMI namespace used in reading XMI models and writing JCR nodes.
  */
-public class XmiLexicon {
+public interface XmiLexicon {
 
-    public static class Namespace {
-        public static final String URI = "http://www.omg.org/XMI";
-        public static final String PREFIX = "xmi";
+    /**
+     * The URI and prefix constants of the XMI namespace.
+     */
+    public interface Namespace {
+        String PREFIX = "xmi";
+        String URI = "http://www.omg.org/XMI";
     }
 
-    public interface ModelIds {
+    /**
+     * Constants associated with the XMI namespace that identify XMI model identifiers.
+     */
+    public interface ModelId {
         String UUID = "uuid";
+        String XMI_TAG = "XMI";
     }
 
-    public static final String MODEL = PREFIX + ":model";
-    public static final String XMI = PREFIX + ":xmi";
-    public static final String VERSION = PREFIX + ":version";
-    public static final String UUID = PREFIX + ':' + ModelIds.UUID;
-    public static final String REFERENCEABLE = PREFIX + ":referenceable";
+    /**
+     * JCR identifiers relating to the XMI namespace.
+     */
+    public interface JcrId {
+        String MODEL = PREFIX + ":model";
+        String REFERENCEABLE = PREFIX + ":referenceable";
+        String UUID = PREFIX + ':' + ModelId.UUID;
+        String VERSION = PREFIX + ":version";
+        String XMI = PREFIX + ":xmi";
+    }
 }

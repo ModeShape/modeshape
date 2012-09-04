@@ -40,22 +40,23 @@ public abstract class XmiBasePart implements XmiPart {
     /**
      * @param name the part name (cannot be <code>null</code> or empty)
      */
-    protected XmiBasePart(String name) {
+    protected XmiBasePart( final String name ) {
         CheckArg.isNotEmpty(name, "name");
         this.name = name;
     }
+
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
-    public boolean equals( Object obj ) {
+    public boolean equals( final Object obj ) {
         if ((obj == null) || !(obj instanceof XmiBasePart)) {
             return false;
         }
 
-        XmiBasePart that = (XmiBasePart)obj;
+        final XmiBasePart that = (XmiBasePart)obj;
 
         if (this == that) {
             return true;
@@ -110,7 +111,7 @@ public abstract class XmiBasePart implements XmiPart {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiPart#getName()
      */
     @Override
@@ -120,7 +121,7 @@ public abstract class XmiBasePart implements XmiPart {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiPart#getNamespacePrefix()
      */
     @Override
@@ -130,7 +131,7 @@ public abstract class XmiBasePart implements XmiPart {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiPart#getNamespaceUri()
      */
     @Override
@@ -140,7 +141,7 @@ public abstract class XmiBasePart implements XmiPart {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiPart#getQName()
      */
     @Override
@@ -154,7 +155,7 @@ public abstract class XmiBasePart implements XmiPart {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiPart#getValue()
      */
     @Override
@@ -164,7 +165,7 @@ public abstract class XmiBasePart implements XmiPart {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -172,14 +173,23 @@ public abstract class XmiBasePart implements XmiPart {
         return HashCode.compute(this.name, this.namespacePrefix, this.namespaceUri, this.value);
     }
 
+    /**
+     * @param newNamespacePrefix the new namespace prefix (can be <code>null</code> or empty)
+     */
     public void setNamespacePrefix( final String newNamespacePrefix ) {
         this.namespacePrefix = newNamespacePrefix;
     }
 
+    /**
+     * @param newNamespaceUri the new namespace URI (can be <code>null</code> or empty)
+     */
     public void setNamespaceUri( final String newNamespaceUri ) {
         this.namespaceUri = newNamespaceUri;
     }
 
+    /**
+     * @param newValue the new part value (can be <code>null</code> or empty)
+     */
     public void setValue( final String newValue ) {
         this.value = newValue;
     }

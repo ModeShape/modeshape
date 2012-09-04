@@ -31,13 +31,15 @@ import javax.jcr.NamespaceRegistry;
 import javax.xml.stream.XMLStreamReader;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.sequencer.teiid.TeiidI18n;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
-import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
 import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
 import org.modeshape.sequencer.teiid.xmi.XmiAttribute;
 import org.modeshape.sequencer.teiid.xmi.XmiBasePart;
 import org.modeshape.sequencer.teiid.xmi.XmiElement;
 import org.modeshape.sequencer.teiid.xmi.XmiReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Reader of XMI relational models to support the CND definitions.
@@ -51,8 +53,8 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
     private static final boolean DEFAULT_SUPPORTS_OUTER_JOIN = true;
     private static final boolean DEFAULT_SUPPORTS_WHERE_ALL = true;
     private static final boolean DEFAULT_VISIBLE = true;
-    private static final String MM_HREF_PREFIX = "mmuuid/";
-    private static final String MM_UUID_PREFIX = "mmuuid:";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ModelReader.class);
 
     private final NamespaceRegistry registry; // never null
     private final ReferenceResolver resolver;
@@ -84,33 +86,12 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
         ensureNamespacePrefixIsValid(newAttribute);
         super.addAttribute(element, newAttribute); // set the parent
 
-        if (XmiLexicon.ModelIds.UUID.equals(newAttribute.getName())
+        if (XmiLexicon.ModelId.UUID.equals(newAttribute.getName())
             && XmiLexicon.Namespace.URI.equals(newAttribute.getNamespaceUri())) {
             final String value = newAttribute.getValue();
 
-            if (!StringUtil.isBlank(value) && value.startsWith(MM_UUID_PREFIX)) {
-                newAttribute.setValue(value.substring(MM_UUID_PREFIX.length()));
-            }
-        } else if (CoreLexicon.ModelIds.ANNOTATED_OBJECT.equals(newAttribute.getName())
-                   && CoreLexicon.Namespace.URI.equals(newAttribute.getNamespaceUri())) {
-            final String value = newAttribute.getValue();
-
-            if (!StringUtil.isBlank(value) && value.startsWith(MM_HREF_PREFIX)) {
-                newAttribute.setValue(value.substring(MM_HREF_PREFIX.length()));
-            }
-        } else if ((TransformLexicon.ModelIds.OUTPUTS.equals(newAttribute.getName()) || TransformLexicon.ModelIds.TARGET.equals(newAttribute.getName()))
-                   && TransformLexicon.Namespace.URI.equals(newAttribute.getNamespaceUri())) {
-            final String value = newAttribute.getValue();
-
-            if (!StringUtil.isBlank(value) && value.startsWith(MM_HREF_PREFIX)) {
-                newAttribute.setValue(value.substring(MM_HREF_PREFIX.length()));
-            }
-        } else if (TransformLexicon.ModelIds.HREF.equals(newAttribute.getName())
-                   && TransformLexicon.Namespace.URI.equals(newAttribute.getNamespaceUri())) {
-            final String value = newAttribute.getValue();
-
-            if (!StringUtil.isBlank(value) && (value.indexOf(MM_HREF_PREFIX) != -1)) {
-                newAttribute.setValue(value.substring(value.indexOf(MM_HREF_PREFIX) + 1));
+            if (!StringUtil.isBlank(value) && value.startsWith(CoreLexicon.ModelId.MM_UUID_PREFIX)) {
+                newAttribute.setValue(value.substring(CoreLexicon.ModelId.MM_UUID_PREFIX.length()));
             }
         }
     }
@@ -127,7 +108,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
         super.addChild(parent, newChild);
 
         if (!StringUtil.isBlank(newChild.getUuid())) {
-            this.resolver.recordXmiUuid(newChild.getUuid(), newChild);
+            this.resolver.record(newChild.getUuid(), newChild);
         }
     }
 
@@ -143,7 +124,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
         super.addElement(newElement);
 
         if (!StringUtil.isBlank(newElement.getUuid())) {
-            this.resolver.recordXmiUuid(newElement.getUuid(), newElement);
+            this.resolver.record(newElement.getUuid(), newElement);
         }
     }
 
@@ -161,14 +142,20 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
             return 0;
         }
 
-        if (getModelImports().contains(that.getPath())) {
-            // this model imports that, so this model is greater than that ...
-            return 1;
+        String thatPath = that.getPath();
+
+        for (XmiElement modelImport : getModelImports()) {
+            if (thatPath.equals(modelImport.getAttributeValue(CoreLexicon.ModelId.NAME, CoreLexicon.Namespace.URI))) {
+                return -1;
+            }
         }
 
-        if (that.getModelImports().contains(getPath())) {
-            // that model imports this, so this model is less than that ...
-            return -1;
+        String thisPath = getPath();
+
+        for (XmiElement modelImport : that.getModelImports()) {
+            if (thisPath.equals(modelImport.getAttributeValue(CoreLexicon.ModelId.NAME, CoreLexicon.Namespace.URI))) {
+                return -1;
+            }
         }
 
         // Otherwise, neither model depends upon each other, so base the order upon the number of models ...
@@ -178,7 +165,8 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
     private void ensureNamespacePrefixIsValid( final XmiBasePart xmiPart ) {
         assert (xmiPart != null);
 
-        // make sure XMI part prefix is the same as the registered prefix for the namespace URI
+        // models may have a namespace prefix that does not match the one registered in the NamespaceRegistry.
+        // so make sure the XMI part prefix is the same as the registered prefix for the namespace URI.
         final String nsUri = xmiPart.getNamespaceUri();
 
         if (!StringUtil.isBlank(nsUri)) {
@@ -189,8 +177,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
                     xmiPart.setNamespacePrefix(registeredPrefix);
                 }
             } catch (final Exception e) {
-                // TODO log and remove stacktrace
-                e.printStackTrace();
+                LOGGER.error(TeiidI18n.namespaceUriNotFoundInRegistry.text(nsUri, getPath()), e);
             }
         }
     }
@@ -205,7 +192,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
             return null;
         }
 
-        return modelAnnotation.getAttributeValue(CoreLexicon.ModelIds.DESCRIPTION, CoreLexicon.Namespace.URI);
+        return modelAnnotation.getAttributeValue(CoreLexicon.ModelId.DESCRIPTION, CoreLexicon.Namespace.URI);
     }
 
     private XmiElement getElement( final String name,
@@ -229,7 +216,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
             return DEFAULT_MAX_SET_SIZE;
         }
 
-        final String maxSetSize = modelAnnotation.getAttributeValue(CoreLexicon.ModelIds.MAX_SET_SIZE, CoreLexicon.Namespace.URI);
+        final String maxSetSize = modelAnnotation.getAttributeValue(CoreLexicon.ModelId.MAX_SET_SIZE, CoreLexicon.Namespace.URI);
 
         if (StringUtil.isBlank(maxSetSize)) {
             return DEFAULT_MAX_SET_SIZE;
@@ -242,9 +229,12 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
      * @return the model annotation XMI element or <code>null</code> if not found
      */
     private XmiElement getModelAnnotation() {
-        return getElement(CoreLexicon.ModelIds.MODEL_ANNOTATION, CoreLexicon.Namespace.URI);
+        return getElement(CoreLexicon.ModelId.MODEL_ANNOTATION, CoreLexicon.Namespace.URI);
     }
 
+    /**
+     * @return the model imports XMI elements or <code>null</code> if none found
+     */
     public List<XmiElement> getModelImports() {
         final XmiElement modelAnnotation = getModelAnnotation();
 
@@ -255,8 +245,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
         final List<XmiElement> imports = new ArrayList<XmiElement>();
 
         for (final XmiElement kid : modelAnnotation.getChildren()) {
-            if (CoreLexicon.ModelIds.MODEL_IMPORT.equals(kid.getName())
-                && CoreLexicon.Namespace.URI.equals(kid.getNamespaceUri())) {
+            if (CoreLexicon.ModelId.MODEL_IMPORT.equals(kid.getName()) && CoreLexicon.Namespace.URI.equals(kid.getNamespaceUri())) {
                 imports.add(kid);
             }
         }
@@ -274,7 +263,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
             return null;
         }
 
-        return modelAnnotation.getAttributeValue(CoreLexicon.ModelIds.MODEL_TYPE, CoreLexicon.Namespace.URI);
+        return modelAnnotation.getAttributeValue(CoreLexicon.ModelId.MODEL_TYPE, CoreLexicon.Namespace.URI);
     }
 
     /**
@@ -287,7 +276,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
             return null;
         }
 
-        return modelAnnotation.getAttributeValue(CoreLexicon.ModelIds.NAME_IN_SOURCE, CoreLexicon.Namespace.URI);
+        return modelAnnotation.getAttributeValue(CoreLexicon.ModelId.NAME_IN_SOURCE, CoreLexicon.Namespace.URI);
     }
 
     /**
@@ -300,7 +289,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
             return null;
         }
 
-        return modelAnnotation.getAttributeValue(CoreLexicon.ModelIds.PRIMARY_METAMODEL_URI, CoreLexicon.Namespace.URI);
+        return modelAnnotation.getAttributeValue(CoreLexicon.ModelId.PRIMARY_METAMODEL_URI, CoreLexicon.Namespace.URI);
     }
 
     /**
@@ -313,7 +302,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
             return null;
         }
 
-        return modelAnnotation.getAttributeValue(CoreLexicon.ModelIds.PRODUCER_NAME, CoreLexicon.Namespace.URI);
+        return modelAnnotation.getAttributeValue(CoreLexicon.ModelId.PRODUCER_NAME, CoreLexicon.Namespace.URI);
     }
 
     /**
@@ -326,7 +315,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
             return null;
         }
 
-        return modelAnnotation.getAttributeValue(CoreLexicon.ModelIds.PRODUCER_VERSION, CoreLexicon.Namespace.URI);
+        return modelAnnotation.getAttributeValue(CoreLexicon.ModelId.PRODUCER_VERSION, CoreLexicon.Namespace.URI);
     }
 
     /**
@@ -338,7 +327,9 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
     protected XmiElement handleEndElement( final XMLStreamReader streamReader ) {
         final XmiElement endElement = super.handleEndElement(streamReader);
 
-        if (XMI_TAG.equals(streamReader.getLocalName())) {
+        // stop if XMI tag or if ModelAnnotation tag short circuit reading if model won't be sequenced
+        if (XmiLexicon.ModelId.XMI_TAG.equals(streamReader.getLocalName())
+            || (CoreLexicon.ModelId.MODEL_ANNOTATION.equals(endElement.getName()) && !ModelSequencer.shouldSequence(this))) {
             stop();
         }
 
@@ -355,7 +346,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
             return DEFAULT_VISIBLE;
         }
 
-        final String visible = modelAnnotation.getAttributeValue(CoreLexicon.ModelIds.VISIBLE, CoreLexicon.Namespace.URI);
+        final String visible = modelAnnotation.getAttributeValue(CoreLexicon.ModelId.VISIBLE, CoreLexicon.Namespace.URI);
 
         if (StringUtil.isBlank(visible)) {
             return DEFAULT_VISIBLE;
@@ -372,7 +363,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
     @Override
     protected XmiElement pop( final XMLStreamReader streamReader ) {
         // ignore XMI tag
-        if (!XmiReader.XMI_TAG.equals(streamReader.getLocalName()) || (getStackSize() != 0)) {
+        if (!XmiLexicon.ModelId.XMI_TAG.equals(streamReader.getLocalName()) || (getStackSize() != 0)) {
             return super.pop(streamReader);
         }
 
@@ -387,37 +378,39 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
     @Override
     protected void push( final XmiElement element ) {
         // ignore XMI tag
-        if (!XmiReader.XMI_TAG.equals(element.getName()) || (getStackSize() != 0)) {
+        if (!XmiLexicon.ModelId.XMI_TAG.equals(element.getName()) || (getStackSize() != 0)) {
             super.push(element);
         }
     }
 
+    /**
+     * @param stream the input stream of the XMI model being read (cannot be <code>null</code>)
+     * @throws Exception if there is a problem reading the input stream
+     */
     public void readModel( final InputStream stream ) throws Exception {
+        CheckArg.isNotNull(stream, "stream");
+
+        final long startTime = System.currentTimeMillis();
         final List<XmiElement> elements = super.read(stream);
 
         if (DEBUG) {
             for (final XmiElement element : elements) {
-                System.err.println("====model element=" + element.getName());
+                debug("====root model element=" + element.getName());
             }
 
             debug("");
 
-            // TODO change this to only print unresolved
             for (final Entry<String, XmiElement> uuidMapping : this.resolver.getUuidMappings().entrySet()) {
-                System.err.println(uuidMapping.getKey() + '=' + uuidMapping.getValue());
+                debug(uuidMapping.getKey() + '=' + uuidMapping.getValue());
             }
 
             debug("");
-        }
 
-        if (DEBUG) {
-            System.err.println();
-
-            for (final Entry<String, XmiElement> uuidMapping : this.resolver.getUuidMappings().entrySet()) {
-                System.err.println(uuidMapping.getKey() + '=' + uuidMapping.getValue());
+            for (String uuid : this.resolver.getUnresolved().keySet()) {
+                debug("**** unresolved " + uuid);
             }
 
-            System.err.println();
+            debug("\n\nmodel read time=" + (System.currentTimeMillis() - startTime));
         }
     }
 
@@ -431,7 +424,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
             return DEFAULT_SUPPORTS_DISTINCT;
         }
 
-        final String supports = modelAnnotation.getAttributeValue(CoreLexicon.ModelIds.SUPPORTS_DISTINCT,
+        final String supports = modelAnnotation.getAttributeValue(CoreLexicon.ModelId.SUPPORTS_DISTINCT,
                                                                   CoreLexicon.Namespace.URI);
 
         if (StringUtil.isBlank(supports)) {
@@ -451,7 +444,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
             return DEFAULT_SUPPORTS_JOIN;
         }
 
-        final String supports = modelAnnotation.getAttributeValue(CoreLexicon.ModelIds.SUPPORTS_JOIN, CoreLexicon.Namespace.URI);
+        final String supports = modelAnnotation.getAttributeValue(CoreLexicon.ModelId.SUPPORTS_JOIN, CoreLexicon.Namespace.URI);
 
         if (StringUtil.isBlank(supports)) {
             return DEFAULT_SUPPORTS_JOIN;
@@ -470,7 +463,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
             return DEFAULT_SUPPORTS_ORDER_BY;
         }
 
-        final String supports = modelAnnotation.getAttributeValue(CoreLexicon.ModelIds.SUPPORTS_ORDER_BY,
+        final String supports = modelAnnotation.getAttributeValue(CoreLexicon.ModelId.SUPPORTS_ORDER_BY,
                                                                   CoreLexicon.Namespace.URI);
 
         if (StringUtil.isBlank(supports)) {
@@ -490,7 +483,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
             return DEFAULT_SUPPORTS_OUTER_JOIN;
         }
 
-        final String supports = modelAnnotation.getAttributeValue(CoreLexicon.ModelIds.SUPPORTS_OUTER_JOIN,
+        final String supports = modelAnnotation.getAttributeValue(CoreLexicon.ModelId.SUPPORTS_OUTER_JOIN,
                                                                   CoreLexicon.Namespace.URI);
 
         if (StringUtil.isBlank(supports)) {
@@ -510,7 +503,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
             return DEFAULT_SUPPORTS_WHERE_ALL;
         }
 
-        final String supports = modelAnnotation.getAttributeValue(CoreLexicon.ModelIds.SUPPORTS_WHERE_ALL,
+        final String supports = modelAnnotation.getAttributeValue(CoreLexicon.ModelId.SUPPORTS_WHERE_ALL,
                                                                   CoreLexicon.Namespace.URI);
 
         if (StringUtil.isBlank(supports)) {

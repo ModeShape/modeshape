@@ -33,22 +33,38 @@ import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
+import org.modeshape.sequencer.teiid.TeiidI18n;
 import org.modeshape.sequencer.teiid.VdbModel;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
 import org.modeshape.sequencer.teiid.lexicon.DiagramLexicon;
 import org.modeshape.sequencer.teiid.lexicon.ModelExtensionDefinitionLexicon;
+import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon;
+import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
 
 /**
  * A sequencer of Teiid XMI model files.
  */
 public class ModelSequencer extends Sequencer {
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     private static final String[] MODEL_FILE_EXTENSIONS = {".xmi"};
 
     private static void debug( final String message ) {
         System.err.println(message);
+    }
+
+    /**
+     * @param modelReader the reader who processed the model file (cannot be <code>null</code>)
+     * @return <code>true</code> if the model process by the reader should be sequenced
+     */
+    public static boolean shouldSequence( final ModelReader modelReader ) {
+        assert (modelReader != null);
+
+        final String modelType = modelReader.getModelType();
+        final boolean validModelType = CoreLexicon.ModelType.PHYSICAL.equalsIgnoreCase(modelType)
+                                       || CoreLexicon.ModelType.VIRTUAL.equalsIgnoreCase(modelType);
+        return (validModelType && RelationalLexicon.Namespace.URI.equals(modelReader.getPrimaryMetamodelUri()));
     }
 
     private final ReferenceResolver resolver;
@@ -80,7 +96,7 @@ public class ModelSequencer extends Sequencer {
                             final Context context ) throws Exception {
         final Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
-        outputNode.addMixin(CoreLexicon.MODEL);
+        outputNode.addMixin(CoreLexicon.JcrId.MODEL);
         return sequenceModel(binaryValue.getStream(), outputNode, outputNode.getPath(), null, context);
     }
 
@@ -172,6 +188,7 @@ public class ModelSequencer extends Sequencer {
         assert (modelStream != null);
         assert (modelOutputNode != null);
         assert (context != null);
+        assert (modelOutputNode.isNodeType(CoreLexicon.JcrId.MODEL));
 
         if (DEBUG) {
             debug("sequenceModel:model node path=" + modelOutputNode.getPath() + ", model path=" + modelPath + ", vdb model="
@@ -199,7 +216,7 @@ public class ModelSequencer extends Sequencer {
      * @param vdbModel the VDB model associated with the input stream (cannot be <code>null</code>)
      * @param context the sequencer context (cannot be <code>null</code>)
      * @return <code>true</code> if the model file input stream was successfully sequenced
-     * @throws Exception if there is a problem during sequencing
+     * @throws Exception if there is a problem during sequencing or node does not have a VDB model primary type
      */
     public boolean sequenceVdbModel( final InputStream modelStream,
                                      final Node modelOutputNode,
@@ -208,16 +225,11 @@ public class ModelSequencer extends Sequencer {
         CheckArg.isNotNull(modelStream, "modelStream");
         CheckArg.isNotNull(modelOutputNode, "modelOutputNode");
         CheckArg.isNotNull(vdbModel, "vdbModel");
-        return sequenceModel(modelStream, modelOutputNode, vdbModel.getPathInVdb(), vdbModel, context);
-    }
 
-    /**
-     * @param modelReader the reader who processed the model file (cannot be <code>null</code>)
-     * @return <code>true</code> if the model process by the reader should be sequenced
-     */
-    private boolean shouldSequence( final ModelReader modelReader ) {
-        assert (modelReader != null);
-        final String modelType = modelReader.getModelType();
-        return (CoreLexicon.ModelType.PHYSICAL.equalsIgnoreCase(modelType) || CoreLexicon.ModelType.VIRTUAL.equalsIgnoreCase(modelType));
+        if (!modelOutputNode.isNodeType(VdbLexicon.Model.MODEL)) {
+            throw new RuntimeException(TeiidI18n.invalidVdbModelNodeType.text(modelOutputNode.getPath()));
+        }
+
+        return sequenceModel(modelStream, modelOutputNode, vdbModel.getPathInVdb(), vdbModel, context);
     }
 }

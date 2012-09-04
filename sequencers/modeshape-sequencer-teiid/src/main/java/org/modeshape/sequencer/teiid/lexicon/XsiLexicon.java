@@ -25,15 +25,22 @@ package org.modeshape.sequencer.teiid.lexicon;
 
 
 /**
- * 
+ * Constants associated with the XSI namespace used in reading XMI models and writing JCR nodes.
  */
-public class XsiLexicon {
+public interface XsiLexicon {
 
-    public static class Namespace {
-        public static final String URI = "http://www.w3.org/2001/XMLSchema-instance";
-        public static final String PREFIX = "xsi";
+    /**
+     * The URI and prefix constants of the XSI namespace.
+     */
+    public interface Namespace {
+        String PREFIX = "xsi";
+        String URI = "http://www.w3.org/2001/XMLSchema-instance";
     }
 
-    public static final String TYPE = Namespace.PREFIX + ":type";
-
+    /**
+     * Model identifiers relating to the XSI namespace.
+     */
+    public interface ModelId {
+        String TYPE = "type";
+    }
 }

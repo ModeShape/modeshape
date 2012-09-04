@@ -26,16 +26,22 @@ package org.modeshape.sequencer.teiid.lexicon;
 import static org.modeshape.sequencer.teiid.lexicon.TransformLexicon.Namespace.PREFIX;
 
 /**
- * 
+ * Constants associated with the transformation namespace used in reading XMI models and writing JCR nodes.
  */
-public class TransformLexicon {
+public interface TransformLexicon {
 
-    public static class Namespace {
-        public static final String URI = "http://www.metamatrix.com/metamodels/Transformation";
-        public static final String PREFIX = "transform";
+    /**
+     * The URI and prefix constants of the transformaion namespace.
+     */
+    public interface Namespace {
+        String PREFIX = "transform";
+        String URI = "http://www.metamatrix.com/metamodels/Transformation";
     }
 
-    public interface ModelIds {
+    /**
+     * Constants associated with the transformation namespace that identify XMI model identifiers.
+     */
+    public interface ModelId {
         String ALIAS = "alias";
         String ALIASED_OBJECT = "aliasedObject";
         String ALIASES = "aliases";
@@ -59,19 +65,28 @@ public class TransformLexicon {
         String UPDATE_SQL_DEFAULT = "updateSql";
     }
 
-    public static final String SELECT_SQL = PREFIX + ":selectSql";
-    public static final String INSERT_SQL = PREFIX + ":insertSql";
-    public static final String UPDATE_SQL = PREFIX + ":updateSql";
-    public static final String DELETE_SQL = PREFIX + ":deleteSql";
-    public static final String INSERT_ALLOWED = PREFIX + ":insertAllowed";
-    public static final String UPDATE_ALLOWED = PREFIX + ":updateAllowed";
-    public static final String DELETE_ALLOWED = PREFIX + ":deleteAllowed";
-    public static final String OUTPUT_LOCKED = PREFIX + ":outputLocked";
-    public static final String INSERT_SQL_DEFAULT = PREFIX + ":insertSqlDefault";
-    public static final String UPDATE_SQL_DEFAULT = PREFIX + ":updateSqlDefault";
-    public static final String DELETE_SQL_DEFAULT = PREFIX + ":deleteSqlDefault";
-    public static final String ALIAS = PREFIX + ":alias";
-    public static final String WITH_SQL = PREFIX + ":withSql";
-    public static final String TRANSFORMED = PREFIX + ":transformed";
-    public static final String INPUTS = PREFIX + ":inputs";
+    /**
+     * JCR identifiers relating to the transformation namespace.
+     */
+    public interface JcrId {
+        String ALIAS = PREFIX + ":alias";
+        String DELETE_ALLOWED = PREFIX + ":deleteAllowed";
+        String DELETE_SQL = PREFIX + ":deleteSql";
+        String DELETE_SQL_DEFAULT = PREFIX + ":deleteSqlDefault";
+        String INPUTS = PREFIX + ":inputs";
+        String INSERT_ALLOWED = PREFIX + ":insertAllowed";
+        String INSERT_SQL = PREFIX + ":insertSql";
+        String INSERT_SQL_DEFAULT = PREFIX + ":insertSqlDefault";
+        String OUTPUT_LOCKED = PREFIX + ":outputLocked";
+        String SELECT_SQL = PREFIX + ":selectSql";
+        String TRANSFORMED = PREFIX + ":transformed";
+        String TRANSFORMED_FROM = PREFIX + ":transformedFrom";
+        String TRANSFORMED_FROM_HREFS = PREFIX + ":transformedFromHrefs";
+        String TRANSFORMED_FROM_XMI_UUIDS = PREFIX + ":transformedFromXmiUuids";
+        String TRANSFORMED_FROM_NAMES = PREFIX + ":transformedFromNames";
+        String UPDATE_ALLOWED = PREFIX + ":updateAllowed";
+        String UPDATE_SQL = PREFIX + ":updateSql";
+        String UPDATE_SQL_DEFAULT = PREFIX + ":updateSqlDefault";
+        String WITH_SQL = PREFIX + ":withSql";
+    }
 }

@@ -37,6 +37,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
+import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
 import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
 
 /**
@@ -106,6 +107,14 @@ public class VdbSequencerTest extends AbstractSequencerTest {
             assertThat(modelNode.getProperty("modelClass").getString(), is("Relational"));
             assertThat(modelNode.getProperty("indexName").getString(), is("2173178531.INDEX"));
 
+            // transformation
+            Node booksTable = modelNode.getNode("BOOKS");
+            assertThat(booksTable.isNodeType(TransformLexicon.JcrId.TRANSFORMED), is(true));
+            assertThat(booksTable.hasProperty(TransformLexicon.JcrId.TRANSFORMED_FROM_NAMES), is(true));
+            assertThat(booksTable.getProperty(TransformLexicon.JcrId.TRANSFORMED_FROM_NAMES).getValues().length, is(1));
+            assertThat(booksTable.getProperty(TransformLexicon.JcrId.TRANSFORMED_FROM_NAMES).getValues()[0].getString(),
+                       is("BOOKS"));
+
             { // markers
                 Node markersGroupNode = modelNode.getNode(VdbLexicon.Model.MARKERS);
                 assertNotNull(markersGroupNode);
@@ -123,7 +132,6 @@ public class VdbSequencerTest extends AbstractSequencerTest {
                     assertThat(node.getProperty(VdbLexicon.Model.Marker.PATH).getString(), is("BOOKS"));
                     assertThat(node.getProperty(VdbLexicon.Model.Marker.SEVERITY).getString(), is("ERROR"));
 
-           
                     if (node.getProperty(VdbLexicon.Model.Marker.MESSAGE).getString().equals(message1)) {
                         ++messagesFound;
                         message1 = "message1 found";

@@ -23,17 +23,22 @@
  */
 package org.modeshape.sequencer.teiid.lexicon;
 
-
 /**
- * 
+ * Constants associated with the JDBC namespace used in reading XMI models and writing JCR nodes.
  */
 public interface JdbcLexicon {
 
+    /**
+     * The URI constant of the diagram namespace. The model and JRC namespace prefix are different.
+     */
     public interface Namespace {
         String URI = "http://www.metamatrix.com/metamodels/JDBC";
     }
 
-    public interface ModelIds {
+    /**
+     * Constants associated with the JDBC namespace that identify XMI model identifiers.
+     */
+    public interface ModelId {
         String NS_PREFIX = "jdbc";
         String EXCLUDED_OBJECT_PATHS = "excludedObjectPaths";
         String SOURCE = "JdbcSource";
@@ -43,14 +48,17 @@ public interface JdbcLexicon {
         String INCLUDED_TABLE_TYPES = "includedTableTypes";
     }
 
-    public interface JcrIds {
+    /**
+     * JCR identifiers relating to the JDBC namespace.
+     */
+    public interface JcrId {
         String NS_PREFIX = "jdbcs";
         String CONVERT_CASE_IN_MODEL = NS_PREFIX + ":convertCaseInModel";
         String CREATE_CATALOGS_IN_MODEL = NS_PREFIX + ":createCatalogsInModel";
         String CREATE_SCHEMAS_IN_MODEL = NS_PREFIX + ":createSchemasInModel";
         String DRIVER_CLASS = NS_PREFIX + ":driverClass";
         String DRIVER_NAME = NS_PREFIX + ":driverName";
-        String EXCLUDED_OBJECT_PATHS = NS_PREFIX + ':' + ModelIds.EXCLUDED_OBJECT_PATHS;
+        String EXCLUDED_OBJECT_PATHS = NS_PREFIX + ':' + ModelId.EXCLUDED_OBJECT_PATHS;
         String GENERATE_SOURCE_NAMES_IN_MODEL = NS_PREFIX + ":generateSourceNamesInModel";
         String IMPORTED = NS_PREFIX + ":imported";
         String INCLUDE_APPROXIMATE_INDEXES = NS_PREFIX + ":includeApproximateIndexes";
@@ -58,9 +66,9 @@ public interface JdbcLexicon {
         String INCLUDE_INDEXES = NS_PREFIX + ":includeIndexes";
         String INCLUDE_PROCEDURES = NS_PREFIX + ":includeProcedures";
         String INCLUDE_UNIQUE_INDEXES = NS_PREFIX + ":includeUniqueIndexes";
-        String INCLUDED_CATALOG_PATHS = NS_PREFIX + ':' + ModelIds.INCLUDED_CATALOG_PATHS;
-        String INCLUDED_SCHEMA_PATHS = NS_PREFIX + ':' + ModelIds.INCLUDED_SCHEMA_PATHS;
-        String INCLUDED_TABLE_TYPES = NS_PREFIX + ':' + ModelIds.INCLUDED_TABLE_TYPES;
+        String INCLUDED_CATALOG_PATHS = NS_PREFIX + ':' + ModelId.INCLUDED_CATALOG_PATHS;
+        String INCLUDED_SCHEMA_PATHS = NS_PREFIX + ':' + ModelId.INCLUDED_SCHEMA_PATHS;
+        String INCLUDED_TABLE_TYPES = NS_PREFIX + ':' + ModelId.INCLUDED_TABLE_TYPES;
         String SOURCE = NS_PREFIX + ":source";
         String URL = NS_PREFIX + ":url";
         String USER_NAME = NS_PREFIX + ":username";
