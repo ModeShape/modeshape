@@ -67,7 +67,6 @@ public interface RelationalLexicon {
         String INDEX = "Index";
         String INDEXES = "indexes";
         String LENGTH = "length";
-        String LOGICAL_RELATIONSHIP = "logicalRelationships";
         String MATERIALIZED = "materialized";
         String MAX_VALUE = "maximumValue";
         String MIN_VALUE = "minimumValue";
@@ -146,12 +145,6 @@ public interface RelationalLexicon {
         String INDEX_XMI_UUIDS = PREFIX + ":indexXmiUuids";
         String INDEXES = PREFIX + ":indexes";
         String LENGTH = PREFIX + ':' + ModelId.LENGTH;
-        String LOGICAL_RELATIONSHIP = PREFIX + ":logicalRelationship";
-        String LOGICAL_RELATIONSHIP_END = PREFIX + ":logicalRelationshipEnd";
-        String LOGICAL_RELATIONSHIP_HREFS = PREFIX + ":logicalRelationshipHrefs";
-        String LOGICAL_RELATIONSHIP_NAMES = PREFIX + ":logicalRelationshipNames";
-        String LOGICAL_RELATIONSHIP_XMI_UUIDS = PREFIX + ":logicalRelationshipXmiUuids";
-        String LOGICAL_RELATIONSHIPS = PREFIX + ":logicalRelationships";
         String MATERIALIZED = PREFIX + ':' + ModelId.MATERIALIZED;
         String MAX_VALUE = PREFIX + ':' + ModelId.MAX_VALUE;
         String MIN_VALUE = PREFIX + ':' + ModelId.MIN_VALUE;

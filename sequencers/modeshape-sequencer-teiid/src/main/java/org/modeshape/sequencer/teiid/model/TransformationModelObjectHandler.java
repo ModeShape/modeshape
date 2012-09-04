@@ -28,7 +28,7 @@ import javax.jcr.Node;
 import javax.jcr.Value;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.JcrMixLexicon;
+import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon.JcrId;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon.ModelId;
@@ -269,8 +269,8 @@ public final class TransformationModelObjectHandler extends ModelObjectHandler {
                                                            propertyName);
             } else {
                 // resolved referencer, resolved referenced
-                if (!referencedNode.isNodeType(JcrMixLexicon.REFERENCEABLE.getString())) {
-                    referencedNode.addMixin(JcrMixLexicon.REFERENCEABLE.getString());
+                if (!referencedNode.isNodeType(JcrConstants.MIX_REFERENCEABLE)) {
+                    referencedNode.addMixin(JcrConstants.MIX_REFERENCEABLE);
                 }
 
                 final Value weakRef = referencerNode.getSession().getValueFactory().createValue(referencedNode, true);

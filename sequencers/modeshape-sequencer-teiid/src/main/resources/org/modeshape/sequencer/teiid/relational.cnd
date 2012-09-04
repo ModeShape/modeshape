@@ -140,10 +140,6 @@
  - relational:cardinality (long) 
  - relational:supportsUpdate (boolean) = 'true' 
  - relational:materialized (boolean) = 'false' 
- - relational:logicalRelationships (weakreference) multiple 
- - relational:logicalRelationshipHrefs (string) multiple 
- - relational:logicalRelationshipXmiUuids (string) multiple 
- - relational:logicalRelationshipNames (string) multiple 
  + * (relational:primaryKey) = relational:primaryKey copy
  + * (relational:foreignKey) = relational:foreignKey copy
  + * (relational:accessPattern) = relational:accessPattern copy sns
@@ -178,21 +174,6 @@
  + * (relational:procedureParameter) = relational:procedureParameter copy sns
  + * (relational:procedureResult) = relational:procedureResult copy
 
-
-// -------------------------------------------
-// Logical Relationships
-// -------------------------------------------
-
-[relational:logicalRelationshipEnd] > nt:unstructured, relational:relationalEntity
- - relational:multiplicity (string) < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
- - relational:table (weakreference)
- - relational:tableHref (string)
- - relational:tableXmiUuid (string)
- - relational:tableName (string)
-
-[relational:logicalRelationship] > relational:relationship orderable
- + * (relational:logicalRelationshipEnd) = relational:logicalRelationshipEnd copy sns
-
 // -------------------------------------------
 // Catalogs and Schemas
 // -------------------------------------------
@@ -201,12 +182,10 @@
  + * (relational:table) = relational:baseTable copy
  + * (relational:procedure) = relational:procedure copy sns
  + * (relational:index) = relational:index copy
- + * (relational:logicalRelationship) = relational:logicalRelationship copy
-
+ 
 [relational:catalog] > nt:unstructured, relational:relationalEntity orderable
  + * (relational:schema) = relational:schema copy
  + * (relational:table) = relational:baseTable copy
  + * (relational:procedure) = relational:procedure copy sns
  + * (relational:index) = relational:index copy
- + * (relational:logicalRelationship) = relational:logicalRelationship copy
  
