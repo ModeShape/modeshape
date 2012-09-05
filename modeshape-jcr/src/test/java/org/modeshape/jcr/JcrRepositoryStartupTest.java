@@ -23,69 +23,122 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import java.io.File;
-import java.net.URL;
+import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Session;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import java.io.File;
+import java.net.URL;
+import java.util.UUID;
+import java.util.concurrent.Callable;
 
 /**
  * Tests that related to repeatedly starting/stopping repositories (without another repository configured in the @Before and @After
  * methods).
+ *
+ * @author rhauch
+ * @author hchiorean
  */
 public class JcrRepositoryStartupTest extends AbstractTransactionalTest {
 
     @Test
-    @FixFor( {"MODE-1526", "MODE-1512"} )
+    @FixFor( { "MODE-1526", "MODE-1512", "MODE-1617" } )
     public void shouldKeepPersistentDataAcrossRestart() throws Exception {
         File contentFolder = new File("target/persistent_repository/store/persistentRepository");
-        boolean testNodeShouldExist = contentFolder.exists() && contentFolder.isDirectory();
 
-        URL configUrl = getClass().getClassLoader().getResource("config/repo-config-persistent-cache.json");
-        RepositoryConfiguration config = RepositoryConfiguration.read(configUrl);
+        final boolean testNodeShouldExist = contentFolder.exists() && contentFolder.isDirectory();
+        final String newWs = "newWs_" + UUID.randomUUID().toString();
+        final String newWs1 = "newWs_" + UUID.randomUUID().toString();
 
-        JcrRepository repository = null;
-        try {
-            // Start the repository for the first time ...
-            repository = new JcrRepository(config);
-            repository.start();
+        String repositoryConfigFile = "config/repo-config-persistent-cache.json";
 
-            Session session = repository.login();
-            if (testNodeShouldExist) {
-                assertNotNull(session.getNode("/testNode"));
-            } else {
-                session.getRootNode().addNode("testNode");
-                session.save();
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+                if (testNodeShouldExist) {
+                    assertNotNull(session.getNode("/testNode"));
+                } else {
+                    session.getRootNode().addNode("testNode");
+                    session.save();
+                }
+
+                //create 2 new workspaces
+                session.getWorkspace().createWorkspace(newWs);
+                session.getWorkspace().createWorkspace(newWs1);
+                session.logout();
+
+                return null;
             }
-            session.logout();
-            // System.out.println("SLEEPING for 5sec");
-            // Thread.sleep(5000L);
-        } finally {
+        }, repositoryConfigFile);
 
-            // Kill the repository and the cache manager (something we only do in testing),
-            // which means we have to recreate the JcrRepository instance (and its Cache instance) ...
-            TestingUtil.killRepositoryAndContainer(repository);
-            System.out.println("Stopped repository and killed caches ...");
-        }
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
 
-        File lock = new File("target/persistent_repository/index/nodeinfo/write.lock");
-        assertThat(lock.exists(), is(false));
+                Session session = repository.login();
+                assertNotNull(session.getNode("/testNode"));
+                session.logout();
+
+                //check the workspaces were persisted
+                Session newWsSession = repository.login(newWs);
+                newWsSession.getRootNode().addNode("newWsTestNode");
+                newWsSession.save();
+                newWsSession.logout();
+
+                Session newWs1Session = repository.login(newWs1);
+                newWs1Session.getWorkspace().deleteWorkspace(newWs1);
+                newWs1Session.logout();
+
+                return null;
+            }
+        }, repositoryConfigFile);
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session newWsSession = repository.login(newWs);
+                assertNotNull(newWsSession.getNode("/newWsTestNode"));
+                newWsSession.logout();
+
+                //check a workspace was deleted
+                try {
+                    repository.login(newWs1);
+                    fail("Workspace was not deleted from the repository");
+                } catch (NoSuchWorkspaceException e) {
+                    //expected
+                }
+                return null;
+            }
+        }, repositoryConfigFile);
+    }
+
+    protected void startRunStop( RepositoryOperation operation,
+                                 String repositoryConfigFile ) throws Exception {
+        URL configUrl = getClass().getClassLoader().getResource(repositoryConfigFile);
+        RepositoryConfiguration config = RepositoryConfiguration.read(configUrl);
+        JcrRepository repository = null;
 
         try {
-            System.out.println("Starting repository again ...");
-            config = RepositoryConfiguration.read(configUrl); // re-read, since the old one has an embedded cache-container
             repository = new JcrRepository(config);
             repository.start();
 
-            Session session = repository.login();
-            assertNotNull(session.getNode("/testNode"));
-            session.logout();
+            operation.setRepository(repository).call();
         } finally {
-            TestingUtil.killRepositoryAndContainer(repository);
+            if (repository != null) {
+                TestingUtil.killRepositoryAndContainer(repository);
+            }
         }
     }
 
+    private abstract class RepositoryOperation implements Callable<Void> {
+        protected JcrRepository repository;
+
+        private RepositoryOperation setRepository( JcrRepository repository ) {
+            this.repository = repository;
+            return this;
+        }
+    }
 }
