@@ -49,8 +49,6 @@ public class VdbDataRole implements Comparable<VdbDataRole> {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
     @Override

@@ -23,6 +23,12 @@
  */
 package org.modeshape.sequencer.teiid.xmi;
 
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamReader;
+import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.StringUtil;
+import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -30,21 +36,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamReader;
-import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.StringUtil;
-import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
 
 /**
  * A XMI file reader.
  */
 public class XmiReader {
 
+    protected Logger logger = Logger.getLogger(getClass());
     protected static final boolean DEBUG = false;
 
-    protected static void debug( final String message ) {
-        System.err.println(message);
+    protected void debug( final String message ) {
+        if (DEBUG) {
+            System.err.println(message);
+        }
+        logger.debug(message);
     }
 
     private static String getIndent( final int stackSize ) {
@@ -121,9 +126,7 @@ public class XmiReader {
             newAttribute.setValue(streamReader.getAttributeValue(i));
             addAttribute(element, newAttribute);
 
-            if (DEBUG) {
-                debug(getIndent(this.stack.size()) + "  added attribute: " + newAttribute);
-            }
+            debug(getIndent(this.stack.size()) + "  added attribute: " + newAttribute);
         }
     }
 
@@ -153,7 +156,7 @@ public class XmiReader {
 
     /**
      * Map has keys of namespaces prefixes and values of namespace URIs.
-     * 
+     *
      * @return the namespaces declared in the file (never <code>null</code>)
      */
     protected Map<String, String> getNamespaces() {
@@ -189,7 +192,7 @@ public class XmiReader {
 
     /**
      * Handles a stream {@link javax.xml.stream.XMLStreamConstants#CHARACTERS} event.
-     * 
+     *
      * @param streamReader the stream reader (cannot be <code>null</code>)
      */
     protected void handleCharacters( final XMLStreamReader streamReader ) {
@@ -198,16 +201,14 @@ public class XmiReader {
 
         if (!StringUtil.isBlank(value) && !this.stack.isEmpty()) {
             this.stack.peek().setValue(value);
-        } else if (DEBUG) {
-            if (!StringUtil.isBlank(value)) {
-                debug("**** unhandled XmiReader CHARACTERS event type. Character=" + streamReader.getText());
-            }
+        } else if (!StringUtil.isBlank(value)) {
+            debug("**** unhandled XmiReader CHARACTERS event type. Character=" + streamReader.getText());
         }
     }
 
     /**
      * Handles a stream {@link javax.xml.stream.XMLStreamConstants#END_ELEMENT} event.
-     * 
+     *
      * @param streamReader the stream reader (cannot be <code>null</code>)
      * @return the XMI element popped off the stack (never <code>null</code>)
      */
@@ -215,29 +216,23 @@ public class XmiReader {
         CheckArg.isNotNull(streamReader, "streamReader");
         final XmiElement popped = pop(streamReader);
 
-        if (DEBUG) {
-            debug(getIndent(this.stack.size() + 1) + "end:elementName=" + streamReader.getLocalName() + ", popped=" + popped);
-        }
-
+        debug(getIndent(this.stack.size() + 1) + "end:elementName=" + streamReader.getLocalName() + ", popped=" + popped);
         return popped;
     }
 
     /**
      * Handles a stream events not covered by other methods.
-     * 
+     *
      * @param streamReader the stream reader (cannot be <code>null</code>)
      */
     protected void handleOtherEvents( final XMLStreamReader streamReader ) {
         CheckArg.isNotNull(streamReader, "streamReader");
-
-        if (DEBUG) {
-            debug("**** unhandled XmiReader event of type " + streamReader.getEventType());
-        }
+        debug("**** unhandled XmiReader event of type " + streamReader.getEventType());
     }
 
     /**
      * Handles a stream {@link javax.xml.stream.XMLStreamConstants#START_ELEMENT} event.
-     * 
+     *
      * @param streamReader the stream reader (cannot be <code>null</code>)
      * @return the new XMI element pushed onto the stack (never <code>null</code>)
      * @throws Exception if there is a problem reading from the stream
@@ -255,9 +250,7 @@ public class XmiReader {
 
         push(element);
 
-        if (DEBUG) {
-            debug(getIndent(this.stack.size()) + "startElement: " + element);
-        }
+        debug(getIndent(this.stack.size()) + "startElement: " + element);
 
         // create attributes
         createAttributes(streamReader, element);
@@ -268,9 +261,7 @@ public class XmiReader {
                 final String nsUri = streamReader.getNamespaceURI(i);
                 this.namespaces.put(nsPrefix, nsUri);
 
-                if (DEBUG) {
-                    debug("registered namespace " + nsPrefix + '=' + nsUri + " to model");
-                }
+                debug("registered namespace " + nsPrefix + '=' + nsUri + " to model");
             }
         }
 

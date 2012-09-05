@@ -23,14 +23,11 @@
  */
 package org.modeshape.sequencer.teiid.model;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 import javax.jcr.Node;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import org.modeshape.common.collection.Multimap;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.sequencer.Sequencer.Context;
@@ -44,16 +41,25 @@ import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
 import org.modeshape.sequencer.teiid.model.ReferenceResolver.UnresolvedProperty;
 import org.modeshape.sequencer.teiid.model.ReferenceResolver.UnresolvedReference;
 import org.modeshape.sequencer.teiid.xmi.XmiElement;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Writes the JCR node structure for a model.
  */
 public final class ModelNodeWriter {
 
+    private static final Logger LOGGER = Logger.getLogger(ModelNodeWriter.class);
+
     private static final boolean DEBUG = false;
 
-    private static void debug( final String message ) {
-        System.err.println(message);
+    private void debug( final String message ) {
+        if (DEBUG) {
+            System.err.println(message);
+        }
+        LOGGER.debug(message);
     }
 
     private final Context context;
@@ -147,55 +153,39 @@ public final class ModelNodeWriter {
             }
         }
 
-        if (DEBUG) {
-            debug("\n\nmodel write time=" + (System.currentTimeMillis() - startTime));
-        }
+        debug("\n\nmodel write time=" + (System.currentTimeMillis() - startTime));
 
         return result;
     }
 
     private boolean writeModelObjects() throws Exception {
-        if (DEBUG) {
-            debug("\n\n[begin writeModelObjects()]");
-        }
+        debug("\n\n[begin writeModelObjects()]");
 
         for (final XmiElement element : this.reader.getElements()) {
             final String nsUri = element.getNamespaceUri();
             final ModelObjectHandler handler = getHandler(nsUri);
 
             if (handler == null) {
-                if (DEBUG) {
-                    debug("ModelObjectHandler for namespace " + nsUri + " cannot be found");
-                }
-
+                debug("ModelObjectHandler for namespace " + nsUri + " cannot be found");
                 continue;
             }
 
             handler.process(element, this.outputNode);
         }
 
-        if (DEBUG) {
-            debug("[end writeModelObjects()]\n\n");
-        }
-
+        debug("[end writeModelObjects()]\n\n");
         return true;
     }
 
     public boolean writeUnresolvedReferences() throws Exception {
         // TODO this is modifying the unresolved references it is processing. may need to have multiple passes?
-
-        if (DEBUG) {
-            debug("\n\n[begin writeUnresolvedReferences()]");
-        }
+        debug("\n\n[begin writeUnresolvedReferences()]");
 
         for (final Entry<String, UnresolvedReference> entry : this.resolver.getUnresolved().entrySet()) {
             final Node resolved = this.resolver.getNode(entry.getKey());
 
             if (resolved == null) {
-                if (DEBUG) {
-                    debug("**** uuid " + entry.getKey() + " is still unresolved during last phase of writing model");
-                }
-
+                debug("**** uuid " + entry.getKey() + " is still unresolved during last phase of writing model");
                 continue;
             }
 
@@ -205,10 +195,7 @@ public final class ModelNodeWriter {
             // add mixins
             for (final String mixin : unresolved.getMixins()) {
                 resolved.addMixin(mixin);
-
-                if (DEBUG) {
-                    debug("adding mixin " + mixin + " to resolved node " + resolved.getName());
-                }
+                debug("adding mixin " + mixin + " to resolved node " + resolved.getName());
             }
 
             { // add properties
@@ -228,11 +215,8 @@ public final class ModelNodeWriter {
                     } else {
                         // single valued
                         resolved.setProperty(propName, property.getValue());
-
-                        if (DEBUG) {
-                            debug("setting property '" + propName + "' with value '" + property.getValue()
-                                  + "' to resolved node " + resolved.getName());
-                        }
+                        debug("setting property '" + propName + "' with value '" + property.getValue()
+                                      + "' to resolved node " + resolved.getName());
                     }
                 }
             }
@@ -294,7 +278,8 @@ public final class ModelNodeWriter {
                             unresolvedReferencer.addProperty(propertyName, resolved.getName(), true);
                         } else {
                             referencerNode.setProperty(propertyName,
-                                                       new Value[] {this.context.valueFactory().createValue(resolved.getName())});
+                                                       new Value[] { this.context.valueFactory().createValue(
+                                                               resolved.getName()) });
                         }
                     }
                 }
@@ -329,10 +314,8 @@ public final class ModelNodeWriter {
             this.resolver.resolved(unresolved);
         }
 
-        if (DEBUG) {
-            debug("number unresolved at end=" + this.resolver.getUnresolved().size());
-            debug("[end writeUnresolvedReferences()]\n\n");
-        }
+        debug("number unresolved at end=" + this.resolver.getUnresolved().size());
+        debug("[end writeUnresolvedReferences()]\n\n");
 
         return true;
     }

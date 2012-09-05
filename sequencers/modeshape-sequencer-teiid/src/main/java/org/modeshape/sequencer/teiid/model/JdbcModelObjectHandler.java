@@ -37,8 +37,6 @@ import org.modeshape.sequencer.teiid.xmi.XmiPart;
 public final class JdbcModelObjectHandler extends ModelObjectHandler {
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.model.ModelObjectHandler#getQName(org.modeshape.sequencer.teiid.xmi.XmiPart)
      */
     @Override
@@ -48,8 +46,6 @@ public final class JdbcModelObjectHandler extends ModelObjectHandler {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.model.ModelObjectHandler#process(org.modeshape.sequencer.teiid.xmi.XmiElement,
      *      javax.jcr.Node)
      */

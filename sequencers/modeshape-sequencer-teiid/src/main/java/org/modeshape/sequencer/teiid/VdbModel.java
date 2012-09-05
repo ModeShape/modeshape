@@ -230,8 +230,6 @@ public class VdbModel implements Comparable<VdbModel> {
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
      * The natural order of VDB models is based upon dependencies (e.g., model imports), where models that depends upon other
      * models will always follow the models they depend on. Thus any model that has no dependencies will always appear first.
      * 
@@ -295,8 +293,6 @@ public class VdbModel implements Comparable<VdbModel> {
         }
 
         /**
-         * {@inheritDoc}
-         * 
          * @see Object#toString()
          */
         @Override

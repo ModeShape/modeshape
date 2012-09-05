@@ -23,12 +23,9 @@
  */
 package org.modeshape.sequencer.teiid.model;
 
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map.Entry;
 import javax.jcr.NamespaceRegistry;
 import javax.xml.stream.XMLStreamReader;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.sequencer.teiid.TeiidI18n;
@@ -38,8 +35,10 @@ import org.modeshape.sequencer.teiid.xmi.XmiAttribute;
 import org.modeshape.sequencer.teiid.xmi.XmiBasePart;
 import org.modeshape.sequencer.teiid.xmi.XmiElement;
 import org.modeshape.sequencer.teiid.xmi.XmiReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
 
 /**
  * Reader of XMI relational models to support the CND definitions.
@@ -54,7 +53,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
     private static final boolean DEFAULT_SUPPORTS_WHERE_ALL = true;
     private static final boolean DEFAULT_VISIBLE = true;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ModelReader.class);
+    private static final Logger LOGGER = Logger.getLogger(ModelReader.class);
 
     private final NamespaceRegistry registry; // never null
     private final ReferenceResolver resolver;
@@ -74,8 +73,6 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiReader#addAttribute(org.modeshape.sequencer.teiid.xmi.XmiElement,
      *      org.modeshape.sequencer.teiid.xmi.XmiAttribute)
      */
@@ -87,7 +84,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
         super.addAttribute(element, newAttribute); // set the parent
 
         if (XmiLexicon.ModelId.UUID.equals(newAttribute.getName())
-            && XmiLexicon.Namespace.URI.equals(newAttribute.getNamespaceUri())) {
+                && XmiLexicon.Namespace.URI.equals(newAttribute.getNamespaceUri())) {
             final String value = newAttribute.getValue();
 
             if (!StringUtil.isBlank(value) && value.startsWith(CoreLexicon.ModelId.MM_UUID_PREFIX)) {
@@ -97,8 +94,6 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiReader#addChild(org.modeshape.sequencer.teiid.xmi.XmiElement,
      *      org.modeshape.sequencer.teiid.xmi.XmiElement)
      */
@@ -113,8 +108,6 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiReader#addElement(org.modeshape.sequencer.teiid.xmi.XmiElement)
      */
     @Override
@@ -129,8 +122,6 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
     @Override
@@ -177,7 +168,7 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
                     xmiPart.setNamespacePrefix(registeredPrefix);
                 }
             } catch (final Exception e) {
-                LOGGER.error(TeiidI18n.namespaceUriNotFoundInRegistry.text(nsUri, getPath()), e);
+                LOGGER.error(e, TeiidI18n.namespaceUriNotFoundInRegistry, nsUri, getPath());
             }
         }
     }
@@ -216,7 +207,8 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
             return DEFAULT_MAX_SET_SIZE;
         }
 
-        final String maxSetSize = modelAnnotation.getAttributeValue(CoreLexicon.ModelId.MAX_SET_SIZE, CoreLexicon.Namespace.URI);
+        final String maxSetSize = modelAnnotation.getAttributeValue(CoreLexicon.ModelId.MAX_SET_SIZE,
+                                                                    CoreLexicon.Namespace.URI);
 
         if (StringUtil.isBlank(maxSetSize)) {
             return DEFAULT_MAX_SET_SIZE;
@@ -245,7 +237,8 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
         final List<XmiElement> imports = new ArrayList<XmiElement>();
 
         for (final XmiElement kid : modelAnnotation.getChildren()) {
-            if (CoreLexicon.ModelId.MODEL_IMPORT.equals(kid.getName()) && CoreLexicon.Namespace.URI.equals(kid.getNamespaceUri())) {
+            if (CoreLexicon.ModelId.MODEL_IMPORT.equals(kid.getName()) && CoreLexicon.Namespace.URI.equals(
+                    kid.getNamespaceUri())) {
                 imports.add(kid);
             }
         }
@@ -319,8 +312,6 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiReader#handleEndElement(javax.xml.stream.XMLStreamReader)
      */
     @Override
@@ -329,7 +320,8 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
 
         // stop if XMI tag or if ModelAnnotation tag short circuit reading if model won't be sequenced
         if (XmiLexicon.ModelId.XMI_TAG.equals(streamReader.getLocalName())
-            || (CoreLexicon.ModelId.MODEL_ANNOTATION.equals(endElement.getName()) && !ModelSequencer.shouldSequence(this))) {
+                || (CoreLexicon.ModelId.MODEL_ANNOTATION.equals(endElement.getName()) && !ModelSequencer.shouldSequence(
+                this))) {
             stop();
         }
 
@@ -356,8 +348,6 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiReader#pop(javax.xml.stream.XMLStreamReader)
      */
     @Override
@@ -371,8 +361,6 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiReader#push(org.modeshape.sequencer.teiid.xmi.XmiElement)
      */
     @Override
@@ -393,25 +381,23 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
         final long startTime = System.currentTimeMillis();
         final List<XmiElement> elements = super.read(stream);
 
-        if (DEBUG) {
-            for (final XmiElement element : elements) {
-                debug("====root model element=" + element.getName());
-            }
-
-            debug("");
-
-            for (final Entry<String, XmiElement> uuidMapping : this.resolver.getUuidMappings().entrySet()) {
-                debug(uuidMapping.getKey() + '=' + uuidMapping.getValue());
-            }
-
-            debug("");
-
-            for (String uuid : this.resolver.getUnresolved().keySet()) {
-                debug("**** unresolved " + uuid);
-            }
-
-            debug("\n\nmodel read time=" + (System.currentTimeMillis() - startTime));
+        for (final XmiElement element : elements) {
+            debug("====root model element=" + element.getName());
         }
+
+        debug("");
+
+        for (final Entry<String, XmiElement> uuidMapping : this.resolver.getUuidMappings().entrySet()) {
+            debug(uuidMapping.getKey() + '=' + uuidMapping.getValue());
+        }
+
+        debug("");
+
+        for (String uuid : this.resolver.getUnresolved().keySet()) {
+            debug("**** unresolved " + uuid);
+        }
+
+        debug("\n\nmodel read time=" + (System.currentTimeMillis() - startTime));
     }
 
     /**

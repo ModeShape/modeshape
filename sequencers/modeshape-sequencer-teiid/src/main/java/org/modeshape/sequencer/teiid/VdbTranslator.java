@@ -51,8 +51,6 @@ public class VdbTranslator implements Comparable<VdbTranslator> {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
     @Override
