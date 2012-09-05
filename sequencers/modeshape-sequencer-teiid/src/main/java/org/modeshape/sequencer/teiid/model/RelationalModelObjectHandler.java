@@ -46,8 +46,6 @@ import org.modeshape.sequencer.teiid.xmi.XmiElement;
 public final class RelationalModelObjectHandler extends ModelObjectHandler {
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.model.ModelObjectHandler#process(org.modeshape.sequencer.teiid.xmi.XmiElement,
      *      javax.jcr.Node)
      */

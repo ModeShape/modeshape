@@ -46,8 +46,6 @@ public abstract class XmiBasePart implements XmiPart {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -110,8 +108,6 @@ public abstract class XmiBasePart implements XmiPart {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiPart#getName()
      */
     @Override
@@ -120,8 +116,6 @@ public abstract class XmiBasePart implements XmiPart {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiPart#getNamespacePrefix()
      */
     @Override
@@ -130,8 +124,6 @@ public abstract class XmiBasePart implements XmiPart {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiPart#getNamespaceUri()
      */
     @Override
@@ -140,8 +132,6 @@ public abstract class XmiBasePart implements XmiPart {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiPart#getQName()
      */
     @Override
@@ -154,8 +144,6 @@ public abstract class XmiBasePart implements XmiPart {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiPart#getValue()
      */
     @Override
@@ -164,8 +152,6 @@ public abstract class XmiBasePart implements XmiPart {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -195,8 +181,6 @@ public abstract class XmiBasePart implements XmiPart {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see java.lang.Object#toString()
      */
     @Override

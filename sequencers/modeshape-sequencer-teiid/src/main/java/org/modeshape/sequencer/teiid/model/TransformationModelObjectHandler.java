@@ -23,7 +23,6 @@
  */
 package org.modeshape.sequencer.teiid.model;
 
-import static org.modeshape.sequencer.teiid.lexicon.TransformLexicon.Namespace.URI;
 import javax.jcr.Node;
 import javax.jcr.Value;
 import org.modeshape.common.util.CheckArg;
@@ -32,6 +31,7 @@ import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon.JcrId;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon.ModelId;
+import static org.modeshape.sequencer.teiid.lexicon.TransformLexicon.Namespace.URI;
 import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
 import org.modeshape.sequencer.teiid.model.ReferenceResolver.UnresolvedReference;
 import org.modeshape.sequencer.teiid.xmi.XmiElement;
@@ -43,8 +43,6 @@ import org.modeshape.sequencer.teiid.xmi.XmiElement;
 public final class TransformationModelObjectHandler extends ModelObjectHandler {
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.model.ModelObjectHandler#process(org.modeshape.sequencer.teiid.xmi.XmiElement,
      *      javax.jcr.Node)
      */
@@ -55,9 +53,7 @@ public final class TransformationModelObjectHandler extends ModelObjectHandler {
         CheckArg.isNotNull(parentNode, "node");
         CheckArg.isEquals(element.getNamespaceUri(), "namespace URI", URI, "relational URI");
 
-        if (DEBUG) {
-            debug("==== TransformationModelObjectHandler:process:element=" + element.getName());
-        }
+        debug("==== TransformationModelObjectHandler:process:element=" + element.getName());
 
         if (ModelId.TRANSFORMATION_CONTAINER.equals(element.getName())) {
             // just process children
@@ -65,15 +61,11 @@ public final class TransformationModelObjectHandler extends ModelObjectHandler {
                 if (ModelId.TRANSFORMATION_MAPPINGS.equals(kid.getName())) {
                     processMappings(kid);
                 } else {
-                    if (DEBUG) {
-                        debug("**** transformation container child of '" + kid.getName() + "' was not processed");
-                    }
+                    debug("**** transformation container child of '" + kid.getName() + "' was not processed");
                 }
             }
         } else {
-            if (DEBUG) {
-                debug("**** transformation type of '" + element.getName() + "' was not processed");
-            }
+            debug("**** transformation type of '" + element.getName() + "' was not processed");
         }
     }
 
@@ -144,7 +136,7 @@ public final class TransformationModelObjectHandler extends ModelObjectHandler {
         assert (mappings != null);
         assert (ModelId.TRANSFORMATION_MAPPINGS.equals(mappings.getName()));
 
-        System.err.println("========="+mappings.getName());
+        debug("=========" + mappings.getName());
         final ReferenceResolver resolver = getResolver();
         final String targetUuid = mappings.getAttributeValue(ModelId.TARGET, URI);
         final String uuid = resolver.resolveInternalReference(targetUuid);
@@ -186,9 +178,7 @@ public final class TransformationModelObjectHandler extends ModelObjectHandler {
             } else if (ModelId.NESTED.equals(kid.getName())) {
                 processNested(kid);
             } else {
-                if (DEBUG) {
-                    debug("**** transformation mapping child type of " + kid + " was not processed");
-                }
+                debug("**** transformation mapping child type of " + kid + " was not processed");
             }
         }
     }
@@ -286,7 +276,7 @@ public final class TransformationModelObjectHandler extends ModelObjectHandler {
                         System.arraycopy(currentValues, 0, newValues, 0, currentValues.length);
                         newValues[currentValues.length] = weakRef;
                     } else {
-                        newValues = new Value[] {weakRef};
+                        newValues = new Value[] { weakRef };
                     }
 
                     referencedNode.setProperty(propertyName, newValues);

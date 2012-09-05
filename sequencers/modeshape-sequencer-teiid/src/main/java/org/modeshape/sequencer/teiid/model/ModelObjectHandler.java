@@ -26,6 +26,7 @@ package org.modeshape.sequencer.teiid.model;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.Value;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrConstants;
@@ -42,10 +43,15 @@ import org.modeshape.sequencer.teiid.xmi.XmiPart;
  */
 public abstract class ModelObjectHandler {
 
+    protected Logger logger = Logger.getLogger(getClass());
+
     protected static final boolean DEBUG = false;
 
-    protected static void debug( final String message ) {
-        System.err.println(message);
+    protected void debug( final String message ) {
+        if (DEBUG) {
+            System.err.println(message);
+        }
+        logger.debug(message);
     }
 
     private Context context; // set by handler framework and is never null
@@ -83,10 +89,7 @@ public abstract class ModelObjectHandler {
         setProperty(newNode, XmiLexicon.JcrId.UUID, element.getUuid());
         this.resolver.record(element.getUuid(), newNode);
 
-        if (DEBUG) {
-            debug("adding node " + newNode.getName() + " to parent " + parentNode.getName());
-        }
-
+        debug("adding node " + newNode.getName() + " to parent " + parentNode.getName());
         return newNode;
     }
 
@@ -124,12 +127,10 @@ public abstract class ModelObjectHandler {
             newValues[currentValues.length] = newValue;
             node.setProperty(propertyName, newValues);
         } else {
-            node.setProperty(propertyName, new Value[] {newValue});
+            node.setProperty(propertyName, new Value[] { newValue });
         }
 
-        if (DEBUG) {
-            debug("added a value of " + newValue + " to multi-valued property " + propertyName + " in node " + node.getName());
-        }
+        debug("added a value of " + newValue + " to multi-valued property " + propertyName + " in node " + node.getName());
     }
 
     /**
@@ -179,7 +180,7 @@ public abstract class ModelObjectHandler {
 
     /**
      * <strong>This method should only be called by the framework loading model object handlers.</strong>
-     * 
+     *
      * @param context the sequencer context being set (never <code>null</code>)
      */
     protected void setContext( final Context context ) {
@@ -211,7 +212,7 @@ public abstract class ModelObjectHandler {
 
     /**
      * Sets the specified property only if the value is not <code>null</code> and not empty.
-     * 
+     *
      * @param node the node whose property is being set (cannot be <code>null</code>)
      * @param propertyName the name of the property being set (cannot be <code>null</code>)
      * @param propertyValue the proposed property value (can be <code>null</code> or empty)
@@ -258,16 +259,10 @@ public abstract class ModelObjectHandler {
             } else {
                 if (multiValued) {
                     addPropertyValue(node, propertyName, propertyValue);
-
-                    if (DEBUG) {
-                        debug(node.getName() + ":adding value " + propertyValue + " to multi-valued property " + propertyName);
-                    }
+                    debug(node.getName() + ":adding value " + propertyValue + " to multi-valued property " + propertyName);
                 } else {
                     node.setProperty(propertyName, propertyValue);
-
-                    if (DEBUG) {
-                        debug(node.getName() + ":setting " + propertyName + " = " + propertyValue);
-                    }
+                    debug(node.getName() + ":setting " + propertyName + " = " + propertyValue);
                 }
             }
         }
@@ -275,7 +270,7 @@ public abstract class ModelObjectHandler {
 
     /**
      * <strong>This method should only be called by the framework loading model object handlers.</strong>
-     * 
+     *
      * @param reader the model reader being set (never <code>null</code>)
      */
     protected void setReader( final ModelReader reader ) {
@@ -285,7 +280,7 @@ public abstract class ModelObjectHandler {
 
     /**
      * <strong>This method should only be called by the framework loading model object handlers.</strong>
-     * 
+     *
      * @param resolver the reference resolver used during sequencing (cannot be <code>null</code>)
      */
     protected void setResolver( final ReferenceResolver resolver ) {
@@ -295,7 +290,7 @@ public abstract class ModelObjectHandler {
 
     /**
      * <strong>This method should only be called by the framework loading model object handlers.</strong>
-     * 
+     *
      * @param vdbModel the VDB model being sequenced (can be <code>null</code> if model is not from a VDB)
      */
     protected void setVdbModel( final VdbModel vdbModel ) {

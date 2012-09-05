@@ -23,19 +23,12 @@
  */
 package org.modeshape.sequencer.teiid;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import javax.jcr.Binary;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrConstants;
@@ -47,23 +40,37 @@ import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
 import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
 import org.modeshape.sequencer.teiid.model.ModelSequencer;
 import org.modeshape.sequencer.teiid.model.ReferenceResolver;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * A sequencer of Teiid Virtual Database (VDB) files.
  */
 public class VdbSequencer extends Sequencer {
 
+    private static final Logger LOGGER = Logger.getLogger(VdbSequencer.class);
+
     private static final boolean DEBUG = false;
     private static final String MANIFEST_FILE = "/META-INF/vdb.xml";
     private static final Pattern VERSION_REGEX = Pattern.compile("(.*)[.]\\s*[+-]?([0-9]+)\\s*$");
 
-    private static void debug( final String message ) {
-        System.err.println(message);
+    private void debug( final String message ) {
+        if (DEBUG) {
+            System.err.println(message);
+        }
+        LOGGER.debug(message);
+
     }
 
     /**
      * Utility method to extract the version information from a VDB filename.
-     * 
+     *
      * @param fileNameWithoutExtension the filename for the VDB, without its extension; may not be null
      * @param version the reference to the AtomicInteger that will be modified to contain the version
      * @return the 'fileNameWithoutExtension' value (without any trailing '.' characters); never null
@@ -87,8 +94,6 @@ public class VdbSequencer extends Sequencer {
     private ReferenceResolver resolver; // constructed during initialize method
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.jcr.api.sequencer.Sequencer#execute(javax.jcr.Property, javax.jcr.Node,
      *      org.modeshape.jcr.api.sequencer.Sequencer.Context)
      */
@@ -96,9 +101,7 @@ public class VdbSequencer extends Sequencer {
     public boolean execute( final Property inputProperty,
                             final Node outputNode,
                             final Context context ) throws Exception {
-        if (DEBUG) {
-            debug("VdbSequencer.execute called:outputNode name=" + outputNode.getName() + ", path=" + outputNode.getPath());
-        }
+        debug("VdbSequencer.execute called:outputNode name=" + outputNode.getName() + ", path=" + outputNode.getPath());
 
         final Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
@@ -113,9 +116,7 @@ public class VdbSequencer extends Sequencer {
                 String entryName = entry.getName();
 
                 if (entryName.endsWith(MANIFEST_FILE)) {
-                    if (DEBUG) {
-                        debug("----before reading vdb.xml");
-                    }
+                    debug("----before reading vdb.xml");
 
                     manifest = VdbManifest.read(vdbStream, context);
                     assert (manifest != null) : "manifest is null";
@@ -141,13 +142,9 @@ public class VdbSequencer extends Sequencer {
                     // create properties child nodes
                     sequenceProperties(manifest, outputNode);
 
-                    if (DEBUG) {
-                        debug(">>>>done reading vdb.xml\n\n");
-                    }
+                    debug(">>>>done reading vdb.xml\n\n");
                 } else if (!entry.isDirectory() && this.modelSequencer.hasModelFileExtension(entryName)) {
-                    if (DEBUG) {
-                        debug("----before reading model " + entryName);
-                    }
+                    debug("----before reading model " + entryName);
 
                     VdbModel vdbModel = null;
 
@@ -175,10 +172,8 @@ public class VdbSequencer extends Sequencer {
 
                     this.modelSequencer.sequenceVdbModel(vdbStream, modelNode, vdbModel, context);
 
-                    if (DEBUG) {
-                        debug(">>>>done reading model " + entryName + "\n\n");
-                    }
-                } else if (DEBUG) {
+                    debug(">>>>done reading model " + entryName + "\n\n");
+                } else {
                     debug("----ignoring resource " + entryName);
                 }
             }
@@ -199,8 +194,6 @@ public class VdbSequencer extends Sequencer {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @throws IOException
      * @see org.modeshape.jcr.api.sequencer.Sequencer#initialize(javax.jcr.NamespaceRegistry,
      *      org.modeshape.jcr.api.nodetype.NodeTypeManager)
@@ -342,7 +335,8 @@ public class VdbSequencer extends Sequencer {
             final Node translatorsGroupNode = outputNode.addNode(VdbLexicon.Vdb.TRANSLATORS, VdbLexicon.Vdb.TRANSLATORS);
 
             for (final VdbTranslator translator : translatorsGroup) {
-                final Node translatorNode = translatorsGroupNode.addNode(translator.getName(), VdbLexicon.Translator.TRANSLATOR);
+                final Node translatorNode = translatorsGroupNode.addNode(translator.getName(),
+                                                                         VdbLexicon.Translator.TRANSLATOR);
                 setProperty(translatorNode, VdbLexicon.Translator.TYPE, translator.getType());
                 setProperty(translatorNode, VdbLexicon.Translator.DESCRIPTION, translator.getDescription());
 
@@ -360,7 +354,7 @@ public class VdbSequencer extends Sequencer {
 
     /**
      * Sets a property value only if the value is not <code>null</code> and not empty.
-     * 
+     *
      * @param node the node whose property is being set (cannot be <code>null</code>)
      * @param name the property name (cannot be <code>null</code>)
      * @param value the property value (can be <code>null</code> or empty)
