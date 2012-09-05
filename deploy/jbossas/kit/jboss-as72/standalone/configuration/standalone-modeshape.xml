@@ -252,14 +252,12 @@
                     <sequencer name="msoffice-sequencer" classname="msoffice" module="org.modeshape.sequencer.msoffice">
                         <path-expression>/files(//*.(xls|ppt|doc)[*])/jcr:content[@jcr:data] => /derived/msoffice/$1</path-expression>
                     </sequencer>
-                    <!-- Not yet implemented
                     <sequencer name="teiid-model-sequencer" classname="model" module="org.modeshape.sequencer.teiid">
                       <path-expression>/files(//)*.xmi[*])/jcr:content[@jcr:data] => /derived/teiid/models/$1</path-expression>
                     </sequencer>
                     <sequencer name="teiid-vdb-sequencer" classname="vdb" module="org.modeshape.sequencer.teiid">
                       <path-expression>/files(//)*.vdb[*])/jcr:content[@jcr:data] => /derived/teiid/vdbs/$1</path-expression>
                     </sequencer>
-                    -->
                     <!--
                      The XSD, XML, WSDL, and ZIP sequencers all generate a node for the input documents, and so we don't want the filename to
                      be included in the output path. Therefore, only the relative path under '/files' and above '*.xsd' (or '*.wsdl'

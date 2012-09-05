@@ -146,17 +146,13 @@
             </includes>
         </dependencySet>
 
-        <!--<dependencySet>-->
-            <!--<outputDirectory>modules/org/modeshape/sequencer/teiid/main</outputDirectory>-->
-            <!--<includes>-->
-                <!--<include>org.modeshape:modeshape-sequencer-teiid:jar</include>-->
-                <!--<include>com.beust:jcommander:jar</include>-->
-            <!--</includes>-->
-        <!--<excludes>-->
-            <!--<exclude>org.modeshape:modeshape-common</exclude>-->
-            <!--<exclude>org.modeshape:modeshape-jcr-api</exclude>-->
-        <!--</excludes>-->
-        <!--</dependencySet>-->
+        <dependencySet>
+            <outputDirectory>modules/org/modeshape/sequencer/teiid/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-teiid:jar</include>
+                <include>com.beust:jcommander:jar</include>
+            </includes>
+        </dependencySet>
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>

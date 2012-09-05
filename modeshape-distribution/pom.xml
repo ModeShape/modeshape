@@ -55,10 +55,11 @@
             <artifactId>modeshape-sequencer-msoffice</artifactId>
         </dependency>
 
-        <!--<dependency>-->
-        <!--<groupId>org.modeshape</groupId>-->
-        <!--<artifactId>modeshape-sequencer-teiid</artifactId>-->
-        <!--</dependency>-->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-sequencer-teiid</artifactId>
+        </dependency>
+        
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-text</artifactId>
