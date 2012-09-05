@@ -217,6 +217,8 @@ public class RepositoryCache implements Observable {
                 EditableDocument editable = entry.editDocumentContent();
                 PropertyFactory propFactory = context.getPropertyFactory();
                 translator.setProperty(editable, propFactory.create(name("workspaces"), workspaceNames), null);
+                //we need to update the cache immediately, so the changes are persisted
+                database.replace(systemMetadataKeyStr, editable, entry.getMetadata());
             }
         }
     }
