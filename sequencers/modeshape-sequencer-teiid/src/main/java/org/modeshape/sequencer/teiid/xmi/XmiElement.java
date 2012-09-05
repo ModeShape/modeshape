@@ -70,8 +70,6 @@ public class XmiElement extends XmiBasePart implements XmiDescendent {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiBasePart#equals(java.lang.Object)
      */
     @Override
@@ -230,8 +228,6 @@ public class XmiElement extends XmiBasePart implements XmiDescendent {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiBasePart#getNamespacePrefix()
      */
     @Override
@@ -250,8 +246,6 @@ public class XmiElement extends XmiBasePart implements XmiDescendent {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiBasePart#getNamespaceUri()
      */
     @Override
@@ -270,8 +264,6 @@ public class XmiElement extends XmiBasePart implements XmiDescendent {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiDescendent#getParent()
      */
     @Override
@@ -287,8 +279,6 @@ public class XmiElement extends XmiBasePart implements XmiDescendent {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiBasePart#hashCode()
      */
     @Override
@@ -297,8 +287,6 @@ public class XmiElement extends XmiBasePart implements XmiDescendent {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.teiid.xmi.XmiDescendent#setParent(org.modeshape.sequencer.teiid.xmi.XmiElement)
      */
     @Override
@@ -307,8 +295,6 @@ public class XmiElement extends XmiBasePart implements XmiDescendent {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see java.lang.Object#toString()
      */
     @Override

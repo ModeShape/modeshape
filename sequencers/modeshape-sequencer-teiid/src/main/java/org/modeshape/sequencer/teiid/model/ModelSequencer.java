@@ -23,13 +23,12 @@
  */
 package org.modeshape.sequencer.teiid.model;
 
-import java.io.IOException;
-import java.io.InputStream;
 import javax.jcr.Binary;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
@@ -40,6 +39,8 @@ import org.modeshape.sequencer.teiid.lexicon.DiagramLexicon;
 import org.modeshape.sequencer.teiid.lexicon.ModelExtensionDefinitionLexicon;
 import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon;
 import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * A sequencer of Teiid XMI model files.
@@ -48,10 +49,14 @@ public class ModelSequencer extends Sequencer {
 
     private static final boolean DEBUG = false;
 
-    private static final String[] MODEL_FILE_EXTENSIONS = {".xmi"};
+    private static final String[] MODEL_FILE_EXTENSIONS = { ".xmi" };
+    private static final Logger LOGGER = Logger.getLogger(ModelSequencer.class);
 
-    private static void debug( final String message ) {
-        System.err.println(message);
+    private void debug( final String message ) {
+        if (DEBUG) {
+            System.err.println(message);
+        }
+        LOGGER.debug(message);
     }
 
     /**
@@ -63,7 +68,7 @@ public class ModelSequencer extends Sequencer {
 
         final String modelType = modelReader.getModelType();
         final boolean validModelType = CoreLexicon.ModelType.PHYSICAL.equalsIgnoreCase(modelType)
-                                       || CoreLexicon.ModelType.VIRTUAL.equalsIgnoreCase(modelType);
+                || CoreLexicon.ModelType.VIRTUAL.equalsIgnoreCase(modelType);
         return (validModelType && RelationalLexicon.Namespace.URI.equals(modelReader.getPrimaryMetamodelUri()));
     }
 
@@ -85,8 +90,6 @@ public class ModelSequencer extends Sequencer {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.jcr.api.sequencer.Sequencer#execute(javax.jcr.Property, javax.jcr.Node,
      *      org.modeshape.jcr.api.sequencer.Sequencer.Context)
      */
@@ -116,62 +119,40 @@ public class ModelSequencer extends Sequencer {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.jcr.api.sequencer.Sequencer#initialize(javax.jcr.NamespaceRegistry,
      *      org.modeshape.jcr.api.nodetype.NodeTypeManager)
      */
     @Override
     public void initialize( final NamespaceRegistry registry,
                             final NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
-        if (DEBUG) {
-            debug("enter initialize");
-        }
+        debug("enter initialize");
 
         super.registerNodeTypes("../xmi.cnd", nodeTypeManager, true);
-
-        if (DEBUG) {
-            debug("xmi.cnd loaded");
-        }
+        debug("xmi.cnd loaded");
 
         super.registerNodeTypes("../mmcore.cnd", nodeTypeManager, true);
-
-        if (DEBUG) {
-            debug("mmcore.cnd loaded");
-        }
+        debug("mmcore.cnd loaded");
 
         super.registerNodeTypes("../jdbc.cnd", nodeTypeManager, true);
-
-        if (DEBUG) {
-            debug("jdbc.cnd loaded");
-        }
+        debug("jdbc.cnd loaded");
 
         super.registerNodeTypes("../relational.cnd", nodeTypeManager, true);
-
-        if (DEBUG) {
-            debug("relational.cnd loaded");
-        }
+        debug("relational.cnd loaded");
 
         super.registerNodeTypes("../transformation.cnd", nodeTypeManager, true);
-
-        if (DEBUG) {
-            debug("transformation.cnd loaded");
-        }
+        debug("transformation.cnd loaded");
 
         // Register some of the namespaces we'll need ...
         registerNamespace(DiagramLexicon.Namespace.PREFIX, DiagramLexicon.Namespace.URI, registry);
         registerNamespace(ModelExtensionDefinitionLexicon.Namespace.PREFIX, // TODO may not need this if MED CND is made
                           ModelExtensionDefinitionLexicon.Namespace.URI,
                           registry);
-
-        if (DEBUG) {
-            debug("exit initialize");
-        }
+        debug("exit initialize");
     }
 
     /**
      * The method that performs the sequencing.
-     * 
+     *
      * @param modelStream the input stream of the model file (cannot be <code>null</code>)
      * @param modelOutputNode the root node of the model being sequenced (cannot be <code>null</code>)
      * @param modelPath the model path including the model name (cannot be <code>null</code> or empty)
@@ -190,17 +171,16 @@ public class ModelSequencer extends Sequencer {
         assert (context != null);
         assert (modelOutputNode.isNodeType(CoreLexicon.JcrId.MODEL));
 
-        if (DEBUG) {
-            debug("sequenceModel:model node path=" + modelOutputNode.getPath() + ", model path=" + modelPath + ", vdb model="
-                  + vdbModel);
-        }
+        debug("sequenceModel:model node path=" + modelOutputNode.getPath() + ", model path=" + modelPath + ", vdb model="
+                      + vdbModel);
 
         final NamespaceRegistry registry = modelOutputNode.getSession().getWorkspace().getNamespaceRegistry();
         final ModelReader modelReader = new ModelReader(modelPath, this.resolver, registry);
         modelReader.readModel(modelStream);
 
         if (shouldSequence(modelReader)) {
-            final ModelNodeWriter nodeWriter = new ModelNodeWriter(modelOutputNode, modelReader, this.resolver, vdbModel, context);
+            final ModelNodeWriter nodeWriter = new ModelNodeWriter(modelOutputNode, modelReader, this.resolver, vdbModel,
+                                                                   context);
             return nodeWriter.write();
         }
 
@@ -210,7 +190,7 @@ public class ModelSequencer extends Sequencer {
 
     /**
      * Used only by the VDB sequencer to sequence a model file contained in a VDB.
-     * 
+     *
      * @param modelStream the input stream of the model file (cannot be <code>null</code>)
      * @param modelOutputNode the root node of the model being sequenced (cannot be <code>null</code>)
      * @param vdbModel the VDB model associated with the input stream (cannot be <code>null</code>)

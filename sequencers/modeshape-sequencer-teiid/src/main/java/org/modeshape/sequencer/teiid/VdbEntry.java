@@ -45,8 +45,6 @@ public class VdbEntry implements Comparable<VdbEntry> {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
     @Override
