@@ -33,16 +33,16 @@ import org.modeshape.jcr.value.BinaryValue;
  *
  * @author kulikov
  */
-public class CustomBinaryStoreImpl extends CustomBinaryStore {
+public class CustomBinaryStoreImpl extends AbstractBinaryStore {
         private String provisionedValue;
+        private String key;
 
         public String getProvisionedValue() {
             return this.provisionedValue;
         }
-        
-        @Override
-        public void configure(Properties conf) {
-            this.provisionedValue = conf.getProperty("key");
+
+        public String getKey() {
+            return key;
         }
 
         @Override

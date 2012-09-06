@@ -61,7 +61,7 @@ public class CustomBinaryStoreTest {
     public void shouldLoadAndConfigureCustomBinaryStore() throws Exception {
         CustomBinaryStoreImpl store = (CustomBinaryStoreImpl) config.getBinaryStorage().getBinaryStore();
         assertTrue(store != null);
-        assertEquals("value", store.getProvisionedValue());
+        assertEquals("value", store.getKey());
     }
 
 
