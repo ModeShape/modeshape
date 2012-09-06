@@ -20,3 +20,8 @@ Luca Stancapiano (jedim@vige.it)
 Petr Siroky (psiroky@redhat.com)
 Ted Jones (tejones@redhat.com)
 Timo Sallinen (timo.sallinen@gmail.com)
+
+ModeShape WebDAV Servlet code was originally authored by
+
+Robert Erler (yavarin@gmx.de)
+Stefan Groschupf (sg@media-style.com)

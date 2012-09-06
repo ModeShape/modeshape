@@ -320,6 +320,11 @@
         <eclipse.emf.ecorexmi.version>2.4.1</eclipse.emf.ecorexmi.version>
         <tika.version>1.1</tika.version>
 
+        <!--WebDAV servlet-->
+        <jmock.version>2.4.0</jmock.version>
+        <spring.webmvc>2.5.2</spring.webmvc>
+        <spring.mock>2.0.7</spring.mock>
+
         <!--
             JBOSS AS 7.1.1.Final
         -->
@@ -799,6 +804,11 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-webdav</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-web-jcr-webdav</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -997,7 +1007,7 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.api.version}</version>
-                <scope>provided</scope>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -1009,8 +1019,28 @@
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
                 <version>${log4j.version}</version>
-                <scope>provided</scope>
+                <scope>test</scope>
             </dependency>
+            <!--WebDAV servlet-->
+            <dependency>
+                <groupId>org.jmock</groupId>
+                <artifactId>jmock</artifactId>
+                <version>${jmock.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-webmvc</artifactId>
+                <version>${spring.webmvc}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-mock</artifactId>
+                <version>${spring.mock}</version>
+                <scope>test</scope>
+            </dependency>
+
             <!--
                 Demo module
             -->

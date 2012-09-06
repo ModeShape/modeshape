@@ -6,44 +6,29 @@
         <groupId>org.modeshape</groupId>
         <artifactId>modeshape-parent</artifactId>
         <version>3.0-SNAPSHOT</version>
-        <relativePath>../modeshape-parent/pom.xml</relativePath>
+        <relativePath>../../modeshape-parent</relativePath>
     </parent>
-
-    <!-- The groupId and version values are inherited from parent -->
-    <artifactId>modeshape-common</artifactId>
+    <artifactId>modeshape-webdav</artifactId>
     <packaging>jar</packaging>
-    <name>ModeShape Common</name>
-    <description>ModeShape Common Library and Utilities</description>
+    <name>ModeShape WebDAV Servlet</name>
+    <description>ModeShape WebDAV Servlet Library</description>
     <url>http://www.modeshape.org</url>
-
-    <!--
-         Define the dependencies. Note that all version and scopes default to
-         those defined in the dependencyManagement section of the parent pom.
-     -->
     <dependencies>
-        <!--
-        Testing (note the scope)
-        -->
+
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-common</artifactId>
         </dependency>
+
         <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-library</artifactId>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-        </dependency>
-        <!--
-             This is the only module that requires (or should ever require) SLF4j and LOG4j for compiling. All the logger by default
-             should have the "test" scope.
-          -->
+
+        <!--  TESTING DEPENDENCIES -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -52,7 +37,24 @@
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
-            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jmock</groupId>
+            <artifactId>jmock</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit-dep</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-mock</artifactId>
         </dependency>
     </dependencies>
 
@@ -65,7 +67,7 @@
                         <artifactId>maven-assembly-plugin</artifactId>
                         <configuration>
                             <descriptorRefs>
-                                <descriptorRef>component-with-dependencies</descriptorRef>
+                                <descriptorRef>module-with-dependencies</descriptorRef>
                             </descriptorRefs>
                         </configuration>
                     </plugin>
