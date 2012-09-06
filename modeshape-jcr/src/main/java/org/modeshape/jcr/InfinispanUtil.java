@@ -24,7 +24,10 @@
 package org.modeshape.jcr;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -37,7 +40,6 @@ import org.infinispan.distexec.DistributedExecutorService;
 import org.infinispan.loaders.CacheLoader;
 import org.infinispan.loaders.CacheLoaderException;
 import org.infinispan.loaders.CacheLoaderManager;
-import org.infinispan.util.concurrent.ConcurrentHashSet;
 import org.modeshape.common.logging.Logger;
 
 /**
@@ -58,6 +60,9 @@ public class InfinispanUtil {
      * @param <V> the type of value
      * @param cache the cache
      * @return the sequence that can be used to obtain the keys; never null
+     * @throws CacheLoaderException if there is an error within the cache loader
+     * @throws InterruptedException if the process is interrupted
+     * @throws ExecutionException if there is an error while getting all keys
      */
     @SuppressWarnings("unchecked")
     public static <K, V> Sequence<K> getAllKeys( Cache<K, V> cache ) throws CacheLoaderException, InterruptedException, ExecutionException {
@@ -74,6 +79,7 @@ public class InfinispanUtil {
                 LOGGER.debug("Use distributed call to fetch all keys");
                 // Use a distributed executor to execute callables throughout the Infinispan cluster ...
                 DistributedExecutorService distributedExecutor = new DefaultExecutorService(cache);
+                @SuppressWarnings( "synthetic-access" )
                 List<Future<Set<K>>> futures = distributedExecutor.submitEverywhere(new GetAllMemoryKeys<K, V>());
                 cacheKeys = mergeResults(futures);
             } else {
@@ -87,6 +93,7 @@ public class InfinispanUtil {
                     LOGGER.debug("Use distributed call to fetch all keys");
                     // store is not shared so every node must return key list of the store
                     DistributedExecutorService distributedExecutor = new DefaultExecutorService(cache);
+                    @SuppressWarnings( "synthetic-access" )
                     List<Future<Set<K>>> futures = distributedExecutor.submitEverywhere(new GetAllKeys<K, V>());
                     cacheKeys = mergeResults(futures);
                 } else {
@@ -107,6 +114,11 @@ public class InfinispanUtil {
     /**
      * Since keys can appear more than one time e.g. multiple owners in a distributed cache,
      * they all must be merged into a Set.
+     * @param futures the list of futures whose results should be merged
+     * @param <K> the type of key
+     * @return the set of keys
+     * @throws InterruptedException if the process is interrupted
+     * @throws ExecutionException if there is an error while getting all keys
      */
     private static <K> Set<K> mergeResults(List<Future<Set<K>>> futures) throws InterruptedException, ExecutionException {
         // todo use ConcurrentHashSet and merge as the results appear
