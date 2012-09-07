@@ -947,27 +947,34 @@ public class JcrSession implements Session {
      */
     void save( AbstractJcrNode node ) throws RepositoryException {
         // first check the node is valid from a cache perspective
-        CachedNode cachedNode = null;
+        Set<NodeKey> keysToBeSaved = null;
         try {
-            cachedNode = node.node();
             if (node.isNew()) {
                 // expected by TCK
                 throw new RepositoryException(JcrI18n.unableToSaveNodeThatWasCreatedSincePreviousSave.text(node.getPath(),
                                                                                                            workspaceName()));
             }
 
-            if (node.containsChangesWithExternalDependencies()) {
+            AtomicReference<Set<NodeKey>> refToKeys = new AtomicReference<Set<NodeKey>>();
+            if (node.containsChangesWithExternalDependencies(refToKeys)) {
                 // expected by TCK
                 I18n msg = JcrI18n.unableToSaveBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
                 throw new ConstraintViolationException(msg.text(node.path(), workspaceName()));
             }
+            keysToBeSaved = refToKeys.get();
         } catch (ItemNotFoundException e) {
             throw new InvalidItemStateException(e);
         } catch (NodeNotFoundException e) {
             throw new InvalidItemStateException(e);
         }
+        assert keysToBeSaved != null;
 
         SessionCache sessionCache = cache();
+        if (sessionCache.getChangedNodeKeys().size() == keysToBeSaved.size()) {
+            // The node is above all the other changes, so go ahead and save the whole session ...
+            save();
+            return;
+        }
 
         // Perform the save, using 'JcrPreSave' operations ...
         SessionCache systemCache = createSystemCache(false);
@@ -975,8 +982,8 @@ public class JcrSession implements Session {
         Map<NodeKey, NodeKey> baseVersionKeys = this.baseVersionKeys.get();
         Map<NodeKey, NodeKey> originalVersionKeys = this.originalVersionKeys.get();
         try {
-            sessionCache.save(cachedNode, systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys,
-                                                                                originalVersionKeys));
+            sessionCache.save(keysToBeSaved, systemContent.cache(), new JcrPreSave(systemContent, baseVersionKeys,
+                                                                                   originalVersionKeys));
         } catch (WrappedException e) {
             Throwable cause = e.getCause();
             throw (cause instanceof RepositoryException) ? (RepositoryException)cause : new RepositoryException(e.getCause());

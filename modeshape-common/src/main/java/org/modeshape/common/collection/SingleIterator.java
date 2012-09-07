@@ -21,38 +21,40 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.cache;
+package org.modeshape.common.collection;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.modeshape.jcr.value.Path;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import org.modeshape.common.annotation.NotThreadSafe;
 
 /**
- * A simple cache of node paths, useful when obtaining the path for many nodes on a subgraph.
+ * An {@link Iterator} that is used to iterate over a single, fixed value.
+ * 
+ * @param <T> the value type
  */
-public class PathCache {
-    private final NodeCache cache;
-    private final Map<NodeKey, Path> paths = new HashMap<NodeKey, Path>();
+@NotThreadSafe
+public class SingleIterator<T> implements Iterator<T> {
+    private T value;
 
-    public PathCache( NodeCache cache ) {
-        this.cache = cache;
+    public SingleIterator( T value ) {
+        this.value = value;
     }
 
-    public NodeCache getCache() {
-        return cache;
+    @Override
+    public boolean hasNext() {
+        return value != null;
     }
 
-    public Path getPath( CachedNode node ) {
-        NodeKey key = node.getKey();
-        Path path = paths.get(key);
-        if (path == null) {
-            path = node.getPath(this);
-            paths.put(key, path); // even if null
-        }
-        return path;
+    @Override
+    public T next() {
+        if (value == null) throw new NoSuchElementException();
+        T next = value;
+        value = null;
+        return next;
     }
 
-    public boolean removePath( NodeKey key ) {
-        return paths.remove(key) != null;
+    @Override
+    public void remove() {
+        throw new UnsupportedOperationException();
     }
 }

@@ -23,31 +23,6 @@
  */
 package org.modeshape.jcr.cache.document;
 
-import org.infinispan.util.concurrent.ConcurrentHashSet;
-import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.text.Inflector;
-import org.modeshape.jcr.JcrLexicon;
-import org.modeshape.jcr.JcrNtLexicon;
-import org.modeshape.jcr.cache.CachedNode;
-import org.modeshape.jcr.cache.ChildReference;
-import org.modeshape.jcr.cache.ChildReferences;
-import org.modeshape.jcr.cache.ChildReferences.BasicContext;
-import org.modeshape.jcr.cache.ChildReferences.ChildInsertions;
-import org.modeshape.jcr.cache.MutableCachedNode;
-import org.modeshape.jcr.cache.NodeCache;
-import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.cache.NodeNotFoundException;
-import org.modeshape.jcr.cache.NodeNotFoundInParentException;
-import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.value.BinaryValue;
-import org.modeshape.jcr.value.Name;
-import org.modeshape.jcr.value.NameFactory;
-import org.modeshape.jcr.value.NamespaceRegistry;
-import org.modeshape.jcr.value.Path;
-import org.modeshape.jcr.value.Path.Segment;
-import org.modeshape.jcr.value.Property;
-import org.modeshape.jcr.value.PropertyFactory;
-import org.modeshape.jcr.value.basic.NodeKeyReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -68,6 +43,32 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.infinispan.util.concurrent.ConcurrentHashSet;
+import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.text.Inflector;
+import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.JcrNtLexicon;
+import org.modeshape.jcr.cache.CachedNode;
+import org.modeshape.jcr.cache.ChildReference;
+import org.modeshape.jcr.cache.ChildReferences;
+import org.modeshape.jcr.cache.ChildReferences.BasicContext;
+import org.modeshape.jcr.cache.ChildReferences.ChildInsertions;
+import org.modeshape.jcr.cache.MutableCachedNode;
+import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.NodeNotFoundException;
+import org.modeshape.jcr.cache.NodeNotFoundInParentException;
+import org.modeshape.jcr.cache.PathCache;
+import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.value.BinaryValue;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.NameFactory;
+import org.modeshape.jcr.value.NamespaceRegistry;
+import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.Path.Segment;
+import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.PropertyFactory;
+import org.modeshape.jcr.value.basic.NodeKeyReference;
 
 /**
  * A node used within a {@link SessionCache session} when that node has (or may have) transient (unsaved) changes. This node is an
@@ -400,6 +401,24 @@ public class SessionNode implements MutableCachedNode {
         CachedNode parent = parent(session);
         if (parent != null) {
             Path parentPath = parent.getPath(session);
+            return session.pathFactory().create(parentPath, getSegment(session, parent));
+        }
+        // make sure that this isn't a node which has been removed in the meantime
+        CachedNode persistedNode = workspace(cache).getNode(key);
+        if (persistedNode == null) {
+            throw new NodeNotFoundException(key);
+        }
+        // This is the root node ...
+        return session.rootPath();
+    }
+
+    @Override
+    public Path getPath( PathCache pathCache ) throws NodeNotFoundException {
+        NodeCache cache = pathCache.getCache();
+        AbstractSessionCache session = session(cache);
+        CachedNode parent = parent(session);
+        if (parent != null) {
+            Path parentPath = pathCache.getPath(parent);
             return session.pathFactory().create(parentPath, getSegment(session, parent));
         }
         // make sure that this isn't a node which has been removed in the meantime

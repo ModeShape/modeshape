@@ -23,14 +23,14 @@
  */
 package org.modeshape.jcr.cache.document;
 
+import java.util.Collections;
+import java.util.Set;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionEnvironment;
-import java.util.Collections;
-import java.util.Set;
 
 /**
  * A read-only {@link SessionCache} implementation.
@@ -81,7 +81,7 @@ public class ReadOnlySessionCache extends AbstractSessionCache {
     }
 
     @Override
-    public void save( CachedNode node,
+    public void save( Set<NodeKey> toBeSaved,
                       SessionCache otherSession,
                       PreSave preSaveOperation ) {
         // do nothing
