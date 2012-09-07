@@ -33,12 +33,12 @@ import java.io.IOException;
 
 public class DoHead extends AbstractMethod {
 
-    protected String _dftIndexFile;
-    protected IWebdavStore _store;
-    protected String _insteadOf404;
-    protected ResourceLocks _resourceLocks;
-    protected IMimeTyper _mimeTyper;
-    protected int _contentLength;
+    protected final String dftIndexFile;
+    protected final IWebdavStore store;
+    protected final String insteadOf404;
+    protected final ResourceLocks resourceLocks;
+    protected final IMimeTyper mimeTyper;
+    protected final int contentLength;
 
     private static Logger LOG = Logger.getLogger(DoHead.class);
 
@@ -48,12 +48,12 @@ public class DoHead extends AbstractMethod {
                    ResourceLocks resourceLocks,
                    IMimeTyper mimeTyper,
                    int contentLengthHeader ) {
-        _store = store;
-        _dftIndexFile = dftIndexFile;
-        _insteadOf404 = insteadOf404;
-        _resourceLocks = resourceLocks;
-        _mimeTyper = mimeTyper;
-        _contentLength = contentLengthHeader;
+        this.store = store;
+        this.dftIndexFile = dftIndexFile;
+        this.insteadOf404 = insteadOf404;
+        this.resourceLocks = resourceLocks;
+        this.mimeTyper = mimeTyper;
+        this.contentLength = contentLengthHeader;
     }
 
     public void execute( ITransaction transaction,
@@ -67,11 +67,11 @@ public class DoHead extends AbstractMethod {
         String path = getRelativePath(req);
         LOG.trace("-- " + this.getClass().getName());
 
-        StoredObject so = _store.getStoredObject(transaction, path);
+        StoredObject so = store.getStoredObject(transaction, path);
         if (so == null) {
-            if (this._insteadOf404 != null && !_insteadOf404.trim().equals("")) {
-                path = this._insteadOf404;
-                so = _store.getStoredObject(transaction, this._insteadOf404);
+            if (this.insteadOf404 != null && !insteadOf404.trim().equals("")) {
+                path = this.insteadOf404;
+                so = store.getStoredObject(transaction, this.insteadOf404);
             }
         } else {
             bUriExists = true;
@@ -79,8 +79,8 @@ public class DoHead extends AbstractMethod {
 
         if (so != null) {
             if (so.isFolder()) {
-                if (_dftIndexFile != null && !_dftIndexFile.trim().equals("")) {
-                    resp.sendRedirect(resp.encodeRedirectURL(req.getRequestURI() + this._dftIndexFile));
+                if (dftIndexFile != null && !dftIndexFile.trim().equals("")) {
+                    resp.sendRedirect(resp.encodeRedirectURL(req.getRequestURI() + this.dftIndexFile));
                     return;
                 }
             } else if (so.isNullResource()) {
@@ -92,7 +92,7 @@ public class DoHead extends AbstractMethod {
 
             String tempLockOwner = "doGet" + System.currentTimeMillis() + req.toString();
 
-            if (_resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
+            if (resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
                 try {
                     String eTagMatch = req.getHeader("If-None-Match");
                     if (eTagMatch != null) {
@@ -117,7 +117,7 @@ public class DoHead extends AbstractMethod {
 
                             long resourceLength = so.getResourceLength();
 
-                            if (_contentLength == 1) {
+                            if (contentLength == 1) {
                                 if (resourceLength > 0) {
                                     if (resourceLength <= Integer.MAX_VALUE) {
                                         resp.setContentLength((int)resourceLength);
@@ -129,7 +129,7 @@ public class DoHead extends AbstractMethod {
                                 }
                             }
 
-                            String mimeType = _mimeTyper.getMimeType(transaction, path);
+                            String mimeType = mimeTyper.getMimeType(transaction, path);
                             if (mimeType != null) {
                                 resp.setContentType(mimeType);
                             } else {
@@ -152,7 +152,7 @@ public class DoHead extends AbstractMethod {
                 } catch (WebdavException e) {
                     resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
                 } finally {
-                    _resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
+                    resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
                 }
             } else {
                 resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);

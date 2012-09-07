@@ -32,13 +32,13 @@ public class DoOptions extends DeterminableMethod {
 
     private static Logger LOG = Logger.getLogger(DoOptions.class);
 
-    private IWebdavStore _store;
-    private ResourceLocks _resourceLocks;
+    private IWebdavStore store;
+    private ResourceLocks resourceLocks;
 
     public DoOptions( IWebdavStore store,
                       ResourceLocks resLocks ) {
-        _store = store;
-        _resourceLocks = resLocks;
+        this.store = store;
+        resourceLocks = resLocks;
     }
 
     public void execute( ITransaction transaction,
@@ -49,12 +49,12 @@ public class DoOptions extends DeterminableMethod {
 
         String tempLockOwner = "doOptions" + System.currentTimeMillis() + req.toString();
         String path = getRelativePath(req);
-        if (_resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
+        if (resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
             StoredObject so = null;
             try {
                 resp.addHeader("DAV", "1, 2");
 
-                so = _store.getStoredObject(transaction, path);
+                so = store.getStoredObject(transaction, path);
                 String methodsAllowed = determineMethodsAllowed(so);
                 resp.addHeader("Allow", methodsAllowed);
                 resp.addHeader("MS-Author-Via", "DAV");
@@ -63,7 +63,7 @@ public class DoOptions extends DeterminableMethod {
             } catch (WebdavException e) {
                 resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
             } finally {
-                _resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
+                resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
             }
         } else {
             resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);

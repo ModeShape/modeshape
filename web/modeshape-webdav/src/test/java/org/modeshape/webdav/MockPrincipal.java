@@ -40,35 +40,35 @@ import java.security.Principal;
 
 public class MockPrincipal implements Principal {
 
-    protected String _name = null;
-    protected String[] _roles = null;
+    protected String name = null;
+    protected String[] roles = null;
 
     public MockPrincipal() {
         super();
-        _name = "";
-        _roles = new String[0];
+        name = "";
+        roles = new String[0];
     }
 
     public MockPrincipal( String name ) {
         super();
-        _name = name;
-        _roles = new String[0];
+        this.name = name;
+        roles = new String[0];
     }
 
     public MockPrincipal( String name,
                           String[] roles ) {
         super();
-        _name = name;
-        _roles = roles;
+        this.name = name;
+        this.roles = roles;
     }
 
     public String getName() {
-        return _name;
+        return name;
     }
 
     public boolean isUserInRole( String role ) {
-        for (int i = 0; i < _roles.length; i++) {
-            if (role.equals(_roles[i])) {
+        for (int i = 0; i < roles.length; i++) {
+            if (role.equals(roles[i])) {
                 return true;
             }
         }
@@ -85,18 +85,18 @@ public class MockPrincipal implements Principal {
         }
 
         Principal p = (Principal)o;
-        if (_name == null) {
+        if (name == null) {
             return (p.getName() == null);
         } else {
-            return (_name.equals(p.getName()));
+            return (name.equals(p.getName()));
         }
     }
 
     public int hashCode() {
-        if (_name == null) {
+        if (name == null) {
             return "".hashCode();
         } else {
-            return _name.hashCode();
+            return name.hashCode();
         }
     }
 

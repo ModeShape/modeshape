@@ -12,18 +12,17 @@ public class DoNotImplemented implements IMethodExecutor {
 
     private static Logger LOG = Logger.getLogger(DoNotImplemented.class);
 
-    private boolean _readOnly;
+    private final boolean readOnly;
 
     public DoNotImplemented( boolean readOnly ) {
-        _readOnly = readOnly;
+        this.readOnly = readOnly;
     }
 
     public void execute( ITransaction transaction,
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException {
         LOG.trace("-- " + req.getMethod());
-
-        if (_readOnly) {
+        if (readOnly) {
             resp.sendError(WebdavStatus.SC_FORBIDDEN);
         } else {
             resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED);

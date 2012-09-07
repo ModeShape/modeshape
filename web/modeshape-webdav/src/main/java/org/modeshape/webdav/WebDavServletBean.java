@@ -28,6 +28,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Map;
 
 public class WebDavServletBean extends HttpServlet {
 
@@ -39,17 +40,17 @@ public class WebDavServletBean extends HttpServlet {
     protected static MessageDigest MD5_HELPER;
 
     private static final boolean READ_ONLY = false;
-    protected ResourceLocks _resLocks;
-    protected IWebdavStore _store;
-    private HashMap<String, IMethodExecutor> _methodMap = new HashMap<String, IMethodExecutor>();
+    protected final ResourceLocks resLocks;
+    protected IWebdavStore store;
+    private Map<String, IMethodExecutor> methodMap = new HashMap<String, IMethodExecutor>();
 
     public WebDavServletBean() {
-        _resLocks = new ResourceLocks();
+        resLocks = new ResourceLocks();
 
         try {
             MD5_HELPER = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException();
+            throw new IllegalStateException(e);
         }
     }
 
@@ -59,12 +60,12 @@ public class WebDavServletBean extends HttpServlet {
                       int nocontentLenghHeaders,
                       boolean lazyFolderCreationOnPut ) throws ServletException {
 
-        _store = store;
+        this.store = store;
 
         IMimeTyper mimeTyper = new IMimeTyper() {
             public String getMimeType( ITransaction transaction,
                                        String path ) {
-                String retVal = _store.getStoredObject(transaction, path).getMimeType();
+                String retVal = WebDavServletBean.this.store.getStoredObject(transaction, path).getMimeType();
                 if (retVal == null) {
                     retVal = getServletContext().getMimeType(path);
                 }
@@ -72,32 +73,32 @@ public class WebDavServletBean extends HttpServlet {
             }
         };
 
-        register("GET", new DoGet(store, dftIndexFile, insteadOf404, _resLocks, mimeTyper, nocontentLenghHeaders));
-        register("HEAD", new DoHead(store, dftIndexFile, insteadOf404, _resLocks, mimeTyper, nocontentLenghHeaders));
-        DoDelete doDelete = (DoDelete)register("DELETE", new DoDelete(store, _resLocks, READ_ONLY));
-        DoCopy doCopy = (DoCopy)register("COPY", new DoCopy(store, _resLocks, doDelete, READ_ONLY));
-        register("LOCK", new DoLock(store, _resLocks, READ_ONLY));
-        register("UNLOCK", new DoUnlock(store, _resLocks, READ_ONLY));
-        register("MOVE", new DoMove(_resLocks, doDelete, doCopy, READ_ONLY));
-        register("MKCOL", new DoMkcol(store, _resLocks, READ_ONLY));
-        register("OPTIONS", new DoOptions(store, _resLocks));
-        register("PUT", new DoPut(store, _resLocks, READ_ONLY, lazyFolderCreationOnPut));
-        register("PROPFIND", new DoPropfind(store, _resLocks, mimeTyper));
-        register("PROPPATCH", new DoProppatch(store, _resLocks, READ_ONLY));
+        register("GET", new DoGet(store, dftIndexFile, insteadOf404, resLocks, mimeTyper, nocontentLenghHeaders));
+        register("HEAD", new DoHead(store, dftIndexFile, insteadOf404, resLocks, mimeTyper, nocontentLenghHeaders));
+        DoDelete doDelete = (DoDelete)register("DELETE", new DoDelete(store, resLocks, READ_ONLY));
+        DoCopy doCopy = (DoCopy)register("COPY", new DoCopy(store, resLocks, doDelete, READ_ONLY));
+        register("LOCK", new DoLock(store, resLocks, READ_ONLY));
+        register("UNLOCK", new DoUnlock(store, resLocks, READ_ONLY));
+        register("MOVE", new DoMove(resLocks, doDelete, doCopy, READ_ONLY));
+        register("MKCOL", new DoMkcol(store, resLocks, READ_ONLY));
+        register("OPTIONS", new DoOptions(store, resLocks));
+        register("PUT", new DoPut(store, resLocks, READ_ONLY, lazyFolderCreationOnPut));
+        register("PROPFIND", new DoPropfind(store, resLocks, mimeTyper));
+        register("PROPPATCH", new DoProppatch(store, resLocks, READ_ONLY));
         register("*NO*IMPL*", new DoNotImplemented(READ_ONLY));
     }
 
     @Override
     public void destroy() {
-        if (_store != null) {
-            _store.destroy();
+        if (store != null) {
+            store.destroy();
         }
         super.destroy();
     }
 
     protected IMethodExecutor register( String methodName,
                                         IMethodExecutor method ) {
-        _methodMap.put(methodName, method);
+        methodMap.put(methodName, method);
         return method;
     }
 
@@ -118,20 +119,20 @@ public class WebDavServletBean extends HttpServlet {
 
         try {
             Principal userPrincipal = req.getUserPrincipal();
-            transaction = _store.begin(userPrincipal);
+            transaction = store.begin(userPrincipal);
             needRollback = true;
-            _store.checkAuthentication(transaction);
+            store.checkAuthentication(transaction);
             resp.setStatus(WebdavStatus.SC_OK);
 
             try {
-                IMethodExecutor methodExecutor = (IMethodExecutor)_methodMap.get(methodName);
+                IMethodExecutor methodExecutor = methodMap.get(methodName);
                 if (methodExecutor == null) {
-                    methodExecutor = (IMethodExecutor)_methodMap.get("*NO*IMPL*");
+                    methodExecutor = methodMap.get("*NO*IMPL*");
                 }
 
                 methodExecutor.execute(transaction, req, resp);
 
-                _store.commit(transaction);
+                store.commit(transaction);
                 /** Clear not consumed data
                  *
                  * Clear input stream if available otherwise later access
@@ -150,7 +151,7 @@ public class WebDavServletBean extends HttpServlet {
             } catch (IOException e) {
                 LOG.error(e, new TextI18n("IOException"));
                 resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
-                _store.rollback(transaction);
+                store.rollback(transaction);
                 throw new ServletException(e);
             }
 
@@ -163,7 +164,7 @@ public class WebDavServletBean extends HttpServlet {
             LOG.error(e, new TextI18n("Exception"));
         } finally {
             if (needRollback) {
-                _store.rollback(transaction);
+                store.rollback(transaction);
             }
         }
 

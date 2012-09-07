@@ -52,7 +52,7 @@ public class DoGet extends DoHead {
                            String path ) {
 
         try {
-            StoredObject so = _store.getStoredObject(transaction, path);
+            StoredObject so = store.getStoredObject(transaction, path);
             if (so.isNullResource()) {
                 String methodsAllowed = DeterminableMethod.determineMethodsAllowed(so);
                 resp.addHeader("Allow", methodsAllowed);
@@ -60,7 +60,7 @@ public class DoGet extends DoHead {
                 return;
             }
             OutputStream out = resp.getOutputStream();
-            InputStream in = _store.getResourceContent(transaction, path);
+            InputStream in = store.getResourceContent(transaction, path);
             try {
                 int read = -1;
                 byte[] copyBuffer = new byte[BUF_SIZE];
@@ -93,7 +93,7 @@ public class DoGet extends DoHead {
                                HttpServletResponse resp,
                                HttpServletRequest req ) throws IOException {
 
-        StoredObject so = _store.getStoredObject(transaction, path);
+        StoredObject so = store.getStoredObject(transaction, path);
         if (so == null) {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND, req.getRequestURI());
         } else {
@@ -111,7 +111,7 @@ public class DoGet extends DoHead {
                 resp.setContentType("text/html");
                 resp.setCharacterEncoding("UTF8");
                 OutputStream out = resp.getOutputStream();
-                String[] children = _store.getChildrenNames(transaction, path);
+                String[] children = store.getChildrenNames(transaction, path);
                 // Make sure it's not null
                 children = children == null ? new String[] { } : children;
                 // Sort by name
@@ -137,7 +137,7 @@ public class DoGet extends DoHead {
                     childrenTemp.append("<td>");
                     childrenTemp.append("<a href=\"");
                     childrenTemp.append(child);
-                    StoredObject obj = _store.getStoredObject(transaction, path + "/" + child);
+                    StoredObject obj = store.getStoredObject(transaction, path + "/" + child);
                     if (obj == null) {
                         LOG.error(new TextI18n("Should not return null for " + path + "/" + child));
                     }
@@ -225,7 +225,7 @@ public class DoGet extends DoHead {
             InputStream iStream = cl.getResourceAsStream("webdav.css");
             if (iStream != null) {
                 // Found css via class loader, use that one
-                StringBuffer out = new StringBuffer();
+                StringBuilder out = new StringBuilder();
                 byte[] b = new byte[4096];
                 for (int n; (n = iStream.read(b)) != -1; ) {
                     out.append(new String(b, 0, n));

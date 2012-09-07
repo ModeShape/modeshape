@@ -35,9 +35,9 @@ public class DoDelete extends AbstractMethod {
 
     private static Logger LOG = Logger.getLogger(DoDelete.class);
 
-    private IWebdavStore store;
-    private ResourceLocks resourceLocks;
-    private boolean readOnly;
+    private final IWebdavStore store;
+    private final ResourceLocks resourceLocks;
+    private final boolean readOnly;
 
     public DoDelete( IWebdavStore store,
                      ResourceLocks resourceLocks,
@@ -56,12 +56,12 @@ public class DoDelete extends AbstractMethod {
             String path = getRelativePath(req);
             String parentPath = getParentPath(getCleanPath(path));
 
-            if (!isUnlocked(transaction, req, resp, resourceLocks, parentPath)) {
+            if (!isUnlocked(transaction, req, resourceLocks, parentPath)) {
                 resp.setStatus(WebdavStatus.SC_LOCKED);
                 return; // parent is locked
             }
 
-            if (!isUnlocked(transaction, req, resp, resourceLocks, path)) {
+            if (!isUnlocked(transaction, req, resourceLocks, path)) {
                 resp.setStatus(WebdavStatus.SC_LOCKED);
                 return; // resource is locked
             }
@@ -119,7 +119,7 @@ public class DoDelete extends AbstractMethod {
                     store.removeObject(transaction, path);
                 } else {
                     if (so.isFolder()) {
-                        deleteFolder(transaction, path, errorList, req, resp);
+                        deleteFolder(transaction, path, errorList);
                         store.removeObject(transaction, path);
                     } else {
                         resp.sendError(WebdavStatus.SC_NOT_FOUND);
@@ -137,19 +137,16 @@ public class DoDelete extends AbstractMethod {
      * helper method of deleteResource() deletes the folder and all of its
      * contents
      *
+     *
      * @param transaction indicates that the method is within the scope of a WebDAV
      * transaction
      * @param path the folder to be deleted
      * @param errorList all errors that ocurred
-     * @param req HttpServletRequest
-     * @param resp HttpServletResponse
      * @throws WebdavException if an error in the underlying store occurs
      */
     private void deleteFolder( ITransaction transaction,
                                String path,
-                               Hashtable<String, Integer> errorList,
-                               HttpServletRequest req,
-                               HttpServletResponse resp ) throws WebdavException {
+                               Hashtable<String, Integer> errorList ) throws WebdavException {
 
         String[] children = store.getChildrenNames(transaction, path);
         children = children == null ? new String[] { } : children;
@@ -162,7 +159,7 @@ public class DoDelete extends AbstractMethod {
                     store.removeObject(transaction, path + children[i]);
 
                 } else {
-                    deleteFolder(transaction, path + children[i], errorList, req, resp);
+                    deleteFolder(transaction, path + children[i], errorList);
                     store.removeObject(transaction, path + children[i]);
                 }
             } catch (AccessDeniedException e) {

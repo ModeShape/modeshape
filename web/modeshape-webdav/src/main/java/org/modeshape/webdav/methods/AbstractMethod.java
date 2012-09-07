@@ -22,6 +22,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.webdav.IMethodExecutor;
 import org.modeshape.webdav.ITransaction;
 import org.modeshape.webdav.StoredObject;
@@ -258,8 +259,8 @@ public abstract class AbstractMethod implements IMethodExecutor {
         String lastModified = "";
 
         if (so != null && so.isResource()) {
-            resourceLength = new Long(so.getResourceLength()).toString();
-            lastModified = new Long(so.getLastModified().getTime()).toString();
+            resourceLength = Long.toString(so.getResourceLength());
+            lastModified = Long.toString(so.getLastModified().getTime());
         }
 
         return "W/\"" + resourceLength + "-" + lastModified + "\"";
@@ -315,8 +316,8 @@ public abstract class AbstractMethod implements IMethodExecutor {
      * resource. Returning true if no lock exists or the If-Header is
      * corresponding to the locked resource
      *
+     *
      * @param req Servlet request
-     * @param resp Servlet response
      * @param resourceLocks
      * @param path path to the resource
      * @return true if no lock on a resource with the given path exists or if
@@ -326,7 +327,6 @@ public abstract class AbstractMethod implements IMethodExecutor {
      */
     protected boolean isUnlocked( ITransaction transaction,
                                   HttpServletRequest req,
-                                  HttpServletResponse resp,
                                   IResourceLocks resourceLocks,
                                   String path ) throws IOException, LockFailedException {
 
@@ -366,7 +366,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
 
         if (errorList.size() == 1) {
             int code = errorList.elements().nextElement();
-            if (WebdavStatus.getStatusText(code) != "") {
+            if (!StringUtil.isBlank(WebdavStatus.getStatusText(code))) {
                 resp.sendError(code, WebdavStatus.getStatusText(code));
             } else {
                 resp.sendError(code);
@@ -389,7 +389,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
             while (pathList.hasMoreElements()) {
 
                 String errorPath = pathList.nextElement();
-                int errorCode = errorList.get(errorPath).intValue();
+                int errorCode = errorList.get(errorPath);
 
                 generatedXML.writeElement("DAV::response", XMLWriter.OPENING);
 

@@ -50,22 +50,22 @@ public class XMLWriter {
     /**
      * Buffer.
      */
-    protected StringBuffer _buffer = new StringBuffer();
+    protected StringBuffer buffer = new StringBuffer();
 
     /**
      * Writer.
      */
-    protected Writer _writer = null;
+    protected Writer writer = null;
 
     /**
      * Namespaces to be declared in the root element
      */
-    protected Map<String, String> _namespaces;
+    protected Map<String, String> namespaces;
 
     /**
      * Is true until the root element is written
      */
-    protected boolean _isRootElement = true;
+    protected boolean isRootElement = true;
 
     // ----------------------------------------------------------- Constructors
 
@@ -73,7 +73,7 @@ public class XMLWriter {
      * Constructor.
      */
     public XMLWriter( Map<String, String> namespaces ) {
-        _namespaces = namespaces;
+        this.namespaces = namespaces;
     }
 
     /**
@@ -81,8 +81,8 @@ public class XMLWriter {
      */
     public XMLWriter( Writer writer,
                       Map<String, String> namespaces ) {
-        _writer = writer;
-        _namespaces = namespaces;
+        this.writer = writer;
+        this.namespaces = namespaces;
     }
 
     // --------------------------------------------------------- Public Methods
@@ -93,7 +93,7 @@ public class XMLWriter {
      * @return String containing the generated XML
      */
     public String toString() {
-        return _buffer.toString();
+        return buffer.toString();
     }
 
     /**
@@ -105,7 +105,7 @@ public class XMLWriter {
     public void writeProperty( String name,
                                String value ) {
         writeElement(name, OPENING);
-        _buffer.append(value);
+        buffer.append(value);
         writeElement(name, CLOSING);
     }
 
@@ -128,20 +128,20 @@ public class XMLWriter {
                               int type ) {
         StringBuffer nsdecl = new StringBuffer();
 
-        if (_isRootElement) {
-            for (Iterator<String> iter = _namespaces.keySet().iterator(); iter.hasNext(); ) {
+        if (isRootElement) {
+            for (Iterator<String> iter = namespaces.keySet().iterator(); iter.hasNext(); ) {
                 String fullName = (String)iter.next();
-                String abbrev = (String)_namespaces.get(fullName);
+                String abbrev = (String)namespaces.get(fullName);
                 nsdecl.append(" xmlns:").append(abbrev).append("=\"").append(fullName).append("\"");
             }
-            _isRootElement = false;
+            isRootElement = false;
         }
 
         int pos = name.lastIndexOf(':');
         if (pos >= 0) {
             // lookup prefix for namespace
             String fullns = name.substring(0, pos);
-            String prefix = (String)_namespaces.get(fullns);
+            String prefix = (String)namespaces.get(fullns);
             if (prefix == null) {
                 // there is no prefix for this namespace
                 name = name.substring(pos + 1);
@@ -156,14 +156,14 @@ public class XMLWriter {
 
         switch (type) {
             case OPENING:
-                _buffer.append("<" + name + nsdecl + ">");
+                buffer.append("<" + name + nsdecl + ">");
                 break;
             case CLOSING:
-                _buffer.append("</" + name + ">\n");
+                buffer.append("</" + name + ">\n");
                 break;
             case NO_CONTENT:
             default:
-                _buffer.append("<" + name + nsdecl + "/>");
+                buffer.append("<" + name + nsdecl + "/>");
                 break;
         }
     }
@@ -174,7 +174,7 @@ public class XMLWriter {
      * @param text Text to append
      */
     public void writeText( String text ) {
-        _buffer.append(text);
+        buffer.append(text);
     }
 
     /**
@@ -183,24 +183,24 @@ public class XMLWriter {
      * @param data Data to append
      */
     public void writeData( String data ) {
-        _buffer.append("<![CDATA[" + data + "]]>");
+        buffer.append("<![CDATA[" + data + "]]>");
     }
 
     /**
      * Write XML Header.
      */
     public void writeXMLHeader() {
-        _buffer.append("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n");
+        buffer.append("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n");
     }
 
     /**
      * Send data and reinitializes buffer.
      */
     public void sendData() throws IOException {
-        if (_writer != null) {
-            _writer.write(_buffer.toString());
-            _writer.flush();
-            _buffer = new StringBuffer();
+        if (writer != null) {
+            writer.write(buffer.toString());
+            writer.flush();
+            buffer = new StringBuffer();
         }
     }
 

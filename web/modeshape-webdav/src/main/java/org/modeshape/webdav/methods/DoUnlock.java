@@ -2,6 +2,7 @@ package org.modeshape.webdav.methods;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.modeshape.common.i18n.TextI18n;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.webdav.ITransaction;
 import org.modeshape.webdav.IWebdavStore;
@@ -16,16 +17,16 @@ public class DoUnlock extends DeterminableMethod {
 
     private static Logger LOG = Logger.getLogger(DoUnlock.class);
 
-    private IWebdavStore _store;
-    private IResourceLocks _resourceLocks;
-    private boolean _readOnly;
+    private final IWebdavStore store;
+    private final IResourceLocks resourceLocks;
+    private final boolean readOnly;
 
     public DoUnlock( IWebdavStore store,
                      IResourceLocks resourceLocks,
                      boolean readOnly ) {
-        _store = store;
-        _resourceLocks = resourceLocks;
-        _readOnly = readOnly;
+        this.store = store;
+        this.resourceLocks = resourceLocks;
+        this.readOnly = readOnly;
     }
 
     public void execute( ITransaction transaction,
@@ -33,18 +34,18 @@ public class DoUnlock extends DeterminableMethod {
                          HttpServletResponse resp ) throws IOException, LockFailedException {
         LOG.trace("-- " + this.getClass().getName());
 
-        if (_readOnly) {
+        if (readOnly) {
             resp.sendError(WebdavStatus.SC_FORBIDDEN);
         } else {
 
             String path = getRelativePath(req);
             String tempLockOwner = "doUnlock" + System.currentTimeMillis() + req.toString();
             try {
-                if (_resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
+                if (resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
 
                     String lockId = getLockIdFromLockTokenHeader(req);
                     LockedObject lo;
-                    if (lockId != null && ((lo = _resourceLocks.getLockedObjectByID(transaction, lockId)) != null)) {
+                    if (lockId != null && ((lo = resourceLocks.getLockedObjectByID(transaction, lockId)) != null)) {
 
                         String[] owners = lo.getOwner();
                         String owner = null;
@@ -65,10 +66,10 @@ public class DoUnlock extends DeterminableMethod {
                             }
                         }
 
-                        if (_resourceLocks.unlock(transaction, lockId, owner)) {
-                            StoredObject so = _store.getStoredObject(transaction, path);
+                        if (resourceLocks.unlock(transaction, lockId, owner)) {
+                            StoredObject so = store.getStoredObject(transaction, path);
                             if (so.isNullResource()) {
-                                _store.removeObject(transaction, path);
+                                store.removeObject(transaction, path);
                             }
 
                             resp.setStatus(WebdavStatus.SC_NO_CONTENT);
@@ -82,9 +83,9 @@ public class DoUnlock extends DeterminableMethod {
                     }
                 }
             } catch (LockFailedException e) {
-                e.printStackTrace();
+               LOG.warn(e, new TextI18n("Cannot unlock resource"));
             } finally {
-                _resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
+                resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
             }
         }
     }

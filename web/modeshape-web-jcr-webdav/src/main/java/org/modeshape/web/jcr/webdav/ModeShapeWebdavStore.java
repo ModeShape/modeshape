@@ -256,9 +256,9 @@ public class ModeShapeWebdavStore implements IWebdavStore {
 
     @Override
     public long getResourceLength( ITransaction transaction,
-                                   String uri ) {
+                                   String resourceUri ) {
         try {
-            ResolvedRequest resolved = resolveRequest(transaction, uri);
+            ResolvedRequest resolved = resolveRequest(transaction, resourceUri);
             if (resolved.getPath() == null) {
                 // Not a node, so there's no length ...
                 return -1;

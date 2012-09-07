@@ -29,7 +29,6 @@ import org.modeshape.webdav.WebdavStatus;
 import org.modeshape.webdav.exceptions.AccessDeniedException;
 import org.modeshape.webdav.exceptions.LockFailedException;
 import org.modeshape.webdav.exceptions.WebdavException;
-import org.modeshape.webdav.fromcatalina.URLEncoder;
 import org.modeshape.webdav.fromcatalina.XMLHelper;
 import org.modeshape.webdav.fromcatalina.XMLWriter;
 import org.modeshape.webdav.locking.LockedObject;
@@ -49,11 +48,6 @@ public class DoPropfind extends AbstractMethod {
     private static Logger LOG = Logger.getLogger(DoPropfind.class);
 
     /**
-     * Array containing the safe characters set.
-     */
-    protected static URLEncoder URL_ENCODER;
-
-    /**
      * PROPFIND - Specify a property mask.
      */
     private static final int FIND_BY_PROPERTY = 0;
@@ -68,18 +62,18 @@ public class DoPropfind extends AbstractMethod {
      */
     private static final int FIND_PROPERTY_NAMES = 2;
 
-    private IWebdavStore _store;
-    private ResourceLocks _resourceLocks;
-    private IMimeTyper _mimeTyper;
+    private final IWebdavStore store;
+    private final ResourceLocks resourceLocks;
+    private final IMimeTyper mimeTyper;
 
-    private int _depth;
+    private int depth;
 
     public DoPropfind( IWebdavStore store,
                        ResourceLocks resLocks,
                        IMimeTyper mimeTyper ) {
-        _store = store;
-        _resourceLocks = resLocks;
-        _mimeTyper = mimeTyper;
+        this.store = store;
+        this.resourceLocks = resLocks;
+        this.mimeTyper = mimeTyper;
     }
 
     public void execute( ITransaction transaction,
@@ -90,13 +84,13 @@ public class DoPropfind extends AbstractMethod {
         // Retrieve the resources
         String path = getCleanPath(getRelativePath(req));
         String tempLockOwner = "doPropfind" + System.currentTimeMillis() + req.toString();
-        _depth = getDepth(req);
+        depth = getDepth(req);
 
-        if (_resourceLocks.lock(transaction, path, tempLockOwner, false, _depth, TEMP_TIMEOUT, TEMPORARY)) {
+        if (resourceLocks.lock(transaction, path, tempLockOwner, false, depth, TEMP_TIMEOUT, TEMPORARY)) {
 
             StoredObject so = null;
             try {
-                so = _store.getStoredObject(transaction, path);
+                so = store.getStoredObject(transaction, path);
                 if (so == null) {
                     resp.setContentType("text/xml; charset=UTF-8");
                     resp.sendError(HttpServletResponse.SC_NOT_FOUND, req.getRequestURI());
@@ -148,12 +142,12 @@ public class DoPropfind extends AbstractMethod {
                 XMLWriter generatedXML = new XMLWriter(resp.getWriter(), namespaces);
                 generatedXML.writeXMLHeader();
                 generatedXML.writeElement("DAV::multistatus", XMLWriter.OPENING);
-                if (_depth == 0) {
-                    parseProperties(transaction, req, generatedXML, path, propertyFindType, properties, _mimeTyper.getMimeType(
+                if (depth == 0) {
+                    parseProperties(transaction, req, generatedXML, path, propertyFindType, properties, mimeTyper.getMimeType(
                             transaction, path));
                 } else {
-                    recursiveParseProperties(transaction, path, req, generatedXML, propertyFindType, properties, _depth,
-                                             _mimeTyper.getMimeType(transaction, path));
+                    recursiveParseProperties(transaction, path, req, generatedXML, propertyFindType, properties, depth,
+                                             mimeTyper.getMimeType(transaction, path));
                 }
                 generatedXML.writeElement("DAV::multistatus", XMLWriter.CLOSING);
 
@@ -164,10 +158,9 @@ public class DoPropfind extends AbstractMethod {
                 LOG.warn(new TextI18n("Sending internal error!"));
                 resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
             } catch (ServletException e) {
-                e.printStackTrace(); // To change body of catch statement use
-                // File | Settings | File Templates.
+                LOG.error(e, new TextI18n("Cannot create the xml document builder"));
             } finally {
-                _resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
+                resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
             }
         } else {
             Hashtable<String, Integer> errorList = new Hashtable<String, Integer>();
@@ -185,7 +178,6 @@ public class DoPropfind extends AbstractMethod {
      * @param propertyFindType
      * @param properties
      * @param depth depth of the propfind
-     * @throws IOException if an error in the underlying store occurs
      */
     private void recursiveParseProperties( ITransaction transaction,
                                            String currentPath,
@@ -200,7 +192,7 @@ public class DoPropfind extends AbstractMethod {
 
         if (depth > 0) {
             // no need to get name if depth is already zero
-            String[] names = _store.getChildrenNames(transaction, currentPath);
+            String[] names = store.getChildrenNames(transaction, currentPath);
             names = names == null ? new String[] { } : names;
             String newPath = null;
 
@@ -234,7 +226,7 @@ public class DoPropfind extends AbstractMethod {
                                   Vector<String> propertiesVector,
                                   String mimeType ) throws WebdavException {
 
-        StoredObject so = _store.getStoredObject(transaction, path);
+        StoredObject so = store.getStoredObject(transaction, path);
 
         boolean isFolder = so.isFolder();
         final String creationdate = creationDateFormat(so.getCreationDate());
@@ -244,7 +236,7 @@ public class DoPropfind extends AbstractMethod {
         // ResourceInfo resourceInfo = new ResourceInfo(path, resources);
 
         generatedXML.writeElement("DAV::response", XMLWriter.OPENING);
-        String status = new String("HTTP/1.1 " + WebdavStatus.SC_OK + " " + WebdavStatus.getStatusText(WebdavStatus.SC_OK));
+        String status = "HTTP/1.1 " + WebdavStatus.SC_OK + " " + WebdavStatus.getStatusText(WebdavStatus.SC_OK);
 
         // Generating href element
         generatedXML.writeElement("DAV::href", XMLWriter.OPENING);
@@ -291,9 +283,8 @@ public class DoPropfind extends AbstractMethod {
                 if (!isFolder) {
                     generatedXML.writeProperty("DAV::getlastmodified", lastModified);
                     generatedXML.writeProperty("DAV::getcontentlength", resourceLength);
-                    String contentType = mimeType;
-                    if (contentType != null) {
-                        generatedXML.writeProperty("DAV::getcontenttype", contentType);
+                    if (mimeType != null) {
+                        generatedXML.writeProperty("DAV::getcontenttype", mimeType);
                     }
                     generatedXML.writeProperty("DAV::getetag", getETag(so));
                     generatedXML.writeElement("DAV::resourcetype", XMLWriter.NO_CONTENT);
@@ -427,8 +418,8 @@ public class DoPropfind extends AbstractMethod {
 
                 if (propertiesNotFoundList.hasMoreElements()) {
 
-                    status = new String("HTTP/1.1 " + WebdavStatus.SC_NOT_FOUND + " " + WebdavStatus.getStatusText(
-                            WebdavStatus.SC_NOT_FOUND));
+                    status = "HTTP/1.1 " + WebdavStatus.SC_NOT_FOUND + " " + WebdavStatus.getStatusText(
+                            WebdavStatus.SC_NOT_FOUND);
 
                     generatedXML.writeElement("DAV::propstat", XMLWriter.OPENING);
                     generatedXML.writeElement("DAV::prop", XMLWriter.OPENING);
@@ -457,8 +448,7 @@ public class DoPropfind extends AbstractMethod {
     private void writeSupportedLockElements( ITransaction transaction,
                                              XMLWriter generatedXML,
                                              String path ) {
-
-        LockedObject lo = _resourceLocks.getLockedObjectByPath(transaction, path);
+        LockedObject lo = resourceLocks.getLockedObjectByPath(transaction, path);
 
         generatedXML.writeElement("DAV::supportedlock", XMLWriter.OPENING);
 
@@ -516,7 +506,7 @@ public class DoPropfind extends AbstractMethod {
                                              XMLWriter generatedXML,
                                              String path ) {
 
-        LockedObject lo = _resourceLocks.getLockedObjectByPath(transaction, path);
+        LockedObject lo = resourceLocks.getLockedObjectByPath(transaction, path);
 
         if (lo != null && !lo.hasExpired()) {
 
@@ -536,10 +526,10 @@ public class DoPropfind extends AbstractMethod {
             generatedXML.writeElement("DAV::lockscope", XMLWriter.CLOSING);
 
             generatedXML.writeElement("DAV::depth", XMLWriter.OPENING);
-            if (_depth == INFINITY) {
+            if (depth == INFINITY) {
                 generatedXML.writeText("Infinity");
             } else {
-                generatedXML.writeText(String.valueOf(_depth));
+                generatedXML.writeText(String.valueOf(depth));
             }
             generatedXML.writeElement("DAV::depth", XMLWriter.CLOSING);
 
@@ -557,7 +547,7 @@ public class DoPropfind extends AbstractMethod {
             }
 
             int timeout = (int)(lo.getTimeoutMillis() / 1000);
-            String timeoutStr = new Integer(timeout).toString();
+            String timeoutStr = Integer.toString(timeout);
             generatedXML.writeElement("DAV::timeout", XMLWriter.OPENING);
             generatedXML.writeText("Second-" + timeoutStr);
             generatedXML.writeElement("DAV::timeout", XMLWriter.CLOSING);

@@ -137,7 +137,7 @@ public class StoredObject {
     }
 
     /**
-     * Retrieve the myme type from the store object.
+     * Retrieve the mime type from the store object.
      * Can also return NULL if the store does not handle
      * mime type stuff.
      * In that case the mime type is determined by the servletcontext

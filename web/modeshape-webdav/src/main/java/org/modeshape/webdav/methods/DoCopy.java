@@ -36,19 +36,19 @@ public class DoCopy extends AbstractMethod {
 
     private static Logger LOG = Logger.getLogger(DoCopy.class);
 
-    private IWebdavStore _store;
-    private ResourceLocks _resourceLocks;
-    private DoDelete _doDelete;
-    private boolean _readOnly;
+    private final IWebdavStore store;
+    private final ResourceLocks resourceLocks;
+    private final DoDelete doDelete;
+    private final boolean readOnly;
 
     public DoCopy( IWebdavStore store,
                    ResourceLocks resourceLocks,
                    DoDelete doDelete,
                    boolean readOnly ) {
-        _store = store;
-        _resourceLocks = resourceLocks;
-        _doDelete = doDelete;
-        _readOnly = readOnly;
+        this.store = store;
+        this.resourceLocks = resourceLocks;
+        this.doDelete = doDelete;
+        this.readOnly = readOnly;
     }
 
     public void execute( ITransaction transaction,
@@ -57,10 +57,10 @@ public class DoCopy extends AbstractMethod {
         LOG.trace("-- " + this.getClass().getName());
 
         String path = getRelativePath(req);
-        if (!_readOnly) {
+        if (!readOnly) {
 
             String tempLockOwner = "doCopy" + System.currentTimeMillis() + req.toString();
-            if (_resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
+            if (resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
                 try {
                     copyResource(transaction, req, resp);
                 } catch (AccessDeniedException e) {
@@ -72,7 +72,7 @@ public class DoCopy extends AbstractMethod {
                 } catch (WebdavException e) {
                     resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
                 } finally {
-                    _resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
+                    resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
                 }
             } else {
                 resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
@@ -116,12 +116,12 @@ public class DoCopy extends AbstractMethod {
         Hashtable<String, Integer> errorList = new Hashtable<String, Integer>();
         String parentDestinationPath = getParentPath(getCleanPath(destinationPath));
 
-        if (!isUnlocked(transaction, req, resp, _resourceLocks, parentDestinationPath)) {
+        if (!isUnlocked(transaction, req, resourceLocks, parentDestinationPath)) {
             resp.setStatus(WebdavStatus.SC_LOCKED);
             return false; // parentDestination is locked
         }
 
-        if (!isUnlocked(transaction, req, resp, _resourceLocks, destinationPath)) {
+        if (!isUnlocked(transaction, req, resourceLocks, destinationPath)) {
             resp.setStatus(WebdavStatus.SC_LOCKED);
             return false; // destination is locked
         }
@@ -132,10 +132,10 @@ public class DoCopy extends AbstractMethod {
         // Overwriting the destination
         String lockOwner = "copyResource" + System.currentTimeMillis() + req.toString();
 
-        if (_resourceLocks.lock(transaction, destinationPath, lockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
+        if (resourceLocks.lock(transaction, destinationPath, lockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
             StoredObject copySo, destinationSo = null;
             try {
-                copySo = _store.getStoredObject(transaction, path);
+                copySo = store.getStoredObject(transaction, path);
                 // Retrieve the resources
                 if (copySo == null) {
                     resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -151,13 +151,13 @@ public class DoCopy extends AbstractMethod {
 
                 errorList = new Hashtable<String, Integer>();
 
-                destinationSo = _store.getStoredObject(transaction, destinationPath);
+                destinationSo = store.getStoredObject(transaction, destinationPath);
 
                 if (overwrite) {
 
                     // Delete destination resource, if it exists
                     if (destinationSo != null) {
-                        _doDelete.deleteResource(transaction, destinationPath, errorList, req, resp);
+                        doDelete.deleteResource(transaction, destinationPath, errorList, req, resp);
                     } else {
                         resp.setStatus(WebdavStatus.SC_CREATED);
                     }
@@ -178,7 +178,7 @@ public class DoCopy extends AbstractMethod {
                 }
 
             } finally {
-                _resourceLocks.unlockTemporaryLockedObjects(transaction, destinationPath, lockOwner);
+                resourceLocks.unlockTemporaryLockedObjects(transaction, destinationPath, lockOwner);
             }
         } else {
             resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
@@ -220,15 +220,15 @@ public class DoCopy extends AbstractMethod {
                        HttpServletRequest req,
                        HttpServletResponse resp ) throws WebdavException, IOException {
 
-        StoredObject sourceSo = _store.getStoredObject(transaction, sourcePath);
+        StoredObject sourceSo = store.getStoredObject(transaction, sourcePath);
         if (sourceSo.isResource()) {
-            _store.createResource(transaction, destinationPath);
-            long resourceLength = _store.setResourceContent(transaction, destinationPath, _store.getResourceContent(transaction,
-                                                                                                                    sourcePath),
-                                                            null, null);
+            store.createResource(transaction, destinationPath);
+            long resourceLength = store.setResourceContent(transaction, destinationPath, store.getResourceContent(transaction,
+                                                                                                                  sourcePath),
+                                                           null, null);
 
             if (resourceLength != -1) {
-                StoredObject destinationSo = _store.getStoredObject(transaction, destinationPath);
+                StoredObject destinationSo = store.getStoredObject(transaction, destinationPath);
                 destinationSo.setResourceLength(resourceLength);
             }
 
@@ -262,7 +262,7 @@ public class DoCopy extends AbstractMethod {
                              HttpServletRequest req,
                              HttpServletResponse resp ) throws WebdavException {
 
-        _store.createFolder(transaction, destinationPath);
+        store.createFolder(transaction, destinationPath);
         boolean infiniteDepth = true;
         String depth = req.getHeader("Depth");
         if (depth != null) {
@@ -271,23 +271,23 @@ public class DoCopy extends AbstractMethod {
             }
         }
         if (infiniteDepth) {
-            String[] children = _store.getChildrenNames(transaction, sourcePath);
+            String[] children = store.getChildrenNames(transaction, sourcePath);
             children = children == null ? new String[] { } : children;
 
             StoredObject childSo;
             for (int i = children.length - 1; i >= 0; i--) {
                 children[i] = "/" + children[i];
                 try {
-                    childSo = _store.getStoredObject(transaction, (sourcePath + children[i]));
+                    childSo = store.getStoredObject(transaction, (sourcePath + children[i]));
                     if (childSo.isResource()) {
-                        _store.createResource(transaction, destinationPath + children[i]);
-                        long resourceLength = _store.setResourceContent(transaction, destinationPath + children[i],
-                                                                        _store.getResourceContent(transaction,
-                                                                                                  sourcePath + children[i]),
-                                                                        null, null);
+                        store.createResource(transaction, destinationPath + children[i]);
+                        long resourceLength = store.setResourceContent(transaction, destinationPath + children[i],
+                                                                       store.getResourceContent(transaction,
+                                                                                                sourcePath + children[i]), null,
+                                                                       null);
 
                         if (resourceLength != -1) {
-                            StoredObject destinationSo = _store.getStoredObject(transaction, destinationPath + children[i]);
+                            StoredObject destinationSo = store.getStoredObject(transaction, destinationPath + children[i]);
                             destinationSo.setResourceLength(resourceLength);
                         }
 

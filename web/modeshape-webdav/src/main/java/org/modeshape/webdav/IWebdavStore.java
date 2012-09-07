@@ -44,6 +44,7 @@ public interface IWebdavStore {
      * @param principal the principal that started this request or <code>null</code> if
      * there is non available
      * @throws WebdavException
+     * @return a new {@link ITransaction transaction}
      */
     ITransaction begin( Principal principal );
 
@@ -153,13 +154,14 @@ public interface IWebdavStore {
      *
      * @param transaction indicates that the method is within the scope of a WebDAV
      * transaction
+     * @param resourceUri URI of the resource for which the length should be retrieved
      * @return length of the resource in bytes, <code>-1</code> declares this
      *         value as invalid and asks the adapter to try to set it from the
      *         properties if possible
      * @throws WebdavException if something goes wrong on the store level
      */
     long getResourceLength( ITransaction transaction,
-                            String path );
+                            String resourceUri );
 
     /**
      * Removes the object specified by <code>uri</code>.

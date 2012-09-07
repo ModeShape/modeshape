@@ -34,21 +34,21 @@ public class DoPut extends AbstractMethod {
 
     private static Logger LOG = Logger.getLogger(DoPut.class);
 
-    private IWebdavStore _store;
-    private IResourceLocks _resourceLocks;
-    private boolean _readOnly;
-    private boolean _lazyFolderCreationOnPut;
+    private final IWebdavStore store;
+    private final IResourceLocks resourceLocks;
+    private final boolean readOnly;
+    private final boolean lazyFolderCreationOnPut;
 
-    private String _userAgent;
+    private String userAgent;
 
     public DoPut( IWebdavStore store,
                   IResourceLocks resLocks,
                   boolean readOnly,
                   boolean lazyFolderCreationOnPut ) {
-        _store = store;
-        _resourceLocks = resLocks;
-        _readOnly = readOnly;
-        _lazyFolderCreationOnPut = lazyFolderCreationOnPut;
+        this.store = store;
+        this.resourceLocks = resLocks;
+        this.readOnly = readOnly;
+        this.lazyFolderCreationOnPut = lazyFolderCreationOnPut;
     }
 
     public void execute( ITransaction transaction,
@@ -56,52 +56,52 @@ public class DoPut extends AbstractMethod {
                          HttpServletResponse resp ) throws IOException, LockFailedException {
         LOG.trace("-- " + this.getClass().getName());
 
-        if (!_readOnly) {
+        if (!readOnly) {
             String path = getRelativePath(req);
             String parentPath = getParentPath(path);
 
-            _userAgent = req.getHeader("User-Agent");
+            userAgent = req.getHeader("User-Agent");
 
             Hashtable<String, Integer> errorList = new Hashtable<String, Integer>();
 
-            if (!isUnlocked(transaction, req, resp, _resourceLocks, parentPath)) {
+            if (!isUnlocked(transaction, req, resourceLocks, parentPath)) {
                 resp.setStatus(WebdavStatus.SC_LOCKED);
                 return; // parent is locked
             }
 
-            if (!isUnlocked(transaction, req, resp, _resourceLocks, path)) {
+            if (!isUnlocked(transaction, req, resourceLocks, path)) {
                 resp.setStatus(WebdavStatus.SC_LOCKED);
                 return; // resource is locked
             }
 
             String tempLockOwner = "doPut" + System.currentTimeMillis() + req.toString();
-            if (_resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
+            if (resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
                 StoredObject parentSo, so = null;
                 try {
-                    parentSo = _store.getStoredObject(transaction, parentPath);
+                    parentSo = store.getStoredObject(transaction, parentPath);
                     if (parentPath != null && parentSo != null && parentSo.isResource()) {
                         resp.sendError(WebdavStatus.SC_FORBIDDEN);
                         return;
 
-                    } else if (parentPath != null && parentSo == null && _lazyFolderCreationOnPut) {
-                        _store.createFolder(transaction, parentPath);
+                    } else if (parentPath != null && parentSo == null && lazyFolderCreationOnPut) {
+                        store.createFolder(transaction, parentPath);
 
-                    } else if (parentPath != null && parentSo == null && !_lazyFolderCreationOnPut) {
+                    } else if (parentPath != null && parentSo == null && !lazyFolderCreationOnPut) {
                         errorList.put(parentPath, WebdavStatus.SC_NOT_FOUND);
                         sendReport(req, resp, errorList);
                         return;
                     }
 
-                    so = _store.getStoredObject(transaction, path);
+                    so = store.getStoredObject(transaction, path);
 
                     if (so == null) {
-                        _store.createResource(transaction, path);
+                        store.createResource(transaction, path);
                         // resp.setStatus(WebdavStatus.SC_CREATED);
                     } else {
                         // This has already been created, just update the data
                         if (so.isNullResource()) {
 
-                            LockedObject nullResourceLo = _resourceLocks.getLockedObjectByPath(transaction, path);
+                            LockedObject nullResourceLo = resourceLocks.getLockedObjectByPath(transaction, path);
                             if (nullResourceLo == null) {
                                 resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
                                 return;
@@ -125,7 +125,7 @@ public class DoPut extends AbstractMethod {
                                     owner = nullResourceLockOwners[0];
                                 }
 
-                                if (!_resourceLocks.unlock(transaction, lockToken, owner)) {
+                                if (!resourceLocks.unlock(transaction, lockToken, owner)) {
                                     resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
                                 }
                             } else {
@@ -138,9 +138,9 @@ public class DoPut extends AbstractMethod {
                     doUserAgentWorkaround(resp);
 
                     // setting resourceContent
-                    long resourceLength = _store.setResourceContent(transaction, path, req.getInputStream(), null, null);
+                    long resourceLength = store.setResourceContent(transaction, path, req.getInputStream(), null, null);
 
-                    so = _store.getStoredObject(transaction, path);
+                    so = store.getStoredObject(transaction, path);
                     if (resourceLength != -1) {
                         so.setResourceLength(resourceLength);
                     }
@@ -151,7 +151,7 @@ public class DoPut extends AbstractMethod {
                 } catch (WebdavException e) {
                     resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
                 } finally {
-                    _resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
+                    resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
                 }
             } else {
                 resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
@@ -166,13 +166,13 @@ public class DoPut extends AbstractMethod {
      * @param resp
      */
     private void doUserAgentWorkaround( HttpServletResponse resp ) {
-        if (_userAgent != null && _userAgent.indexOf("WebDAVFS") != -1 && _userAgent.indexOf("Transmit") == -1) {
-            LOG.trace("DoPut.execute() : do workaround for user agent '" + _userAgent + "'");
+        if (userAgent != null && userAgent.contains("WebDAVFS") && !userAgent.contains("Transmit")) {
+            LOG.trace("DoPut.execute() : do workaround for user agent '" + userAgent + "'");
             resp.setStatus(WebdavStatus.SC_CREATED);
-        } else if (_userAgent != null && _userAgent.indexOf("Transmit") != -1) {
+        } else if (userAgent != null && userAgent.contains("Transmit")) {
             // Transmit also uses WEBDAVFS 1.x.x but crashes
             // with SC_CREATED response
-            LOG.trace("DoPut.execute() : do workaround for user agent '" + _userAgent + "'");
+            LOG.trace("DoPut.execute() : do workaround for user agent '" + userAgent + "'");
             resp.setStatus(WebdavStatus.SC_NO_CONTENT);
         } else {
             resp.setStatus(WebdavStatus.SC_CREATED);

@@ -66,12 +66,9 @@ public class WebdavServlet extends WebDavServletBean {
         IWebdavStore webdavStore;
         try {
             Class<?> clazz = WebdavServlet.class.getClassLoader().loadClass(clazzName);
-
             Constructor<?> ctor = clazz.getConstructor(new Class[] { File.class });
-
-            webdavStore = (IWebdavStore)ctor.newInstance(new Object[] { root });
+            webdavStore = (IWebdavStore)ctor.newInstance(root);
         } catch (Exception e) {
-            e.printStackTrace();
             throw new RuntimeException("some problem making store component", e);
         }
         return webdavStore;
@@ -85,7 +82,7 @@ public class WebdavServlet extends WebDavServletBean {
         if (rootPath.equals("*WAR-FILE-ROOT*")) {
             String file = LocalFileSystemStore.class.getProtectionDomain().getCodeSource().getLocation().getFile().replace('\\',
                                                                                                                            '/');
-            if (file.charAt(0) == '/' && System.getProperty("os.name").indexOf("Windows") != -1) {
+            if (file.charAt(0) == '/' && System.getProperty("os.name").contains("Windows")) {
                 file = file.substring(1, file.length());
             }
 

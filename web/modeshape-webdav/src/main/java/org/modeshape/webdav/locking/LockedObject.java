@@ -1,5 +1,7 @@
 package org.modeshape.webdav.locking;
 
+import org.modeshape.common.i18n.TextI18n;
+import org.modeshape.common.logging.Logger;
 import java.util.UUID;
 
 /**
@@ -9,47 +11,48 @@ import java.util.UUID;
  */
 public class LockedObject {
 
-    private ResourceLocks _resourceLocks;
+    private static final Logger LOGGER = Logger.getLogger(LockedObject.class);
 
-    private String _path;
+    private ResourceLocks resourceLocks;
 
-    private String _id;
+    private String path;
+
+    private String id;
 
     /**
      * Describing the depth of a locked collection. If the locked resource is
      * not a collection, depth is 0 / doesn't matter.
      */
-    protected int _lockDepth;
+    protected int lockDepth;
 
     /**
      * Describing the timeout of a locked object (ms)
      */
-    protected long _expiresAt;
+    protected long expiresAt;
 
     /**
      * owner of the lock. shared locks can have multiple owners. is null if no
      * owner is present
      */
-    // protected String[] _owner = null;
-    protected String[] _owner = null;
+    protected String[] owner = null;
 
     /**
      * children of that lock
      */
-    protected LockedObject[] _children = null;
+    protected LockedObject[] children = null;
 
-    protected LockedObject _parent = null;
+    protected LockedObject parent = null;
 
     /**
      * weather the lock is exclusive or not. if owner=null the exclusive value
      * doesn't matter
      */
-    protected boolean _exclusive = false;
+    protected boolean exclusive = false;
 
     /**
      * weather the lock is a write or read lock
      */
-    protected String _type = null;
+    protected String type = null;
 
     /**
      * @param resLocks the resourceLocks where locks are stored
@@ -59,18 +62,18 @@ public class LockedObject {
     public LockedObject( ResourceLocks resLocks,
                          String path,
                          boolean temporary ) {
-        _path = path;
-        _id = UUID.randomUUID().toString();
-        _resourceLocks = resLocks;
+        this.path = path;
+        id = UUID.randomUUID().toString();
+        resourceLocks = resLocks;
 
         if (!temporary) {
-            _resourceLocks._locks.put(path, this);
-            _resourceLocks._locksByID.put(_id, this);
+            resourceLocks.locks.put(path, this);
+            resourceLocks.locksByID.put(id, this);
         } else {
-            _resourceLocks._tempLocks.put(path, this);
-            _resourceLocks._tempLocksByID.put(_id, this);
+            resourceLocks.tempLocks.put(path, this);
+            resourceLocks.tempLocksByID.put(id, this);
         }
-        _resourceLocks._cleanupCounter++;
+        resourceLocks.cleanupCounter++;
     }
 
     /**
@@ -81,26 +84,26 @@ public class LockedObject {
      */
     public boolean addLockedObjectOwner( String owner ) {
 
-        if (_owner == null) {
-            _owner = new String[1];
+        if (this.owner == null) {
+            this.owner = new String[1];
         } else {
 
-            int size = _owner.length;
+            int size = this.owner.length;
             String[] newLockObjectOwner = new String[size + 1];
 
             // check if the owner is already here (that should actually not
             // happen)
             for (int i = 0; i < size; i++) {
-                if (_owner[i].equals(owner)) {
+                if (this.owner[i].equals(owner)) {
                     return false;
                 }
             }
 
-            System.arraycopy(_owner, 0, newLockObjectOwner, 0, size);
-            _owner = newLockObjectOwner;
+            System.arraycopy(this.owner, 0, newLockObjectOwner, 0, size);
+            this.owner = newLockObjectOwner;
         }
 
-        _owner[_owner.length - 1] = owner;
+        this.owner[this.owner.length - 1] = owner;
         return true;
     }
 
@@ -112,32 +115,31 @@ public class LockedObject {
     public void removeLockedObjectOwner( String owner ) {
 
         try {
-            if (_owner != null) {
-                int size = _owner.length;
+            if (this.owner != null) {
+                int size = this.owner.length;
                 for (int i = 0; i < size; i++) {
                     // check every owner if it is the requested one
-                    if (_owner[i].equals(owner)) {
+                    if (this.owner[i].equals(owner)) {
                         // remove the owner
                         size -= 1;
                         String[] newLockedObjectOwner = new String[size];
                         for (int j = 0; j < size; j++) {
                             if (j < i) {
-                                newLockedObjectOwner[j] = _owner[j];
+                                newLockedObjectOwner[j] = this.owner[j];
                             } else {
-                                newLockedObjectOwner[j] = _owner[j + 1];
+                                newLockedObjectOwner[j] = this.owner[j + 1];
                             }
                         }
-                        _owner = newLockedObjectOwner;
+                        this.owner = newLockedObjectOwner;
 
                     }
                 }
-                if (_owner.length == 0) {
-                    _owner = null;
+                if (this.owner.length == 0) {
+                    this.owner = null;
                 }
             }
         } catch (ArrayIndexOutOfBoundsException e) {
-            System.out.println("LockedObject.removeLockedObjectOwner()");
-            System.out.println(e.toString());
+            LOGGER.error(e, new TextI18n("LockedObject.removeLockedObjectOwner()"));
         }
     }
 
@@ -147,14 +149,14 @@ public class LockedObject {
      * @param newChild new child
      */
     public void addChild( LockedObject newChild ) {
-        if (_children == null) {
-            _children = new LockedObject[0];
+        if (children == null) {
+            children = new LockedObject[0];
         }
-        int size = _children.length;
+        int size = children.length;
         LockedObject[] newChildren = new LockedObject[size + 1];
-        System.arraycopy(_children, 0, newChildren, 0, size);
+        System.arraycopy(children, 0, newChildren, 0, size);
         newChildren[size] = newChild;
-        _children = newChildren;
+        children = newChildren;
     }
 
     /**
@@ -162,31 +164,31 @@ public class LockedObject {
      * (does not check this itself)
      */
     public void removeLockedObject() {
-        if (this != _resourceLocks._root && !this.getPath().equals("/")) {
+        if (this != resourceLocks.root && !this.getPath().equals("/")) {
 
-            int size = _parent._children.length;
+            int size = parent.children.length;
             for (int i = 0; i < size; i++) {
-                if (_parent._children[i].equals(this)) {
+                if (parent.children[i].equals(this)) {
                     LockedObject[] newChildren = new LockedObject[size - 1];
                     for (int i2 = 0; i2 < (size - 1); i2++) {
                         if (i2 < i) {
-                            newChildren[i2] = _parent._children[i2];
+                            newChildren[i2] = parent.children[i2];
                         } else {
-                            newChildren[i2] = _parent._children[i2 + 1];
+                            newChildren[i2] = parent.children[i2 + 1];
                         }
                     }
                     if (newChildren.length != 0) {
-                        _parent._children = newChildren;
+                        parent.children = newChildren;
                     } else {
-                        _parent._children = null;
+                        parent.children = null;
                     }
                     break;
                 }
             }
 
             // removing from hashtable
-            _resourceLocks._locksByID.remove(getID());
-            _resourceLocks._locks.remove(getPath());
+            resourceLocks.locksByID.remove(getID());
+            resourceLocks.locks.remove(getPath());
 
             // now the garbage collector has some work to do
         }
@@ -197,32 +199,32 @@ public class LockedObject {
      * (does not check this itself)
      */
     public void removeTempLockedObject() {
-        if (this != _resourceLocks._tempRoot) {
+        if (this != resourceLocks.tempRoot) {
             // removing from tree
-            if (_parent != null && _parent._children != null) {
-                int size = _parent._children.length;
+            if (parent != null && parent.children != null) {
+                int size = parent.children.length;
                 for (int i = 0; i < size; i++) {
-                    if (_parent._children[i].equals(this)) {
+                    if (parent.children[i].equals(this)) {
                         LockedObject[] newChildren = new LockedObject[size - 1];
                         for (int i2 = 0; i2 < (size - 1); i2++) {
                             if (i2 < i) {
-                                newChildren[i2] = _parent._children[i2];
+                                newChildren[i2] = parent.children[i2];
                             } else {
-                                newChildren[i2] = _parent._children[i2 + 1];
+                                newChildren[i2] = parent.children[i2 + 1];
                             }
                         }
                         if (newChildren.length != 0) {
-                            _parent._children = newChildren;
+                            parent.children = newChildren;
                         } else {
-                            _parent._children = null;
+                            parent.children = null;
                         }
                         break;
                     }
                 }
 
                 // removing from hashtable
-                _resourceLocks._tempLocksByID.remove(getID());
-                _resourceLocks._tempLocks.remove(getPath());
+                resourceLocks.tempLocksByID.remove(getID());
+                resourceLocks.tempLocks.remove(getPath());
 
                 // now the garbage collector has some work to do
             }
@@ -252,15 +254,15 @@ public class LockedObject {
      * @return true if no locks at the parent path are forbidding a new lock
      */
     private boolean checkParents( boolean exclusive ) {
-        if (_path.equals("/")) {
+        if (path.equals("/")) {
             return true;
         } else {
-            if (_owner == null) {
+            if (owner == null) {
                 // no owner, checking parents
-                return _parent != null && _parent.checkParents(exclusive);
+                return parent != null && parent.checkParents(exclusive);
             } else {
                 // there already is a owner
-                return !(_exclusive || exclusive) && _parent.checkParents(exclusive);
+                return !(this.exclusive || exclusive) && parent.checkParents(exclusive);
             }
         }
     }
@@ -268,27 +270,27 @@ public class LockedObject {
     /**
      * helper of checkLocks(). looks if the children are locked
      *
-     * @param exclusive wheather the new lock should be exclusive
+     * @param exclusive whether the new lock should be exclusive
      * @param depth depth
      * @return true if no locks at the children paths are forbidding a new lock
      */
     private boolean checkChildren( boolean exclusive,
                                    int depth ) {
-        if (_children == null) {
+        if (children == null) {
             // a file
 
-            return _owner == null || !(_exclusive || exclusive);
+            return owner == null || !(this.exclusive || exclusive);
         } else {
             // a folder
 
-            if (_owner == null) {
+            if (owner == null) {
                 // no owner, checking children
 
                 if (depth != 0) {
                     boolean canLock = true;
-                    int limit = _children.length;
+                    int limit = children.length;
                     for (int i = 0; i < limit; i++) {
-                        if (!_children[i].checkChildren(exclusive, depth - 1)) {
+                        if (!children[i].checkChildren(exclusive, depth - 1)) {
                             canLock = false;
                         }
                     }
@@ -299,7 +301,7 @@ public class LockedObject {
                 }
             } else {
                 // there already is a owner
-                return !(_exclusive || exclusive);
+                return !(this.exclusive || exclusive);
             }
         }
 
@@ -311,7 +313,7 @@ public class LockedObject {
      * @param timeout
      */
     public void refreshTimeout( int timeout ) {
-        _expiresAt = System.currentTimeMillis() + (timeout * 1000);
+        expiresAt = System.currentTimeMillis() + (timeout * 1000);
     }
 
     /**
@@ -320,7 +322,7 @@ public class LockedObject {
      * @return timeout
      */
     public long getTimeoutMillis() {
-        return (_expiresAt - System.currentTimeMillis());
+        return (expiresAt - System.currentTimeMillis());
     }
 
     /**
@@ -329,8 +331,8 @@ public class LockedObject {
      * @return true if timeout has passed
      */
     public boolean hasExpired() {
-        if (_expiresAt != 0) {
-            return (System.currentTimeMillis() > _expiresAt);
+        if (expiresAt != 0) {
+            return (System.currentTimeMillis() > expiresAt);
         } else {
             return true;
         }
@@ -342,7 +344,7 @@ public class LockedObject {
      * @return locktoken
      */
     public String getID() {
-        return _id;
+        return id;
     }
 
     /**
@@ -351,7 +353,7 @@ public class LockedObject {
      * @return owners
      */
     public String[] getOwner() {
-        return _owner;
+        return owner;
     }
 
     /**
@@ -360,7 +362,7 @@ public class LockedObject {
      * @return path
      */
     public String getPath() {
-        return _path;
+        return path;
     }
 
     /**
@@ -369,7 +371,7 @@ public class LockedObject {
      * @param exclusive
      */
     public void setExclusive( boolean exclusive ) {
-        _exclusive = exclusive;
+        this.exclusive = exclusive;
     }
 
     /**
@@ -378,7 +380,7 @@ public class LockedObject {
      * @return exclusivity
      */
     public boolean isExclusive() {
-        return _exclusive;
+        return exclusive;
     }
 
     /**
@@ -387,7 +389,7 @@ public class LockedObject {
      * @return exclusivity
      */
     public boolean isShared() {
-        return !_exclusive;
+        return !exclusive;
     }
 
     /**
@@ -396,7 +398,7 @@ public class LockedObject {
      * @return type
      */
     public String getType() {
-        return _type;
+        return type;
     }
 
     /**
@@ -405,7 +407,7 @@ public class LockedObject {
      * @return depth
      */
     public int getLockDepth() {
-        return _lockDepth;
+        return lockDepth;
     }
 
 }

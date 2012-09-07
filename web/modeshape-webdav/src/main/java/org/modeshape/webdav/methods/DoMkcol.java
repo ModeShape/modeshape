@@ -34,16 +34,16 @@ public class DoMkcol extends AbstractMethod {
 
     private static Logger LOG = Logger.getLogger(DoMkcol.class);
 
-    private IWebdavStore _store;
-    private IResourceLocks _resourceLocks;
-    private boolean _readOnly;
+    private final IWebdavStore store;
+    private final IResourceLocks resourceLocks;
+    private boolean readOnly;
 
     public DoMkcol( IWebdavStore store,
                     IResourceLocks resourceLocks,
                     boolean readOnly ) {
-        _store = store;
-        _resourceLocks = resourceLocks;
-        _readOnly = readOnly;
+        this.store = store;
+        this.resourceLocks = resourceLocks;
+        this.readOnly = readOnly;
     }
 
     public void execute( ITransaction transaction,
@@ -51,42 +51,38 @@ public class DoMkcol extends AbstractMethod {
                          HttpServletResponse resp ) throws IOException, LockFailedException {
         LOG.trace("-- " + this.getClass().getName());
 
-        if (!_readOnly) {
+        if (!readOnly) {
             String path = getRelativePath(req);
             String parentPath = getParentPath(getCleanPath(path));
 
             Hashtable<String, Integer> errorList = new Hashtable<String, Integer>();
 
-            if (!isUnlocked(transaction, req, resp, _resourceLocks, parentPath)) {
-                // TODO remove
-                LOG.trace(
-                        "MkCol on locked resource (parentPath) not executable!" + "\n Sending SC_FORBIDDEN (403) error response!");
-
+            if (!isUnlocked(transaction, req, resourceLocks, parentPath)) {
                 resp.sendError(WebdavStatus.SC_FORBIDDEN);
                 return;
             }
 
             String tempLockOwner = "doMkcol" + System.currentTimeMillis() + req.toString();
 
-            if (_resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
+            if (resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
                 StoredObject parentSo, so = null;
                 try {
-                    parentSo = _store.getStoredObject(transaction, parentPath);
+                    parentSo = store.getStoredObject(transaction, parentPath);
                     if (parentSo == null) {
                         // parent not exists
                         resp.sendError(WebdavStatus.SC_CONFLICT);
                         return;
                     }
                     if (parentPath != null && parentSo.isFolder()) {
-                        so = _store.getStoredObject(transaction, path);
+                        so = store.getStoredObject(transaction, path);
                         if (so == null) {
-                            _store.createFolder(transaction, path);
+                            store.createFolder(transaction, path);
                             resp.setStatus(WebdavStatus.SC_CREATED);
                         } else {
                             // object already exists
                             if (so.isNullResource()) {
 
-                                LockedObject nullResourceLo = _resourceLocks.getLockedObjectByPath(transaction, path);
+                                LockedObject nullResourceLo = resourceLocks.getLockedObjectByPath(transaction, path);
                                 if (nullResourceLo == null) {
                                     resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
                                     return;
@@ -110,17 +106,13 @@ public class DoMkcol extends AbstractMethod {
                                         owner = nullResourceLockOwners[0];
                                     }
 
-                                    if (_resourceLocks.unlock(transaction, lockToken, owner)) {
+                                    if (resourceLocks.unlock(transaction, lockToken, owner)) {
                                         resp.setStatus(WebdavStatus.SC_CREATED);
                                     } else {
                                         resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
                                     }
 
                                 } else {
-                                    // TODO remove
-                                    LOG.trace(
-                                            "MkCol on lock-null-resource with wrong lock-token!" + "\n Sending multistatus error report!");
-
                                     errorList.put(path, WebdavStatus.SC_LOCKED);
                                     sendReport(req, resp, errorList);
                                 }
@@ -133,10 +125,6 @@ public class DoMkcol extends AbstractMethod {
                         }
 
                     } else if (parentPath != null && parentSo.isResource()) {
-                        // TODO remove
-                        LOG.trace(
-                                "MkCol on resource is not executable" + "\n Sending SC_METHOD_NOT_ALLOWED (405) error response!");
-
                         String methodsAllowed = DeterminableMethod.determineMethodsAllowed(parentSo);
                         resp.addHeader("Allow", methodsAllowed);
                         resp.sendError(WebdavStatus.SC_METHOD_NOT_ALLOWED);
@@ -149,7 +137,7 @@ public class DoMkcol extends AbstractMethod {
                 } catch (WebdavException e) {
                     resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
                 } finally {
-                    _resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
+                    resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
                 }
             } else {
                 resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
