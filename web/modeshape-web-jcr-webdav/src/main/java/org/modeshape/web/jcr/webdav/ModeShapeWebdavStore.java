@@ -43,15 +43,15 @@ import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.servlet.http.HttpServletRequest;
-import net.sf.webdav.ITransaction;
-import net.sf.webdav.IWebdavStore;
-import net.sf.webdav.StoredObject;
-import net.sf.webdav.exceptions.WebdavException;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.web.jcr.RepositoryManager;
+import org.modeshape.webdav.ITransaction;
+import org.modeshape.webdav.IWebdavStore;
+import org.modeshape.webdav.StoredObject;
+import org.modeshape.webdav.exceptions.WebdavException;
 
 /**
  * Implementation of the {@code IWebdavStore} interface that uses a JCR repository as a backing store.
@@ -73,6 +73,11 @@ public class ModeShapeWebdavStore implements IWebdavStore {
 
     private final Logger logger = Logger.getLogger(getClass());
 
+    /**
+     *
+     * @param requestResolver
+     * @param contentMapper
+     */
     public ModeShapeWebdavStore( RequestResolver requestResolver,
                                  ContentMapper contentMapper ) {
         super();
@@ -86,21 +91,15 @@ public class ModeShapeWebdavStore implements IWebdavStore {
      * 
      * @param request the request to store in thread-local storage; null to clear the storage
      */
-    static final void setRequest( HttpServletRequest request ) {
+    static void setRequest( HttpServletRequest request ) {
         THREAD_LOCAL_REQUEST.set(request);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ITransaction begin( Principal principal ) {
         return new JcrSessionTransaction(principal);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void commit( ITransaction transaction ) {
         CheckArg.isNotNull(transaction, "transaction");
@@ -109,27 +108,22 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         ((JcrSessionTransaction)transaction).commit();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void rollback( ITransaction transaction ) {
         // No op. By not saving the session, we will let the session expire without committing any changes
-
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void checkAuthentication( ITransaction transaction ) {
         // No op.
     }
 
+    @Override
+    public void destroy() {
+    }
+
     /**
-     * {@inheritDoc}
-     * 
-     * @see net.sf.webdav.IWebdavStore#createFolder(net.sf.webdav.ITransaction, java.lang.String)
+     * @see IWebdavStore#createFolder(org.modeshape.webdav.ITransaction, String)
      */
     @Override
     public void createFolder( ITransaction transaction,
@@ -164,10 +158,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
+     @Override
     public void createResource( ITransaction transaction,
                                 String resourceUri ) {
         // Mac OS X workaround from Drools Guvnor
@@ -208,9 +199,6 @@ public class ModeShapeWebdavStore implements IWebdavStore {
 
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String[] getChildrenNames( ITransaction transaction,
                                       String folderUri ) {
@@ -246,9 +234,6 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         return children;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public InputStream getResourceContent( ITransaction transaction,
                                            String resourceUri ) {
@@ -269,14 +254,11 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getResourceLength( ITransaction transaction,
-                                   String uri ) {
+                                   String resourceUri ) {
         try {
-            ResolvedRequest resolved = resolveRequest(transaction, uri);
+            ResolvedRequest resolved = resolveRequest(transaction, resourceUri);
             if (resolved.getPath() == null) {
                 // Not a node, so there's no length ...
                 return -1;
@@ -291,9 +273,6 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public StoredObject getStoredObject( ITransaction transaction,
                                          String uri ) {
@@ -356,9 +335,6 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         return ob;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void removeObject( ITransaction transaction,
                               String uri ) {
@@ -386,9 +362,6 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long setResourceContent( ITransaction transaction,
                                     String resourceUri,
@@ -495,7 +468,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
      * @return the node; never null
      * @throws RepositoryException if the node does not exist, or if there is another problem obtaining the node
      */
-    private final Node nodeFor( ITransaction transaction,
+    private Node nodeFor( ITransaction transaction,
                                 ResolvedRequest request ) throws RepositoryException {
         return ((JcrSessionTransaction)transaction).nodeFor(request);
     }
@@ -508,7 +481,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
      * @return true if the repository and/or workspace do exist, or false otherwise
      * @throws RepositoryException if is a problem accessing the repository
      */
-    private final boolean repositoryAndWorkspaceExist( ITransaction transaction,
+    private boolean repositoryAndWorkspaceExist( ITransaction transaction,
                                                        ResolvedRequest request ) throws RepositoryException {
         return ((JcrSessionTransaction)transaction).repositoryAndWorkspaceExist(request);
     }
@@ -521,7 +494,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
      * @return the children names, or null if there are no children
      * @throws RepositoryException if is a problem accessing the repository
      */
-    private final String[] childrenFor( ITransaction transaction,
+    private String[] childrenFor( ITransaction transaction,
                                         ResolvedRequest request ) throws RepositoryException {
         return ((JcrSessionTransaction)transaction).childrenFor(request);
     }
@@ -639,9 +612,6 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             return names == null ? null : names.toArray(new String[names.size()]);
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public Principal getPrincipal() {
             return principal;
@@ -682,21 +652,11 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             assert this.workspaceName != null;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#hashCode()
-         */
         @Override
         public int hashCode() {
             return repositoryName.hashCode();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#equals(java.lang.Object)
-         */
         @Override
         public boolean equals( Object obj ) {
             if (obj == this) return true;
@@ -707,11 +667,6 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             return false;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#toString()
-         */
         @Override
         public String toString() {
             return repositoryName + "/" + workspaceName;

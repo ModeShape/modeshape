@@ -13,6 +13,9 @@ import javax.jcr.RepositoryException;
 import javax.servlet.ServletContext;
 import org.modeshape.common.logging.Logger;
 
+/**
+ * Implementation of the {@link ContentMapper} interface that maps webdav requests to JCR operations.
+ */
 public class DefaultContentMapper implements ContentMapper {
 
     public static final String INIT_CONTENT_PRIMARY_TYPE_NAMES = "org.modeshape.web.jcr.webdav.CONTENT_PRIMARY_TYPE_NAMES";

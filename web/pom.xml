@@ -18,6 +18,8 @@
     <module>modeshape-web-jcr-rest</module>
     <module>modeshape-web-jcr-rest-war</module>
     <module>modeshape-web-jcr-rest-client</module>
+    <module>modeshape-webdav</module>
+    <module>modeshape-webdav-war</module>
     <module>modeshape-web-jcr-webdav</module>
     <module>modeshape-web-jcr-webdav-war</module>
   </modules>

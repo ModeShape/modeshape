@@ -37,12 +37,13 @@
             <artifactId>mockito-all</artifactId>
         </dependency>
         <!--
-              Logging (require SLF4J API for compiling, but use Log4J and its SLF4J
-              binding for testing)
+             This is the only module that requires (or should ever require) SLF4j and LOG4j for compiling. All the logger by default
+             should have the "test" scope.
           -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -51,6 +52,7 @@
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

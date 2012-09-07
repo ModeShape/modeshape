@@ -20,8 +20,8 @@
         </dependency>
 
         <dependency>
-            <groupId>net.sf.webdav-servlet</groupId>
-            <artifactId>webdav-servlet</artifactId>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-webdav</artifactId>
         </dependency>
 
         <!--

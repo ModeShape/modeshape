@@ -14,6 +14,7 @@
     <description>ModeShape servlet that provides WebDAV access to JCR items</description>
     <url>http://www.modeshape.org</url>
     <dependencies>
+        <!--  TESTING DEPENDENCIES -->
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-web-jcr-webdav</artifactId>
@@ -21,11 +22,14 @@
             <scope>integration-test</scope>
         </dependency>
 
-        <!--
-            Logging dependencies.
-            The WebDav servlet requires SLF4J by default, so we'll overwrite the logging dependencies with "integration-test"
-            scope, but we'll exclude them from the war file during assembly.
-        -->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-webdav-war</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -47,7 +51,6 @@
             <scope>integration-test</scope>
         </dependency>
 
-        <!--  TESTING DEPENDENCIES -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit-dep</artifactId>
@@ -65,7 +68,7 @@
         </dependency>
     </dependencies>
     <build>
-        <finalName>webdav</finalName>
+        <finalName>webdav-jcr</finalName>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
