@@ -25,7 +25,7 @@ package org.modeshape.web.jcr.webdav;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
-import net.sf.webdav.exceptions.WebdavException;
+import org.modeshape.webdav.exceptions.WebdavException;
 
 /**
  * Interface for a method of resolving a request into a repository name, workspace name, and node path. Implementations can use

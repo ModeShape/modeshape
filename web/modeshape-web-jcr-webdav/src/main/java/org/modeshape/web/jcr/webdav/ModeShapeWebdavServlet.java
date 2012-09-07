@@ -28,9 +28,9 @@ import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import net.sf.webdav.IWebdavStore;
-import net.sf.webdav.WebdavServlet;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.webdav.IWebdavStore;
+import org.modeshape.webdav.WebdavServlet;
 
 /**
  * Custom servlet implementation that provides WebDAV access to a JCR repository. Nodes in the repository with a specified primary
@@ -47,9 +47,6 @@ public class ModeShapeWebdavServlet extends WebdavServlet {
     private RequestResolver requestResolver;
     private ContentMapper contentMapper;
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected IWebdavStore constructStore( String clazzName,
                                            File root ) {
@@ -112,7 +109,6 @@ public class ModeShapeWebdavServlet extends WebdavServlet {
     }
 
     /**
-     * {@inheritDoc}
      * <p>
      * This method also sets and clears a thread-local reference to the incoming {@link HttpServletRequest request}.
      * </p>
