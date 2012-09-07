@@ -129,6 +129,13 @@
       <!--Needed by the webdav tests -->
       <dependency>
           <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-webdav-war</artifactId>
+          <version>${project.version}</version>
+          <scope>test</scope>
+          <type>test-jar</type>
+      </dependency>
+      <dependency>
+          <groupId>org.modeshape</groupId>
           <artifactId>modeshape-web-jcr-webdav-war</artifactId>
           <version>${project.version}</version>
           <scope>test</scope>

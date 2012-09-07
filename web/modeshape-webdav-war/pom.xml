@@ -1,33 +1,24 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>org.modeshape</groupId>
         <artifactId>modeshape-parent</artifactId>
         <version>3.0-SNAPSHOT</version>
         <relativePath>../../modeshape-parent</relativePath>
     </parent>
-    <artifactId>modeshape-web-jcr-webdav-war</artifactId>
+    <artifactId>modeshape-webdav-war</artifactId>
     <packaging>war</packaging>
-    <name>ModeShape JCR WebDAV Servlet</name>
-    <description>ModeShape servlet that provides WebDAV access to JCR items</description>
+    <name>ModeShape WebDAV Servlet Test WAR</name>
+    <description>ModeShape Servlet WAR which allows integration testing of the default WebDav framework (forked from WebDAV-Servlet)</description>
     <url>http://www.modeshape.org</url>
     <dependencies>
         <!--  TESTING DEPENDENCIES -->
         <dependency>
             <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-web-jcr-webdav</artifactId>
+            <artifactId>modeshape-webdav</artifactId>
             <version>${project.version}</version>
             <scope>integration-test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-webdav-war</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-            <type>test-jar</type>
         </dependency>
 
         <dependency>
@@ -60,20 +51,15 @@
             <groupId>com.googlecode.sardine</groupId>
             <artifactId>sardine</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jcr</artifactId>
-            <scope>integration-test</scope>
-        </dependency>
     </dependencies>
     <build>
-        <finalName>webdav-jcr</finalName>
+        <finalName>webdav</finalName>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
             </resource>
             <resource>
+                <filtering>true</filtering>
                 <directory>src/main/webapp</directory>
             </resource>
         </resources>
