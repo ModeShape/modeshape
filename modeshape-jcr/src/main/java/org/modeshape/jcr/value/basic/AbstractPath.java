@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import org.modeshape.common.CommonI18n;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.GraphI18n;
@@ -43,8 +42,8 @@ import org.modeshape.jcr.value.Path;
 /**
  * An abstract foundation for different {@link Path} implementations. This class does not manage any of the {@link Path}'s state,
  * but it does provide implementations for most of the methods based upon a few abstract methods. For example, any implementaton
- * that requires the {@link org.modeshape.jcr.value.Path.Segment path's segments} are written to use the {@link #iterator()}, since that is likely more
- * efficient for the majority of implementations.
+ * that requires the {@link org.modeshape.jcr.value.Path.Segment path's segments} are written to use the {@link #iterator()},
+ * since that is likely more efficient for the majority of implementations.
  */
 @Immutable
 public abstract class AbstractPath implements Path {
@@ -72,33 +71,6 @@ public abstract class AbstractPath implements Path {
             throw new UnsupportedOperationException();
         }
     };
-
-    @NotThreadSafe
-    protected static class SingleIterator<T> implements Iterator<T> {
-        private T value;
-
-        protected SingleIterator( T value ) {
-            this.value = value;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return value != null;
-        }
-
-        @Override
-        public T next() {
-            if (value == null) throw new NoSuchElementException();
-            T next = value;
-            value = null;
-            return next;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-    }
 
     private transient int hc = 0;
 

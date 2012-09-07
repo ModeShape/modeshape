@@ -40,6 +40,7 @@ import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.NodeNotFoundInParentException;
+import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;
@@ -223,6 +224,23 @@ public class LazyCachedNode implements CachedNode {
         CachedNode parent = parent(wsCache);
         if (parent != null) {
             Path parentPath = parent.getPath(wsCache);
+            return wsCache.pathFactory().create(parentPath, getSegment(wsCache));
+        }
+        // check that the node hasn't been removed in the meantime
+        if (wsCache.getNode(key) == null) {
+            throw new NodeNotFoundException(key);
+        }
+        // This is the root node ...
+        return wsCache.rootPath();
+    }
+
+    @Override
+    public Path getPath( PathCache pathCache ) throws NodeNotFoundException {
+        NodeCache cache = pathCache.getCache();
+        WorkspaceCache wsCache = workspaceCache(cache);
+        CachedNode parent = parent(wsCache);
+        if (parent != null) {
+            Path parentPath = pathCache.getPath(parent);
             return wsCache.pathFactory().create(parentPath, getSegment(wsCache));
         }
         // check that the node hasn't been removed in the meantime

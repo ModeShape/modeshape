@@ -32,8 +32,6 @@ import org.junit.BeforeClass;
 import org.modeshape.jcr.value.binary.AbstractBinaryStoreTest;
 import org.modeshape.jcr.value.binary.BinaryStore;
 
-import java.net.InetAddress;
-
 public abstract class AbstractInfinispanStoreTest extends AbstractBinaryStoreTest {
 
     protected static DefaultCacheManager cacheManager;

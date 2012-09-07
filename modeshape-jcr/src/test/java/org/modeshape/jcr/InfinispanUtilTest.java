@@ -23,20 +23,13 @@
  */
 package org.modeshape.jcr;
 
-
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.LoaderConfigurationBuilder;
-import org.infinispan.loaders.CacheStore;
 import org.infinispan.loaders.file.FileCacheStore;
-import org.infinispan.loaders.jdbc.TableManipulation;
-import org.infinispan.loaders.jdbc.connectionfactory.ConnectionFactoryConfig;
-import org.infinispan.loaders.jdbc.stringbased.JdbcStringBasedCacheStore;
-import org.infinispan.loaders.jdbc.stringbased.JdbcStringBasedCacheStoreConfig;
 import org.infinispan.manager.DefaultCacheManager;
-import org.infinispan.schematic.SchematicEntry;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -45,9 +38,7 @@ import org.modeshape.jcr.value.binary.infinispan.InfinispanTestUtil;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
-import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.fail;
 
 public class InfinispanUtilTest {

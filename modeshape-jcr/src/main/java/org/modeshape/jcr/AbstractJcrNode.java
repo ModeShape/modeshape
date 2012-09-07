@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Binary;
@@ -3177,7 +3178,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public void save()
         throws AccessDeniedException, ItemExistsException, ConstraintViolationException, InvalidItemStateException,
         ReferentialIntegrityException, VersionException, LockException, NoSuchNodeTypeException, RepositoryException {
-        session.save(this);
+        if (this.isRoot()) {
+            // Just call save on the session (it's more efficient) ...
+            session.save();
+        } else {
+            session.save(this);
+        }
     }
 
     @Override
@@ -3301,15 +3307,19 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * Determines whether this node, or any nodes below it, contain changes that depend on nodes that are outside of this node's
      * hierarchy.
      * 
+     * @param affectedNodeKeys the reference that should be assigned to the set of node keys that are at or below this node; may
+     *        be null if not needed
      * @return true if this node's hierarchy has nodes with changes dependent on nodes from outside the hierarchy
      * @throws InvalidItemStateException
      * @throws ItemNotFoundException
      * @throws RepositoryException
      */
-    protected boolean containsChangesWithExternalDependencies() throws RepositoryException {
+    protected boolean containsChangesWithExternalDependencies( AtomicReference<Set<NodeKey>> affectedNodeKeys )
+        throws RepositoryException {
         Set<NodeKey> allChanges = sessionCache().getChangedNodeKeys();
         Set<NodeKey> changesAtOrBelowThis = sessionCache().getChangedNodeKeysAtOrBelow(this.node());
         removeReferrerChanges(allChanges, changesAtOrBelowThis);
+        if (affectedNodeKeys != null) affectedNodeKeys.set(changesAtOrBelowThis);
 
         return !changesAtOrBelowThis.containsAll(allChanges);
     }

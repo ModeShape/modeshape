@@ -231,9 +231,11 @@
                                 <property>
                                     <name>known.issues</name>
                                     <value>
-                                        <!--// TODO author=Randall Hauch date=7/10/12 description=https://issues.apache.org/jira/browse/MODE-1552-->
+                                        <!-- 
+                                        List each test method that is not passing because of known issues, where the method is
+                                        of the form "package#method". For example:
                                         org.apache.jackrabbit.test.api.ShareableNodeTest#testModifyDescendantAndSave
-                                        org.apache.jackrabbit.test.api.ShareableNodeTest#testModifyDescendantAndRemoveShareAndSave
+                                        -->
                                     </value>
                                 </property>
                             </systemProperties>

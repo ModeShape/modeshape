@@ -133,10 +133,10 @@ public class JcrRepositoryStartupTest extends AbstractTransactionalTest {
         }
     }
 
-    private abstract class RepositoryOperation implements Callable<Void> {
+    protected abstract class RepositoryOperation implements Callable<Void> {
         protected JcrRepository repository;
 
-        private RepositoryOperation setRepository( JcrRepository repository ) {
+        protected RepositoryOperation setRepository( JcrRepository repository ) {
             this.repository = repository;
             return this;
         }

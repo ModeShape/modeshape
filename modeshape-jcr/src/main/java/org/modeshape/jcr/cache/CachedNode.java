@@ -86,6 +86,18 @@ public interface CachedNode {
     Path getPath( NodeCache cache ) throws NodeNotFoundException;
 
     /**
+     * Get the path to this node.
+     * 
+     * @param pathCache the cache of paths that can be used to compute the path for any node; may not be null
+     * @return the node's path; never null with at least one segment for all nodes except the root node
+     * @throws NodeNotFoundInParentException if this node no longer exists inside the parent node (and perhaps in no other parent)
+     * @throws NodeNotFoundException if this node no longer exists
+     * @see #getName(NodeCache)
+     * @see #getSegment(NodeCache)
+     */
+    Path getPath( PathCache pathCache ) throws NodeNotFoundException;
+
+    /**
      * Get the node key for this node's primary parent within this workspace.
      * 
      * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null

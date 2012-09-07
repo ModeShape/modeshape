@@ -153,6 +153,7 @@ public class Database {
      * Generates SQL statement for content retrieve.
      * 
      * @param key content id
+     * @param inUse true if the binary given by the key is expected to be still be in use, or false if the binary can be no longer used
      * @return executable SQL statement
      * @throws BinaryStoreException
      */

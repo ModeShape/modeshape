@@ -54,8 +54,8 @@ public interface SessionCache extends NodeCache {
 
     /**
      * The definition of a callback that can be implemented and passed to {@link SessionCache#save(SessionCache, PreSave)} and
-     * {@link SessionCache#save(CachedNode, SessionCache, PreSave)}, allowing the caller to recieve a hook where they can
-     * interrogate each of the changed nodes and perform additional logic prior to the actual persisting of the changes. Note that
+     * {@link SessionCache#save(Set, SessionCache, PreSave)}, allowing the caller to recieve a hook where they can interrogate
+     * each of the changed nodes and perform additional logic prior to the actual persisting of the changes. Note that
      * implementations are free to make additional modifications to the supplied nodes, and even create additional nodes or change
      * persistent but unchanged nodes, as long as these operations are done within the same calling thread.
      */
@@ -102,7 +102,7 @@ public interface SessionCache extends NodeCache {
      * Saves all of this session's changes that were made at or below the specified path. Note that this is not terribly
      * efficient, but is done to implement the deprecated {@link javax.jcr.Item#save()}.
      * 
-     * @param node the node at or below which all changes should be saved; may not be null
+     * @param toBeSaved the set of keys identifying the nodes whose changes should be saved; may not be null
      * @param otherSession another session whose changes should be saved with this session's changes; may not be null
      * @param preSaveOperation the set of operations to run against the new and changed nodes prior to saving; may be null
      * @throws LockFailureException if a requested lock could not be made
@@ -110,7 +110,7 @@ public interface SessionCache extends NodeCache {
      *         document
      * @throws DocumentNotFoundException if one of the modified documents was removed by another session
      */
-    public void save( CachedNode node,
+    public void save( Set<NodeKey> toBeSaved,
                       SessionCache otherSession,
                       PreSave preSaveOperation );
 

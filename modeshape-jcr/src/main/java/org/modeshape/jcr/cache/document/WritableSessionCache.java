@@ -55,6 +55,7 @@ import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.value.DateTime;
+import org.modeshape.jcr.cache.AllPathsCache;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.CachedNode.ReferenceType;
 import org.modeshape.jcr.cache.ChildReference;
@@ -63,6 +64,7 @@ import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
 import org.modeshape.jcr.cache.DocumentNotFoundException;
 import org.modeshape.jcr.cache.LockFailureException;
 import org.modeshape.jcr.cache.MutableCachedNode;
+import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.PathCache;
@@ -251,7 +253,27 @@ public class WritableSessionCache extends AbstractSessionCache {
     @Override
     public Set<NodeKey> getChangedNodeKeysAtOrBelow( CachedNode srcNode ) {
         CheckArg.isNotNull(srcNode, "srcNode");
-        Path sourcePath = srcNode.getPath(this);
+        final Path sourcePath = srcNode.getPath(this);
+
+        // Create a path cache so that we don't recompute the path for the same node more than once ...
+        AllPathsCache allPathsCache = new AllPathsCache(this, workspaceCache, context()) {
+            @Override
+            protected Set<NodeKey> getAdditionalParentKeys( CachedNode node,
+                                                            NodeCache cache ) {
+                Set<NodeKey> keys = super.getAdditionalParentKeys(node, cache);
+                if (node instanceof SessionNode) {
+                    SessionNode sessionNode = (SessionNode)node;
+                    // Per the JCR TCK, we have to consider the nodes that *used to be* shared nodes before this
+                    // session removed them, so we need to include the keys of the additional parents that were removed ...
+                    ChangedAdditionalParents changed = sessionNode.additionalParents();
+                    if (changed != null) {
+                        keys = new HashSet<NodeKey>(keys);
+                        keys.addAll(sessionNode.additionalParents().getRemovals());
+                    }
+                }
+                return keys;
+            }
+        };
 
         Lock readLock = this.lock.readLock();
         Set<NodeKey> result = new HashSet<NodeKey>();
@@ -260,7 +282,7 @@ public class WritableSessionCache extends AbstractSessionCache {
             for (Map.Entry<NodeKey, SessionNode> entry : changedNodes.entrySet()) {
                 SessionNode changedNodeThisSession = entry.getValue();
                 NodeKey changedNodeKey = entry.getKey();
-                Path changedNodePath = null;
+                CachedNode changedNode = null;
 
                 if (changedNodeThisSession == REMOVED) {
                     CachedNode persistentRemovedNode = workspaceCache.getNode(changedNodeKey);
@@ -269,13 +291,19 @@ public class WritableSessionCache extends AbstractSessionCache {
                         result.add(changedNodeKey);
                         continue;
                     }
-                    changedNodePath = persistentRemovedNode.getPath(this);
+                    changedNode = persistentRemovedNode;
                 } else {
-                    changedNodePath = changedNodeThisSession.getPath(this);
+                    changedNode = changedNodeThisSession;
                 }
 
-                if (changedNodePath != null && changedNodePath.isAtOrBelow(sourcePath)) {
-                    result.add(changedNodeKey);
+                // Compute all of the valid paths by which this node can be accessed. If *any* of these paths
+                // are below the source path, then the node should be included in the result ...
+                for (Path validPath : allPathsCache.getPaths(changedNode)) {
+                    if (validPath.isAtOrBelow(sourcePath)) {
+                        // The changed node is directly below the source node ...
+                        result.add(changedNodeKey);
+                        break;
+                    }
                 }
             }
             return result;
@@ -535,17 +563,18 @@ public class WritableSessionCache extends AbstractSessionCache {
      * caution, as this method attempts to get write locks on both sessions, meaning they <i>cannot<i> be concurrently used
      * elsewhere (otherwise deadlocks might occur).</b>
      * 
+     * @param toBeSaved the set of keys identifying the nodes whose changes should be saved; may not be null
      * @param other the other session
+     * @param preSaveOperation the pre-save operation
      * @throws LockFailureException if a requested lock could not be made
      * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
      *         document
      * @throws DocumentNotFoundException if one of the modified documents was removed by another session
      */
     @Override
-    public void save( CachedNode node,
+    public void save( Set<NodeKey> toBeSaved,
                       SessionCache other,
                       PreSave preSaveOperation ) {
-        Path topPath = node.getPath(this);
 
         // Try getting locks on both sessions ...
         final WritableSessionCache that = (WritableSessionCache)other;
@@ -560,9 +589,22 @@ public class WritableSessionCache extends AbstractSessionCache {
             thatLock.lock();
 
             // Before we start the transaction, apply the pre-save operations to the new and changed nodes below the path ...
-            final List<NodeKey> savedNodesInOrder = filterChangesAtOrBelowPath(topPath, preSaveOperation);
+            final List<NodeKey> savedNodesInOrder = new LinkedList<NodeKey>();
 
             try {
+                // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
+                if (preSaveOperation != null) {
+                    SaveContext saveContext = new BasicSaveContext(context());
+                    for (MutableCachedNode node : this.changedNodes.values()) {
+                        if (node == REMOVED || !toBeSaved.contains(node.getKey())) {
+                            continue;
+                        }
+                        checkNodeNotRemovedByAnotherTransaction(node);
+                        preSaveOperation.process(node, saveContext);
+                        savedNodesInOrder.add(node.getKey());
+                    }
+                }
+
                 // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
                 txn = txns.begin();
 
@@ -635,42 +677,6 @@ public class WritableSessionCache extends AbstractSessionCache {
         // TODO: Events ... these events should be combined, but cannot each ChangeSet only has a single workspace
         txns.updateCache(this.workspaceCache, events1, txn);
         txns.updateCache(that.workspaceCache, events2, txn);
-    }
-
-    private List<NodeKey> filterChangesAtOrBelowPath( Path topPath,
-                                                      PreSave preSaveOperation ) throws Exception {
-        List<NodeKey> savedNodesInOrder = new LinkedList<NodeKey>();
-        SaveContext saveContext = new BasicSaveContext(context());
-
-        for (NodeKey key : this.changedNodesInOrder) {
-            MutableCachedNode changedNode = this.changedNodes.get(key);
-            if (changedNode != REMOVED) {
-                if (changedNode.isAtOrBelow(this, topPath)) {
-                    if (preSaveOperation != null) {
-                        checkNodeNotRemovedByAnotherTransaction(changedNode);
-                        preSaveOperation.process(changedNode, saveContext);
-                    }
-                    savedNodesInOrder.add(key);
-                } else {
-                    boolean hasReferrers = !changedNode.getChangedReferrerNodes().isEmpty();
-                    if (hasReferrers) {
-                        // we need to include any referrer changes
-                        savedNodesInOrder.add(key);
-                    }
-                }
-            } else {
-                // we can't ignore removed nodes below the top path
-                CachedNode removedNode = workspaceCache().getNode(key);
-                if (removedNode == null) {
-                    // probably removed by someone else
-                    continue;
-                }
-                if (topPath.isAtOrAbove(removedNode.getPath(this))) {
-                    savedNodesInOrder.add(key);
-                }
-            }
-        }
-        return savedNodesInOrder;
     }
 
     /**
@@ -950,11 +956,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                         }
                     }
                 } else {
-                    boolean isSameWorkspace = workspaceCache().getWorkspaceKey().equalsIgnoreCase(node.getKey().getWorkspaceKey());
-                    //only update the indexes if the node we're working with is in the same workspace as the current workspace.
-                    //when linking/un-linking nodes (e.g. shareable node or jcr:system) this condition will be false.
-                    //the downside of this is that there may be cases (e.g. back references when working with versions) in which
-                    //we might loose information from the indexes
+                    boolean isSameWorkspace = workspaceCache().getWorkspaceKey()
+                                                              .equalsIgnoreCase(node.getKey().getWorkspaceKey());
+                    // only update the indexes if the node we're working with is in the same workspace as the current workspace.
+                    // when linking/un-linking nodes (e.g. shareable node or jcr:system) this condition will be false.
+                    // the downside of this is that there may be cases (e.g. back references when working with versions) in which
+                    // we might loose information from the indexes
                     if (monitor != null && isSameWorkspace) {
                         // Get the primary and mixin type names; even though we're passing in the session, the two properties
                         // should be there and shouldn't require a looking in the cache...
@@ -1007,7 +1014,7 @@ public class WritableSessionCache extends AbstractSessionCache {
             // we need to collect the referrers at the end only, so that other potential changes in references have been computed
             Set<NodeKey> referrers = new HashSet<NodeKey>();
             for (NodeKey removedKey : removedNodes) {
-                //we need the current document from the database, because this differs from what's persisted
+                // we need the current document from the database, because this differs from what's persisted
                 Document doc = database.get(removedKey.toString()).getContentAsDocument();
                 referrers.addAll(translator.getReferrers(doc, ReferenceType.STRONG));
             }
