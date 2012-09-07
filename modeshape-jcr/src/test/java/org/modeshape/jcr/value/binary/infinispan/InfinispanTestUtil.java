@@ -25,7 +25,6 @@ package org.modeshape.jcr.value.binary.infinispan;
 
 
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
-import org.infinispan.manager.CacheManager;
 import org.infinispan.manager.DefaultCacheManager;
 import org.jgroups.Global;
 import org.modeshape.jcr.bus.ClusteredRepositoryChangeBusTest;

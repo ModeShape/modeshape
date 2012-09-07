@@ -33,7 +33,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import javax.transaction.TransactionManager;
-import org.infinispan.config.Configuration;
+
+import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
@@ -60,10 +61,12 @@ public abstract class AbstractSchematicDbTest {
     @Before
     public void beforeEach() {
         logger = Logger.getLogger(getClass());
+        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
+        configurationBuilder
+                .invocationBatching().enable()
+                .transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
 
-        Configuration c = new Configuration();
-        c = c.fluent().transaction().transactionManagerLookup(new DummyTransactionManagerLookup()).build();
-        cm = TestCacheManagerFactory.createCacheManager(c);
+        cm = TestCacheManagerFactory.createCacheManager(configurationBuilder);
         // Now create the SchematicDb ...
         db = Schematic.get(cm, "documents");
         tm = TestingUtil.getTransactionManager(db.getCache());

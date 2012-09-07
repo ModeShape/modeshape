@@ -24,8 +24,10 @@
 package org.modeshape.jcr.store;
 
 import java.io.File;
-import org.infinispan.loaders.CacheLoaderConfig;
-import org.infinispan.loaders.jdbc.binary.JdbcBinaryCacheStoreConfig;
+
+import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.cache.LoaderConfigurationBuilder;
+import org.infinispan.loaders.jdbc.binary.JdbcBinaryCacheStore;
 import org.junit.Ignore;
 import org.modeshape.common.util.FileUtil;
 
@@ -47,23 +49,23 @@ public class JdbcBinaryCacheStoreTest extends InMemoryTest {
     }
 
     @Override
-    protected CacheLoaderConfig getCacheLoaderConfiguration() {
-        JdbcBinaryCacheStoreConfig config = new JdbcBinaryCacheStoreConfig();
-        config.setConnectionFactoryClass("org.infinispan.loaders.jdbc.connectionfactory.PooledConnectionFactory");
-        // config.setConnectionUrl("jdbc:h2:mem:string_based_db;DB_CLOSE_DELAY=-1");
-        config.setConnectionUrl(dataSourceConfig.getUrl() + "/string_based_db;DB_CLOSE_DELAY=1");
-        config.setIdColumnName("ID_COLUMN");
-        config.setDataColumnName("DATA_COLUMN");
-        config.setTimestampColumnName("TIMESTAMP_COLUMN");
-        config.setUserName(dataSourceConfig.getUsername());
-        config.setDriverClass(dataSourceConfig.getDriverClassName());
-        config.setIdColumnType("VARCHAR(255)");
-        config.setDataColumnType("BINARY");
-        config.setTimestampColumnType("BIGINT");
-        config.setDropTableOnExit(false);
-        config.setCreateTableOnStart(true);
-        config.setCacheName("default");
-        config.setBucketTableNamePrefix("MODE");
-        return config;
+    public void applyLoaderConfiguration(ConfigurationBuilder configurationBuilder) {
+        LoaderConfigurationBuilder lb = configurationBuilder.loaders().addCacheLoader().cacheLoader(new JdbcBinaryCacheStore());
+        lb.addProperty("dropTableOnExit", "false")
+                .addProperty("createTableOnStart", "true")
+                .addProperty("connectionFactoryClass", "org.infinispan.loaders.jdbc.connectionfactory.PooledConnectionFactory")
+                .addProperty("connectionUrl", dataSourceConfig.getUrl() + "/string_based_db;DB_CLOSE_DELAY=1")
+                .addProperty("driverClass", dataSourceConfig.getDriverClassName())
+                .addProperty("userName", dataSourceConfig.getUsername())
+                .addProperty("stringsTableNamePrefix", "ISPN_STRING_TABLE")
+                .addProperty("idColumnName", "ID_COLUMN")
+                .addProperty("idColumnType", "VARCHAR(255)")
+                .addProperty("timestampColumnName", "TIMESTAMP_COLUMN")
+                .addProperty("timestampColumnType", "BIGINT")
+                .addProperty("dataColumnName", "DATA_COLUMN")
+                .addProperty("dataColumnType", "BINARY")
+                .addProperty("bucketTableNamePrefix", "MODE")
+                .addProperty("cacheName", "default");
     }
+
 }

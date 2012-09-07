@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import org.infinispan.Cache;
-import org.infinispan.config.Configuration;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.schematic.SchemaLibrary;
 import org.infinispan.schematic.SchemaLibrary.Results;
@@ -33,9 +33,12 @@ public class CacheSchematicDbTest {
 
     @Before
     public void beforeTest() {
-        Configuration c = new Configuration();
-        c = c.fluent().invocationBatching().transaction().transactionManagerLookup(new DummyTransactionManagerLookup()).build();
-        cm = TestCacheManagerFactory.createCacheManager(c);
+        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
+        configurationBuilder
+                .invocationBatching().enable()
+                .transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
+
+        cm = TestCacheManagerFactory.createCacheManager(configurationBuilder);
         cache = cm.getCache("documents");
         // tm = TestingUtil.getTransactionManager(cache);
         // Now create the SchematicDb ...

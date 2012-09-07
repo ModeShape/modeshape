@@ -32,7 +32,8 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.transaction.TransactionManager;
-import org.infinispan.loaders.CacheLoaderConfig;
+
+import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -67,7 +68,7 @@ public class InMemoryTest {
 
         STARTUP.start();
         INFINISPAN_STARTUP.start();
-        environment = new TestingEnvironment(getCacheLoaderConfiguration());
+        environment = new TestingEnvironment(this);
         txnMgr = org.infinispan.test.TestingUtil.getTransactionManager(environment.getCacheContainer().getCache(REPO_NAME));
         INFINISPAN_STARTUP.stop();
         MODESHAPE_STARTUP.start();
@@ -112,8 +113,7 @@ public class InMemoryTest {
         // do nothing by default
     }
 
-    protected CacheLoaderConfig getCacheLoaderConfiguration() {
-        return null;
+    public void applyLoaderConfiguration(ConfigurationBuilder configurationBuilder) {
     }
 
     @Test
