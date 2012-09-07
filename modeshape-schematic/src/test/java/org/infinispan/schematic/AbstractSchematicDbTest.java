@@ -24,7 +24,7 @@
 package org.infinispan.schematic;
 
 import javax.transaction.TransactionManager;
-import org.infinispan.config.Configuration;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.test.TestingUtil;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
@@ -41,9 +41,11 @@ public abstract class AbstractSchematicDbTest {
 
     @Before
     public void beforeTest() {
-        Configuration c = new Configuration();
-        c = c.fluent().transaction().transactionManagerLookup(new DummyTransactionManagerLookup()).build();
-        cm = TestCacheManagerFactory.createCacheManager(c);
+        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
+        configurationBuilder
+                .invocationBatching().enable()
+                .transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
+        cm = TestCacheManagerFactory.createCacheManager(configurationBuilder);
         // Now create the SchematicDb ...
         db = Schematic.get(cm, "documents");
         tm = TestingUtil.getTransactionManager(db.getCache());

@@ -23,8 +23,9 @@
  */
 package org.modeshape.jcr.store;
 
-import org.infinispan.loaders.CacheLoaderConfig;
-import org.infinispan.loaders.jdbc.stringbased.JdbcStringBasedCacheStoreConfig;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.cache.LoaderConfigurationBuilder;
+import org.infinispan.loaders.jdbc.stringbased.JdbcStringBasedCacheStore;
 import org.junit.Ignore;
 
 /**
@@ -42,22 +43,22 @@ public class JdbcStringCacheStoreTest extends InMemoryTest {
     }
 
     @Override
-    protected CacheLoaderConfig getCacheLoaderConfiguration() {
-        JdbcStringBasedCacheStoreConfig config = new JdbcStringBasedCacheStoreConfig();
-        config.setConnectionFactoryClass("org.infinispan.loaders.jdbc.connectionfactory.PooledConnectionFactory");
-        // config.setConnectionUrl("jdbc:h2:mem:string_based_db;DB_CLOSE_DELAY=-1");
-        config.setConnectionUrl(dataSourceConfig.getUrl() + "/string_based_db;DB_CLOSE_DELAY=1");
-        config.setIdColumnName("ID_COLUMN");
-        config.setDataColumnName("DATA_COLUMN");
-        config.setTimestampColumnName("TIMESTAMP_COLUMN");
-        config.setStringsTableNamePrefix("ISPN_STRING_TABLE");
-        config.setUserName(dataSourceConfig.getUsername());
-        config.setDriverClass(dataSourceConfig.getDriverClassName());
-        config.setIdColumnType("VARCHAR(255)");
-        config.setDataColumnType("BINARY");
-        config.setTimestampColumnType("BIGINT");
-        config.setDropTableOnExit(true);
-        config.setCreateTableOnStart(true);
-        return config;
+    public void applyLoaderConfiguration(ConfigurationBuilder configurationBuilder) {
+        LoaderConfigurationBuilder lb = configurationBuilder.loaders().addCacheLoader().cacheLoader(new JdbcStringBasedCacheStore());
+        lb.addProperty("dropTableOnExit", "true")
+                .addProperty("createTableOnStart", "true")
+                .addProperty("connectionFactoryClass", "org.infinispan.loaders.jdbc.connectionfactory.PooledConnectionFactory")
+                .addProperty("connectionUrl", dataSourceConfig.getUrl() + "/string_based_db;DB_CLOSE_DELAY=1")
+                .addProperty("driverClass", dataSourceConfig.getDriverClassName())
+                .addProperty("userName", dataSourceConfig.getUsername())
+                //.addProperty("databaseType", databaseType)
+                .addProperty("stringsTableNamePrefix", "ISPN_STRING_TABLE")
+                .addProperty("idColumnName", "ID_COLUMN")
+                .addProperty("idColumnType", "VARCHAR(255)")
+                .addProperty("timestampColumnName", "TIMESTAMP_COLUMN")
+                .addProperty("timestampColumnType", "BIGINT")
+                .addProperty("dataColumnName", "DATA_COLUMN")
+                .addProperty("dataColumnType", "BINARY");
     }
+
 }

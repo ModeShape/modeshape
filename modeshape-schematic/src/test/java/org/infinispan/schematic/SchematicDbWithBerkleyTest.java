@@ -1,9 +1,10 @@
 package org.infinispan.schematic;
 
 import java.io.File;
-import org.infinispan.config.Configuration;
-import org.infinispan.config.GlobalConfiguration;
-import org.infinispan.loaders.bdbje.BdbjeCacheStoreConfig;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.cache.LoaderConfigurationBuilder;
+import org.infinispan.configuration.global.GlobalConfigurationBuilder;
+import org.infinispan.loaders.bdbje.BdbjeCacheStore;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
@@ -20,20 +21,19 @@ public class SchematicDbWithBerkleyTest extends AbstractSchematicDbTest {
         File dbDir = new File("target/bdb");
         TestUtil.delete(dbDir);
 
-        GlobalConfiguration global = new GlobalConfiguration();
-        global = global.fluent().serialization().addAdvancedExternalizer(Schematic.externalizers()).build();
+        GlobalConfigurationBuilder globalConfigurationBuilder = new GlobalConfigurationBuilder();
+        globalConfigurationBuilder
+                .transport().transport(null)
+                .serialization().addAdvancedExternalizer(Schematic.externalizers());
 
-        BdbjeCacheStoreConfig berkleyConfig = new BdbjeCacheStoreConfig();
-        berkleyConfig.setLocation(dbDir.getAbsolutePath());
-        Configuration c = new Configuration();
-        c = c.fluent()
-             .invocationBatching()
-             .transaction()
-             .transactionManagerLookup(new DummyTransactionManagerLookup())
-             .loaders()
-             .addCacheLoader(berkleyConfig)
-             .build();
-        cm = TestCacheManagerFactory.createCacheManager(global, c, true);
+        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
+        configurationBuilder
+                .invocationBatching().enable()
+                .transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
+        LoaderConfigurationBuilder lb = configurationBuilder.loaders().addCacheLoader().cacheLoader(new BdbjeCacheStore());
+        lb.addProperty("location", dbDir.getAbsolutePath());
+
+        cm = TestCacheManagerFactory.createClusteredCacheManager(globalConfigurationBuilder, configurationBuilder);
         tm = cm.getCache().getAdvancedCache().getTransactionManager();
         // Now create the SchematicDb ...
         db = Schematic.get(cm, "documents");

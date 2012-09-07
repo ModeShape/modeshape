@@ -24,8 +24,10 @@
 package org.modeshape.jcr.store;
 
 import java.io.File;
-import org.infinispan.loaders.CacheLoaderConfig;
-import org.infinispan.loaders.jdbm.JdbmCacheStoreConfig;
+
+import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.cache.LoaderConfigurationBuilder;
+import org.infinispan.loaders.jdbm.JdbmCacheStore;
 import org.junit.Ignore;
 import org.modeshape.common.util.FileUtil;
 
@@ -43,9 +45,9 @@ public class JdbmCacheStoreTest extends InMemoryTest {
     }
 
     @Override
-    protected CacheLoaderConfig getCacheLoaderConfiguration() {
-        JdbmCacheStoreConfig config = new JdbmCacheStoreConfig();
-        config.setLocation(dbDir.getAbsolutePath());
-        return config;
+    public void applyLoaderConfiguration(ConfigurationBuilder configurationBuilder) {
+        LoaderConfigurationBuilder lb = configurationBuilder.loaders().addCacheLoader().cacheLoader(new JdbmCacheStore());
+        lb.addProperty("location", dbDir.getAbsolutePath());
     }
+
 }

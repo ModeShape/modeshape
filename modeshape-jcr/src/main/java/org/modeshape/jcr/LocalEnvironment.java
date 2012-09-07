@@ -32,11 +32,13 @@ import java.util.Map;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import org.infinispan.config.Configuration;
-import org.infinispan.config.FluentConfiguration;
-import org.infinispan.config.GlobalConfiguration;
+import org.infinispan.configuration.cache.Configuration;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.global.GlobalConfiguration;
+import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
 import org.infinispan.transaction.lookup.TransactionManagerLookup;
 import org.jgroups.Channel;
@@ -47,7 +49,6 @@ import org.modeshape.common.util.StringUtil;
 /**
  * 
  */
-@SuppressWarnings( "deprecation" )
 public class LocalEnvironment implements Environment {
 
     public static final Class<? extends TransactionManagerLookup> DEFAULT_TRANSACTION_MANAGER_LOOKUP_CLASS = GenericTransactionManagerLookup.class;
@@ -150,9 +151,8 @@ public class LocalEnvironment implements Environment {
             try {
                 container = new DefaultCacheManager(configFile);
             } catch (FileNotFoundException e) {
-                // Configuration file was not found, so try JNDI ...
-                String jndiName = configFile;
-                container = (CacheContainer)jndiContext().lookup(jndiName);
+                // Configuration file was not found, so try JNDI using configFileName as JNDI name...
+                container = (CacheContainer)jndiContext().lookup(configFile);
             }
         }
         if (container == null) {
@@ -166,16 +166,17 @@ public class LocalEnvironment implements Environment {
     }
 
     protected Configuration createDefaultConfiguration() {
-        FluentConfiguration configurator = new FluentConfiguration(new Configuration());
-        configurator.transaction().transactionManagerLookupClass(transactionManagerLookupClass());
-        return configurator.build();
+        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
+        configurationBuilder.transaction().transactionMode(TransactionMode.TRANSACTIONAL);
+        configurationBuilder.transaction().transactionManagerLookup(transactionManagerLookupInstance());
+        return configurationBuilder.build();
     }
 
     protected GlobalConfiguration createGlobalConfiguration() {
-        GlobalConfiguration global = new GlobalConfiguration();
+        GlobalConfigurationBuilder global = new GlobalConfigurationBuilder();
         // TODO author=Horia Chiorean date=7/26/12 description=MODE-1524 - Currently we don't use advanced externalizers
         // global = global.fluent().serialization().addAdvancedExternalizer(Schematic.externalizers()).build();
-        return global;
+        return global.build();
     }
 
     protected CacheContainer createContainer( GlobalConfiguration globalConfiguration,

@@ -23,22 +23,25 @@
  */
 package org.modeshape.jcr;
 
-import org.infinispan.config.Configuration;
-import org.infinispan.config.GlobalConfiguration;
-import org.infinispan.loaders.CacheLoaderConfig;
+import org.infinispan.configuration.cache.Configuration;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.cache.LegacyConfigurationAdaptor;
+import org.infinispan.configuration.global.GlobalConfiguration;
+import org.infinispan.configuration.global.LegacyGlobalConfigurationAdaptor;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.test.TestingUtil;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
+import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.infinispan.transaction.lookup.TransactionManagerLookup;
+import org.modeshape.jcr.store.InMemoryTest;
 
 /**
  * An {@link Environment} implementation that can be used for testing.
  */
-@SuppressWarnings( "deprecation" )
 public class TestingEnvironment extends LocalEnvironment {
 
-    private final CacheLoaderConfig cacheLoaderConfiguration;
+    private final InMemoryTest inMemoryTest;
 
     public TestingEnvironment() {
         this(null, DummyTransactionManagerLookup.class);
@@ -48,13 +51,13 @@ public class TestingEnvironment extends LocalEnvironment {
         this(null, transactionManagerLookup);
     }
 
-    public TestingEnvironment( CacheLoaderConfig cacheLoaderConfiguration ) {
-        this(cacheLoaderConfiguration, DummyTransactionManagerLookup.class);
+    public TestingEnvironment(InMemoryTest inMemoryTest) {
+        this(inMemoryTest, DummyTransactionManagerLookup.class);
     }
 
-    public TestingEnvironment(CacheLoaderConfig cacheLoaderConfiguration, Class<? extends TransactionManagerLookup> transactionManagerLookup) {
+    public TestingEnvironment(InMemoryTest inMemoryTest, Class<? extends TransactionManagerLookup> transactionManagerLookup) {
         super(transactionManagerLookup);
-        this.cacheLoaderConfiguration = cacheLoaderConfiguration;
+        this.inMemoryTest = inMemoryTest;
     }
 
     @Override
@@ -64,18 +67,19 @@ public class TestingEnvironment extends LocalEnvironment {
 
     @Override
     protected Configuration createDefaultConfiguration() {
-        Configuration c = new Configuration();
-        if (cacheLoaderConfiguration != null) {
-            c = c.fluent().loaders().addCacheLoader(cacheLoaderConfiguration).build();
+        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
+        configurationBuilder.transaction().transactionMode(TransactionMode.TRANSACTIONAL);
+        configurationBuilder.transaction().transactionManagerLookup(transactionManagerLookupInstance());
+        if(inMemoryTest != null){
+            inMemoryTest.applyLoaderConfiguration(configurationBuilder);
         }
-        TransactionManagerLookup txnMgrLookup = transactionManagerLookupInstance();
-        c = c.fluent().transaction().transactionManagerLookup(txnMgrLookup).build();
-        return c;
+        return configurationBuilder.build();
     }
 
     @Override
     protected CacheContainer createContainer( GlobalConfiguration globalConfiguration,
                                               Configuration configuration ) {
-        return TestCacheManagerFactory.createCacheManager(globalConfiguration, configuration);
+        return TestCacheManagerFactory.createCacheManager(LegacyGlobalConfigurationAdaptor.adapt(globalConfiguration),
+                LegacyConfigurationAdaptor.adapt(configuration));
     }
 }
