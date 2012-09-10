@@ -1,20 +1,19 @@
 package org.modeshape.web.jcr.webdav;
 
-import com.googlecode.sardine.Sardine;
-import com.googlecode.sardine.SardineFactory;
-import com.googlecode.sardine.util.SardineException;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.webdav.WebdavStoreClientTest;
+import com.googlecode.sardine.Sardine;
+import com.googlecode.sardine.SardineFactory;
+import com.googlecode.sardine.util.SardineException;
 
 /**
- * Unit test for the {@link ModeShapeWebdavStore} implementation, tested using a real web-dav compliant client.
- * This test should contains any relevant WebDAV tests from the point of the view of the JCR - WebDAV integration.
- *
- * Any WebDAV spec issues, should be tested via {@link WebdavStoreClientTest}.
+ * Unit test for the {@link ModeShapeWebdavStore} implementation, tested using a real web-dav compliant client. This test should
+ * contains any relevant WebDAV tests from the point of the view of the JCR - WebDAV integration. Any WebDAV spec issues, should
+ * be tested via {@link WebdavStoreClientTest}.
  * 
  * @author Horia Chiorean
  */
@@ -27,6 +26,7 @@ public class ModeShapeWebdavStoreClientTest extends WebdavStoreClientTest {
     private static final String REPOSITORY_NAME = "webdav_repo";
     private static final String SERVER_CONTEXT = "http://localhost:8090/webdav-jcr";
 
+    @Override
     protected Sardine initializeWebDavClient() throws SardineException {
         // Configured in pom
         return SardineFactory.begin("dnauser", "password");
@@ -62,6 +62,7 @@ public class ModeShapeWebdavStoreClientTest extends WebdavStoreClientTest {
         return "default";
     }
 
+    @Override
     protected String getServerContext() {
         return SERVER_CONTEXT;
     }
