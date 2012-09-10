@@ -24,10 +24,14 @@
 package org.modeshape.jcr.cache.change;
 
 
+import java.io.Serializable;
+
 /**
  * 
  */
-public abstract class Change {
+public abstract class Change  implements Serializable{
+
+    private static final long serialVersionUID = 1L;
 
     protected Change() {
     }

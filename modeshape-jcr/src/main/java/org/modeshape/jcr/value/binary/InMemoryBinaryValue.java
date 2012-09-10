@@ -40,7 +40,7 @@ public class InMemoryBinaryValue extends AbstractBinary {
 
     private static final long serialVersionUID = 2L;
 
-    private final BinaryStore store;
+    private transient final BinaryStore store;
     private final byte[] bytes;
     private transient String mimeType;
 

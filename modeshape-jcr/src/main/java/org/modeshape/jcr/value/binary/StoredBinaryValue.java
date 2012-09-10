@@ -38,7 +38,7 @@ public class StoredBinaryValue extends AbstractBinary {
 
     private static final long serialVersionUID = 1L;
 
-    private final BinaryStore store;
+    private final transient BinaryStore store;
     private final long size;
     private transient String mimeType;
 
