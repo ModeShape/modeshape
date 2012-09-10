@@ -31,6 +31,8 @@ import org.modeshape.jcr.value.Path;
  */
 public abstract class AbstractNodeChange extends Change {
 
+    private static final long serialVersionUID = 1L;
+
     private final NodeKey key;
     protected final Path path;
 
@@ -45,7 +47,7 @@ public abstract class AbstractNodeChange extends Change {
 
     /**
      * Get the path to the node involved in the change.
-     *
+     * 
      * @return the path; may not be null
      */
     public Path getPath() {

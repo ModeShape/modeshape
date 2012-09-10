@@ -10,6 +10,8 @@ import org.modeshape.jcr.value.Path;
  */
 public class NodeSequenced extends AbstractSequencingChange {
 
+    private static final long serialVersionUID = 1L;
+
     private final NodeKey outputNodeKey;
     private final Path outputNodePath;
 

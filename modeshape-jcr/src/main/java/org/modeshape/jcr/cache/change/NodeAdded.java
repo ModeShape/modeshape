@@ -36,6 +36,7 @@ import org.modeshape.jcr.value.Property;
  */
 public class NodeAdded extends AbstractNodeChange {
 
+    private static final long serialVersionUID = 1L;
     private static final Map<Name, Property> EMPTY_PROPERTIES = Collections.emptyMap();
 
     private final NodeKey parentKey;

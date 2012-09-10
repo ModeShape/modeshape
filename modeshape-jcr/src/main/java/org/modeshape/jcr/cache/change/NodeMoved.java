@@ -31,6 +31,8 @@ import org.modeshape.jcr.value.Path;
  */
 public class NodeMoved extends AbstractNodeChange {
 
+    private static final long serialVersionUID = 1L;
+
     private final NodeKey oldParent;
     private final NodeKey newParent;
     private final Path oldPath;
