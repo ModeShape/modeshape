@@ -268,7 +268,10 @@ public class RecordingChanges implements Changes, ChangeSet {
           .append(getTimestamp())
           .append(" with user data = ")
           .append(userData)
+          .append(" in repository ").append(repositoryKey)
+          .append(" and workspace ").append(workspaceName)
           .append("\n");
+
         for (Change change : this) {
             sb.append("  ").append(change).append("\n");
         }

@@ -24,6 +24,7 @@
 package org.modeshape.jcr;
 
 import java.io.File;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -130,5 +131,14 @@ public class TestingUtil {
         } catch (Throwable t) {
             log.error(t, JcrI18n.errorKillingEngine, t.getMessage());
         }
+    }
+
+    public static JcrRepository startRepositoryWithConfig(String configFile) throws Exception {
+        URL configUrl = TestingUtil.class.getClassLoader().getResource(configFile);
+        RepositoryConfiguration config = RepositoryConfiguration.read(configUrl);
+        JcrRepository repository = null;
+        repository = new JcrRepository(config);
+        repository.start();
+        return repository;
     }
 }

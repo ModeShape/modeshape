@@ -1,0 +1,14 @@
+{
+    "name" : "Clustered Repository",
+    "workspaces" : {
+        "predefined" : ["otherWorkspace"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "storage" : {
+        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
+    },
+    "clustering" : {
+        "clusterName" : "modeshape"
+    }
+}

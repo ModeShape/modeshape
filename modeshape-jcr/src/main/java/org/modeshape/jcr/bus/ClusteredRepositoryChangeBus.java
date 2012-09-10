@@ -103,11 +103,6 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         this.delegate = delegate;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.bus.ChangeBus#start()
-     */
     @Override
     public synchronized void start() {
         String clusterName = clusteringConfiguration.getClusterName();
@@ -167,11 +162,6 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.bus.ChangeBus#hasObservers()
-     */
     @Override
     public boolean hasObservers() {
         return delegate.hasObservers();
@@ -186,11 +176,6 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         return channel != null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.bus.ChangeBus#shutdown()
-     */
     @Override
     public synchronized void shutdown() {
         if (channel != null) {
@@ -302,21 +287,11 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
 
     protected final class Receiver extends ReceiverAdapter {
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jgroups.MembershipListener#block()
-         */
         @Override
         public void block() {
             isOpen.set(false);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jgroups.MessageListener#receive(org.jgroups.Message)
-         */
         @Override
         public void receive( Message message ) {
             if (!hasObservers()) {
@@ -336,21 +311,11 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
             }
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jgroups.MembershipListener#suspect(org.jgroups.Address)
-         */
         @Override
         public void suspect( Address suspectedMbr ) {
             LOGGER.error(BusI18n.memberOfClusterIsSuspect, clusteringConfiguration.getClusterName(), suspectedMbr);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jgroups.MembershipListener#viewAccepted(org.jgroups.View)
-         */
         @Override
         public void viewAccepted( View newView ) {
             LOGGER.trace("Members of '{0}' cluster have changed: {1}", clusteringConfiguration.getClusterName(), newView);
@@ -369,31 +334,16 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
     }
 
     protected final class Listener implements ChannelListener {
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jgroups.ChannelListener#channelClosed(org.jgroups.Channel)
-         */
         @Override
         public void channelClosed( Channel channel ) {
             isOpen.set(false);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jgroups.ChannelListener#channelConnected(org.jgroups.Channel)
-         */
         @Override
         public void channelConnected( Channel channel ) {
             isOpen.set(true);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.jgroups.ChannelListener#channelDisconnected(org.jgroups.Channel)
-         */
         @Override
         public void channelDisconnected( Channel channel ) {
             isOpen.set(false);

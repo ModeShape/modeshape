@@ -646,8 +646,8 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         }
 
         // Now process the changes ...
-        Set<Name> nodeTypesToRefresh = null;
-        Set<Name> nodeTypesToDelete = null;
+        Set<Name> nodeTypesToRefresh = new HashSet<Name>();
+        Set<Name> nodeTypesToDelete = new HashSet<Name>();
         for (Change change : changeSet) {
             if (change instanceof NodeAdded) {
                 NodeAdded added = (NodeAdded)change;
@@ -655,7 +655,6 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
                 if (nodeTypesPath.isAncestorOf(addedPath)) {
                     // Get the name of the node type ...
                     Name nodeTypeName = addedPath.getSegment(2).getName();
-                    if (nodeTypesToRefresh == null) nodeTypesToRefresh = new HashSet<Name>();
                     nodeTypesToRefresh.add(nodeTypeName);
                 }
             } else if (change instanceof NodeRemoved) {
@@ -665,13 +664,11 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
                     // Get the name of the node type ...
                     Name nodeTypeName = removedPath.getSegment(2).getName();
                     if (removedPath.size() == 3) {
-                        if (nodeTypesToDelete == null) nodeTypesToDelete = new HashSet<Name>();
                         nodeTypesToDelete.add(nodeTypeName);
                     } else {
                         // It's a child defn or property defn ...
-                        if (nodeTypesToDelete == null || !nodeTypesToDelete.contains(nodeTypeName)) {
+                        if (!nodeTypesToDelete.contains(nodeTypeName)) {
                             // The child defn or property defn is being removed but the node type is not ...
-                            if (nodeTypesToRefresh == null) nodeTypesToRefresh = new HashSet<Name>();
                             nodeTypesToRefresh.add(nodeTypeName);
                         }
                     }
@@ -682,13 +679,12 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
                 if (nodeTypesPath.isAncestorOf(changedPath)) {
                     // Get the name of the node type ...
                     Name nodeTypeName = changedPath.getSegment(2).getName();
-                    if (nodeTypesToRefresh == null) nodeTypesToRefresh = new HashSet<Name>();
                     nodeTypesToRefresh.add(nodeTypeName);
                 }
             } // we don't care about node moves (don't happen) or property added/removed (handled by node add/remove)
         }
 
-        if (nodeTypesToRefresh == null && nodeTypesToDelete == null) {
+        if (nodeTypesToRefresh.isEmpty() && nodeTypesToDelete.isEmpty()) {
             // No changes
             return;
         }
