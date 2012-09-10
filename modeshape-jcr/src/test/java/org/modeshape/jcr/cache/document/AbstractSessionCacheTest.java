@@ -23,8 +23,11 @@
  */
 package org.modeshape.jcr.cache.document;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import javax.transaction.TransactionManager;
 import org.modeshape.jcr.ExecutionContext;
+import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
@@ -49,7 +52,8 @@ public abstract class AbstractSessionCacheTest extends AbstractNodeCacheTest {
     @Override
     protected NodeCache createCache() {
         listener = new PrintingChangeSetListener();
-        workspaceCache = new WorkspaceCache(context, "repo", "ws", database(), 100L, ROOT_KEY_WS1, listener);
+        ConcurrentMap<NodeKey, CachedNode> nodeCache = new ConcurrentHashMap<NodeKey, CachedNode>();
+        workspaceCache = new WorkspaceCache(context, "repo", "ws", database(), 100L, ROOT_KEY_WS1, nodeCache, listener);
         loadJsonDocuments(resource(resourceNameForWorkspaceContentDocument()));
         session1 = createSessionCache(context, workspaceCache);
         session2 = createSessionCache(context, workspaceCache);

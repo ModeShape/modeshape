@@ -189,6 +189,10 @@
                     "default" : true,
                     "description" : "Specifies whether users can create additional workspaces beyond the predefined, system, and default workspaces. The default value is 'true'."
                 },
+                "cacheConfiguration" : {
+                    "type" : "string",
+                    "description" : "The location of the file defining the Infinispan configuration for the repository's workspace caches. If a file could not be found (on the thread context classloader, on the application's classpath, or on the system classpath), then the name is used to look in JNDI for an Infinispan CacheContainer instance. If no such container is found, then a value of 'org/modeshape/jcr/deafult-workspace-cache-config.xml' is used, which is the default configuration provided by ModeShape."
+                },
                 "description" : {
                     "type" : "string",
                     "description" : "The optional description of this section of the configuration. It is unused by ModeShape."

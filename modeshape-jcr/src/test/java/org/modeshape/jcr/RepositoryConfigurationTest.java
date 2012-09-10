@@ -266,6 +266,23 @@ public class RepositoryConfigurationTest {
         assertNotNull(clusteringConfiguration.getDocument());
     }
 
+    @Test
+    public void shouldAllowWorkspaceCacheContainerToBeConfigured() throws Exception {
+        String cacheContainer = "my-container";
+
+        RepositoryConfiguration config = RepositoryConfiguration.read("{ \"name\" : \"foo\", \"workspaces\" : {\"cacheConfiguration\":\""
+                                                                      + cacheContainer + "\"} }");
+        System.out.println(config.validate());
+        assertThat(config.validate().hasProblems(), is(false));
+        assertEquals(cacheContainer, config.getWorkspaceCacheConfiguration());
+
+        config = RepositoryConfiguration.read("{ 'name' : 'foo', 'workspaces' : { 'cacheConfiguration' : '" + cacheContainer
+                                              + "' } }");
+        System.out.println(config.validate());
+        assertThat(config.validate().hasProblems(), is(false));
+        assertEquals(cacheContainer, config.getWorkspaceCacheConfiguration());
+    }
+
     protected RepositoryConfiguration assertValid( RepositoryConfiguration config ) {
         Problems results = config.validate();
         assertThat(results.toString(), results.hasProblems(), is(false));

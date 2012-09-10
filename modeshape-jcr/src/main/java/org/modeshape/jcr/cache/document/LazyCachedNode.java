@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.cache.document;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -54,16 +55,18 @@ import org.modeshape.jcr.value.Property;
  * externally each instance appears to be immutable and invariant.
  */
 @Immutable
-public class LazyCachedNode implements CachedNode {
+public class LazyCachedNode implements CachedNode, Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final NodeKey key;
     private Document document;
-    private Map<Name, Property> properties;
-    private NodeKey parent;
-    private Set<NodeKey> additionalParents;
-    private ChildReference parentReferenceToSelf;
-    private boolean propertiesFullyLoaded = false;
-    private ChildReferences childReferences;
+    private transient Map<Name, Property> properties;
+    private transient NodeKey parent;
+    private transient Set<NodeKey> additionalParents;
+    private transient ChildReference parentReferenceToSelf;
+    private transient boolean propertiesFullyLoaded = false;
+    private transient ChildReferences childReferences;
 
     public LazyCachedNode( NodeKey key ) {
         this.key = key;

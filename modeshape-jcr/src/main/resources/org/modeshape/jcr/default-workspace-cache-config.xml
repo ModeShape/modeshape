@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<infinispan
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="urn:infinispan:config:5.1 http://www.infinispan.org/schemas/infinispan-config-5.1.xsd"
+        xmlns="urn:infinispan:config:5.1">
+
+    <global/>
+    
+    <!--
+      Define the configuration for each workspace cache. This configuration will be used if there is no "namedCache"
+      definition for the workspace name. Note that the names of caches following the convention 
+      "{repositoryName}/{workspaceName}".
+    -->
+    <default>
+
+        <!-- Local in-memory caches with no persistence. -->
+        <clustering mode="LOCAL"/>
+
+        <!-- No more that 10K entries per cache, with LIRS eviction. -->
+        <eviction maxEntries="10000" strategy="LIRS"/>
+
+        <!-- Expire entries after 120 seconds or after 60 seconds of not being used (whichever comes first). -->
+        <expiration lifespan="120000" maxIdle="60000"/>  
+          
+    </default>
+    
+</infinispan>

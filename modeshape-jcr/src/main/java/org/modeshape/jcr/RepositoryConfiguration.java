@@ -76,7 +76,11 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.clustering.DefaultChannelProvider;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
-import org.modeshape.jcr.value.binary.*;
+import org.modeshape.jcr.value.binary.AbstractBinaryStore;
+import org.modeshape.jcr.value.binary.BinaryStoreException;
+import org.modeshape.jcr.value.binary.DatabaseBinaryStore;
+import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
+import org.modeshape.jcr.value.binary.TransientBinaryStore;
 import org.modeshape.jcr.value.binary.infinispan.InfinispanBinaryStore;
 
 /**
@@ -271,6 +275,15 @@ public class RepositoryConfiguration {
         public static final String DEFAULT = "default";
 
         /**
+         * The name for the field containing the name of the file defining the Infinispan configuration for the repository's
+         * workspace caches. If a file could not be found (on the thread context classloader, on the application's classpath, or
+         * on the system classpath), then the name is used to look in JNDI for an Infinispan CacheContainer instance. If no such
+         * container is found, then a value of "org/modeshape/jcr/deafult-workspace-cache-config.xml" is used, which is the
+         * default configuration provided by ModeShape.
+         */
+        public static final String WORKSPACE_CACHE_CONFIGURATION = "cacheConfiguration";
+
+        /**
          * The name for the field whose value is a document containing binary storage information.
          */
         public static final String BINARY_STORAGE = "binaryStorage";
@@ -446,6 +459,11 @@ public class RepositoryConfiguration {
          */
         public static final Set<String> ANONYMOUS_ROLES = Collections.unmodifiableSet(new HashSet<String>(
                                                                                                           Arrays.asList(new String[] {ModeShapeRoles.ADMIN})));
+
+        /**
+         * The default value of the {@link FieldName#WORKSPACE_CACHE_CONFIGURATION} field is '{@value} '.
+         */
+        public static final String WORKSPACE_CACHE_CONFIGURATION = "org/modeshape/jcr/default-workspace-cache-config.xml";
 
         /**
          * The default value of the {@link FieldName#USE_ANONYMOUS_ON_FAILED_LOGINS} field is '{@value} '.
@@ -863,8 +881,21 @@ public class RepositoryConfiguration {
         return Default.CACHE_TRANSACTION_MANAGER_LOOKUP;
     }
 
+    public String getWorkspaceCacheConfiguration() {
+        Document storage = doc.getDocument(FieldName.WORKSPACES);
+        if (storage != null) {
+            return storage.getString(FieldName.WORKSPACE_CACHE_CONFIGURATION, Default.WORKSPACE_CACHE_CONFIGURATION);
+        }
+        return Default.WORKSPACE_CACHE_CONFIGURATION;
+    }
+
     CacheContainer getContentCacheContainer() throws IOException, NamingException {
         return getCacheContainer(null);
+    }
+
+    CacheContainer getWorkspaceContentCacheContainer() throws IOException, NamingException {
+        String config = getWorkspaceCacheConfiguration();
+        return getCacheContainer(config);
     }
 
     protected CacheContainer getCacheContainer( String config ) throws IOException, NamingException {
@@ -980,7 +1011,7 @@ public class RepositoryConfiguration {
                 classname = binaryStorage.getString(FieldName.CLASSNAME);
                 classPath = binaryStorage.getString(FieldName.CLASSLOADER);
 
-                //class name is mandatory
+                // class name is mandatory
                 if (StringUtil.isBlank(classname)) {
                     throw new BinaryStoreException(JcrI18n.missingVariableValue.text("classname"));
                 }
@@ -998,7 +1029,7 @@ public class RepositoryConfiguration {
          */
         private AbstractBinaryStore createInstance() throws Exception {
             ClassLoader classLoader = environment().getClassLoader(getClass().getClassLoader(), classPath);
-            return (AbstractBinaryStore) classLoader.loadClass(classname).newInstance();
+            return (AbstractBinaryStore)classLoader.loadClass(classname).newInstance();
         }
 
         private void setTypeFields( Object instance,
@@ -1030,11 +1061,7 @@ public class RepositoryConfiguration {
                     // this is very ! tricky because it does not throw an exception - ever
                     ReflectionUtil.setValue(instance, fieldName, convertedFieldValue);
                 } catch (Throwable e) {
-                    Logger.getLogger(getClass()).error(e,
-                                                       JcrI18n.unableToSetFieldOnInstance,
-                                                       fieldName,
-                                                       fieldValue,
-                                                       classname);
+                    Logger.getLogger(getClass()).error(e, JcrI18n.unableToSetFieldOnInstance, fieldName, fieldValue, classname);
                 }
             }
         }
@@ -1042,7 +1069,7 @@ public class RepositoryConfiguration {
         /**
          * Attempts "its best" to convert a generic Object value (coming from a Document) to a value which can be set on the field
          * of a component. Note: thanks to type erasure, generics are not supported.
-         *
+         * 
          * @param expectedType the {@link Class} of the field on which the value should be set
          * @param value a generic value coming from a document. Can be a simple value, another {@link Document} or {@link Array}
          * @return the converted value, which should be compatible with the expected type.
@@ -1162,7 +1189,7 @@ public class RepositoryConfiguration {
         }
 
         public java.lang.reflect.Field findField( Class<?> typeClass,
-                                                   String fieldName ) {
+                                                  String fieldName ) {
             java.lang.reflect.Field field = null;
             if (typeClass != null) {
                 try {
@@ -2069,7 +2096,7 @@ public class RepositoryConfiguration {
         @SuppressWarnings( {"unchecked", "cast"} )
         private <Type> Type createGenericComponent( ClassLoader classLoader ) {
             // Create the instance ...
-            Type instance = (Type) Util.getInstance(getClassname(), classLoader);
+            Type instance = (Type)Util.getInstance(getClassname(), classLoader);
             if (ReflectionUtil.getField("name", instance.getClass()) != null) {
                 // Always try to set the name (if there is such a field). The name may be set based upon
                 // the value in the document, but a name field in documents is not required ...
@@ -2276,4 +2303,5 @@ public class RepositoryConfiguration {
             return field;
         }
     }
+
 }

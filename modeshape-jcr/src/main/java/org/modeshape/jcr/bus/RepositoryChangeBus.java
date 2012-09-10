@@ -84,6 +84,7 @@ public final class RepositoryChangeBus implements ChangeBus {
 
     @Override
     public void shutdown() {
+        shutdown = true;
         try {
             listenersLock.writeLock().lock();
             listeners.clear();
@@ -97,7 +98,7 @@ public final class RepositoryChangeBus implements ChangeBus {
     private void stopWork() {
         executor.shutdown();
         for (Future<?> worker : workers) {
-            worker.cancel(true);
+            if (!worker.isDone()) worker.cancel(true);
         }
         workers.clear();
     }
