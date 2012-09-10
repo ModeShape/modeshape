@@ -34,6 +34,8 @@ import org.modeshape.jcr.value.Path;
  */
 public class NodeSequencingFailure extends AbstractSequencingChange {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * The cause of the sequencing failure
      */

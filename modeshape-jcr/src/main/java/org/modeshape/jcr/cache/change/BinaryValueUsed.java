@@ -30,6 +30,8 @@ import org.modeshape.jcr.value.BinaryKey;
  */
 public class BinaryValueUsed extends BinaryValueUsageChange {
 
+    private static final long serialVersionUID = 1L;
+
     public BinaryValueUsed( BinaryKey key ) {
         super(key);
     }

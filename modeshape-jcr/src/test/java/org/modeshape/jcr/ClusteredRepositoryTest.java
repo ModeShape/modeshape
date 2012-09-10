@@ -24,27 +24,27 @@
 
 package org.modeshape.jcr;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
 import org.junit.After;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.observation.Event;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Unit test for various clustered repository scenarios.
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class ClusteredRepositoryTest extends AbstractTransactionalTest {
@@ -98,11 +98,11 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
         assertTrue(paths.contains("/testNode/jcr:primaryType"));
     }
 
-    private class ClusteringEventListener implements EventListener {
+    protected class ClusteringEventListener implements EventListener {
         private final List<String> paths;
         private final CountDownLatch eventsLatch;
 
-        private ClusteringEventListener( int expectedEventsCount ) {
+        protected ClusteringEventListener( int expectedEventsCount ) {
             this.paths = new ArrayList<String>();
             this.eventsLatch = new CountDownLatch(expectedEventsCount);
         }

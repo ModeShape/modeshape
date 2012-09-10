@@ -34,6 +34,8 @@ import org.modeshape.jcr.value.Path;
  */
 public abstract class AbstractSequencingChange extends AbstractNodeChange {
 
+    private static final long serialVersionUID = 1L;
+
     private final String userId;
     private final String selectedPath;
     private final String outputPath;

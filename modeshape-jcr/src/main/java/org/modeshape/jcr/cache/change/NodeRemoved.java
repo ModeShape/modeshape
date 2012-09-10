@@ -31,6 +31,8 @@ import org.modeshape.jcr.value.Path;
  */
 public class NodeRemoved extends AbstractNodeChange {
 
+    private static final long serialVersionUID = 1L;
+
     private final NodeKey parentKey;
 
     public NodeRemoved( NodeKey key,

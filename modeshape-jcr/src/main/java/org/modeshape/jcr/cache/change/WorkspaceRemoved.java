@@ -28,6 +28,8 @@ package org.modeshape.jcr.cache.change;
  */
 public class WorkspaceRemoved extends Change {
 
+    private static final long serialVersionUID = 1L;
+
     private final String workspaceName;
 
     public WorkspaceRemoved( String workspaceName ) {

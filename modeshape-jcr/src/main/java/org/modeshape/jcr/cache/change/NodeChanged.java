@@ -31,6 +31,8 @@ import org.modeshape.jcr.value.Path;
  */
 public class NodeChanged extends AbstractNodeChange {
 
+    private static final long serialVersionUID = 1L;
+
     public NodeChanged( NodeKey key,
                         Path path ) {
         super(key, path);

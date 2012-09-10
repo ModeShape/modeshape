@@ -32,6 +32,8 @@ import org.modeshape.jcr.value.Property;
  */
 public class PropertyAdded extends AbstractNodeChange {
 
+    private static final long serialVersionUID = 1L;
+
     private final Property property;
 
     public PropertyAdded( NodeKey key,

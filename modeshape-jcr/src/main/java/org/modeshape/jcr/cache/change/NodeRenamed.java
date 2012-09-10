@@ -32,6 +32,8 @@ import org.modeshape.jcr.value.Path.Segment;
  */
 public class NodeRenamed extends AbstractNodeChange {
 
+    private static final long serialVersionUID = 1L;
+
     private final Segment oldSegment;
 
     public NodeRenamed( NodeKey key,
