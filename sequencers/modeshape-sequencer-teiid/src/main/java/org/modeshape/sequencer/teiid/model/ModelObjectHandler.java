@@ -127,7 +127,7 @@ public abstract class ModelObjectHandler {
             newValues[currentValues.length] = newValue;
             node.setProperty(propertyName, newValues);
         } else {
-            node.setProperty(propertyName, new Value[] { newValue });
+            node.setProperty(propertyName, new Value[] {newValue});
         }
 
         debug("added a value of " + newValue + " to multi-valued property " + propertyName + " in node " + node.getName());
@@ -179,8 +179,27 @@ public abstract class ModelObjectHandler {
                                      final Node parentNode ) throws Exception;
 
     /**
+     * If the value is <code>null</code> or empty the property is not set.
+     * 
+     * @param node the node whose boolean property is being set (cannot be <code>null</code>)
+     * @param value the property value (can be <code>null</code> or empty)
+     * @param jcrPropertyName the JCR property name (cannot be <code>null</code> or empty)
+     * @throws Exception if there is a problem setting the property
+     */
+    protected void setBooleanProperty( final Node node,
+                                       final String jcrPropertyName,
+                                       final String value ) throws Exception {
+        CheckArg.isNotNull(node, "node");
+        CheckArg.isNotEmpty(jcrPropertyName, "jcrPropertyName");
+
+        if (!StringUtil.isBlank(value)) {
+            node.setProperty(jcrPropertyName, Boolean.parseBoolean(value));
+        }
+    }
+
+    /**
      * <strong>This method should only be called by the framework loading model object handlers.</strong>
-     *
+     * 
      * @param context the sequencer context being set (never <code>null</code>)
      */
     protected void setContext( final Context context ) {
@@ -189,30 +208,8 @@ public abstract class ModelObjectHandler {
     }
 
     /**
-     * @param node the node whose properties are being set (cannot be <code>null</code>)
-     * @param element the XMI element whose attributes are being used to set the properties (cannot be <code>null</code>)
-     * @param nameAttributeUri the URI of the name attribute to use as the node name (can be <code>null</code> or empty)
-     * @throws Exception if there is a problem setting the properties
-     */
-    protected void setProperties( final Node node,
-                                  final XmiElement element,
-                                  final String nameAttributeUri ) throws Exception {
-        CheckArg.isNotNull(node, "node");
-        CheckArg.isNotNull(element, "element");
-
-        final XmiAttribute nameAttribute = element.getNameAttribute(nameAttributeUri);
-
-        for (final XmiAttribute attribute : element.getAttributes()) {
-            // don't set if name property as that is the node name
-            if (!attribute.equals(nameAttribute) && !XmiLexicon.JcrId.UUID.equals(attribute.getQName())) {
-                setProperty(node, getQName(attribute), attribute.getValue());
-            }
-        }
-    }
-
-    /**
-     * Sets the specified property only if the value is not <code>null</code> and not empty.
-     *
+     * Sets the specified, <strong>single-valued</strong>, property only if the value is not <code>null</code> and not empty.
+     * 
      * @param node the node whose property is being set (cannot be <code>null</code>)
      * @param propertyName the name of the property being set (cannot be <code>null</code>)
      * @param propertyValue the proposed property value (can be <code>null</code> or empty)
@@ -225,52 +222,33 @@ public abstract class ModelObjectHandler {
         CheckArg.isNotEmpty(propertyName, "propertyName");
 
         if (!StringUtil.isBlank(propertyValue)) {
-            boolean multiValued = false;
-
-            if (node.hasProperty(propertyName)) {
-                if (node.getProperty(propertyName).isMultiple()) {
-                    multiValued = true;
-                }
-            } else {
-                // TODO need to get property definition here (get answer one time and cache)
-            }
-
             if (this.resolver.isReference(propertyValue)) {
-                String[] refUuids = propertyValue.split("\\s"); // see if multi-valued
+                String refUuid = this.resolver.resolveInternalReference(propertyValue);
+                Node refNode = this.resolver.getNode(refUuid);
 
-                for (String refUuid : refUuids) {
-                    refUuid = this.resolver.resolveInternalReference(refUuid);
-                    Node refNode = this.resolver.getNode(refUuid);
-
-                    if (refNode == null) {
-                        // unresolved reference
-                        UnresolvedReference unresolved = this.resolver.addUnresolvedReference(refUuid);
-                        unresolved.addReferencerReference(node.getProperty(XmiLexicon.JcrId.UUID).getString(), propertyName);
-                    } else {
-                        // add weakreference
-                        if (!refNode.isNodeType(JcrConstants.MIX_REFERENCEABLE)) {
-                            refNode.addMixin(JcrConstants.MIX_REFERENCEABLE);
-                        }
-
-                        Value weakReference = node.getSession().getValueFactory().createValue(refNode, true);
-                        node.setProperty(propertyName, weakReference);
+                if (refNode == null) {
+                    // unresolved reference
+                    UnresolvedReference unresolved = this.resolver.addUnresolvedReference(refUuid);
+                    unresolved.addReferencerReference(node.getProperty(XmiLexicon.JcrId.UUID).getString(), propertyName);
+                } else {
+                    // add weakreference
+                    if (!refNode.isNodeType(JcrConstants.MIX_REFERENCEABLE)) {
+                        refNode.addMixin(JcrConstants.MIX_REFERENCEABLE);
                     }
+
+                    Value weakReference = node.getSession().getValueFactory().createValue(refNode, true);
+                    node.setProperty(propertyName, weakReference);
                 }
             } else {
-                if (multiValued) {
-                    addPropertyValue(node, propertyName, propertyValue);
-                    debug(node.getName() + ":adding value " + propertyValue + " to multi-valued property " + propertyName);
-                } else {
-                    node.setProperty(propertyName, propertyValue);
-                    debug(node.getName() + ":setting " + propertyName + " = " + propertyValue);
-                }
+                node.setProperty(propertyName, propertyValue);
+                debug(node.getName() + ":setting " + propertyName + " = " + propertyValue);
             }
         }
     }
 
     /**
      * <strong>This method should only be called by the framework loading model object handlers.</strong>
-     *
+     * 
      * @param reader the model reader being set (never <code>null</code>)
      */
     protected void setReader( final ModelReader reader ) {
@@ -280,7 +258,7 @@ public abstract class ModelObjectHandler {
 
     /**
      * <strong>This method should only be called by the framework loading model object handlers.</strong>
-     *
+     * 
      * @param resolver the reference resolver used during sequencing (cannot be <code>null</code>)
      */
     protected void setResolver( final ReferenceResolver resolver ) {
@@ -290,7 +268,7 @@ public abstract class ModelObjectHandler {
 
     /**
      * <strong>This method should only be called by the framework loading model object handlers.</strong>
-     *
+     * 
      * @param vdbModel the VDB model being sequenced (can be <code>null</code> if model is not from a VDB)
      */
     protected void setVdbModel( final VdbModel vdbModel ) {

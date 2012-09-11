@@ -58,10 +58,7 @@ public final class RelationalModelObjectHandler extends ModelObjectHandler {
         CheckArg.isNotNull(parentNode, "node");
         CheckArg.isEquals(element.getNamespaceUri(), "namespace URI", URI, "relational URI");
 
-        if (DEBUG) {
-            debug("==== RelationalModelObjectHandler:process:element=" + element.getName());
-        }
-
+        debug("==== RelationalModelObjectHandler:process:element=" + element.getName());
         final String type = element.getName();
 
         if (ModelId.BASE_TABLE.equals(type)) {
@@ -109,9 +106,7 @@ public final class RelationalModelObjectHandler extends ModelObjectHandler {
                 tableNode = addNode(parentNode, element, URI, JcrId.VIEW);
                 processTable(element, tableNode);
             } else {
-                if (DEBUG) {
-                    debug("**** relational '" + ModelId.TABLES + "' type + of '" + xsiType + "' was not processed");
-                }
+                debug("**** relational '" + ModelId.TABLES + "' type + of '" + xsiType + "' was not processed");
             }
         } else if (ModelId.TYPE.equals(type)) {
             processType(element, parentNode);
@@ -122,9 +117,7 @@ public final class RelationalModelObjectHandler extends ModelObjectHandler {
             final Node viewNode = addNode(parentNode, element, URI, JcrId.VIEW);
             processTable(element, viewNode);
         } else {
-            if (DEBUG) {
-                debug("**** relational type of " + type + " was not processed");
-            }
+            debug("**** relational type of " + type + " was not processed");
         }
     }
 
@@ -614,17 +607,19 @@ public final class RelationalModelObjectHandler extends ModelObjectHandler {
                 // - relational:typeName (string)
                 setProperty(parentNode, JcrId.TYPE_NAME, typeName);
 
-                // TODO typeElement does not have a XMI UUID so there is not a way to look up node (if it even exists)
                 // - relational:type (weakreference)
                 final String uuid = ReferenceResolver.STANDARD_DATA_TYPE_UUIDS_BY_NAMES.get(typeName);
-//                final Node typeNode = getResolver().getNode(uuid);
-//
-//                if (typeNode == null) {
-//                    UnresolvedReference unresolved = getResolver().addUnresolvedReference(uuid);
-//                    unresolved.addReferencerReference(typeElement.getUuid(), JcrId.TYPE);
-//                } else {
-//                    parentNode.setProperty(JcrId.TYPE, parentNode.getSession().getValueFactory().createValue(typeNode, true));
-//                }
+                final Node typeNode = getResolver().getNode(uuid);
+
+                if (typeNode == null) {
+                    // type element may not have a UUID and then it is impossible to set weak reference
+                    if (typeElement.getUuid() != null) {
+                        UnresolvedReference unresolved = getResolver().addUnresolvedReference(uuid);
+                        unresolved.addReferencerReference(typeElement.getUuid(), JcrId.TYPE);
+                    }
+                } else {
+                    parentNode.setProperty(JcrId.TYPE, parentNode.getSession().getValueFactory().createValue(typeNode, true));
+                }
 
                 // - relational:typeXmiUuid (string)
                 setProperty(parentNode, JcrId.TYPE_XMI_UUID, uuid);

@@ -205,7 +205,6 @@ public final class CoreModelObjectHandler extends ModelObjectHandler {
                             if (node != null) {
                                 addPropertyValue(node, JcrId.KEYWORDS, keyword);
                             } else if (unresolved != null) {
-                                // TODO unresolved needs to be able to handle multi-valued properties
                                 unresolved.addProperty(JcrId.KEYWORDS, keyword, true);
                             }
                         }

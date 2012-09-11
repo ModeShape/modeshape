@@ -725,7 +725,7 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                        is("jdbc:oracle:thin:@englxdbs11.mm.atl2.redhat.com:1521:ORCL"));
 
             // import settings
-            Node settings = jdbcSourceNode.getNode(JdbcLexicon.JcrId.IMPORTED);
+            Node settings = outputNode.getNode(JdbcLexicon.JcrId.IMPORTED);
             assertNotNull(settings);
             assertThat(settings.getPrimaryNodeType().getName(), is(JdbcLexicon.JcrId.IMPORTED));
             assertThat(settings.getProperty(XmiLexicon.JcrId.UUID).getString(), is("5c6e0cc1-400d-4e3b-aa8a-d4fdef6a3e36"));

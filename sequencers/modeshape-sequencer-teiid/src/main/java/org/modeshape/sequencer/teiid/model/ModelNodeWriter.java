@@ -24,6 +24,7 @@
 package org.modeshape.sequencer.teiid.model;
 
 import javax.jcr.Node;
+import javax.jcr.Property;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import org.modeshape.common.collection.Multimap;
@@ -41,8 +42,10 @@ import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
 import org.modeshape.sequencer.teiid.model.ReferenceResolver.UnresolvedProperty;
 import org.modeshape.sequencer.teiid.model.ReferenceResolver.UnresolvedReference;
 import org.modeshape.sequencer.teiid.xmi.XmiElement;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -178,8 +181,10 @@ public final class ModelNodeWriter {
     }
 
     public boolean writeUnresolvedReferences() throws Exception {
-        // TODO this is modifying the unresolved references it is processing. may need to have multiple passes?
         debug("\n\n[begin writeUnresolvedReferences()]");
+
+        // keep track of the unresolved references that have been resolved so that they can be marked as resolved later
+        List<UnresolvedReference> resolvedReferences = new ArrayList<ReferenceResolver.UnresolvedReference>();
 
         for (final Entry<String, UnresolvedReference> entry : this.resolver.getUnresolved().entrySet()) {
             final Node resolved = this.resolver.getNode(entry.getKey());
@@ -254,8 +259,7 @@ public final class ModelNodeWriter {
                             resolved.setProperty(propertyName, refs.iterator().next());
                         }
                     } else {
-                        // TODO find using prop defns
-                        resolved.getPrimaryNodeType().getPropertyDefinitions();
+                        debug("**** resolved property is multi-value and is not being processed");
                     }
                 }
             }
@@ -274,7 +278,6 @@ public final class ModelNodeWriter {
                         if (referencerNode == null) {
                             // referencer node is unresolved
                             UnresolvedReference unresolvedReferencer = this.resolver.addUnresolvedReference(uuid);
-                            // TODO find a way to not assume multi-valued though they all are right now
                             unresolvedReferencer.addProperty(propertyName, resolved.getName(), true);
                         } else {
                             referencerNode.setProperty(propertyName,
@@ -303,15 +306,32 @@ public final class ModelNodeWriter {
                             UnresolvedReference unresolvedReferencer = this.resolver.addUnresolvedReference(referencerUuuid);
                             unresolvedReferencer.addReference(propertyName, entry.getKey());
                         } else {
-                            // TODO multi-valued
-                            referencer.setProperty(propertyName, weakRef);
+                            if (referencer.hasProperty(propertyName)) {
+                                Property prop = referencer.getProperty(propertyName);
+
+                                if (prop.isMultiple()) {
+                                    Value[] currentValues = prop.getValues();
+                                    final Value[] newValues = new Value[currentValues.length + 1];
+                                    System.arraycopy(currentValues, 0, newValues, 0, currentValues.length);
+                                    newValues[currentValues.length] = weakRef;
+                                    referencer.setProperty(propertyName, newValues);
+                                } else {
+                                    referencer.setProperty(propertyName, weakRef);
+                                }
+                            } else {
+                                debug("**** weak reference property could be multi-value here");
+                            }
                         }
                     }
                 }
             }
+        }
 
-            // mark as resolved
-            this.resolver.resolved(unresolved);
+        // let resolver know the references were resolved
+        if (!resolvedReferences.isEmpty()) {
+            for (UnresolvedReference unresolved : resolvedReferences) {
+                this.resolver.resolved(unresolved);
+            }
         }
 
         debug("number unresolved at end=" + this.resolver.getUnresolved().size());
