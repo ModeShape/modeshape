@@ -40,12 +40,25 @@ public interface JdbcLexicon {
      */
     public interface ModelId {
         String NS_PREFIX = "jdbc";
+        String CONVERT_CASE_IN_MODEL = "convertCaseInModel";
+        String CREATE_CATALOGS_IN_MODEL = "createCatalogsInModel";
+        String CREATE_SCHEMAS_IN_MODEL = "createSchemasInModel";
+        String DRIVER_CLASS = "driverClass";
+        String DRIVER_NAME = "driverName";
         String EXCLUDED_OBJECT_PATHS = "excludedObjectPaths";
+        String GENERATE_SOURCE_NAMES_IN_MODEL = "generateSourceNamesInModel";
         String SOURCE = "JdbcSource";
         String IMPORT_SETTINGS = "importSettings";
+        String INCLUDE_APPROXIMATE_INDEXES = "includeApproximateIndexes";
+        String INCLUDE_FOREIGN_KEYS = "includeForeignKeys";
+        String INCLUDE_INDEXES = "includeIndexes";
+        String INCLUDE_PROCEDURES = "includeProcedures";
+        String INCLUDE_UNIQUE_INDEXES = "includeUniqueIndexes";
         String INCLUDED_CATALOG_PATHS = "includedCatalogPaths";
         String INCLUDED_SCHEMA_PATHS = "includedSchemaPaths";
         String INCLUDED_TABLE_TYPES = "includedTableTypes";
+        String URL = "url";
+        String USER_NAME = "username";
     }
 
     /**
@@ -53,24 +66,24 @@ public interface JdbcLexicon {
      */
     public interface JcrId {
         String NS_PREFIX = "jdbcs";
-        String CONVERT_CASE_IN_MODEL = NS_PREFIX + ":convertCaseInModel";
-        String CREATE_CATALOGS_IN_MODEL = NS_PREFIX + ":createCatalogsInModel";
-        String CREATE_SCHEMAS_IN_MODEL = NS_PREFIX + ":createSchemasInModel";
-        String DRIVER_CLASS = NS_PREFIX + ":driverClass";
-        String DRIVER_NAME = NS_PREFIX + ":driverName";
+        String CONVERT_CASE_IN_MODEL = NS_PREFIX + ':' + ModelId.CONVERT_CASE_IN_MODEL;
+        String CREATE_CATALOGS_IN_MODEL = NS_PREFIX + ':' + ModelId.CREATE_CATALOGS_IN_MODEL;
+        String CREATE_SCHEMAS_IN_MODEL = NS_PREFIX + ':' + ModelId.CREATE_SCHEMAS_IN_MODEL;
+        String DRIVER_CLASS = NS_PREFIX + ':' + ModelId.DRIVER_CLASS;
+        String DRIVER_NAME = NS_PREFIX + ':' + ModelId.DRIVER_NAME;
         String EXCLUDED_OBJECT_PATHS = NS_PREFIX + ':' + ModelId.EXCLUDED_OBJECT_PATHS;
-        String GENERATE_SOURCE_NAMES_IN_MODEL = NS_PREFIX + ":generateSourceNamesInModel";
+        String GENERATE_SOURCE_NAMES_IN_MODEL = NS_PREFIX + ':' + ModelId.GENERATE_SOURCE_NAMES_IN_MODEL;
         String IMPORTED = NS_PREFIX + ":imported";
-        String INCLUDE_APPROXIMATE_INDEXES = NS_PREFIX + ":includeApproximateIndexes";
-        String INCLUDE_FOREIGN_KEYS = NS_PREFIX + ":includeForeignKeys";
-        String INCLUDE_INDEXES = NS_PREFIX + ":includeIndexes";
-        String INCLUDE_PROCEDURES = NS_PREFIX + ":includeProcedures";
-        String INCLUDE_UNIQUE_INDEXES = NS_PREFIX + ":includeUniqueIndexes";
+        String INCLUDE_APPROXIMATE_INDEXES = NS_PREFIX + ':' + ModelId.INCLUDE_APPROXIMATE_INDEXES;
+        String INCLUDE_FOREIGN_KEYS = NS_PREFIX + ':' + ModelId.INCLUDE_FOREIGN_KEYS;
+        String INCLUDE_INDEXES = NS_PREFIX + ':' + ModelId.INCLUDE_INDEXES;
+        String INCLUDE_PROCEDURES = NS_PREFIX + ':' + ModelId.INCLUDE_PROCEDURES;
+        String INCLUDE_UNIQUE_INDEXES = NS_PREFIX + ':' + ModelId.INCLUDE_UNIQUE_INDEXES;
         String INCLUDED_CATALOG_PATHS = NS_PREFIX + ':' + ModelId.INCLUDED_CATALOG_PATHS;
         String INCLUDED_SCHEMA_PATHS = NS_PREFIX + ':' + ModelId.INCLUDED_SCHEMA_PATHS;
         String INCLUDED_TABLE_TYPES = NS_PREFIX + ':' + ModelId.INCLUDED_TABLE_TYPES;
         String SOURCE = NS_PREFIX + ":source";
-        String URL = NS_PREFIX + ":url";
-        String USER_NAME = NS_PREFIX + ":username";
+        String URL = NS_PREFIX + ':' + ModelId.URL;
+        String USER_NAME = NS_PREFIX + ':' + ModelId.USER_NAME;
     }
 }

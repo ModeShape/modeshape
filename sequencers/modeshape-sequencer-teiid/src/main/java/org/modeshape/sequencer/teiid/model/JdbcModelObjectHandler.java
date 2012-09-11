@@ -56,35 +56,112 @@ public final class JdbcModelObjectHandler extends ModelObjectHandler {
         CheckArg.isNotNull(parentNode, "outputNode");
         CheckArg.isEquals(element.getNamespaceUri(), "namespace URI", URI, "JDBC URI");
 
-        if (DEBUG) {
-            debug("==== JdbcModelObjectHandler:process:element=" + element.getName());
-        }
-
+        debug("==== JdbcModelObjectHandler:process:element=" + element.getName());
         final String type = element.getName();
-        Node newNode = null;
 
         if (ModelId.SOURCE.equals(type)) {
-            newNode = addNode(parentNode, element, URI, JcrId.SOURCE);
-        } else if (ModelId.IMPORT_SETTINGS.equals(type)) {
-            newNode = addNode(parentNode, element, URI, JcrId.IMPORTED);
-        } else if (ModelId.EXCLUDED_OBJECT_PATHS.equals(type)) {
-            addPropertyValue(parentNode, JcrId.EXCLUDED_OBJECT_PATHS, element.getValue());
-        } else if (ModelId.INCLUDED_CATALOG_PATHS.equals(type)) {
-            addPropertyValue(parentNode, JcrId.INCLUDED_CATALOG_PATHS, element.getValue());
-        } else if (ModelId.INCLUDED_SCHEMA_PATHS.equals(type)) {
-            addPropertyValue(parentNode, JcrId.INCLUDED_SCHEMA_PATHS, element.getValue());
-        } else if (ModelId.INCLUDED_TABLE_TYPES.equals(type)) {
-            addPropertyValue(parentNode, JcrId.INCLUDED_TABLE_TYPES, element.getValue());
-        }
+            // - jdbcs:name (string)
+            final Node sourceNode = addNode(parentNode, element, URI, JcrId.SOURCE);
+            processSource(element, sourceNode);
 
-        // process new node
-        if (newNode != null) {
-            setProperties(newNode, element, URI);
+            // process import settings
+            for (final XmiElement childElement : element.getChildren()) {
+                if (ModelId.IMPORT_SETTINGS.equals(childElement.getName())) {
+                    process(childElement, parentNode);
+                    break; // only one
+                }
+
+                debug("**** JDBC Source child element type of " + childElement.getName() + " was not processed");
+            }
+        } else if (ModelId.IMPORT_SETTINGS.equals(type)) {
+            final Node importSettingNode = addNode(parentNode, element, URI, JcrId.IMPORTED);
+            processImportSetting(element, importSettingNode);
 
             // process children
-            for (final XmiElement kid : element.getChildren()) {
-                process(kid, newNode);
+            for (final XmiElement childElement : element.getChildren()) {
+                final String childType = childElement.getName();
+
+                if (ModelId.EXCLUDED_OBJECT_PATHS.equals(childType)) {
+                    // - jdbcs:excludedObjectPaths (string) multiple
+                    addPropertyValue(importSettingNode, JcrId.EXCLUDED_OBJECT_PATHS, childElement.getValue());
+                } else if (ModelId.INCLUDED_CATALOG_PATHS.equals(childType)) {
+                    // - jdbcs:includedCatalogPaths (string) multiple
+                    addPropertyValue(importSettingNode, JcrId.INCLUDED_CATALOG_PATHS, childElement.getValue());
+                } else if (ModelId.INCLUDED_SCHEMA_PATHS.equals(childType)) {
+                    // - jdbcs:includedSchemaPaths (string) multiple
+                    addPropertyValue(importSettingNode, JcrId.INCLUDED_SCHEMA_PATHS, childElement.getValue());
+                } else if (ModelId.INCLUDED_TABLE_TYPES.equals(childType)) {
+                    // - jdbcs:includedTableTypes (string) multiple
+                    addPropertyValue(importSettingNode, JcrId.INCLUDED_TABLE_TYPES, childElement.getValue());
+                } else {
+                    debug("**** JDBC Import Settings child element type of " + childElement.getName() + " was not processed");
+                }
             }
+        } else {
+            debug("**** JDBC type of " + type + " was not processed");
         }
+    }
+
+    private void processImportSetting( final XmiElement importSettingElement,
+                                       final Node importSettingNode ) throws Exception {
+        // - jdbcs:createCatalogsInModel (boolean) = 'true'
+        setBooleanProperty(importSettingNode,
+                           JcrId.CREATE_CATALOGS_IN_MODEL,
+                           importSettingElement.getAttributeValue(ModelId.CREATE_CATALOGS_IN_MODEL, URI));
+
+        // - jdbcs:createSchemasInModel (boolean) = 'true'
+        setBooleanProperty(importSettingNode,
+                           JcrId.CREATE_SCHEMAS_IN_MODEL,
+                           importSettingElement.getAttributeValue(ModelId.CREATE_SCHEMAS_IN_MODEL, URI));
+
+        // - jdbcs:convertCaseInModel (string) < 'NONE', 'TO_UPPERCASE', 'TO_LOWERCASE'
+        setProperty(importSettingNode,
+                    JcrId.CONVERT_CASE_IN_MODEL,
+                    importSettingElement.getAttributeValue(ModelId.CONVERT_CASE_IN_MODEL, URI));
+
+        // - jdbcs:generateSourceNamesInModel (string) = 'UNQUALIFIED' < 'NONE', 'UNQUALIFIED', 'FULLY_QUALIFIED'
+        setProperty(importSettingNode,
+                    JcrId.GENERATE_SOURCE_NAMES_IN_MODEL,
+                    importSettingElement.getAttributeValue(ModelId.GENERATE_SOURCE_NAMES_IN_MODEL, URI));
+
+        // - jdbcs:includeForeignKeys (boolean) = 'true'
+        setBooleanProperty(importSettingNode,
+                           JcrId.INCLUDE_FOREIGN_KEYS,
+                           importSettingElement.getAttributeValue(ModelId.INCLUDE_FOREIGN_KEYS, URI));
+
+        // - jdbcs:includeIndexes (boolean) = 'true'
+        setBooleanProperty(importSettingNode,
+                           JcrId.INCLUDE_INDEXES,
+                           importSettingElement.getAttributeValue(ModelId.INCLUDE_INDEXES, URI));
+
+        // - jdbcs:includeProcedures (boolean) = 'false'
+        setBooleanProperty(importSettingNode,
+                           JcrId.INCLUDE_PROCEDURES,
+                           importSettingElement.getAttributeValue(ModelId.INCLUDE_PROCEDURES, URI));
+
+        // - jdbcs:includeApproximateIndexes (boolean) = 'true'
+        setBooleanProperty(importSettingNode,
+                           JcrId.INCLUDE_APPROXIMATE_INDEXES,
+                           importSettingElement.getAttributeValue(ModelId.INCLUDE_APPROXIMATE_INDEXES, URI));
+
+        // - jdbcs:includeUniqueIndexes (boolean) = 'false'
+        setBooleanProperty(importSettingNode,
+                           JcrId.INCLUDE_UNIQUE_INDEXES,
+                           importSettingElement.getAttributeValue(ModelId.INCLUDE_UNIQUE_INDEXES, URI));
+    }
+
+    private void processSource( final XmiElement sourceElement,
+                                final Node sourceNode ) throws Exception {
+        // - jdbcs:driverName (string)
+        setProperty(sourceNode, JcrId.DRIVER_NAME, sourceElement.getAttributeValue(ModelId.DRIVER_NAME, URI));
+
+        // - jdbcs:driverClass (string)
+        setProperty(sourceNode, JcrId.DRIVER_CLASS, sourceElement.getAttributeValue(ModelId.DRIVER_CLASS, URI));
+
+        // - jdbcs:username (string)
+        setProperty(sourceNode, JcrId.USER_NAME, sourceElement.getAttributeValue(ModelId.USER_NAME, URI));
+
+        // - jdbcs:url (string)
+        setProperty(sourceNode, JcrId.URL, sourceElement.getAttributeValue(ModelId.URL, URI));
     }
 }
