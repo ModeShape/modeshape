@@ -26,38 +26,15 @@ package org.modeshape.jcr;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.AccessControlContext;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import javax.jcr.AccessDeniedException;
-import javax.jcr.Credentials;
-import javax.jcr.LoginException;
-import javax.jcr.NoSuchWorkspaceException;
-import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
+import javax.jcr.*;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.NoInitialContextException;
@@ -103,32 +80,15 @@ import org.modeshape.jcr.api.query.Query;
 import org.modeshape.jcr.bus.ChangeBus;
 import org.modeshape.jcr.bus.ClusteredRepositoryChangeBus;
 import org.modeshape.jcr.bus.RepositoryChangeBus;
-import org.modeshape.jcr.cache.NodeCache;
-import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.cache.RepositoryCache;
-import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.cache.SessionEnvironment;
 import org.modeshape.jcr.cache.SessionEnvironment.Monitor;
 import org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory;
-import org.modeshape.jcr.cache.WorkspaceNotFoundException;
-import org.modeshape.jcr.cache.change.Change;
-import org.modeshape.jcr.cache.change.ChangeSet;
-import org.modeshape.jcr.cache.change.ChangeSetListener;
-import org.modeshape.jcr.cache.change.WorkspaceAdded;
-import org.modeshape.jcr.cache.change.WorkspaceRemoved;
+import org.modeshape.jcr.cache.*;
+import org.modeshape.jcr.cache.change.*;
 import org.modeshape.jcr.mimetype.MimeTypeDetectors;
 import org.modeshape.jcr.query.QueryIndexing;
-import org.modeshape.jcr.query.parse.FullTextSearchParser;
-import org.modeshape.jcr.query.parse.JcrQomQueryParser;
-import org.modeshape.jcr.query.parse.JcrSql2QueryParser;
-import org.modeshape.jcr.query.parse.JcrSqlQueryParser;
-import org.modeshape.jcr.query.parse.QueryParsers;
+import org.modeshape.jcr.query.parse.*;
 import org.modeshape.jcr.query.xpath.XPathQueryParser;
-import org.modeshape.jcr.security.AnonymousProvider;
-import org.modeshape.jcr.security.AuthenticationProvider;
-import org.modeshape.jcr.security.AuthenticationProviders;
-import org.modeshape.jcr.security.JaasProvider;
-import org.modeshape.jcr.security.SecurityContext;
+import org.modeshape.jcr.security.*;
 import org.modeshape.jcr.txn.NoClientTransactions;
 import org.modeshape.jcr.txn.SynchronizedTransactions;
 import org.modeshape.jcr.txn.Transactions;
@@ -271,9 +231,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      * 
      * @throws FileNotFoundException if the Infinispan configuration file is specified but could not be found
      * @throws IOException if there is a problem with the specified Infinispan configuration file
-     * @throws NamingException if there is a problem looking in JNDI for the Infinispan CacheContainer
+     * @throws Exception if there is a problem with underlying resource setup
      */
-    void start() throws IOException, NamingException {
+    void start() throws Exception {
         doStart();
     }
 
@@ -308,10 +268,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      * @param changes the changes for the configuration
      * @throws FileNotFoundException if the Infinispan configuration file is changed but could not be found
      * @throws IOException if there is a problem with the specified Infinispan configuration file
-     * @throws NamingException if there is a problem looking in JNDI for the Infinispan CacheContainer
+     * @throws Exception if there is a problem with underlying resources
      * @see ModeShapeEngine#update(String, Changes)
      */
-    void apply( Changes changes ) throws IOException, NamingException {
+    void apply( Changes changes ) throws Exception {
         try {
             stateLock.lock();
             logger.debug("Applying changes to '{0}' repository configuration: {1} --> {2}", repositoryName, changes, config);
@@ -339,7 +299,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
     }
 
-    protected final RunningState doStart() throws IOException, NamingException {
+    protected final RunningState doStart() throws Exception {
         try {
             stateLock.lock();
             if (this.state.get() == State.RESTORING) {
@@ -484,7 +444,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         state.set(State.RESTORING);
     }
 
-    protected final void completeRestore() throws ExecutionException, IOException, NamingException {
+    protected final void completeRestore() throws ExecutionException, Exception {
         if (getState() == State.RESTORING) {
             logger.debug("Shutting down '{0}' after content has been restored", getName());
             Future<Boolean> future = shutdown();
@@ -953,13 +913,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final MimeTypeDetectors mimeTypeDetector;
         private final BackupService backupService;
 
-        protected RunningState() throws IOException, NamingException {
+        protected RunningState() throws Exception {
             this(null, null);
         }
 
         @SuppressWarnings( "deprecation" )
         protected RunningState( JcrRepository.RunningState other,
-                                JcrRepository.ConfigurationChange change ) throws IOException, NamingException {
+                                JcrRepository.ConfigurationChange change ) throws Exception {
             this.config = repositoryConfiguration();
             if (other == null) {
                 logger.debug("Starting '{0}' repository with configuration: \n{1}", repositoryName(), this.config);

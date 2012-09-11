@@ -610,13 +610,10 @@ public class ModeShapeEngine implements Repositories {
             // Apply the changes immediately (synchronously) ...
             try {
                 repository.apply(changes);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 throw new ConfigurationException(problems, JcrI18n.repositoryConfigurationIsNotValid.text(repositoryName,
                                                                                                           e.getMessage()), e);
-            } catch (NamingException e) {
-                throw new ConfigurationException(problems, JcrI18n.repositoryConfigurationIsNotValid.text(repositoryName,
-                                                                                                          e.getMessage()), e);
-            }
+            } 
             return new ImmediateFuture<JcrRepository>(repository);
             //
             // // Create an initializer that will start the repository ...

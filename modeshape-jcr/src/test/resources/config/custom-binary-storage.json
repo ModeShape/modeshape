@@ -1,0 +1,12 @@
+{
+    "name" : "Test Repository",
+    "storage" : {
+        "transactionManagerLookup" = "org.infinispan.transaction.lookup.DummyTransactionManagerLookup",
+     "binaryStorage" : {
+         "type"  : "custom",
+         "classname" : "org.modeshape.jcr.value.binary.CustomBinaryStoreImpl",
+         "key" : "value"
+     }
+    }
+    
+}
