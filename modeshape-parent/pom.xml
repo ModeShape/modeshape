@@ -892,7 +892,6 @@
                 <groupId>org.jgroups</groupId>
                 <artifactId>jgroups</artifactId>
                 <version>${jgroups.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>

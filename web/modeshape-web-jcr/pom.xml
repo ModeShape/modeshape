@@ -57,10 +57,6 @@
             <artifactId>modeshape-jcr</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-unit-test</artifactId>
-        </dependency>
     </dependencies>
 
     <profiles>
