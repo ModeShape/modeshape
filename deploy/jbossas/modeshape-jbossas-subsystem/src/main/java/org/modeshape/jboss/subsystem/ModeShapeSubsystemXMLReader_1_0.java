@@ -532,6 +532,9 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                     case CACHE_CONTAINER_JNDI_NAME:
                         ModelAttributes.CACHE_CONTAINER_JNDI_NAME.parseAndSetParameter(attrValue, storageType, reader);
                         break;
+                    case CHUNK_SIZE:
+                        ModelAttributes.CHUNK_SIZE.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
                     default:
                         storageType.get(attrName).set(attrValue);
                         break;
