@@ -227,7 +227,10 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                 started = startAndWriteAttribute(writer, storage, ModelAttributes.CACHE_CONTAINER_JNDI_NAME, element, started);
             } else if (ModelKeys.DATA_CACHE_NAME.equals(key)) {
                 started = startAndWriteAttribute(writer, storage, ModelAttributes.DATA_CACHE_NAME, element, started);
+            } else if (ModelKeys.CHUNK_SIZE.equals(key)) {
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.CHUNK_SIZE, element, started);
             }
+            
             // Custom ...
             else if (ModelKeys.CLASSNAME.equals(key)) {
                 started = startAndWriteAttribute(writer, storage, ModelAttributes.CLASSNAME, element, started);
