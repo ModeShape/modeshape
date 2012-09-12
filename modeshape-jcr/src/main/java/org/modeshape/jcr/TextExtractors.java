@@ -32,7 +32,7 @@ import org.modeshape.jcr.api.text.TextExtractor;
 import org.modeshape.jcr.text.TextExtractorOutput;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
-import org.modeshape.jcr.value.binary.BinaryStore;
+import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.InMemoryBinaryValue;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,17 +48,24 @@ public final class TextExtractors {
 
     private static final Logger LOGGER = Logger.getLogger(TextExtractors.class);
 
-    private final List<TextExtractor> extractors = new ArrayList<TextExtractor>();
+    private final List<TextExtractor> extractors;
     private final ExecutorService extractingQueue;
     private final ConcurrentHashMap<BinaryKey, CountDownLatch> workerLatches;
-    private final boolean enabledFullTextSearch;
+    private final boolean fullTextSearchEnabled;
 
-    public TextExtractors( JcrRepository.RunningState repository,
-                           RepositoryConfiguration.TextExtracting extracting ) {
-        this.extractingQueue = repository.context().getCachedTreadPool(extracting.getThreadPoolName());
+    public TextExtractors( ExecutorService extractingQueue,
+                           boolean fullTextSearchEnabled,
+                           List<TextExtractor> extractors ) {
+        this.extractingQueue = extractingQueue;
         this.workerLatches = new ConcurrentHashMap<BinaryKey, CountDownLatch>();
-        this.enabledFullTextSearch = repository.isFullTextSearchEnabled();
-        initExtractors(repository, extracting);
+        this.fullTextSearchEnabled = fullTextSearchEnabled;
+        this.extractors = extractors;
+    }
+
+    TextExtractors( JcrRepository.RunningState repository,
+                    RepositoryConfiguration.TextExtracting extracting ) {
+        this(repository.context().getCachedTreadPool(extracting.getThreadPoolName()), repository.isFullTextSearchEnabled(),
+             getConfiguredExtractors(repository, extracting));
     }
 
     protected void shutdown() {
@@ -66,24 +73,8 @@ public final class TextExtractors {
         extractingQueue.shutdown();
     }
 
-    private void initExtractors( JcrRepository.RunningState repository,
-                                 RepositoryConfiguration.TextExtracting extracting ) {
-        List<Component> extractors = extracting.getTextExtractors();
-        for (Component component : extractors) {
-            try {
-                TextExtractor extractor = component.createInstance(getClass().getClassLoader());
-                extractor.setLogger(ExtensionLogger.getLogger(extractor.getClass()));
-                this.extractors.add(extractor);
-            } catch (Throwable t) {
-                String desc = component.getName();
-                String repoName = repository.name();
-                LOGGER.error(t, JcrI18n.unableToInitializeTextExtractor, desc, repoName, t.getMessage());
-            }
-        }
-    }
-
     public boolean extractionEnabled() {
-        return enabledFullTextSearch && !extractors.isEmpty();
+        return fullTextSearchEnabled && !extractors.isEmpty();
     }
 
     public String extract( InMemoryBinaryValue inMemoryBinaryValue,
@@ -108,7 +99,7 @@ public final class TextExtractors {
         return null;
     }
 
-    public void extract( BinaryStore store,
+    public void extract( AbstractBinaryStore store,
                          BinaryValue binaryValue,
                          TextExtractor.Context context ) {
         if (!extractionEnabled()) {
@@ -133,6 +124,24 @@ public final class TextExtractors {
         return workerLatches.get(binaryKey);
     }
 
+    private static List<TextExtractor> getConfiguredExtractors( JcrRepository.RunningState repository,
+                                                                RepositoryConfiguration.TextExtracting extracting ) {
+        List<Component> extractorComponents = extracting.getTextExtractors();
+        List<TextExtractor> extractors = new ArrayList<TextExtractor>(extractorComponents.size());
+        for (Component component : extractorComponents) {
+            try {
+                TextExtractor extractor = component.createInstance(TextExtractors.class.getClassLoader());
+                extractor.setLogger(ExtensionLogger.getLogger(extractor.getClass()));
+                extractors.add(extractor);
+            } catch (Throwable t) {
+                String desc = component.getName();
+                String repoName = repository.name();
+                LOGGER.error(t, JcrI18n.unableToInitializeTextExtractor, desc, repoName, t.getMessage());
+            }
+        }
+        return extractors;
+    }
+
     /**
      * A unit of work which extracts text from a binary value, stores that text in a store and notifies a latch that the
      * extraction operation has finished.
@@ -140,10 +149,10 @@ public final class TextExtractors {
     protected final class Worker implements Runnable {
         private final BinaryValue binaryValue;
         private final TextExtractor.Context context;
-        private final BinaryStore store;
+        private final AbstractBinaryStore store;
         private final CountDownLatch latch;
 
-        protected Worker( BinaryStore store,
+        protected Worker( AbstractBinaryStore store,
                           BinaryValue binaryValue,
                           TextExtractor.Context context,
                           CountDownLatch latch ) {

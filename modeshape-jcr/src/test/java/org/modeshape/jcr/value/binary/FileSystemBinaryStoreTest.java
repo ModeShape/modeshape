@@ -26,8 +26,21 @@ package org.modeshape.jcr.value.binary;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
+import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.modeshape.common.FixFor;
+import org.modeshape.common.statistic.Stopwatch;
+import org.modeshape.common.util.FileUtil;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.SecureHash;
+import org.modeshape.common.util.SecureHash.Algorithm;
+import org.modeshape.jcr.api.Binary;
+import org.modeshape.jcr.value.BinaryKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -48,36 +61,24 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.modeshape.common.FixFor;
-import org.modeshape.common.statistic.Stopwatch;
-import org.modeshape.common.util.FileUtil;
-import org.modeshape.common.util.IoUtil;
-import org.modeshape.common.util.SecureHash;
-import org.modeshape.common.util.SecureHash.Algorithm;
-import org.modeshape.jcr.api.Binary;
-import org.modeshape.jcr.value.BinaryKey;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class FileSystemBinaryStoreTest {
+public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
 
     protected static final int MIN_BINARY_SIZE = 20;
 
     public static final String[] CONTENT = new String[] {
-        "Lorem ipsum",
-        "Lorem ipsum pulvinar",
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel felis tellus, at pellentesque sem. Praesent semper quam odio, a volutpat diam. Pellentesque ornare aliquet pellentesque. Nunc elit purus, accumsan eget semper id, pulvinar at ipsum. Quisque sagittis nisi at dui imperdiet id rhoncus nunc dictum. Vivamus semper leo sit.",
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec tortor nunc, blandit in tempor ut, venenatis ac magna. Vestibulum gravida.",
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam volutpat tortor non eros bibendum vitae consectetur lacus eleifend. Mauris tempus.",
-        "Morbi pulvinar volutpat sem id sagittis. Vestibulum ornare urna at massa iaculis vitae tincidunt nisi volutpat. Suspendisse auctor gravida viverra.",};
+        "Lorem ipsum" + UUID.randomUUID().toString(),
+        "Lorem ipsum pulvinar" + UUID.randomUUID().toString(),
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel felis tellus, at pellentesque sem. " + UUID.randomUUID().toString(),
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec tortor nunc, blandit in tempor ut, venenatis ac magna. Vestibulum gravida." + UUID.randomUUID().toString(),
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam volutpat tortor non eros bibendum vitae consectetur lacus eleifend. Mauris tempus." + UUID.randomUUID().toString(),
+        "Morbi pulvinar volutpat sem id sagittis. Vestibulum ornare urna at massa iaculis vitae tincidunt nisi volutpat. Suspendisse auctor gravida viverra." + UUID.randomUUID().toString()};
 
     public static final String[] CONTENT_HASHES;
 
@@ -103,13 +104,13 @@ public class FileSystemBinaryStoreTest {
         return null;
     }
 
-    protected File directory;
-    protected File trash;
-    protected FileSystemBinaryStore store;
-    protected boolean print = false;
+    protected static File directory;
+    protected static File trash;
+    protected static FileSystemBinaryStore store;
+    protected static boolean print = false;
 
-    @Before
-    public void beforeEach() {
+    @BeforeClass
+    public static void beforeClass() {
         directory = new File("target/fsbs/");
         FileUtil.delete(directory);
         directory.mkdirs();
@@ -119,31 +120,21 @@ public class FileSystemBinaryStoreTest {
         print = false;
     }
 
-    @After
-    public void afterEach() {
+    @AfterClass
+    public static void afterClass() {
         FileUtil.delete(directory);
     }
 
-    @Test
-    public void shouldStoreSmallContentInMemory() throws Exception {
-        storeAndCheck(0, InMemoryBinaryValue.class);
+    @Override
+    protected BinaryStore getBinaryStore() {
+        return store;
     }
 
-    @Test
-    public void shouldStoreSmallestBinaryContentInStore() throws Exception {
-        storeAndCheck(1, StoredBinaryValue.class);
-    }
-
-    @Test
-    public void shouldStoreLargerBinaryContentInStore() throws Exception {
-        storeAndCheck(2, StoredBinaryValue.class);
-    }
-
-    @Test
-    public void shouldStoreMultipleBinariesInStore() throws Exception {
-        for (int i = 0; i != CONTENT.length; ++i) {
-            storeAndCheck(i);
-        }
+    @Override
+    @Test(expected = BinaryStoreException.class)
+    public void shouldStoreZeroLengthBinary() throws BinaryStoreException, IOException {
+        //the file system binary store will not store a 0 byte size content
+        super.shouldStoreZeroLengthBinary();
     }
 
     @Test
@@ -172,9 +163,6 @@ public class FileSystemBinaryStoreTest {
         // Make sure the file was removed from the trash ...
         assertThat(countStoredFiles(), is(storedSha1s.size() - 1));
         assertThat(countTrashFiles(), is(0));
-
-        // And that all directories in the trash were removed (since they should be empty) ...
-        assertThat(trash.listFiles().length, is(0));
     }
 
     @Test

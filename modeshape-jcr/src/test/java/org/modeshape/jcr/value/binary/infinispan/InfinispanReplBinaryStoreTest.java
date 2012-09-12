@@ -29,12 +29,14 @@ import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
-import org.junit.Before;
+import org.junit.BeforeClass;
 
 public class InfinispanReplBinaryStoreTest extends AbstractInfinispanStoreTest {
 
-    @Before
-    public void before(){
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        cacheManager = InfinispanTestUtil.beforeClassStartup(true);
+
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.clustering().cacheMode(CacheMode.REPL_SYNC);
         Configuration blobConfiguration = configurationBuilder.build();

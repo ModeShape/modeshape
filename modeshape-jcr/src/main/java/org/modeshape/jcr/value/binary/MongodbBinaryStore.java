@@ -213,7 +213,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     @Override
     public InputStream getInputStream( BinaryKey key ) throws BinaryStoreException {
         if (!db.collectionExists(key.toString())) {
-            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.toString());
+            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, db.getName()));
         }
         return new ChunkInputStream(db.getCollection(key.toString()));
     }
@@ -248,14 +248,14 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
             DBCollection content = db.getCollection(source.getKey().toString());
             setAttribute(content, FIELD_MIME_TYPE, mimeType);
         } else {
-            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.toString());
+            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(source.getKey(), db.getName()));
         }
     }
 
     @Override
     protected String getStoredMimeType( BinaryValue source ) throws BinaryStoreException {
         if (!db.collectionExists(source.getKey().toString())) {
-            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.toString());
+            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(source.getKey(), db.getName()));
         }
         DBCollection content = db.getCollection(source.getKey().toString());
         return (String)getAttribute(content, FIELD_MIME_TYPE);
@@ -265,7 +265,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     public void storeExtractedText( BinaryValue source,
                                     String extractedText ) throws BinaryStoreException {
         if (!db.collectionExists(source.getKey().toString())) {
-            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.toString());
+            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(source.getKey(), db.getName()));
         }
         DBCollection content = db.getCollection(source.getKey().toString());
         setAttribute(content, FIELD_EXTRACTED_TEXT, extractedText);
@@ -274,7 +274,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     @Override
     public String getExtractedText( BinaryValue source ) throws BinaryStoreException {
         if (!db.collectionExists(source.getKey().toString())) {
-            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.toString());
+            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(source.getKey(), db.getName()));
         }
         DBCollection content = db.getCollection(source.getKey().toString());
         return (String)getAttribute(content, FIELD_EXTRACTED_TEXT);

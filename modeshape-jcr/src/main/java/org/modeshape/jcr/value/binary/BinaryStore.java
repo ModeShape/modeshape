@@ -42,11 +42,6 @@ import org.modeshape.jcr.value.BinaryValue;
 public interface BinaryStore {
 
     /**
-     * The default minimum size (in bytes) of binary values that are persisted in the binary store is 4096 bytes, or 4KB.
-     */
-    public static final long DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES = 1024 * 4;
-
-    /**
      * Get the minimum number of bytes that a binary value must contain before it can be stored in the binary store.
      * 
      * @return the minimum number of bytes for a stored binary value; never negative
@@ -80,7 +75,7 @@ public interface BinaryStore {
      * 
      * @param stream the stream containing the binary content to be stored; may not be null
      * @return the binary value representing the stored binary value; never null
-     * @throws BinaryStoreException
+     * @throws BinaryStoreException if there any unexpected problem
      */
     BinaryValue storeValue( InputStream stream ) throws BinaryStoreException;
 
@@ -130,43 +125,28 @@ public interface BinaryStore {
      * 
      * @param binary the binary content; may not be null
      * @return the extracted text, or null if none could be extracted
-     * @throws BinaryStoreException if the binary content could not be accessed
+     * @throws BinaryStoreException if the binary content could not be accessed or if the given binary value cannot be found within
+     * the store.
      */
     String getText( BinaryValue binary ) throws BinaryStoreException;
 
     /**
-     * Get the MIME type for this binary value or {@code null} if the mime-type cannot be determined.
-     * 
+     * Get the MIME type for this binary value, never {@code null}.
+     * <p>
+     * If the store has never determined the mime-type of the given binary and the binary can be located in the store,
+     * it will attempt to determine it via the configured {@link MimeTypeDetector detectors} and store it.
+     * </p>
      * @param binary the binary content; may not be null
      * @param name the name of the content, useful for determining the MIME type; may be null if not known
-     * @return the MIME type, or null if it cannot be determined (e.g., the Binary is empty)
+     * @return the MIME type of the content, as determined by the installed detectors or {@code null} if none of the detectors
+     * can determine it.
+     *
      * @throws IOException if there is a problem reading the binary content
+     * @throws BinaryStoreException if the binary value cannot be found in the store
      * @throws RepositoryException if any other error occurs.
      */
     public String getMimeType( BinaryValue binary,
                                String name ) throws IOException, RepositoryException;
-
-    /**
-     * Stores the extracted text of a binary value into this store.
-     * 
-     * @param source a {@code non-null} {@link BinaryValue} instance from which the text was extracted
-     * @param extractedText a {@code non-null} and {@code non-blank} string representing the extracted text
-     * @throws BinaryStoreException if the operation fails or if the extracted text cannot be stored for the given binary value
-     *         (regardless of the reason)
-     */
-    void storeExtractedText( BinaryValue source,
-                             String extractedText ) throws BinaryStoreException;
-
-    /**
-     * Returns the extracted text of a binary value, or {@code null} if such text hasn't been stored previously or if the binary
-     * value cannot be found in this store.
-     * 
-     * @param source a {@code non-null} {@link BinaryValue} instance from which the text was extracted
-     * @return a {@code String} representing the extracted text, or {@code null} if such text hasn't been stored in this store
-     *         previously.
-     * @throws BinaryStoreException if anything unexpected happens.
-     */
-    String getExtractedText( BinaryValue source ) throws BinaryStoreException;
 
     /**
      * Obtain an iterable implementation containing all of the store's binary keys. The resulting iterator may be lazy, in the

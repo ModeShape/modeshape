@@ -407,12 +407,15 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     @Override
     public String getExtractedText(BinaryValue binary) throws BinaryStoreException {
         Metadata metadata = metadataCache.get(binary.getKey().toString());
-        if(metadata == null || metadata.getNumberTextChunks() == 0){
+        if (metadata == null) {
+            throw new BinaryStoreException(JcrI18n.errorStoringMimeType.text(JcrI18n.unableToFindBinaryValue.text(binary.getKey(), "Infinispan cache "+metadataCache.getName())));
+        }
+        if (metadata.getNumberTextChunks() == 0) {
             return null;
         }
         try {
-            return IoUtil.read(new ChunkInputStream(blobCache, binary+"-text"), "UTF-8");
-        } catch (IOException ex){
+            return IoUtil.read(new ChunkInputStream(blobCache, binary + "-text"), "UTF-8");
+        } catch (IOException ex) {
             logger.debug(ex, "Error during read of extracted text for {0}", binary.getKey().toString());
             throw new BinaryStoreException(JcrI18n.errorReadingExtractedText.text(ex.getCause().getMessage()));
         }
