@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -47,7 +46,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-import javax.naming.NamingException;
 import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.Editor;
 import org.modeshape.common.annotation.ThreadSafe;

@@ -925,7 +925,7 @@ public class RepositoryConfiguration {
         private String classPath;
 
         private final Document binaryStorage;
-        private final Set<String> excludeList = new HashSet();
+        private final Set<String> excludeList = new HashSet<String>();
 
         protected BinaryStorage( Document binaryStorage ) {
             this.binaryStorage = binaryStorage != null ? binaryStorage : EMPTY;
@@ -2053,6 +2053,7 @@ public class RepositoryConfiguration {
          * @see #getClasspath()
          * @throws Exception if anything fails
          */
+        @SuppressWarnings( "unchecked" )
         public <Type> Type createInstance( ClassLoader fallbackLoader ) throws Exception {
             // Handle some of the built-in providers in a special way ...
             String classname = getClassname();
@@ -2065,6 +2066,7 @@ public class RepositoryConfiguration {
             return (Type)createGenericComponent(classLoader);
         }
 
+        @SuppressWarnings( {"unchecked", "cast"} )
         private <Type> Type createGenericComponent( ClassLoader classLoader ) {
             // Create the instance ...
             Type instance = (Type) Util.getInstance(getClassname(), classLoader);

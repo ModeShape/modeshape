@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import javax.jcr.Session;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -33,8 +32,8 @@ import java.util.concurrent.TimeUnit;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.jcr.Workspace;
-import javax.naming.NamingException;
 import junit.framework.AssertionFailedError;
 import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.Document;
@@ -234,7 +233,7 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
         } catch (Exception e) {
             throw new AssertionFailedError("Unexpected error while predefining the \"" + workspaceName + "\" workspace:"
                                            + e.getMessage());
-        } 
+        }
     }
 
     /**
