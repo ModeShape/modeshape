@@ -32,8 +32,10 @@ import java.lang.reflect.Constructor;
 
 public class WebdavServlet extends WebDavServletBean {
 
+    private static final long serialVersionUID = 1L;
     private static final String ROOTPATH_PARAMETER = "rootpath";
 
+    @Override
     public void init() throws ServletException {
 
         // Parameters from web.xml

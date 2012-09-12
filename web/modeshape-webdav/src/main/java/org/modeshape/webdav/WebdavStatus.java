@@ -245,9 +245,8 @@ public class WebdavStatus {
     public static String getStatusText( int nHttpStatusCode ) {
         if (!mapStatusCodes.containsKey(nHttpStatusCode)) {
             return "";
-        } else {
-            return mapStatusCodes.get(nHttpStatusCode);
         }
+        return mapStatusCodes.get(nHttpStatusCode);
     }
 
     // -------------------------------------------------------- Private Methods

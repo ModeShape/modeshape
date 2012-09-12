@@ -1,12 +1,12 @@
 package org.modeshape.webdav.locking;
 
+import java.util.UUID;
 import org.modeshape.common.i18n.TextI18n;
 import org.modeshape.common.logging.Logger;
-import java.util.UUID;
 
 /**
  * a helper class for ResourceLocks, represents the Locks
- *
+ * 
  * @author re
  */
 public class LockedObject {
@@ -20,8 +20,7 @@ public class LockedObject {
     private String id;
 
     /**
-     * Describing the depth of a locked collection. If the locked resource is
-     * not a collection, depth is 0 / doesn't matter.
+     * Describing the depth of a locked collection. If the locked resource is not a collection, depth is 0 / doesn't matter.
      */
     protected int lockDepth;
 
@@ -31,8 +30,7 @@ public class LockedObject {
     protected long expiresAt;
 
     /**
-     * owner of the lock. shared locks can have multiple owners. is null if no
-     * owner is present
+     * owner of the lock. shared locks can have multiple owners. is null if no owner is present
      */
     protected String[] owner = null;
 
@@ -44,8 +42,7 @@ public class LockedObject {
     protected LockedObject parent = null;
 
     /**
-     * weather the lock is exclusive or not. if owner=null the exclusive value
-     * doesn't matter
+     * weather the lock is exclusive or not. if owner=null the exclusive value doesn't matter
      */
     protected boolean exclusive = false;
 
@@ -78,7 +75,7 @@ public class LockedObject {
 
     /**
      * adds a new owner to a lock
-     *
+     * 
      * @param owner string that represents the owner
      * @return true if the owner was added, false otherwise
      */
@@ -109,7 +106,7 @@ public class LockedObject {
 
     /**
      * tries to remove the owner from the lock
-     *
+     * 
      * @param owner string that represents the owner
      */
     public void removeLockedObjectOwner( String owner ) {
@@ -145,7 +142,7 @@ public class LockedObject {
 
     /**
      * adds a new child lock to this lock
-     *
+     * 
      * @param newChild new child
      */
     public void addChild( LockedObject newChild ) {
@@ -160,8 +157,7 @@ public class LockedObject {
     }
 
     /**
-     * deletes this Lock object. assumes that it has no children and no owners
-     * (does not check this itself)
+     * deletes this Lock object. assumes that it has no children and no owners (does not check this itself)
      */
     public void removeLockedObject() {
         if (this != resourceLocks.root && !this.getPath().equals("/")) {
@@ -195,8 +191,7 @@ public class LockedObject {
     }
 
     /**
-     * deletes this Lock object. assumes that it has no children and no owners
-     * (does not check this itself)
+     * deletes this Lock object. assumes that it has no children and no owners (does not check this itself)
      */
     public void removeTempLockedObject() {
         if (this != resourceLocks.tempRoot) {
@@ -232,9 +227,8 @@ public class LockedObject {
     }
 
     /**
-     * checks if a lock of the given exclusivity can be placed, only considering
-     * children up to "depth"
-     *
+     * checks if a lock of the given exclusivity can be placed, only considering children up to "depth"
+     * 
      * @param exclusive wheather the new lock should be exclusive
      * @param depth the depth to which should be checked
      * @return true if the lock can be placed
@@ -249,27 +243,25 @@ public class LockedObject {
 
     /**
      * helper of checkLocks(). looks if the parents are locked
-     *
+     * 
      * @param exclusive wheather the new lock should be exclusive
      * @return true if no locks at the parent path are forbidding a new lock
      */
     private boolean checkParents( boolean exclusive ) {
         if (path.equals("/")) {
             return true;
-        } else {
-            if (owner == null) {
-                // no owner, checking parents
-                return parent != null && parent.checkParents(exclusive);
-            } else {
-                // there already is a owner
-                return !(this.exclusive || exclusive) && parent.checkParents(exclusive);
-            }
         }
+        if (owner == null) {
+            // no owner, checking parents
+            return parent != null && parent.checkParents(exclusive);
+        }
+        // there already is a owner
+        return !(this.exclusive || exclusive) && parent.checkParents(exclusive);
     }
 
     /**
      * helper of checkLocks(). looks if the children are locked
-     *
+     * 
      * @param exclusive whether the new lock should be exclusive
      * @param depth depth
      * @return true if no locks at the children paths are forbidding a new lock
@@ -280,36 +272,33 @@ public class LockedObject {
             // a file
 
             return owner == null || !(this.exclusive || exclusive);
-        } else {
-            // a folder
-
-            if (owner == null) {
-                // no owner, checking children
-
-                if (depth != 0) {
-                    boolean canLock = true;
-                    int limit = children.length;
-                    for (int i = 0; i < limit; i++) {
-                        if (!children[i].checkChildren(exclusive, depth - 1)) {
-                            canLock = false;
-                        }
-                    }
-                    return canLock;
-                } else {
-                    // depth == 0 -> we don't care for children
-                    return true;
-                }
-            } else {
-                // there already is a owner
-                return !(this.exclusive || exclusive);
-            }
         }
+        // a folder
+
+        if (owner == null) {
+            // no owner, checking children
+
+            if (depth != 0) {
+                boolean canLock = true;
+                int limit = children.length;
+                for (int i = 0; i < limit; i++) {
+                    if (!children[i].checkChildren(exclusive, depth - 1)) {
+                        canLock = false;
+                    }
+                }
+                return canLock;
+            }
+            // depth == 0 -> we don't care for children
+            return true;
+        }
+        // there already is a owner
+        return !(this.exclusive || exclusive);
 
     }
 
     /**
      * Sets a new timeout for the LockedObject
-     *
+     * 
      * @param timeout
      */
     public void refreshTimeout( int timeout ) {
@@ -318,7 +307,7 @@ public class LockedObject {
 
     /**
      * Gets the timeout for the LockedObject
-     *
+     * 
      * @return timeout
      */
     public long getTimeoutMillis() {
@@ -327,20 +316,19 @@ public class LockedObject {
 
     /**
      * Return true if the lock has expired.
-     *
+     * 
      * @return true if timeout has passed
      */
     public boolean hasExpired() {
         if (expiresAt != 0) {
             return (System.currentTimeMillis() > expiresAt);
-        } else {
-            return true;
         }
+        return true;
     }
 
     /**
      * Gets the LockID (locktoken) for the LockedObject
-     *
+     * 
      * @return locktoken
      */
     public String getID() {
@@ -349,7 +337,7 @@ public class LockedObject {
 
     /**
      * Gets the owners for the LockedObject
-     *
+     * 
      * @return owners
      */
     public String[] getOwner() {
@@ -358,7 +346,7 @@ public class LockedObject {
 
     /**
      * Gets the path for the LockedObject
-     *
+     * 
      * @return path
      */
     public String getPath() {
@@ -367,7 +355,7 @@ public class LockedObject {
 
     /**
      * Sets the exclusivity for the LockedObject
-     *
+     * 
      * @param exclusive
      */
     public void setExclusive( boolean exclusive ) {
@@ -376,7 +364,7 @@ public class LockedObject {
 
     /**
      * Gets the exclusivity for the LockedObject
-     *
+     * 
      * @return exclusivity
      */
     public boolean isExclusive() {
@@ -385,7 +373,7 @@ public class LockedObject {
 
     /**
      * Gets the exclusivity for the LockedObject
-     *
+     * 
      * @return exclusivity
      */
     public boolean isShared() {
@@ -394,7 +382,7 @@ public class LockedObject {
 
     /**
      * Gets the type of the lock
-     *
+     * 
      * @return type
      */
     public String getType() {
@@ -403,7 +391,7 @@ public class LockedObject {
 
     /**
      * Gets the depth of the lock
-     *
+     * 
      * @return depth
      */
     public int getLockDepth() {

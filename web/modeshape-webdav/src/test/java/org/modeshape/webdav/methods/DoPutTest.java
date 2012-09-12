@@ -34,6 +34,7 @@ import org.modeshape.webdav.locking.LockedObject;
 import org.modeshape.webdav.locking.ResourceLocks;
 import org.springframework.mock.web.DelegatingServletInputStream;
 
+@SuppressWarnings( "synthetic-access" )
 public class DoPutTest extends AbstractWebDAVTest {
     private static final String PARENT_PATH = "/parentCollection";
     private static final String PATH = PARENT_PATH + "/fileToPut";
@@ -231,9 +232,13 @@ public class DoPutTest extends AbstractWebDAVTest {
                 one(mockReq).getHeader("User-Agent");
                 will(returnValue("Transmit agent"));
 
-                one(mockResourceLocks).lock(with(any(ITransaction.class)), with(any(String.class)), with(any(String.class)),
-                                            with(any(boolean.class)), with(any(int.class)), with(any(int.class)), with(any(
-                        boolean.class)));
+                one(mockResourceLocks).lock(with(any(ITransaction.class)),
+                                            with(any(String.class)),
+                                            with(any(String.class)),
+                                            with(any(boolean.class)),
+                                            with(any(int.class)),
+                                            with(any(int.class)),
+                                            with(any(boolean.class)));
                 will(returnValue(true));
 
                 one(mockReq).getHeader("If");
@@ -299,7 +304,8 @@ public class DoPutTest extends AbstractWebDAVTest {
 
                 one(mockRes).addHeader("Lock-Token", lockToken);
 
-                one(mockResourceLocks).unlockTemporaryLockedObjects(with(any(ITransaction.class)), with(any(String.class)),
+                one(mockResourceLocks).unlockTemporaryLockedObjects(with(any(ITransaction.class)),
+                                                                    with(any(String.class)),
                                                                     with(any(String.class)));
 
                 // // -----LOCK on a non-existing resource successful------
@@ -328,9 +334,13 @@ public class DoPutTest extends AbstractWebDAVTest {
                 one(mockResourceLocks).getLockedObjectByID(mockTransaction, loId);
                 will(returnValue(lockNullResourceLo));
 
-                one(mockResourceLocks).lock(with(any(ITransaction.class)), with(any(String.class)), with(any(String.class)),
-                                            with(any(boolean.class)), with(any(int.class)), with(any(int.class)), with(any(
-                        boolean.class)));
+                one(mockResourceLocks).lock(with(any(ITransaction.class)),
+                                            with(any(String.class)),
+                                            with(any(String.class)),
+                                            with(any(boolean.class)),
+                                            with(any(int.class)),
+                                            with(any(int.class)),
+                                            with(any(boolean.class)));
                 will(returnValue(true));
 
                 parentSo = initFolderStoredObject();
@@ -347,6 +357,7 @@ public class DoPutTest extends AbstractWebDAVTest {
                 one(mockReq).getHeader("If");
                 will(returnValue(ifHeaderLockToken));
 
+                @SuppressWarnings( "null" )
                 String[] owners = lockNullResourceLo.getOwner();
                 String owner = null;
                 if (owners != null) {
@@ -370,7 +381,8 @@ public class DoPutTest extends AbstractWebDAVTest {
                 one(mockStore).getStoredObject(mockTransaction, PATH);
                 will(returnValue(newResourceSo));
 
-                one(mockResourceLocks).unlockTemporaryLockedObjects(with(any(ITransaction.class)), with(any(String.class)),
+                one(mockResourceLocks).unlockTemporaryLockedObjects(with(any(ITransaction.class)),
+                                                                    with(any(String.class)),
                                                                     with(any(String.class)));
             }
         });

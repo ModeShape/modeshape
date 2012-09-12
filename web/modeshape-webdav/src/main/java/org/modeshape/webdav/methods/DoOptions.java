@@ -15,6 +15,7 @@
  */
 package org.modeshape.webdav.methods;
 
+import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.modeshape.common.logging.Logger;
@@ -26,7 +27,6 @@ import org.modeshape.webdav.exceptions.AccessDeniedException;
 import org.modeshape.webdav.exceptions.LockFailedException;
 import org.modeshape.webdav.exceptions.WebdavException;
 import org.modeshape.webdav.locking.ResourceLocks;
-import java.io.IOException;
 
 public class DoOptions extends DeterminableMethod {
 
@@ -41,6 +41,7 @@ public class DoOptions extends DeterminableMethod {
         resourceLocks = resLocks;
     }
 
+    @Override
     public void execute( ITransaction transaction,
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException, LockFailedException {

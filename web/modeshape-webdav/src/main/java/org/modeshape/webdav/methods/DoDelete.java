@@ -15,6 +15,8 @@
  */
 package org.modeshape.webdav.methods;
 
+import java.io.IOException;
+import java.util.Hashtable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.modeshape.common.logging.Logger;
@@ -28,8 +30,6 @@ import org.modeshape.webdav.exceptions.ObjectAlreadyExistsException;
 import org.modeshape.webdav.exceptions.ObjectNotFoundException;
 import org.modeshape.webdav.exceptions.WebdavException;
 import org.modeshape.webdav.locking.ResourceLocks;
-import java.io.IOException;
-import java.util.Hashtable;
 
 public class DoDelete extends AbstractMethod {
 
@@ -47,6 +47,7 @@ public class DoDelete extends AbstractMethod {
         this.readOnly = readOnly;
     }
 
+    @Override
     public void execute( ITransaction transaction,
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException, LockFailedException {
@@ -94,9 +95,8 @@ public class DoDelete extends AbstractMethod {
 
     /**
      * deletes the recources at "path"
-     *
-     * @param transaction indicates that the method is within the scope of a WebDAV
-     * transaction
+     * 
+     * @param transaction indicates that the method is within the scope of a WebDAV transaction
      * @param path the folder to be deleted
      * @param errorList all errors that ocurred
      * @param req HttpServletRequest
@@ -134,12 +134,9 @@ public class DoDelete extends AbstractMethod {
     }
 
     /**
-     * helper method of deleteResource() deletes the folder and all of its
-     * contents
-     *
-     *
-     * @param transaction indicates that the method is within the scope of a WebDAV
-     * transaction
+     * helper method of deleteResource() deletes the folder and all of its contents
+     * 
+     * @param transaction indicates that the method is within the scope of a WebDAV transaction
      * @param path the folder to be deleted
      * @param errorList all errors that ocurred
      * @throws WebdavException if an error in the underlying store occurs
@@ -149,7 +146,7 @@ public class DoDelete extends AbstractMethod {
                                Hashtable<String, Integer> errorList ) throws WebdavException {
 
         String[] children = store.getChildrenNames(transaction, path);
-        children = children == null ? new String[] { } : children;
+        children = children == null ? new String[] {} : children;
         StoredObject so = null;
         for (int i = children.length - 1; i >= 0; i--) {
             children[i] = "/" + children[i];

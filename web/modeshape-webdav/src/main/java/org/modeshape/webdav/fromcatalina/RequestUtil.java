@@ -91,6 +91,7 @@ public final class RequestUtil {
      * in the request URL that is often reported in error messages.
      *
      * @param message The message string to be filtered
+     * @return the filtered message
      */
     public static String filter( String message ) {
 
@@ -130,6 +131,7 @@ public final class RequestUtil {
      * to perform security checks for malicious input.
      *
      * @param path Relative path to be normalized
+     * @return the normalized path
      */
     public static String normalize( String path ) {
 
@@ -191,6 +193,7 @@ public final class RequestUtil {
      * <code>null</code> is returned.
      *
      * @param contentType a content type header
+     * @return the character encoding
      */
     public static String parseCharacterEncoding( String contentType ) {
 
@@ -218,6 +221,7 @@ public final class RequestUtil {
      * Parse a cookie header into an array of cookies according to RFC 2109.
      *
      * @param header Value of an HTTP "Cookie" header
+     * @return the cookies
      */
     public static Cookie[] parseCookieHeader( String header ) {
 
@@ -248,12 +252,11 @@ public final class RequestUtil {
                     cookies.add(new Cookie(name, value));
                 }
             } catch (Throwable e) {
-                ;
+                // do nothing ?!
             }
         }
 
-        return ((Cookie[])cookies.toArray(new Cookie[cookies.size()]));
-
+        return cookies.toArray(new Cookie[cookies.size()]);
     }
 
     /**
@@ -269,7 +272,8 @@ public final class RequestUtil {
      *
      * @param map Map that accumulates the resulting parameters
      * @param data Input string containing request parameters
-     * @throws IllegalArgumentException if the data is malformed
+     * @param encoding
+     * @throws UnsupportedEncodingException if the data is malformed
      */
     public static void parseParameters( Map<String, String[]> map,
                                         String data,
@@ -301,6 +305,7 @@ public final class RequestUtil {
      * used... This may be different than some other servers.
      *
      * @param str The url-encoded string
+     * @return the decoded URL
      * @throws IllegalArgumentException if a '%' character is not followed by a valid 2-digit hexadecimal
      * number
      */
@@ -315,6 +320,7 @@ public final class RequestUtil {
      *
      * @param str The url-encoded string
      * @param enc The encoding to use; if null, the default encoding is used
+     * @return the decoded URL
      * @throws IllegalArgumentException if a '%' character is not followed by a valid 2-digit hexadecimal
      * number
      */
@@ -346,6 +352,7 @@ public final class RequestUtil {
      * Decode and return the specified URL-encoded byte array.
      *
      * @param bytes The url-encoded byte array
+     * @return the decoded URL
      * @throws IllegalArgumentException if a '%' character is not followed by a valid 2-digit hexadecimal
      * number
      */
@@ -358,6 +365,7 @@ public final class RequestUtil {
      *
      * @param bytes The url-encoded byte array
      * @param enc The encoding to use; if null, the default encoding is used
+     * @return the decoded URL
      * @throws IllegalArgumentException if a '%' character is not followed by a valid 2-digit hexadecimal
      * number
      */
@@ -395,6 +403,7 @@ public final class RequestUtil {
      * Convert a byte character value to hexidecimal digit value.
      *
      * @param b the character value byte
+     * @return the hexadecimal digit value
      */
     private static byte convertHexDigit( byte b ) {
         if ((b >= '0') && (b <= '9')) {
@@ -421,7 +430,7 @@ public final class RequestUtil {
                                      String name,
                                      String value ) {
         String[] newValues = null;
-        String[] oldValues = (String[])map.get(name);
+        String[] oldValues = map.get(name);
         if (oldValues == null) {
             newValues = new String[1];
             newValues[0] = value;

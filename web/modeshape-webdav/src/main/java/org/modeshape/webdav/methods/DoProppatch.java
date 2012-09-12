@@ -1,5 +1,10 @@
 package org.modeshape.webdav.methods;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Vector;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -21,11 +26,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Vector;
 
 public class DoProppatch extends AbstractMethod {
 
@@ -43,6 +43,7 @@ public class DoProppatch extends AbstractMethod {
         this.resourceLocks = resLocks;
     }
 
+    @Override
     public void execute( ITransaction transaction,
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException, LockFailedException {
@@ -199,7 +200,7 @@ public class DoProppatch extends AbstractMethod {
             } catch (WebdavException e) {
                 resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
             } catch (ServletException e) {
-               LOG.error(e, new TextI18n("Cannot create document builder"));
+                LOG.error(e, new TextI18n("Cannot create document builder"));
             } finally {
                 resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
             }

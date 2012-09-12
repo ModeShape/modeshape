@@ -1,5 +1,6 @@
 package org.modeshape.webdav.methods;
 
+import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.modeshape.common.i18n.TextI18n;
@@ -11,7 +12,6 @@ import org.modeshape.webdav.WebdavStatus;
 import org.modeshape.webdav.exceptions.LockFailedException;
 import org.modeshape.webdav.locking.IResourceLocks;
 import org.modeshape.webdav.locking.LockedObject;
-import java.io.IOException;
 
 public class DoUnlock extends DeterminableMethod {
 
@@ -29,6 +29,7 @@ public class DoUnlock extends DeterminableMethod {
         this.readOnly = readOnly;
     }
 
+    @Override
     public void execute( ITransaction transaction,
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException, LockFailedException {
@@ -61,8 +62,6 @@ public class DoUnlock extends DeterminableMethod {
                             // exclusive, only one lock owner
                             if (owners != null) {
                                 owner = owners[0];
-                            } else {
-                                owner = null;
                             }
                         }
 
@@ -83,7 +82,7 @@ public class DoUnlock extends DeterminableMethod {
                     }
                 }
             } catch (LockFailedException e) {
-               LOG.warn(e, new TextI18n("Cannot unlock resource"));
+                LOG.warn(e, new TextI18n("Cannot unlock resource"));
             } finally {
                 resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
             }

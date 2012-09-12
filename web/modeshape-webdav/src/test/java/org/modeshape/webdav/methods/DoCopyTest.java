@@ -9,6 +9,7 @@ import org.modeshape.webdav.locking.LockedObject;
 import org.modeshape.webdav.locking.ResourceLocks;
 import org.springframework.mock.web.DelegatingServletInputStream;
 
+@SuppressWarnings( "synthetic-access" )
 public class DoCopyTest extends AbstractWebDAVTest {
 
     @Test

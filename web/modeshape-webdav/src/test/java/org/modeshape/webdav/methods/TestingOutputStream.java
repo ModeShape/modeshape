@@ -24,20 +24,21 @@
 
 package org.modeshape.webdav.methods;
 
+import java.io.ByteArrayOutputStream;
 import javax.servlet.ServletOutputStream;
 import org.junit.Ignore;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 @Ignore
 public class TestingOutputStream extends ServletOutputStream {
 
     private ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-    public void write( int i ) throws IOException {
+    @Override
+    public void write( int i ) {
         baos.write(i);
     }
 
+    @Override
     public String toString() {
         return baos.toString();
     }

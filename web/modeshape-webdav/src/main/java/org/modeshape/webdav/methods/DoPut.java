@@ -15,6 +15,8 @@
  */
 package org.modeshape.webdav.methods;
 
+import java.io.IOException;
+import java.util.Hashtable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.modeshape.common.logging.Logger;
@@ -27,8 +29,6 @@ import org.modeshape.webdav.exceptions.LockFailedException;
 import org.modeshape.webdav.exceptions.WebdavException;
 import org.modeshape.webdav.locking.IResourceLocks;
 import org.modeshape.webdav.locking.LockedObject;
-import java.io.IOException;
-import java.util.Hashtable;
 
 public class DoPut extends AbstractMethod {
 
@@ -51,6 +51,7 @@ public class DoPut extends AbstractMethod {
         this.lazyFolderCreationOnPut = lazyFolderCreationOnPut;
     }
 
+    @Override
     public void execute( ITransaction transaction,
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException, LockFailedException {

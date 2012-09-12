@@ -1,5 +1,6 @@
 package org.modeshape.webdav.methods;
 
+import java.util.Locale;
 import org.jmock.Expectations;
 import org.junit.Test;
 import org.modeshape.webdav.AbstractWebDAVTest;
@@ -7,8 +8,8 @@ import org.modeshape.webdav.StoredObject;
 import org.modeshape.webdav.WebdavStatus;
 import org.modeshape.webdav.locking.ResourceLocks;
 import org.springframework.mock.web.DelegatingServletInputStream;
-import java.util.Locale;
 
+@SuppressWarnings( "synthetic-access" )
 public class DoGetTest extends AbstractWebDAVTest {
 
     @Test
@@ -123,7 +124,7 @@ public class DoGetTest extends AbstractWebDAVTest {
                 will(returnValue(testingOutputStream));
 
                 one(mockStore).getChildrenNames(mockTransaction, "/foo/");
-                will(returnValue(new String[] { "AAA", "BBB" }));
+                will(returnValue(new String[] {"AAA", "BBB"}));
 
                 one(mockStore).getStoredObject(mockTransaction, "/foo//AAA");
                 will(returnValue(aaa));

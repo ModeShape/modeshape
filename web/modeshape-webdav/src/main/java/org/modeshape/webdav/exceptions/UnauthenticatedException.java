@@ -18,6 +18,8 @@ package org.modeshape.webdav.exceptions;
 
 public class UnauthenticatedException extends WebdavException {
 
+    private static final long serialVersionUID = 1L;
+
     public UnauthenticatedException() {
         super();
     }

@@ -15,6 +15,11 @@
  */
 package org.modeshape.webdav.methods;
 
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Vector;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -37,11 +42,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Vector;
 
 public class DoPropfind extends AbstractMethod {
 
@@ -76,6 +76,7 @@ public class DoPropfind extends AbstractMethod {
         this.mimeTyper = mimeTyper;
     }
 
+    @Override
     public void execute( ITransaction transaction,
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException, LockFailedException {
@@ -143,10 +144,21 @@ public class DoPropfind extends AbstractMethod {
                 generatedXML.writeXMLHeader();
                 generatedXML.writeElement("DAV::multistatus", XMLWriter.OPENING);
                 if (depth == 0) {
-                    parseProperties(transaction, req, generatedXML, path, propertyFindType, properties, mimeTyper.getMimeType(
-                            transaction, path));
+                    parseProperties(transaction,
+                                    req,
+                                    generatedXML,
+                                    path,
+                                    propertyFindType,
+                                    properties,
+                                    mimeTyper.getMimeType(transaction, path));
                 } else {
-                    recursiveParseProperties(transaction, path, req, generatedXML, propertyFindType, properties, depth,
+                    recursiveParseProperties(transaction,
+                                             path,
+                                             req,
+                                             generatedXML,
+                                             propertyFindType,
+                                             properties,
+                                             depth,
                                              mimeTyper.getMimeType(transaction, path));
                 }
                 generatedXML.writeElement("DAV::multistatus", XMLWriter.CLOSING);
@@ -171,13 +183,16 @@ public class DoPropfind extends AbstractMethod {
 
     /**
      * goes recursive through all folders. used by propfind
-     *
+     * 
+     * @param transaction
      * @param currentPath the current path
      * @param req HttpServletRequest
      * @param generatedXML
      * @param propertyFindType
      * @param properties
      * @param depth depth of the propfind
+     * @param mimeType
+     * @throws WebdavException
      */
     private void recursiveParseProperties( ITransaction transaction,
                                            String currentPath,
@@ -193,7 +208,7 @@ public class DoPropfind extends AbstractMethod {
         if (depth > 0) {
             // no need to get name if depth is already zero
             String[] names = store.getChildrenNames(transaction, currentPath);
-            names = names == null ? new String[] { } : names;
+            names = names == null ? new String[] {} : names;
             String newPath = null;
 
             for (String name : names) {
@@ -202,7 +217,13 @@ public class DoPropfind extends AbstractMethod {
                     newPath += "/";
                 }
                 newPath += name;
-                recursiveParseProperties(transaction, newPath, req, generatedXML, propertyFindType, properties, depth - 1,
+                recursiveParseProperties(transaction,
+                                         newPath,
+                                         req,
+                                         generatedXML,
+                                         propertyFindType,
+                                         properties,
+                                         depth - 1,
                                          mimeType);
             }
         }
@@ -210,13 +231,15 @@ public class DoPropfind extends AbstractMethod {
 
     /**
      * Propfind helper method.
-     *
+     * 
+     * @param transaction
      * @param req The servlet request
      * @param generatedXML XML response to the Propfind request
      * @param path Path of the current resource
      * @param type Propfind type
-     * @param propertiesVector If the propfind type is find properties by name, then this Vector
-     * contains those properties
+     * @param propertiesVector If the propfind type is find properties by name, then this Vector contains those properties
+     * @param mimeType
+     * @throws WebdavException
      */
     private void parseProperties( ITransaction transaction,
                                   HttpServletRequest req,
@@ -346,7 +369,7 @@ public class DoPropfind extends AbstractMethod {
 
                 while (properties.hasMoreElements()) {
 
-                    String property = (String)properties.nextElement();
+                    String property = properties.nextElement();
 
                     if (property.equals("DAV::creationdate")) {
                         generatedXML.writeProperty("DAV::creationdate", creationdate);
@@ -418,14 +441,14 @@ public class DoPropfind extends AbstractMethod {
 
                 if (propertiesNotFoundList.hasMoreElements()) {
 
-                    status = "HTTP/1.1 " + WebdavStatus.SC_NOT_FOUND + " " + WebdavStatus.getStatusText(
-                            WebdavStatus.SC_NOT_FOUND);
+                    status = "HTTP/1.1 " + WebdavStatus.SC_NOT_FOUND + " "
+                             + WebdavStatus.getStatusText(WebdavStatus.SC_NOT_FOUND);
 
                     generatedXML.writeElement("DAV::propstat", XMLWriter.OPENING);
                     generatedXML.writeElement("DAV::prop", XMLWriter.OPENING);
 
                     while (propertiesNotFoundList.hasMoreElements()) {
-                        generatedXML.writeElement((String)propertiesNotFoundList.nextElement(), XMLWriter.NO_CONTENT);
+                        generatedXML.writeElement(propertiesNotFoundList.nextElement(), XMLWriter.NO_CONTENT);
                     }
 
                     generatedXML.writeElement("DAV::prop", XMLWriter.CLOSING);
