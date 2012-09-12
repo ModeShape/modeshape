@@ -73,7 +73,7 @@
                 </executions>
                 <configuration>
                     <archive>
-                        <manifestFile>target/test-classes/META-INF/MANIFEST.MF</manifestFile>
+                        <manifestFile>${project.build.testOutputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
             </plugin>

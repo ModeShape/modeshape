@@ -272,6 +272,7 @@
         <infinispan.version>5.1.2.FINAL</infinispan.version>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
         <jgroups.version>3.0.6.Final</jgroups.version>
+        <c3p0.version>0.9.1.2</c3p0.version>
         <jboss.logging.version>3.1.0.CR2</jboss.logging.version>
 
         <sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
@@ -913,6 +914,13 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-cachestore-jdbc</artifactId>
                 <version>${infinispan.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <!--Required by infinispan-cachestore-jdbc -->
+            <dependency>
+                <groupId>c3p0</groupId>
+                <artifactId>c3p0</artifactId>
+                <version>${c3p0.version}</version>
                 <scope>test</scope>
             </dependency>
             

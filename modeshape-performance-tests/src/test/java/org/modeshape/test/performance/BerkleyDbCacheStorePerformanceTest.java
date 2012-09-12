@@ -23,14 +23,15 @@
  */
 package org.modeshape.test.performance;
 
-import java.io.File;
 import javax.jcr.Node;
-import org.infinispan.loaders.CacheLoaderConfig;
-import org.infinispan.loaders.bdbje.BdbjeCacheStoreConfig;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.cache.LoaderConfigurationBuilder;
+import org.infinispan.loaders.bdbje.BdbjeCacheStore;
 import org.junit.Test;
 import org.modeshape.common.annotation.Performance;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.FileUtil;
+import java.io.File;
 
 public class BerkleyDbCacheStorePerformanceTest extends InMemoryPerformanceTest {
 
@@ -42,28 +43,15 @@ public class BerkleyDbCacheStorePerformanceTest extends InMemoryPerformanceTest 
     }
 
     @Override
-    protected CacheLoaderConfig getCacheLoaderConfiguration() {
-        BdbjeCacheStoreConfig config = new BdbjeCacheStoreConfig();
-        config.setLocation(dbDir.getAbsolutePath());
-        return config;
-    }
-
-    @Override
-    @Test
-    public void shouldAllowCreatingManyUnstructuredNodesWithNoSameNameSiblings() throws Exception {
-        super.shouldAllowCreatingManyUnstructuredNodesWithNoSameNameSiblings();
+    public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
+        LoaderConfigurationBuilder lb = configurationBuilder.loaders().addCacheLoader().cacheLoader(new BdbjeCacheStore());
+        lb.addProperty("location", dbDir.getAbsolutePath());
     }
 
     @Performance
     @Test
     public void shouldAllowCreatingMillionNodeSubgraphUsingMultipleSaves() throws Exception {
         repeatedlyCreateSubgraph(1, 2, 100, 0, false, true);
-    }
-
-    @Override
-    @Test
-    public void shouldAllowSmallSubgraph() throws Exception {
-        super.shouldAllowSmallSubgraph();
     }
 
     @Performance

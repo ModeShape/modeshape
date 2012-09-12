@@ -1,14 +1,14 @@
 {
-    "name" : "Test Repository",
+    "name" : "Test_Repository",
     "storage" : {
-        "transactionManagerLookup" = "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
+        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
     },
     "query" : {
         "indexStorage" : {
             "type" : "ram"
         },
         "indexing" : {
-            "mode" : "sync",
+            "mode" : "sync"
         }
     }
 }

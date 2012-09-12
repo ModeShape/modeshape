@@ -23,32 +23,30 @@
  */
 package org.modeshape.test.performance;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import java.io.InputStream;
-import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.transaction.TransactionManager;
-import org.infinispan.loaders.CacheLoaderConfig;
-import org.infinispan.manager.CacheContainer;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Json;
-import org.infinispan.test.TestingUtil;
 import org.junit.After;
 import org.junit.AfterClass;
+import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
+import org.modeshape.jcr.CustomLoaderTest;
 import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.TestingEnvironment;
+import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
 
-public class InMemoryPerformanceTest {
+public class InMemoryPerformanceTest implements CustomLoaderTest {
 
     private static final String LARGE_STRING_VALUE = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed fermentum iaculis placerat. Mauris condimentum dapibus pretium. Vestibulum gravida sodales tellus vitae porttitor. Nunc dictum, eros vel adipiscing pellentesque, sem mi iaculis dui, a aliquam neque magna non turpis. Maecenas imperdiet est eu lorem placerat mattis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Vestibulum scelerisque molestie tristique. Mauris nibh diam, vestibulum eu condimentum at, facilisis at nisi. Maecenas vehicula accumsan lacus in venenatis. Nulla nisi eros, fringilla at dapibus mollis, pharetra at urna. Praesent in risus magna, at iaculis sapien. Fusce id velit id dui tempor hendrerit semper a nunc. Nam eget mauris tellus.";
     private static final String SMALL_STRING_VALUE = "The quick brown fox jumped over the moon. What? ";
@@ -57,8 +55,9 @@ public class InMemoryPerformanceTest {
     private static final Stopwatch INFINISPAN_STARTUP = new Stopwatch();
     private static final Stopwatch MODESHAPE_STARTUP = new Stopwatch();
 
+    private static final int MANY_NODES_COUNT = 10000;
+
     private Environment environment;
-    private TransactionManager txnMgr;
     private RepositoryConfiguration config;
     protected ModeShapeEngine engine;
     protected Repository repository;
@@ -76,12 +75,10 @@ public class InMemoryPerformanceTest {
 
         Document configDoc = Json.read(configStream);
 
-        environment = new TestingEnvironment(getCacheLoaderConfiguration());
+        environment = new TestingEnvironment(this);
 
         STARTUP.start();
         INFINISPAN_STARTUP.start();
-        CacheContainer cm = environment.getCacheContainer(null);
-        txnMgr = TestingUtil.getTransactionManager(cm.getCache(config.getCacheName()));
         config = new RepositoryConfiguration(configDoc, configFileName, environment);
         INFINISPAN_STARTUP.stop();
 
@@ -98,19 +95,15 @@ public class InMemoryPerformanceTest {
     @After
     public void afterEach() throws Exception {
         try {
-            engine.shutdown().get(3L, TimeUnit.SECONDS);
+            org.modeshape.jcr.TestingUtil.killEngine(engine);
         } finally {
             engine = null;
             repository = null;
             config = null;
             try {
-                TestingUtil.killTransaction(txnMgr);
+                environment.shutdown();
             } finally {
-                try {
-                    environment.shutdown();
-                } finally {
-                    cleanUpFileSystem();
-                }
+                cleanUpFileSystem();
             }
         }
     }
@@ -126,8 +119,8 @@ public class InMemoryPerformanceTest {
         // do nothing by default
     }
 
-    protected CacheLoaderConfig getCacheLoaderConfiguration() {
-        return null;
+    @Override
+    public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
     }
 
     @Test
@@ -155,13 +148,16 @@ public class InMemoryPerformanceTest {
             Node node = session.getRootNode().addNode("testNode");
             session.save();
 
-            int count = 10000;
-            if (i > 2) sw.start();
-            for (int j = 0; j != count; ++j) {
+            if (i > 2) {
+                sw.start();
+            }
+            for (int j = 0; j != MANY_NODES_COUNT; ++j) {
                 node.addNode("childNode");
             }
             session.save();
-            if (i > 2) sw.stop();
+            if (i > 2) {
+                sw.stop();
+            }
 
             // Now add another node ...
             node.addNode("oneMore");
@@ -192,13 +188,17 @@ public class InMemoryPerformanceTest {
             Node node = session.getRootNode().addNode("testNode");
             session.save();
 
-            int count = 10000;
-            if (i > 2) sw.start();
+            int count = MANY_NODES_COUNT;
+            if (i > 2) {
+                sw.start();
+            }
             for (int j = 0; j != count; ++j) {
                 node.addNode("childNode" + j);
             }
             session.save();
-            if (i > 2) sw.stop();
+            if (i > 2) {
+                sw.stop();
+            }
 
             // Now add another node ...
             node.addNode("oneMore");
@@ -232,7 +232,9 @@ public class InMemoryPerformanceTest {
         session.save();
 
         Stopwatch sw = new Stopwatch();
-        if (print) System.out.print("Iterating ");
+        if (print) {
+            System.out.print("Iterating ");
+        }
         int numNodesEach = 0;
         for (int i = 0; i != samples; ++i) {
             System.out.print(".");
@@ -267,14 +269,14 @@ public class InMemoryPerformanceTest {
     /**
      * Create a structured subgraph by generating nodes with the supplied number of properties and children, to the supplied
      * maximum subgraph depth.
-     * 
+     *
      * @param session the session that should be used; may not be null
      * @param parentNode the parent node under which the subgraph is to be created
      * @param depthRemaining the depth of the subgraph; must be a positive number
      * @param numberOfChildrenPerNode the number of child nodes to create under each node
      * @param numberOfPropertiesPerNode the number of properties to create on each node; must be 0 or more
      * @param useSns true if the child nodes under a parent should be same-name-siblings, or false if they should each have their
-     *        own unique name
+     * own unique name
      * @param depthToSave
      * @return the number of nodes created in the subgraph
      * @throws RepositoryException if there is a problem
@@ -295,13 +297,8 @@ public class InMemoryPerformanceTest {
             }
             numberCreated += numberOfChildrenPerNode;
             if (depthRemaining > 1) {
-                numberCreated += createSubgraph(session,
-                                                child,
-                                                depthRemaining - 1,
-                                                numberOfChildrenPerNode,
-                                                numberOfPropertiesPerNode,
-                                                useSns,
-                                                depthToSave);
+                numberCreated += createSubgraph(session, child, depthRemaining - 1, numberOfChildrenPerNode,
+                                                numberOfPropertiesPerNode, useSns, depthToSave);
             }
         }
         if (depthRemaining == depthToSave) {

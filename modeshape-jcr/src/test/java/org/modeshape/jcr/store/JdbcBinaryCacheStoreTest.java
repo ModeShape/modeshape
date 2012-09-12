@@ -34,6 +34,8 @@ import org.modeshape.common.util.FileUtil;
 
 /**
  * Currently ignored because of the time required to run it.
+ *
+ * //TODO author=Horia Chiorean date=9/12/12 description=If they are ever enabled, c3p0 needs to be added as a test dependency
  */
 @Ignore
 public class JdbcBinaryCacheStoreTest extends InMemoryTest {
@@ -57,7 +59,6 @@ public class JdbcBinaryCacheStoreTest extends InMemoryTest {
                 .addProperty("connectionUrl", dataSourceConfig.getUrl() + "/string_based_db;DB_CLOSE_DELAY=1")
                 .addProperty("driverClass", dataSourceConfig.getDriverClassName())
                 .addProperty("userName", dataSourceConfig.getUsername())
-                .addProperty("stringsTableNamePrefix", "ISPN_STRING_TABLE")
                 .addProperty("idColumnName", "ID_COLUMN")
                 .addProperty("idColumnType", "VARCHAR(255)")
                 .addProperty("timestampColumnName", "TIMESTAMP_COLUMN")
