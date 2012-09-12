@@ -21,7 +21,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-@SuppressWarnings( "deprecation" )
 public class CacheSchematicDbTest {
 
     private CacheSchematicDb db;
@@ -34,9 +33,10 @@ public class CacheSchematicDbTest {
     @Before
     public void beforeTest() {
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder
-                .invocationBatching().enable()
-                .transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
+        configurationBuilder.invocationBatching()
+                            .enable()
+                            .transaction()
+                            .transactionManagerLookup(new DummyTransactionManagerLookup());
 
         cm = TestCacheManagerFactory.createCacheManager(configurationBuilder);
         cache = cm.getCache("documents");

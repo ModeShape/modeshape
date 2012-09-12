@@ -32,7 +32,6 @@ import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
 import org.junit.Before;
 
-@SuppressWarnings( "deprecation" )
 public abstract class AbstractSchematicDbTest {
 
     protected SchematicDb db;
@@ -42,9 +41,10 @@ public abstract class AbstractSchematicDbTest {
     @Before
     public void beforeTest() {
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder
-                .invocationBatching().enable()
-                .transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
+        configurationBuilder.invocationBatching()
+                            .enable()
+                            .transaction()
+                            .transactionManagerLookup(new DummyTransactionManagerLookup());
         cm = TestCacheManagerFactory.createCacheManager(configurationBuilder);
         // Now create the SchematicDb ...
         db = Schematic.get(cm, "documents");

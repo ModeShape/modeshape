@@ -272,6 +272,8 @@
         <infinispan.version>5.1.2.FINAL</infinispan.version>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
         <jgroups.version>3.0.6.Final</jgroups.version>
+        <jboss.logging.version>3.1.0.CR2</jboss.logging.version>
+
         <sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
         <jdbc.mysql.version>5.0.7</jdbc.mysql.version>
         <jdbc.derby.version>10.8.1.2</jdbc.derby.version>
@@ -448,6 +450,7 @@
                 <!--The following versions are also used by AS7.2-->
                 <infinispan.version>5.1.5.FINAL</infinispan.version>
                 <jgroups.version>3.1.0.Final</jgroups.version>
+                <jboss.logging.version>3.1.0.GA</jboss.logging.version>
             </properties>
         </profile>
         
@@ -457,6 +460,7 @@
                 <jbossas-version>7.2.0.Alpha1-SNAPSHOT</jbossas-version>
                 <infinispan.version>5.1.5.FINAL</infinispan.version>
                 <jgroups.version>3.1.0.Final</jgroups.version>
+                <jboss.logging.version>3.1.0.GA</jboss.logging.version>
                 <jbossas7.assembly.descriptor.version>72</jbossas7.assembly.descriptor.version>
             </properties>
         </profile>
@@ -1399,6 +1403,12 @@
             <!--
                 Schematic dependencies
             -->
+            <dependency>
+                <groupId>org.jboss.logging</groupId>
+                <artifactId>jboss-logging</artifactId>
+                <version>${jboss.logging.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>de.undercouch</groupId>
                 <artifactId>bson4jackson</artifactId>
