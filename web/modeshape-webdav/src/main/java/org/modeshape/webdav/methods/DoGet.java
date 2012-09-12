@@ -15,6 +15,13 @@
  */
 package org.modeshape.webdav.methods;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.modeshape.common.i18n.TextI18n;
@@ -25,13 +32,6 @@ import org.modeshape.webdav.IWebdavStore;
 import org.modeshape.webdav.StoredObject;
 import org.modeshape.webdav.WebdavStatus;
 import org.modeshape.webdav.locking.ResourceLocks;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Locale;
 
 public class DoGet extends DoHead {
 
@@ -47,6 +47,7 @@ public class DoGet extends DoHead {
 
     }
 
+    @Override
     protected void doBody( ITransaction transaction,
                            HttpServletResponse resp,
                            String path ) {
@@ -88,6 +89,7 @@ public class DoGet extends DoHead {
         }
     }
 
+    @Override
     protected void folderBody( ITransaction transaction,
                                String path,
                                HttpServletResponse resp,
@@ -113,7 +115,7 @@ public class DoGet extends DoHead {
                 OutputStream out = resp.getOutputStream();
                 String[] children = store.getChildrenNames(transaction, path);
                 // Make sure it's not null
-                children = children == null ? new String[] { } : children;
+                children = children == null ? new String[] {} : children;
                 // Sort by name
                 Arrays.sort(children);
                 StringBuilder childrenTemp = new StringBuilder();
@@ -183,42 +185,18 @@ public class DoGet extends DoHead {
     }
 
     /**
-     * Return the CSS styles used to display the HTML representation
-     * of the webdav content.
-     *
-     * @return
+     * Return the CSS styles used to display the HTML representation of the webdav content.
+     * 
+     * @return the HTML body
      */
     protected String getCSS() {
         // The default styles to use
-        String retVal = "body {\n" +
-                "	font-family: Arial, Helvetica, sans-serif;\n" +
-                "}\n" +
-                "h1 {\n" +
-                "	font-size: 1.5em;\n" +
-                "}\n" +
-                "th {\n" +
-                "	background-color: #9DACBF;\n" +
-                "}\n" +
-                "table {\n" +
-                "	border-top-style: solid;\n" +
-                "	border-right-style: solid;\n" +
-                "	border-bottom-style: solid;\n" +
-                "	border-left-style: solid;\n" +
-                "}\n" +
-                "td {\n" +
-                "	margin: 0px;\n" +
-                "	padding-top: 2px;\n" +
-                "	padding-right: 5px;\n" +
-                "	padding-bottom: 2px;\n" +
-                "	padding-left: 5px;\n" +
-                "}\n" +
-                "tr.even {\n" +
-                "	background-color: #CCCCCC;\n" +
-                "}\n" +
-                "tr.odd {\n" +
-                "	background-color: #FFFFFF;\n" +
-                "}\n" +
-                "";
+        String retVal = "body {\n" + "	font-family: Arial, Helvetica, sans-serif;\n" + "}\n" + "h1 {\n" + "	font-size: 1.5em;\n"
+                        + "}\n" + "th {\n" + "	background-color: #9DACBF;\n" + "}\n" + "table {\n"
+                        + "	border-top-style: solid;\n" + "	border-right-style: solid;\n" + "	border-bottom-style: solid;\n"
+                        + "	border-left-style: solid;\n" + "}\n" + "td {\n" + "	margin: 0px;\n" + "	padding-top: 2px;\n"
+                        + "	padding-right: 5px;\n" + "	padding-bottom: 2px;\n" + "	padding-left: 5px;\n" + "}\n" + "tr.even {\n"
+                        + "	background-color: #CCCCCC;\n" + "}\n" + "tr.odd {\n" + "	background-color: #FFFFFF;\n" + "}\n" + "";
         try {
             // Try loading one via class loader and use that one instead
             ClassLoader cl = getClass().getClassLoader();
@@ -227,7 +205,7 @@ public class DoGet extends DoHead {
                 // Found css via class loader, use that one
                 StringBuilder out = new StringBuilder();
                 byte[] b = new byte[4096];
-                for (int n; (n = iStream.read(b)) != -1; ) {
+                for (int n; (n = iStream.read(b)) != -1;) {
                     out.append(new String(b, 0, n));
                 }
                 retVal = out.toString();
@@ -241,12 +219,12 @@ public class DoGet extends DoHead {
 
     /**
      * Return the header to be displayed in front of the folder content
-     *
+     * 
      * @param transaction
      * @param path
      * @param resp
      * @param req
-     * @return
+     * @return the header string
      */
     protected String getHeader( ITransaction transaction,
                                 String path,
@@ -257,12 +235,12 @@ public class DoGet extends DoHead {
 
     /**
      * Return the footer to be displayed after the folder content
-     *
+     * 
      * @param transaction
      * @param path
      * @param resp
      * @param req
-     * @return
+     * @return the footer string
      */
     protected String getFooter( ITransaction transaction,
                                 String path,
@@ -273,7 +251,7 @@ public class DoGet extends DoHead {
 
     /**
      * Return this as the Date/Time format for displaying Creation + Modification dates
-     *
+     * 
      * @param browserLocale
      * @return DateFormat used to display creation and modification dates
      */

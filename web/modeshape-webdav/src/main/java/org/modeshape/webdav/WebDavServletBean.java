@@ -1,5 +1,12 @@
 package org.modeshape.webdav;
 
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -22,15 +29,10 @@ import org.modeshape.webdav.methods.DoPropfind;
 import org.modeshape.webdav.methods.DoProppatch;
 import org.modeshape.webdav.methods.DoPut;
 import org.modeshape.webdav.methods.DoUnlock;
-import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.Principal;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
 
 public class WebDavServletBean extends HttpServlet {
+
+    private static final long serialVersionUID = 1L;
 
     private static Logger LOG = Logger.getLogger(WebDavServletBean.class);
 
@@ -54,6 +56,7 @@ public class WebDavServletBean extends HttpServlet {
         }
     }
 
+    @SuppressWarnings( "unused" )
     public void init( IWebdavStore store,
                       String dftIndexFile,
                       String insteadOf404,
@@ -63,6 +66,7 @@ public class WebDavServletBean extends HttpServlet {
         this.store = store;
 
         IMimeTyper mimeTyper = new IMimeTyper() {
+            @Override
             public String getMimeType( ITransaction transaction,
                                        String path ) {
                 String retVal = WebDavServletBean.this.store.getStoredObject(transaction, path).getMimeType();
@@ -133,11 +137,9 @@ public class WebDavServletBean extends HttpServlet {
                 methodExecutor.execute(transaction, req, resp);
 
                 store.commit(transaction);
-                /** Clear not consumed data
-                 *
-                 * Clear input stream if available otherwise later access
-                 * include current input.  These cases occure if the client
-                 * sends a request with body to an not existing resource.
+                /**
+                 * Clear not consumed data Clear input stream if available otherwise later access include current input. These
+                 * cases occure if the client sends a request with body to an not existing resource.
                  */
                 if (req.getContentLength() != 0 && req.getInputStream().available() > 0) {
                     if (LOG.isTraceEnabled()) {

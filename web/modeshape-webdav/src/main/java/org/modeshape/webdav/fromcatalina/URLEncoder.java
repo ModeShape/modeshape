@@ -61,6 +61,7 @@ public class URLEncoder {
         safeCharacters.set(c);
     }
 
+    @SuppressWarnings( "cast" )
     public String encode( String path ) {
         int maxBytesPerChar = 10;
         // int caseDiff = ('a' - 'A');

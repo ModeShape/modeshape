@@ -15,6 +15,8 @@
  */
 package org.modeshape.webdav.methods;
 
+import java.io.IOException;
+import java.util.Hashtable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.modeshape.common.logging.Logger;
@@ -29,8 +31,6 @@ import org.modeshape.webdav.exceptions.ObjectNotFoundException;
 import org.modeshape.webdav.exceptions.WebdavException;
 import org.modeshape.webdav.fromcatalina.RequestUtil;
 import org.modeshape.webdav.locking.ResourceLocks;
-import java.io.IOException;
-import java.util.Hashtable;
 
 public class DoCopy extends AbstractMethod {
 
@@ -51,6 +51,7 @@ public class DoCopy extends AbstractMethod {
         this.readOnly = readOnly;
     }
 
+    @Override
     public void execute( ITransaction transaction,
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException, LockFailedException {
@@ -85,9 +86,8 @@ public class DoCopy extends AbstractMethod {
 
     /**
      * Copy a resource.
-     *
-     * @param transaction indicates that the method is within the scope of a WebDAV
-     * transaction
+     * 
+     * @param transaction indicates that the method is within the scope of a WebDAV transaction
      * @param req Servlet request
      * @param resp Servlet response
      * @return true if the copy is successful
@@ -166,9 +166,8 @@ public class DoCopy extends AbstractMethod {
                     if (destinationSo != null) {
                         resp.sendError(WebdavStatus.SC_PRECONDITION_FAILED);
                         return false;
-                    } else {
-                        resp.setStatus(WebdavStatus.SC_CREATED);
                     }
+                    resp.setStatus(WebdavStatus.SC_CREATED);
 
                 }
                 copy(transaction, path, destinationPath, errorList, req, resp);
@@ -199,15 +198,13 @@ public class DoCopy extends AbstractMethod {
     }
 
     /**
-     * copies the specified resource(s) to the specified destination.
-     * preconditions must be handled by the caller. Standard status codes must
-     * be handled by the caller. a multi status report in case of errors is
-     * created here.
-     *
-     * @param transaction indicates that the method is within the scope of a WebDAV
-     * transaction
+     * copies the specified resource(s) to the specified destination. preconditions must be handled by the caller. Standard status
+     * codes must be handled by the caller. a multi status report in case of errors is created here.
+     * 
+     * @param transaction indicates that the method is within the scope of a WebDAV transaction
      * @param sourcePath path from where to read
      * @param destinationPath path where to write
+     * @param errorList
      * @param req HttpServletRequest
      * @param resp HttpServletResponse
      * @throws WebdavException if an error in the underlying store occurs
@@ -223,9 +220,11 @@ public class DoCopy extends AbstractMethod {
         StoredObject sourceSo = store.getStoredObject(transaction, sourcePath);
         if (sourceSo.isResource()) {
             store.createResource(transaction, destinationPath);
-            long resourceLength = store.setResourceContent(transaction, destinationPath, store.getResourceContent(transaction,
-                                                                                                                  sourcePath),
-                                                           null, null);
+            long resourceLength = store.setResourceContent(transaction,
+                                                           destinationPath,
+                                                           store.getResourceContent(transaction, sourcePath),
+                                                           null,
+                                                           null);
 
             if (resourceLength != -1) {
                 StoredObject destinationSo = store.getStoredObject(transaction, destinationPath);
@@ -243,11 +242,9 @@ public class DoCopy extends AbstractMethod {
     }
 
     /**
-     * helper method of copy() recursively copies the FOLDER at source path to
-     * destination path
-     *
-     * @param transaction indicates that the method is within the scope of a WebDAV
-     * transaction
+     * helper method of copy() recursively copies the FOLDER at source path to destination path
+     * 
+     * @param transaction indicates that the method is within the scope of a WebDAV transaction
      * @param sourcePath where to read
      * @param destinationPath where to write
      * @param errorList all errors that ocurred
@@ -272,7 +269,7 @@ public class DoCopy extends AbstractMethod {
         }
         if (infiniteDepth) {
             String[] children = store.getChildrenNames(transaction, sourcePath);
-            children = children == null ? new String[] { } : children;
+            children = children == null ? new String[] {} : children;
 
             StoredObject childSo;
             for (int i = children.length - 1; i >= 0; i--) {
@@ -281,9 +278,11 @@ public class DoCopy extends AbstractMethod {
                     childSo = store.getStoredObject(transaction, (sourcePath + children[i]));
                     if (childSo.isResource()) {
                         store.createResource(transaction, destinationPath + children[i]);
-                        long resourceLength = store.setResourceContent(transaction, destinationPath + children[i],
-                                                                       store.getResourceContent(transaction,
-                                                                                                sourcePath + children[i]), null,
+                        long resourceLength = store.setResourceContent(transaction,
+                                                                       destinationPath + children[i],
+                                                                       store.getResourceContent(transaction, sourcePath
+                                                                                                             + children[i]),
+                                                                       null,
                                                                        null);
 
                         if (resourceLength != -1) {
@@ -309,7 +308,7 @@ public class DoCopy extends AbstractMethod {
 
     /**
      * Parses and normalizes the destination header.
-     *
+     * 
      * @param req Servlet request
      * @param resp Servlet response
      * @return destinationPath
@@ -378,12 +377,10 @@ public class DoCopy extends AbstractMethod {
     }
 
     /**
-     * Return a context-relative path, beginning with a "/", that represents the
-     * canonical version of the specified path after ".." and "." elements are
-     * resolved out. If the specified path attempts to go outside the boundaries
-     * of the current context (i.e. too many ".." path elements are present),
-     * return <code>null</code> instead.
-     *
+     * Return a context-relative path, beginning with a "/", that represents the canonical version of the specified path after
+     * ".." and "." elements are resolved out. If the specified path attempts to go outside the boundaries of the current context
+     * (i.e. too many ".." path elements are present), return <code>null</code> instead.
+     * 
      * @param path Path to be normalized
      * @return normalized path
      */

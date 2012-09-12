@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.modeshape.webdav.AbstractWebDAVTest;
 import org.modeshape.webdav.WebdavStatus;
 
+@SuppressWarnings( "synthetic-access" )
 public class DoNotImplementedTest extends AbstractWebDAVTest {
 
     @Test

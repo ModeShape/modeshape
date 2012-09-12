@@ -69,16 +69,10 @@ public class XMLWriter {
 
     // ----------------------------------------------------------- Constructors
 
-    /**
-     * Constructor.
-     */
     public XMLWriter( Map<String, String> namespaces ) {
         this.namespaces = namespaces;
     }
 
-    /**
-     * Constructor.
-     */
     public XMLWriter( Writer writer,
                       Map<String, String> namespaces ) {
         this.writer = writer;
@@ -92,6 +86,7 @@ public class XMLWriter {
      *
      * @return String containing the generated XML
      */
+    @Override
     public String toString() {
         return buffer.toString();
     }
@@ -130,8 +125,8 @@ public class XMLWriter {
 
         if (isRootElement) {
             for (Iterator<String> iter = namespaces.keySet().iterator(); iter.hasNext(); ) {
-                String fullName = (String)iter.next();
-                String abbrev = (String)namespaces.get(fullName);
+                String fullName = iter.next();
+                String abbrev = namespaces.get(fullName);
                 nsdecl.append(" xmlns:").append(abbrev).append("=\"").append(fullName).append("\"");
             }
             isRootElement = false;
@@ -141,7 +136,7 @@ public class XMLWriter {
         if (pos >= 0) {
             // lookup prefix for namespace
             String fullns = name.substring(0, pos);
-            String prefix = (String)namespaces.get(fullns);
+            String prefix = namespaces.get(fullns);
             if (prefix == null) {
                 // there is no prefix for this namespace
                 name = name.substring(pos + 1);
@@ -195,6 +190,7 @@ public class XMLWriter {
 
     /**
      * Send data and reinitializes buffer.
+     * @throws IOException
      */
     public void sendData() throws IOException {
         if (writer != null) {

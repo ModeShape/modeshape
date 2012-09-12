@@ -16,6 +16,16 @@
 
 package org.modeshape.webdav.methods;
 
+import java.io.IOException;
+import java.io.Writer;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Locale;
+import java.util.TimeZone;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -32,16 +42,6 @@ import org.modeshape.webdav.fromcatalina.URLEncoder;
 import org.modeshape.webdav.fromcatalina.XMLWriter;
 import org.modeshape.webdav.locking.IResourceLocks;
 import org.modeshape.webdav.locking.LockedObject;
-import java.io.IOException;
-import java.io.Writer;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Locale;
-import java.util.TimeZone;
 
 public abstract class AbstractMethod implements IMethodExecutor {
 
@@ -60,14 +60,12 @@ public abstract class AbstractMethod implements IMethodExecutor {
     protected static final int INFINITY = 3;
 
     /**
-     * Simple date format for the creation date ISO 8601 representation
-     * (partial).
+     * Simple date format for the creation date ISO 8601 representation (partial).
      */
     protected static final String CREATION_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
     /**
-     * Simple date format for the last modified date. (RFC 822 updated by RFC
-     * 1123)
+     * Simple date format for the last modified date. (RFC 822 updated by RFC 1123)
      */
     protected static final String LAST_MODIFIED_DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss z";
 
@@ -110,7 +108,6 @@ public abstract class AbstractMethod implements IMethodExecutor {
      */
     protected static final int TEMP_TIMEOUT = 10;
 
-
     public static String lastModifiedDateFormat( final Date date ) {
         DateFormat df = thLastmodifiedDateFormat.get();
         if (df == null) {
@@ -140,11 +137,11 @@ public abstract class AbstractMethod implements IMethodExecutor {
         return df.format(date);
     }
 
-
     /**
      * Return the relative path associated with this servlet.
-     *
+     * 
      * @param request The servlet request we are processing
+     * @return the relative path
      */
     protected String getRelativePath( HttpServletRequest request ) {
 
@@ -173,9 +170,8 @@ public abstract class AbstractMethod implements IMethodExecutor {
     }
 
     /**
-     * creates the parent path from the given path by removing the last '/' and
-     * everything after that
-     *
+     * creates the parent path from the given path by removing the last '/' and everything after that
+     * 
      * @param path the path
      * @return parent path
      */
@@ -189,7 +185,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
 
     /**
      * removes a / at the end of the path string, if present
-     *
+     * 
      * @param path the path
      * @return the path without trailing /
      */
@@ -203,6 +199,9 @@ public abstract class AbstractMethod implements IMethodExecutor {
 
     /**
      * Return JAXP document builder instance.
+     * 
+     * @return the builder
+     * @throws ServletException
      */
     protected DocumentBuilder getDocumentBuilder() throws ServletException {
         DocumentBuilder documentBuilder = null;
@@ -219,7 +218,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
 
     /**
      * reads the depth header from the request and returns it as a int
-     *
+     * 
      * @param req
      * @return the depth from the depth header
      */
@@ -238,7 +237,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
 
     /**
      * URL rewriter.
-     *
+     * 
      * @param path Path which has to be rewiten
      * @return the rewritten path
      */
@@ -248,9 +247,8 @@ public abstract class AbstractMethod implements IMethodExecutor {
 
     /**
      * Get the ETag associated with a file.
-     *
-     * @param so StoredObject to get resourceLength, lastModified and a hashCode of
-     * StoredObject
+     * 
+     * @param so StoredObject to get resourceLength, lastModified and a hashCode of StoredObject
      * @return the ETag
      */
     protected String getETag( StoredObject so ) {
@@ -285,7 +283,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
                     firstId = firstId.substring(firstId.indexOf(':') + 1);
                 }
                 ids[0] = firstId;
-                //opaque lock token
+                // opaque lock token
                 String secondId = id.substring(id.lastIndexOf("(<"), id.lastIndexOf(">)"));
                 if (secondId.contains("locktoken:")) {
                     secondId = secondId.substring(secondId.indexOf(':') + 1);
@@ -311,17 +309,14 @@ public abstract class AbstractMethod implements IMethodExecutor {
     }
 
     /**
-     * Checks if locks on resources at the given path exists and if so checks
-     * the If-Header to make sure the If-Header corresponds to the locked
-     * resource. Returning true if no lock exists or the If-Header is
-     * corresponding to the locked resource
-     *
-     *
+     * Checks if locks on resources at the given path exists and if so checks the If-Header to make sure the If-Header corresponds
+     * to the locked resource. Returning true if no lock exists or the If-Header is corresponding to the locked resource
+     * 
+     * @param transaction
      * @param req Servlet request
      * @param resourceLocks
      * @param path path to the resource
-     * @return true if no lock on a resource with the given path exists or if
-     *         the If-Header corresponds to the locked resource
+     * @return true if no lock on a resource with the given path exists or if the If-Header corresponds to the locked resource
      * @throws IOException
      * @throws LockFailedException
      */
@@ -346,19 +341,18 @@ public abstract class AbstractMethod implements IMethodExecutor {
             requestLockToken = requestLockTokens[0];
             LockedObject lockedObjectByToken = resourceLocks.getLockedObjectByID(transaction, requestLockToken);
             return lockedObjectByToken != null && lockedObjectByToken.equals(resourceLock);
-        } else {
-            return false;
         }
+        return false;
     }
 
     /**
-     * Send a multistatus element containing a complete error report to the
-     * client. If the errorList contains only one error, send the error
-     * directly without wrapping it in a multistatus message.
-     *
+     * Send a multistatus element containing a complete error report to the client. If the errorList contains only one error, send
+     * the error directly without wrapping it in a multistatus message.
+     * 
      * @param req Servlet request
      * @param resp Servlet response
      * @param errorList List of error to be displayed
+     * @throws IOException
      */
     protected void sendReport( HttpServletRequest req,
                                HttpServletResponse resp,

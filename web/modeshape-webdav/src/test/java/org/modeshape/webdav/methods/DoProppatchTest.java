@@ -7,6 +7,7 @@ import org.modeshape.webdav.StoredObject;
 import org.modeshape.webdav.WebdavStatus;
 import org.modeshape.webdav.locking.ResourceLocks;
 
+@SuppressWarnings( "synthetic-access" )
 public class DoProppatchTest extends AbstractWebDAVTest {
 
     @Test

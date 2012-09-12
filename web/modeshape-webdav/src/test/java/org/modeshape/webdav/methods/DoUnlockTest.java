@@ -9,6 +9,7 @@ import org.modeshape.webdav.WebdavStatus;
 import org.modeshape.webdav.locking.LockedObject;
 import org.modeshape.webdav.locking.ResourceLocks;
 
+@SuppressWarnings( "synthetic-access" )
 public class DoUnlockTest extends AbstractWebDAVTest {
 
     private static final boolean EXCLUSIVE = true;
@@ -157,9 +158,13 @@ public class DoUnlockTest extends AbstractWebDAVTest {
                 one(mockReq).getHeader("User-Agent");
                 will(returnValue("Goliath"));
 
-                one(mockResourceLocks).lock(with(any(ITransaction.class)), with(any(String.class)), with(any(String.class)),
-                                            with(any(boolean.class)), with(any(int.class)), with(any(int.class)), with(any(
-                        boolean.class)));
+                one(mockResourceLocks).lock(with(any(ITransaction.class)),
+                                            with(any(String.class)),
+                                            with(any(String.class)),
+                                            with(any(boolean.class)),
+                                            with(any(int.class)),
+                                            with(any(int.class)),
+                                            with(any(boolean.class)));
                 will(returnValue(true));
 
                 one(mockReq).getHeader("If");
@@ -223,7 +228,8 @@ public class DoUnlockTest extends AbstractWebDAVTest {
 
                 one(mockRes).addHeader("Lock-Token", lockToken);
 
-                one(mockResourceLocks).unlockTemporaryLockedObjects(with(any(ITransaction.class)), with(any(String.class)),
+                one(mockResourceLocks).unlockTemporaryLockedObjects(with(any(ITransaction.class)),
+                                                                    with(any(String.class)),
                                                                     with(any(String.class)));
 
                 // -----LOCK on a non-existing resource successful------
@@ -235,9 +241,13 @@ public class DoUnlockTest extends AbstractWebDAVTest {
                 one(mockReq).getPathInfo();
                 will(returnValue(nullLoPath));
 
-                one(mockResourceLocks).lock(with(any(ITransaction.class)), with(any(String.class)), with(any(String.class)),
-                                            with(any(boolean.class)), with(any(int.class)), with(any(int.class)), with(any(
-                        boolean.class)));
+                one(mockResourceLocks).lock(with(any(ITransaction.class)),
+                                            with(any(String.class)),
+                                            with(any(String.class)),
+                                            with(any(boolean.class)),
+                                            with(any(int.class)),
+                                            with(any(int.class)),
+                                            with(any(boolean.class)));
                 will(returnValue(true));
 
                 one(mockReq).getHeader("Lock-Token");
@@ -246,6 +256,7 @@ public class DoUnlockTest extends AbstractWebDAVTest {
                 one(mockResourceLocks).getLockedObjectByID(mockTransaction, loId);
                 will(returnValue(lockNullResourceLo));
 
+                @SuppressWarnings( "null" )
                 String[] owners = lockNullResourceLo.getOwner();
                 String owner = null;
                 if (owners != null) {
@@ -262,7 +273,8 @@ public class DoUnlockTest extends AbstractWebDAVTest {
 
                 one(mockRes).setStatus(WebdavStatus.SC_NO_CONTENT);
 
-                one(mockResourceLocks).unlockTemporaryLockedObjects(with(any(ITransaction.class)), with(any(String.class)),
+                one(mockResourceLocks).unlockTemporaryLockedObjects(with(any(ITransaction.class)),
+                                                                    with(any(String.class)),
                                                                     with(any(String.class)));
 
             }

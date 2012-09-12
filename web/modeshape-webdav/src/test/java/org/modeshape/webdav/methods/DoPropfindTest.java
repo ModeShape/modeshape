@@ -7,6 +7,7 @@ import org.modeshape.webdav.StoredObject;
 import org.modeshape.webdav.WebdavStatus;
 import org.modeshape.webdav.locking.ResourceLocks;
 
+@SuppressWarnings( "synthetic-access" )
 public class DoPropfindTest extends AbstractWebDAVTest {
 
     @Test
@@ -59,7 +60,7 @@ public class DoPropfindTest extends AbstractWebDAVTest {
                 will(returnValue(path));
 
                 one(mockStore).getChildrenNames(mockTransaction, path);
-                will(returnValue(new String[] { "file1", "file2" }));
+                will(returnValue(new String[] {"file1", "file2"}));
 
                 StoredObject file1So = initFileStoredObject(RESOURCE_CONTENT);
 
@@ -73,7 +74,7 @@ public class DoPropfindTest extends AbstractWebDAVTest {
                 will(returnValue(path));
 
                 one(mockStore).getChildrenNames(mockTransaction, path + "file1");
-                will(returnValue(new String[] { }));
+                will(returnValue(new String[] {}));
 
                 StoredObject file2So = initFileStoredObject(RESOURCE_CONTENT);
 
@@ -87,7 +88,7 @@ public class DoPropfindTest extends AbstractWebDAVTest {
                 will(returnValue(path));
 
                 one(mockStore).getChildrenNames(mockTransaction, path + "file2");
-                will(returnValue(new String[] { }));
+                will(returnValue(new String[] {}));
             }
         });
 

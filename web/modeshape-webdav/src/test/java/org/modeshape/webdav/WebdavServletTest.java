@@ -11,6 +11,7 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockServletConfig;
 import org.springframework.mock.web.MockServletContext;
 
+@SuppressWarnings( "synthetic-access" )
 public class WebdavServletTest extends AbstractWebDAVTest {
 
     private ServletConfig servletConfig;
@@ -35,14 +36,13 @@ public class WebdavServletTest extends AbstractWebDAVTest {
         mockHttpSession = new MockHttpSession(mockServletContext);
         mockServletContext = new MockServletContext();
 
-        mockPrincipal = new MockPrincipal("Admin", new String[] { "Admin", "Manager" });
+        mockPrincipal = new MockPrincipal("Admin", new String[] {"Admin", "Manager"});
     }
 
     @Test
     public void testInit() throws Exception {
 
-        mockery.checking(new Expectations() {
-        });
+        mockery.checking(new Expectations() {});
 
         WebDavServletBean servlet = new WebdavServlet();
         servlet.init(mockStore, dftIndexFile, insteadOf404, 1, true);
@@ -117,15 +117,17 @@ public class WebdavServletTest extends AbstractWebDAVTest {
         mockRequest.addHeader("User-Agent", "...some Client with WebDAVFS...");
 
         mockRequest.setSession(mockHttpSession);
-        mockPrincipal = new MockPrincipal("Admin", new String[] { "Admin", "Manager" });
+        mockPrincipal = new MockPrincipal("Admin", new String[] {"Admin", "Manager"});
         mockRequest.setUserPrincipal(mockPrincipal);
         mockRequest.addUserRole("Admin");
         mockRequest.addUserRole("Manager");
 
         mockRequest.setContent(RESOURCE_CONTENT);
 
-        mockery.checking(new Expectations() {{
-        }});
+        mockery.checking(new Expectations() {
+            {
+            }
+        });
 
         WebDavServletBean servlet = new WebdavServlet();
         servlet.init(mockServletConfig);

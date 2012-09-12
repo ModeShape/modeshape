@@ -15,6 +15,9 @@
  */
 package org.modeshape.webdav.methods;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Hashtable;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -36,9 +39,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Hashtable;
 
 public class DoLock extends AbstractMethod {
 
@@ -67,6 +67,7 @@ public class DoLock extends AbstractMethod {
         this.readOnly = readOnly;
     }
 
+    @Override
     public void execute( ITransaction transaction,
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException, LockFailedException {
@@ -252,9 +253,6 @@ public class DoLock extends AbstractMethod {
 
     // ------------------------------------------------- helper methods
 
-    /**
-     * Executes the LOCK
-     */
     private void executeLock( ITransaction transaction,
                               HttpServletRequest req,
                               HttpServletResponse resp ) throws LockFailedException, IOException, ServletException {
@@ -298,9 +296,6 @@ public class DoLock extends AbstractMethod {
         }
     }
 
-    /**
-     * Tries to get the LockInformation from LOCK request
-     */
     private boolean getLockInformation( HttpServletRequest req,
                                         HttpServletResponse resp ) throws ServletException, IOException {
 
@@ -420,9 +415,6 @@ public class DoLock extends AbstractMethod {
         return true;
     }
 
-    /**
-     * Ties to read the timeout from request
-     */
     private int getTimeout( HttpServletRequest req ) {
 
         int lockDuration = DEFAULT_TIMEOUT;
@@ -459,9 +451,6 @@ public class DoLock extends AbstractMethod {
         return lockDuration;
     }
 
-    /**
-     * Generates the response XML with all lock information
-     */
     private void generateXMLReport( HttpServletResponse resp,
                                     LockedObject lockedObject ) throws IOException {
 
@@ -527,9 +516,6 @@ public class DoLock extends AbstractMethod {
 
     }
 
-    /**
-     * Executes the lock for a Mac OS Finder client
-     */
     private void doMacLockRequestWorkaround( ITransaction transaction,
                                              HttpServletRequest req,
                                              HttpServletResponse resp ) throws LockFailedException, IOException {
@@ -557,9 +543,6 @@ public class DoLock extends AbstractMethod {
         }
     }
 
-    /**
-     * Sends an error report to the client
-     */
     private void sendLockFailError( HttpServletRequest req,
                                     HttpServletResponse resp ) throws IOException {
         Hashtable<String, Integer> errorList = new Hashtable<String, Integer>();

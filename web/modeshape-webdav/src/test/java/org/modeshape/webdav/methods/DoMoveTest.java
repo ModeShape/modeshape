@@ -8,6 +8,7 @@ import org.modeshape.webdav.WebdavStatus;
 import org.modeshape.webdav.locking.ResourceLocks;
 import org.springframework.mock.web.DelegatingServletInputStream;
 
+@SuppressWarnings( "synthetic-access" )
 public class DoMoveTest extends AbstractWebDAVTest {
     private static final String OVERWRITE_PATH = DEST_COLLECTION_PATH + "/sourceFolder";
 
@@ -418,7 +419,7 @@ public class DoMoveTest extends AbstractWebDAVTest {
                 will(returnValue(null));
 
                 one(mockStore).getChildrenNames(mockTransaction, SOURCE_COLLECTION_PATH);
-                will(returnValue(new String[] { "sourceFile" }));
+                will(returnValue(new String[] {"sourceFile"}));
 
                 StoredObject sourceFileSo = initFileStoredObject(RESOURCE_CONTENT);
 
@@ -430,7 +431,10 @@ public class DoMoveTest extends AbstractWebDAVTest {
                 one(mockStore).getResourceContent(mockTransaction, SOURCE_COLLECTION_PATH + "/sourceFile");
                 DelegatingServletInputStream resourceStream = resourceRequestStream();
                 will(returnValue(resourceStream));
-                one(mockStore).setResourceContent(mockTransaction, DEST_COLLECTION_PATH + "/sourceFile", resourceStream, null,
+                one(mockStore).setResourceContent(mockTransaction,
+                                                  DEST_COLLECTION_PATH + "/sourceFile",
+                                                  resourceStream,
+                                                  null,
                                                   null);
                 will(returnValue(RESOURCE_LENGTH));
 
@@ -445,7 +449,7 @@ public class DoMoveTest extends AbstractWebDAVTest {
                 will(returnValue(sourceCollectionSo));
 
                 one(mockStore).getChildrenNames(mockTransaction, SOURCE_COLLECTION_PATH);
-                will(returnValue(new String[] { "sourceFile" }));
+                will(returnValue(new String[] {"sourceFile"}));
 
                 one(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
                 will(returnValue(sourceFileSo));
@@ -576,7 +580,7 @@ public class DoMoveTest extends AbstractWebDAVTest {
                 will(returnValue(destCollectionSo));
 
                 one(mockStore).getChildrenNames(mockTransaction, OVERWRITE_PATH);
-                will(returnValue(new String[] { "destFile" }));
+                will(returnValue(new String[] {"destFile"}));
 
                 StoredObject destFileSo = initFileStoredObject(RESOURCE_CONTENT);
 
@@ -594,8 +598,8 @@ public class DoMoveTest extends AbstractWebDAVTest {
                 will(returnValue(null));
 
                 one(mockStore).getChildrenNames(mockTransaction, SOURCE_COLLECTION_PATH);
-                //make sure it's a new array reference :(
-                will(returnValue(new String[] { "sourceFile" }));
+                // make sure it's a new array reference :(
+                will(returnValue(new String[] {"sourceFile"}));
 
                 StoredObject sourceFileSo = initFileStoredObject(RESOURCE_CONTENT);
 
@@ -620,7 +624,7 @@ public class DoMoveTest extends AbstractWebDAVTest {
                 will(returnValue(sourceCollectionSo));
 
                 one(mockStore).getChildrenNames(mockTransaction, SOURCE_COLLECTION_PATH);
-                will(returnValue(new String[] { "sourceFile" }));
+                will(returnValue(new String[] {"sourceFile"}));
 
                 one(mockStore).getStoredObject(mockTransaction, SOURCE_FILE_PATH);
                 will(returnValue(sourceFileSo));

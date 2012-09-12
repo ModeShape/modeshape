@@ -15,6 +15,8 @@
  */
 package org.modeshape.webdav.methods;
 
+import java.io.IOException;
+import java.util.Hashtable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.modeshape.common.logging.Logger;
@@ -25,8 +27,6 @@ import org.modeshape.webdav.exceptions.LockFailedException;
 import org.modeshape.webdav.exceptions.ObjectAlreadyExistsException;
 import org.modeshape.webdav.exceptions.WebdavException;
 import org.modeshape.webdav.locking.ResourceLocks;
-import java.io.IOException;
-import java.util.Hashtable;
 
 public class DoMove extends AbstractMethod {
 
@@ -47,6 +47,7 @@ public class DoMove extends AbstractMethod {
         this.readOnly = readOnly;
     }
 
+    @Override
     public void execute( ITransaction transaction,
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException, LockFailedException {

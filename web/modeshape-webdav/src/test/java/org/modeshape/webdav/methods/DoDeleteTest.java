@@ -8,6 +8,7 @@ import org.modeshape.webdav.WebdavStatus;
 import org.modeshape.webdav.locking.LockedObject;
 import org.modeshape.webdav.locking.ResourceLocks;
 
+@SuppressWarnings( "synthetic-access" )
 public class DoDeleteTest extends AbstractWebDAVTest {
 
     @Test
@@ -98,7 +99,7 @@ public class DoDeleteTest extends AbstractWebDAVTest {
                 will(returnValue(folderSo));
 
                 one(mockStore).getChildrenNames(mockTransaction, SOURCE_COLLECTION_PATH);
-                will(returnValue(new String[] { "subFolder", "sourceFile" }));
+                will(returnValue(new String[] {"subFolder", "sourceFile"}));
 
                 StoredObject fileSo = initFileStoredObject(RESOURCE_CONTENT);
 
@@ -113,7 +114,7 @@ public class DoDeleteTest extends AbstractWebDAVTest {
                 will(returnValue(subFolderSo));
 
                 one(mockStore).getChildrenNames(mockTransaction, SOURCE_COLLECTION_PATH + "/subFolder");
-                will(returnValue(new String[] { "fileInSubFolder" }));
+                will(returnValue(new String[] {"fileInSubFolder"}));
 
                 StoredObject fileInSubFolderSo = initFileStoredObject(RESOURCE_CONTENT);
 

@@ -16,6 +16,7 @@ implied.
  */
 package org.modeshape.webdav.methods;
 
+import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.modeshape.common.logging.Logger;
@@ -29,7 +30,6 @@ import org.modeshape.webdav.exceptions.LockFailedException;
 import org.modeshape.webdav.exceptions.ObjectAlreadyExistsException;
 import org.modeshape.webdav.exceptions.WebdavException;
 import org.modeshape.webdav.locking.ResourceLocks;
-import java.io.IOException;
 
 public class DoHead extends AbstractMethod {
 
@@ -56,6 +56,7 @@ public class DoHead extends AbstractMethod {
         this.contentLength = contentLengthHeader;
     }
 
+    @Override
     public void execute( ITransaction transaction,
                          HttpServletRequest req,
                          HttpServletResponse resp ) throws IOException, LockFailedException {
@@ -167,6 +168,7 @@ public class DoHead extends AbstractMethod {
 
     }
 
+    @SuppressWarnings( "unused" )
     protected void folderBody( ITransaction transaction,
                                String path,
                                HttpServletResponse resp,
@@ -174,6 +176,7 @@ public class DoHead extends AbstractMethod {
         // no body for HEAD
     }
 
+    @SuppressWarnings( "unused" )
     protected void doBody( ITransaction transaction,
                            HttpServletResponse resp,
                            String path ) throws IOException {
