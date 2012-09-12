@@ -81,7 +81,11 @@
                 <executions>
                     <execution>
                         <id>test-jar</id>
-                        <phase>non-existant</phase>
+                        <configuration>
+                            <archive>
+                                <manifestFile>${project.build.testOutputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                            </archive>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
