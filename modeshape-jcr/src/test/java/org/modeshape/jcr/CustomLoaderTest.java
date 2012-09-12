@@ -3,14 +3,14 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
+ * See the AUTHORS.txt file in the distribution for a full listing of
  * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -21,26 +21,18 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.test.performance;
+
+package org.modeshape.jcr;
 
 import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.cache.LoaderConfigurationBuilder;
-import org.infinispan.loaders.jdbm.JdbmCacheStore;
-import org.modeshape.common.util.FileUtil;
-import java.io.File;
 
-public class JdbmCacheStorePerformanceTest extends InMemoryPerformanceTest {
+/**
+ * Interface which should be implemented by unit tests that require a custom ISPN cache loader configuration and which
+ * use the {@link TestingEnvironment} together with the repository configuration.
+ *
+ * @author Horia Chiorean (hchiorea@redhat.com)
+ */
+public interface CustomLoaderTest {
 
-    private final File dbDir = new File("target/database");
-
-    @Override
-    protected void cleanUpFileSystem() {
-        FileUtil.delete(dbDir);
-    }
-
-    @Override
-    public void applyLoaderConfiguration(ConfigurationBuilder configurationBuilder) {
-        LoaderConfigurationBuilder lb = configurationBuilder.loaders().addCacheLoader().cacheLoader(new JdbmCacheStore());
-        lb.addProperty("location", dbDir.getAbsolutePath());
-    }
+    public void applyLoaderConfiguration(ConfigurationBuilder configurationBuilder);
 }

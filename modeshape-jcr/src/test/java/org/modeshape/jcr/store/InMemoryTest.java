@@ -39,12 +39,13 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
+import org.modeshape.jcr.CustomLoaderTest;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.TestingEnvironment;
 import org.modeshape.jcr.TestingUtil;
 
-public class InMemoryTest {
+public class InMemoryTest implements CustomLoaderTest {
 
     private static final String LARGE_STRING_VALUE = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed fermentum iaculis placerat. Mauris condimentum dapibus pretium. Vestibulum gravida sodales tellus vitae porttitor. Nunc dictum, eros vel adipiscing pellentesque, sem mi iaculis dui, a aliquam neque magna non turpis. Maecenas imperdiet est eu lorem placerat mattis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Vestibulum scelerisque molestie tristique. Mauris nibh diam, vestibulum eu condimentum at, facilisis at nisi. Maecenas vehicula accumsan lacus in venenatis. Nulla nisi eros, fringilla at dapibus mollis, pharetra at urna. Praesent in risus magna, at iaculis sapien. Fusce id velit id dui tempor hendrerit semper a nunc. Nam eget mauris tellus.";
     private static final String SMALL_STRING_VALUE = "The quick brown fox jumped over the moon. What? ";
@@ -113,7 +114,8 @@ public class InMemoryTest {
         // do nothing by default
     }
 
-    public void applyLoaderConfiguration(ConfigurationBuilder configurationBuilder) {
+    @Override
+    public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
     }
 
     @Test

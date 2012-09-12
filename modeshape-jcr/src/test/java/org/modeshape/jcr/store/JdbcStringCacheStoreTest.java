@@ -30,6 +30,7 @@ import org.junit.Ignore;
 
 /**
  * Currently ignored because of the time required to run it.
+ * //TODO author=Horia Chiorean date=9/12/12 description=If they are ever enabled, c3p0 needs to be added as a test dependency
  */
 @Ignore
 public class JdbcStringCacheStoreTest extends InMemoryTest {

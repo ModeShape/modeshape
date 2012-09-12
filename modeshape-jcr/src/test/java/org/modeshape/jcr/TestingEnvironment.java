@@ -34,30 +34,25 @@ import org.infinispan.test.fwk.TestCacheManagerFactory;
 import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.infinispan.transaction.lookup.TransactionManagerLookup;
-import org.modeshape.jcr.store.InMemoryTest;
 
 /**
  * An {@link Environment} implementation that can be used for testing.
  */
 public class TestingEnvironment extends LocalEnvironment {
 
-    private final InMemoryTest inMemoryTest;
+    private final CustomLoaderTest customLoaderTest;
 
     public TestingEnvironment() {
         this(null, DummyTransactionManagerLookup.class);
     }
 
-    public TestingEnvironment(Class<? extends TransactionManagerLookup> transactionManagerLookup) {
-        this(null, transactionManagerLookup);
+    public TestingEnvironment(CustomLoaderTest customLoaderTest ) {
+        this(customLoaderTest, DummyTransactionManagerLookup.class);
     }
 
-    public TestingEnvironment(InMemoryTest inMemoryTest) {
-        this(inMemoryTest, DummyTransactionManagerLookup.class);
-    }
-
-    public TestingEnvironment(InMemoryTest inMemoryTest, Class<? extends TransactionManagerLookup> transactionManagerLookup) {
+    public TestingEnvironment(CustomLoaderTest customLoaderTest, Class<? extends TransactionManagerLookup> transactionManagerLookup) {
         super(transactionManagerLookup);
-        this.inMemoryTest = inMemoryTest;
+        this.customLoaderTest = customLoaderTest;
     }
 
     @Override
@@ -70,8 +65,8 @@ public class TestingEnvironment extends LocalEnvironment {
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.transaction().transactionMode(TransactionMode.TRANSACTIONAL);
         configurationBuilder.transaction().transactionManagerLookup(transactionManagerLookupInstance());
-        if(inMemoryTest != null){
-            inMemoryTest.applyLoaderConfiguration(configurationBuilder);
+        if(customLoaderTest != null) {
+            customLoaderTest.applyLoaderConfiguration(configurationBuilder);
         }
         return configurationBuilder.build();
     }
@@ -80,6 +75,6 @@ public class TestingEnvironment extends LocalEnvironment {
     protected CacheContainer createContainer( GlobalConfiguration globalConfiguration,
                                               Configuration configuration ) {
         return TestCacheManagerFactory.createCacheManager(LegacyGlobalConfigurationAdaptor.adapt(globalConfiguration),
-                LegacyConfigurationAdaptor.adapt(configuration));
+                                                          LegacyConfigurationAdaptor.adapt(configuration));
     }
 }
