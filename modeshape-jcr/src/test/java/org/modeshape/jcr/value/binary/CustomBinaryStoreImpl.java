@@ -24,57 +24,57 @@
 package org.modeshape.jcr.value.binary;
 
 import java.io.InputStream;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 
 /**
- *
  * @author kulikov
  */
 public class CustomBinaryStoreImpl extends AbstractBinaryStore {
-        private String provisionedValue;
-        private String key;
+    private String provisionedValue;
+    private String key;
 
-        public String getProvisionedValue() {
-            return this.provisionedValue;
-        }
+    public String getProvisionedValue() {
+        return this.provisionedValue;
+    }
 
-        public String getKey() {
-            return key;
-        }
+    public String getKey() {
+        return key;
+    }
 
-        @Override
-        public BinaryValue storeValue(InputStream stream) throws BinaryStoreException {
-            return null;
-        }
+    @Override
+    public BinaryValue storeValue( InputStream stream ) {
+        return null;
+    }
 
-        @Override
-        public InputStream getInputStream(BinaryKey key) throws BinaryStoreException {
-            return null;
-        }
+    @Override
+    public InputStream getInputStream( BinaryKey key ) {
+        return null;
+    }
 
-        @Override
-        public void markAsUnused(Iterable<BinaryKey> keys) throws BinaryStoreException {
-        }
+    @Override
+    public void markAsUnused( Iterable<BinaryKey> keys ) {
+    }
 
-        @Override
-        public void removeValuesUnusedLongerThan(long minimumAge, TimeUnit unit) throws BinaryStoreException {
-        }
+    @Override
+    public void removeValuesUnusedLongerThan( long minimumAge,
+                                              TimeUnit unit ) {
+    }
 
-        @Override
-        public void storeExtractedText(BinaryValue source, String extractedText) throws BinaryStoreException {
-        }
+    @Override
+    public void storeExtractedText( BinaryValue source,
+                                    String extractedText ) {
+    }
 
-        @Override
-        public String getExtractedText(BinaryValue source) throws BinaryStoreException {
-            return null;
-        }
+    @Override
+    public String getExtractedText( BinaryValue source ) {
+        return null;
+    }
 
-        @Override
-        public Iterable<BinaryKey> getAllBinaryKeys() throws BinaryStoreException {
-            return null;
-        }
+    @Override
+    public Iterable<BinaryKey> getAllBinaryKeys() {
+        return null;
+    }
 
 }

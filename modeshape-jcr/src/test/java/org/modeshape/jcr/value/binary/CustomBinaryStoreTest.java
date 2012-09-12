@@ -23,12 +23,18 @@
  */
 package org.modeshape.jcr.value.binary;
 
-import org.junit.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.modeshape.jcr.RepositoryConfiguration;
 
 /**
- *
  * @author kulikov
  */
 public class CustomBinaryStoreTest {
@@ -54,15 +60,11 @@ public class CustomBinaryStoreTest {
     public void tearDown() {
     }
 
-    /**
-     * Test of newInstance method, of class CustomBinaryStore.
-     */
     @Test
     public void shouldLoadAndConfigureCustomBinaryStore() throws Exception {
-        CustomBinaryStoreImpl store = (CustomBinaryStoreImpl) config.getBinaryStorage().getBinaryStore();
-        assertTrue(store != null);
+        CustomBinaryStoreImpl store = (CustomBinaryStoreImpl)config.getBinaryStorage().getBinaryStore();
+        assertThat(store, is(notNullValue()));
         assertEquals("value", store.getKey());
     }
-
 
 }
