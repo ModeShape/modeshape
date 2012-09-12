@@ -29,6 +29,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
+import org.infinispan.Cache;
+import org.infinispan.manager.CacheContainer;
+import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
@@ -84,13 +87,15 @@ public class RepositoryCache implements Observable {
     private final Logger logger;
     private final SessionEnvironment sessionContext;
     private final boolean systemContentInitialized;
+    private final CacheContainer workspaceCacheManager;
 
     public RepositoryCache( ExecutionContext context,
                             SchematicDb database,
                             RepositoryConfiguration configuration,
                             ContentInitializer initializer,
                             SessionEnvironment sessionContext,
-                            ChangeBus changeBus ) {
+                            ChangeBus changeBus,
+                            CacheContainer workspaceCacheContainer ) {
         this.context = context;
         this.configuration = configuration;
         this.database = database;
@@ -102,6 +107,7 @@ public class RepositoryCache implements Observable {
         this.logger = Logger.getLogger(getClass());
         this.workspaceCachesByName = new ConcurrentHashMap<String, WorkspaceCache>();
         this.sessionContext = sessionContext;
+        this.workspaceCacheManager = workspaceCacheContainer;
 
         // Initialize the workspaces ..
         this.systemWorkspaceName = RepositoryConfiguration.SYSTEM_WORKSPACE_NAME;
@@ -147,6 +153,27 @@ public class RepositoryCache implements Observable {
 
     protected Name name( String name ) {
         return context.getValueFactories().getNameFactory().create(name);
+    }
+
+    public void startShutdown() {
+        // Shutdown the in-memory caches used for the WorkspaceCache instances ...
+        for (Map.Entry<String, WorkspaceCache> entry : workspaceCachesByName.entrySet()) {
+            // Tell the workspace cache intance that it's closed ...
+            entry.getValue().signalClosing();
+        }
+    }
+
+    public void completeShutdown() {
+        // Shutdown the in-memory caches used for the WorkspaceCache instances ...
+        for (Map.Entry<String, WorkspaceCache> entry : workspaceCachesByName.entrySet()) {
+            String workspaceName = entry.getKey();
+            // Tell the workspace cache intance that it's closed ...
+            entry.getValue().signalClosed();
+            // Remove the infinispan cache from the manager ...
+            if (workspaceCacheManager instanceof EmbeddedCacheManager) {
+                ((EmbeddedCacheManager)workspaceCacheManager).removeCache(cacheNameForWorkspace(workspaceName));
+            }
+        }
     }
 
     /**
@@ -217,7 +244,7 @@ public class RepositoryCache implements Observable {
                 EditableDocument editable = entry.editDocumentContent();
                 PropertyFactory propFactory = context.getPropertyFactory();
                 translator.setProperty(editable, propFactory.create(name("workspaces"), workspaceNames), null);
-                //we need to update the cache immediately, so the changes are persisted
+                // we need to update the cache immediately, so the changes are persisted
                 database.replace(systemMetadataKeyStr, editable, entry.getMetadata());
             }
         }
@@ -321,7 +348,13 @@ public class RepositoryCache implements Observable {
             trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKey.toString()), null);
 
             database.putIfAbsent(rootKey.toString(), rootDoc, null);
-            cache = new WorkspaceCache(context, getKey(), name, database, minimumBinarySizeInBytes.get(), rootKey, changeBus);
+
+            // Create/get the Infinispan cache that we'll use within the WorkspaceCache, using the cache manager's
+            // default configuration ...
+            Cache<NodeKey, CachedNode> nodeCache = workspaceCacheManager.getCache(cacheNameForWorkspace(name));
+            cache = new WorkspaceCache(context, getKey(), name, database, minimumBinarySizeInBytes.get(), rootKey, nodeCache,
+                                       changeBus);
+
             WorkspaceCache existing = workspaceCachesByName.putIfAbsent(name, cache);
             if (existing != null) {
                 // Some other thread snuck in and created the cache for this workspace, so use it instead ...
@@ -338,11 +371,23 @@ public class RepositoryCache implements Observable {
         return cache;
     }
 
+    protected final String cacheNameForWorkspace( String workspaceName ) {
+        return this.name + "/" + workspaceName;
+    }
+
     void removeWorkspace( String name ) {
         assert name != null;
         assert !this.workspaceNames.contains(name);
         WorkspaceCache removed = this.workspaceCachesByName.remove(name);
-        if (removed != null) removed.signalDeleted();
+        if (removed != null) {
+            try {
+                removed.signalDeleted();
+            } finally {
+                if (workspaceCacheManager instanceof EmbeddedCacheManager) {
+                    ((EmbeddedCacheManager)workspaceCacheManager).removeCache(cacheNameForWorkspace(name));
+                }
+            }
+        }
     }
 
     /**

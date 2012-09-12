@@ -26,15 +26,38 @@ package org.modeshape.jcr;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.AccessControlContext;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import javax.jcr.*;
+import javax.jcr.AccessDeniedException;
+import javax.jcr.Credentials;
+import javax.jcr.LoginException;
+import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.NoInitialContextException;
@@ -80,15 +103,32 @@ import org.modeshape.jcr.api.query.Query;
 import org.modeshape.jcr.bus.ChangeBus;
 import org.modeshape.jcr.bus.ClusteredRepositoryChangeBus;
 import org.modeshape.jcr.bus.RepositoryChangeBus;
+import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.RepositoryCache;
+import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.SessionEnvironment;
 import org.modeshape.jcr.cache.SessionEnvironment.Monitor;
 import org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory;
-import org.modeshape.jcr.cache.*;
-import org.modeshape.jcr.cache.change.*;
+import org.modeshape.jcr.cache.WorkspaceNotFoundException;
+import org.modeshape.jcr.cache.change.Change;
+import org.modeshape.jcr.cache.change.ChangeSet;
+import org.modeshape.jcr.cache.change.ChangeSetListener;
+import org.modeshape.jcr.cache.change.WorkspaceAdded;
+import org.modeshape.jcr.cache.change.WorkspaceRemoved;
 import org.modeshape.jcr.mimetype.MimeTypeDetectors;
 import org.modeshape.jcr.query.QueryIndexing;
-import org.modeshape.jcr.query.parse.*;
+import org.modeshape.jcr.query.parse.FullTextSearchParser;
+import org.modeshape.jcr.query.parse.JcrQomQueryParser;
+import org.modeshape.jcr.query.parse.JcrSql2QueryParser;
+import org.modeshape.jcr.query.parse.JcrSqlQueryParser;
+import org.modeshape.jcr.query.parse.QueryParsers;
 import org.modeshape.jcr.query.xpath.XPathQueryParser;
-import org.modeshape.jcr.security.*;
+import org.modeshape.jcr.security.AnonymousProvider;
+import org.modeshape.jcr.security.AuthenticationProvider;
+import org.modeshape.jcr.security.AuthenticationProviders;
+import org.modeshape.jcr.security.JaasProvider;
+import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.txn.NoClientTransactions;
 import org.modeshape.jcr.txn.SynchronizedTransactions;
 import org.modeshape.jcr.txn.Transactions;
@@ -1021,7 +1061,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                 // Set up the repository cache ...
                 final SessionEnvironment sessionEnv = new RepositorySessionEnvironment(this.transactions);
-                this.cache = new RepositoryCache(context, database, config, new SystemContentInitializer(), sessionEnv, changeBus);
+                CacheContainer workspaceCacheContainer = this.config.getWorkspaceContentCacheContainer();
+                this.cache = new RepositoryCache(context, database, config, new SystemContentInitializer(), sessionEnv,
+                                                 changeBus, workspaceCacheContainer);
 
                 // Set up the node type manager ...
                 this.nodeTypes = new RepositoryNodeTypeManager(this, true, true);
@@ -1386,8 +1428,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 }
             }
 
-            // Shutdown the binary store ...
-            this.binaryStore.shutdown();
+            // Now shutdown the repository caches ...
+            this.cache.startShutdown();
 
             // shutdown the event bus
             if (this.changeBus != null) {
@@ -1404,12 +1446,18 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 extractors.shutdown();
             }
 
-            if (statistics != null) {
-                statistics.stop();
-            }
-
             if (backupService != null) {
                 backupService.shutdown();
+            }
+
+            // Shutdown the binary store ...
+            this.binaryStore.shutdown();
+
+            // Now shutdown the repository caches ...
+            this.cache.completeShutdown();
+
+            if (statistics != null) {
+                statistics.stop();
             }
 
             this.context().terminateAllPools(30, TimeUnit.SECONDS);

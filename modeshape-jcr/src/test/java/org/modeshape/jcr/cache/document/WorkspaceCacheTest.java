@@ -23,13 +23,18 @@
  */
 package org.modeshape.jcr.cache.document;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.NodeKey;
 
 public class WorkspaceCacheTest extends AbstractNodeCacheTest {
 
     @Override
     protected NodeCache createCache() {
-        WorkspaceCache workspaceCache = new WorkspaceCache(context, "repo", "ws", database(), 100L, ROOT_KEY_WS1, null);
+        ConcurrentMap<NodeKey, CachedNode> nodeCache = new ConcurrentHashMap<NodeKey, CachedNode>();
+        WorkspaceCache workspaceCache = new WorkspaceCache(context, "repo", "ws", database(), 100L, ROOT_KEY_WS1, nodeCache, null);
         loadJsonDocuments(resource(resourceNameForWorkspaceContentDocument()));
         return workspaceCache;
     }

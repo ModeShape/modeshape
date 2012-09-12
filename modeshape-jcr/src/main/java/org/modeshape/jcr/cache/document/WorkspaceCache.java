@@ -24,7 +24,6 @@
 package org.modeshape.jcr.cache.document;
 
 import java.util.Iterator;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
@@ -51,7 +50,7 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
     private final DocumentTranslator translator;
     private final ExecutionContext context;
     private final SchematicDb database;
-    private final ConcurrentMap<NodeKey, CachedNode> nodesByKey = new ConcurrentHashMap<NodeKey, CachedNode>();
+    private final ConcurrentMap<NodeKey, CachedNode> nodesByKey;
     private final NodeKey rootKey;
     private final ChildReference childReferenceForRoot;
     private final String repositoryKey;
@@ -69,6 +68,7 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
                            SchematicDb database,
                            long largeValueSize,
                            NodeKey rootKey,
+                           ConcurrentMap<NodeKey, CachedNode> cache,
                            ChangeSetListener changeSetListener ) {
         this.context = context;
         this.database = database;
@@ -82,6 +82,7 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         this.sourceKey = rootKey.getSourceKey();
         this.pathFactory = context.getValueFactories().getPathFactory();
         this.nameFactory = context.getValueFactories().getNameFactory();
+        this.nodesByKey = cache;
     }
 
     public void setMinimumBinarySizeInBytes( long largeValueSize ) {
@@ -205,6 +206,7 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         if (!closed) {
             // Clear this workspace's cached nodes (iteratively is okay since it's a ConcurrentMap) ...
             for (NodeKey key : changeSet.changedNodes()) {
+                if (closed) break;
                 nodesByKey.remove(key);
             }
         }
@@ -220,6 +222,7 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         checkNotClosed();
         // Clear this workspace's cached nodes (iteratively is okay since it's a ConcurrentMap) ...
         for (NodeKey key : changes.changedNodes()) {
+            if (closed) break;
             nodesByKey.remove(key);
         }
 
@@ -234,6 +237,15 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
     }
 
     public void signalDeleted() {
+        this.closed = true;
+        clear();
+    }
+
+    public void signalClosing() {
+        this.closed = true;
+    }
+
+    public void signalClosed() {
         this.closed = true;
         clear();
     }
