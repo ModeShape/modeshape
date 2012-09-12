@@ -119,7 +119,6 @@ public class InMemoryPerformanceTest implements CustomLoaderTest {
         // do nothing by default
     }
 
-    @Override
     public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
     }
 
