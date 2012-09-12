@@ -778,23 +778,27 @@ public class JcrSession implements Session {
     public boolean propertyExists( String absPath ) throws RepositoryException {
         checkLive();
         CheckArg.isNotEmpty(absPath, "absPath");
-        // Return root node if path is "/"
         Path path = absolutePathFor(absPath);
-        if (path.isRoot()) {
-            throw new PathNotFoundException(JcrI18n.rootNodeIsNotProperty.text());
-        }
-        if (path.isIdentifier()) {
-            throw new PathNotFoundException(JcrI18n.identifierPathNeverReferencesProperty.text());
+
+        // Check the kind of path ...
+        if (path.isRoot() || path.isIdentifier()) {
+            // These are not properties ...
+            return false;
         }
 
+        // There is at least one segment ...
         Segment lastSegment = path.getLastSegment();
         if (lastSegment.hasIndex()) {
             throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(absPath));
         }
 
-        // This will throw a PNFE if the parent path does not exist
-        CachedNode parentNode = cachedNode(path.getParent());
-        return parentNode != null && parentNode.hasProperty(lastSegment.getName(), cache());
+        try {
+            // This will throw a PNFE if the parent path does not exist
+            CachedNode parentNode = cachedNode(path.getParent());
+            return parentNode != null && parentNode.hasProperty(lastSegment.getName(), cache());
+        } catch (PathNotFoundException e) {
+            return false;
+        }
     }
 
     @Override
