@@ -182,9 +182,16 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
     public void removeVersion( String versionName )
         throws ReferentialIntegrityException, AccessDeniedException, UnsupportedRepositoryOperationException, VersionException,
         RepositoryException {
-
         JcrVersionNode version = getVersion(versionName);
-        assert version.getParent() == this;
+        removeVersion(version);
+    }
+
+    public void removeVersion( Version versionToBeRemoved )
+        throws ReferentialIntegrityException, AccessDeniedException, UnsupportedRepositoryOperationException, VersionException,
+        RepositoryException {
+
+        assert versionToBeRemoved.getParent() == this;
+        JcrVersionNode version = (JcrVersionNode)versionToBeRemoved;
 
         validateIncomingReferences(version);
 
@@ -203,7 +210,7 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
             List<JcrValue> newNodeSuccessors = new ArrayList<JcrValue>();
 
             // Add each of the successors from the version's predecessor ...
-            NodeKey predecessorKey = ((NodeKeyReference) ((JcrValue)predecessorValue).value()).getNodeKey();
+            NodeKey predecessorKey = ((NodeKeyReference)((JcrValue)predecessorValue).value()).getNodeKey();
             AbstractJcrNode predecessor = session().node(predecessorKey, null);
             MutableCachedNode predecessorSystem = system.mutable(predecessor.key());
 
@@ -215,8 +222,7 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
 
             // Set the property ...
             Object[] newSuccessorReferences = extractValues(newNodeSuccessors);
-            predecessorSystem.setProperty(system, session.propertyFactory().create(JcrLexicon.SUCCESSORS,
-                                                                                   newSuccessorReferences));
+            predecessorSystem.setProperty(system, session.propertyFactory().create(JcrLexicon.SUCCESSORS, newSuccessorReferences));
             addedValues.clear();
         }
 
@@ -226,7 +232,7 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
             List<JcrValue> newNodePredecessors = new ArrayList<JcrValue>();
 
             // Add each of the predecessors from the version's successor ...
-            NodeKey successorKey = ((NodeKeyReference) ((JcrValue) successorValue).value()).getNodeKey();
+            NodeKey successorKey = ((NodeKeyReference)((JcrValue)successorValue).value()).getNodeKey();
             AbstractJcrNode successor = session().node(successorKey, null);
             MutableCachedNode successorSystem = system.mutable(successor.key());
 
@@ -238,8 +244,8 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
 
             // Set the property ...
             Object[] newPredecessorReferences = extractValues(newNodePredecessors);
-            successorSystem.setProperty(system, session.propertyFactory().create(JcrLexicon.PREDECESSORS,
-                                                                                 newPredecessorReferences));
+            successorSystem.setProperty(system,
+                                        session.propertyFactory().create(JcrLexicon.PREDECESSORS, newPredecessorReferences));
         }
 
         system.mutable(key).removeChild(system, version.key);
@@ -247,7 +253,7 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
         try {
             system.save();
         } catch (org.modeshape.jcr.cache.ReferentialIntegrityException e) {
-            //expected by the tck
+            // expected by the tck
             throw new ReferentialIntegrityException(e);
         }
     }
@@ -256,7 +262,7 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
     * Verify that the only references to this version are from its predecessors and successors in the version history.
     */
     private void validateIncomingReferences( JcrVersionNode version ) throws RepositoryException {
-        for (PropertyIterator iter = version.getReferences(); iter.hasNext(); ) {
+        for (PropertyIterator iter = version.getReferences(); iter.hasNext();) {
             AbstractJcrProperty prop = (AbstractJcrProperty)iter.next();
             AbstractJcrNode referrer = prop.getParent();
 
@@ -264,8 +270,11 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
             if (referrer.isRoot()) {
                 throw new ReferentialIntegrityException(JcrI18n.cannotRemoveVersion.text(prop.getPath()));
             }
-            boolean referrerIsAnotherVersion = (referrer instanceof JcrVersionNode) &&
-                    ((JcrVersionNode) referrer).getContainingHistory().getIdentifier().equals(version.getContainingHistory().getIdentifier());
+            boolean referrerIsAnotherVersion = (referrer instanceof JcrVersionNode)
+                                               && ((JcrVersionNode)referrer).getContainingHistory()
+                                                                            .getIdentifier()
+                                                                            .equals(version.getContainingHistory()
+                                                                                           .getIdentifier());
             if (!this.equals(referrer) && !referrerIsAnotherVersion) {
                 throw new ReferentialIntegrityException(JcrI18n.cannotRemoveVersion.text(prop.getPath()));
             }
@@ -366,6 +375,24 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
     public String getVersionableIdentifier() throws RepositoryException {
         // ModeShape uses a node's UUID as it's identifier
         return getVersionableUUID();
+    }
+
+    @Override
+    public String toString() {
+        try {
+            StringBuilder sb = new StringBuilder();
+            String versionableId = getVersionableIdentifier();
+            sb.append("Version history for " + session.getNodeByIdentifier(versionableId).location() + " (" + versionableId
+                      + ") stored at " + location() + ":\n");
+            VersionIterator iter = getAllLinearVersions();
+            while (iter.hasNext()) {
+                Version v = iter.nextVersion();
+                sb.append(" - " + v.getName() + "\n");
+            }
+            return sb.toString();
+        } catch (RepositoryException e) {
+            return super.toString();
+        }
     }
 
     /**
