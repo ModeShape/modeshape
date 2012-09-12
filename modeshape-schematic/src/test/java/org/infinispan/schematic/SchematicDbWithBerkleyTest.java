@@ -12,7 +12,6 @@ import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.Before;
 import org.junit.Test;
 
-@SuppressWarnings( "deprecation" )
 public class SchematicDbWithBerkleyTest extends AbstractSchematicDbTest {
 
     @Override
@@ -22,14 +21,13 @@ public class SchematicDbWithBerkleyTest extends AbstractSchematicDbTest {
         TestUtil.delete(dbDir);
 
         GlobalConfigurationBuilder globalConfigurationBuilder = new GlobalConfigurationBuilder();
-        globalConfigurationBuilder
-                .transport().transport(null)
-                .serialization().addAdvancedExternalizer(Schematic.externalizers());
+        globalConfigurationBuilder.transport().transport(null).serialization().addAdvancedExternalizer(Schematic.externalizers());
 
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder
-                .invocationBatching().enable()
-                .transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
+        configurationBuilder.invocationBatching()
+                            .enable()
+                            .transaction()
+                            .transactionManagerLookup(new DummyTransactionManagerLookup());
         LoaderConfigurationBuilder lb = configurationBuilder.loaders().addCacheLoader().cacheLoader(new BdbjeCacheStore());
         lb.addProperty("location", dbDir.getAbsolutePath());
 
