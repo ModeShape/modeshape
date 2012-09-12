@@ -392,17 +392,42 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         session.getNode("/a/b/argleBargle");
     }
 
-    @Test( expected = PathNotFoundException.class )
-    public void shouldNotReturnNodeAsProperty() throws Exception {
+    @Test
+    public void shoulReturnPropertyDoesExistAtPathForExistingProperty() throws Exception {
+        initializeData();
+        assertThat(session.propertyExists("/a/jcr:primaryType"), is(true));
+        assertThat(session.propertyExists("/a/jcr:mixinTypes"), is(true));
+        assertThat(session.propertyExists("/a/b/booleanProperty"), is(true));
+        assertThat(session.getProperty("/a/b/booleanProperty"), is(notNullValue()));
+    }
+
+    @Test
+    public void shoulReturnPropertyDoesNotExistAtPathForNode() throws Exception {
         initializeData();
         assertThat(session.propertyExists("/a/b"), is(false));
-        session.getProperty("/a/b");
+        try {
+            assertThat(session.getProperty("/a/b"), is(notNullValue()));
+            fail("Expected an exception");
+        } catch (PathNotFoundException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void shouldReturnNoPropertyExistsWhenPathIncludesNonExistantNode() throws Exception {
+        initializeData();
+        assertThat(session.propertyExists("/a/foo/bar/non-existant"), is(false));
     }
 
     @Test( expected = PathNotFoundException.class )
     public void shouldNotReturnNonExistantProperty() throws Exception {
         initializeData();
-        assertThat(session.propertyExists("/a/b/argleBargle"), is(false));
+        try {
+            assertThat(session.propertyExists("/a/b/argleBargle"), is(false));
+        } catch (RepositoryException e) {
+            fail("Unexpected exception");
+        }
+        // This will throw a PathNotFoundException ...
         session.getProperty("/a/b/argleBargle");
     }
 
