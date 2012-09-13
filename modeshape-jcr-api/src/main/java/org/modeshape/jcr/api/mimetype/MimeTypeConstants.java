@@ -33,6 +33,7 @@ public final class MimeTypeConstants {
     }
 
     public static final String TEXT_PLAIN = "text/plain";
+    public static final String TEXT_JCR_CND = "text/jcr-cnd";
     public static final String RTF = "text/rtf";
     public static final String HTML = "text/html";
     public static final String WSDL = "application/wsdl+xml";
@@ -43,6 +44,7 @@ public final class MimeTypeConstants {
     public static final String XSLT = "application/xslt+xml";
     public static final String XSFP = "application/xsfp+xml";
     public static final String MXML = "application/xv+xml";
+    public static final String XML_DTD = "application/xml-dtd";
 
     /** This is not a valid MIME type, but we're using it in case other people use it */
     @Deprecated

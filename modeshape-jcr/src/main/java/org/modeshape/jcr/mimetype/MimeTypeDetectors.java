@@ -29,12 +29,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import javax.jcr.Binary;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.collection.Collections;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.RepositoryI18n;
+import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 
 /**
@@ -46,6 +49,9 @@ import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 @ThreadSafe
 public final class MimeTypeDetectors extends MimeTypeDetector {
     private static final Logger LOGGER = Logger.getLogger(MimeTypeDetectors.class);
+
+    private static Set<String> LESS_PREFERRED_MIME_TYPES = Collections.unmodifiableSet(MimeTypeConstants.TEXT_PLAIN,
+                                                                                       MimeTypeConstants.OCTET_STREAM);
 
     private List<MimeTypeDetector> detectors = new ArrayList<MimeTypeDetector>();
 
@@ -134,12 +140,43 @@ public final class MimeTypeDetectors extends MimeTypeDetector {
 
     private String detectMimeTypeUsingDetectors( String name,
                                                  Binary binary ) throws RepositoryException, IOException {
+        String bestGuess = null;
         for (MimeTypeDetector detector : detectors) {
             String mimeType = detector.mimeTypeOf(name, binary);
             if (mimeType != null) {
-                return mimeType;
+                bestGuess = chooseBest(name, bestGuess, mimeType, detector);
             }
         }
-        return null;
+        return bestGuess;
+    }
+
+    /**
+     * A trivial algorithm that will decide between two MIME types resulting from separate detectors. The logic is as follows:
+     * <ol>
+     * <li>If either supplied MIME type is null, the other is returned; otherwise</li>
+     * <li>If both supplied MIME types are equivalent, the the first is returned; otherwise</li>
+     * <li>If either supplied MIME type is "less preferred" (e.g., "<code>text/plain</code>" or "
+     * <code>application/octet-stream</code>"; see {@link #LESS_PREFERRED_MIME_TYPES}), then the other is returned; otherwise
+     * <li>The first supplied MIME type is returned.</li>
+     * </ol>
+     * 
+     * @param name the name of the file; may be null
+     * @param mimeType1 the first MIME type; may be null
+     * @param mimeType2 the second MIME type; may be null
+     * @param detector2 the detector used to find the second MIME type; may not be null
+     * @return the "best" MIME type given the supplied information
+     */
+    private String chooseBest( String name,
+                               String mimeType1,
+                               String mimeType2,
+                               MimeTypeDetector detector2 ) {
+        if (mimeType1 == null) return mimeType2;
+        else if (mimeType2 == null) return mimeType1;
+        assert mimeType1 != null;
+        assert mimeType2 != null;
+        if (mimeType1.equals(detector2)) return mimeType1;
+        if (LESS_PREFERRED_MIME_TYPES.contains(mimeType1)) return mimeType2;
+        if (LESS_PREFERRED_MIME_TYPES.contains(mimeType2)) return mimeType1;
+        return mimeType1;
     }
 }
