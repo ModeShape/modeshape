@@ -31,6 +31,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -117,10 +118,6 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
                 return new StoredBinaryValue(this, key, temp.getSize());
             }
 
-            InputStream content = this.getInputStream(key);
-            if (content != null && getContentLength(content) > 0) {
-            }
-
             // store content
             try {
                 PreparedStatement sql = database.insertContentSQL(key, temp.getStream());
@@ -139,10 +136,15 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     @Override
     public InputStream getInputStream( BinaryKey key ) throws BinaryStoreException {
         ResultSet rs = Database.executeQuery(database.retrieveContentSQL(key, true));
-        if (rs == null) {
-            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.toString());
+        InputStream inputStream = Database.asStream(rs);
+        if (inputStream == null) {
+            try {
+                throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database.connection.getCatalog()));
+            } catch (SQLException e) {
+                logger.debug(e, "Unable to retrieve db information");
+            }
         }
-        return Database.asStream(rs);
+        return inputStream;
     }
 
     @Override
@@ -164,11 +166,20 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     @Override
     protected String getStoredMimeType( BinaryValue source ) throws BinaryStoreException {
+        checkContentExists(source);
         ResultSet rs = Database.executeQuery(database.retrieveMimeTypeSQL(source.getKey()));
-        if (rs == null) {
-            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.toString());
-        }
         return Database.asString(rs);
+    }
+
+    private void checkContentExists( BinaryValue source ) throws BinaryStoreException {
+        if (!contentExists(source.getKey(), true)) {
+            try {
+                throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(source.getKey(),
+                                                                                    database.connection.getCatalog()));
+            } catch (SQLException e) {
+                logger.debug("Cannot get catalog information", e);
+            }
+        }
     }
 
     @Override
@@ -180,10 +191,8 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     @Override
     public String getExtractedText( BinaryValue source ) throws BinaryStoreException {
+        checkContentExists(source);
         ResultSet rs = Database.executeQuery(database.retrieveExtTextSQL(source.getKey()));
-        if (rs == null) {
-            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.toString());
-        }
         return Database.asString(rs);
     }
 
@@ -225,8 +234,13 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         Set<BinaryKey> keys = new HashSet<BinaryKey>();
         try {
             PreparedStatement sql = database.retrieveBinaryKeys(keys);
-            Database.execute(sql);
-            return keys;
+            List<String> keysString = Database.asStringList(Database.executeQuery(sql));
+
+            Set<BinaryKey> binaryKeys = new HashSet<BinaryKey>(keysString.size());
+            for (String keyString : keysString) {
+                binaryKeys.add(new BinaryKey(keyString));
+            }
+            return binaryKeys;
         } catch (Exception e) {
             throw new BinaryStoreException(e);
         }
@@ -252,7 +266,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     private boolean contentExists(BinaryKey key, boolean alive) throws BinaryStoreException {
         try {
             ResultSet rs = Database.executeQuery(database.retrieveContentSQL(key, alive));
-            return rs != null && rs.next();
+            return rs.next();
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
         }

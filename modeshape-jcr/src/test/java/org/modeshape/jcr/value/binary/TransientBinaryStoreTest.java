@@ -25,13 +25,13 @@ package org.modeshape.jcr.value.binary;
 
 import java.io.File;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.modeshape.common.util.FileUtil;
 
 public class TransientBinaryStoreTest extends FileSystemBinaryStoreTest {
 
-    @Override
-    @Before
-    public void beforeEach() {
+    @BeforeClass
+    public static void beforeEach() {
         store = TransientBinaryStore.get();
         directory = TransientBinaryStore.TRANSIENT_STORE_DIRECTORY;
         FileUtil.delete(directory);

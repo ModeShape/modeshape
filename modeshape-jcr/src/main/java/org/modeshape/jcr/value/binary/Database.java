@@ -28,6 +28,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.value.BinaryKey;
@@ -438,6 +440,25 @@ public class Database {
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
         }
+    }
+
+    /**
+     * Provides access to query data
+     *
+     * @param rs retrieved query result
+     * @return result as string.
+     * @throws BinaryStoreException
+     */
+    public static List<String> asStringList( ResultSet rs ) throws BinaryStoreException {
+        List<String> result = new ArrayList<String>();
+        try {
+            while (rs.next()) {
+                result.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            throw new BinaryStoreException(e);
+        }
+        return result;
     }
 
     /**

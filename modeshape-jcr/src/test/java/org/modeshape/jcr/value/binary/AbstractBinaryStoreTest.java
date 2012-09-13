@@ -23,71 +23,99 @@
  */
 package org.modeshape.jcr.value.binary;
 
-import org.junit.Test;
-import org.modeshape.common.util.IoUtil;
-import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
-import org.modeshape.jcr.value.BinaryKey;
-import org.modeshape.jcr.value.BinaryValue;
-
 import javax.jcr.Binary;
 import javax.jcr.RepositoryException;
-import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
+import org.junit.Test;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.jcr.AbstractTransactionalTest;
+import org.modeshape.jcr.TextExtractors;
+import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
+import org.modeshape.jcr.api.text.TextExtractor;
+import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.BinaryValue;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Use this abstract class to realize test cases which can easily executed on different BinaryStores
- *
  */
-public abstract class AbstractBinaryStoreTest {
+public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest {
 
     public static final byte[] LARGE_DATA = new byte[6 * 1024 * 1024];
     public static final BinaryKey LARGE_KEY;
-    public static final byte[] SMALL_DATA = new byte[1012];
+    public static final byte[] SMALL_DATA = new byte[1024];
     public static final BinaryKey SMALL_KEY;
+    public static final byte[] MEDIUM_DATA = new byte[1024 * 100];
+    public static final BinaryKey MEDIUM_KEY;
     public static final byte[] ZERO_DATA = new byte[0];
     public static final BinaryKey ZERO_KEY;
     public static final String TEXT_DATA;
 
+    private static final Random RANDOM = new Random();
+
     static {
-        new Random().nextBytes(LARGE_DATA);
+        RANDOM.nextBytes(LARGE_DATA);
         LARGE_KEY = BinaryKey.keyFor(LARGE_DATA);
-        new Random().nextBytes(SMALL_DATA);
+        RANDOM.nextBytes(SMALL_DATA);
         SMALL_KEY = BinaryKey.keyFor(SMALL_DATA);
+        RANDOM.nextBytes(MEDIUM_DATA);
+        MEDIUM_KEY = BinaryKey.keyFor(MEDIUM_DATA);
         ZERO_KEY = BinaryKey.keyFor(new byte[0]);
-        TEXT_DATA = "Flash Gordon said: Ich bin Bärliner.";
+        TEXT_DATA = "Flash Gordon said: Ich bin Bärliner." + UUID.randomUUID().toString();
     }
 
     protected abstract BinaryStore getBinaryStore();
 
+    @Test
+    public void shouldAllowChangingTheMinimumBinarySize() throws Exception {
+        BinaryStore binaryStore = getBinaryStore();
+        long originalSize = binaryStore.getMinimumBinarySizeInBytes();
+        assertTrue(originalSize > 0);
+        long newSize = 12l;
+        binaryStore.setMinimumBinarySizeInBytes(newSize);
+        assertEquals(newSize, binaryStore.getMinimumBinarySizeInBytes());
+        binaryStore.setMinimumBinarySizeInBytes(originalSize);
+    }
 
-    @Test(expected = BinaryStoreException.class)
-    public void testNoBinaryValue() throws BinaryStoreException {
-        getBinaryStore().getInputStream(new BinaryKey("nonsuch"));
+    @Test( expected = BinaryStoreException.class )
+    public void shouldFailWhenGettingInvalidBinary() throws BinaryStoreException {
+        getBinaryStore().getInputStream(invalidBinaryKey());
     }
 
     @Test
-    public void testLargeData() throws BinaryStoreException, IOException {
-        validateDataInStore(LARGE_KEY, LARGE_DATA);
+    public void shouldStoreLargeBinary() throws BinaryStoreException, IOException {
+        storeAndValidate(LARGE_KEY, LARGE_DATA);
     }
 
     @Test
-    public void testSmallData() throws BinaryStoreException, IOException {
-        validateDataInStore(SMALL_KEY, SMALL_DATA);
+    public void shouldStoreMediumBinary() throws BinaryStoreException, IOException {
+        storeAndValidate(MEDIUM_KEY, MEDIUM_DATA);
     }
 
     @Test
-    public void testZeroData() throws BinaryStoreException, IOException {
-        validateDataInStore(ZERO_KEY, ZERO_DATA);
+    public void shouldStoreSmallBinary() throws BinaryStoreException, IOException {
+        storeAndValidate(SMALL_KEY, SMALL_DATA);
     }
 
-    private void validateDataInStore(BinaryKey key, byte[] data) throws BinaryStoreException, IOException {
+    @Test
+    public void shouldStoreZeroLengthBinary() throws BinaryStoreException, IOException {
+        storeAndValidate(ZERO_KEY, ZERO_DATA);
+    }
+
+    private void storeAndValidate( BinaryKey key,
+                                   byte[] data ) throws BinaryStoreException, IOException {
         BinaryValue res = getBinaryStore().storeValue(new ByteArrayInputStream(data));
         assertEquals(key, res.getKey());
         assertEquals(data.length, res.getSize());
@@ -97,12 +125,12 @@ public abstract class AbstractBinaryStoreTest {
     }
 
     @Test
-    public void testMarkAndRemoveUnused() throws BinaryStoreException {
+    public void shouldCleanupUnunsedValues() throws Exception {
         getBinaryStore().storeValue(new ByteArrayInputStream(SMALL_DATA));
         List<BinaryKey> keys = new ArrayList<BinaryKey>();
         keys.add(SMALL_KEY);
         getBinaryStore().markAsUnused(keys);
-        try { Thread.sleep(1000); } catch (Throwable t){}
+        Thread.sleep(1000);
         // now remove and test if still there
         getBinaryStore().removeValuesUnusedLongerThan(1, TimeUnit.MILLISECONDS);
 
@@ -110,46 +138,83 @@ public abstract class AbstractBinaryStoreTest {
             // no annotation used here to differ from other BinaryStoreException
             getBinaryStore().getInputStream(SMALL_KEY);
             fail("Key was not removed");
-        } catch (BinaryStoreException ex){}
+        } catch (BinaryStoreException ex) {
+        }
     }
 
-    @Test(expected=BinaryStoreException.class)
-    public void testGetMimeTypeWithoutExistingValue() throws IOException, RepositoryException {
-        getBinaryStore().getMimeType(new StoredBinaryValue(getBinaryStore(), new BinaryKey("nonsuch"), 0), "foobar.txt");
+    @Test( expected = BinaryStoreException.class )
+    public void shouldFailWhenGettingTheMimeTypeOfBinaryWhichIsntStored() throws IOException, RepositoryException {
+        getBinaryStore().getMimeType(new StoredBinaryValue(getBinaryStore(), invalidBinaryKey(), 0), "foobar.txt");
+    }
+
+    @Test( expected = BinaryStoreException.class )
+    public void shouldFailWhenGettingTheTextOfBinaryWhichIsntStored() throws IOException, RepositoryException {
+        getBinaryStore().getText(new StoredBinaryValue(getBinaryStore(), invalidBinaryKey(), 0));
+    }
+
+    private BinaryKey invalidBinaryKey() {
+        return new BinaryKey(UUID.randomUUID().toString());
     }
 
     @Test
-    public void testMimeType() throws RepositoryException, IOException {
+    public void shouldReturnAllStoredKeys() throws Exception {
+        storeAndValidate(MEDIUM_KEY, MEDIUM_DATA);
+        storeAndValidate(SMALL_KEY, SMALL_DATA);
+
+        List<String> keys = new ArrayList<String>(Arrays.asList(MEDIUM_KEY.toString(), SMALL_KEY.toString()));
+        for (BinaryKey key : getBinaryStore().getAllBinaryKeys()) {
+            keys.remove(key.toString());
+        }
+        assertEquals(0, keys.size());
+    }
+
+    @Test
+    public void shouldExtractAndStoreMimeTypeWhenDetectorConfigured() throws RepositoryException, IOException {
         getBinaryStore().setMimeTypeDetector(new DummyMimeTypeDetector());
         BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(SMALL_DATA));
         assertNull(((AbstractBinaryStore)getBinaryStore()).getStoredMimeType(binaryValue));
         // unclean stuff... a getter modifies silently data
         assertEquals(DummyMimeTypeDetector.DEFAULT_TYPE, getBinaryStore().getMimeType(binaryValue, "foobar.txt"));
-        assertEquals(DummyMimeTypeDetector.DEFAULT_TYPE, ((AbstractBinaryStore)getBinaryStore()).getStoredMimeType(binaryValue));
+        assertEquals(DummyMimeTypeDetector.DEFAULT_TYPE, ((AbstractBinaryStore)getBinaryStore()).getStoredMimeType(
+                binaryValue));
     }
 
     @Test
-    public void testTextExtraction() throws BinaryStoreException {
-        assertNull(getBinaryStore().getExtractedText(new StoredBinaryValue(getBinaryStore(), new BinaryKey("nonsuch"), 0)));
+    public void shouldExtractAndStoreTextWhenExtractorConfigured() throws Exception {
+        TextExtractors extractors = new TextExtractors(Executors.newSingleThreadExecutor(), true,
+                                                       Arrays.<TextExtractor>asList(new DummyTextExtractor()));
+        getBinaryStore().setTextExtractors(extractors);
 
-        // test store + get
         BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(SMALL_DATA));
-        getBinaryStore().storeExtractedText(binaryValue, TEXT_DATA);
-
-        String text = getBinaryStore().getExtractedText(binaryValue);
-        assertEquals(TEXT_DATA, text);
-
-        // TextExtractors have no interface and are final :-o ... how to test w/o repository? :-)
+        assertNull(((AbstractBinaryStore)getBinaryStore()).getExtractedText(binaryValue));
+        assertEquals(DummyTextExtractor.EXTRACTED_TEXT, getBinaryStore().getText(binaryValue));
+        assertEquals(DummyTextExtractor.EXTRACTED_TEXT, ((AbstractBinaryStore)getBinaryStore()).getExtractedText(binaryValue));
     }
 
-    static class DummyMimeTypeDetector extends MimeTypeDetector {
+    private static class DummyMimeTypeDetector extends MimeTypeDetector {
 
         public static final String DEFAULT_TYPE = "application/foobar";
 
         @Override
-        public String mimeTypeOf(String name, Binary binaryValue) {
+        public String mimeTypeOf( String name,
+                                  Binary binaryValue ) {
             return DEFAULT_TYPE;
         }
     }
 
+    private static class DummyTextExtractor extends TextExtractor {
+        private static final String EXTRACTED_TEXT = "some text";
+
+        @Override
+        public void extractFrom( org.modeshape.jcr.api.Binary binary,
+                                 Output output,
+                                 Context context ) throws Exception {
+            output.recordText(EXTRACTED_TEXT);
+        }
+
+        @Override
+        public boolean supportsMimeType( String mimeType ) {
+            return true;
+        }
+    }
 }

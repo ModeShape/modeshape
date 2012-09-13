@@ -23,90 +23,66 @@
  */
 package org.modeshape.jcr.value.binary;
 
-import static org.junit.Assert.assertEquals;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-import org.junit.After;
+import de.flapdoodle.embed.mongo.MongodExecutable;
+import de.flapdoodle.embed.mongo.MongodProcess;
+import de.flapdoodle.embed.mongo.MongodStarter;
+import de.flapdoodle.embed.mongo.config.MongodConfig;
+import de.flapdoodle.embed.mongo.config.RuntimeConfig;
+import de.flapdoodle.embed.mongo.distribution.Version;
+import de.flapdoodle.embed.process.runtime.Network;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.modeshape.jcr.value.BinaryValue;
+import java.io.IOException;
+import java.util.UUID;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Setup mongodb env and uncomment tests to run.
  * 
  * @author kulikov
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class MongodbBinaryStoreTest {
+public class MongodbBinaryStoreTest extends AbstractBinaryStoreTest {
+    private static final Logger LOGGER = Logger.getLogger("MongoDBOutput");
 
-    private MongodbBinaryStore binaryStore;
+    private static MongodProcess mongodProcess;
+    private static MongodExecutable mongodExecutable;
 
-    public MongodbBinaryStoreTest() {
+    private static MongodbBinaryStore binaryStore;
+
+    static {
+        try {
+            LOGGER.addHandler(new FileHandler("target/mongoDB_output.txt", false));
+            LOGGER.setLevel(Level.SEVERE);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @BeforeClass
     public static void setUpClass() throws Exception {
+        RuntimeConfig config = RuntimeConfig.getInstance(LOGGER);
+        MongodStarter runtime = MongodStarter.getInstance(config);
+        int freeServerPort = Network.getFreeServerPort();
+        mongodExecutable = runtime.prepare(new MongodConfig(Version.Main.V2_0, freeServerPort,
+                                                                             Network.localhostIsIPv6()));
+        mongodProcess = mongodExecutable.start();
+
+        binaryStore = new MongodbBinaryStore(Network.getLocalHost().getHostAddress(), freeServerPort, "test-" + UUID.randomUUID());
+        binaryStore.start();
     }
 
     @AfterClass
     public static void tearDownClass() throws Exception {
+        binaryStore.shutdown();
+        mongodExecutable.stop();
+        mongodProcess.stop();
     }
 
-    @Before
-    public void setUp() {
-        Properties props = new Properties();
-        props.setProperty("mongodb.database", "test");
-
-        binaryStore = new MongodbBinaryStore("test", null);
-        binaryStore.setChunkSize(3);
-        binaryStore.start();
+    @Override
+    protected BinaryStore getBinaryStore() {
+        return binaryStore;
     }
-
-    @After
-    public void tearDown() {
-    }
-
-    @Ignore
-    @Test
-    public void testStoreAndRetriveValue() throws Exception {
-        ByteArrayInputStream content = new ByteArrayInputStream("Test message".getBytes());
-        BinaryValue bv = binaryStore.storeValue(content);
-
-        InputStream is = binaryStore.getInputStream(bv.getKey());
-        String s = read(is);
-
-        assertEquals("Test message", s);
-    }
-
-    @Ignore
-    @Test
-    public void testExtractedText() throws Exception {
-        // store content
-        ByteArrayInputStream content = new ByteArrayInputStream("Test message".getBytes());
-        BinaryValue bv = binaryStore.storeValue(content);
-
-        // store text
-        binaryStore.storeExtractedText(bv, "Text");
-        assertEquals("Text", binaryStore.getExtractedText(bv));
-    }
-
-    private String read( InputStream is ) throws IOException {
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        int b = 0;
-        int len = 0;
-        while (b != -1) {
-            b = is.read();
-            if (b != -1) {
-                bout.write((byte)b);
-                len++;
-            }
-        }
-        return new String(bout.toByteArray(), 0, len);
-    }
-
 }

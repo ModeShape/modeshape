@@ -26,7 +26,6 @@ package org.modeshape.jcr.value.binary.infinispan;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.junit.Before;
 import org.junit.BeforeClass;
 
 public class InfinispanLocalBinaryStoreTest extends AbstractInfinispanStoreTest {
@@ -34,10 +33,7 @@ public class InfinispanLocalBinaryStoreTest extends AbstractInfinispanStoreTest 
     @BeforeClass
     public static void beforeClass() throws Exception {
         cacheManager = InfinispanTestUtil.beforeClassStartup(false);
-    }
 
-    @Before
-    public void before(){
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.clustering().cacheMode(CacheMode.LOCAL);
         Configuration blobConfiguration = configurationBuilder.build();

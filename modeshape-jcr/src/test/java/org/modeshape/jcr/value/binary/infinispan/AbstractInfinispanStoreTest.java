@@ -26,9 +26,8 @@ package org.modeshape.jcr.value.binary.infinispan;
 
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.manager.DefaultCacheManager;
-import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.modeshape.jcr.value.binary.AbstractBinaryStoreTest;
 import org.modeshape.jcr.value.binary.BinaryStore;
 
@@ -38,27 +37,25 @@ public abstract class AbstractInfinispanStoreTest extends AbstractBinaryStoreTes
     private static final String BLOB = "blob";
     private static final String METADATA = "metadata";
 
-    private InfinispanBinaryStore binaryStore;
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        cacheManager = InfinispanTestUtil.beforeClassStartup(true);
-    }
+    private static InfinispanBinaryStore binaryStore;
 
     @AfterClass
-    public static void afterClass(){
-       InfinispanTestUtil.afterClassShutdown(cacheManager);
+    public static void afterClass() {
+        stopAdditionalCaches();
+        InfinispanTestUtil.afterClassShutdown(cacheManager);
+
+        binaryStore.shutdown();
     }
 
-    @After
-    public void after(){
+    private static void stopAdditionalCaches() {
         cacheManager.getCache(METADATA).stop();
         cacheManager.removeCache(METADATA);
         cacheManager.getCache(BLOB).stop();
         cacheManager.removeCache(BLOB);
     }
 
-    void startBinaryStore(Configuration metadataConfiguration, Configuration blobConfiguration){
+    protected static void startBinaryStore( Configuration metadataConfiguration,
+                                            Configuration blobConfiguration ) {
         cacheManager.defineConfiguration(METADATA, metadataConfiguration);
         cacheManager.startCache(METADATA);
 
@@ -74,6 +71,9 @@ public abstract class AbstractInfinispanStoreTest extends AbstractBinaryStoreTes
         return binaryStore;
     }
 
+    @Override
+    @Ignore( "The infinispan binary stored do no support this operation" )
+    public void shouldReturnAllStoredKeys() throws Exception {
 
-
+    }
 }
