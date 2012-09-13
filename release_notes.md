@@ -1,6 +1,6 @@
 # Release Notes for ModeShape &version;
 
-The ModeShape &version; release is the third beta release of our new architecture, and is suitable
+The ModeShape &version; release is the fourth beta release of our new architecture, and is suitable
 only for testing and previewing features. APIs and storage formats are still subject to change.
 
 ## What's new
@@ -45,7 +45,7 @@ node types. Now it's easy to create custom sequencers.
 detectors that use the filename extensions and the binary content.
 - New and simpler API for implementing custom text extractors.
 - Improved storage of binary values of all sizes, with a separate facility for storing these on the file
-system. Storage of binary values in Infinispan and DBMSes will be added in upcoming releases.
+system, in Infinispan caches, in relational DBMSes (via JDBC), and in MongoDB.
 - API interfaces and methods that were deprecated in 2.7.0.Final (or later) have been removed.
 There weren't many of these; most of the ModeShape API remains the same.
 - Integration with JBoss AS 7. ModeShape runs as an integrated subsystem within AS7, and
