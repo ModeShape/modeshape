@@ -23,7 +23,14 @@
  */
 package org.modeshape.jcr.mimetype;
 
-import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.*;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.AU;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.FLI;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.OCTET_STREAM;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.PCX;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.PHOTOSHOP;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.TAR;
+import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.XML_DTD;
+import org.junit.Test;
 import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
 
 /**
@@ -36,6 +43,12 @@ public class MimeTypeDetectorsTest extends ApertureMimeTypeDetectorTest {
     @Override
     protected MimeTypeDetector getDetector() {
         return new MimeTypeDetectors();
+    }
+
+    @Test
+    @Override
+    public void shouldProvideMimeTypeForDtd() throws Exception {
+        testMimeType("test.dtd", XML_DTD);
     }
 
     @Override

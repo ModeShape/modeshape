@@ -23,31 +23,60 @@
  */
 package org.modeshape.sequencer.cnd;
 
-
-import javax.jcr.*;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.AUTO_CREATED;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.AVAILABLE_QUERY_OPERATORS;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.CHILD_NODE_DEFINITION;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.DEFAULT_PRIMARY_TYPE;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.DEFAULT_VALUES;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.HAS_ORDERABLE_CHILD_NODES;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.IS_ABSTRACT;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.IS_FULL_TEXT_SEARCHABLE;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.IS_MIXIN;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.IS_QUERYABLE;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.IS_QUERY_ORDERABLE;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.MANDATORY;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.MULTIPLE;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.NAME;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.NODE_TYPE;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.NODE_TYPE_NAME;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.ON_PARENT_VERSION;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.PRIMARY_ITEM_NAME;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.PROPERTY_DEFINITION;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.PROTECTED;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.REQUIRED_PRIMARY_TYPES;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.REQUIRED_TYPE;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.SAME_NAME_SIBLINGS;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.SUPERTYPES;
+import static org.modeshape.sequencer.cnd.CndSequencerLexicon.VALUE_CONSTRAINTS;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import javax.jcr.Binary;
+import javax.jcr.NamespaceRegistry;
+import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.OnParentVersionAction;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.CndImporter;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import static org.modeshape.sequencer.cnd.CndSequencerLexicon.*;
 import org.modeshape.jcr.value.NamespaceRegistry.Namespace;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-
 
 /**
  * A sequencer of CND files.
- *
+ * 
  * @author Horia Chiorean
  */
 public class CndSequencer extends Sequencer {
@@ -56,16 +85,20 @@ public class CndSequencer extends Sequencer {
     private static final Logger LOGGER = Logger.getLogger(CndSequencer.class);
 
     @Override
-    public void initialize( NamespaceRegistry registry, NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
-        super.registerNodeTypes("sequencer-cnd.cnd", nodeTypeManager, true);
+    public void initialize( NamespaceRegistry registry,
+                            NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
+        registerNodeTypes("sequencer-cnd.cnd", nodeTypeManager, true);
+        registerDefaultMimeTypes(MimeTypeConstants.TEXT_JCR_CND);
     }
 
     @Override
-    public boolean execute( Property inputProperty, Node outputNode, Context context ) throws Exception {
+    public boolean execute( Property inputProperty,
+                            Node outputNode,
+                            Context context ) throws Exception {
         Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
 
-        //if the output is jcr:system/jcr:nodeTypes import via the NodeTypeManager
+        // if the output is jcr:system/jcr:nodeTypes import via the NodeTypeManager
         if (outputIsSystemNodeTypes(outputNode, binaryValue)) {
             return true;
         }
@@ -81,7 +114,8 @@ public class CndSequencer extends Sequencer {
         return true;
     }
 
-    private void processNodeTypeDefinitions( Node outputNode, CndImporter cndImporter ) throws RepositoryException {
+    private void processNodeTypeDefinitions( Node outputNode,
+                                             CndImporter cndImporter ) throws RepositoryException {
         List<NodeTypeDefinition> importedNodeTypes = cndImporter.getNodeTypeDefinitions();
 
         for (NodeTypeDefinition nodeTypeDefinition : importedNodeTypes) {
@@ -89,7 +123,8 @@ public class CndSequencer extends Sequencer {
         }
     }
 
-    private void registerImportedNamespaces( Node outputNode, CndImporter cndImporter ) throws RepositoryException {
+    private void registerImportedNamespaces( Node outputNode,
+                                             CndImporter cndImporter ) throws RepositoryException {
         NamespaceRegistry namespaceRegistry = outputNode.getSession().getWorkspace().getNamespaceRegistry();
         for (Namespace namespace : cndImporter.getNamespaces()) {
             super.registerNamespace(namespace.getPrefix(), namespace.getNamespaceUri(), namespaceRegistry);
@@ -109,7 +144,8 @@ public class CndSequencer extends Sequencer {
         return cndImporter;
     }
 
-    private boolean outputIsSystemNodeTypes( Node outputNode, Binary binaryValue ) throws RepositoryException, IOException {
+    private boolean outputIsSystemNodeTypes( Node outputNode,
+                                             Binary binaryValue ) throws RepositoryException, IOException {
         String systemNodesPath = JcrLexicon.SYSTEM.getString() + "/" + JcrLexicon.NODE_TYPES.getString();
         if (outputNode.getPath().contains(systemNodesPath)) {
             NodeTypeManager nodeTypeManager = (NodeTypeManager)outputNode.getSession().getWorkspace().getNodeTypeManager();
@@ -119,7 +155,8 @@ public class CndSequencer extends Sequencer {
         return false;
     }
 
-    private void storeNodeTypeDefinition( Node outputNode, NodeTypeDefinition nodeTypeDefinition ) throws RepositoryException {
+    private void storeNodeTypeDefinition( Node outputNode,
+                                          NodeTypeDefinition nodeTypeDefinition ) throws RepositoryException {
         Node nodeTypeNode = processNodeTypeDefinition(outputNode, nodeTypeDefinition);
 
         PropertyDefinition[] declaredPropertyDefinitions = nodeTypeDefinition.getDeclaredPropertyDefinitions();
@@ -137,7 +174,8 @@ public class CndSequencer extends Sequencer {
         }
     }
 
-    private void processChildNodeDefinition( Node nodeTypeNode, NodeDefinition childNodeDefinition ) throws RepositoryException {
+    private void processChildNodeDefinition( Node nodeTypeNode,
+                                             NodeDefinition childNodeDefinition ) throws RepositoryException {
         Node childNode = nodeTypeNode.addNode(CHILD_NODE_DEFINITION, CHILD_NODE_DEFINITION);
 
         if (!RESIDUAL_ITEM_NAME.equals(childNodeDefinition.getName())) {
@@ -154,7 +192,8 @@ public class CndSequencer extends Sequencer {
         childNode.setProperty(DEFAULT_PRIMARY_TYPE, childNodeDefinition.getDefaultPrimaryTypeName());
     }
 
-    private void processPropertyDefinition( Node nodeTypeNode, PropertyDefinition propertyDefinition ) throws RepositoryException {
+    private void processPropertyDefinition( Node nodeTypeNode,
+                                            PropertyDefinition propertyDefinition ) throws RepositoryException {
         Node propertyDefinitionNode = nodeTypeNode.addNode(PROPERTY_DEFINITION, PROPERTY_DEFINITION);
 
         if (!RESIDUAL_ITEM_NAME.equals(propertyDefinition.getName())) {
@@ -164,10 +203,13 @@ public class CndSequencer extends Sequencer {
         propertyDefinitionNode.setProperty(MANDATORY, propertyDefinition.isMandatory());
         propertyDefinitionNode.setProperty(MULTIPLE, propertyDefinition.isMultiple());
         propertyDefinitionNode.setProperty(PROTECTED, propertyDefinition.isProtected());
-        propertyDefinitionNode.setProperty(ON_PARENT_VERSION, OnParentVersionAction.nameFromValue(propertyDefinition.getOnParentVersion()));
-        propertyDefinitionNode.setProperty(REQUIRED_TYPE, PropertyType.nameFromValue(propertyDefinition.getRequiredType()).toUpperCase());
-        String[] availableQueryOperators = propertyDefinition.getAvailableQueryOperators();       
-        propertyDefinitionNode.setProperty(AVAILABLE_QUERY_OPERATORS, availableQueryOperators != null ? availableQueryOperators : new String[0]);
+        propertyDefinitionNode.setProperty(ON_PARENT_VERSION,
+                                           OnParentVersionAction.nameFromValue(propertyDefinition.getOnParentVersion()));
+        propertyDefinitionNode.setProperty(REQUIRED_TYPE, PropertyType.nameFromValue(propertyDefinition.getRequiredType())
+                                                                      .toUpperCase());
+        String[] availableQueryOperators = propertyDefinition.getAvailableQueryOperators();
+        propertyDefinitionNode.setProperty(AVAILABLE_QUERY_OPERATORS,
+                                           availableQueryOperators != null ? availableQueryOperators : new String[0]);
         Value[] defaultValues = propertyDefinition.getDefaultValues();
         propertyDefinitionNode.setProperty(DEFAULT_VALUES, defaultValues != null ? defaultValues : new Value[0]);
         String[] valueConstraints = propertyDefinition.getValueConstraints();
@@ -176,7 +218,8 @@ public class CndSequencer extends Sequencer {
         propertyDefinitionNode.setProperty(IS_QUERY_ORDERABLE, propertyDefinition.isQueryOrderable());
     }
 
-    private Node processNodeTypeDefinition( Node outputNode, NodeTypeDefinition nodeTypeDefinition ) throws RepositoryException {
+    private Node processNodeTypeDefinition( Node outputNode,
+                                            NodeTypeDefinition nodeTypeDefinition ) throws RepositoryException {
         Node nodeTypeNode = outputNode.addNode(nodeTypeDefinition.getName(), NODE_TYPE);
 
         nodeTypeNode.setProperty(IS_MIXIN, nodeTypeDefinition.isMixin());

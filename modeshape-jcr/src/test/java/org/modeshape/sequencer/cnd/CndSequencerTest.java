@@ -76,7 +76,7 @@ public class CndSequencerTest extends AbstractSequencerTest {
     }
 
     @Test
-    public void sequenceImages() throws Exception {
+    public void sequenceImagesCndFile() throws Exception {
         Node imagesNode = createNodeWithContentFromFile("images.cnd", "sequencer/cnd/images.cnd");
         verifyImageMetadataNode(imagesNode);
         verifyEmbeddedImageNode(imagesNode);
