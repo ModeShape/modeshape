@@ -26,10 +26,10 @@ package org.modeshape.jcr.value.binary;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
-import org.junit.AfterClass;
+import org.junit.After;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
@@ -109,8 +109,8 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
     protected static FileSystemBinaryStore store;
     protected static boolean print = false;
 
-    @BeforeClass
-    public static void beforeClass() {
+    @Before
+    public void beforeClass() {
         directory = new File("target/fsbs/");
         FileUtil.delete(directory);
         directory.mkdirs();
@@ -120,8 +120,8 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
         print = false;
     }
 
-    @AfterClass
-    public static void afterClass() {
+    @After
+    public void afterClass() {
         FileUtil.delete(directory);
     }
 
@@ -163,6 +163,9 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
         // Make sure the file was removed from the trash ...
         assertThat(countStoredFiles(), is(storedSha1s.size() - 1));
         assertThat(countTrashFiles(), is(0));
+
+        // And that all directories in the trash were removed (since they should be empty) ...
+        assertThat(trash.listFiles().length, is(0));
     }
 
     @Test

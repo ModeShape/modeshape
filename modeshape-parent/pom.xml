@@ -303,6 +303,7 @@
         <wsdl4j.version>1.6.2</wsdl4j.version>
         <bson4jackson.version>1.1.2</bson4jackson.version>
         <mongo.driver.version>2.7.3</mongo.driver.version>
+        <embedmongo.version>1.25</embedmongo.version>
         <json.simple.version>1.1</json.simple.version>
         <aperture.version>1.1.0.Beta1</aperture.version>
         <logback.version>0.9.29</logback.version>
@@ -1429,6 +1430,13 @@
                 <artifactId>mongo-java-driver</artifactId>
                 <version>${mongo.driver.version}</version>
                 <scope>provided</scope>
+            </dependency>
+            <!-- MongoDB binary store test -->
+            <dependency>
+                <groupId>de.flapdoodle.embed</groupId>
+                <artifactId>de.flapdoodle.embed.mongo</artifactId>
+                <version>${embedmongo.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>com.googlecode.json-simple</groupId>

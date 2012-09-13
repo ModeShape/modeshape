@@ -23,6 +23,18 @@
  */
 package org.modeshape.jcr.value.binary;
 
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
+import com.mongodb.Mongo;
+import com.mongodb.ServerAddress;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.BinaryValue;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.UnknownHostException;
@@ -32,18 +44,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import org.modeshape.common.util.IoUtil;
-import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.JcrI18n;
-import org.modeshape.jcr.value.BinaryKey;
-import org.modeshape.jcr.value.BinaryValue;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-import com.mongodb.Mongo;
-import com.mongodb.ServerAddress;
 
 /**
  * A {@link BinaryStore} implementation that uses a MongoDB for persisting binary values.
@@ -51,6 +51,10 @@ import com.mongodb.ServerAddress;
  * @author kulikov
  */
 public class MongodbBinaryStore extends AbstractBinaryStore {
+
+    //default database name
+    private static final String DEFAULT_DB_NAME = "ModeShape_BinaryStore";
+
     // field names
     private static final String FIELD_CHUNK_TYPE = "chunk-type";
     private static final String FIELD_MIME_TYPE = "mime-type";
@@ -73,6 +77,9 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     // database name
     private String database;
 
+    private String host;
+    private int port;
+
     // credentials
     private String username;
     private String password;
@@ -85,6 +92,11 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
     // chunk size in bytes
     protected int chunkSize = 1024;
+
+    public MongodbBinaryStore() {
+        this.cache = TransientBinaryStore.get();
+        this.database = DEFAULT_DB_NAME;
+    }
 
     /**
      * Creates new store.
@@ -123,6 +135,22 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     }
 
     /**
+     * Creates a new instance of the store, using a single MongoDB.
+     *
+     * @param host
+     * @param port
+     * @param database
+     */
+    public MongodbBinaryStore( String host,
+                               int port,
+                               String database ) {
+        this.cache = TransientBinaryStore.get();
+        this.host = host;
+        this.port = port;
+        this.database = database;
+    }
+
+    /**
      * Converts list of addresses specified in text format to mongodb specific address.
      * 
      * @param addresses list of addresses in text format
@@ -152,11 +180,6 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
             }
 
             list.add(new ServerAddress(host, port));
-        }
-
-        // use default address if nothing was specified by config
-        if (list.isEmpty()) {
-            list.add(new ServerAddress("localhost"));
         }
 
         return list;
@@ -198,7 +221,6 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
             ChunkOutputStream dbStream = new ChunkOutputStream(content);
             try {
                 IoUtil.write(temp.getStream(), dbStream);
-                dbStream.flush();
             } catch (Exception e) {
                 throw new BinaryStoreException(e);
             }
@@ -234,7 +256,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     public void removeValuesUnusedLongerThan( long minimumAge,
                                               TimeUnit unit ) {
         long deadline = new Date().getTime() - unit.toMillis(minimumAge);
-        Set<String> keys = db.getCollectionNames();
+        Set<String> keys = getStoredKeys();
         for (String key : keys) {
             DBCollection content = db.getCollection(key);
             if (isExpired(content, deadline)) content.drop();
@@ -283,11 +305,25 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     @Override
     public Iterable<BinaryKey> getAllBinaryKeys() {
         ArrayList<BinaryKey> list = new ArrayList<BinaryKey>();
-        Set<String> keys = db.getCollectionNames();
+        Set<String> keys = getStoredKeys();
         for (String s : keys) {
-            list.add(BinaryKey.keyFor(s.getBytes()));
+            list.add(new BinaryKey(s));
         }
         return list;
+    }
+
+    private Set<String> getStoredKeys() {
+        Set<String> storedKeys = new HashSet<String>();
+
+        Set<String> collectionNames = db.getCollectionNames();
+        for (String collectionName : collectionNames) {
+            //make sure Mongo predefined collections are not taken into account
+            if (collectionName.toLowerCase().startsWith("system") || collectionName.toLowerCase().startsWith("local")) {
+                continue;
+            }
+            storedKeys.add(collectionName);
+        }
+        return storedKeys;
     }
 
     @Override
@@ -299,19 +335,30 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
             throw new RuntimeException("Database name is not specified");
         }
 
-        // connect to database
-        try {
-            Mongo mongo = new Mongo(replicaSet(replicaSet));
-            db = mongo.getDB(database);
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        initMongoDatabase();
 
         // authenticate if required
         if (!StringUtil.isBlank(username) && !StringUtil.isBlank(password)) {
             if (!db.authenticate(username, password.toCharArray())) {
                 throw new RuntimeException("Invalid username/password");
             }
+        }
+    }
+
+    private void initMongoDatabase() {
+        // connect to database
+        try {
+            Mongo mongo = null;
+            if (!replicaSet.isEmpty())  {
+                mongo = new Mongo(replicaSet(replicaSet));
+            } else if (!StringUtil.isBlank(host)) {
+                mongo = new Mongo(host, port);
+            } else {
+                mongo = new Mongo();
+            }
+            db = mongo.getDB(database);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -361,7 +408,8 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
      */
     private boolean isExpired( DBCollection content,
                                long deadline ) {
-        return (Long)getAttribute(content, FIELD_UNUSED_SINCE) < deadline;
+        Long unusedSince = (Long)getAttribute(content, FIELD_UNUSED_SINCE);
+        return unusedSince != null && unusedSince < deadline;
     }
 
     /**
@@ -426,7 +474,6 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
                 chunk = new BasicDBObject();
             }
         }
-
     }
 
     /**
@@ -438,24 +485,24 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
         // local buffer and current position inthe buffer
         private byte[] buffer = new byte[chunkSize];
-        private int offset;
+        private int offset = 0;
 
         // object for reading chunks from database
         private DBObject chunk = new BasicDBObject();
         // the actual amount of data stored in chunk
-        private int size;
+        private int size = 0;
 
         public ChunkInputStream( DBCollection chunks ) {
             // execute query for selecting data chunks only
             cursor = chunks.find(DATA_CHUNK);
-            offset = buffer.length;
         }
 
         @Override
         public int read() {
             // read current chunk
             if (offset < size) {
-                return buffer[offset++];
+                //make sure it's unsigned (see javadoc)
+                return 0xff & buffer[offset++];
             }
 
             // try to pick up next chunk
@@ -468,7 +515,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
             // start reading from new chunk
             if (offset < size) {
-                return buffer[offset++];
+                return 0xff & buffer[offset++];
             }
 
             // end of stream reached
