@@ -82,6 +82,7 @@
     </dependencies>
 
     <modules>
+        <module>modeshape-sequencer-default</module>
         <module>modeshape-sequencer-msoffice</module>
         <module>modeshape-sequencer-images</module>
         <module>modeshape-sequencer-java</module>
