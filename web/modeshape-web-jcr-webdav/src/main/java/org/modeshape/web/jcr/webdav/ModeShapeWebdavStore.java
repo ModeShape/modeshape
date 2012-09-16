@@ -120,6 +120,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
 
     @Override
     public void destroy() {
+        RepositoryManager.shutdown();
     }
 
     /**

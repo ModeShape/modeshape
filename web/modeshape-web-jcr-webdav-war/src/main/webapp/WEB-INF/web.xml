@@ -134,6 +134,10 @@
 		<listener-class>org.modeshape.web.jcr.ModeShapeJcrDeployer</listener-class>
 	</listener>
 
+    <listener>
+        <listener-class>org.modeshape.web.jcr.webdav.WebdavContextListener</listener-class>
+    </listener>
+
 	<!-- Required WebDAV servlet - should not be modified -->
 	<servlet>
 		<servlet-name>WebDAV</servlet-name>

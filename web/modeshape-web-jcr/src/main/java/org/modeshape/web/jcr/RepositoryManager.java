@@ -193,7 +193,7 @@ public class RepositoryManager {
         return names;
     }
 
-    static void shutdown() {
+    public static void shutdown() {
         // Go through all the RepositoryFactory instances and see if any can be shutdown ...
         for (javax.jcr.RepositoryFactory factory : ServiceLoader.load(javax.jcr.RepositoryFactory.class)) {
             if (factory instanceof org.modeshape.jcr.api.RepositoryFactory) {
