@@ -1,14 +1,20 @@
 package org.modeshape.web.jcr.webdav;
 
+import com.googlecode.sardine.DavResource;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.webdav.WebdavStoreClientTest;
 import com.googlecode.sardine.Sardine;
 import com.googlecode.sardine.SardineFactory;
 import com.googlecode.sardine.util.SardineException;
+import java.io.ByteArrayInputStream;
+import java.util.Random;
+import java.util.UUID;
 
 /**
  * Unit test for the {@link ModeShapeWebdavStore} implementation, tested using a real web-dav compliant client. This test should
@@ -57,6 +63,25 @@ public class ModeShapeWebdavStoreClientTest extends WebdavStoreClientTest {
         String uri = getJcrServerUrl("missingWS");
         assertFalse(sardine.exists(uri));
     }
+
+    @Test
+    @FixFor( "MODE-1542" )
+    public void shouldCreateLargeFile() throws Exception {
+        int binarySize = 100 * (1 << 20); //100 MB
+        byte[] binaryData = new byte[binarySize];
+        new Random().nextBytes(binaryData);
+
+        String folderUri = resourceUri("testDirectory" + UUID.randomUUID().toString());
+        sardine.createDirectory(folderUri);
+        String fileUri = folderUri + "/testFile" + UUID.randomUUID().toString();
+
+        sardine.put(fileUri, new ByteArrayInputStream(binaryData), "application/octet-stream");
+        assertTrue(sardine.exists(fileUri));
+        DavResource file = getResourceAtURI(fileUri);
+
+        assertEquals(binarySize, file.getContentLength().intValue());
+    }
+
 
     protected String getDefaultWorkspaceName() {
         return "default";

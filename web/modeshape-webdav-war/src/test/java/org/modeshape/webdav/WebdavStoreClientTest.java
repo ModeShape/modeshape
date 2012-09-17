@@ -45,6 +45,7 @@ import java.util.UUID;
  * <p>
  * Ideally this would contain at least the test cases that <a href="http://www.webdav.org/neon/litmus">Litmus</a> has.
  * </p>
+ *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class WebdavStoreClientTest {
@@ -87,7 +88,7 @@ public class WebdavStoreClientTest {
         assertEquals(0l, folder.getContentLength().longValue());
     }
 
-    private DavResource getResourceAtURI( String uri ) throws SardineException {
+    protected DavResource getResourceAtURI( String uri ) throws SardineException {
         List<DavResource> resourcesList = sardine.getResources(uri);
         assertEquals(1, resourcesList.size());
         return resourcesList.get(0);
@@ -110,7 +111,7 @@ public class WebdavStoreClientTest {
     }
 
     protected String resourceUri( String resourceName ) {
-        return !StringUtil.isBlank(resourceName) ? getServerContext() + "/" + resourceName :  getServerContext();
+        return !StringUtil.isBlank(resourceName) ? getServerContext() + "/" + resourceName : getServerContext();
     }
 
     protected String getServerContext() {

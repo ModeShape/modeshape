@@ -47,6 +47,7 @@ import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.web.jcr.RepositoryManager;
 import org.modeshape.webdav.ITransaction;
 import org.modeshape.webdav.IWebdavStore;
@@ -128,6 +129,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
     @Override
     public void createFolder( ITransaction transaction,
                               String folderUri ) {
+        folderUri = removeTrailingSlash(folderUri);
         int ind = folderUri.lastIndexOf('/');
         String parentUri = folderUri.substring(0, ind + 1);
         String resourceName = folderUri.substring(ind + 1);
@@ -161,7 +163,9 @@ public class ModeShapeWebdavStore implements IWebdavStore {
      @Override
     public void createResource( ITransaction transaction,
                                 String resourceUri ) {
-        // Mac OS X workaround from Drools Guvnor
+         resourceUri = removeTrailingSlash(resourceUri);
+
+         // Mac OS X workaround from Drools Guvnor
         if (resourceUri.endsWith(".DS_Store")) return;
 
         int ind = resourceUri.lastIndexOf('/');
@@ -197,6 +201,15 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             throw new WebdavException(re);
         }
 
+    }
+
+    private String removeTrailingSlash( String uri ) {
+        if (!StringUtil.isBlank(uri) && uri.length() > 1 && uri.endsWith("/")) {
+            return uri.substring(0, uri.length() - 1);
+        }
+        else {
+            return uri;
+        }
     }
 
     @Override
