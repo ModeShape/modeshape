@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
 import org.infinispan.Cache;
+import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.schematic.Schematic;
@@ -171,7 +172,10 @@ public class RepositoryCache implements Observable {
             entry.getValue().signalClosed();
             // Remove the infinispan cache from the manager ...
             if (workspaceCacheManager instanceof EmbeddedCacheManager) {
-                ((EmbeddedCacheManager)workspaceCacheManager).removeCache(cacheNameForWorkspace(workspaceName));
+                EmbeddedCacheManager embeddedCacheManager = (EmbeddedCacheManager) workspaceCacheManager;
+                if (embeddedCacheManager.getStatus().equals(ComponentStatus.RUNNING)) {
+                    ((EmbeddedCacheManager)workspaceCacheManager).removeCache(cacheNameForWorkspace(workspaceName));
+                }
             }
         }
     }
