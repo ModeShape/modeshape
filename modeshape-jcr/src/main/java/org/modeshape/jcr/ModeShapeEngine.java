@@ -66,7 +66,7 @@ public class ModeShapeEngine implements Repositories {
 
     private final Map<String, JcrRepository> repositories = new HashMap<String, JcrRepository>();
     private ExecutorService repositoryStarterService;
-    private ScheduledExecutorService cron;
+    private ScheduledExecutorService cronStarterService;
     private volatile State state = State.NOT_RUNNING;
 
     public enum State {
@@ -74,7 +74,7 @@ public class ModeShapeEngine implements Repositories {
         STARTING,
         RUNNING,
         RESTORING,
-        STOPPING;
+        STOPPING
     }
 
     public ModeShapeEngine() {
@@ -112,13 +112,11 @@ public class ModeShapeEngine implements Repositories {
 
             // Start the Cron service, with a minimum of a single thread ...
             ThreadFactory cronThreadFactory = new NamedThreadFactory("modeshape-cron");
-            cron = new ScheduledThreadPoolExecutor(1, cronThreadFactory);
+            cronStarterService = new ScheduledThreadPoolExecutor(1, cronThreadFactory);
 
             // Add a Cron job that cleans up each repository ...
-            cron.scheduleAtFixedRate(new GarbageCollectionTask(),
-                                     RepositoryConfiguration.GARBAGE_COLLECTION_SWEEP_PERIOD,
-                                     RepositoryConfiguration.GARBAGE_COLLECTION_SWEEP_PERIOD,
-                                     TimeUnit.MILLISECONDS);
+            cronStarterService.scheduleAtFixedRate(new GarbageCollectionTask(), RepositoryConfiguration.GARBAGE_COLLECTION_SWEEP_PERIOD,
+                                     RepositoryConfiguration.GARBAGE_COLLECTION_SWEEP_PERIOD, TimeUnit.MILLISECONDS);
 
             state = State.RUNNING;
         } catch (RuntimeException e) {
@@ -252,10 +250,13 @@ public class ModeShapeEngine implements Repositories {
             if (repositories.isEmpty()) {
                 // All repositories were properly shutdown, so now stop the service for starting and shutting down the repos ...
                 repositoryStarterService.shutdown();
+                repositoryStarterService = null;
+
+                cronStarterService.shutdown();
+                cronStarterService = null;
 
                 // Do not clear the set of repositories, so that restarting will work just fine ...
                 this.state = State.NOT_RUNNING;
-                repositoryStarterService = null;
             } else {
                 // Could not shut down all repositories, so keep running ..
                 this.state = State.RUNNING;
@@ -266,7 +267,7 @@ public class ModeShapeEngine implements Repositories {
         } finally {
             lock.unlock();
         }
-        return true;
+        return this.state != State.RUNNING;
     }
 
     /**
@@ -373,7 +374,7 @@ public class ModeShapeEngine implements Repositories {
      * @see #deploy(RepositoryConfiguration)
      * @see #undeploy(String)
      */
-    public final Future<JcrRepository> startRepository( String repositoryName ) throws NoSuchRepositoryException {
+    public final Future<JcrRepository> startRepository( final String repositoryName ) throws NoSuchRepositoryException {
         final JcrRepository repository = getRepository(repositoryName);
         if (repository.getState() == State.RUNNING) {
             return ImmediateFuture.create(repository);
@@ -389,6 +390,7 @@ public class ModeShapeEngine implements Repositories {
                     return repository;
                 } catch (Exception e) {
                     // Something went wrong, so undeploy the repository ...
+                    undeploy(repositoryName);
                     throw e;
                 }
             }
