@@ -25,14 +25,16 @@
 package org.modeshape.jcr.mimetype;
 
 import javax.jcr.Binary;
-import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
+import org.modeshape.common.annotation.Immutable;
 
 /**
  * Implementation of {@link MimeTypeDetector} which doesn't detect mime-types.
  * 
  * @author Horia Chiorean
  */
-public final class NullMimeTypeDetector extends MimeTypeDetector {
+@Immutable
+public final class NullMimeTypeDetector implements MimeTypeDetector {
+
     public static final MimeTypeDetector INSTANCE = new NullMimeTypeDetector();
 
     private NullMimeTypeDetector() {

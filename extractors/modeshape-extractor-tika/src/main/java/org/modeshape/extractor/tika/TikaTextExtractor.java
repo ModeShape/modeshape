@@ -126,14 +126,17 @@ public class TikaTextExtractor extends TextExtractor {
         processStream(binary, new BinaryOperation<Object>() {
             @Override
             public Object execute( InputStream stream ) throws Exception {
-                Metadata metadata = prepareMetadata(binary);
+                Metadata metadata = prepareMetadata(binary, context);
                 try {
+                    LOGGER.debug("Using TikaTextExtractor to extract text");
                     ContentHandler textHandler = new BodyContentHandler();
                     // Parse the input stream ...
                     parser.parse(stream, textHandler, metadata, new ParseContext());
 
                     // Record all of the text in the body ...
-                    output.recordText(textHandler.toString().trim());
+                    String text = textHandler.toString().trim();
+                    output.recordText(text);
+                    LOGGER.debug("TikaTextExtractor found text: " + text);
                 } catch (Throwable e) {
                     LOGGER.error(e, TikaI18n.errorWhileExtractingTextFrom, e.getMessage());
                 }
@@ -148,19 +151,23 @@ public class TikaTextExtractor extends TextExtractor {
      * is available to the underlying context. If not, Tika's autodetection mechanism is used to try and get the mime-type.
      * 
      * @param binary a <code>org.modeshape.jcr.api.Binary</code> instance of the content being parsed
+     * @param context the extraction context; may not be null
      * @return a <code>Metadata</code> instance.
      * @throws java.io.IOException if auto-detecting the mime-type via Tika fails
      * @throws RepositoryException if error obtaining MIME-type of the binary parameter
      */
-    protected final Metadata prepareMetadata( final Binary binary ) throws IOException, RepositoryException {
+    protected final Metadata prepareMetadata( final Binary binary,
+                                              final Context context ) throws IOException, RepositoryException {
         Metadata metadata = new Metadata();
 
         String mimeType = binary.getMimeType();
         if (StringUtil.isBlank(mimeType)) {
-            LOGGER.warn(TikaI18n.warnCannotDetectMimeType);
-            mimeType = new TikaMimeTypeDetector().mimeTypeOf(null, binary);
+            // Call the detector (we don't know the name) ...
+            mimeType = context.mimeTypeOf(null, binary);
         }
-        metadata.set(Metadata.CONTENT_TYPE, mimeType);
+        if (!StringUtil.isBlank(mimeType)) {
+            metadata.set(Metadata.CONTENT_TYPE, mimeType);
+        }
         return metadata;
     }
 
@@ -176,11 +183,14 @@ public class TikaTextExtractor extends TextExtractor {
                 if (parser == null) {
                     parser = new DefaultParser(this.getClass().getClassLoader());
                 }
+                LOGGER.debug("Initializing TikaTextExtractor");
                 Map<MediaType, Parser> parsers = parser.getParsers();
+                LOGGER.debug("TikaTextExtractor found " + parsers.size() + " parsers");
                 for (MediaType mediaType : parsers.keySet()) {
                     // Don't use the toString() method, as it may append properties ...
                     String mimeType = mediaType.getType() + "/" + mediaType.getSubtype();
                     supportedMediaTypes.add(mimeType);
+                    LOGGER.debug("TikaTextExtractor will support '" + mimeType + "'");
                 }
             } finally {
                 initLock.unlock();

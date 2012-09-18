@@ -29,8 +29,8 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.TimeZone;
-import org.modeshape.common.annotation.Immutable;
 import org.codehaus.jettison.json.JSONObject;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.Base64;
 import org.modeshape.web.jcr.rest.client.IJcrConstants;
 import org.modeshape.web.jcr.rest.client.Utils;
@@ -85,6 +85,7 @@ public final class FileNode extends JsonNode {
      * @param versionable true if the file node should be versionable
      * @throws Exception if there is a problem constructing the file node
      */
+    @SuppressWarnings( "deprecation" )
     public FileNode( Workspace workspace,
                      String path,
                      File file,

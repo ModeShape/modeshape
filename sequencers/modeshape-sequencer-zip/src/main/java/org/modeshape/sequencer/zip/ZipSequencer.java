@@ -36,7 +36,6 @@ import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.JcrConstants;
-import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 
@@ -46,6 +45,11 @@ import org.modeshape.jcr.api.sequencer.Sequencer;
  * @author Horia Chiorean
  */
 public class ZipSequencer extends Sequencer {
+
+    public static final class MimeTypeConstants {
+        public static final String JAR = "application/java-archive";
+        public static final String ZIP = "application/zip";
+    }
 
     @Override
     public void initialize( NamespaceRegistry registry,

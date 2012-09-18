@@ -22,10 +22,9 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * This package defines an interface for the {@link org.modeshape.jcr.api.mimetype.MimeTypeDetector MIME type detector}, which represents a component
- * that is able to determine the MIME type for a stream of data and/or the name of the file containing the data.
- * One implementation that uses the {@link org.modeshape.jcr.mimetype.ExtensionBasedMimeTypeDetector filename extensions} is provided
- * as a lightweight, flexible, and customizeable implementation.
+ * This package defines an internal adapter framework for detecting MIME types. The framework generally wraps the Tika library,
+ * but is capable of being used without error but with significantly degraded functionality when Tika is not available on the classpath.
+ * Thus, Tika can be removed if MIME type detection is not required.
  */
 
 package org.modeshape.jcr.mimetype;

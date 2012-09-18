@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  Define each of the MIME types that should override (or add to) the standard TIKA MIME types
+  that are defined in the 'org/apache/tika/mime/tika-mimetypes.xml' and 'org/apache/tika/mime/custom-tika-mimetypes.xml'
+  files on the classpath. This file is read in after those, and therefore will overwrite any definitions in those
+  files.
+-->
+<mime-info>
+  <!-- 
+    IANA now has an official MIME type for JCR CND files. 
+    See http://www.iana.org/assignments/media-types/text/jcr-cnd for more information.
+  -->
+  <mime-type type="text/jcr-cnd">
+    <glob pattern="*.cnd"/>
+  </mime-type>
+  
+</mime-info>

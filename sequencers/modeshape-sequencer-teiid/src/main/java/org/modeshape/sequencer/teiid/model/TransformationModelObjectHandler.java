@@ -23,6 +23,7 @@
  */
 package org.modeshape.sequencer.teiid.model;
 
+import static org.modeshape.sequencer.teiid.lexicon.TransformLexicon.Namespace.URI;
 import javax.jcr.Node;
 import javax.jcr.Value;
 import org.modeshape.common.util.CheckArg;
@@ -31,7 +32,6 @@ import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon.JcrId;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon.ModelId;
-import static org.modeshape.sequencer.teiid.lexicon.TransformLexicon.Namespace.URI;
 import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
 import org.modeshape.sequencer.teiid.model.ReferenceResolver.UnresolvedReference;
 import org.modeshape.sequencer.teiid.xmi.XmiElement;
@@ -253,6 +253,7 @@ public final class TransformationModelObjectHandler extends ModelObjectHandler {
             // add reference
             unresolvedReferencer.addReference(propertyName, referencedUuid);
         } else {
+            assert referencerNode != null;
             if (referencedNode == null) {
                 // resolved referencer, unresolved referenced
                 unresolvedReference = resolver.addUnresolvedReference(referencedUuid);
@@ -276,7 +277,7 @@ public final class TransformationModelObjectHandler extends ModelObjectHandler {
                         System.arraycopy(currentValues, 0, newValues, 0, currentValues.length);
                         newValues[currentValues.length] = weakRef;
                     } else {
-                        newValues = new Value[] { weakRef };
+                        newValues = new Value[] {weakRef};
                     }
 
                     referencedNode.setProperty(propertyName, newValues);

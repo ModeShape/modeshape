@@ -31,6 +31,7 @@ import org.junit.Test;
 /**
  *
  */
+@SuppressWarnings( "deprecation" )
 public final class UtilsTest {
 
     // ===========================================================================================================================

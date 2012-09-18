@@ -21,48 +21,31 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.api.mimetype;
+package org.modeshape.jcr.mimetype;
 
+import java.io.IOException;
 import javax.jcr.Binary;
 import javax.jcr.RepositoryException;
-import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * MIME-type detection libraries must provide thread-safe implementations of this interface to enable ModeShape to use the
- * libraries to return MIME-types for data sources.
- *
- * Implementors are expected to have a public, no-arg constructor.
+ * libraries to return MIME-types for data sources. Implementors are expected to have a public, no-arg constructor.
  */
 
-public abstract class MimeTypeDetector {
+public interface MimeTypeDetector {
 
     /**
      * Returns the MIME-type of a binary value, using its supplied content and/or its supplied name, depending upon the
      * implementation. If the MIME-type cannot be determined, either a "default" MIME-type or <code>null</code> may be returned,
      * where the former will prevent earlier registered MIME-type detectors from being consulted.
-     *
+     * 
      * @param name The name of the data source; may be <code>null</code>.
-     * @param binaryValue The value which contains the raw data for which the mime type should be returned; may be <code>null</code>.
+     * @param binaryValue The value which contains the raw data for which the mime type should be returned; may be
+     *        <code>null</code>.
      * @return The MIME-type of the data source, or optionally <code>null</code> if the MIME-type could not be determined.
      * @throws IOException If an error occurs reading the supplied content.
      * @throws RepositoryException if any error occurs while attempting to read the stream from the binary value
      */
-    public abstract String mimeTypeOf( String name, Binary binaryValue ) throws RepositoryException, IOException;
-
-    protected final <T> T processStream(Binary binary, StreamOperation<T> operation) throws RepositoryException, IOException {
-        InputStream stream = binary.getStream();
-        try {
-            return operation.execute(stream);
-        }
-        finally {
-            if (stream != null) {
-                stream.close();
-            }
-        }
-    }
-
-    protected interface StreamOperation<T> {
-        T execute(InputStream stream) throws IOException;
-    }
+    String mimeTypeOf( String name,
+                       Binary binaryValue ) throws RepositoryException, IOException;
 }

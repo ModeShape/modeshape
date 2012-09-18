@@ -34,12 +34,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.util.SizeMeasuringInputStream;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
@@ -111,7 +109,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
                 return new StoredBinaryValue(this, key, temp.getSize());
             }
 
-            //check unused content
+            // check unused content
             if (this.contentExists(key, UNUSED)) {
                 PreparedStatement sql = database.restoreContentSQL(key);
                 Database.execute(sql);
@@ -258,12 +256,12 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
      * Test content for existence.
      * 
      * @param key content identifier
-     * @param alive true inside used content and false for checking within 
-     * content marked as unused.
+     * @param alive true inside used content and false for checking within content marked as unused.
      * @return true if content found
-     * @throws BinaryStoreException 
+     * @throws BinaryStoreException
      */
-    private boolean contentExists(BinaryKey key, boolean alive) throws BinaryStoreException {
+    private boolean contentExists( BinaryKey key,
+                                   boolean alive ) throws BinaryStoreException {
         try {
             ResultSet rs = Database.executeQuery(database.retrieveContentSQL(key, alive));
             return rs.next();
@@ -279,27 +277,6 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
      */
     private long now() {
         return new Date().getTime();
-    }
-
-    /**
-     * Determine length of the content.
-     * 
-     * @param stream content
-     * @return the length of the content in bytes.
-     * @throws BinaryStoreException
-     */
-    private long getContentLength( InputStream stream ) throws BinaryStoreException {
-        AtomicLong length = new AtomicLong();
-        SizeMeasuringInputStream ms = new SizeMeasuringInputStream(stream, length);
-        try {
-            int b = 0;
-            while (b != -1) {
-                b = ms.read();
-            }
-            return length.longValue();
-        } catch (Exception e) {
-            throw new BinaryStoreException(e);
-        }
     }
 
     /**

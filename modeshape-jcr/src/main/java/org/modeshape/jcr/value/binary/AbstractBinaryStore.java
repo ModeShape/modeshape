@@ -23,20 +23,20 @@
  */
 package org.modeshape.jcr.value.binary;
 
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.TextExtractors;
-import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
-import org.modeshape.jcr.mimetype.ExtensionBasedMimeTypeDetector;
+import org.modeshape.jcr.mimetype.MimeTypeDetector;
+import org.modeshape.jcr.mimetype.NullMimeTypeDetector;
 import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.value.BinaryValue;
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * An abstract class for a {@link BinaryStore}, with common functionality needed by implementation classes.
@@ -82,7 +82,7 @@ public abstract class AbstractBinaryStore implements BinaryStore {
 
     private final AtomicLong minBinarySizeInBytes = new AtomicLong(DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES);
     private volatile TextExtractors extractors;
-    private volatile MimeTypeDetector detector = ExtensionBasedMimeTypeDetector.INSTANCE;
+    private volatile MimeTypeDetector detector = NullMimeTypeDetector.INSTANCE;
 
     @Override
     public long getMinimumBinarySizeInBytes() {
@@ -103,7 +103,7 @@ public abstract class AbstractBinaryStore implements BinaryStore {
 
     @Override
     public void setMimeTypeDetector( MimeTypeDetector mimeTypeDetector ) {
-        this.detector = mimeTypeDetector != null ? mimeTypeDetector : ExtensionBasedMimeTypeDetector.INSTANCE;
+        this.detector = mimeTypeDetector != null ? mimeTypeDetector : NullMimeTypeDetector.INSTANCE;
     }
 
     @Override
@@ -123,7 +123,7 @@ public abstract class AbstractBinaryStore implements BinaryStore {
 
         if (binary instanceof InMemoryBinaryValue) {
             // The extracted text will never be stored, so try directly using the text extractors ...
-            return extractors.extract((InMemoryBinaryValue)binary, new TextExtractorContext());
+            return extractors.extract((InMemoryBinaryValue)binary, new TextExtractorContext(detector()));
         }
 
         // there isn't any text available, so wait for a job to finish and then return the result
@@ -131,7 +131,7 @@ public abstract class AbstractBinaryStore implements BinaryStore {
             CountDownLatch latch = extractors.getWorkerLatch(binary.getKey(), false);
             if (latch == null) {
                 // There is no latch, so just compute the text here ...
-                extractors.extract(this, binary, new TextExtractorContext());
+                extractors.extract(this, binary, new TextExtractorContext(detector()));
                 // Find the latch again ...
                 latch = extractors.getWorkerLatch(binary.getKey(), false);
             }
@@ -171,16 +171,17 @@ public abstract class AbstractBinaryStore implements BinaryStore {
 
     /**
      * Returns the stored mime-type of a binary value.
-     *
+     * 
      * @param binaryValue a {@code non-null} {@link BinaryValue}
      * @return either a non-empty {@code String} if a stored mimetype exists, or {@code null} if such a value doesn't exist yet.
-     * @throws BinaryStoreException if there's a problem accessing the binary store or if the binary value cannot be found in the store
+     * @throws BinaryStoreException if there's a problem accessing the binary store or if the binary value cannot be found in the
+     *         store
      */
     protected abstract String getStoredMimeType( BinaryValue binaryValue ) throws BinaryStoreException;
 
     /**
      * Stores the given mime-type for a binary value.
-     *
+     * 
      * @param binaryValue a {@code non-null} {@link BinaryValue}
      * @param mimeType a non-empty {@code String}
      * @throws BinaryStoreException if there's a problem accessing the binary store
@@ -190,19 +191,19 @@ public abstract class AbstractBinaryStore implements BinaryStore {
 
     /**
      * Stores the extracted text of a binary value into this store.
-     *
+     * 
      * @param source a {@code non-null} {@link BinaryValue} instance from which the text was extracted
      * @param extractedText a {@code non-null} and {@code non-blank} string representing the extracted text
      * @throws BinaryStoreException if the operation fails or if the extracted text cannot be stored for the given binary value
-     * (regardless of the reason)
+     *         (regardless of the reason)
      */
     public abstract void storeExtractedText( BinaryValue source,
-                                                String extractedText ) throws BinaryStoreException;
+                                             String extractedText ) throws BinaryStoreException;
 
     /**
      * Returns the extracted text of a binary value, or {@code null} if such text hasn't been stored previously (but the binary
      * value can be found in the store)
-     *
+     * 
      * @param source a {@code non-null} {@link BinaryValue} instance from which the text was extracted
      * @return a {@code String} representing the extracted text, or {@code null} if such text hasn't been stored in this store
      *         previously.
@@ -212,7 +213,7 @@ public abstract class AbstractBinaryStore implements BinaryStore {
 
     /**
      * Get the text extractor that can be used to extract text by this store.
-     *
+     * 
      * @return the text extractor; never null
      */
     protected final TextExtractors extractors() {
@@ -221,7 +222,7 @@ public abstract class AbstractBinaryStore implements BinaryStore {
 
     /**
      * Get the MIME type detector that can be used to find the MIME type for binary content
-     *
+     * 
      * @return the detector; never null
      */
     protected final MimeTypeDetector detector() {

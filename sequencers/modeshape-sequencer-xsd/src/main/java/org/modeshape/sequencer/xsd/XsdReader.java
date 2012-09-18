@@ -74,11 +74,11 @@ import org.eclipse.xsd.util.XSDParser;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.SizeMeasuringInputStream;
 import org.modeshape.common.util.SizeMeasuringReader;
-import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.sequencer.sramp.AbstractResolvingReader;
 import org.modeshape.sequencer.sramp.SrampLexicon;
 import org.modeshape.sequencer.sramp.SymbolSpace;
+import org.modeshape.sequencer.xsd.XsdSequencer.MimeTypeConstants;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.xml.sax.InputSource;
@@ -569,7 +569,9 @@ public class XsdReader extends AbstractResolvingReader {
         Node attributeGroupNode = null;
         if (defn.isAttributeGroupDefinitionReference()) {
             XSDAttributeGroupDefinition resolved = defn.getResolvedAttributeGroupDefinition();
-            logger.debug("Attribute Group definition (ref): '{0}' in ns '{1}' ", resolved.getName(), resolved.getTargetNamespace());
+            logger.debug("Attribute Group definition (ref): '{0}' in ns '{1}' ",
+                         resolved.getName(),
+                         resolved.getTargetNamespace());
             attributeGroupNode = parentNode.addNode(resolved.getName(), XsdLexicon.ATTRIBUTE_GROUP);
             setReference(attributeGroupNode,
                          XsdLexicon.REF,

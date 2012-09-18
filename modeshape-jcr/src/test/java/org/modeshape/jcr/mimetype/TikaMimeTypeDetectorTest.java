@@ -22,27 +22,33 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.extractor.tika;
+package org.modeshape.jcr.mimetype;
 
 import static junit.framework.Assert.assertEquals;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import java.io.IOException;
+import java.io.InputStream;
 import org.junit.Test;
 import org.modeshape.jcr.InMemoryTestBinary;
-import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
-import java.io.IOException;
 
 /**
  * Unit test for {@link TikaMimeTypeDetector}
- *
+ * 
  * @author Horia Chiorean
  */
 public class TikaMimeTypeDetectorTest {
 
-    public static final String TXT_FILE = "modeshape.txt";
-    public static final String PDF_FILE = "modeshape_gs.pdf";
-    public static final String POSTSCRIPT_FILE = "modeshape.ps";
-    public static final String WORD_FILE = "modeshape.doc";
-    public static final String WORD_OPEN_XML_FILE = "modeshape.docx";
-    private TikaMimeTypeDetector detector = new TikaMimeTypeDetector();
+    public static final String TXT_FILE = "mimetype/modeshape.txt";
+    public static final String PDF_FILE = "mimetype/modeshape_gs.pdf";
+    public static final String POSTSCRIPT_FILE = "mimetype/modeshape.ps";
+    public static final String WORD_FILE = "mimetype/modeshape.doc";
+    public static final String WORD_OPEN_XML_FILE = "mimetype/modeshape.docx";
+    public static final String EXCEL_FILE = "mimetype/msoffice_file.xls";
+    public static final String XSD_FILE = "mimetype/xsd_file.xsd";
+
+    private TikaMimeTypeDetector detector = new TikaMimeTypeDetector(getClass().getClassLoader());
 
     @Test
     public void shouldDetectTextPlainMimeTypeWithoutName() throws Exception {
@@ -91,12 +97,28 @@ public class TikaMimeTypeDetectorTest {
 
     @Test
     public void shouldDetectMsWordOpenXMLWithName() throws Exception {
-        assertEquals(MimeTypeConstants.MICROSOFT_WORD_OPEN_XML, detector.mimeTypeOf(WORD_OPEN_XML_FILE, binaryFromFile(WORD_OPEN_XML_FILE)));
+        assertEquals(MimeTypeConstants.MICROSOFT_WORD_OPEN_XML,
+                     detector.mimeTypeOf(WORD_OPEN_XML_FILE, binaryFromFile(WORD_OPEN_XML_FILE)));
     }
 
     @Test
-    public void shouldDetectXSD() throws Exception {
-        assertEquals(MimeTypeConstants.APPLICATION_XML, detector.mimeTypeOf(null, binaryFromFile("xsd_file.xsd")));
+    public void shouldDetectExcelDocumentWithoutName() throws Exception {
+        assertEquals(MimeTypeConstants.MICROSOFT_EXCEL, detector.mimeTypeOf(null, binaryFromFile(EXCEL_FILE)));
+    }
+
+    @Test
+    public void shouldDetectExcelDocumentWithName() throws Exception {
+        assertEquals(MimeTypeConstants.MICROSOFT_EXCEL, detector.mimeTypeOf(EXCEL_FILE, binaryFromFile(EXCEL_FILE)));
+    }
+
+    @Test
+    public void shouldDetectXSDWithoutName() throws Exception {
+        assertEquals(MimeTypeConstants.APPLICATION_XML, detector.mimeTypeOf(null, binaryFromFile(XSD_FILE)));
+    }
+
+    @Test
+    public void shouldDetectXSDWithName() throws Exception {
+        assertEquals(MimeTypeConstants.APPLICATION_XML, detector.mimeTypeOf(XSD_FILE, binaryFromFile(XSD_FILE)));
     }
 
     @Test
@@ -104,7 +126,9 @@ public class TikaMimeTypeDetectorTest {
         assertEquals(MimeTypeConstants.TEXT_PLAIN, detector.mimeTypeOf(PDF_FILE, binaryFromFile(TXT_FILE)));
     }
 
-    private InMemoryTestBinary binaryFromFile(String filePath) throws IOException {
-        return new InMemoryTestBinary(getClass().getClassLoader().getResourceAsStream(filePath));
+    private InMemoryTestBinary binaryFromFile( String filePath ) throws IOException {
+        InputStream stream = getClass().getClassLoader().getResourceAsStream(filePath);
+        assertThat(stream, is(notNullValue()));
+        return new InMemoryTestBinary(stream);
     }
 }

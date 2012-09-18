@@ -32,7 +32,6 @@ import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.sequencer.sramp.AbstractSrampSequencer;
 import org.modeshape.sequencer.xsd.XsdSequencer;
@@ -41,6 +40,12 @@ import org.modeshape.sequencer.xsd.XsdSequencer;
  * A sequencer that processes and extract the schema object model from XML Schema Document files.
  */
 public class WsdlSequencer extends AbstractSrampSequencer {
+
+    public static final class MimeTypeConstants {
+        public static final String WSDL = "application/wsdl+xml";
+        public static final String APPLICATION_XML = "application/xml";
+        public static final String TEXT_XML = "text/xml";
+    }
 
     @Override
     public void initialize( NamespaceRegistry registry,

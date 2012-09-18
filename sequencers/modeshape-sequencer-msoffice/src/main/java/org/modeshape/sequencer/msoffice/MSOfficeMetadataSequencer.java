@@ -23,7 +23,6 @@
  */
 package org.modeshape.sequencer.msoffice;
 
-import org.modeshape.jcr.api.Binary;
 import static org.modeshape.jcr.api.JcrConstants.JCR_MIME_TYPE;
 import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.AUTHOR;
 import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.CHARACTERS;
@@ -60,7 +59,7 @@ import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.sequencer.msoffice.excel.ExcelMetadata;
@@ -114,14 +113,21 @@ import org.modeshape.sequencer.msoffice.word.WordMetadataReader;
  */
 public class MSOfficeMetadataSequencer extends Sequencer {
 
+    public static final class MimeTypeConstants {
+        public static final String MICROSOFT_APPLICATION_MS_WORD = "application/msword";
+        public static final String MICROSOFT_WORD = "application/vnd.ms-word";
+        public static final String MICROSOFT_EXCEL = "application/vnd.ms-excel";
+        public static final String MICROSOFT_POWERPOINT = "application/vnd.ms-powerpoint";
+    }
+
     @Override
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         registerNodeTypes("msoffice.cnd", nodeTypeManager, true);
         registerDefaultMimeTypes(MimeTypeConstants.MICROSOFT_EXCEL,
-                                  MimeTypeConstants.MICROSOFT_POWERPOINT,
-                                  MimeTypeConstants.MICROSOFT_WORD,
-                                  MimeTypeConstants.MICROSOFT_APPLICATION_MS_WORD);
+                                 MimeTypeConstants.MICROSOFT_POWERPOINT,
+                                 MimeTypeConstants.MICROSOFT_WORD,
+                                 MimeTypeConstants.MICROSOFT_APPLICATION_MS_WORD);
     }
 
     @Override

@@ -94,11 +94,16 @@ public class TikaTextExtractorIntegrationTest {
         // this will create jcr:content of type nt:resource with the jcr:data property
         jcrTools.uploadFile(session, "/" + filepath, getResource(filepath));
         session.save();
-        // wait a bit to make sure the text extraction has happened
-        Thread.sleep(500);
-        Query query = session.getWorkspace().getQueryManager().createQuery(validationQuery, JcrQuery.JCR_SQL2);
-        QueryResult result = query.execute();
-        assertEquals("Node with text content not found", 1, result.getNodes().getSize());
+        long numRows = 0;
+        for (int i = 0; i != 10; ++i) {
+            // wait a bit to make sure the text extraction has happened
+            Thread.sleep(500);
+            Query query = session.getWorkspace().getQueryManager().createQuery(validationQuery, JcrQuery.JCR_SQL2);
+            QueryResult result = query.execute();
+            numRows = result.getNodes().getSize();
+            if (numRows > 0) break;
+        }
+        assertEquals("Node with text content not found", 1, numRows);
     }
 
     private InputStream getResource( String path ) {

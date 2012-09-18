@@ -34,7 +34,6 @@ import java.io.RandomAccessFile;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.security.NoSuchAlgorithmException;
-import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -131,7 +130,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
 
             if (extractors() != null && !(value instanceof InMemoryBinaryValue)) {
                 // We never store the text for in-memory values ...
-                extractors().extract(this, value, new TextExtractorContext());
+                extractors().extract(this, value, new TextExtractorContext(detector()));
             }
             return value;
         } catch (IOException e) {
@@ -419,8 +418,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
     @Override
     public String getExtractedText( BinaryValue source ) throws BinaryStoreException {
         if (!binaryValueExists(source)) {
-            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(source.getKey(),
-                                                                                directory));
+            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(source.getKey(), directory));
         }
         BinaryKey extractedTextKey = createKeyFromSourceWithSuffix(source.getKey(), EXTRACTED_TEXT_SUFFIX);
         return storedStringAtKey(extractedTextKey);
@@ -468,8 +466,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
     @Override
     protected String getStoredMimeType( BinaryValue binaryValue ) throws BinaryStoreException {
         if (!binaryValueExists(binaryValue)) {
-            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(binaryValue.getKey(),
-                                                                                directory));
+            throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(binaryValue.getKey(), directory));
         }
         BinaryKey mimeTypeKey = createKeyFromSourceWithSuffix(binaryValue.getKey(), MIME_TYPE_SUFFIX);
         return storedStringAtKey(mimeTypeKey);
@@ -482,7 +479,7 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         storeStringAtKey(mimeType, mimeTypeKey);
     }
 
-    private boolean binaryValueExists(BinaryValue binaryValue) throws BinaryStoreException {
+    private boolean binaryValueExists( BinaryValue binaryValue ) throws BinaryStoreException {
         File file = findFile(directory, binaryValue.getKey(), false);
         return file.exists() && file.canRead();
     }

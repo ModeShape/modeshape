@@ -23,7 +23,9 @@
  */
 package org.modeshape.jcr.api.text;
 
+import java.io.IOException;
 import java.io.InputStream;
+import javax.jcr.RepositoryException;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.Logger;
 
@@ -115,6 +117,9 @@ public abstract class TextExtractor {
      * Interface which provides additional information to the text extractors, during the extraction operation.
      */
     public interface Context {
+
+        String mimeTypeOf( String name,
+                           Binary binaryValue ) throws RepositoryException, IOException;
 
     }
 

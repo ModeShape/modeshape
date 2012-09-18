@@ -23,7 +23,14 @@
  */
 package org.modeshape.sequencer.wsdl;
 
-import com.ibm.wsdl.Constants;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
@@ -82,25 +89,18 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.sequencer.sramp.NamespaceEntityResolver;
 import org.modeshape.sequencer.sramp.SrampLexicon;
 import org.modeshape.sequencer.sramp.SymbolSpace;
+import org.modeshape.sequencer.wsdl.WsdlSequencer.MimeTypeConstants;
 import org.modeshape.sequencer.xsd.XsdLexicon;
 import org.modeshape.sequencer.xsd.XsdReader;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.ibm.wsdl.Constants;
 
 /**
  * A class that can parse WSDL 1.1 definitions and derive a node structure from the content
@@ -113,7 +113,6 @@ public class Wsdl11Reader extends WsdlReader<javax.wsdl.Definition> {
     protected static final SymbolSpace BINDINGS = new SymbolSpace("Bindings");
     protected static final SymbolSpace PORTS = new SymbolSpace("Ports");
     protected static final SymbolSpace SERVICES = new SymbolSpace("Services");
-
 
     protected Map<WSDLElement, String> uuidForComponent;
     protected Map<WSDLElement, String> nameForComponent;
@@ -269,7 +268,7 @@ public class Wsdl11Reader extends WsdlReader<javax.wsdl.Definition> {
     @SuppressWarnings( "unchecked" )
     protected void processMessage( Message message,
                                    Node messagesNode ) throws Exception {
-        Node messageNode = addChildNode(messagesNode, message.getQName(),  WsdlLexicon.MESSAGE);
+        Node messageNode = addChildNode(messagesNode, message.getQName(), WsdlLexicon.MESSAGE);
         setReferenceable(messageNode, MESSAGES, message.getQName());
         processDocumentation(message, messageNode);
         processExtensibilityElements(message, messageNode);
@@ -633,7 +632,7 @@ public class Wsdl11Reader extends WsdlReader<javax.wsdl.Definition> {
      * This method is used by the {@link #processDocumentation(WSDLElement, Node)} to clean up the documentation content string.
      * By default, this method replaces all line feeds, carriage returns, and sequences of multiple whitespace with a single
      * space.
-     *
+     * 
      * @param content the original content as read from the definition; never null
      * @return the cleaned content; may be null if the content contained useless information
      */
@@ -710,8 +709,7 @@ public class Wsdl11Reader extends WsdlReader<javax.wsdl.Definition> {
         } else if (element instanceof SOAPOperation) {
             processSOAPOperation((SOAPOperation)element, parentNode);
         } else if (element instanceof MIMEMultipartRelated) {
-            processMIMEMultipartRelated((MIMEMultipartRelated)element,
-                                        parentNode);
+            processMIMEMultipartRelated((MIMEMultipartRelated)element, parentNode);
         } else if (element instanceof MIMEContent) {
             processMIMEContent((MIMEContent)element, parentNode);
         } else if (element instanceof MIMEPart) {
@@ -904,9 +902,9 @@ public class Wsdl11Reader extends WsdlReader<javax.wsdl.Definition> {
 
     /**
      * This method is called by {@link #processExtensibilityElement(javax.wsdl.extensions.ExtensibilityElement, javax.jcr.Node)}
-     * when the type of extension is not known. By default this method does nothing, but subclasses can override this method
-     * to specialize the behavior.
-     *
+     * when the type of extension is not known. By default this method does nothing, but subclasses can override this method to
+     * specialize the behavior.
+     * 
      * @param element the extensibility element
      * @param parentNode the parent node; never null
      * @throws Exception if there is a problem processing the element

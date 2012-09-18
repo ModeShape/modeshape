@@ -425,6 +425,9 @@ public final class JcrI18n {
     public static I18n errorWhileRollingBackIndexChanges;
     public static I18n missingVariableValue;
 
+    public static I18n unableToReadMediaTypeRegistry;
+    public static I18n unableToInitializeMimeTypeDetector;
+
     static {
         try {
             I18n.initialize(JcrI18n.class);

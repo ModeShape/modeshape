@@ -51,8 +51,11 @@ import org.modeshape.common.logging.Logger;
  * used to load custom mappings (in the standard format) into a {@link Map} instance, which can then be passed to one of the
  * constructors.
  * </p>
+ * 
+ * @deprecated Use a MIME type detection framework, such as Tika
  */
 @Immutable
+@Deprecated
 public class MimeTypeUtil {
 
     /**

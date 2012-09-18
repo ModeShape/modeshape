@@ -1,0 +1,31 @@
+ModeShape (formerly "JBoss DNA") is a JCR 2.0 (JSR-283) implementation that provides access to content stored in many different kinds of systems. A ModeShape repository isn't yet another silo of isolated information, but rather it's a JCR view of the information you already have in your environment: files systems, databases, other repositories, services, applications, etc.
+
+To your applications, ModeShape looks and behaves like a regular JCR repository. Using the standard JCR API, applications can search, navigate, version, and listen for changes in the content. But under the covers, ModeShape gets its content by federating multiple back-end systems (like databases, services, other repositories, etc.), allowing those systems to continue "owning" the information while ensuring the unified repository stays up-to-date and in sync.
+
+ModeShape repositories can be used in a variety of applications. One of the most obvious ones is in provisioning and management, where it's critical to understand and keep track of the metadata for models, database, services, components, applications, clusters, machines, and other systems used in an enterprise. Governance takes that a step farther, by also tracking the policies and expectations against which performance can be verified. In these cases, a repository is an excellent mechanism for managing this complex and highly-varied information. But a ModeShape repository doesn't have to be large and complex: it could just manage configuration information for an application, or it could just provide a JCR interface on top of a couple of non-JCR systems.
+
+ModeShape supports all JCR 2.0 required features:
+
+- repository acquisition
+- authentication
+- reading/navigating
+- query
+- export
+- node type discovery
+- permissions and capability checking
+
+and most of the JCR 2.0 optional features:
+
+- writing
+- import
+- observation
+- workspace management
+- versioning
+- locking
+- node type management
+- same-name siblings
+- orderable child nodes
+- shareable nodes
+- mix:etag, mix:created and mix:lastModified mixins with autocreated properties
+
+ModeShape supports five query languages: the JCR-SQL2 and JCR-QOM query languages defined in JSR-283, the XPath, JCR-SQL query languages defined in JCR 1.0 (JSR-170), and a full-text search-engine-like language.

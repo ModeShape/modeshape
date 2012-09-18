@@ -31,7 +31,6 @@ import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.JcrConstants;
-import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 
@@ -69,6 +68,20 @@ import org.modeshape.jcr.api.sequencer.Sequencer;
  * </p>
  */
 public class ImageMetadataSequencer extends Sequencer {
+
+    public static final class MimeTypeConstants {
+        public static final String BMP = "image/bmp";
+        public static final String GIF = "image/gif";
+        public static final String JPEG = "image/jpeg";
+        public static final String PBM = "image/x-portable-bitmap";
+        public static final String PGM = "image/x-portable-graymap";
+        public static final String PPM = "image/x-portable-pixmap";
+        public static final String PNG = "image/png";
+        public static final String RAS = "image/x-cmu-raster";
+        public static final String TIFF = "image/tiff";
+        public static final String PHOTOSHOP = "image/vnd.adobe.photoshop";
+        public static final String PCX = "image/x-pcx";
+    }
 
     @Override
     public boolean execute( Property inputProperty,
@@ -122,15 +135,15 @@ public class ImageMetadataSequencer extends Sequencer {
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         registerNodeTypes("images.cnd", nodeTypeManager, true);
         registerDefaultMimeTypes(MimeTypeConstants.JPEG,
-                                    MimeTypeConstants.BMP,
-                                    MimeTypeConstants.GIF,
-                                    MimeTypeConstants.PCX,
-                                    MimeTypeConstants.PNG,
-                                    MimeTypeConstants.TIFF,
-                                    MimeTypeConstants.RAS,
-                                    MimeTypeConstants.PBM,
-                                    MimeTypeConstants.PGM,
-                                    MimeTypeConstants.PPM,
-                                    MimeTypeConstants.PHOTOSHOP);
+                                 MimeTypeConstants.BMP,
+                                 MimeTypeConstants.GIF,
+                                 MimeTypeConstants.PCX,
+                                 MimeTypeConstants.PNG,
+                                 MimeTypeConstants.TIFF,
+                                 MimeTypeConstants.RAS,
+                                 MimeTypeConstants.PBM,
+                                 MimeTypeConstants.PGM,
+                                 MimeTypeConstants.PPM,
+                                 MimeTypeConstants.PHOTOSHOP);
     }
 }

@@ -68,13 +68,13 @@ public class CustomBinaryStoreImpl extends AbstractBinaryStore {
     }
 
     @Override
-    protected String getStoredMimeType( BinaryValue binaryValue ) throws BinaryStoreException {
+    protected String getStoredMimeType( BinaryValue binaryValue ) {
         return null;
     }
 
     @Override
     protected void storeMimeType( BinaryValue binaryValue,
-                                  String mimeType ) throws BinaryStoreException {
+                                  String mimeType ) {
     }
 
     @Override
