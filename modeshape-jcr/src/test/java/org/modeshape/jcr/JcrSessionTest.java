@@ -23,24 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.when;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Calendar;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import javax.jcr.Binary;
 import javax.jcr.Item;
 import javax.jcr.NamespaceException;
@@ -56,12 +38,35 @@ import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.mockito.Mockito;
+import static org.mockito.Mockito.when;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.value.Path;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class JcrSessionTest extends SingleUseAbstractTest {
 
@@ -716,6 +721,92 @@ public class JcrSessionTest extends SingleUseAbstractTest {
 
         // check the node was actually deleted
         assertFalse(session.getRootNode().hasNode("referenceable"));
+    }
+
+    @Test
+    @FixFor("MODE-1613")
+    public void shouldMoveLotsOfSNS() throws Exception {
+        Node root = session.getRootNode();
+        boolean multiThreaded = false;
+
+        int iterationsCount = 8;
+        for (int it = 0; it < iterationsCount; it++) {
+            //System.out.println("Iteration " + it);
+
+            Node parent1 = root.addNode("parent1");
+            Node parent2 = root.addNode("parent2");
+
+            int nodeCount = 100;
+            List<String> parent1ChildrenIds = new ArrayList<String>(nodeCount);
+            List<String> parent2ChildrenIds = new ArrayList<String>(nodeCount);
+            for (int i = 0; i < nodeCount; i++) {
+                parent1ChildrenIds.add(parent1.addNode("p1_child").getIdentifier());
+                parent2ChildrenIds.add(parent2.addNode("p2_child").getIdentifier());
+            }
+            session.save();
+
+            ExecutorService executorService = Executors.newCachedThreadPool();
+            List<Future<?>> submittedTasks = new ArrayList<Future<?>>(nodeCount);
+            for (int i = 0; i < nodeCount; i++) {
+                String parent1ChildId = parent1ChildrenIds.get(i);
+                String parent2ChildId = parent2ChildrenIds.get(i);
+
+                MoveTask task = new MoveTask(parent1ChildId, parent2ChildId, session);
+                if (multiThreaded) {
+                    submittedTasks.add(executorService.submit(task));
+                } else {
+                    task.run();
+                }
+            }
+            executorService.shutdown();
+            for (Future<?> submittedTask : submittedTasks) {
+                submittedTask.get();
+            }
+
+            session.getNode("/parent1").remove();
+            session.getNode("/parent2").remove();
+            session.save();
+        }
+    }
+
+    private class MoveTask implements Runnable {
+        private JcrSession session;
+        private String parent1ChildId;
+        private String parent2ChildId;
+
+        private MoveTask( String parent1ChildId,
+                          String parent2ChildId,
+                          JcrSession session ) {
+            this.parent1ChildId = parent1ChildId;
+            this.parent2ChildId = parent2ChildId;
+            this.session = session;
+        }
+
+        public void run() {
+            try {
+                Node parent1Child = session.getNodeByIdentifier(parent1ChildId);
+                String parent1ChildPath = parent1Child.getPath();
+                session.getNode(parent1ChildPath);
+                session.move(parent1ChildPath, "/parent2/p1_child");
+
+                Node parent2Child = session.getNodeByIdentifier(parent2ChildId);
+                String parent2ChildPath = parent2Child.getPath();
+                session.getNode(parent2ChildPath);
+                session.move(parent2ChildPath, "/parent1/p2_child");
+
+                session.save();
+
+                parent1Child = session.getNodeByIdentifier(parent1ChildId);
+                parent1ChildPath = parent1Child.getPath();
+                session.getNode(parent1ChildPath);
+
+                parent2Child = session.getNodeByIdentifier(parent2ChildId);
+                parent2ChildPath = parent2Child.getPath();
+                session.getNode(parent2ChildPath);
+            } catch (RepositoryException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private void expectReferentialIntegrityException() throws RepositoryException {
