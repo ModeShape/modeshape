@@ -1,0 +1,16 @@
+{
+    "name" : "Default Sequencers Test Repository",
+    "sequencing" : {
+        "removeDerivedContentWithOriginal" : true,
+        "sequencers" : {
+            "Files in the same location" : {
+                "classname" : "default",
+                "pathExpressions" : [ "default://(*.any)/jcr:content[@jcr:data]" ]
+            },
+            "Files in different location" : {
+                "classname" : "org.modeshape.sequencer.any.DefaultSequencer",
+                "pathExpressions" : [ "default://(*.any)/jcr:content[@jcr:data] => /anys" ]
+            }
+        }
+    }
+}

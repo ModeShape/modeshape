@@ -582,6 +582,7 @@ public class RepositoryConfiguration {
         aliases.put("servletprovider", servletProvider);
         PROVIDER_ALIASES = Collections.unmodifiableMap(aliases);
 
+        String defaultSequencer = "org.modeshape.sequencer.any.DefaultSequencer";
         String cndSequencer = "org.modeshape.sequencer.cnd.CndSequencer";
         String classfileSequencer = "org.modeshape.sequencer.classfile.ClassFileSequencer";
         String ddlSequencer = "org.modeshape.sequencer.ddl.DdlSequencer";
@@ -599,6 +600,8 @@ public class RepositoryConfiguration {
         String delimitedTextSequencer = "org.modeshape.sequencer.text.DelimitedTextSequencer";
 
         aliases = new HashMap<String, String>();
+        aliases.put("default", defaultSequencer);
+        aliases.put("defaultsequencer", defaultSequencer);
         aliases.put("cnd", cndSequencer);
         aliases.put("cndsequencer", cndSequencer);
         aliases.put("class", classfileSequencer);
