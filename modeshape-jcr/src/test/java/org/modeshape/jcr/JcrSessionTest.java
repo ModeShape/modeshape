@@ -65,7 +65,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public class JcrSessionTest extends SingleUseAbstractTest {
@@ -152,13 +151,17 @@ public class JcrSessionTest extends SingleUseAbstractTest {
             session.save();
 
             int count = 100;
-            if (i > 2) sw.start();
+            if (i > 2) {
+                sw.start();
+            }
             for (int j = 0; j != count; ++j) {
                 node.addNode("childNode" + j);
             }
 
             session.save();
-            if (i > 2) sw.stop();
+            if (i > 2) {
+                sw.stop();
+            }
 
             // Now add another node ...
             node.addNode("oneMore");
@@ -541,7 +544,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
 
     /**
      * ModeShape JCR implementation is supposed to have root type named {@link ModeShapeLexicon#ROOT}.
-     * 
+     *
      * @throws Exception if an error occurs during the test
      */
     @Test
@@ -557,7 +560,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
 
     /**
      * ModeShape JCR implementation is supposed to have a referenceable root.
-     * 
+     *
      * @throws RepositoryException if an error occurs during the test
      */
     @Test
@@ -647,7 +650,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         }
     }
 
-    @FixFor( {"MODE-694", "MODE-1525"} )
+    @FixFor( { "MODE-694", "MODE-1525" } )
     @Test
     public void shouldAddCreatedPropertyForHierarchyNodes() throws Exception {
         Node folderNode = session.getRootNode().addNode("folderNode", "nt:folder");
@@ -679,14 +682,14 @@ public class JcrSessionTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldHaveCapabilityToPerformValidAddNode() throws Exception {
-        assertTrue(session.hasCapability("addNode", session.getRootNode(), new String[] {"someNewNode"}));
-        assertTrue(session.hasCapability("addNode", session.getRootNode(), new String[] {"someNewNode", "nt:unstructured"}));
+        assertTrue(session.hasCapability("addNode", session.getRootNode(), new String[] { "someNewNode" }));
+        assertTrue(session.hasCapability("addNode", session.getRootNode(), new String[] { "someNewNode", "nt:unstructured" }));
     }
 
     @Test
     public void shouldNotHaveCapabilityToPerformInvalidAddNode() throws Exception {
-        assertTrue(!session.hasCapability("addNode", session.getRootNode(), new String[] {"someNewNode[2]"}));
-        assertTrue(!session.hasCapability("addNode", session.getRootNode(), new String[] {"someNewNode", "nt:invalidType"}));
+        assertTrue(!session.hasCapability("addNode", session.getRootNode(), new String[] { "someNewNode[2]" }));
+        assertTrue(!session.hasCapability("addNode", session.getRootNode(), new String[] { "someNewNode", "nt:invalidType" }));
     }
 
     @Test
@@ -724,85 +727,68 @@ public class JcrSessionTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor("MODE-1613")
+    @FixFor( "MODE-1613" )
     public void shouldMoveLotsOfSNS() throws Exception {
-        Node root = session.getRootNode();
-        boolean multiThreaded = false;
+        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream("config/transactional-repo-config.json"));
 
-        int iterationsCount = 8;
-        for (int it = 0; it < iterationsCount; it++) {
-            //System.out.println("Iteration " + it);
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-            Node parent1 = root.addNode("parent1");
-            Node parent2 = root.addNode("parent2");
+        int nodeCount = 100;
 
-            int nodeCount = 100;
-            List<String> parent1ChildrenIds = new ArrayList<String>(nodeCount);
-            List<String> parent2ChildrenIds = new ArrayList<String>(nodeCount);
-            for (int i = 0; i < nodeCount; i++) {
-                parent1ChildrenIds.add(parent1.addNode("p1_child").getIdentifier());
-                parent2ChildrenIds.add(parent2.addNode("p2_child").getIdentifier());
-            }
-            session.save();
-
-            ExecutorService executorService = Executors.newCachedThreadPool();
-            List<Future<?>> submittedTasks = new ArrayList<Future<?>>(nodeCount);
-            for (int i = 0; i < nodeCount; i++) {
-                String parent1ChildId = parent1ChildrenIds.get(i);
-                String parent2ChildId = parent2ChildrenIds.get(i);
-
-                MoveTask task = new MoveTask(parent1ChildId, parent2ChildId, session);
-                if (multiThreaded) {
-                    submittedTasks.add(executorService.submit(task));
-                } else {
-                    task.run();
-                }
-            }
-            executorService.shutdown();
-            for (Future<?> submittedTask : submittedTasks) {
-                submittedTask.get();
-            }
-
-            session.getNode("/parent1").remove();
-            session.getNode("/parent2").remove();
-            session.save();
+        session = repository.login();
+        Node testRoot = session.getRootNode().addNode("testRoot");
+        Node parentWithSNS = testRoot.addNode("parent");
+        List<String> futureParentsIds = new ArrayList<String>(nodeCount);
+        for (int i = 0; i < nodeCount; i++) {
+            futureParentsIds.add(testRoot.addNode("parent" + i).getIdentifier());
         }
+
+        int iterationsCount = 5;
+        for (int it = 0; it < iterationsCount; it++) {
+//            System.out.println("Iteration " + it);
+
+            List<String> childrenIDs = new ArrayList<String>(nodeCount);
+            for (int i = 0; i < nodeCount; i++) {
+                childrenIDs.add(parentWithSNS.addNode("child").getIdentifier());
+            }
+            session.save();
+
+            for (int i = 0; i < nodeCount; i++) {
+                String childId = childrenIDs.get(i);
+                String futureParentId = futureParentsIds.get(i);
+
+                MoveOperation task = new MoveOperation(childId, futureParentId);
+                executorService.submit(task).get();
+            }
+        }
+        executorService.shutdown();
     }
 
-    private class MoveTask implements Runnable {
-        private JcrSession session;
-        private String parent1ChildId;
-        private String parent2ChildId;
+    private class MoveOperation implements Runnable {
+        private String sourceId;
+        private String targetId;
 
-        private MoveTask( String parent1ChildId,
-                          String parent2ChildId,
-                          JcrSession session ) {
-            this.parent1ChildId = parent1ChildId;
-            this.parent2ChildId = parent2ChildId;
-            this.session = session;
+        private MoveOperation( String sourceId,
+                               String targetId ) {
+            this.sourceId = sourceId;
+            this.targetId = targetId;
         }
 
         public void run() {
             try {
-                Node parent1Child = session.getNodeByIdentifier(parent1ChildId);
-                String parent1ChildPath = parent1Child.getPath();
-                session.getNode(parent1ChildPath);
-                session.move(parent1ChildPath, "/parent2/p1_child");
+                JcrSession moveSession = repository.login();
 
-                Node parent2Child = session.getNodeByIdentifier(parent2ChildId);
-                String parent2ChildPath = parent2Child.getPath();
-                session.getNode(parent2ChildPath);
-                session.move(parent2ChildPath, "/parent1/p2_child");
+                Node targetNode = moveSession.getNodeByIdentifier(targetId);
+                String targetNodePath = targetNode.getPath() + "/";
+                targetNode = moveSession.getNode(targetNodePath);
 
-                session.save();
+                Node sourceNode = moveSession.getNodeByIdentifier(sourceId);
+                String sourceNodePath = sourceNode.getPath();
+                sourceNode = moveSession.getNode(sourceNodePath);
 
-                parent1Child = session.getNodeByIdentifier(parent1ChildId);
-                parent1ChildPath = parent1Child.getPath();
-                session.getNode(parent1ChildPath);
-
-                parent2Child = session.getNodeByIdentifier(parent2ChildId);
-                parent2ChildPath = parent2Child.getPath();
-                session.getNode(parent2ChildPath);
+                moveSession.move(sourceNodePath, targetNodePath);
+                moveSession.save();
+                moveSession.logout();
             } catch (RepositoryException e) {
                 throw new RuntimeException(e);
             }
@@ -828,8 +814,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         } else {
             try {
                 node.getUUID();
-                fail("Should have thrown an UnsupportedRepositoryOperationException if the node " + pathToNode
-                     + " is not referenceable");
+                fail("Should have thrown an UnsupportedRepositoryOperationException if the node " + pathToNode + " is not referenceable");
             } catch (UnsupportedRepositoryOperationException e) {
                 // expected
             }
