@@ -36,7 +36,6 @@ import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 
@@ -59,6 +58,10 @@ import org.modeshape.jcr.api.sequencer.Sequencer;
  * </p>
  */
 public class Mp3MetadataSequencer extends Sequencer {
+
+    public static final class MimeTypeConstants {
+        public static final String MP3 = "audio/mpeg";
+    }
 
     @Override
     public void initialize( NamespaceRegistry registry,

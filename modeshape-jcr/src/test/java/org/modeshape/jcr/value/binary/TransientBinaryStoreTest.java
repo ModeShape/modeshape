@@ -24,7 +24,6 @@
 package org.modeshape.jcr.value.binary;
 
 import java.io.File;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.modeshape.common.util.FileUtil;
 

@@ -10,25 +10,24 @@
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details
+ * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this software; if not, write to the Free
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.api.mimetype;
+package org.modeshape.jcr.mimetype;
 
 /**
- * Class used to hold a series of mime-type constants
- * 
- * @author Horia Chiorean
+ * Use for testing only.
  */
 public final class MimeTypeConstants {
+
     private MimeTypeConstants() {
     }
 
@@ -49,6 +48,7 @@ public final class MimeTypeConstants {
     public static final String XSD = "application/xsd";
     @Deprecated
     public static final String XSD_XML = "application/xsd+xml";
+    public static final String WSDL_XML = "application/wsdl+xml";
 
     public static final String MP3 = "audio/mpeg";
     public static final String WAV = "audio/x-wav";
@@ -86,6 +86,7 @@ public final class MimeTypeConstants {
     public static final String ZIP = "application/zip";
     public static final String LZW = "application/x-compress";
     public static final String TAR = "application/x-tar";
+    public static final String GTAR = "application/x-gtar";
 
     public static final String BASH = "application/x-bash";
     public static final String SH = "application/x-sh";
@@ -139,4 +140,5 @@ public final class MimeTypeConstants {
     public static final String CALENDAR = "text/calendar";
 
     public static final String OCTET_STREAM = "application/octet-stream";
+
 }

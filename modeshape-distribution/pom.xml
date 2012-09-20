@@ -30,6 +30,16 @@
             <artifactId>modeshape-schematic</artifactId>
         </dependency>
 
+        <!-- 
+        Both 'modeshape-jcr' and 'modeshape-extractor-tika' depend on Tika, but have different transitive dependencies
+        (due to exclusions). Therefore, depend on this directly to pull in all transitive dependences defined in the parent POM.
+        And do this before 'modeshape-jcr' pulls in only a subset.
+        -->
+        <dependency>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-parsers</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
@@ -109,6 +119,7 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jbossas-subsystem</artifactId>
         </dependency>
+
     </dependencies>
 
     <profiles>
@@ -362,11 +373,6 @@
                     <artifactId>jboss-as-controller</artifactId>
                     <version>${jbossas-version}</version>
                     <scope>compile</scope>
-                </dependency>
-                <dependency>
-                  <!-- Already compile scope, but needed for resolution of references in our code -->
-                  <groupId>org.semanticdesktop</groupId>
-                  <artifactId>aperture</artifactId>
                 </dependency>
             </dependencies>
             <build>

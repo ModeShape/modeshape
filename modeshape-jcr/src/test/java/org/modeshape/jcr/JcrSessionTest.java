@@ -23,6 +23,29 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.when;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.Binary;
 import javax.jcr.Item;
 import javax.jcr.NamespaceException;
@@ -38,35 +61,12 @@ import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.mockito.Mockito;
-import static org.mockito.Mockito.when;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.value.Path;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 public class JcrSessionTest extends SingleUseAbstractTest {
 
@@ -724,14 +724,14 @@ public class JcrSessionTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor("MODE-1613")
+    @FixFor( "MODE-1613" )
     public void shouldMoveLotsOfSNS() throws Exception {
         Node root = session.getRootNode();
         boolean multiThreaded = false;
 
         int iterationsCount = 8;
         for (int it = 0; it < iterationsCount; it++) {
-            //System.out.println("Iteration " + it);
+            // System.out.println("Iteration " + it);
 
             Node parent1 = root.addNode("parent1");
             Node parent2 = root.addNode("parent2");
@@ -769,19 +769,20 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         }
     }
 
-    private class MoveTask implements Runnable {
+    protected class MoveTask implements Runnable {
         private JcrSession session;
         private String parent1ChildId;
         private String parent2ChildId;
 
-        private MoveTask( String parent1ChildId,
-                          String parent2ChildId,
-                          JcrSession session ) {
+        protected MoveTask( String parent1ChildId,
+                            String parent2ChildId,
+                            JcrSession session ) {
             this.parent1ChildId = parent1ChildId;
             this.parent2ChildId = parent2ChildId;
             this.session = session;
         }
 
+        @Override
         public void run() {
             try {
                 Node parent1Child = session.getNodeByIdentifier(parent1ChildId);

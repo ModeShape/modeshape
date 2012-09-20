@@ -35,7 +35,6 @@ import javax.jcr.RepositoryException;
 import org.junit.Test;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.JcrConstants;
-import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.observation.Event;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 
@@ -74,7 +73,7 @@ public class ZipSequencerTest extends AbstractSequencerTest {
         assertEquals(JcrConstants.NT_FILE, file.getPrimaryNodeType().getName());
         Node fileContent = file.getNode(JcrConstants.JCR_CONTENT);
         assertNotNull(fileContent);
-        assertEquals(MimeTypeConstants.TEXT_PLAIN, fileContent.getProperty(JcrConstants.JCR_MIME_TYPE).getString());
+        assertEquals("text/plain", fileContent.getProperty(JcrConstants.JCR_MIME_TYPE).getString());
         Binary fileData = fileContent.getProperty(JcrConstants.JCR_DATA).getBinary();
         assertNotNull(fileData);
         if (expectedContent != null) {

@@ -26,25 +26,28 @@ package org.modeshape.extractor.tika;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.modeshape.common.util.IoUtil;
-import org.modeshape.jcr.InMemoryTestBinary;
-import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
-import org.modeshape.jcr.text.TextExtractorContext;
-import org.modeshape.jcr.text.TextExtractorOutput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.NoSuchElementException;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.jcr.InMemoryTestBinary;
+import org.modeshape.jcr.mimetype.MimeTypeDetector;
+import org.modeshape.jcr.mimetype.MimeTypeDetectors;
+import org.modeshape.jcr.text.TextExtractorContext;
+import org.modeshape.jcr.text.TextExtractorOutput;
 
 /**
  * Unit test for {@link TikaTextExtractor}
  */
 public class TikaTextExtractorTest {
 
+    private static final MimeTypeDetector DETECTOR = new MimeTypeDetectors();
     private TikaTextExtractor extractor;
     private LinkedList<String> extracted = null;
     private LinkedList<String> expected = null;
@@ -68,27 +71,28 @@ public class TikaTextExtractorTest {
 
     @Test
     public void shouldSupportExtractingFromTextFiles() throws Exception {
-        assertThat(extractor.supportsMimeType(MimeTypeConstants.TEXT_PLAIN), is(true));
+        assertThat(extractor.supportsMimeType("text/plain"), is(true));
     }
 
     @Test
     public void shouldSupportExtractingFromPdfFiles() throws Exception {
-        assertThat(extractor.supportsMimeType(MimeTypeConstants.PDF), is(true));
+        assertThat(extractor.supportsMimeType("application/pdf"), is(true));
     }
 
     @Test
     public void shouldNotSupportExtractingFromPostscriptFiles() throws Exception {
-        assertThat(extractor.supportsMimeType(MimeTypeConstants.POSTSCRIPT), is(false));
+        assertThat(extractor.supportsMimeType("application/postscript"), is(false));
     }
 
     @Test
     public void shouldSupportExtractingFromDocWordFiles() throws Exception {
-        assertThat(extractor.supportsMimeType(MimeTypeConstants.MICROSOFT_APPLICATION_MS_WORD), is(true));
+        assertThat(extractor.supportsMimeType("application/msword"), is(true));
     }
 
     @Test
     public void shouldSupportExtractingFromDocxWordFiles() throws Exception {
-        assertThat(extractor.supportsMimeType(MimeTypeConstants.MICROSOFT_WORD_OPEN_XML), is(true));
+        assertThat(extractor.supportsMimeType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+                   is(true));
     }
 
     @Test
@@ -152,9 +156,18 @@ public class TikaTextExtractorTest {
     }
 
     private void extractedShouldHave( List<String> words ) {
+        List<String> missingWords = new LinkedList<String>();
         for (String word : words) {
-            assertThat(extracted.pop(), is(word));
+            String extractedWord = null;
+            try {
+                extractedWord = extracted.pop();
+            } catch (NoSuchElementException e) {
+                missingWords.add(word);
+                continue;
+            }
+            assertThat(extractedWord, is(word));
         }
+        assertThat("Missing words: " + missingWords, missingWords.size(), is(0));
     }
 
     private List<String> expectedTermsThrough( String... words ) {
@@ -186,8 +199,9 @@ public class TikaTextExtractorTest {
 
     private void extractTermsFrom( String resourcePath ) throws Exception {
         InputStream stream = getClass().getClassLoader().getResourceAsStream(resourcePath);
+        assertThat(stream, is(notNullValue()));
         TextExtractorOutput output = new TextExtractorOutput();
-        extractor.extractFrom(new InMemoryTestBinary(stream), output, new TextExtractorContext());
+        extractor.extractFrom(new InMemoryTestBinary(stream), output, new TextExtractorContext(DETECTOR));
         output.toString();
         addWords(extracted, output.getText());
     }

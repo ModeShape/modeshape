@@ -61,11 +61,50 @@
             <artifactId>lucene-regex</artifactId>
         </dependency>
 
-        <!-- MIME-type detection. This dependency can be omitted by clients, either by removing the aperture.jar or excluding it from their pom-->
+        <!-- MIME-type detection. This can be excluded in applications and components that depend on ModeShape
+             if MIME type detection is to be disabled in ModeShape. -->
         <dependency>
-            <groupId>org.semanticdesktop</groupId>
-            <artifactId>aperture</artifactId>
-            <scope>provided</scope>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-parsers</artifactId>
+            <exclusions>
+                <!--
+                Exclude a few more things that we don't need for MIME type detection.
+                We do this here instead of in the parent POM because the Tika-based
+                text extractor will want these.
+                -->
+                <exclusion>
+                    <groupId>org.apache.james</groupId>
+                    <artifactId>apache-mime4j-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.james</groupId>
+                    <artifactId>apache-mime4j-dom</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.ccil.cowan.tagsoup</groupId>
+                    <artifactId>tagsoup</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>asm</groupId>
+                    <artifactId>asm</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.pdfbox</groupId>
+                    <artifactId>pdfbox</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.googlecode.juniversalchardet</groupId>
+                    <artifactId>juniversalchardet</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.geronimo.specs</groupId>
+                    <artifactId>geronimo-stax-api_1.0_spec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.googlecode.mp4parser</groupId>
+                    <artifactId>isoparser</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!--  Used in tests -->

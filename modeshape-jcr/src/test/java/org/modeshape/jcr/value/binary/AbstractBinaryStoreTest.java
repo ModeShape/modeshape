@@ -23,20 +23,10 @@
  */
 package org.modeshape.jcr.value.binary;
 
-import javax.jcr.Binary;
-import javax.jcr.RepositoryException;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
-import org.junit.Test;
-import org.modeshape.common.util.IoUtil;
-import org.modeshape.jcr.AbstractTransactionalTest;
-import org.modeshape.jcr.TextExtractors;
-import org.modeshape.jcr.api.mimetype.MimeTypeDetector;
-import org.modeshape.jcr.api.text.TextExtractor;
-import org.modeshape.jcr.value.BinaryKey;
-import org.modeshape.jcr.value.BinaryValue;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,6 +37,16 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.Binary;
+import javax.jcr.RepositoryException;
+import org.junit.Test;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.jcr.AbstractTransactionalTest;
+import org.modeshape.jcr.TextExtractors;
+import org.modeshape.jcr.api.text.TextExtractor;
+import org.modeshape.jcr.mimetype.MimeTypeDetector;
+import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.BinaryValue;
 
 /**
  * Use this abstract class to realize test cases which can easily executed on different BinaryStores
@@ -148,7 +148,7 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
     }
 
     @Test( expected = BinaryStoreException.class )
-    public void shouldFailWhenGettingTheTextOfBinaryWhichIsntStored() throws IOException, RepositoryException {
+    public void shouldFailWhenGettingTheTextOfBinaryWhichIsntStored() throws RepositoryException {
         getBinaryStore().getText(new StoredBinaryValue(getBinaryStore(), invalidBinaryKey(), 0));
     }
 
@@ -175,8 +175,7 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         assertNull(((AbstractBinaryStore)getBinaryStore()).getStoredMimeType(binaryValue));
         // unclean stuff... a getter modifies silently data
         assertEquals(DummyMimeTypeDetector.DEFAULT_TYPE, getBinaryStore().getMimeType(binaryValue, "foobar.txt"));
-        assertEquals(DummyMimeTypeDetector.DEFAULT_TYPE, ((AbstractBinaryStore)getBinaryStore()).getStoredMimeType(
-                binaryValue));
+        assertEquals(DummyMimeTypeDetector.DEFAULT_TYPE, ((AbstractBinaryStore)getBinaryStore()).getStoredMimeType(binaryValue));
     }
 
     @Test
@@ -191,7 +190,7 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         assertEquals(DummyTextExtractor.EXTRACTED_TEXT, ((AbstractBinaryStore)getBinaryStore()).getExtractedText(binaryValue));
     }
 
-    private static class DummyMimeTypeDetector extends MimeTypeDetector {
+    protected static final class DummyMimeTypeDetector implements MimeTypeDetector {
 
         public static final String DEFAULT_TYPE = "application/foobar";
 
@@ -202,7 +201,7 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         }
     }
 
-    private static class DummyTextExtractor extends TextExtractor {
+    protected static final class DummyTextExtractor extends TextExtractor {
         private static final String EXTRACTED_TEXT = "some text";
 
         @Override

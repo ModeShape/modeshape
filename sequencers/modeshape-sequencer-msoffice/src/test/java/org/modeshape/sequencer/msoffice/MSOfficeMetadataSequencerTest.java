@@ -27,10 +27,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.modeshape.jcr.api.JcrConstants.JCR_MIME_TYPE;
-import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_APPLICATION_MS_WORD;
-import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_EXCEL;
-import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_POWERPOINT;
-import static org.modeshape.jcr.api.mimetype.MimeTypeConstants.MICROSOFT_WORD;
 import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.AUTHOR;
 import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.COMMENT;
 import static org.modeshape.sequencer.msoffice.MSOfficeMetadataLexicon.EXCEL_SHEET_NODE;
@@ -52,6 +48,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import org.junit.Test;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
+import org.modeshape.sequencer.msoffice.MSOfficeMetadataSequencer.MimeTypeConstants;
 
 /**
  * Unit test for {@link MSOfficeMetadataSequencer}
@@ -90,7 +87,9 @@ public class MSOfficeMetadataSequencerTest extends AbstractSequencerTest {
 
         assertEquals(METADATA_NODE, outputNode.getPrimaryNodeType().getName());
         String mimeType = outputNode.getProperty(JCR_MIME_TYPE).getString();
-        assertEquals(MICROSOFT_WORD.equals(mimeType) || MICROSOFT_APPLICATION_MS_WORD.equals(mimeType), true);
+        assertEquals(MimeTypeConstants.MICROSOFT_WORD.equals(mimeType)
+                     || MimeTypeConstants.MICROSOFT_APPLICATION_MS_WORD.equals(mimeType),
+                     true);
         assertMetadata(outputNode);
 
         NodeIterator headingsIterator = outputNode.getNodes();
@@ -118,7 +117,32 @@ public class MSOfficeMetadataSequencerTest extends AbstractSequencerTest {
         assertNotNull(outputNode);
 
         assertEquals(METADATA_NODE, outputNode.getPrimaryNodeType().getName());
-        assertEquals(MICROSOFT_EXCEL, outputNode.getProperty(JCR_MIME_TYPE).getString());
+        assertEquals(MimeTypeConstants.MICROSOFT_EXCEL, outputNode.getProperty(JCR_MIME_TYPE).getString());
+        assertMetadata(outputNode);
+
+        NodeIterator sheetsIterator = outputNode.getNodes();
+        assertEquals(EXCEL_SHEETS.size(), sheetsIterator.getSize());
+        while (sheetsIterator.hasNext()) {
+            Node sheet = sheetsIterator.nextNode();
+            assertEquals(EXCEL_SHEET_NODE, sheet.getPrimaryNodeType().getName());
+
+            String sheetName = sheet.getProperty(SHEET_NAME).getString();
+            assertTrue(EXCEL_SHEETS.containsKey(sheetName));
+            String text = EXCEL_SHEETS.get(sheetName);
+            if (text != null) {
+                assertTrue(sheet.getProperty(TEXT).getString().contains(text));
+            }
+        }
+    }
+
+    @Test
+    public void shouldSequenceAnotherExcelFiles() throws Exception {
+        createNodeWithContentFromFile("msoffice_file.xls", "msoffice_file.xls");
+        Node outputNode = getOutputNode(rootNode, "msoffice_file.xls/" + METADATA_NODE);
+        assertNotNull(outputNode);
+
+        assertEquals(METADATA_NODE, outputNode.getPrimaryNodeType().getName());
+        assertEquals(MimeTypeConstants.MICROSOFT_EXCEL, outputNode.getProperty(JCR_MIME_TYPE).getString());
         assertMetadata(outputNode);
 
         NodeIterator sheetsIterator = outputNode.getNodes();
@@ -143,7 +167,7 @@ public class MSOfficeMetadataSequencerTest extends AbstractSequencerTest {
         assertNotNull(outputNode);
 
         assertEquals(METADATA_NODE, outputNode.getPrimaryNodeType().getName());
-        assertEquals(MICROSOFT_POWERPOINT, outputNode.getProperty(JCR_MIME_TYPE).getString());
+        assertEquals(MimeTypeConstants.MICROSOFT_POWERPOINT, outputNode.getProperty(JCR_MIME_TYPE).getString());
         NodeIterator slidesIterator = outputNode.getNodes();
         assertEquals(1, slidesIterator.getSize());
 

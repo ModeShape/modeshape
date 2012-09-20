@@ -23,10 +23,27 @@
  */
 package org.modeshape.jcr.text;
 
+import java.io.IOException;
+import javax.jcr.RepositoryException;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.text.TextExtractor;
+import org.modeshape.jcr.mimetype.MimeTypeDetector;
 
 /**
  * A context for extracting the content.
  */
 public final class TextExtractorContext implements TextExtractor.Context {
+
+    private final MimeTypeDetector detector;
+
+    public TextExtractorContext( MimeTypeDetector detector ) {
+        this.detector = detector;
+        assert this.detector != null;
+    }
+
+    @Override
+    public String mimeTypeOf( String name,
+                              Binary binaryValue ) throws RepositoryException, IOException {
+        return detector.mimeTypeOf(name, binaryValue);
+    }
 }

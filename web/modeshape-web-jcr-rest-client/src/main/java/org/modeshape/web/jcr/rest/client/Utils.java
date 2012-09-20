@@ -33,6 +33,7 @@ import org.modeshape.common.util.MimeTypeUtil;
 /**
  * The <code>Utils</code> class contains common utilities used by this project.
  */
+@SuppressWarnings( "deprecation" )
 public final class Utils {
 
     // ===========================================================================================================================
@@ -66,13 +67,15 @@ public final class Utils {
      * @param file the file whose mime type is being requested
      * @return the mime type or the default mime type (<code>"application/octet-stream"</code>) if one can't be determined from
      *         the file extension (never <code>null</code>)
+     * @deprecated Use another MIME type detection framework, such as Tika
      */
+    @Deprecated
     public static String getMimeType( File file ) {
         if (mimeTypeUtils == null) {
             // load custom extensions
-        	ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        	try {	        		        	
-	        	Thread.currentThread().setContextClassLoader(Utils.class.getClassLoader());
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            try {
+                Thread.currentThread().setContextClassLoader(Utils.class.getClassLoader());
 
                 final ClassLoader classLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
                     @Override
@@ -82,14 +85,14 @@ public final class Utils {
                 });
 
                 InputStream stream = classLoader.getResourceAsStream("org/modeshape/web/jcr/rest/client/mime.types");
-	            Map<String, String> customMap = MimeTypeUtil.load(stream, null);
-	
-	            // construct
-	            mimeTypeUtils = new MimeTypeUtil(customMap, true);
-        	} finally {
-                //restore original classloader
-        		Thread.currentThread().setContextClassLoader(cl);
-        	}
+                Map<String, String> customMap = MimeTypeUtil.load(stream, null);
+
+                // construct
+                mimeTypeUtils = new MimeTypeUtil(customMap, true);
+            } finally {
+                // restore original classloader
+                Thread.currentThread().setContextClassLoader(cl);
+            }
         }
 
         String mimeType = mimeTypeUtils.mimeTypeOf(file);

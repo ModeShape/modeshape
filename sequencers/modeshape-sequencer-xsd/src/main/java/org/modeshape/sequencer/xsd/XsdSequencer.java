@@ -32,7 +32,6 @@ import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.sequencer.sramp.AbstractSrampSequencer;
 
@@ -41,7 +40,17 @@ import org.modeshape.sequencer.sramp.AbstractSrampSequencer;
  */
 public class XsdSequencer extends AbstractSrampSequencer {
 
-    @SuppressWarnings( "deprecation" )
+    public static final class MimeTypeConstants {
+        public static final String APPLICATION_XML = "application/xml";
+        public static final String TEXT_XML = "text/xml";
+
+        /** This is not a valid MIME type, but we're using it in case other people use it */
+        @Deprecated
+        public static final String XSD = "application/xsd";
+        @Deprecated
+        public static final String XSD_XML = "application/xsd+xml";
+    }
+
     @Override
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {

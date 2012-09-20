@@ -30,7 +30,6 @@ import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.api.mimetype.MimeTypeConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.xml.sax.InputSource;
@@ -45,6 +44,17 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * {@link InheritingXmlSequencer}.
  */
 public class XmlSequencer extends Sequencer {
+
+    public static final class MimeTypeConstants {
+        public static final String WSDL = "application/wsdl+xml";
+        public static final String APPLICATION_XML = "application/xml";
+        public static final String TEXT_XML = "text/xml";
+        public static final String HTML_XML = "application/xhtml+xml";
+        public static final String XOP_XML = "application/xop+xml";
+        public static final String XSLT = "application/xslt+xml";
+        public static final String XSFP = "application/xsfp+xml";
+        public static final String MXML = "application/xv+xml";
+    }
 
     /**
      * The choices for how attributes that have no namespace prefix should be assigned a namespace.
@@ -82,12 +92,12 @@ public class XmlSequencer extends Sequencer {
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         super.registerNodeTypes("xml.cnd", nodeTypeManager, true);
         registerDefaultMimeTypes(MimeTypeConstants.APPLICATION_XML,
-                                  MimeTypeConstants.TEXT_XML,
-                                  MimeTypeConstants.HTML_XML,
-                                  MimeTypeConstants.XOP_XML,
-                                  MimeTypeConstants.XSLT,
-                                  MimeTypeConstants.XSFP,
-                                  MimeTypeConstants.MXML);
+                                 MimeTypeConstants.TEXT_XML,
+                                 MimeTypeConstants.HTML_XML,
+                                 MimeTypeConstants.XOP_XML,
+                                 MimeTypeConstants.XSLT,
+                                 MimeTypeConstants.XSFP,
+                                 MimeTypeConstants.MXML);
     }
 
     @Override
