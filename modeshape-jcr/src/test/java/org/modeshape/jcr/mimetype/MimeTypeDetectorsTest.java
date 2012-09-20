@@ -130,6 +130,7 @@ public class MimeTypeDetectorsTest {
         testMimeType("master.xml", APPLICATION_XML);
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldProvideMimeTypeForXsd() throws Exception {
         testMimeType("xsd_file.xsd", APPLICATION_XML, XSD_XML);

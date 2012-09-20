@@ -125,10 +125,13 @@ public final class TikaMimeTypeDetector implements MimeTypeDetector {
                 // There is content and possibly a name ...
                 autoDetectedMimeType = allDetectors.detect(tikaInputStream, metadata);
             } finally {
-                // if (stream != null) {
-                // stream.close();
-                // }
-                tmp.close();
+                try {
+                    tmp.close();
+                } finally {
+                    if (stream != null) {
+                        stream.close();
+                    }
+                }
             }
         }
         return autoDetectedMimeType != null ? autoDetectedMimeType.toString() : null;

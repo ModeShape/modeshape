@@ -427,6 +427,7 @@ public final class JcrI18n {
 
     public static I18n unableToReadMediaTypeRegistry;
     public static I18n unableToInitializeMimeTypeDetector;
+    public static I18n noMimeTypeDetectorsFound;
 
     static {
         try {
