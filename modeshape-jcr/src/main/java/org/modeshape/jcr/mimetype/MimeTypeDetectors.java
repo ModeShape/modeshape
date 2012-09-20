@@ -29,6 +29,7 @@ import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.Environment;
+import org.modeshape.jcr.JcrI18n;
 
 /**
  * Implementation of {@link MimeTypeDetector} that can be used to detect MIME types. Internally, this detector uses the
@@ -55,6 +56,7 @@ public final class MimeTypeDetectors implements MimeTypeDetector {
             delegate = new TikaMimeTypeDetector(classLoader);
         } catch (Throwable e) {
             delegate = NullMimeTypeDetector.INSTANCE;
+            LOGGER.warn(JcrI18n.noMimeTypeDetectorsFound);
         }
         this.delegate = delegate;
     }
