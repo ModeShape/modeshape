@@ -1,0 +1,21 @@
+{
+    "name" : "Transactional Repository",
+    "monitoring" : {
+        "enabled" : true
+    },
+    "storage" : {
+        "cacheName"  : "transactionalRepository",
+        "cacheConfiguration" : "config/infinispan-transactional.xml"
+    },
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "query" : {
+        "enabled" : true,
+        "indexStorage" : {
+            "type" : "ram"
+        },
+        "rebuildUponStartup" : "if_missing"
+    }
+}
