@@ -30,6 +30,7 @@ package org.modeshape.jcr.api;
  */
 public final class JcrConstants {
     public static final String JCR_CONTENT = "jcr:content";
+    public static final String JCR_ROOT = "jcr:root";
     public static final String JCR_NAME = "jcr:name";
     public static final String JCR_PATH = "jcr:path";
     public static final String JCR_SCORE = "jcr:score";

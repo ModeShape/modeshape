@@ -181,6 +181,7 @@ public final class JcrI18n {
     public static I18n typeNotFound;
     public static I18n supertypeNotFound;
     public static I18n errorImportingNodeTypeContent;
+    public static I18n errorDuringInitialImport;
     public static I18n nodeTypesNotFoundInXml;
 
     public static I18n failedToQueryForDerivedContent;

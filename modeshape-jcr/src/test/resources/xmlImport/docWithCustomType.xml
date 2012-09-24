@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <folder jcr:mixinTypes="mix:created, mix:modified" jcr:primaryType="nt:folder">
+        <file jcr:primaryType="nt:file"/>
+        <file jcr:primaryType="nt:file"/>
+    </folder>
+</jcr:root>
