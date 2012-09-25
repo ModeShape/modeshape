@@ -508,7 +508,7 @@ public class RepositoryCache implements Observable {
      * @return the node cache; never null
      * @throws WorkspaceNotFoundException if no such workspace exists
      */
-    public NodeCache getWorkspaceCache( String workspaceName ) {
+    public WorkspaceCache getWorkspaceCache( String workspaceName ) {
         return workspace(workspaceName);
     }
 

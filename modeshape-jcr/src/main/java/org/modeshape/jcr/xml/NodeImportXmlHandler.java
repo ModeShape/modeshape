@@ -24,6 +24,7 @@
 
 package org.modeshape.jcr.xml;
 
+import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.LinkedHashMultimap;
 import org.modeshape.common.collection.Multimap;
@@ -344,10 +345,6 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
                 NoOpEncoder.getInstance()) : nameFactory.create(localName, XML_DECODER).getString(NoOpEncoder.getInstance());
     }
 
-    private String createPath( Path path ) {
-        return path.getString(NoOpEncoder.getInstance());
-    }
-
     @Override
     public void endElement( String uri,
                             String localName,
@@ -392,9 +389,13 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
     }
 
     @Override
-    public void endDocument() {
+    public void endDocument() throws SAXException {
         this.validateRootElement = false;
-        this.destination.submit(getParsedElementByPath());
+        try {
+            this.destination.submit(getParsedElementByPath());
+        } catch (RepositoryException e) {
+            throw new SAXException(e);
+        }
         this.parsedElements.clear();
     }
 
@@ -403,10 +404,10 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
      *
      * @return a {@link TreeMap} of the parsed elements, sorted in ascending order by path.
      */
-    private TreeMap<String, ImportElement> getParsedElementByPath() {
-        TreeMap<String, ImportElement> result = new TreeMap<String, ImportElement>();
+    private TreeMap<Path, ImportElement> getParsedElementByPath() {
+        TreeMap<Path, ImportElement> result = new TreeMap<Path, ImportElement>();
         for (ImportElement element : parsedElements) {
-            result.put(createPath(element.getPath()), element);
+            result.put(element.getPath(), element);
         }
         return result;
     }

@@ -24,6 +24,7 @@
 package org.modeshape.jcr.value.binary;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
@@ -114,14 +115,16 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         storeAndValidate(ZERO_KEY, ZERO_DATA);
     }
 
-    private void storeAndValidate( BinaryKey key,
+    private BinaryValue storeAndValidate( BinaryKey key,
                                    byte[] data ) throws BinaryStoreException, IOException {
         BinaryValue res = getBinaryStore().storeValue(new ByteArrayInputStream(data));
+        assertNotNull(res);
         assertEquals(key, res.getKey());
         assertEquals(data.length, res.getSize());
         InputStream inputStream = getBinaryStore().getInputStream(key);
         BinaryKey currentKey = BinaryKey.keyFor(IoUtil.readBytes(inputStream));
         assertEquals(key, currentKey);
+        return res;
     }
 
     @Test
@@ -183,9 +186,7 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         TextExtractors extractors = new TextExtractors(Executors.newSingleThreadExecutor(), true,
                                                        Arrays.<TextExtractor>asList(new DummyTextExtractor()));
         getBinaryStore().setTextExtractors(extractors);
-
-        BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(SMALL_DATA));
-        assertNull(((AbstractBinaryStore)getBinaryStore()).getExtractedText(binaryValue));
+        BinaryValue binaryValue = storeAndValidate(SMALL_KEY, SMALL_DATA);
         assertEquals(DummyTextExtractor.EXTRACTED_TEXT, getBinaryStore().getText(binaryValue));
         assertEquals(DummyTextExtractor.EXTRACTED_TEXT, ((AbstractBinaryStore)getBinaryStore()).getExtractedText(binaryValue));
     }

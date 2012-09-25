@@ -8,6 +8,11 @@
         "predefined" : ["otherWorkspace"],
         "default" : "default",
         "allowCreation" : true,
+        "initialContent" : {
+            "ws1" : "file1.xml",
+            "ws2" : "file2.xml",
+            "*" : "default.xml"
+        }
     },
     "storage" : {
         "cacheName" : "Thorough",

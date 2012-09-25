@@ -183,6 +183,8 @@ public class RepositoryConfiguration {
     public static final String JSON_SCHEMA_URI = "http://modeshape.org/3.0/repository-config#";
     public static final String JSON_SCHEMA_RESOURCE_PATH = "org/modeshape/jcr/repository-config-schema.json";
 
+    private static final Logger LOGGER = Logger.getLogger(RepositoryConfiguration.class);
+
     public static class FieldName {
         /**
          * The name for the field specifying the repository's name.
@@ -267,6 +269,11 @@ public class RepositoryConfiguration {
          * predefined, system, and default workspaces.
          */
         public static final String ALLOW_CREATION = "allowCreation";
+
+        /**
+         * The name of the field under which initial content can be specified for workspaces
+         */
+        public static final String INITIAL_CONTENT = "initialContent";
 
         /**
          * The name for the field under "workspaces" specifying the name of the workspace that should be used by default when
@@ -470,6 +477,12 @@ public class RepositoryConfiguration {
          */
         public static final boolean USE_ANONYMOUS_ON_FAILED_LOGINS = false;
 
+        /**
+         * The default value which symbolizes "all" the workspaces, meaning the initial content should be imported for each of the
+         * new workspaces.
+         */
+        public static final String INITIAL_CONTENT = "*";
+
         public static final String ANONYMOUS_USERNAME = "<anonymous>";
 
         public static final boolean QUERY_ENABLED = true;
@@ -652,16 +665,13 @@ public class RepositoryConfiguration {
         FileLookup factory = FileLookupFactory.newInstance();
         InputStream configStream = factory.lookupFile(JSON_SCHEMA_RESOURCE_PATH, RepositoryConfiguration.class.getClassLoader());
         if (configStream == null) {
-            Logger.getLogger(RepositoryConfiguration.class).error(JcrI18n.unableToFindRepositoryConfigurationSchema,
-                                                                  JSON_SCHEMA_RESOURCE_PATH);
+            LOGGER.error(JcrI18n.unableToFindRepositoryConfigurationSchema, JSON_SCHEMA_RESOURCE_PATH);
         }
         try {
             Document configDoc = Json.read(configStream);
             SCHEMA_LIBRARY.put(JSON_SCHEMA_URI, configDoc);
         } catch (IOException e) {
-            Logger.getLogger(RepositoryConfiguration.class).error(e,
-                                                                  JcrI18n.unableToLoadRepositoryConfigurationSchema,
-                                                                  JSON_SCHEMA_RESOURCE_PATH);
+            LOGGER.error(e, JcrI18n.unableToLoadRepositoryConfigurationSchema, JSON_SCHEMA_RESOURCE_PATH);
         }
     }
 
@@ -797,11 +807,6 @@ public class RepositoryConfiguration {
         }
     }
 
-    /**
-     * An empty {@link RepositoryConfiguration} that uses all the defaults.
-     */
-    public static final RepositoryConfiguration DEFAULT_CONFIGURATION = new RepositoryConfiguration();
-
     private final String docName;
     private final Document doc;
     private transient Environment environment = new LocalEnvironment();
@@ -926,6 +931,15 @@ public class RepositoryConfiguration {
     }
 
     /**
+     * Returns the initial content configuration for this repository configuration
+     *
+     * @return a {@code non-null} {@link InitialContent}
+     */
+    public InitialContent getInitialContent() {
+        return new InitialContent(doc.getDocument(FieldName.WORKSPACES));
+    }
+
+    /**
      * Returns a fully qualified built-in sequencer class name mapped to the given alias, or {@code null} if there isn't such a
      * mapping
      * 
@@ -945,6 +959,69 @@ public class RepositoryConfiguration {
      */
     public static String getBuiltInTextExtractorClassName( String alias ) {
         return EXTRACTOR_ALIASES.get(alias);
+    }
+
+    @Immutable
+    public class InitialContent {
+        private final Map<String, String> workspacesInitialContentFiles;
+        private String defaultInitialContentFile = "";
+
+        public InitialContent( Document workspaces ) {
+            workspacesInitialContentFiles = new HashMap<String, String>();
+            if (workspaces != null) {
+                Document initialContent = workspaces.getDocument(FieldName.INITIAL_CONTENT);
+                if (initialContent != null) {
+                    parseInitialContent(initialContent);
+                }
+            }
+        }
+
+        private void parseInitialContent( Document initialContent ) {
+
+            for (String workspaceName : initialContent.keySet()) {
+                Object value = initialContent.get(workspaceName);
+                if (!(value instanceof String)) {
+                    LOGGER.warn(JcrI18n.invalidInitialContentValue, value.toString(), workspaceName);
+                } else {
+                    String initialContentFilePath = ((String) value).trim();
+                    if (Default.INITIAL_CONTENT.equals(workspaceName)) {
+                        defaultInitialContentFile = initialContentFilePath;
+                    } else {
+                        workspacesInitialContentFiles.put(workspaceName, initialContentFilePath);
+                    }
+                }
+            }
+        }
+
+        /**
+         * Checks if there is an initial content file configured for the given workspace.
+         *
+         * @param workspaceName a non-null {@link String} representing the name of a workspace
+         * @return {@code true} if either there's an initial file configured specifically for the workspace or there's a default
+         * file which applies to all the workspaces.
+         */
+        public boolean hasInitialContentFile( String workspaceName ) {
+            if (workspacesInitialContentFiles.containsKey(workspaceName)) {
+                return !StringUtil.isBlank(workspacesInitialContentFiles.get(workspaceName));
+            } else {
+                return !StringUtil.isBlank(defaultInitialContentFile);
+            }
+        }
+
+        /**
+         * Returns the initial content file configured for the workspace with the given name.
+         *
+         * @param workspaceName a non-null {@link String} representing the name of a workspace
+         * @return either a {@link String} representing the initial content file for the workspace, or an empty string indicating
+         * that explicitly no file has been configured for this workspace.
+         */
+        public String getInitialContentFile( String workspaceName ) {
+            if (workspacesInitialContentFiles.containsKey(workspaceName)) {
+                return workspacesInitialContentFiles.get(workspaceName);
+            } else {
+                return defaultInitialContentFile;
+            }
+        }
     }
 
     /**
@@ -1044,7 +1121,7 @@ public class RepositoryConfiguration {
                     // locate the field instance on which the value will be set
                     java.lang.reflect.Field instanceField = findField(instance.getClass(), fieldName);
                     if (instanceField == null) {
-                        Logger.getLogger(getClass()).warn(JcrI18n.missingFieldOnInstance, fieldName, classname);
+                        LOGGER.warn(JcrI18n.missingFieldOnInstance, fieldName, classname);
                         continue;
                     }
 
@@ -1061,7 +1138,7 @@ public class RepositoryConfiguration {
                     // this is very ! tricky because it does not throw an exception - ever
                     ReflectionUtil.setValue(instance, fieldName, convertedFieldValue);
                 } catch (Throwable e) {
-                    Logger.getLogger(getClass()).error(e, JcrI18n.unableToSetFieldOnInstance, fieldName, fieldValue, classname);
+                    LOGGER.error(e, JcrI18n.unableToSetFieldOnInstance, fieldName, fieldValue, classname);
                 }
             }
         }
@@ -2142,7 +2219,7 @@ public class RepositoryConfiguration {
                     // locate the field instance on which the value will be set
                     java.lang.reflect.Field instanceField = findField(instance.getClass(), fieldName);
                     if (instanceField == null) {
-                        Logger.getLogger(getClass()).warn(JcrI18n.missingFieldOnInstance, fieldName, getClassname());
+                        LOGGER.warn(JcrI18n.missingFieldOnInstance, fieldName, getClassname());
                         continue;
                     }
 
@@ -2159,11 +2236,7 @@ public class RepositoryConfiguration {
                     // this is very ! tricky because it does not throw an exception - ever
                     ReflectionUtil.setValue(instance, fieldName, convertedFieldValue);
                 } catch (Throwable e) {
-                    Logger.getLogger(getClass()).error(e,
-                                                       JcrI18n.unableToSetFieldOnInstance,
-                                                       fieldName,
-                                                       fieldValue,
-                                                       getClassname());
+                    LOGGER.error(e, JcrI18n.unableToSetFieldOnInstance, fieldName, fieldValue, getClassname());
                 }
             }
         }

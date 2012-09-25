@@ -843,7 +843,6 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
                 executor.execute(runnable);
             }
             executor.shutdown(); // Disable new tasks from being submitted
-            System.out.println("Done");
         } finally {
             if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
                 fail("timeout");

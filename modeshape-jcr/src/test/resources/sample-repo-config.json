@@ -14,7 +14,11 @@
     "workspaces" : {
         "predefined" : ["ws1","ws2"],
         "default" : "default",
-        "allowCreation" : true
+        "allowCreation" : true,
+        "initialContent" : {
+            "default" : "file1.xml",
+            "*" : "default.xml"
+        }
     },
     "security" : {
         "anonymous" : {

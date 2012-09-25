@@ -430,6 +430,11 @@ public final class JcrI18n {
     public static I18n unableToInitializeMimeTypeDetector;
     public static I18n noMimeTypeDetectorsFound;
 
+    public static I18n invalidInitialContentValue;
+    public static I18n cannotLoadInitialContentFile;
+    public static I18n errorWhileReadingInitialContentFile;
+    public static I18n errorWhileParsingInitialContentFile;
+
     static {
         try {
             I18n.initialize(JcrI18n.class);

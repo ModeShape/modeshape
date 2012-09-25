@@ -59,7 +59,7 @@ public class NodeImportXmlHandlerTest {
 
     private NodeImportXmlHandler handler;
     private ExecutionContext context;
-    private Map<String, NodeImportXmlHandler.ImportElement> parseResults;
+    private Map<Path, NodeImportXmlHandler.ImportElement> parseResults;
     private NodeImportDestination parseDestination;
 
     @Before
@@ -74,7 +74,7 @@ public class NodeImportXmlHandlerTest {
             }
 
             @Override
-            public void submit( TreeMap<String, NodeImportXmlHandler.ImportElement> parseResults ) {
+            public void submit( TreeMap<Path, NodeImportXmlHandler.ImportElement> parseResults ) {
                 NodeImportXmlHandlerTest.this.parseResults = parseResults;
             }
         };
@@ -268,22 +268,24 @@ public class NodeImportXmlHandlerTest {
     @Test
     public void shouldParseXmlDocumentWithMixins() throws Exception {
         parse("xmlImport/docWithMixins.xml");
-        assertNode("cars", "jcr:mixinTypes=mix:created,mix:modified");
+        assertNode("cars", "jcr:mixinTypes=mix:created,mix:lastModified");
     }
 
     @Test
     public void shouldParseXmlDocumentWithCustomPrimaryType() throws Exception {
         parse("xmlImport/docWithCustomType.xml");
-        assertNode("folder", "jcr:mixinTypes=mix:created,mix:modified", "jcr:primaryType=nt:folder");
-        assertNode("folder/file", "jcr:primaryType=nt:file");
-        assertNode("folder/file[2]", "jcr:primaryType=nt:file");
+        assertNode("folder", "jcr:mixinTypes=mix:created,mix:lastModified", "jcr:primaryType=nt:folder");
+        assertNode("folder/file1", "jcr:primaryType=nt:file");
+        assertNode("folder/file1/jcr:content");
+        assertNode("folder/file2", "jcr:primaryType=nt:file");
+        assertNode("folder/file2/jcr:content");
     }
 
     private void assertNode( String path,
                              String... properties ) {
         Path expectedPath = context.getValueFactories().getPathFactory().create("/" + path);
 
-        NodeImportXmlHandler.ImportElement element = parseResults.get(expectedPath.toString());
+        NodeImportXmlHandler.ImportElement element = parseResults.get(expectedPath);
         assertNotNull(path + " not found among parsed elements", element);
 
         for (String propertyValueString : properties) {

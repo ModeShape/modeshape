@@ -250,6 +250,17 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         clear();
     }
 
+    /**
+     * Checks if this ws cache is empty. An empty cache is considered when the only node key under root is the system key.
+     *
+     * @return {@code true} if the system key is the only key under root, {@code false} other wise.
+     */
+    public boolean isEmpty() {
+        CachedNode root = getNode(getRootKey());
+        //expect there to be 1 child under root - the system key
+        return root.getChildReferences(this).size() == 1;
+    }
+
     @Override
     public String toString() {
         return workspaceName;

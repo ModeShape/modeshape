@@ -189,6 +189,12 @@
                     "default" : true,
                     "description" : "Specifies whether users can create additional workspaces beyond the predefined, system, and default workspaces. The default value is 'true'."
                 },
+                "initialContent" : {
+                    "type" : "object",
+                    "uniqueItems" : true,
+                    "description" : "The workspace name to initial content xml mapping that allows initial content to be imported into workspace. The '*' string is used when a default content should be imported into all the workspaces.",
+                    "additionalProperties" : true
+                },
                 "description" : {
                     "type" : "string",
                     "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
