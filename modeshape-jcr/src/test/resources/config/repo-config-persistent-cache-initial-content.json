@@ -1,0 +1,29 @@
+{
+    "name" : "Persistent Repository With Initial Content",
+    "storage" : {
+        "cacheName" : "persistentRepositoryInitialContent",
+        "cacheConfiguration" : "config/infinispan-persistent-initial-content.xml"
+    },
+    "workspaces" : {
+        "predefined" : ["ws1"],
+        "default" : "default",
+        "allowCreation" : true,
+        "initialContent" : {
+            "ws1" : "xmlImport/docWithMixins.xml"
+        }
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    },
+    "query" : {
+        "enabled" : true,
+        "indexStorage" : {
+            "type" : "filesystem",
+            "location" : "target/persistent_repository_initial_content/index"
+        },
+        "rebuildUponStartup" : "if_missing"
+    }
+}

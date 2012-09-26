@@ -91,8 +91,7 @@ public final class TextExtractors {
                 break;
             }
 
-            String extractedText = output.getText();
-            return extractedText;
+            return output.getText();
         } catch (Exception e) {
             LOGGER.error(JcrI18n.errorExtractingTextFromBinary, inMemoryBinaryValue.getHexHash(), e.getLocalizedMessage());
         }

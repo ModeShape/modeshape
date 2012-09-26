@@ -53,7 +53,7 @@ import java.util.TreeSet;
 public class JcrInitialContentTest extends SingleUseAbstractTest {
 
     @Test
-    public void shouldImportInitialContentForAllWsConfigurations() throws Exception {
+    public void shouldImportInitialContentForAllWorkspaceConfigurations() throws Exception {
         startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream(
                 "config/repo-config-initial-content.json"));
         //preconfigured ws

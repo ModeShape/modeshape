@@ -185,10 +185,18 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
     public void shouldExtractAndStoreTextWhenExtractorConfigured() throws Exception {
         TextExtractors extractors = new TextExtractors(Executors.newSingleThreadExecutor(), true,
                                                        Arrays.<TextExtractor>asList(new DummyTextExtractor()));
-        getBinaryStore().setTextExtractors(extractors);
-        BinaryValue binaryValue = storeAndValidate(SMALL_KEY, SMALL_DATA);
-        assertEquals(DummyTextExtractor.EXTRACTED_TEXT, getBinaryStore().getText(binaryValue));
-        assertEquals(DummyTextExtractor.EXTRACTED_TEXT, ((AbstractBinaryStore)getBinaryStore()).getExtractedText(binaryValue));
+        BinaryStore binaryStore = getBinaryStore();
+        binaryStore.setTextExtractors(extractors);
+
+        //make sure the binary is random, so we avoid the cases when the latches are already present (see TextExtractors)
+        byte[] randomBinary = new byte[1024];
+        RANDOM.nextBytes(randomBinary);
+
+        BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(randomBinary));
+        assertNull(((AbstractBinaryStore)getBinaryStore()).getStoredMimeType(binaryValue));
+        String extractedText = binaryStore.getText(binaryValue);
+        assertEquals(DummyTextExtractor.EXTRACTED_TEXT, extractedText);
+        assertEquals(DummyTextExtractor.EXTRACTED_TEXT, ((AbstractBinaryStore)binaryStore).getExtractedText(binaryValue));
     }
 
     protected static final class DummyMimeTypeDetector implements MimeTypeDetector {

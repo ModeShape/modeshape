@@ -116,7 +116,7 @@ public abstract class AbstractBinaryStore implements BinaryStore {
             }
         }
 
-        // there isn't extracted text stored, so try to
+        // there isn't extracted text stored, so try to extract text if extraction is enabled
         if (extractors == null || !extractors.extractionEnabled()) {
             return null;
         }
@@ -128,7 +128,6 @@ public abstract class AbstractBinaryStore implements BinaryStore {
 
         // there isn't any text available, so wait for a job to finish and then return the result
         try {
-            System.out.println("Extracting text for real");
             CountDownLatch latch = extractors.getWorkerLatch(binary.getKey(), false);
             if (latch == null) {
                 // There is no latch, so just compute the text here ...
