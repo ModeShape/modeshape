@@ -435,6 +435,8 @@ public final class JcrI18n {
     public static I18n errorWhileReadingInitialContentFile;
     public static I18n errorWhileParsingInitialContentFile;
 
+    public static I18n errorDuringInitialInitialization;
+
     static {
         try {
             I18n.initialize(JcrI18n.class);

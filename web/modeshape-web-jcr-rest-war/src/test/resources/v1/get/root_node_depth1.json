@@ -12,7 +12,8 @@
                 "jcr:nodeTypes",
                 "jcr:versionStorage",
                 "mode:namespaces",
-                "mode:locks"
+                "mode:locks",
+                "mode:repository"
             ]
         }
     }

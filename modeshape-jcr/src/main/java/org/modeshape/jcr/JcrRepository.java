@@ -953,6 +953,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final MimeTypeDetectors mimeTypeDetector;
         private final BackupService backupService;
         private final InitialContentImporter initialContentImporter;
+        private final SystemContentInitializer systemContentInitializer;
 
         protected RunningState() throws Exception {
             this(null, null);
@@ -962,6 +963,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected RunningState( JcrRepository.RunningState other,
                                 JcrRepository.ConfigurationChange change ) throws Exception {
             this.config = repositoryConfiguration();
+            this.systemContentInitializer = new SystemContentInitializer();
             if (other == null) {
                 logger.debug("Starting '{0}' repository with configuration: \n{1}", repositoryName(), this.config);
             } else {
@@ -1063,7 +1065,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // Set up the repository cache ...
                 final SessionEnvironment sessionEnv = new RepositorySessionEnvironment(this.transactions);
                 CacheContainer workspaceCacheContainer = this.config.getWorkspaceContentCacheContainer();
-                this.cache = new RepositoryCache(context, database, config, new SystemContentInitializer(), sessionEnv,
+                this.cache = new RepositoryCache(context, database, config, systemContentInitializer, sessionEnv,
                                                  changeBus, workspaceCacheContainer);
 
                 // Set up the node type manager ...
@@ -1221,11 +1223,16 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
          */
         protected final void postInitialize() throws Exception {
             this.sequencers.initialize();
-
-            //import initial content for each of the workspaces (this has to be done after the running state has "started"
-            for (String workspaceName : repositoryCache().getWorkspaceNames()) {
-                initialContentImporter.importInitialContent(workspaceName);
-            }
+            this.cache.runSystemOneTimeInitializationOperation(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    //import initial content for each of the workspaces (this has to be done after the running state has "started"
+                    for (String workspaceName : repositoryCache().getWorkspaceNames()) {
+                        initialContentImporter.importInitialContent(workspaceName);
+                    }
+                    return null;
+                }
+            });
         }
 
         protected final Sequencers sequencers() {

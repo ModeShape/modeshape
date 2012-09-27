@@ -63,9 +63,13 @@
 
 [mode:versionStorage] > mode:versionHistoryFolder
 
+[mode:repository] > nt:base, mix:created
+- mode:initializationState (string) mandatory protected ignore < 'STARTED','FINISHED'
+
 [mode:system] > nt:base
 + mode:namespaces (mode:namespaces) = mode:namespaces autocreated mandatory protected abort
 + mode:locks (mode:locks) = mode:locks autocreated mandatory protected abort
++ mode:repository (mode:repository) = mode:repository autocreated protected abort
 + jcr:nodeTypes (mode:nodeTypes) = mode:nodeTypes autocreated mandatory protected abort
 + jcr:versionStorage (mode:versionStorage) = mode:versionStorage autocreated mandatory protected abort
 

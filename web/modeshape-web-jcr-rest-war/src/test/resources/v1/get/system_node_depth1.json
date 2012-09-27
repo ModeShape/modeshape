@@ -48,6 +48,7 @@
                 "mode:locks",
                 "mode:versionHistoryFolder",
                 "mode:versionStorage",
+                "mode:repository",
                 "mode:system",
                 "mode:root",
                 "mode:resource",

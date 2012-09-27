@@ -102,4 +102,15 @@ public class ModeShapeLexicon {
 
     public static final Name DEPTH = new BasicName(Namespace.URI, "depth");
     public static final Name LOCALNAME = new BasicName(Namespace.URI, "localName");
+
+
+    /**
+     * The name of the post initialization node which is used to synchronize a cluster of repositories
+     */
+    public static final Name REPOSITORY= new BasicName(Namespace.URI, "repository");
+    public static final Name INITIALIZATION_STATE = new BasicName(Namespace.URI, "initializationState");
+
+    public enum InitializationState {
+        STARTED, FINISHED
+    }
 }
