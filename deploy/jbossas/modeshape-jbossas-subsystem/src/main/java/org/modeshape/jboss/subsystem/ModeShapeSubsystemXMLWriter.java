@@ -23,8 +23,11 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.ListAttributeDefinition;
@@ -102,13 +105,34 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             started = startIfNeeded(writer, Element.WORKSPACES, started);
             ModelNode names = repository.get(ModelKeys.PREDEFINED_WORKSPACE_NAMES);
             if (names.isDefined()) {
+                Map<String, String> workspacesInitialContent = new HashMap<String, String>();
+                if (has(repository, ModelKeys.WORKSPACES_INITIAL_CONTENT)) {
+                    List<ModelNode> initialContentNodes = repository.get(ModelKeys.WORKSPACES_INITIAL_CONTENT).asList();
+                    for (ModelNode modelNode : initialContentNodes) {
+                        Property property = modelNode.asProperty();
+                        workspacesInitialContent.put(property.getName(), property.getValue().asString());
+                    }
+                }
+
                 for (ModelNode workspace : repository.get(ModelKeys.PREDEFINED_WORKSPACE_NAMES).asList()) {
                     writer.writeStartElement(Element.WORKSPACE.getLocalName());
                     String name = workspace.asString();
                     writer.writeAttribute(Attribute.NAME.getLocalName(), name);
+
+                    if (workspacesInitialContent.containsKey(name)) {
+                        writer.writeStartElement(Element.INITIAL_CONTENT.getLocalName());
+                        writer.writeCharacters(workspacesInitialContent.get(name));
+                        writer.writeEndElement();
+                    }
+
                     writer.writeEndElement();
                 }
             }
+        }
+        if (has(repository, ModelKeys.DEFAULT_INITIAL_CONTENT)) {
+            writer.writeStartElement(Element.INITIAL_CONTENT.getLocalName());
+            writer.writeCharacters(repository.get(ModelKeys.DEFAULT_INITIAL_CONTENT).asString());
+            writer.writeEndElement();
         }
         if (started) {
             writer.writeEndElement();

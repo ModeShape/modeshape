@@ -275,6 +275,13 @@ public class RepositoryConfiguration {
          */
         public static final String INITIAL_CONTENT = "initialContent";
 
+
+        /**
+         * The default value which symbolizes "all" the workspaces, meaning the initial content should be imported for each of the
+         * new workspaces.
+         */
+        public static final String DEFAULT_INITIAL_CONTENT = "*";
+
         /**
          * The name for the field under "workspaces" specifying the name of the workspace that should be used by default when
          * creating sessions where the workspace is not specified.
@@ -476,12 +483,6 @@ public class RepositoryConfiguration {
          * The default value of the {@link FieldName#USE_ANONYMOUS_ON_FAILED_LOGINS} field is '{@value} '.
          */
         public static final boolean USE_ANONYMOUS_ON_FAILED_LOGINS = false;
-
-        /**
-         * The default value which symbolizes "all" the workspaces, meaning the initial content should be imported for each of the
-         * new workspaces.
-         */
-        public static final String INITIAL_CONTENT = "*";
 
         public static final String ANONYMOUS_USERNAME = "<anonymous>";
 
@@ -984,7 +985,7 @@ public class RepositoryConfiguration {
                     LOGGER.warn(JcrI18n.invalidInitialContentValue, value.toString(), workspaceName);
                 } else {
                     String initialContentFilePath = ((String) value).trim();
-                    if (Default.INITIAL_CONTENT.equals(workspaceName)) {
+                    if (FieldName.DEFAULT_INITIAL_CONTENT.equals(workspaceName)) {
                         defaultInitialContentFile = initialContentFilePath;
                     } else {
                         workspacesInitialContentFiles.put(workspaceName, initialContentFilePath);

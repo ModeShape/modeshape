@@ -208,14 +208,26 @@
         <xs:annotation>
           <xs:documentation>The definition of a predefined workspace that exists when the repository is started.</xs:documentation>
         </xs:annotation>
-        <xs:complexType>
-          <xs:attribute name="name" type="xs:string" use="required">
-            <xs:annotation>
-              <xs:documentation>The name of the workspace.</xs:documentation>
-            </xs:annotation>
-          </xs:attribute>
-        </xs:complexType>
+          <xs:complexType>
+              <xs:sequence>
+                  <xs:element name="initial-content" type="initial-content" minOccurs="0" maxOccurs="1">
+                      <xs:annotation>
+                          <xs:documentation>The path to the file which should be imported as initial content for this workspace</xs:documentation>
+                      </xs:annotation>
+                  </xs:element>
+              </xs:sequence>
+              <xs:attribute name="name" type="xs:string" use="required">
+                  <xs:annotation>
+                      <xs:documentation>The name of the workspace.</xs:documentation>
+                  </xs:annotation>
+              </xs:attribute>
+          </xs:complexType>
       </xs:element>
+        <xs:element name="initial-content" type="initial-content" minOccurs="0" maxOccurs="1">
+            <xs:annotation>
+                <xs:documentation>The path to the file which should be imported as initial content by default for all new workspaces</xs:documentation>
+            </xs:annotation>
+        </xs:element>
     </xs:sequence>
     <xs:attribute name="default-workspace" type="xs:string" use="optional" default="default">
       <xs:annotation>
@@ -230,6 +242,13 @@
       </xs:annotation>
     </xs:attribute>
   </xs:complexType>
+
+  <xs:simpleType name="initial-content">
+      <xs:annotation>
+          <xs:documentation>Specifies the path to the initial content file that should be loaded</xs:documentation>
+      </xs:annotation>
+      <xs:restriction base="xs:string"/>
+  </xs:simpleType>
 
   <xs:complexType name="authenticators">
     <xs:sequence minOccurs="0" maxOccurs="unbounded">

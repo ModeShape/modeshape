@@ -54,7 +54,8 @@ public enum Element {
     TEXT_EXTRACTOR("text-extractor"),
     SLAVE_FILE_INDEX_STORAGE("slave-file-index-storage"),
     WORKSPACE("workspace"),
-    WORKSPACES("workspaces");
+    WORKSPACES("workspaces"),
+    INITIAL_CONTENT("initial-content");
 
     private final String name;
 

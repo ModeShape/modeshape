@@ -45,6 +45,7 @@ import org.jboss.as.naming.deployment.ContextNames;
 import org.jboss.as.naming.service.BinderService;
 import org.jboss.as.server.Services;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceBuilder.DependencyType;
@@ -135,6 +136,19 @@ public class AddRepository extends AbstractAddStepHandler {
             for (ModelNode name : model.get(ModelKeys.PREDEFINED_WORKSPACE_NAMES).asList()) {
                 workspacesDoc.getOrCreateArray(FieldName.PREDEFINED).add(name.asString());
             }
+
+            if (model.hasDefined(ModelKeys.WORKSPACES_INITIAL_CONTENT)) {
+                EditableDocument initialContentDocument = workspacesDoc.getOrCreateDocument(FieldName.INITIAL_CONTENT);
+                List<ModelNode> workspacesInitialContent = model.get(ModelKeys.WORKSPACES_INITIAL_CONTENT).asList();
+                for (ModelNode initialContent : workspacesInitialContent) {
+                    Property initialContentProperty = initialContent.asProperty();
+                    initialContentDocument.set(initialContentProperty.getName(), initialContentProperty.getValue().asString());
+                }
+            }
+        }
+        if (model.hasDefined(ModelKeys.DEFAULT_INITIAL_CONTENT)) {
+            EditableDocument initialContentDocument = workspacesDoc.getOrCreateDocument(FieldName.INITIAL_CONTENT);
+            initialContentDocument.set(FieldName.DEFAULT_INITIAL_CONTENT, model.get(ModelKeys.DEFAULT_INITIAL_CONTENT).asString());
         }
 
         // Set the storage information (that was set on the repository ModelNode) ...
