@@ -24,11 +24,14 @@
 package org.modeshape.jcr;
 
 import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.PathNotFoundException;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.util.FileUtil;
 import java.io.File;
 import java.net.URL;
 import java.util.UUID;
@@ -110,6 +113,44 @@ public class JcrRepositoryStartupTest extends AbstractTransactionalTest {
                 } catch (NoSuchWorkspaceException e) {
                     //expected
                 }
+                return null;
+            }
+        }, repositoryConfigFile);
+    }
+
+    @Test
+    public void shouldNotImportInitialContentIfWorkspaceContentsChanged() throws Exception {
+        //remove the ISPN local data, so we always start fresh
+        FileUtil.delete("target/persistent_repository_initial_content/store");
+
+        String repositoryConfigFile = "config/repo-config-persistent-cache-initial-content.json";
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                JcrSession ws1Session = repository.login("ws1");
+                //check the initial import
+                AbstractJcrNode node = ws1Session.getNode("/cars");
+                assertNotNull(node);
+                //remove the node initially imported and add a new one
+                node.remove();
+                ws1Session.getRootNode().addNode("testNode");
+
+                ws1Session.save();
+                return null;
+            }
+        }, repositoryConfigFile);
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                JcrSession ws1Session = repository.login("ws1");
+                try {
+                    ws1Session.getNode("/cars");
+                    fail("The initial content should be be re-imported if a workspace is not empty");
+                } catch (PathNotFoundException e) {
+                    //expected
+                }
+                ws1Session.getNode("/testNode");
                 return null;
             }
         }, repositoryConfigFile);

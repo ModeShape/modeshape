@@ -91,7 +91,9 @@ public class JcrHttpDriverIntegrationTest  {
         String query = "SELECT [jcr:primaryType], [jcr:mixinTypes], [jcr:path], [jcr:name], [mode:localName], [mode:depth] FROM [nt:base] WHERE [jcr:path] LIKE '/%' ORDER BY [jcr:path]";
         String[] expectedResults = new String[] {
                 "jcr:path[STRING]    jcr:name[STRING]    mode:depth[LONG]    mode:localName[STRING]    jcr:mixinTypes[STRING]    jcr:primaryType[STRING]",
-                "/        0        null    mode:root"
+                "/        0        null    mode:root",
+                "/jcr:system    jcr:system    1    system    null    mode:system",
+                "/jcr:system/mode:repository    mode:repository    2    repository    null    mode:repository"
         };
         ConnectionResultsComparator.executeTest(connection, query, expectedResults, 4);
     }

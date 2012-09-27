@@ -181,6 +181,7 @@ public final class JcrI18n {
     public static I18n typeNotFound;
     public static I18n supertypeNotFound;
     public static I18n errorImportingNodeTypeContent;
+    public static I18n errorDuringInitialImport;
     public static I18n nodeTypesNotFoundInXml;
 
     public static I18n failedToQueryForDerivedContent;
@@ -428,6 +429,13 @@ public final class JcrI18n {
     public static I18n unableToReadMediaTypeRegistry;
     public static I18n unableToInitializeMimeTypeDetector;
     public static I18n noMimeTypeDetectorsFound;
+
+    public static I18n invalidInitialContentValue;
+    public static I18n cannotLoadInitialContentFile;
+    public static I18n errorWhileReadingInitialContentFile;
+    public static I18n errorWhileParsingInitialContentFile;
+
+    public static I18n errorDuringInitialInitialization;
 
     static {
         try {

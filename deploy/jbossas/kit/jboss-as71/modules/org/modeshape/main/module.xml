@@ -25,6 +25,7 @@
     <resources>
         <resource-root path="modeshape-jcr-${project.version}.jar" />
         <resource-root path="conf" />
+        <resource-root path="res" />
         <resource-root path="modeshape-jbossas-subsystem-${project.version}.jar" />
     </resources>
 

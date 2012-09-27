@@ -1,0 +1,19 @@
+{
+    "name" : "Repository with initial content",
+    "storage" : {
+        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
+    },
+    "workspaces" : {
+        "predefined" : ["ws1", "ws2"],
+        "default" : "default",
+        "allowCreation" : true,
+        "initialContent" : {
+            "ws1" : "xmlImport/docWithMixins.xml",
+            "ws2" : "xmlImport/docWithCustomType.xml",
+            "default" : "xmlImport/docWithoutNamespaces.xml",
+            "ws4" : "",
+            "ws5" : "xmlImport/docWithCustomType.xml",
+            "*" : "xmlImport/docWithMixins.xml"
+        }
+    }
+}

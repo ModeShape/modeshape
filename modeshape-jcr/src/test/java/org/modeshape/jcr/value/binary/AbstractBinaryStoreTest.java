@@ -24,6 +24,7 @@
 package org.modeshape.jcr.value.binary;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
@@ -114,14 +115,16 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         storeAndValidate(ZERO_KEY, ZERO_DATA);
     }
 
-    private void storeAndValidate( BinaryKey key,
+    private BinaryValue storeAndValidate( BinaryKey key,
                                    byte[] data ) throws BinaryStoreException, IOException {
         BinaryValue res = getBinaryStore().storeValue(new ByteArrayInputStream(data));
+        assertNotNull(res);
         assertEquals(key, res.getKey());
         assertEquals(data.length, res.getSize());
         InputStream inputStream = getBinaryStore().getInputStream(key);
         BinaryKey currentKey = BinaryKey.keyFor(IoUtil.readBytes(inputStream));
         assertEquals(key, currentKey);
+        return res;
     }
 
     @Test
@@ -182,12 +185,18 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
     public void shouldExtractAndStoreTextWhenExtractorConfigured() throws Exception {
         TextExtractors extractors = new TextExtractors(Executors.newSingleThreadExecutor(), true,
                                                        Arrays.<TextExtractor>asList(new DummyTextExtractor()));
-        getBinaryStore().setTextExtractors(extractors);
+        BinaryStore binaryStore = getBinaryStore();
+        binaryStore.setTextExtractors(extractors);
 
-        BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(SMALL_DATA));
-        assertNull(((AbstractBinaryStore)getBinaryStore()).getExtractedText(binaryValue));
-        assertEquals(DummyTextExtractor.EXTRACTED_TEXT, getBinaryStore().getText(binaryValue));
-        assertEquals(DummyTextExtractor.EXTRACTED_TEXT, ((AbstractBinaryStore)getBinaryStore()).getExtractedText(binaryValue));
+        //make sure the binary is random, so we avoid the cases when the latches are already present (see TextExtractors)
+        byte[] randomBinary = new byte[1024];
+        RANDOM.nextBytes(randomBinary);
+
+        BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(randomBinary));
+        assertNull(((AbstractBinaryStore)getBinaryStore()).getStoredMimeType(binaryValue));
+        String extractedText = binaryStore.getText(binaryValue);
+        assertEquals(DummyTextExtractor.EXTRACTED_TEXT, extractedText);
+        assertEquals(DummyTextExtractor.EXTRACTED_TEXT, ((AbstractBinaryStore)binaryStore).getExtractedText(binaryValue));
     }
 
     protected static final class DummyMimeTypeDetector implements MimeTypeDetector {

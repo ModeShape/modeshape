@@ -116,4 +116,8 @@ public class ModelKeys {
     static final String ADD_CUSTOM_INDEX_STORAGE = "add-custom-index-storage";
     static final String REMOVE_INDEX_STORAGE = "remove-index-storage";
 
+    static final String DEFAULT_INITIAL_CONTENT = "default-initial-content";
+    static final String WORKSPACES_INITIAL_CONTENT = "workspaces-initial-content";
+    static final String INITIAL_CONTENT = "initial-content";
+
 }

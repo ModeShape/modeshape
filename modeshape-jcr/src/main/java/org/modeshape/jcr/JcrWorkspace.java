@@ -659,6 +659,9 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             }
             repository.repositoryCache().createWorkspace(name);
             repository.statistics().increment(ValueMetric.WORKSPACE_COUNT);
+
+            //import any initial content
+            repository.runningState().initialContentImporter().importInitialContent(name);
         } catch (UnsupportedOperationException e) {
             throw new UnsupportedRepositoryOperationException(e.getMessage());
         }

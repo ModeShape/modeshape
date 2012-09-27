@@ -278,6 +278,10 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                     parseWorkspace(reader, repository);
                     break;
                 }
+                case INITIAL_CONTENT: {
+                    repository.get(ModelKeys.DEFAULT_INITIAL_CONTENT).set(reader.getElementText());
+                    break;
+                }
                 default: {
                     throw ParseUtils.unexpectedElement(reader);
                 }
@@ -287,6 +291,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
 
     private void parseWorkspace( final XMLExtendedStreamReader reader,
                                  final ModelNode repository ) throws XMLStreamException {
+        String workspaceName = null;
         if (reader.getAttributeCount() > 0) {
             for (int i = 0; i < reader.getAttributeCount(); i++) {
                 String attrName = reader.getAttributeLocalName(i);
@@ -294,6 +299,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                 Attribute attribute = Attribute.forName(attrName);
                 switch (attribute) {
                     case NAME:
+                        workspaceName = attrValue;
                         repository.get(ModelKeys.PREDEFINED_WORKSPACE_NAMES).add(attrValue);
                         break;
                     default:
@@ -302,7 +308,20 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
             }
         }
 
-        requireNoElements(reader);
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case INITIAL_CONTENT: {
+                    if (workspaceName != null) {
+                        repository.get(ModelKeys.WORKSPACES_INITIAL_CONTENT).add(workspaceName, reader.getElementText());
+                    }
+                    break;
+                }
+                default: {
+                    throw ParseUtils.unexpectedElement(reader);
+                }
+            }
+        }
     }
 
     private void parseIndexing( final XMLExtendedStreamReader reader,

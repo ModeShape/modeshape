@@ -460,6 +460,21 @@ public class ModelAttributes {
                                                                                                                                                          FieldName.PREDEFINED)
                                                                                                                   .build();
 
+    public static final SimpleAttributeDefinition DEFAULT_INITIAL_CONTENT = new MappedAttributeDefinitionBuilder(ModelKeys.DEFAULT_INITIAL_CONTENT,
+                                                                                                                 ModelType.STRING)
+                                                                                .setAllowExpression(false)
+                                                                                .setAllowNull(true)
+                                                                                .build();
+
+    public static final ListAttributeDefinition WORKSPACES_INITIAL_CONTENT = MappedListAttributeDefinition.Builder.of(ModelKeys.WORKSPACES_INITIAL_CONTENT,
+                                                                                                                     new MappedAttributeDefinitionBuilder(ModelKeys.INITIAL_CONTENT,
+                                                                                                                                                         ModelType.PROPERTY).setAllowNull(false)
+                                                                                                                                                        .build())
+                                                                            .setAllowNull(true)
+                                                                            .setMinSize(0)
+                                                                            .build();
+
+
     public static final SimpleAttributeDefinition PROPERTY = new SimpleAttributeDefinition(ModelKeys.PROPERTY,
                                                                                            ModelType.PROPERTY, true);
     public static final SimpleListAttributeDefinition PROPERTIES = SimpleListAttributeDefinition.Builder.of(ModelKeys.PROPERTIES,
@@ -609,7 +624,7 @@ public class ModelAttributes {
 
     public static final AttributeDefinition[] REPOSITORY_ATTRIBUTES = {CACHE_NAME, CACHE_CONTAINER, JNDI_NAME, ENABLE_MONITORING,
         SECURITY_DOMAIN, ANONYMOUS_ROLES, ANONYMOUS_USERNAME, USE_ANONYMOUS_IF_AUTH_FAILED, DEFAULT_WORKSPACE,
-        PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, MINIMUM_BINARY_SIZE, THREAD_POOL, BATCH_SIZE, READER_STRATEGY,
+        PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, DEFAULT_INITIAL_CONTENT, WORKSPACES_INITIAL_CONTENT, MINIMUM_BINARY_SIZE, THREAD_POOL, BATCH_SIZE, READER_STRATEGY,
         MODE, SYSTEM_CONTENT_MODE, ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME, ANALYZER_MODULE,
         REBUILD_INDEXES_UPON_STARTUP, CLUSTER_NAME, CLUSTER_STACK,};
 

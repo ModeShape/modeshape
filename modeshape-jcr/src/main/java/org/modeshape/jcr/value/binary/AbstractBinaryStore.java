@@ -116,7 +116,7 @@ public abstract class AbstractBinaryStore implements BinaryStore {
             }
         }
 
-        // there isn't extracted text stored, so try to
+        // there isn't extracted text stored, so try to extract text if extraction is enabled
         if (extractors == null || !extractors.extractionEnabled()) {
             return null;
         }
