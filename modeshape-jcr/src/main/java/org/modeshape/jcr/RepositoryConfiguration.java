@@ -275,7 +275,6 @@ public class RepositoryConfiguration {
          */
         public static final String INITIAL_CONTENT = "initialContent";
 
-
         /**
          * The default value which symbolizes "all" the workspaces, meaning the initial content should be imported for each of the
          * new workspaces.
@@ -933,7 +932,7 @@ public class RepositoryConfiguration {
 
     /**
      * Returns the initial content configuration for this repository configuration
-     *
+     * 
      * @return a {@code non-null} {@link InitialContent}
      */
     public InitialContent getInitialContent() {
@@ -977,6 +976,7 @@ public class RepositoryConfiguration {
             }
         }
 
+        @SuppressWarnings( "synthetic-access" )
         private void parseInitialContent( Document initialContent ) {
 
             for (String workspaceName : initialContent.keySet()) {
@@ -984,7 +984,7 @@ public class RepositoryConfiguration {
                 if (!(value instanceof String)) {
                     LOGGER.warn(JcrI18n.invalidInitialContentValue, value.toString(), workspaceName);
                 } else {
-                    String initialContentFilePath = ((String) value).trim();
+                    String initialContentFilePath = ((String)value).trim();
                     if (FieldName.DEFAULT_INITIAL_CONTENT.equals(workspaceName)) {
                         defaultInitialContentFile = initialContentFilePath;
                     } else {
@@ -996,32 +996,30 @@ public class RepositoryConfiguration {
 
         /**
          * Checks if there is an initial content file configured for the given workspace.
-         *
+         * 
          * @param workspaceName a non-null {@link String} representing the name of a workspace
          * @return {@code true} if either there's an initial file configured specifically for the workspace or there's a default
-         * file which applies to all the workspaces.
+         *         file which applies to all the workspaces.
          */
         public boolean hasInitialContentFile( String workspaceName ) {
             if (workspacesInitialContentFiles.containsKey(workspaceName)) {
                 return !StringUtil.isBlank(workspacesInitialContentFiles.get(workspaceName));
-            } else {
-                return !StringUtil.isBlank(defaultInitialContentFile);
             }
+            return !StringUtil.isBlank(defaultInitialContentFile);
         }
 
         /**
          * Returns the initial content file configured for the workspace with the given name.
-         *
+         * 
          * @param workspaceName a non-null {@link String} representing the name of a workspace
          * @return either a {@link String} representing the initial content file for the workspace, or an empty string indicating
-         * that explicitly no file has been configured for this workspace.
+         *         that explicitly no file has been configured for this workspace.
          */
         public String getInitialContentFile( String workspaceName ) {
             if (workspacesInitialContentFiles.containsKey(workspaceName)) {
                 return workspacesInitialContentFiles.get(workspaceName);
-            } else {
-                return defaultInitialContentFile;
             }
+            return defaultInitialContentFile;
         }
     }
 
@@ -1110,6 +1108,7 @@ public class RepositoryConfiguration {
             return (AbstractBinaryStore)classLoader.loadClass(classname).newInstance();
         }
 
+        @SuppressWarnings( "synthetic-access" )
         private void setTypeFields( Object instance,
                                     Document document ) {
             for (Field field : document.fields()) {
@@ -2208,6 +2207,7 @@ public class RepositoryConfiguration {
             return (Type)new AnonymousProvider(username, roleNames);
         }
 
+        @SuppressWarnings( "synthetic-access" )
         private void setTypeFields( Object instance,
                                     Document document ) {
             for (Field field : document.fields()) {

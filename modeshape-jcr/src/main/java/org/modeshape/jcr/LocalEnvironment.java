@@ -26,9 +26,9 @@ package org.modeshape.jcr;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -38,24 +38,48 @@ import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
 import org.infinispan.transaction.lookup.TransactionManagerLookup;
 import org.jgroups.Channel;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.DelegatingClassLoader;
 import org.modeshape.common.util.StringURLClassLoader;
 import org.modeshape.common.util.StringUtil;
 
 /**
- * 
+ * An {@link Environment} that can be used within a local (non-clustered) process.
+ * <p>
+ * To use a custom Environment instance, simply create a {@link RepositoryConfiguration} as usual but then call the
+ * {@link RepositoryConfiguration#with(Environment)} with the Environment instance and then use the resulting
+ * RepositoryConfiguration instance.
+ * </p>
+ * <p>
+ * When a ModeShape {@link RepositoryConfiguration repository configuration} defines cache containers with configuration files on
+ * the file system or the classpath, then a {@link LocalEnvironment} instance can be used as-is with no other configuration or
+ * setup.
+ * </p>
+ * <p>
+ * If applications wish to programmatically configure the Infinispan caches or cache containers, then those configurations can be
+ * registered with a LocalEnvironment instance. Specifically, the {@link #addCacheContainer(String, CacheContainer)} and
+ * {@link #addCacheContainerIfAbsent(String, CacheContainer)} methods register a programmatically created instance of a
+ * {@link CacheContainer}. Alternatively, the {@link #defineCache(String, String, Configuration)} method can be used to register a
+ * named cache with a programmatically created {@link Configuration Infinispan cache configuration}.
+ * </p>
  */
 public class LocalEnvironment implements Environment {
 
     public static final Class<? extends TransactionManagerLookup> DEFAULT_TRANSACTION_MANAGER_LOOKUP_CLASS = GenericTransactionManagerLookup.class;
 
-    private static final String DEFAULT_CONFIGURATION_NAME = "defaultCacheContainer";
+    /**
+     * The name for the default cache container that is used when {@link #getCacheContainer()} is called or if null is supplied as
+     * the name in {@link #getCacheContainer(String)}.
+     */
+    public static final String DEFAULT_CONFIGURATION_NAME = "defaultCacheContainer";
+
     private final Class<? extends TransactionManagerLookup> transactionManagerLookupClass;
-    private final Map<String, CacheContainer> containers = new HashMap<String, CacheContainer>();
+    private final ConcurrentMap<String, CacheContainer> containers = new ConcurrentHashMap<String, CacheContainer>();
 
     public LocalEnvironment() {
         this.transactionManagerLookupClass = DEFAULT_TRANSACTION_MANAGER_LOOKUP_CLASS;
@@ -66,7 +90,14 @@ public class LocalEnvironment implements Environment {
         this.transactionManagerLookupClass = transactionManagerLookupClass;
     }
 
-    public synchronized CacheContainer getCacheContainer() throws IOException, NamingException {
+    /**
+     * Get the default cache container.
+     * 
+     * @return the default cache container; never null
+     * @throws IOException
+     * @throws NamingException
+     */
+    public CacheContainer getCacheContainer() throws IOException, NamingException {
         return getCacheContainer(null);
     }
 
@@ -186,6 +217,80 @@ public class LocalEnvironment implements Environment {
 
     protected Context jndiContext() throws NamingException {
         return new InitialContext();
+    }
+
+    /**
+     * Add the supplied {@link CacheContainer} under the supplied name if and only if there is not already a cache container
+     * registered at that name.
+     * 
+     * @param name the cache container name; may be null if the {@link #DEFAULT_CONFIGURATION_NAME default configuration name}
+     *        should be used
+     * @param cacheContainer the cache container; may not be null
+     */
+    public void addCacheContainerIfAbsent( String name,
+                                           CacheContainer cacheContainer ) {
+        CheckArg.isNotNull(cacheContainer, "cacheContainer");
+        containers.putIfAbsent(name, cacheContainer);
+    }
+
+    /**
+     * Add the supplied {@link CacheContainer} under the supplied name if and only if there is not already a cache container
+     * registered at that name.
+     * 
+     * @param name the cache container name; may be null if the {@link #DEFAULT_CONFIGURATION_NAME default configuration name}
+     *        should be used
+     * @param cacheContainer the cache container; may not be null
+     * @return the cache container that was previously registered in this environment by the supplied name, or null if there was
+     *         no such previously-registered cache container
+     */
+    public CacheContainer addCacheContainer( String name,
+                                             CacheContainer cacheContainer ) {
+        CheckArg.isNotNull(cacheContainer, "cacheContainer");
+        return containers.put(name, cacheContainer);
+    }
+
+    /**
+     * Define within the default cache container an Infinispan cache with the given cache name and configuration. Note that the
+     * cache container is created if required, but if it exists it must implement the {@link EmbeddedCacheManager} interface for
+     * this method to succeed.
+     * 
+     * @param cacheName the name of the cache being defined; may not be null
+     * @param configuration the cache configuration; may not be null
+     * @return the clone of the supplied configuration that is used by the cache container; never null
+     */
+    public Configuration defineCache( String cacheName,
+                                      Configuration configuration ) {
+        CheckArg.isNotNull(cacheName, "cacheName");
+        CheckArg.isNotNull(configuration, "configuration");
+        return defineCache(null, cacheName, configuration);
+    }
+
+    /**
+     * Define within the named cache container an Infinispan cache with the given cache name and configuration. Note that the
+     * cache container is created if required, but if it exists it must implement the {@link EmbeddedCacheManager} interface for
+     * this method to succeed.
+     * 
+     * @param cacheContainerName the name of the cache container; if null, the {@link #DEFAULT_CONFIGURATION_NAME default
+     *        container name} is used
+     * @param cacheName the name of the cache being defined; may not be null
+     * @param configuration the cache configuration; may not be null
+     * @return the clone of the supplied configuration that is used by the cache container; never null
+     */
+    public Configuration defineCache( String cacheContainerName,
+                                      String cacheName,
+                                      Configuration configuration ) {
+        CheckArg.isNotNull(cacheName, "cacheName");
+        CheckArg.isNotNull(configuration, "configuration");
+        if (cacheContainerName == null) cacheContainerName = DEFAULT_CONFIGURATION_NAME;
+        CacheContainer container = containers.get(cacheContainerName);
+        if (container == null) {
+            Configuration config = createDefaultConfiguration();
+            GlobalConfiguration global = createGlobalConfiguration();
+            CacheContainer newContainer = createContainer(global, config);
+            container = containers.putIfAbsent(cacheContainerName, newContainer);
+            if (container == null) container = newContainer;
+        }
+        return ((EmbeddedCacheManager)container).defineConfiguration(cacheName, configuration);
     }
 
 }
