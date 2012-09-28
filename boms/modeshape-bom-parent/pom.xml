@@ -1,0 +1,107 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.modeshape.bom</groupId>
+    <artifactId>modeshape-bom-parent</artifactId>
+    <version>3.0-SNAPSHOT</version>
+    <name>ModeShape BOM Parent</name>
+
+    <url>http://www.modeshape.org</url>
+    <packaging>pom</packaging>
+    <description>ModeShape top-level Bill of Material (BOM)</description>
+    <inceptionYear>2008</inceptionYear>
+
+    <organization>
+        <name>JBoss, by Red Hat</name>
+        <url>http://www.jboss.org</url>
+    </organization>
+
+    <licenses>
+        <license>
+            <name>GNU Lesser General Public License</name>
+            <url>http://repository.jboss.org/licenses/lgpl-2.1.txt</url>
+            <!--url>http://www.gnu.org/licenses/lgpl.html</url-->
+            <distribution>repo</distribution>
+            <comments>A business-friendly OSS license</comments>
+        </license>
+    </licenses>
+
+    <properties>
+
+        <!-- Versions of non-ModeShape dependencies -->
+        <jcr.version>2.0</jcr.version>
+        <joda.time.version>1.6.2</joda.time.version>
+        <infinispan.version>5.1.2.FINAL</infinispan.version>
+        <c3p0.version>0.9.1.2</c3p0.version>  <!-- same as the one used by Infinispan's JDBC cache store -->
+        <jgroups.version>3.0.6.Final</jgroups.version> <!-- same as the one used by Infinispan -->
+        <hibernate.search.version>4.1.1.Final</hibernate.search.version>
+        <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
+        <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
+        <lucene.version>3.5.0</lucene.version>
+        <lucene.regex.version>3.0.3</lucene.regex.version>
+        <lucene.regex.jakarta.version>1.4</lucene.regex.jakarta.version>
+        <jbossjta.version>4.16.2.Final</jbossjta.version>
+        <picketbox.version>4.0.7.Final</picketbox.version>
+        <resteasy.version>2.3.2.Final</resteasy.version>
+        <jettison.version>1.1</jettison.version>
+        <httpclient.version>4.1.2</httpclient.version>
+        <mongo.driver.version>2.7.3</mongo.driver.version>
+        <embedmongo.version>1.25</embedmongo.version>
+        <tika.version>1.2</tika.version>
+        <javaassist.version>3.11.0.GA</javaassist.version>
+        <jaudiotagger.version>2.0.3</jaudiotagger.version>
+        <poi.version>3.8</poi.version>
+        <jcommander.version>1.5</jcommander.version>
+        <wsdl4j.version>1.6.2</wsdl4j.version>
+        <eclipse.equinox.common.version>3.3.0-v20070426</eclipse.equinox.common.version>
+        <eclipse.jdt.core.version>3.3.0-v_771</eclipse.jdt.core.version>
+        <eclipse.core.resources.version>3.3.0-v20070604</eclipse.core.resources.version>
+        <eclipse.core.expressions.version>3.3.0-v20070606-0010</eclipse.core.expressions.version>
+        <eclipse.core.runtime.version>3.3.100-v20070530</eclipse.core.runtime.version>
+        <eclipse.osgi.version>3.3.0-v20070530</eclipse.osgi.version>
+        <eclipse.core.jobs.version>3.3.0-v20070423</eclipse.core.jobs.version>
+        <eclipse.equinox.registry.version>3.3.0-v20070522</eclipse.equinox.registry.version>
+        <eclipse.equinox.preferences.version>3.2.100-v20070522</eclipse.equinox.preferences.version>
+        <eclipse.core.contenttype.version>3.2.100-v20070319</eclipse.core.contenttype.version>
+        <eclipse.xsd.version>2.2.3</eclipse.xsd.version>
+        <eclipse.emf.common.version>2.4.0</eclipse.emf.common.version>
+        <eclipse.emf.ecore.version>2.4.2</eclipse.emf.ecore.version>
+        <eclipse.emf.ecorechange.version>2.2.3</eclipse.emf.ecorechange.version>
+        <eclipse.emf.ecorexmi.version>2.4.1</eclipse.emf.ecorexmi.version>
+
+        <!-- Versions of JBoss AS dependencies -->
+        <jbossas-version>7.1.1.Final</jbossas-version>
+        <!--jbossas-version>7.2.0.Alpha1-SNAPSHOT</jbossas-version-->
+        <javax.connector-api.version>1.5</javax.connector-api.version>
+        <javax.jta.version>1.1</javax.jta.version>
+        <jbossas7.assembly.descriptor.version>71</jbossas7.assembly.descriptor.version>
+        <javax.servlet.version>2.5</javax.servlet.version>
+
+        <!-- Versions of non-ModeShape dependencies used for logging -->
+        <slf4j.api.version>1.6.1</slf4j.api.version>
+        <slf4j.log4j.version>1.6.1</slf4j.log4j.version>
+        <log4j.version>1.2.16</log4j.version>
+        <logback.version>0.9.29</logback.version>
+        <jboss.logging.version>3.1.0.CR2</jboss.logging.version>
+
+        <!-- Versions of non-ModeShape dependencies used for testing -->
+        <junit.version>4.10</junit.version>
+        <hamcrest.version>1.1</hamcrest.version>
+        <mockito.all.version>1.8.4</mockito.all.version>
+
+    </properties>
+
+    <!--
+         This section defines the default dependency settings inherited by
+         child projects. Note that this section does not add dependencies, but
+         rather provide default settings.
+     -->
+    <dependencyManagement>
+        <dependencies>
+          
+          <!-- Nothing is specified in the parent -->
+
+        </dependencies>
+    </dependencyManagement>
+</project>

@@ -1,0 +1,158 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <parent>
+        <groupId>org.modeshape.bom</groupId>
+        <artifactId>modeshape-bom-parent</artifactId>
+        <version>3.0-SNAPSHOT</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.modeshape.bom</groupId>
+    <artifactId>modeshape-bom-remote-client</artifactId>
+    <version>3.0-SNAPSHOT</version>
+    <name>BOM for using ModeShape's remote clients</name>
+
+    <url>http://www.modeshape.org</url>
+    <packaging>pom</packaging>
+    <description>Bill of Material (BOM) for applications using ModeShape's REST client or remote JDBC driver.</description>
+
+    <properties>
+      <!-- Version properties are inherited from parent -->
+    </properties>
+
+    <!--
+         This section defines the default dependency settings inherited by
+         child BOMs. Note that this section does not add dependencies, but
+         rather provide default settings.
+     -->
+    <dependencyManagement>
+        <dependencies>
+
+            <!-- ModeShape components -->
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-jcr-rest-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jdbc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!--
+                Compatible logging modules.
+            -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+                <version>${slf4j.log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback.version}</version>
+            </dependency>
+            
+            <!--
+               JAX-B implementation used by some modules particularly the REST client & service
+               -->
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-impl</artifactId>
+                <version>${sun.xml.bind.jaxbimpl.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <!--
+               RESTEasy client dependencies
+            -->
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>resteasy-jaxrs</artifactId>
+                <version>${resteasy.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-simple</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>jcl-over-slf4j</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>resteasy-jaxb-provider</artifactId>
+                <version>${resteasy.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.sun.xml.bind</groupId>
+                        <artifactId>jaxb-impl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.sun.xml.stream</groupId>
+                        <artifactId>stream.buffer</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>resteasy-jettison-provider</artifactId>
+                <version>${resteasy.version}</version>
+            </dependency>
+            <!-- Not needed on client??
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>resteasy-multipart-provider</artifactId>
+                <version>${resteasy.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.sun.xml.bind</groupId>
+                        <artifactId>jaxb-impl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.sun.xml.stream</groupId>
+                        <artifactId>stream.buffer</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            -->
+            <dependency>
+                <groupId>org.codehaus.jettison</groupId>
+                <artifactId>jettison</artifactId>
+                <version>${jettison.version}</version>
+                <exclusions>
+                    <!-- This results in duplicate stax-api jars. This is the older one.
+                         A newer is brought in by com.sun.xml.bind:jaxb-impl
+                    -->
+                    <exclusion>
+                        <groupId>stax</groupId>
+                        <artifactId>stax-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${httpclient.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

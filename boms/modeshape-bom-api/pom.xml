@@ -1,0 +1,61 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <parent>
+        <groupId>org.modeshape.bom</groupId>
+        <artifactId>modeshape-bom-parent</artifactId>
+        <version>3.0-SNAPSHOT</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.modeshape.bom</groupId>
+    <artifactId>modeshape-bom-api</artifactId>
+    <version>3.0-SNAPSHOT</version>
+    <name>ModeShape BOM for public APIs</name>
+
+    <url>http://www.modeshape.org</url>
+    <packaging>pom</packaging>
+    <description>Bill of Material (BOM) for using ModeShapes public API</description>
+
+    <properties>
+      <!-- Version properties are inherited from parent -->
+    </properties>
+
+    <!--
+         This section defines the default dependency settings inherited by
+         child projects. Note that this section does not add dependencies, but
+         rather provide default settings.
+     -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- Java Content Repository API -->
+            <dependency>
+                <groupId>javax.jcr</groupId>
+                <artifactId>jcr</artifactId>
+                <version>${jcr.version}</version>
+            </dependency>
+
+            <!-- ModeShape public API -->
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jcr-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- Transactions (JTA) public API -->
+            <dependency>
+                <groupId>javax.transaction</groupId>
+                <artifactId>jta</artifactId>
+                <version>${javax.jta.version}</version>
+            </dependency>
+
+            <!-- Servlet public API (for authentication)-->
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>servlet-api</artifactId>
+                <version>${javax.servlet.version}</version>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+</project>
