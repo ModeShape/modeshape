@@ -64,7 +64,16 @@ public class LazyCachedNode implements CachedNode, Serializable {
     private transient Map<Name, Property> properties;
     private transient NodeKey parent;
     private transient Set<NodeKey> additionalParents;
+    /**
+     * cached reference of the parent node towards this (child) node
+     */
     private transient ChildReference parentReferenceToSelf;
+
+    /**
+     * the reference of the parent set when the above reference is set/changed. Need to be kept in sync to detect stale SNS data
+     * See MODE-1613 for more information
+     */
+    private transient CachedNode parentReferenceToSelfParent;
     private transient boolean propertiesFullyLoaded = false;
     private transient ChildReferences childReferences;
 
@@ -167,6 +176,16 @@ public class LazyCachedNode implements CachedNode, Serializable {
      *         (which can happen if this node is used while in the midst of being (re)moved.
      */
     protected ChildReference parentReferenceToSelf( WorkspaceCache cache ) {
+        if (parentReferenceToSelf != null && parentReferenceToSelfParent != null) {
+            //we have a cached child reference, but we need to check that the reference isn't stale (it could happen for SNS)
+            CachedNode parentFromCache = parent(cache);
+            if (parentReferenceToSelfParent != parentFromCache) {
+                //the parent coming from the ws cache (possibly the db) is different that what we have cached, so we need to
+                //retrieve it again
+                parentReferenceToSelf = null;
+            }
+        }
+
         if (parentReferenceToSelf == null) {
             CachedNode parent = parent(cache);
             if (parent == null) {
@@ -174,6 +193,7 @@ public class LazyCachedNode implements CachedNode, Serializable {
                 parentReferenceToSelf = cache.childReferenceForRoot();
             } else {
                 parentReferenceToSelf = parent.getChildReferences(cache).getChild(key);
+                parentReferenceToSelfParent = parent;
             }
         }
         if (parentReferenceToSelf == null) {

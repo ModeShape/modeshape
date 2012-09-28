@@ -23,29 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.when;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import javax.jcr.Binary;
 import javax.jcr.Item;
 import javax.jcr.NamespaceException;
@@ -57,16 +34,37 @@ import javax.jcr.PropertyType;
 import javax.jcr.ReferentialIntegrityException;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.mockito.Mockito;
+import static org.mockito.Mockito.when;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.value.Path;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 public class JcrSessionTest extends SingleUseAbstractTest {
 
@@ -725,88 +723,83 @@ public class JcrSessionTest extends SingleUseAbstractTest {
 
     @Test
     @FixFor( "MODE-1613" )
-    public void shouldMoveLotsOfSNS() throws Exception {
-        Node root = session.getRootNode();
-        boolean multiThreaded = false;
+    public void shouldMoveSNSAndNotCorruptThePathsOfRemainingSiblings() throws Exception {
+        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream(
+                "config/simple-repo-config.json"));
+        // /testRoot/parent0/child
+        // /testRoot/parent0/child[2]
+        // /testRoot/parent0/child[3]
 
-        int iterationsCount = 8;
-        for (int it = 0; it < iterationsCount; it++) {
-            // System.out.println("Iteration " + it);
+        // /testRoot/parent1/child
+        // /testRoot/parent1/child[2]
+        // /testRoot/parent1/child[3]
 
-            Node parent1 = root.addNode("parent1");
-            Node parent2 = root.addNode("parent2");
+        // move /testRoot/parent0/child[1] to /testRoot/parent1.
 
-            int nodeCount = 100;
-            List<String> parent1ChildrenIds = new ArrayList<String>(nodeCount);
-            List<String> parent2ChildrenIds = new ArrayList<String>(nodeCount);
-            for (int i = 0; i < nodeCount; i++) {
-                parent1ChildrenIds.add(parent1.addNode("p1_child").getIdentifier());
-                parent2ChildrenIds.add(parent2.addNode("p2_child").getIdentifier());
-            }
-            session.save();
+        createTreeWithSNS(2, 3);
 
-            ExecutorService executorService = Executors.newCachedThreadPool();
-            List<Future<?>> submittedTasks = new ArrayList<Future<?>>(nodeCount);
-            for (int i = 0; i < nodeCount; i++) {
-                String parent1ChildId = parent1ChildrenIds.get(i);
-                String parent2ChildId = parent2ChildrenIds.get(i);
-
-                MoveTask task = new MoveTask(parent1ChildId, parent2ChildId, session);
-                if (multiThreaded) {
-                    submittedTasks.add(executorService.submit(task));
-                } else {
-                    task.run();
-                }
-            }
-            executorService.shutdown();
-            for (Future<?> submittedTask : submittedTasks) {
-                submittedTask.get();
-            }
-
-            session.getNode("/parent1").remove();
-            session.getNode("/parent2").remove();
-            session.save();
-        }
+        String srcId = session.getNode("/testRoot/parent0/child[1]").getIdentifier();
+        String destId = session.getNode("/testRoot/parent1").getIdentifier();
+        moveSNSWhileCachingPaths(srcId, destId, "child");
     }
 
-    protected class MoveTask implements Runnable {
-        private JcrSession session;
-        private String parent1ChildId;
-        private String parent2ChildId;
+    /**
+     * Create a tree of nodes that have different name siblings at the leaves.
+     *
+     * @param parentsCount the number of nodes created under the root node
+     * @param snsCount the number of nodes created under each parent
+     */
+    private void createTreeWithSNS( int parentsCount,
+                                    int snsCount ) throws Exception {
+        session = repository.login();
+        List<String> nodeIds = new ArrayList<String>();
+        Node testRoot = session.getRootNode().addNode("testRoot");
 
-        protected MoveTask( String parent1ChildId,
-                            String parent2ChildId,
-                            JcrSession session ) {
-            this.parent1ChildId = parent1ChildId;
-            this.parent2ChildId = parent2ChildId;
-            this.session = session;
+        for (int i = 0; i < parentsCount; i++) {
+            nodeIds.add(testRoot.addNode("parent" + i).getIdentifier());
         }
 
-        @Override
-        public void run() {
-            try {
-                Node parent1Child = session.getNodeByIdentifier(parent1ChildId);
-                String parent1ChildPath = parent1Child.getPath();
-                session.getNode(parent1ChildPath);
-                session.move(parent1ChildPath, "/parent2/p1_child");
-
-                Node parent2Child = session.getNodeByIdentifier(parent2ChildId);
-                String parent2ChildPath = parent2Child.getPath();
-                session.getNode(parent2ChildPath);
-                session.move(parent2ChildPath, "/parent1/p2_child");
-
-                session.save();
-
-                parent1Child = session.getNodeByIdentifier(parent1ChildId);
-                parent1ChildPath = parent1Child.getPath();
-                session.getNode(parent1ChildPath);
-
-                parent2Child = session.getNodeByIdentifier(parent2ChildId);
-                parent2ChildPath = parent2Child.getPath();
-                session.getNode(parent2ChildPath);
-            } catch (RepositoryException e) {
-                throw new RuntimeException(e);
+        for (String parentId : nodeIds) {
+            Node parent = session.getNodeByIdentifier(parentId);
+            for (int c = 0; c < snsCount; c++) {
+                parent.addNode("child");
             }
+        }
+
+        session.save();
+    }
+
+    private void moveSNSWhileCachingPaths( String srcId,
+                                           String destId,
+                                           String destNodeName ) throws Exception {
+        Node targetNode = session.getNodeByIdentifier(destId);
+        String targetNodePath = targetNode.getPath();
+        targetNode = session.getNode(targetNodePath);
+
+        Node sourceNode = session.getNodeByIdentifier(srcId);
+        String sourceNodePath = sourceNode.getPath();
+        sourceNode = session.getNode(sourceNodePath);
+        Node sourceParent = sourceNode.getParent();
+
+        //the next calls will load all the children (sns) and store them in the ws cache
+        loadChildrenByPaths(session, sourceParent);
+        loadChildrenByPaths(session, targetNode);
+
+        session.move(sourceNodePath, targetNodePath + "/" + destNodeName);
+        session.save();
+
+        //this will expose the problem of the cached paths
+        loadChildrenByPaths(session, sourceParent);
+        loadChildrenByPaths(session, targetNode);
+    }
+
+    private void loadChildrenByPaths( Session session,
+                                      Node parentNode ) throws Exception {
+        NodeIterator nodeIterator = parentNode.getNodes();
+        while (nodeIterator.hasNext()) {
+            Node childNode = nodeIterator.nextNode();
+            //this should load &cache the nodes (and their paths)
+            session.getNode(childNode.getPath());
         }
     }
 
