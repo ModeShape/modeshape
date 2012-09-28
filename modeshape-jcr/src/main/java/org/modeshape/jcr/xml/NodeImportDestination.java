@@ -24,24 +24,24 @@
 
 package org.modeshape.jcr.xml;
 
+import java.util.TreeMap;
 import javax.jcr.RepositoryException;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.value.Path;
-import java.util.TreeMap;
 
 /**
- * Interface which is expected to be implemented by clients that perform node importing via XML, using the {@link NodeImportXmlHandler}
- * class.
- *
+ * Interface which is expected to be implemented by clients that perform node importing via XML, using the
+ * {@link NodeImportXmlHandler} class.
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public interface NodeImportDestination {
 
     /**
      * Retrieves the execution context of the destination, in which the import will take place and which is used for creating
-     * values via the {@link org.modeshape.jcr.value.ValueFactories} and for registering namespaces via
-     * the {@link org.modeshape.jcr.value.NamespaceRegistry}
-     *
+     * values via the {@link org.modeshape.jcr.value.ValueFactories} and for registering namespaces via the
+     * {@link org.modeshape.jcr.value.NamespaceRegistry}
+     * 
      * @return a non-null {@link ExecutionContext}
      */
     public ExecutionContext getExecutionContext();
@@ -49,9 +49,9 @@ public interface NodeImportDestination {
     /**
      * Processes the given [nodePath, parseElement] mappings, which represent the results of the xml parsing. The given map is
      * always sorted in ascending order of the node paths.
-     *
+     * 
      * @param parseResults a {@link java.util.TreeMap}, never null.
-     * @throws {@link Exception} if any error occurs while processing the parse results
+     * @throws RepositoryException if any error occurs while processing the parse results
      */
     public void submit( TreeMap<Path, NodeImportXmlHandler.ImportElement> parseResults ) throws RepositoryException;
 }

@@ -26,17 +26,15 @@ package org.modeshape.sequencer.xml;
 import javax.jcr.Node;
 import org.junit.Test;
 
-
-/**
- * Unit test for {@link InheritingXmlSequencer}
- */
 public class InheritingXmlSequencerTest extends AbstractXmlSequencerTest {
 
     @Test
     public void shouldSequenceXsds() throws Exception {
         Node document = sequenceAndAssertDocument("Descriptor.1.0.xsd");
-        assertElement(document, "xs:schema", "xs:targetNamespace=http://ns.adobe.com/air/application/1.0"
-                , "xs:elementFormDefault=qualified");
+        assertElement(document,
+                      "xs:schema",
+                      "xs:targetNamespace=http://ns.adobe.com/air/application/1.0",
+                      "xs:elementFormDefault=qualified");
         assertElement(document, "xs:schema/xs:element", "xs:name=application");
     }
 }

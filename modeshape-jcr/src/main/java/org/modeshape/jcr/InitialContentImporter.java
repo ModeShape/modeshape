@@ -24,6 +24,10 @@
 
 package org.modeshape.jcr;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.TreeMap;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.StringUtil;
@@ -36,15 +40,11 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collection;
-import java.util.TreeMap;
 
 /**
- * Class which handles the import of initial content files for new workspaces, using a {@link NodeImportXmlHandler}. It is important
- * that any new content is imported through the "JCR layer", so that the JCR specific validations are performed.
- *
+ * Class which handles the import of initial content files for new workspaces, using a {@link NodeImportXmlHandler}. It is
+ * important that any new content is imported through the "JCR layer", so that the JCR specific validations are performed.
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public final class InitialContentImporter {
@@ -61,7 +61,7 @@ public final class InitialContentImporter {
     }
 
     protected void importInitialContent( String workspaceName ) throws RepositoryException {
-        //check that there is something which should be imported
+        // check that there is something which should be imported
         if (!initialContentConfig.hasInitialContentFile(workspaceName)) {
             return;
         }
@@ -69,7 +69,7 @@ public final class InitialContentImporter {
         RepositoryCache repositoryCache = runningState.repositoryCache();
         WorkspaceCache wsCache = repositoryCache.getWorkspaceCache(workspaceName);
         if (!wsCache.isEmpty()) {
-            //the ws cache must be empty for initial content to be imported
+            // the ws cache must be empty for initial content to be imported
             LOGGER.debug("Skipping import of initial content into workspace {0} as it is not empty", workspaceName);
             return;
         }
@@ -96,9 +96,8 @@ public final class InitialContentImporter {
         } catch (SAXException e) {
             if (e.getCause() instanceof RepositoryException) {
                 throw (RepositoryException)e.getCause();
-            } else {
-                throw new RepositoryException(JcrI18n.errorWhileParsingInitialContentFile.text(e.getMessage()), e);
             }
+            throw new RepositoryException(JcrI18n.errorWhileParsingInitialContentFile.text(e.getMessage()), e);
         } catch (IOException e) {
             throw new RepositoryException(JcrI18n.errorWhileReadingInitialContentFile.text(e.getMessage()), e);
         } finally {
@@ -125,7 +124,7 @@ public final class InitialContentImporter {
     private class ImportDestination implements NodeImportDestination {
         private final JcrSession session;
 
-        private ImportDestination( JcrSession session ) {
+        protected ImportDestination( JcrSession session ) {
             this.session = session;
         }
 
@@ -134,6 +133,7 @@ public final class InitialContentImporter {
             return session.context();
         }
 
+        @SuppressWarnings( "synthetic-access" )
         @Override
         public void submit( TreeMap<Path, NodeImportXmlHandler.ImportElement> parseResults ) throws RepositoryException {
             for (Path nodePath : parseResults.keySet()) {
@@ -143,7 +143,7 @@ public final class InitialContentImporter {
                 Path parentPath = nodePath.getParent();
                 AbstractJcrNode parentNode = session.node(parentPath);
 
-                //create the new node
+                // create the new node
                 AbstractJcrNode newNode = null;
                 String newNodeRelativePath = nodePath.getLastSegment().getName().getString();
                 if (StringUtil.isBlank(element.getType())) {
@@ -152,12 +152,12 @@ public final class InitialContentImporter {
                     newNode = parentNode.addNode(newNodeRelativePath, element.getType());
                 }
 
-                //add any mixins
+                // add any mixins
                 for (String mixin : element.getMixins()) {
                     newNode.addMixin(mixin);
                 }
 
-                //set the properties
+                // set the properties
                 for (String propertyName : element.getProperties().keySet()) {
                     Collection<String> propertyValues = element.getProperties().get(propertyName);
                     if (propertyValues.size() == 1) {
