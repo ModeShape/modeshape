@@ -23,7 +23,6 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -254,7 +253,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             } else if (ModelKeys.CHUNK_SIZE.equals(key)) {
                 started = startAndWriteAttribute(writer, storage, ModelAttributes.CHUNK_SIZE, element, started);
             }
-            
+
             // Custom ...
             else if (ModelKeys.CLASSNAME.equals(key)) {
                 started = startAndWriteAttribute(writer, storage, ModelAttributes.CLASSNAME, element, started);

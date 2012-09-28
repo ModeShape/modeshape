@@ -24,16 +24,15 @@
 
 package org.modeshape.test.integration;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+import java.io.File;
 import javax.annotation.Resource;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,11 +40,10 @@ import org.junit.runner.RunWith;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.api.JcrConstants;
-import java.io.File;
 
 /**
- * Arquillian integration tests that checks if the workspace-specific and defalu initial content has been imported correctly
- * (see standalone-modeshape.xml)
+ * Arquillian integration tests that checks if the workspace-specific and defalu initial content has been imported correctly (see
+ * standalone-modeshape.xml)
  * 
  * @author Horia Chiorean
  */
@@ -63,7 +61,6 @@ public class InitialContentIntegrationTest {
         archive.setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
         return archive;
     }
-
 
     @Before
     public void before() {

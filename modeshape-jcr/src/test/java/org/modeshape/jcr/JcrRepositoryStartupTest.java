@@ -23,31 +23,30 @@
  */
 package org.modeshape.jcr;
 
-import javax.jcr.NoSuchWorkspaceException;
-import javax.jcr.PathNotFoundException;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
-import org.junit.Test;
-import org.modeshape.common.FixFor;
-import org.modeshape.common.util.FileUtil;
 import java.io.File;
 import java.net.URL;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.PathNotFoundException;
+import javax.jcr.Session;
+import org.junit.Test;
+import org.modeshape.common.FixFor;
+import org.modeshape.common.util.FileUtil;
 
 /**
  * Tests that related to repeatedly starting/stopping repositories (without another repository configured in the @Before and @After
  * methods).
- *
+ * 
  * @author rhauch
  * @author hchiorean
  */
 public class JcrRepositoryStartupTest extends AbstractTransactionalTest {
 
     @Test
-    @FixFor( { "MODE-1526", "MODE-1512", "MODE-1617" } )
+    @FixFor( {"MODE-1526", "MODE-1512", "MODE-1617"} )
     public void shouldKeepPersistentDataAcrossRestart() throws Exception {
         File contentFolder = new File("target/persistent_repository/store/persistentRepository");
 
@@ -68,7 +67,7 @@ public class JcrRepositoryStartupTest extends AbstractTransactionalTest {
                     session.save();
                 }
 
-                //create 2 new workspaces
+                // create 2 new workspaces
                 session.getWorkspace().createWorkspace(newWs);
                 session.getWorkspace().createWorkspace(newWs1);
                 session.logout();
@@ -85,7 +84,7 @@ public class JcrRepositoryStartupTest extends AbstractTransactionalTest {
                 assertNotNull(session.getNode("/testNode"));
                 session.logout();
 
-                //check the workspaces were persisted
+                // check the workspaces were persisted
                 Session newWsSession = repository.login(newWs);
                 newWsSession.getRootNode().addNode("newWsTestNode");
                 newWsSession.save();
@@ -106,12 +105,12 @@ public class JcrRepositoryStartupTest extends AbstractTransactionalTest {
                 assertNotNull(newWsSession.getNode("/newWsTestNode"));
                 newWsSession.logout();
 
-                //check a workspace was deleted
+                // check a workspace was deleted
                 try {
                     repository.login(newWs1);
                     fail("Workspace was not deleted from the repository");
                 } catch (NoSuchWorkspaceException e) {
-                    //expected
+                    // expected
                 }
                 return null;
             }
@@ -120,7 +119,7 @@ public class JcrRepositoryStartupTest extends AbstractTransactionalTest {
 
     @Test
     public void shouldNotImportInitialContentIfWorkspaceContentsChanged() throws Exception {
-        //remove the ISPN local data, so we always start fresh
+        // remove the ISPN local data, so we always start fresh
         FileUtil.delete("target/persistent_repository_initial_content/store");
 
         String repositoryConfigFile = "config/repo-config-persistent-cache-initial-content.json";
@@ -128,10 +127,10 @@ public class JcrRepositoryStartupTest extends AbstractTransactionalTest {
             @Override
             public Void call() throws Exception {
                 JcrSession ws1Session = repository.login("ws1");
-                //check the initial import
+                // check the initial import
                 AbstractJcrNode node = ws1Session.getNode("/cars");
                 assertNotNull(node);
-                //remove the node initially imported and add a new one
+                // remove the node initially imported and add a new one
                 node.remove();
                 ws1Session.getRootNode().addNode("testNode");
 
@@ -148,7 +147,7 @@ public class JcrRepositoryStartupTest extends AbstractTransactionalTest {
                     ws1Session.getNode("/cars");
                     fail("The initial content should be be re-imported if a workspace is not empty");
                 } catch (PathNotFoundException e) {
-                    //expected
+                    // expected
                 }
                 ws1Session.getNode("/testNode");
                 return null;

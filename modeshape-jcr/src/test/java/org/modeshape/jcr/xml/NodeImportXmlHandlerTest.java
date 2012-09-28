@@ -31,6 +31,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.Map;
+import java.util.TreeMap;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.text.NoOpEncoder;
@@ -43,14 +47,10 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
-import java.io.InputStream;
-import java.util.Collection;
-import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * Test case for {@link NodeImportXmlHandler}
- *
+ * 
  * @author Randall Hauch
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
@@ -58,8 +58,8 @@ public class NodeImportXmlHandlerTest {
     private static final String NT_NAMESPACE_URI = "http://www.jcp.org/jcr/nt/1.0";
 
     private NodeImportXmlHandler handler;
-    private ExecutionContext context;
-    private Map<Path, NodeImportXmlHandler.ImportElement> parseResults;
+    protected ExecutionContext context;
+    protected Map<Path, NodeImportXmlHandler.ImportElement> parseResults;
     private NodeImportDestination parseDestination;
 
     @Before
@@ -290,14 +290,16 @@ public class NodeImportXmlHandlerTest {
 
         for (String propertyValueString : properties) {
             String[] parts = propertyValueString.split("=");
-            String propertyName = context.getValueFactories().getNameFactory().create(parts[0]).getString(
-                    NoOpEncoder.getInstance());
+            String propertyName = context.getValueFactories()
+                                         .getNameFactory()
+                                         .create(parts[0])
+                                         .getString(NoOpEncoder.getInstance());
             String propertyValue = parts[1];
             if (propertyName.equals(JcrConstants.JCR_PRIMARY_TYPE)) {
                 assertEquals(propertyValue, element.getType());
             } else {
-                Collection<String> actualPropertyValue = propertyName.equalsIgnoreCase(JcrConstants.JCR_MIXIN_TYPES)
-                        ? element.getMixins() : element.getProperties().get(propertyName);
+                Collection<String> actualPropertyValue = propertyName.equalsIgnoreCase(JcrConstants.JCR_MIXIN_TYPES) ? element.getMixins() : element.getProperties()
+                                                                                                                                                    .get(propertyName);
                 assertNotNull(actualPropertyValue);
                 String[] values = propertyValue.split(",");
                 for (String value : values) {
@@ -320,6 +322,5 @@ public class NodeImportXmlHandlerTest {
             }
         }
     }
-
 
 }

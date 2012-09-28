@@ -1065,8 +1065,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // Set up the repository cache ...
                 final SessionEnvironment sessionEnv = new RepositorySessionEnvironment(this.transactions);
                 CacheContainer workspaceCacheContainer = this.config.getWorkspaceContentCacheContainer();
-                this.cache = new RepositoryCache(context, database, config, systemContentInitializer, sessionEnv,
-                                                 changeBus, workspaceCacheContainer);
+                this.cache = new RepositoryCache(context, database, config, systemContentInitializer, sessionEnv, changeBus,
+                                                 workspaceCacheContainer);
 
                 // Set up the node type manager ...
                 this.nodeTypes = new RepositoryNodeTypeManager(this, true, true);
@@ -1220,15 +1220,19 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         /**
          * Perform any initialization code that requires the repository to be in a running state.
+         * 
+         * @throws Exception if there is a problem during this phase.
          */
         protected final void postInitialize() throws Exception {
             this.sequencers.initialize();
+            final InitialContentImporter importer = initialContentImporter;
             this.cache.runSystemOneTimeInitializationOperation(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
-                    //import initial content for each of the workspaces (this has to be done after the running state has "started"
+                    // import initial content for each of the workspaces (this has to be done after the running state has
+                    // "started"
                     for (String workspaceName : repositoryCache().getWorkspaceNames()) {
-                        initialContentImporter.importInitialContent(workspaceName);
+                        importer.importInitialContent(workspaceName);
                     }
                     return null;
                 }

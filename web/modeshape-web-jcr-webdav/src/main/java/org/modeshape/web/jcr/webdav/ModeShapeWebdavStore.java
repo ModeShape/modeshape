@@ -75,7 +75,6 @@ public class ModeShapeWebdavStore implements IWebdavStore {
     private final Logger logger = Logger.getLogger(getClass());
 
     /**
-     *
      * @param requestResolver
      * @param contentMapper
      */
@@ -160,12 +159,12 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         }
     }
 
-     @Override
+    @Override
     public void createResource( ITransaction transaction,
                                 String resourceUri ) {
-         resourceUri = removeTrailingSlash(resourceUri);
+        resourceUri = removeTrailingSlash(resourceUri);
 
-         // Mac OS X workaround from Drools Guvnor
+        // Mac OS X workaround from Drools Guvnor
         if (resourceUri.endsWith(".DS_Store")) return;
 
         int ind = resourceUri.lastIndexOf('/');
@@ -207,9 +206,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         if (!StringUtil.isBlank(uri) && uri.length() > 1 && uri.endsWith("/")) {
             return uri.substring(0, uri.length() - 1);
         }
-        else {
-            return uri;
-        }
+        return uri;
     }
 
     @Override
@@ -482,7 +479,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
      * @throws RepositoryException if the node does not exist, or if there is another problem obtaining the node
      */
     private Node nodeFor( ITransaction transaction,
-                                ResolvedRequest request ) throws RepositoryException {
+                          ResolvedRequest request ) throws RepositoryException {
         return ((JcrSessionTransaction)transaction).nodeFor(request);
     }
 
@@ -495,7 +492,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
      * @throws RepositoryException if is a problem accessing the repository
      */
     private boolean repositoryAndWorkspaceExist( ITransaction transaction,
-                                                       ResolvedRequest request ) throws RepositoryException {
+                                                 ResolvedRequest request ) throws RepositoryException {
         return ((JcrSessionTransaction)transaction).repositoryAndWorkspaceExist(request);
     }
 
@@ -508,7 +505,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
      * @throws RepositoryException if is a problem accessing the repository
      */
     private String[] childrenFor( ITransaction transaction,
-                                        ResolvedRequest request ) throws RepositoryException {
+                                  ResolvedRequest request ) throws RepositoryException {
         return ((JcrSessionTransaction)transaction).childrenFor(request);
     }
 

@@ -24,6 +24,14 @@
 
 package org.modeshape.jcr.xml;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
+import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.LinkedHashMultimap;
@@ -45,19 +53,11 @@ import org.modeshape.jcr.value.basic.LocalNamespaceRegistry;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.ext.DefaultHandler2;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
-import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A simplified version of the graph xml import handler (from ModeShape 2.x) which is used for importing initial content into
  * workspaces.
- *
+ * 
  * @author Randall Hauch
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
@@ -66,7 +66,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
 
     /**
      * The choices for how attributes that have no namespace prefix should be assigned a namespace.
-     *
+     * 
      * @author Randall Hauch
      */
     public enum AttributeScoping {
@@ -119,7 +119,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
     /**
      * The reference to the {@link org.modeshape.jcr.value.PathFactory}
      */
-    private final PathFactory pathFactory;
+    protected final PathFactory pathFactory;
 
     /**
      * The cached reference to the graph's namespace registry.
@@ -153,7 +153,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
 
     /**
      * Creates a new handler instance, using only an execution context and some default values.
-     *
+     * 
      * @param destination a non-null {@link NodeImportDestination}
      */
     public NodeImportXmlHandler( NodeImportDestination destination ) {
@@ -163,17 +163,17 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
 
     /**
      * Create a handler that parses an xml file.
-     *
-     * @param destination a non-null {@link NodeImportDestination} which is expected to provide a valid context and to handle
-     * the results of the import process.
+     * 
+     * @param destination a non-null {@link NodeImportDestination} which is expected to provide a valid context and to handle the
+     *        results of the import process.
      * @param nameAttribute the name of the property whose value should be used for the names of the nodes (typically, this is
-     * "jcr:name" or something equivalent); or null if the XML element name should always be used as the node name
+     *        "jcr:name" or something equivalent); or null if the XML element name should always be used as the node name
      * @param typeAttribute the name of the property that should be set with the type of the XML element, or null if there is no
-     * such property
+     *        such property
      * @param typeAttributeValue the value of the type property that should be used if the node has no <code>nameAttribute</code>,
-     * or null if the value should be set to the type of the XML element
+     *        or null if the value should be set to the type of the XML element
      * @param scoping defines how to choose the namespace of attributes that do not have a namespace prefix; if null, the
-     * {@link #DEFAULT_ATTRIBUTE_SCOPING} value is used
+     *        {@link #DEFAULT_ATTRIBUTE_SCOPING} value is used
      * @throws IllegalArgumentException if the destination reference is null
      */
     public NodeImportXmlHandler( NodeImportDestination destination,
@@ -208,7 +208,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
      * to register the namespace if required. Note that because this class does not really use the namespace prefixes to create
      * {@link Name} objects, no attempt is made to match the XML namespace prefixes.
      * </p>
-     *
+     * 
      * @see org.xml.sax.helpers.DefaultHandler#startPrefixMapping(java.lang.String, java.lang.String)
      */
     @Override
@@ -272,7 +272,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
                               String localName,
                               String name,
                               Attributes attributes ) throws SAXException {
-        //the root element should only be validated and not taken into account
+        // the root element should only be validated and not taken into account
         if (validateRootElement) {
             if (!name.equalsIgnoreCase(ROOT_ELEMENT_NAME)) {
                 throw new SAXException(JcrI18n.errorDuringInitialImport.text("Root xml element must be " + ROOT_ELEMENT_NAME));
@@ -339,10 +339,11 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
         }
     }
 
-    private String createName( String uri,
-                               String localName ) {
-        return !StringUtil.isBlank(uri) ? nameFactory.create(uri, localName, XML_DECODER).getString(
-                NoOpEncoder.getInstance()) : nameFactory.create(localName, XML_DECODER).getString(NoOpEncoder.getInstance());
+    protected String createName( String uri,
+                                 String localName ) {
+        return !StringUtil.isBlank(uri) ? nameFactory.create(uri, localName, XML_DECODER).getString(NoOpEncoder.getInstance()) : nameFactory.create(localName,
+                                                                                                                                                    XML_DECODER)
+                                                                                                                                            .getString(NoOpEncoder.getInstance());
     }
 
     @Override
@@ -356,7 +357,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
 
         String s = characterDataBuffer.toString().trim();
         if (s.length() > 0) {
-            //there is char data
+            // there is char data
             if (entry.looksLikeProperty()) {
                 // This is just a child element that is really a property ...
                 entry.addAsPropertyValue(s);
@@ -383,6 +384,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
         characterDataBuffer.append(ch, start, length);
     }
 
+    @SuppressWarnings( "unused" )
     @Override
     public void startDocument() throws SAXException {
         this.validateRootElement = true;
@@ -401,7 +403,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
 
     /**
      * Returns an [elementPath, element] map, based on the parsed elements.
-     *
+     * 
      * @return a {@link TreeMap} of the parsed elements, sorted in ascending order by path.
      */
     private TreeMap<Path, ImportElement> getParsedElementByPath() {
@@ -413,8 +415,8 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
     }
 
     /**
-     * Element entries represent in-memory representations of the xml elements (either nodes or properties) encountered between
-     * a {@link NodeImportXmlHandler#startElement(String, String, String, Attributes)} and a
+     * Element entries represent in-memory representations of the xml elements (either nodes or properties) encountered between a
+     * {@link NodeImportXmlHandler#startElement(String, String, String, Attributes)} and a
      * {@link NodeImportXmlHandler#endElement(String, String, String)} event.
      */
     public class ImportElement {
@@ -428,16 +430,16 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
         private Path path;
         private ImportElement parent;
 
-        private ImportElement( ImportElement parent ) {
+        protected ImportElement( ImportElement parent ) {
             this.parent = parent;
         }
 
         /**
          * Returns whether this element entry looks (at this point) like a property element: it has no properties
-         *
+         * 
          * @return true if this looks like a property element, or false otherwise
          */
-        private boolean looksLikeProperty() {
+        protected final boolean looksLikeProperty() {
             return properties.size() == 0;
         }
 
@@ -449,7 +451,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
             return childSnsIndexes.get(childName).incrementAndGet();
         }
 
-        private void setName( String name ) {
+        protected void setName( String name ) {
             this.name = name;
             int snsIndex = 1;
             if (parent != null) {
@@ -460,12 +462,12 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
             }
         }
 
-        private void setType( String type ) {
+        protected void setType( String type ) {
             this.type = type;
         }
 
-        private void addProperty( String propertyName,
-                                  String propertyValue ) {
+        protected void addProperty( String propertyName,
+                                    String propertyValue ) {
             String[] values = propertyValue.split(",");
             for (String value : values) {
                 if (propertyName.equals(JcrConstants.JCR_MIXIN_TYPES)) {
@@ -476,13 +478,13 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
             }
         }
 
-        private void addAsPropertyValue( String value ) {
+        protected void addAsPropertyValue( String value ) {
             parent.addProperty(name, value);
         }
 
         /**
          * Returns the name of the import element, which should translate to the name of a jcr node.
-         *
+         * 
          * @return a non-null {@link String}
          */
         public String getName() {
@@ -491,7 +493,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
 
         /**
          * Returns the name of the import element, which should translate to the type of a jcr node.
-         *
+         * 
          * @return a non-null {@link String}
          */
         public String getType() {
@@ -500,7 +502,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
 
         /**
          * Returns the list of mixins of the import element, which should translate to the mixins of a jcr node.
-         *
+         * 
          * @return a non-null {@link List}
          */
 
@@ -510,7 +512,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
 
         /**
          * Returns the imported element's properties.
-         *
+         * 
          * @return a non-null {@link Multimap}
          */
         public Multimap<String, String> getProperties() {
@@ -519,7 +521,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
 
         /**
          * Returns the path of this import element, which translates to the path of the jcr node.
-         *
+         * 
          * @return a non-null {@link Path}
          */
         public Path getPath() {

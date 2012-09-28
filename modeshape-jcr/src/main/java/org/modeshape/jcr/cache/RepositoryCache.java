@@ -23,6 +23,13 @@
  */
 package org.modeshape.jcr.cache;
 
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicLong;
 import org.infinispan.Cache;
 import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.manager.CacheContainer;
@@ -57,13 +64,6 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.ValueFactory;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  *
@@ -187,7 +187,7 @@ public class RepositoryCache implements Observable {
 
     /**
      * Get the identifier of the repository's metadata document.
-     *
+     * 
      * @return the cache key for the repository's metadata document; never null
      */
     public NodeKey getRepositoryMetadataDocumentKey() {
@@ -263,7 +263,7 @@ public class RepositoryCache implements Observable {
      * Executes the given operation only once, when the repository is created for the first time, using child node under
      * jcr:system as a global "lock". This should make the operation "cluster-friendly", where only the first node in the cluster
      * gets to execute the operation.
-     *
+     * 
      * @param initOperation a {@code non-null} {@link Callable} instance
      * @throws Exception if anything unexpected occurs, clients are expected to handle this
      */
@@ -271,17 +271,16 @@ public class RepositoryCache implements Observable {
         SessionCache systemSession = createSession(context, systemWorkspaceName, false);
         MutableCachedNode systemNode = getSystemNode(systemSession);
 
-        //look for the node which acts as a "global monitor"
+        // look for the node which acts as a "global monitor"
         ChildReference repositoryReference = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.REPOSITORY);
         if (repositoryReference != null) {
-            //should normally happen only in a clustered environment, when another node has committed/created the node
+            // should normally happen only in a clustered environment, when another node has committed/created the node
             CachedNode repositoryNode = systemSession.getNode(repositoryReference.getKey());
             Property statusProperty = repositoryNode.getProperty(ModeShapeLexicon.INITIALIZATION_STATE, systemSession);
-            //if the node exists, the property should be there
+            // if the node exists, the property should be there
             assert statusProperty != null;
-            while (!ModeShapeLexicon.InitializationState.FINISHED.toString().equals(
-                    statusProperty.getFirstValue().toString())) {
-                //some other node is executing the synchronized initialization so wait for it to finish
+            while (!ModeShapeLexicon.InitializationState.FINISHED.toString().equals(statusProperty.getFirstValue().toString())) {
+                // some other node is executing the synchronized initialization so wait for it to finish
                 LOGGER.debug("Waiting for another node to perform the initialization");
                 Thread.sleep(500l);
                 repositoryNode = systemSession.getNode(repositoryReference.getKey());
@@ -290,34 +289,39 @@ public class RepositoryCache implements Observable {
         } else {
             PropertyFactory propertyFactory = context.getPropertyFactory();
 
-            //try to add the node and the status property to started
-            //if another node is doing the same thing and none have committed yet, one of them will fail when the session.save
-            //is committed, because there can be only one child of this type below jcr:system
+            // try to add the node and the status property to started
+            // if another node is doing the same thing and none have committed yet, one of them will fail when the session.save
+            // is committed, because there can be only one child of this type below jcr:system
             Property statusProperty = null;
             MutableCachedNode syncNode = null;
             try {
                 Property primaryType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.REPOSITORY);
                 statusProperty = propertyFactory.create(ModeShapeLexicon.INITIALIZATION_STATE,
                                                         ModeShapeLexicon.InitializationState.STARTED.toString());
-                syncNode = systemNode.createChild(systemSession, systemNode.getKey().withId("mode:synchronizedInitialization"),
-                                                  ModeShapeLexicon.REPOSITORY, primaryType, statusProperty);
+                syncNode = systemNode.createChild(systemSession,
+                                                  systemNode.getKey().withId("mode:synchronizedInitialization"),
+                                                  ModeShapeLexicon.REPOSITORY,
+                                                  primaryType,
+                                                  statusProperty);
                 systemSession.save();
             } catch (Exception e) {
-                //an exception here should mean there's a DB conflict and another process has already managed to initialize
+                // an exception here should mean there's a DB conflict and another process has already managed to initialize
                 LOGGER.warn(e, JcrI18n.errorDuringInitialInitialization);
                 return;
             }
 
             try {
-                //execute the operation
-                //NOTE: this should always complete and ideally take a short amount of time. Otherwise, if this were to block all
-                //the other nodes in a cluster would block
+                // execute the operation
+                // NOTE: this should always complete and ideally take a short amount of time. Otherwise, if this were to block all
+                // the other nodes in a cluster would block
                 initOperation.call();
             } finally {
-                //set the status to finished so that other nodes aren't blocked. If something failed, it should be logged from the outside
+                // set the status to finished so that other nodes aren't blocked. If something failed, it should be logged from
+                // the outside
                 statusProperty = propertyFactory.create(ModeShapeLexicon.INITIALIZATION_STATE,
                                                         ModeShapeLexicon.InitializationState.FINISHED.toString());
-                NodeKey repositoryNodeKey = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.REPOSITORY)
+                NodeKey repositoryNodeKey = systemNode.getChildReferences(systemSession)
+                                                      .getChild(ModeShapeLexicon.REPOSITORY)
                                                       .getKey();
                 syncNode = systemSession.mutable(repositoryNodeKey);
                 syncNode.setProperty(systemSession, statusProperty);
@@ -328,7 +332,7 @@ public class RepositoryCache implements Observable {
 
     /**
      * Runs a refresh operation, if and only if the one time initialization operation has finished successfully.
-     *
+     * 
      * @param refreshOperation a {@code non-null} {@link Callable} instance
      * @throws Exception if anything unexpected occurs, clients are expected to handle this
      * @see RepositoryCache#runSystemOneTimeInitializationOperation(java.util.concurrent.Callable)
@@ -338,8 +342,8 @@ public class RepositoryCache implements Observable {
         MutableCachedNode systemNode = getSystemNode(systemSession);
 
         ChildReference repositoryReference = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.REPOSITORY);
-        if (repositoryReference != null) {
-            //refresh operations are only performed after the one time initialization has succeeded
+        if (repositoryReference == null) {
+            // refresh operations are only performed after the one time initialization has succeeded
             return;
         }
         CachedNode repositoryNode = systemSession.getNode(repositoryReference.getKey());
@@ -408,7 +412,7 @@ public class RepositoryCache implements Observable {
 
     /**
      * Get the key for this repository.
-     *
+     * 
      * @return the repository's key; never null
      */
     public final String getKey() {
@@ -429,7 +433,7 @@ public class RepositoryCache implements Observable {
 
     /**
      * Get the name for this repository.
-     *
+     * 
      * @return the repository's name; never null
      */
     public final String getName() {
@@ -439,7 +443,7 @@ public class RepositoryCache implements Observable {
     /**
      * Get the names of all available workspaces in this repository. Not all workspaces may be loaded. This set does not contain
      * the system workspace name, as that workspace is not accessible/visible to JCR clients.
-     *
+     * 
      * @return the names of all available workspaces; never null and immutable
      */
     public final Set<String> getWorkspaceNames() {
@@ -459,8 +463,7 @@ public class RepositoryCache implements Observable {
             // Create the root document for this workspace ...
             EditableDocument rootDoc = Schematic.newDocument();
             DocumentTranslator trans = new DocumentTranslator(context, database, Long.MAX_VALUE);
-            trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.ROOT),
-                              null);
+            trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.ROOT), null);
             trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKey.toString()), null);
 
             database.putIfAbsent(rootKey.toString(), rootDoc, null);
@@ -512,7 +515,7 @@ public class RepositoryCache implements Observable {
      * <p>
      * This method does nothing if a cache for the workspace with the supplied name hasn't yet been created.
      * </p>
-     *
+     * 
      * @param name the name of the workspace
      */
     void refreshWorkspace( String name ) {
@@ -528,11 +531,11 @@ public class RepositoryCache implements Observable {
      * Create a new workspace in this repository, if the repository is appropriately configured. If the repository already
      * contains a workspace with the supplied name, then this method simply returns that workspace. Otherwise, this method
      * attempts to create the named workspace and will return a cache for this newly-created workspace.
-     *
+     * 
      * @param name the workspace name
      * @return the workspace cache for the new (or existing) workspace; never null
      * @throws UnsupportedOperationException if this repository was not configured to allow
-     * {@link RepositoryConfiguration#isCreatingWorkspacesAllowed() creation of workspaces}.
+     *         {@link RepositoryConfiguration#isCreatingWorkspacesAllowed() creation of workspaces}.
      */
     public WorkspaceCache createWorkspace( String name ) {
         if (!workspaceNames.contains(name)) {
@@ -568,11 +571,11 @@ public class RepositoryCache implements Observable {
      * Permanently destroys the workspace with the supplied name, if the repository is appropriately configured. If no such
      * workspace exists in this repository, this method simply returns. Otherwise, this method attempts to destroy the named
      * workspace.
-     *
+     * 
      * @param name the workspace name
      * @return true if the workspace with the supplied name existed and was destroyed, or false otherwise
      * @throws UnsupportedOperationException if this repository was not configured to allow
-     * {@link RepositoryConfiguration#isCreatingWorkspacesAllowed() creation (and destruction) of workspaces}.
+     *         {@link RepositoryConfiguration#isCreatingWorkspacesAllowed() creation (and destruction) of workspaces}.
      */
     public boolean destroyWorkspace( String name ) {
         if (workspaceNames.contains(name)) {
@@ -581,12 +584,10 @@ public class RepositoryCache implements Observable {
                                                                                                                     getName()));
             }
             if (configuration.getDefaultWorkspaceName().equals(name)) {
-                throw new UnsupportedOperationException(JcrI18n.unableToDestroyDefaultWorkspaceInRepository.text(name,
-                                                                                                                 getName()));
+                throw new UnsupportedOperationException(JcrI18n.unableToDestroyDefaultWorkspaceInRepository.text(name, getName()));
             }
             if (this.systemWorkspaceName.equals(name)) {
-                throw new UnsupportedOperationException(JcrI18n.unableToDestroySystemWorkspaceInRepository.text(name,
-                                                                                                                getName()));
+                throw new UnsupportedOperationException(JcrI18n.unableToDestroySystemWorkspaceInRepository.text(name, getName()));
             }
             if (!configuration.isCreatingWorkspacesAllowed()) {
                 throw new UnsupportedOperationException(JcrI18n.creatingWorkspacesIsNotAllowedInRepository.text(getName()));
@@ -617,7 +618,7 @@ public class RepositoryCache implements Observable {
      * Notice that at times the changes persisted by other sessions may cause some of this session's transient state to become
      * invalid. (For example, this session's newly-created child of some node, A, may become invalid or inaccessible if some other
      * session saved a deletion of node A.)
-     *
+     * 
      * @param workspaceName the name of the workspace; may not be null
      * @return the node cache; never null
      * @throws WorkspaceNotFoundException if no such workspace exists
@@ -628,7 +629,7 @@ public class RepositoryCache implements Observable {
 
     /**
      * Create a session for the workspace with the given name, using the supplied ExecutionContext for the session.
-     *
+     * 
      * @param context the context for the new session; may not be null
      * @param workspaceName the name of the workspace; may not be null
      * @param readOnly true if the session is to be read-only
