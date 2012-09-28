@@ -774,8 +774,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // The node has moved (either within the same parent or to another parent) ...
                         Path oldPath = workspacePaths.getPath(persisted);
                         NodeKey oldParentKey = persisted.getParentKey(workspaceCache);
-                        if (!oldParentKey.equals(newParent) || !additionalParents.isEmpty()) {
-                            // Don't need to change the doc, since we've moved within the same parent ...
+                        if (!oldParentKey.equals(newParent) || (additionalParents != null && !additionalParents.isEmpty())) {
                             translator.setParents(doc, node.newParent(), oldParentKey, additionalParents);
                         }
                         // Generate a move even either way ...
