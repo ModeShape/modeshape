@@ -1,0 +1,1 @@
+This is a parent POM for all of the other BOMs. It defines basic information and a number of properties that define the specific versions of dependencies referenced in the other BOMs.

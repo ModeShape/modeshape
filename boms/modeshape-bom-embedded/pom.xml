@@ -1,0 +1,677 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <parent>
+        <groupId>org.modeshape.bom</groupId>
+        <artifactId>modeshape-bom-parent</artifactId>
+        <version>3.0-SNAPSHOT</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.modeshape.bom</groupId>
+    <artifactId>modeshape-bom-embedded</artifactId>
+    <version>3.0-SNAPSHOT</version>
+    <name>ModeShape BOM for embedded usage</name>
+
+    <url>http://www.modeshape.org</url>
+    <packaging>pom</packaging>
+    <description>Bill of Material (BOM) for embedding ModeShape within JavaSE apps, libraries, and (non-AS7) web apps</description>
+
+    <properties>
+      <!-- Version properties are inherited from parent -->
+    </properties>
+
+    <!--
+         This section defines the default dependency settings inherited by
+         child projects. Note that this section does not add dependencies, but
+         rather provide default settings.
+     -->
+    <dependencyManagement>
+        <dependencies>
+
+            <!-- Public APIs from BOM -->
+            <dependency>
+                <groupId>org.modeshape.bom</groupId>
+                <artifactId>modeshape-bom-api</artifactId>
+                <version>${project.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+
+            <!-- ModeShape implementation components -->
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jcr</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-schematic</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-jcr-tck</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-ddl</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-images</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-java</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-mp3</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-msoffice</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-sramp</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-teiid</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-text</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-xml</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-xsd</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-wsdl</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-zip</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-extractor-tika</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!--
+                Infinispan
+            -->
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-core</artifactId>
+                <version>${infinispan.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.codehaus.woodstox</groupId>
+                        <artifactId>woodstox-core-asl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.woodstox</groupId>
+                        <artifactId>stax2-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-lucene-directory</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-cachestore-bdbje</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-cachestore-jdbm</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-cachestore-jdbc</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <!--Required by infinispan-cachestore-jdbc -->
+            <dependency>
+                <groupId>c3p0</groupId>
+                <artifactId>c3p0</artifactId>
+                <version>${c3p0.version}</version>
+            </dependency>
+            
+            <!--
+                JGroups is used for the changes bus, but it's optional. Most of the times though, this will be in the classpath
+                because of ISPN.
+             -->
+            <dependency>
+                <groupId>org.jgroups</groupId>
+                <artifactId>jgroups</artifactId>
+                <version>${jgroups.version}</version>
+            </dependency>
+
+            <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-search-engine</artifactId>
+                <version>${hibernate.search.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.hibernate</groupId>
+                        <artifactId>hibernate-search-analyzers</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-search-infinispan</artifactId>
+                <version>${hibernate.search.version}</version>
+            </dependency>
+            <dependency>
+              <!--
+              To force testing of Apache Avro integration with the version of Jackson used in AS 7.1
+              -->
+              <groupId>org.codehaus.jackson</groupId>
+              <artifactId>jackson-core-asl</artifactId>
+              <version>${hibernate.search.jackson-core-asl.version}</version>
+            </dependency>
+            <dependency>
+              <!--
+              To force testing of Apache Avro integration with the version of Jackson used in AS 7.1
+              -->
+              <groupId>org.codehaus.jackson</groupId>
+              <artifactId>jackson-mapper-asl</artifactId>
+              <version>${hibernate.search.jackson-mapper-asl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-core</artifactId>
+                <version>${lucene.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-regex</artifactId>
+                <version>${lucene.regex.version}</version>
+            </dependency>
+            
+            <!-- Recommended JUnit version -->
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit-dep</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-unit-test</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!--
+                Compatible logging modules.
+            -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+                <version>${slf4j.log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.logging</groupId>
+                <artifactId>jboss-logging</artifactId>
+                <version>${jboss.logging.version}</version>
+            </dependency>
+            
+            <!--
+                Sequencers
+            -->
+
+            <!-- Eclipse JDT artifacts declare their dependencies using ranges. (yikes!)
+                 So we need to specify exact versions, and we can do that in a dependencyManagement section.
+                 Here are the dependencies showing the last combination that we could get working:
+                 +- org.eclipse.equinox:common:jar:3.3.0-v20070426:compile
+                     +- org.eclipse.jdt:core:jar:3.3.0-v_771:compile
+                     |  +- org.eclipse.core:resources:jar:3.3.0-v20070604:compile
+                     |  |  \- org.eclipse.core:expressions:jar:3.3.0-v20070606-0010:compile
+                     |  \- org.eclipse.core:runtime:jar:3.3.100-v20070530:compile
+                     |     +- org.eclipse:osgi:jar:3.3.0-v20070530:compile
+                     |     +- org.eclipse.core:jobs:jar:3.3.0-v20070423:compile
+                     |     +- org.eclipse.equinox:registry:jar:3.3.0-v20070522:compile
+                     |     +- org.eclipse.equinox:preferences:jar:3.2.100-v20070522:compile
+                     |     \- org.eclipse.core:contenttype:jar:3.2.100-v20070319:compile
+            -->
+            <!--Java sequencer-->
+            <dependency>
+                <groupId>org.eclipse.equinox</groupId>
+                <artifactId>common</artifactId>
+                <version>${eclipse.equinox.common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jdt</groupId>
+                <artifactId>core</artifactId>
+                <version>${eclipse.jdt.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>resources</artifactId>
+                <version>${eclipse.core.resources.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>expressions</artifactId>
+                <version>${eclipse.core.expressions.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>runtime</artifactId>
+                <version>${eclipse.core.runtime.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse</groupId>
+                <artifactId>osgi</artifactId>
+                <version>${eclipse.osgi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>jobs</artifactId>
+                <version>${eclipse.core.jobs.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.equinox</groupId>
+                <artifactId>registry</artifactId>
+                <version>${eclipse.equinox.registry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.equinox</groupId>
+                <artifactId>preferences</artifactId>
+                <version>${eclipse.equinox.preferences.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>contenttype</artifactId>
+                <version>${eclipse.core.contenttype.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>${javaassist.version}</version>
+            </dependency>
+            <!--Mp3 sequencer-->
+            <dependency>
+                <groupId>org</groupId>
+                <artifactId>jaudiotagger</artifactId>
+                <version>${jaudiotagger.version}</version>
+            </dependency>
+            <!--MsOffice sequencer-->
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-scratchpad</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <!--Teiid sequencer-->
+            <dependency>
+                <groupId>com.beust</groupId>
+                <artifactId>jcommander</artifactId>
+                <version>${jcommander.version}</version>
+            </dependency>
+            <!--WSDL sequencer-->
+            <dependency>
+                <groupId>wsdl4j</groupId>
+                <artifactId>wsdl4j</artifactId>
+                <version>${wsdl4j.version}</version>
+            </dependency>
+            <!--XSD sequencer-->
+            <dependency>
+                <groupId>org.eclipse.xsd</groupId>
+                <artifactId>xsd</artifactId>
+                <version>${eclipse.xsd.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.emf</groupId>
+                <artifactId>common</artifactId>
+                <version>${eclipse.emf.common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.emf</groupId>
+                <artifactId>ecore</artifactId>
+                <version>${eclipse.emf.ecore.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.emf</groupId>
+                <artifactId>ecore-change</artifactId>
+                <version>${eclipse.emf.ecorechange.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.emf</groupId>
+                <artifactId>ecore-xmi</artifactId>
+                <version>${eclipse.emf.ecorexmi.version}</version>
+            </dependency>
+
+            <!--
+                TIKA text extractor
+            
+                This Tika dependency brings in a lot of 3rd party libraries. We'll exclude
+                most of them and only keep a few that are for Microsoft Office documents,
+                HTML, XML and PDF. When others are needed, they can simply be added to
+                an application's dependencies.
+                
+                Note that 'modeshape-jcr' excludes even more transitive dependencies, since it
+                only uses the MIME type detector functionality, whereas the 'modeshape-extractor-tika'
+                uses everything defined here.
+                -->
+            <dependency>
+                <groupId>org.apache.tika</groupId>
+                <artifactId>tika-parsers</artifactId>
+                <version>${tika.version}</version>
+                <exclusions>
+                    <!--
+                    The NetCDF and HDF files are often used in the scientific community, so we exclude this
+                    library (and the Commons HTTP Client library) by default.
+                    -->
+                    <exclusion>
+                        <groupId>edu.ucar</groupId>
+                        <artifactId>netcdf</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-httpclient</groupId>
+                        <artifactId>commons-httpclient</artifactId>
+                    </exclusion>
+
+                    <!--
+                    Image metadata isn't often for text extraction,
+                    so exclude this library by default.
+                    -->
+                    <exclusion>
+                        <groupId>com.drewnoakes</groupId>
+                        <artifactId>metadata-extractor</artifactId>
+                    </exclusion>
+                    <!--
+                    RSS and Atom feeds aren't often used for text extraction,
+                    so exclude this library by default.
+                    -->
+                    <exclusion>
+                        <groupId>rome</groupId>
+                        <artifactId>rome</artifactId>
+                    </exclusion>
+                    <!--
+                    Boilerpipe HTML templates are likely not used,
+                    so exclude this library by default.
+                    -->
+                    <exclusion>
+                        <groupId>de.l3s.boilerpipe</groupId>
+                        <artifactId>boilerpipe</artifactId>
+                    </exclusion>
+                    <!-- 
+                    PDFBox declares the Bouncy Castle dependencies
+                    as optional, and Tika always depends on them to avoid
+                    problems with encrypted PDFs (see TIKA-370). 
+                    We exclude them by default. 
+                    -->
+                    <exclusion>
+                      <groupId>org.bouncycastle</groupId>
+                      <artifactId>bcmail-jdk15</artifactId>
+                    </exclusion>
+                    <exclusion>
+                      <groupId>org.bouncycastle</groupId>
+                      <artifactId>bcprov-jdk15</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            
+            <!--
+                Optional dependency when using the MongoDB binary store
+            -->
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>mongo-java-driver</artifactId>
+                <version>${mongo.driver.version}</version>
+            </dependency>
+            
+            <!--
+               Optional/recommended JAAS implementation (PicketBox)
+               -->
+            <dependency>
+                <groupId>org.picketbox</groupId>
+                <artifactId>picketbox-bare</artifactId>
+                <version>${picketbox.version}</version>
+                <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>apache-xalan</groupId>
+                        <artifactId>xalan</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>apache-xalan</groupId>
+                        <artifactId>serializer</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>apache-xerces</groupId>
+                        <artifactId>xml-apis</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>apache-xerces</groupId>
+                        <artifactId>xercesImpl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.hibernate</groupId>
+                        <artifactId>hibernate</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <!--
+                Optional/recommended JTA implementation
+            -->
+            <dependency>
+                <groupId>javax.transaction</groupId>
+                <artifactId>jta</artifactId>
+                <version>${javax.jta.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.jbossts</groupId>
+                <artifactId>jbossjta</artifactId>
+                <version>${jbossjta.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>commons-httpclient</artifactId>
+                        <groupId>commons-httpclient</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>ironjacamar-spec-api</artifactId>
+                        <groupId>org.jboss.ironjacamar</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jboss-logging-spi</artifactId>
+                        <groupId>org.jboss.logging</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jboss-logging</artifactId>
+                        <groupId>org.jboss.logging</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jboss-logging-processor</artifactId>
+                        <groupId>org.jboss.logging</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jboss-logging-generator</artifactId>
+                        <groupId>org.jboss.logging</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jbossws-native-core</artifactId>
+                        <groupId>org.jboss.ws.native</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>emma</artifactId>
+                        <groupId>emma</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>emma_ant</artifactId>
+                        <groupId>emma</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>hornetq-core</artifactId>
+                        <groupId>org.hornetq</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>netty</artifactId>
+                        <groupId>org.jboss.netty</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>wrapper</artifactId>
+                        <groupId>tanukisoft</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jacorb</artifactId>
+                        <groupId>jacorb</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jfreechart</artifactId>
+                        <groupId>jfree</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jboss-corba-ots-spi</artifactId>
+                        <groupId>org.jboss.integration</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jboss-server-manager</artifactId>
+                        <groupId>org.jboss.jbossas</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jboss-ejb-api_3.1_spec</artifactId>
+                        <groupId>org.jboss.spec.javax.ejb</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jnp-client</artifactId>
+                        <groupId>org.jboss.naming</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+                        <groupId>org.jboss.spec.javax.servlet</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jbossws-common</artifactId>
+                        <groupId>org.jboss.ws</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jcl-over-slf4j</artifactId>
+                        <groupId>org.slf4j</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>stax-api</artifactId>
+                        <groupId>stax</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>idl</artifactId>
+                        <groupId>jacorb</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jboss-logging-tools</artifactId>
+                        <groupId>org.jboss.logging</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jboss-connector-api_1.5_spec</artifactId>
+                        <groupId>org.jboss.spec.javax.resource</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jboss-transaction-spi</artifactId>
+                        <groupId>org.jboss.integration</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jboss-remoting</artifactId>
+                        <groupId>org.jboss.remoting</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>slf4j-api</artifactId>
+                        <groupId>org.slf4j</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>dom4j</artifactId>
+                        <groupId>dom4j</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>commons-codec</artifactId>
+                        <groupId>commons-codec</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jboss-logmanager</artifactId>
+                        <groupId>org.jboss.logmanager</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>hibernate-jpa-2.0-api</artifactId>
+                        <groupId>org.hibernate.javax.persistence</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>commons-logging</artifactId>
+                        <groupId>commons-logging</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jcommon</artifactId>
+                        <groupId>jfree</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jboss-transaction-api_1.1_spec</artifactId>
+                        <groupId>org.jboss.spec.javax.transaction</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+</project>
