@@ -23,6 +23,11 @@
  */
 package org.modeshape.jcr;
 
+import static javax.jcr.query.qom.QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO;
+import static javax.jcr.query.qom.QueryObjectModelConstants.JCR_OPERATOR_GREATER_THAN;
+import static javax.jcr.query.qom.QueryObjectModelConstants.JCR_OPERATOR_GREATER_THAN_OR_EQUAL_TO;
+import static javax.jcr.query.qom.QueryObjectModelConstants.JCR_OPERATOR_LESS_THAN;
+import static javax.jcr.query.qom.QueryObjectModelConstants.JCR_OPERATOR_LESS_THAN_OR_EQUAL_TO;
 import static javax.jcr.query.qom.QueryObjectModelConstants.JCR_OPERATOR_LIKE;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
@@ -52,11 +57,13 @@ import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
+import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
+import javax.jcr.query.qom.ChildNode;
 import javax.jcr.query.qom.Column;
 import javax.jcr.query.qom.Constraint;
 import javax.jcr.query.qom.Literal;
@@ -711,6 +718,91 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, columnNames);
     }
 
+    @FixFor( "MODE-1611" )
+    @Test
+    public void shouldAllowQomEqualityCriteriaOnPropertyDefinedWithBooleanPropertyDefinition() throws RepositoryException {
+        assertQomQueryWithBooleanValue(1, null, null, false);
+        assertQomQueryWithBooleanValue(1, "notion:booleanProperty", JCR_OPERATOR_EQUAL_TO, true);
+        assertQomQueryWithBooleanValue(0, "notion:booleanProperty", JCR_OPERATOR_EQUAL_TO, false);
+
+        assertQomQueryWithBooleanValue(1, "notion:booleanProperty", JCR_OPERATOR_GREATER_THAN, false);
+        assertQomQueryWithBooleanValue(1, "notion:booleanProperty", JCR_OPERATOR_GREATER_THAN_OR_EQUAL_TO, false);
+        assertQomQueryWithBooleanValue(0, "notion:booleanProperty", JCR_OPERATOR_GREATER_THAN, true);
+        assertQomQueryWithBooleanValue(1, "notion:booleanProperty", JCR_OPERATOR_GREATER_THAN_OR_EQUAL_TO, true);
+
+        assertQomQueryWithBooleanValue(0, "notion:booleanProperty", JCR_OPERATOR_LESS_THAN, false);
+        assertQomQueryWithBooleanValue(0, "notion:booleanProperty", JCR_OPERATOR_LESS_THAN_OR_EQUAL_TO, false);
+        assertQomQueryWithBooleanValue(0, "notion:booleanProperty", JCR_OPERATOR_LESS_THAN, true);
+        assertQomQueryWithBooleanValue(1, "notion:booleanProperty", JCR_OPERATOR_LESS_THAN_OR_EQUAL_TO, true);
+
+        assertQomQueryWithBooleanValue(0, "notion:booleanProperty2", JCR_OPERATOR_EQUAL_TO, true);
+        assertQomQueryWithBooleanValue(1, "notion:booleanProperty2", JCR_OPERATOR_EQUAL_TO, false);
+
+        assertQomQueryWithBooleanValue(0, "notion:booleanProperty2", JCR_OPERATOR_GREATER_THAN, false);
+        assertQomQueryWithBooleanValue(1, "notion:booleanProperty2", JCR_OPERATOR_GREATER_THAN_OR_EQUAL_TO, false);
+        assertQomQueryWithBooleanValue(0, "notion:booleanProperty2", JCR_OPERATOR_GREATER_THAN, true);
+        assertQomQueryWithBooleanValue(0, "notion:booleanProperty2", JCR_OPERATOR_GREATER_THAN_OR_EQUAL_TO, true);
+
+        assertQomQueryWithBooleanValue(0, "notion:booleanProperty2", JCR_OPERATOR_LESS_THAN, false);
+        assertQomQueryWithBooleanValue(1, "notion:booleanProperty2", JCR_OPERATOR_LESS_THAN_OR_EQUAL_TO, false);
+        assertQomQueryWithBooleanValue(1, "notion:booleanProperty2", JCR_OPERATOR_LESS_THAN, true);
+        assertQomQueryWithBooleanValue(1, "notion:booleanProperty2", JCR_OPERATOR_LESS_THAN_OR_EQUAL_TO, true);
+
+    }
+
+    protected void assertQomQueryWithBooleanValue( int numResults,
+                                                   String propertyName,
+                                                   String operator,
+                                                   boolean propertyValue ) throws RepositoryException {
+        QueryObjectModelFactory qomFactory = session.getWorkspace().getQueryManager().getQOMFactory();
+        ValueFactory valueFactory = session.getValueFactory();
+        Value propertyValueObj = valueFactory.createValue(propertyValue);
+
+        Selector selector = qomFactory.selector("notion:typed", "node");
+        Constraint constraint = null;
+        if (propertyName != null && operator != null) {
+            PropertyValue propValue = qomFactory.propertyValue("node", propertyName);
+            Literal literal = qomFactory.literal(propertyValueObj);
+            constraint = qomFactory.comparison(propValue, operator, literal);
+        }
+        Column[] columns = new Column[2];
+        columns[0] = qomFactory.column("node", "notion:booleanProperty", "notion:booleanProperty");
+        columns[1] = qomFactory.column("node", "notion:booleanProperty2", "notion:booleanProperty2");
+        Ordering[] orderings = null;
+
+        // Build and execute the query ...
+        Query query = qomFactory.createQuery(selector, constraint, orderings, columns);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, numResults);
+        String[] columnNames = {"notion:booleanProperty", "notion:booleanProperty2"};
+        assertResultsHaveColumns(result, columnNames);
+    }
+
+    @FixFor( "MODE-1611" )
+    @Test
+    public void shouldAllowQomUseOfIsChildNodeInWhereClause() throws RepositoryException {
+        QueryObjectModelFactory qomFactory = session.getWorkspace().getQueryManager().getQOMFactory();
+
+        Selector selector = qomFactory.selector("nt:base", "category");
+        ChildNode childNodeConstraint = qomFactory.childNode("category", "/Cars");
+        Constraint constraint = childNodeConstraint;
+        Column[] columns = new Column[0];
+        Ordering[] orderings = null;
+
+        // Build and execute the query ...
+        Query query = qomFactory.createQuery(selector, constraint, orderings, columns);
+        assertThat(query.getStatement(), is("SELECT * FROM [nt:base] AS category WHERE ISCHILDNODE(category,'/Cars')"));
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 4L); // just 4 children below "/Cars"
+        String[] expectedColumns = {"category.jcr:primaryType", "category.jcr:mixinTypes", "category.jcr:name",
+            "category.jcr:path", "category.jcr:score", "category.mode:depth", "category.mode:localName"};
+        assertResultsHaveColumns(result, expectedColumns);
+    }
+
     @FixFor( "MODE-1057" )
     @Test
     public void shouldAllowEqualityNumericCriteriaOnPropertyDefinedWithNumericPropertyDefinition() throws RepositoryException {
@@ -1249,7 +1341,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         String sql = "SELECT [jcr:path] FROM [nt:base] WHERE ISCHILDNODE([nt:base],'/Cars') ORDER BY [jcr:path]";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
-        // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 4L);

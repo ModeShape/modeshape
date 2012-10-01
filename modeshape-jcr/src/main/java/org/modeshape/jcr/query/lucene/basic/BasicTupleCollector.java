@@ -122,7 +122,7 @@ public class BasicTupleCollector extends TupleCollector {
             } else if (JcrConstants.MODE_LOCAL_NAME.equals(propertyName)) {
                 assignments.add(new LocalNameColumnAssignment(index));
             } else if (JcrConstants.MODE_DEPTH.equals(propertyName)) {
-                assignments.add(new LocalNameColumnAssignment(index));
+                assignments.add(new NodeDepthColumnAssignment(index));
             } else {
                 Name propName = nameFactory.create(propertyName);
                 this.columnNames[index] = propName;
