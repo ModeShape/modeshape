@@ -23,17 +23,6 @@
  */
 package org.modeshape.jdbc.delegate;
 
-import javax.jcr.RepositoryException;
-import javax.jcr.nodetype.NodeType;
-import javax.jcr.query.QueryResult;
-import org.modeshape.jdbc.JcrDriver;
-import org.modeshape.jdbc.JdbcLocalI18n;
-import org.modeshape.jdbc.LocalJcrDriver.JcrContextFactory;
-import org.modeshape.web.jcr.rest.client.domain.QueryRow;
-import org.modeshape.web.jcr.rest.client.domain.Repository;
-import org.modeshape.web.jcr.rest.client.domain.Server;
-import org.modeshape.web.jcr.rest.client.domain.Workspace;
-import org.modeshape.web.jcr.rest.client.json.JsonRestClient;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -45,6 +34,17 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.NodeType;
+import javax.jcr.query.QueryResult;
+import org.modeshape.jdbc.JcrDriver;
+import org.modeshape.jdbc.JdbcLocalI18n;
+import org.modeshape.jdbc.LocalJcrDriver.JcrContextFactory;
+import org.modeshape.web.jcr.rest.client.domain.QueryRow;
+import org.modeshape.web.jcr.rest.client.domain.Repository;
+import org.modeshape.web.jcr.rest.client.domain.Server;
+import org.modeshape.web.jcr.rest.client.domain.Workspace;
+import org.modeshape.web.jcr.rest.client.json.JsonRestClient;
 
 /**
  * The HTTPRepositoryDelegate provides remote Repository implementation to access the Jcr layer via HTTP lookup.
@@ -90,7 +90,7 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
     private Repository remoteRepository;
 
     public HttpRepositoryDelegate( String url,
-                                   Properties info) {
+                                   Properties info ) {
         super(url, info);
     }
 
@@ -103,7 +103,7 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
     @Override
     public QueryResult execute( String query,
                                 String language ) throws RepositoryException {
-        logger.trace("Executing query: {0}",  query);
+        logger.trace("Executing query: {0}", query);
 
         try {
             List<QueryRow> results = this.restClient.query(workspace, language, query);
@@ -192,6 +192,9 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
         try {
             Set<String> repositoryNames = new TreeSet<String>();
 
+            // First, validate the Server object (in case we're talking to an newer server that uses a different URL for the API
+            server = restClient.validate(server);
+
             Collection<Repository> repositories = restClient.getRepositories(server);
             for (Repository repository : repositories) {
                 String repositoryName = repository.getName();
@@ -238,7 +241,7 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
     }
 
     private class HttpConnectionInfo extends ConnectionInfo {
-       
+
         protected HttpConnectionInfo( String url,
                                       Properties properties ) {
             super(url, properties);

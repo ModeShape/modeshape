@@ -63,12 +63,10 @@ public final class JsonRestClientTest {
     // user and password configured in pom
     private static final String PSWD = "password";
     private static final String USER = "dnauser";
+    private static final String URL = "http://localhost:8090/resources";
 
-    private static final Server SERVER = new Server("http://localhost:8090/resources/v1", USER, PSWD);
     private static final String REPOSITORY_NAME = "repo";
-    private static final Repository REPOSITORY1 = new Repository(REPOSITORY_NAME, SERVER);
     private static final String WORKSPACE_NAME = "default";
-    private static final Workspace WORKSPACE1 = new Workspace(WORKSPACE_NAME, REPOSITORY1);
 
     private static final String WORKSPACE_PATH = "/myproject/myfolder/";
     private static final String FILE_PATH = WORKSPACE_PATH + "document.txt";
@@ -85,6 +83,9 @@ public final class JsonRestClientTest {
     // ===========================================================================================================================
 
     private IRestClient restClient;
+    private Server server;
+    private Repository repository1;
+    private Workspace workspace1;
 
     private File textfile = null;
 
@@ -93,8 +94,18 @@ public final class JsonRestClientTest {
     // ===========================================================================================================================
 
     @Before
-    public void beforeEach() {
+    public void beforeEach() throws Exception {
         this.restClient = new JsonRestClient();
+        // Create and validate the server ...
+        this.server = new Server(URL, USER, PSWD);
+        try {
+            this.server = this.restClient.validate(server);
+        } catch (Throwable t) {
+            t.printStackTrace(System.err);
+        }
+        // Now create the repository and workspace objects
+        this.repository1 = new Repository(REPOSITORY_NAME, server);
+        this.workspace1 = new Workspace(WORKSPACE_NAME, repository1);
     }
 
     // ===========================================================================================================================
@@ -103,10 +114,10 @@ public final class JsonRestClientTest {
 
     @Test
     public void shouldGetRepositories() throws Exception {
-        Collection<Repository> repositories = this.restClient.getRepositories(SERVER);
+        Collection<Repository> repositories = this.restClient.getRepositories(server);
         assertThat(repositories.size(), equalTo(1));
         Repository repo = repositories.iterator().next();
-        assertThat(repo, is(REPOSITORY1));
+        assertThat(repo, is(repository1));
         if (!repo.getMetadata().isEmpty()) {
             Map<String, Object> metadata = repo.getMetadata();
             assertThat(metadata.get("jcr.specification.name"), is((Object)"Content Repository for Java Technology API"));
@@ -124,7 +135,7 @@ public final class JsonRestClientTest {
     @Ignore
     @Test
     public void shouldGetNodeTypes() throws Exception {
-        Map<String, NodeType> nodeTypes = this.restClient.getNodeTypes(REPOSITORY1);
+        Map<String, NodeType> nodeTypes = this.restClient.getNodeTypes(repository1);
 
         // this is currently the number returned from the default jbossas installation
         // assertThat(results.size(), is(2));
@@ -140,15 +151,15 @@ public final class JsonRestClientTest {
 
     @Test
     public void shouldGetWorkspaces() throws Exception {
-        Collection<Workspace> workspaces = this.restClient.getWorkspaces(REPOSITORY1);
+        Collection<Workspace> workspaces = this.restClient.getWorkspaces(repository1);
         assertThat(workspaces.size(), is(1));
-        assertThat(workspaces.iterator().next(), is(WORKSPACE1));
+        assertThat(workspaces.iterator().next(), is(workspace1));
     }
 
     @Test
     public void shouldNotUnpublishNonexistentFile() throws Exception {
         File file = new File("bogusfile");
-        Status status = this.restClient.unpublish(WORKSPACE1, WORKSPACE_PATH, file);
+        Status status = this.restClient.unpublish(workspace1, WORKSPACE_PATH, file);
 
         printExceptionIfStatusIsError(status);
 
@@ -169,18 +180,18 @@ public final class JsonRestClientTest {
 
         // publish
         File file = new File(binaryFile.toURI());
-        Status status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, file);
+        Status status = this.restClient.publish(workspace1, WORKSPACE_PATH, file);
 
         printExceptionIfStatusIsError(status);
 
         assertThat(status.isOk(), is(true));
 
         // confirm it exists in repository
-        assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_PATH, file), is(true));
+        assertThat(((JsonRestClient)this.restClient).pathExists(workspace1, WORKSPACE_PATH, file), is(true));
 
         // compare file contents to the contents that have been published
-        String expected = new FileNode(WORKSPACE1, WORKSPACE_PATH, file).readFile();
-        String actual = ((JsonRestClient)this.restClient).getFileContents(WORKSPACE1, WORKSPACE_PATH, file);
+        String expected = new FileNode(workspace1, WORKSPACE_PATH, file).readFile();
+        String actual = ((JsonRestClient)this.restClient).getFileContents(workspace1, WORKSPACE_PATH, file);
         assertThat(actual, is(expected));
 
         shouldUnpublishFile(file);
@@ -198,18 +209,18 @@ public final class JsonRestClientTest {
 
         // publish
         textfile = new File(textFile.toURI());
-        Status status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, textfile);
+        Status status = this.restClient.publish(workspace1, WORKSPACE_PATH, textfile);
 
         printExceptionIfStatusIsError(status);
 
         assertThat(status.getMessage(), status.isOk(), is(true));
 
         // confirm it exists in repository
-        assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_PATH, textfile), is(true));
+        assertThat(((JsonRestClient)this.restClient).pathExists(workspace1, WORKSPACE_PATH, textfile), is(true));
 
         // compare file contents to the contents that have been published
-        String expected = new FileNode(WORKSPACE1, WORKSPACE_PATH, textfile).readFile();
-        String actual = ((JsonRestClient)this.restClient).getFileContents(WORKSPACE1, WORKSPACE_PATH, textfile);
+        String expected = new FileNode(workspace1, WORKSPACE_PATH, textfile).readFile();
+        String actual = ((JsonRestClient)this.restClient).getFileContents(workspace1, WORKSPACE_PATH, textfile);
         if (!expected.equals(actual)) {
             System.err.println("\nvan2expected: \n" + expected);
             System.err.println("\nvan2actual: \n" + actual);
@@ -226,18 +237,18 @@ public final class JsonRestClientTest {
 
         // publish
         File file = new File(ddlFile.toURI());
-        Status status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, file);
+        Status status = this.restClient.publish(workspace1, WORKSPACE_PATH, file);
 
         printExceptionIfStatusIsError(status);
 
         assertThat(status.getMessage(), status.isOk(), is(true));
 
         // confirm it exists in repository
-        assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_PATH, file), is(true));
+        assertThat(((JsonRestClient)this.restClient).pathExists(workspace1, WORKSPACE_PATH, file), is(true));
 
         // compare file contents to the contents that have been published
-        String expected = new FileNode(WORKSPACE1, WORKSPACE_PATH, file).readFile();
-        String actual = ((JsonRestClient)this.restClient).getFileContents(WORKSPACE1, WORKSPACE_PATH, file);
+        String expected = new FileNode(workspace1, WORKSPACE_PATH, file).readFile();
+        String actual = ((JsonRestClient)this.restClient).getFileContents(workspace1, WORKSPACE_PATH, file);
         if (!expected.equals(actual)) {
             System.err.println("van1expected: \n" + expected);
             System.err.println("\nvan1actual: \n" + actual);
@@ -254,14 +265,14 @@ public final class JsonRestClientTest {
 
         // publish
         File file = new File(textFile.toURI());
-        Status status = this.restClient.publish(WORKSPACE1, WORKSPACE_UNUSUALPATH, file);
+        Status status = this.restClient.publish(workspace1, WORKSPACE_UNUSUALPATH, file);
 
         printExceptionIfStatusIsError(status);
 
         assertThat(status.getMessage(), status.isOk(), is(true));
 
         // confirm it exists in repository
-        assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_UNUSUALPATH, file), is(true));
+        assertThat(((JsonRestClient)this.restClient).pathExists(workspace1, WORKSPACE_UNUSUALPATH, file), is(true));
 
         shouldUnpublishFile(file);
 
@@ -272,23 +283,23 @@ public final class JsonRestClientTest {
         // first publish
         shouldPublishTextResource();
 
-        Status status = this.restClient.unpublish(WORKSPACE1, WORKSPACE_PATH, textfile);
+        Status status = this.restClient.unpublish(workspace1, WORKSPACE_PATH, textfile);
 
         printExceptionIfStatusIsError(status);
 
         assertThat(status.isOk(), is(true));
 
         // confirm it does not exist in repository
-        assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_PATH, textfile), is(false));
+        assertThat(((JsonRestClient)this.restClient).pathExists(workspace1, WORKSPACE_PATH, textfile), is(false));
     }
 
     protected void shouldUnpublishFile( File file ) throws Exception {
-        Status status = this.restClient.unpublish(WORKSPACE1, WORKSPACE_PATH, file);
+        Status status = this.restClient.unpublish(workspace1, WORKSPACE_PATH, file);
 
         printExceptionIfStatusIsError(status);
 
         // confirm it does not exist in repository
-        assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_PATH, file), is(false));
+        assertThat(((JsonRestClient)this.restClient).pathExists(workspace1, WORKSPACE_PATH, file), is(false));
     }
 
     @Test
@@ -296,7 +307,7 @@ public final class JsonRestClientTest {
         // first publish
         shouldPublishTextResource();
 
-        List<QueryRow> results = this.restClient.query(WORKSPACE1, IJcrConstants.XPATH, "/" + FILE_PATH);
+        List<QueryRow> results = this.restClient.query(workspace1, IJcrConstants.XPATH, "/" + FILE_PATH);
 
         assertThat(results.size(), is(1));
         QueryRow row = results.get(0);
@@ -325,21 +336,21 @@ public final class JsonRestClientTest {
 
         // publish first time
         File file = new File(modelFile.toURI());
-        Status status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, file, false);
+        Status status = this.restClient.publish(workspace1, WORKSPACE_PATH, file, false);
 
         // make sure no error when publishing the first time
         assertThat(status.getMessage(), status.isOk(), is(true));
 
         // confirm it exists in repository
-        assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_PATH, file), is(true));
+        assertThat(((JsonRestClient)this.restClient).pathExists(workspace1, WORKSPACE_PATH, file), is(true));
 
         // compare file contents to the contents that have been published
-        String expected = new FileNode(WORKSPACE1, WORKSPACE_PATH, file).readFile();
-        String actual = ((JsonRestClient)this.restClient).getFileContents(WORKSPACE1, WORKSPACE_PATH, file);
+        String expected = new FileNode(workspace1, WORKSPACE_PATH, file).readFile();
+        String actual = ((JsonRestClient)this.restClient).getFileContents(workspace1, WORKSPACE_PATH, file);
         assertThat(actual, is(expected));
 
         // publish second time
-        status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, file, false);
+        status = this.restClient.publish(workspace1, WORKSPACE_PATH, file, false);
 
         // make sure no error when publishing the second time
         assertThat(status.getMessage(), status.isOk(), is(true));
@@ -355,7 +366,7 @@ public final class JsonRestClientTest {
 
         // publish first time
         File file = new File(modelFile.toURI());
-        Status status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, file, true);
+        Status status = this.restClient.publish(workspace1, WORKSPACE_PATH, file, true);
 
         // make sure no error when publishing the first time
         if (!status.isOk()) {
@@ -365,15 +376,15 @@ public final class JsonRestClientTest {
         assertThat(status.getMessage(), status.isOk(), is(true));
 
         // confirm it exists in repository
-        assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_PATH, file), is(true));
+        assertThat(((JsonRestClient)this.restClient).pathExists(workspace1, WORKSPACE_PATH, file), is(true));
 
         // compare file contents to the contents that have been published
-        String expected = new FileNode(WORKSPACE1, WORKSPACE_PATH, file).readFile();
-        String actual = ((JsonRestClient)this.restClient).getFileContents(WORKSPACE1, WORKSPACE_PATH, file);
+        String expected = new FileNode(workspace1, WORKSPACE_PATH, file).readFile();
+        String actual = ((JsonRestClient)this.restClient).getFileContents(workspace1, WORKSPACE_PATH, file);
         assertThat(actual, is(expected));
 
         // publish second time
-        status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, file, true);
+        status = this.restClient.publish(workspace1, WORKSPACE_PATH, file, true);
 
         // make sure no error when publishing the second time
         if (!status.isOk()) {
@@ -394,7 +405,7 @@ public final class JsonRestClientTest {
 
         String path = WORKSPACE_PATH.substring(0, WORKSPACE_PATH.lastIndexOf("/"));
         String query = "SELECT [jcr:primaryType], [jcr:path], [jcr:title] FROM [nt:folder] WHERE [jcr:path] = '" + path + "'";
-        List<QueryRow> results = this.restClient.query(WORKSPACE1, IJcrConstants.JCR_SQL2, query);
+        List<QueryRow> results = this.restClient.query(workspace1, IJcrConstants.JCR_SQL2, query);
 
         assertThat(results.size(), is(1));
 
