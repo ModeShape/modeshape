@@ -40,6 +40,18 @@ import org.modeshape.web.jcr.rest.client.domain.Workspace;
 public interface IRestClient {
 
     /**
+     * Determines whether the specified server is valid and can be used to establish a connection. This method returns a Server
+     * instance (that may be slightly different than the supplied Server instance, based upon the version of the server being
+     * used) and which should be used in all subsequent operations.
+     * 
+     * @param server the server (never <code>null</code>)
+     * @return the validated server, which should be used in all subsequent operations (never <code>null</code>)
+     * @throws Exception if there is a problem validating the server
+     * @since 3.0
+     */
+    Server validate( Server server ) throws Exception;
+
+    /**
      * Obtains the ModeShape repositories defined within the specified server.
      * 
      * @param server the server whose repositories are being requested (never <code>null</code>)

@@ -35,6 +35,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.Base64;
@@ -239,11 +240,68 @@ public final class JsonRestClient implements IRestClient {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.web.jcr.rest.client.IRestClient#getRepositories(org.modeshape.web.jcr.rest.client.domain.Server)
-     */
+    @Override
+    public Server validate( Server server ) throws Exception {
+        assert server != null;
+        LOGGER.trace("validate: server={0}", server);
+
+        // Try using the supplied URL ...
+        ServerNode serverNode = new ServerNode(server);
+        URL url = serverNode.getFindRepositoriesUrl();
+        HttpClientConnection connection = connect(server, url, RequestMethod.GET);
+        try {
+            int responseCode = connection.getResponseCode();
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                // not a good response code
+                LOGGER.error(RestClientI18n.connectionErrorMsg, responseCode, "validate");
+                String msg = RestClientI18n.validateFailedMsg.text(server.getName(), responseCode);
+                throw new RuntimeException(msg);
+            }
+            // The connection was valid, so get the response as a JSON object ...
+            String response = connection.read();
+            Version version = determineVersion(response);
+            switch (version) {
+                case VERSION_1:
+                    LOGGER.trace("validate: Found version 2.x server at " + server);
+                    return server;
+                case VERSION_2:
+                    // This is a 3.0 server, and we need to talk to the older "/v1" API ...
+                    LOGGER.trace("validate: Found version 3.x server at " + server);
+                    String original = server.getUrl().trim();
+                    if (!original.endsWith("/")) original = original + "/";
+                    String v1Url = original + "v1";
+                    return new Server(v1Url, server.getUser(), server.getPassword());
+            }
+        } finally {
+            if (connection != null) {
+                LOGGER.trace("validate: leaving");
+                connection.disconnect();
+            }
+        }
+        assert false : "Should not get here";
+        return server;
+    }
+
+    private static final String VERSION_2_REPOSITORIES_KEY = "repositories";
+
+    protected Version determineVersion( String getRepositoriesResponse ) throws Exception {
+        JSONObject doc = new JSONObject(getRepositoriesResponse);
+        try {
+            if (doc.has(VERSION_2_REPOSITORIES_KEY)) {
+                doc.getJSONArray(VERSION_2_REPOSITORIES_KEY);
+                return Version.VERSION_2;
+            }
+        } catch (JSONException e) {
+            // do nothing; it's probably version 1 ...
+        }
+        return Version.VERSION_1;
+    }
+
+    private static enum Version {
+        VERSION_1,
+        VERSION_2;
+    }
+
     @Override
     public Collection<Repository> getRepositories( Server server ) throws Exception {
         assert server != null;
