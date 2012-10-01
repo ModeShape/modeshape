@@ -5,6 +5,7 @@
         <groupId>org.modeshape.bom</groupId>
         <artifactId>modeshape-bom-parent</artifactId>
         <version>3.0-SNAPSHOT</version>
+        <relativePath>../modeshape-bom-parent/pom.xml</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
