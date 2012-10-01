@@ -23,7 +23,6 @@
  */
 package org.modeshape.web.jcr.rest.client.json;
 
-import javax.jcr.nodetype.NodeType;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -31,6 +30,14 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import java.io.File;
+import java.net.URL;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import javax.jcr.nodetype.NodeType;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -42,13 +49,6 @@ import org.modeshape.web.jcr.rest.client.domain.QueryRow;
 import org.modeshape.web.jcr.rest.client.domain.Repository;
 import org.modeshape.web.jcr.rest.client.domain.Server;
 import org.modeshape.web.jcr.rest.client.domain.Workspace;
-import java.io.File;
-import java.net.URL;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * The <code>JsonRestClientTest</code> class is a test class for the {@link JsonRestClient JSON REST client} object.
@@ -57,6 +57,7 @@ import java.util.UUID;
  * <p>
  * Two containers: mvn -P cargo-1,cargo-2 clean install assembly:assembly
  */
+@SuppressWarnings( "deprecation" )
 public final class JsonRestClientTest {
 
     // ===========================================================================================================================
@@ -143,7 +144,7 @@ public final class JsonRestClientTest {
         // this is currently the number returned from the default jbossas installation
         // assertThat(results.size(), is(2));
 
-        for (Iterator<NodeType> it = nodeTypes.values().iterator(); it.hasNext(); ) {
+        for (Iterator<NodeType> it = nodeTypes.values().iterator(); it.hasNext();) {
             NodeType nt = it.next();
             System.out.println("NODETYPE: " + nt.getName());
             System.out.println("   declared supertypes:             " + nt.getSupertypes());
@@ -203,7 +204,7 @@ public final class JsonRestClientTest {
     /**
      * this is not made a test because its called by other tests to publish the text resource for thier test, therefore this test
      * on its own is not needed.
-     *
+     * 
      * @throws Exception
      */
     private void shouldPublishTextResource() throws Exception {

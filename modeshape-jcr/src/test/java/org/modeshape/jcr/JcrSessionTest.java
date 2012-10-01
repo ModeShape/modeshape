@@ -23,6 +23,26 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.when;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.Binary;
 import javax.jcr.Item;
 import javax.jcr.NamespaceException;
@@ -39,32 +59,12 @@ import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.mockito.Mockito;
-import static org.mockito.Mockito.when;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.value.Path;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 public class JcrSessionTest extends SingleUseAbstractTest {
 
@@ -724,8 +724,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-1613" )
     public void shouldMoveSNSAndNotCorruptThePathsOfRemainingSiblings() throws Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream(
-                "config/simple-repo-config.json"));
+        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream("config/simple-repo-config.json"));
         // /testRoot/parent0/child
         // /testRoot/parent0/child[2]
         // /testRoot/parent0/child[3]
@@ -745,9 +744,10 @@ public class JcrSessionTest extends SingleUseAbstractTest {
 
     /**
      * Create a tree of nodes that have different name siblings at the leaves.
-     *
+     * 
      * @param parentsCount the number of nodes created under the root node
      * @param snsCount the number of nodes created under each parent
+     * @throws Exception
      */
     private void createTreeWithSNS( int parentsCount,
                                     int snsCount ) throws Exception {
@@ -781,14 +781,14 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         sourceNode = session.getNode(sourceNodePath);
         Node sourceParent = sourceNode.getParent();
 
-        //the next calls will load all the children (sns) and store them in the ws cache
+        // the next calls will load all the children (sns) and store them in the ws cache
         loadChildrenByPaths(session, sourceParent);
         loadChildrenByPaths(session, targetNode);
 
         session.move(sourceNodePath, targetNodePath + "/" + destNodeName);
         session.save();
 
-        //this will expose the problem of the cached paths
+        // this will expose the problem of the cached paths
         loadChildrenByPaths(session, sourceParent);
         loadChildrenByPaths(session, targetNode);
     }
@@ -798,7 +798,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         NodeIterator nodeIterator = parentNode.getNodes();
         while (nodeIterator.hasNext()) {
             Node childNode = nodeIterator.nextNode();
-            //this should load &cache the nodes (and their paths)
+            // this should load &cache the nodes (and their paths)
             session.getNode(childNode.getPath());
         }
     }

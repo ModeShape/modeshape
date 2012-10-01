@@ -55,6 +55,7 @@ import org.modeshape.web.jcr.rest.client.json.IJsonConstants.RequestMethod;
  * The <code>JsonRestClient</code> class is an implementation of <code>IRestClient</code> that works with the ModeShape REST
  * server that uses JSON as its interface protocol.
  */
+@SuppressWarnings( "deprecation" )
 public final class JsonRestClient implements IRestClient {
 
     // ===========================================================================================================================
