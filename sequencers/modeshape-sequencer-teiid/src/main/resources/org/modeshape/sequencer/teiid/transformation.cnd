@@ -43,10 +43,10 @@
  - transform:insertSql (string) 
  - transform:updateSql (string) 
  - transform:deleteSql (string) 
- - transform:insertAllowed (boolean) = 'true' 
- - transform:updateAllowed (boolean) = 'true' 
- - transform:deleteAllowed (boolean) = 'true' 
- - transform:outputLocked (boolean) = 'false' 
- - transform:insertSqlDefault (boolean) = 'true' 
- - transform:updateSqlDefault (boolean) = 'true' 
- - transform:deleteSqlDefault (boolean) = 'true' 
+ - transform:insertAllowed (boolean) = 'true' autocreated
+ - transform:updateAllowed (boolean) = 'true' autocreated
+ - transform:deleteAllowed (boolean) = 'true' autocreated
+ - transform:outputLocked (boolean) = 'false' autocreated
+ - transform:insertSqlDefault (boolean) = 'true' autocreated
+ - transform:updateSqlDefault (boolean) = 'true' autocreated
+ - transform:deleteSqlDefault (boolean) = 'true' autocreated

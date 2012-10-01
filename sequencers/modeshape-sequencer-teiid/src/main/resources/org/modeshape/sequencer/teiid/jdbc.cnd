@@ -42,16 +42,16 @@
  - jdbcs:url (string) 
 
 [jdbcs:imported] > nt:unstructured, xmi:referenceable
- - jdbcs:createCatalogsInModel (boolean) = 'true' 
- - jdbcs:createSchemasInModel (boolean) = 'true' 
+ - jdbcs:createCatalogsInModel (boolean) = 'true' autocreated
+ - jdbcs:createSchemasInModel (boolean) = 'true' autocreated
  - jdbcs:convertCaseInModel (string) < 'NONE', 'TO_UPPERCASE', 'TO_LOWERCASE'
- - jdbcs:generateSourceNamesInModel (string) = 'UNQUALIFIED' < 'NONE', 'UNQUALIFIED', 'FULLY_QUALIFIED'
+ - jdbcs:generateSourceNamesInModel (string) = 'UNQUALIFIED' autocreated < 'NONE', 'UNQUALIFIED', 'FULLY_QUALIFIED'
  - jdbcs:includedCatalogPaths (string) multiple 
  - jdbcs:includedSchemaPaths (string) multiple 
  - jdbcs:excludedObjectPaths (string) multiple 
- - jdbcs:includeForeignKeys (boolean) = 'true' 
- - jdbcs:includeIndexes (boolean) = 'true' 
- - jdbcs:includeProcedures (boolean) = 'false' 
- - jdbcs:includeApproximateIndexes (boolean) = 'true' 
- - jdbcs:includeUniqueIndexes (boolean) = 'false' 
- - jdbcs:includedTableTypes (string) multiple 
+ - jdbcs:includeForeignKeys (boolean) = 'true' autocreated
+ - jdbcs:includeIndexes (boolean) = 'true' autocreated
+ - jdbcs:includeProcedures (boolean) = 'false' autocreated
+ - jdbcs:includeApproximateIndexes (boolean) = 'true' autocreated
+ - jdbcs:includeUniqueIndexes (boolean) = 'false' autocreated
+ - jdbcs:includedTableTypes (string) multiple

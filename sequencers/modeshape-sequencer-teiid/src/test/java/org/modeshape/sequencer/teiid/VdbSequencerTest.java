@@ -61,6 +61,16 @@ public class VdbSequencerTest extends AbstractSequencerTest {
     }
 
     @Test
+    public void shouldHaveValidCnds() throws Exception {
+        registerNodeTypes("org/modeshape/sequencer/teiid/xmi.cnd");
+        registerNodeTypes("org/modeshape/sequencer/teiid/jdbc.cnd");
+        registerNodeTypes("org/modeshape/sequencer/teiid/mmcore.cnd");
+        registerNodeTypes("org/modeshape/sequencer/teiid/relational.cnd");
+        registerNodeTypes("org/modeshape/sequencer/teiid/transformation.cnd");
+        registerNodeTypes("org/modeshape/sequencer/teiid/vdb.cnd");
+    }
+
+    @Test
     public void shouldSequenceBooksVDB() throws Exception {
         createNodeWithContentFromFile("BooksVDB.vdb", "model/books/BooksVDB.vdb");
         Node outputNode = getOutputNode(this.rootNode, "vdbs/BooksVDB.vdb");

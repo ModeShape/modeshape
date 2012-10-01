@@ -38,5 +38,5 @@
  - xmi:uuid (string) mandatory
 
 [xmi:model] > nt:unstructured, xmi:referenceable, mix:referenceable orderable
- - xmi:version (double) = '2.0'
+ - xmi:version (double) = '2.0' autocreated
 

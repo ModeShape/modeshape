@@ -53,23 +53,23 @@
  - relational:fixedLength (boolean) 
  - relational:precision (long) 
  - relational:scale (long) 
- - relational:nullable (string) = 'NULLABLE' < 'NO_NULLS', 'NULLABLE', 'NULLABLE_UNKNOWN'
- - relational:autoIncremented (boolean) = 'false' 
+ - relational:nullable (string) = 'NULLABLE' autocreated < 'NO_NULLS', 'NULLABLE', 'NULLABLE_UNKNOWN'
+ - relational:autoIncremented (boolean) = 'false' autocreated
  - relational:defaultValue (string) 
  - relational:minimumValue (string) 
  - relational:maximumValue (string) 
  - relational:format (string) 
  - relational:characterSetName (string) 
  - relational:collationName (string) 
- - relational:selectable (boolean) = 'true' 
- - relational:updateable (boolean) = 'true' 
- - relational:caseSensitive (boolean) = 'true' 
- - relational:searchability (string) = 'SEARCHABLE' < 'SEARCHABLE', 'ALL_EXCEPT_LIKE', 'LIKE_ONLY', 'UNSEARCHABLE'
- - relational:currency (boolean) = 'false'
- - relational:radix (long) = '10'
- - relational:signed (boolean) = 'true' 
- - relational:distinctValueCount (long) = '-1' 
- - relational:nullValueCount (long) = '-1' 
+ - relational:selectable (boolean) = 'true' autocreated
+ - relational:updateable (boolean) = 'true' autocreated
+ - relational:caseSensitive (boolean) = 'true' autocreated
+ - relational:searchability (string) = 'SEARCHABLE' autocreated < 'SEARCHABLE', 'ALL_EXCEPT_LIKE', 'LIKE_ONLY', 'UNSEARCHABLE'
+ - relational:currency (boolean) = 'false' autocreated
+ - relational:radix (long) = '10' autocreated
+ - relational:signed (boolean) = 'true' autocreated
+ - relational:distinctValueCount (long) = '-1' autocreated
+ - relational:nullValueCount (long) = '-1' autocreated
  - relational:uniqueKeys (weakreference) multiple 
  - relational:uniqueKeyHrefs (string) multiple 
  - relational:uniqueKeyXmiUuids (string) multiple 
@@ -106,8 +106,8 @@
 [relational:primaryKey] > relational:uniqueKey
 
 [relational:foreignKey] > relational:relationship
- - relational:foreignKeyMultiplicity (string) = 'ZERO_TO_MANY' < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
- - relational:primaryKeyMultiplicity (string) = 'ONE' < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
+ - relational:foreignKeyMultiplicity (string) = 'ZERO_TO_MANY' autocreated < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
+ - relational:primaryKeyMultiplicity (string) = 'ONE' autocreated < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
  - relational:columns (weakreference) multiple
  - relational:columnXmiUuids (string) multiple 
  - relational:columnNames (string) multiple 
@@ -118,7 +118,7 @@
 
 [relational:index] > nt:unstructured, relational:relationalEntity
  - relational:filterCondition (string) 
- - relational:nullable (boolean) = 'true' 
+ - relational:nullable (boolean) = 'true' autocreated
  - relational:autoUpdate (boolean) 
  - relational:unique (boolean) 
  - relational:columns (weakreference) multiple
@@ -136,10 +136,10 @@
 // -------------------------------------------
 
 [relational:table] > relational:columnSet abstract orderable
- - relational:system (boolean) = 'false' 
+ - relational:system (boolean) = 'false' autocreated
  - relational:cardinality (long) 
- - relational:supportsUpdate (boolean) = 'true' 
- - relational:materialized (boolean) = 'false' 
+ - relational:supportsUpdate (boolean) = 'true' autocreated
+ - relational:materialized (boolean) = 'false' autocreated
  + * (relational:primaryKey) = relational:primaryKey copy
  + * (relational:foreignKey) = relational:foreignKey copy
  + * (relational:accessPattern) = relational:accessPattern copy sns
@@ -163,8 +163,8 @@
  - relational:length (long) 
  - relational:precision (long) 
  - relational:scale (long) 
- - relational:nullable (string) = 'NULLABLE' < 'NO_NULLS', 'NULLABLE', 'NULLABLE_UNKNOWN'
- - relational:radix (long) = '10' 
+ - relational:nullable (string) = 'NULLABLE' autocreated < 'NO_NULLS', 'NULLABLE', 'NULLABLE_UNKNOWN' 
+ - relational:radix (long) = '10' autocreated
 
 [relational:procedureResult] > relational:columnSet orderable
 

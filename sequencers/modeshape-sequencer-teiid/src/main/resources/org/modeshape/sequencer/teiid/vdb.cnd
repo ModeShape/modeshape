@@ -38,8 +38,8 @@
 
 [vdb:virtualDatabase] > nt:unstructured, mode:hashed
  - vdb:description (string) 
- - vdb:version (long) = '1'
- - vdb:preview (boolean) = 'false'
+ - vdb:version (long) = '1' autocreated
+ - vdb:preview (boolean) = 'false' autocreated
  - vdb:originalFile (string) mandatory
  + vdb:translators (vdb:translators) copy
  + vdb:dataRoles (vdb:dataRoles) copy
@@ -47,9 +47,9 @@
  
 [vdb:model] > mmcore:model
  - vdb:description (string)
- - vdb:visible (boolean) = 'true'
+ - vdb:visible (boolean) = 'true' autocreated
  - vdb:checksum (long)
- - vdb:builtIn (boolean) = 'false'
+ - vdb:builtIn (boolean) = 'false' autocreated
  - vdb:pathInVdb (string) mandatory
  - vdb:sourceTranslator (string)
  - vdb:sourceJndiName (string)
@@ -60,7 +60,7 @@
  + vdb:marker (vdb:marker) = vdb:marker copy sns
 
 [vdb:marker] > nt:unstructured
- - vdb:severity (string) = 'WARNING' < 'WARNING','ERROR','INFO'
+ - vdb:severity (string) = 'WARNING' autocreated < 'WARNING','ERROR','INFO'
  - vdb:path (string) mandatory
  - vdb:message (string) mandatory
  
@@ -78,8 +78,8 @@
 // data role name is node name 
 [vdb:dataRole] > nt:unstructured
  - vdb:description (string)
- - vdb:anyAuthenticated (boolean) = 'false'
- - vdb:allowCreateTemporaryTables (boolean) = 'false'
+ - vdb:anyAuthenticated (boolean) = 'false' autocreated
+ - vdb:allowCreateTemporaryTables (boolean) = 'false' autocreated
  - vdb:mappedRoleNames (string) multiple
  + vdb:permission (vdb:permission) = vdb:permission multiple copy
 
@@ -95,9 +95,9 @@
 
 // permission resource path is node path
 [vdb:permission] > nt:unstructured
- - vdb:allowCreate (boolean) = 'false'
- - vdb:allowRead (boolean) = 'false'
- - vdb:allowUpdate (boolean) = 'false'
- - vdb:allowDelete (boolean) = 'false'
- - vdb:allowExecute (boolean) = 'false'
- - vdb:allowAlter (boolean) = 'false'
+ - vdb:allowCreate (boolean) = 'false' autocreated
+ - vdb:allowRead (boolean) = 'false' autocreated
+ - vdb:allowUpdate (boolean) = 'false' autocreated
+ - vdb:allowDelete (boolean) = 'false' autocreated
+ - vdb:allowExecute (boolean) = 'false' autocreated
+ - vdb:allowAlter (boolean) = 'false' autocreated
