@@ -134,8 +134,8 @@ public class ModelSequencerTest extends AbstractSequencerTest {
             assertThat(tableNode.getProperty(RelationalLexicon.JcrId.SUPPORTS_UPDATE).getBoolean(), is(false));
 
             // defaults
-            // assertThat(tableNode.getProperty(RelationalLexicon.JcrId.MATERIALIZED).getBoolean(), is(false));
-            // assertThat(tableNode.getProperty(RelationalLexicon.JcrId.SYSTEM).getBoolean(), is(false));
+            assertThat(tableNode.getProperty(RelationalLexicon.JcrId.MATERIALIZED).getBoolean(), is(false));
+            assertThat(tableNode.getProperty(RelationalLexicon.JcrId.SYSTEM).getBoolean(), is(false));
 
             // transformation
             assertThat(tableNode.isNodeType(TransformLexicon.JcrId.TRANSFORMED), is(true));
@@ -169,18 +169,17 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                 assertThat(columnNode.getProperty(RelationalLexicon.JcrId.TYPE_NAME).getString(), is("string"));
                 assertThat(columnNode.getProperty(RelationalLexicon.JcrId.TYPE_HREF).getString(),
                            is("http://www.w3.org/2001/XMLSchema#string"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrIds.TYPE).getString(), is(""));
 
                 // column defaults
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
 
                 // column transformed
                 assertThat(columnNode.isNodeType(TransformLexicon.JcrId.TRANSFORMED), is(true));
@@ -202,15 +201,15 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                 assertThat(columnNode.getProperty(RelationalLexicon.JcrId.UPDATEABLE).getBoolean(), is(false));
 
                 // column defaults
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
 
                 columnNode = tableNode.getNode("QUANTITY");
                 assertNotNull(columnNode);
@@ -226,18 +225,17 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                 assertThat(columnNode.getProperty(RelationalLexicon.JcrId.TYPE_NAME).getString(), is("short"));
                 assertThat(columnNode.getProperty(RelationalLexicon.JcrId.TYPE_HREF).getString(),
                            is("http://www.w3.org/2001/XMLSchema#short"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrIds.TYPE).getString(), is(""));
 
                 // column defaults
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
 
                 columnNode = tableNode.getNode("SHIPPER_ID");
                 assertNotNull(columnNode);
@@ -250,15 +248,15 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                 assertThat(columnNode.getProperty(RelationalLexicon.JcrId.UPDATEABLE).getBoolean(), is(false));
 
                 // column defaults
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
 
                 columnNode = tableNode.getNode("SUPPLIER_NAME");
                 assertNotNull(columnNode);
@@ -269,16 +267,16 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                 assertThat(columnNode.getProperty(RelationalLexicon.JcrId.UPDATEABLE).getBoolean(), is(false));
 
                 // column defaults
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
 
                 columnNode = tableNode.getNode("SUPPLIER_STATUS");
                 assertNotNull(columnNode);
@@ -291,15 +289,15 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                 assertThat(columnNode.getProperty(RelationalLexicon.JcrId.UPDATEABLE).getBoolean(), is(false));
 
                 // column defaults
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
 
                 columnNode = tableNode.getNode("SUPPLIER_CITY");
                 assertNotNull(columnNode);
@@ -310,16 +308,16 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                 assertThat(columnNode.getProperty(RelationalLexicon.JcrId.UPDATEABLE).getBoolean(), is(false));
 
                 // column defaults
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
 
                 columnNode = tableNode.getNode("SUPPLIER_STATE");
                 assertNotNull(columnNode);
@@ -330,16 +328,16 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                 assertThat(columnNode.getProperty(RelationalLexicon.JcrId.UPDATEABLE).getBoolean(), is(false));
 
                 // column defaults
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
             }
         }
 
@@ -356,7 +354,7 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                 assertThat(paramNode.getProperty(XmiLexicon.JcrId.UUID).getString(), is("56182540-12a6-1eec-8518-c32201e76066"));
 
                 // parameter defaults
-                // assertThat(paramNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
+                assertThat(paramNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
             }
 
             { // results
@@ -376,16 +374,16 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                 assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NO_NULLS"));
 
                 // column defaults
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.UPDATEABLE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.UPDATEABLE).getBoolean(), is(true));
 
                 columnNode = resultNode.getNode("PART_NAME");
                 assertNotNull(columnNode);
@@ -394,17 +392,17 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                 assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NATIVE_TYPE).getString(), is("varchar"));
 
                 // column defaults
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.UPDATEABLE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.UPDATEABLE).getBoolean(), is(true));
 
                 columnNode = resultNode.getNode("PART_COLOR");
                 assertNotNull(columnNode);
@@ -413,17 +411,17 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                 assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NATIVE_TYPE).getString(), is("varchar"));
 
                 // column defaults
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.UPDATEABLE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.UPDATEABLE).getBoolean(), is(true));
 
                 columnNode = resultNode.getNode("PART_WEIGHT");
                 assertNotNull(columnNode);
@@ -432,22 +430,21 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                 assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NATIVE_TYPE).getString(), is("varchar"));
 
                 // column defaults
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
-                // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.UPDATEABLE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CASE_SENSITIVE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULLABLE).getString(), is("NULLABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("SEARCHABLE"));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
+                assertThat(columnNode.getProperty(RelationalLexicon.JcrId.UPDATEABLE).getBoolean(), is(true));
             }
         }
     }
 
-    //
     // @Test
     // public void shouldSequenceBooksAModels() throws Exception {
     // XmiReader.read(streamFor("/model/books/BookDatatypes.xsd"), null);
@@ -672,14 +669,14 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                     assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SEARCHABILITY).getString(), is("ALL_EXCEPT_LIKE"));
 
                     // column defaults
-                    // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
-                    // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
-                    // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
-                    // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
-                    // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
-                    // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
-                    // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
-                    // assertThat(columnNode.getProperty(RelationalLexicon.JcrId.UPDATEABLE).getBoolean(), is(true));
+                    assertThat(columnNode.getProperty(RelationalLexicon.JcrId.AUTO_INCREMENTED).getBoolean(), is(false));
+                    assertThat(columnNode.getProperty(RelationalLexicon.JcrId.CURRENCY).getBoolean(), is(false));
+                    assertThat(columnNode.getProperty(RelationalLexicon.JcrId.DISTINCT_VALUE_COUNT).getLong(), is(-1L));
+                    assertThat(columnNode.getProperty(RelationalLexicon.JcrId.NULL_VALUE_COUNT).getLong(), is(-1L));
+                    assertThat(columnNode.getProperty(RelationalLexicon.JcrId.RADIX).getLong(), is(10L));
+                    assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SELECTABLE).getBoolean(), is(true));
+                    assertThat(columnNode.getProperty(RelationalLexicon.JcrId.SIGNED).getBoolean(), is(true));
+                    assertThat(columnNode.getProperty(RelationalLexicon.JcrId.UPDATEABLE).getBoolean(), is(true));
                 }
 
                 { // primary key
@@ -733,12 +730,12 @@ public class ModelSequencerTest extends AbstractSequencerTest {
             assertThat(settings.getProperty(JdbcLexicon.JcrId.INCLUDE_APPROXIMATE_INDEXES).getBoolean(), is(false));
 
             // defaults
-            // assertThat(settings.getProperty(JdbcLexicon.JcrId.CREATE_CATALOGS_IN_MODEL).getBoolean(), is(true));
-            // assertThat(settings.getProperty(JdbcLexicon.JcrId.CREATE_SCHEMAS_IN_MODEL).getBoolean(), is(true));
-            // assertThat(settings.getProperty(JdbcLexicon.JcrId.GENERATE_SOURCE_NAMES_IN_MODEL).getString(), is("UNQUALIFIED"));
-            // assertThat(settings.getProperty(JdbcLexicon.JcrId.INCLUDE_FOREIGN_KEYS).getBoolean(), is(true));
-            // assertThat(settings.getProperty(JdbcLexicon.JcrId.INCLUDE_PROCEDURES).getBoolean(), is(false));
-            // assertThat(settings.getProperty(JdbcLexicon.JcrId.INCLUDE_UNIQUE_INDEXES).getBoolean(), is(false));
+            assertThat(settings.getProperty(JdbcLexicon.JcrId.CREATE_CATALOGS_IN_MODEL).getBoolean(), is(true));
+            assertThat(settings.getProperty(JdbcLexicon.JcrId.CREATE_SCHEMAS_IN_MODEL).getBoolean(), is(true));
+            assertThat(settings.getProperty(JdbcLexicon.JcrId.GENERATE_SOURCE_NAMES_IN_MODEL).getString(), is("UNQUALIFIED"));
+            assertThat(settings.getProperty(JdbcLexicon.JcrId.INCLUDE_FOREIGN_KEYS).getBoolean(), is(true));
+            assertThat(settings.getProperty(JdbcLexicon.JcrId.INCLUDE_PROCEDURES).getBoolean(), is(false));
+            assertThat(settings.getProperty(JdbcLexicon.JcrId.INCLUDE_UNIQUE_INDEXES).getBoolean(), is(false));
 
             // muti-value properties
             Property property = settings.getProperty(JdbcLexicon.JcrId.INCLUDED_SCHEMA_PATHS);

@@ -36,23 +36,23 @@
 //------------------------------------------------------------------------------
 
 [mmcore:model] > xmi:model, mode:hashed mixin
-  - mmcore:modelType (string) = 'UNKNOWN' < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'
+  - mmcore:modelType (string) = 'UNKNOWN' autocreated < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'
   - mmcore:primaryMetamodelUri (string)
   - mmcore:description (string)
   - mmcore:nameInSource (string)
-  - mmcore:maxSetSize (long) = '100'
-  - mmcore:visible (boolean) = 'true'
-  - mmcore:supportsDistinct (boolean) = 'true'
-  - mmcore:supportsJoin (boolean) = 'true'
-  - mmcore:supportsOrderBy (boolean) = 'true'
-  - mmcore:supportsOuterJoin (boolean) = 'true'
-  - mmcore:supportsWhereAll (boolean) = 'true'
+  - mmcore:maxSetSize (long) = '100' autocreated
+  - mmcore:visible (boolean) = 'true' autocreated
+  - mmcore:supportsDistinct (boolean) = 'true' autocreated
+  - mmcore:supportsJoin (boolean) = 'true' autocreated
+  - mmcore:supportsOrderBy (boolean) = 'true' autocreated
+  - mmcore:supportsOuterJoin (boolean) = 'true' autocreated
+  - mmcore:supportsWhereAll (boolean) = 'true' autocreated
   - mmcore:producerName (string)
   - mmcore:producerVersion (string)
   - mmcore:originalFile (string)
 
 [mmcore:import] > nt:unstructured, xmi:referenceable orderable
-  - mmcore:modelType (string) = 'UNKNOWN' < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'
+  - mmcore:modelType (string) = 'UNKNOWN' autocreated < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'
   - mmcore:primaryMetamodelUri (string)
   - mmcore:path (string)
   - mmcore:name (string)
