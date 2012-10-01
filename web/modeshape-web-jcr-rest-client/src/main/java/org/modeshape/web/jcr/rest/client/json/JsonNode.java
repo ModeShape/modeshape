@@ -27,7 +27,7 @@ import java.net.URL;
 import org.codehaus.jettison.json.JSONObject;
 
 /**
- * The <code>JsonNode</code> class defines the API for interacing with JSON objects. Every <code>JsonNode</code> knows how to
+ * The <code>JsonNode</code> class defines the API for interacting with JSON objects. Every <code>JsonNode</code> knows how to
  * create their URL and create their JCR content.
  */
 public abstract class JsonNode extends JSONObject {
@@ -78,11 +78,6 @@ public abstract class JsonNode extends JSONObject {
      */
     public abstract URL getUrl() throws Exception;
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.codehaus.jettison.json.JSONObject#toString()
-     */
     @Override
     public String toString() {
         StringBuilder txt = new StringBuilder();

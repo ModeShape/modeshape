@@ -135,8 +135,6 @@ public final class FileNode extends JsonNode {
     // ===========================================================================================================================
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.web.jcr.rest.client.json.JsonNode#getContent()
      */
     @Override
@@ -186,8 +184,6 @@ public final class FileNode extends JsonNode {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.web.jcr.rest.client.json.JsonNode#getUrl()
      */
     @Override

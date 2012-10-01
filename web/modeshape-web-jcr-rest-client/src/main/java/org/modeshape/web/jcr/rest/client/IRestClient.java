@@ -36,6 +36,8 @@ import org.modeshape.web.jcr.rest.client.domain.Workspace;
 
 /**
  * The <code>IRestClient</code> interface is the API for all REST clients used by the Eclipse ModeShape plugin.
+ *
+ * @deprecated since ModeShape 3.1, this should be obsolete
  */
 public interface IRestClient {
 
@@ -70,6 +72,10 @@ public interface IRestClient {
     Map<String, javax.jcr.nodetype.NodeType> getNodeTypes( Repository repository ) throws Exception;
 
     /**
+     * Returns a url string, representing a "server recognizable" url for a the given file.
+     *
+     * NOTE: This does not issue a request
+     *
      * @param file the file whose URL is being requested (never <code>null</code>)
      * @param path the path in the ModeShape workspace where the file is/could be located (never <code>null</code>)
      * @param workspace the workspace where the file is/could be located (never <code>null</code>)
@@ -79,6 +85,19 @@ public interface IRestClient {
     URL getUrl( File file,
                 String path,
                 Workspace workspace ) throws Exception;
+
+    /**
+     * Checks if the given file exists or not on the server, by issuing a GET request.
+     *
+     * @param file the file whose existence is checked, (never <code>null</code>)
+     * @param workspace the workspace where the file is/could be located (never <code>null</code>)
+     * @param path the path in the ModeShape workspace to the parent of the file (never <code>null</code>)
+     * @return {@code true} if the file exists on the server, or {@code false} otherwise.
+     * @throws Exception if there is a problem while performing the check
+     */
+    boolean fileExists( File file,
+                        Workspace workspace,
+                        String path ) throws Exception;
 
     /**
      * Obtains the workspaces defined within the specified ModeShape respository.

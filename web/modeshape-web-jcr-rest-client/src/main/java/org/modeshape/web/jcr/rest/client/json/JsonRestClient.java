@@ -329,11 +329,6 @@ public final class JsonRestClient implements IRestClient {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeTypes(org.modeshape.web.jcr.rest.client.domain.Repository)
-     */
     @Override
     public Map<String, javax.jcr.nodetype.NodeType> getNodeTypes( Repository repository ) throws Exception {
         assert repository != null;
@@ -383,12 +378,6 @@ public final class JsonRestClient implements IRestClient {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.web.jcr.rest.client.IRestClient#getUrl(java.io.File, java.lang.String,
-     *      org.modeshape.web.jcr.rest.client.domain.Workspace)
-     */
     @Override
     public URL getUrl( File file,
                        String path,
@@ -405,11 +394,6 @@ public final class JsonRestClient implements IRestClient {
         return new FileNode(workspace, path, file).getUrl();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.web.jcr.rest.client.IRestClient#getWorkspaces(org.modeshape.web.jcr.rest.client.domain.Repository)
-     */
     @Override
     public Collection<Workspace> getWorkspaces( Repository repository ) throws Exception {
         assert repository != null;
@@ -500,12 +484,6 @@ public final class JsonRestClient implements IRestClient {
         return pathExists(workspace.getServer(), fileNode.getUrl());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.web.jcr.rest.client.IRestClient#publish(org.modeshape.web.jcr.rest.client.domain.Workspace,
-     *      java.lang.String, java.io.File)
-     */
     @Override
     public Status publish( Workspace workspace,
                            String path,
@@ -513,12 +491,13 @@ public final class JsonRestClient implements IRestClient {
         return publish(workspace, path, file, false);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.web.jcr.rest.client.IRestClient#publish(org.modeshape.web.jcr.rest.client.domain.Workspace,
-     *      java.lang.String, java.io.File, boolean)
-     */
+    @Override
+    public boolean fileExists( File file,
+                               Workspace workspace,
+                               String path ) throws Exception {
+        return pathExists(workspace, path, file);
+    }
+
     @Override
     public Status publish( Workspace workspace,
                            String path,
@@ -548,12 +527,6 @@ public final class JsonRestClient implements IRestClient {
         return Status.OK_STATUS;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.web.jcr.rest.client.IRestClient#unpublish(org.modeshape.web.jcr.rest.client.domain.Workspace,
-     *      java.lang.String, java.io.File)
-     */
     @Override
     public Status unpublish( Workspace workspace,
                              String path,
@@ -612,12 +585,6 @@ public final class JsonRestClient implements IRestClient {
         return query(workspace, language, statement, 0, -1, null);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.web.jcr.rest.client.IRestClient#query(org.modeshape.web.jcr.rest.client.domain.Workspace,
-     *      java.lang.String, java.lang.String, int, int, java.util.Map)
-     */
     @SuppressWarnings( "unchecked" )
     @Override
     public List<QueryRow> query( Workspace workspace,
