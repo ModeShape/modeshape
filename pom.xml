@@ -16,7 +16,9 @@
 	<description>Builds the entire ModeShape distribution.</description>
 
 	<modules>
-        <!-- This must be first -->
+        <!-- Order is important -->
+
+        <!-- First these -->
         <module>modeshape-parent</module>
         <module>modeshape-assembly-descriptors</module>
         <!-- Order is important -->
@@ -37,6 +39,13 @@
           The JBoss AS7 subsystem needs the web components and (local) JDBC drivers.
         -->
         <module>deploy/jbossas</module>
+
+        <!-- Finally the BOMs -->
+        <module>boms/modeshape-bom-parent</module>
+        <module>boms/modeshape-bom-api</module>
+        <module>boms/modeshape-bom-jbossasg</module>
+        <module>boms/modeshape-bom-embedded</module>
+        <module>boms/modeshape-bom-remote-client</module>
     </modules>
 	<properties>
 		<rootDir>${project.basedir}</rootDir>
