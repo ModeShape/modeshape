@@ -742,6 +742,39 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         moveSNSWhileCachingPaths(srcId, destId, "child");
     }
 
+    @Test
+    @FixFor( "MODE-1623" )
+    public void shouldAutomaticallySetDefaultValueOnProperties() throws Exception {
+        // Start the repository and register some node types ...
+        ClassLoader cl = getClass().getClassLoader();
+        startRepositoryWithConfiguration(cl.getResourceAsStream("config/simple-repo-config.json"));
+        session.getWorkspace().getNodeTypeManager().registerNodeTypes(cl.getResource("cnd/notionalTypes.cnd"), true);
+
+        // Create a node using a type with property definitions that have default values ...
+        Node node1 = session.getRootNode().addNode("node1", "notion:typed");
+
+        // Before saving, the auto-created properties should be there ...
+        assertThat(node1.hasProperty("notion:booleanProperty"), is(false));
+        assertThat(node1.hasProperty("notion:booleanProperty2"), is(false));
+        assertThat(node1.hasProperty("notion:longProperty"), is(false));
+        assertThat(node1.hasProperty("notion:stringProperty"), is(false));
+        assertThat(node1.hasProperty("notion:booleanPropertyWithDefault"), is(false));
+        assertThat(node1.hasProperty("notion:stringPropertyWithDefault"), is(false));
+        assertThat(node1.hasProperty("notion:booleanAutoCreatedPropertyWithDefault"), is(true));
+        assertThat(node1.hasProperty("notion:stringAutoCreatedPropertyWithDefault"), is(true));
+        assertThat(node1.getProperty("notion:booleanAutoCreatedPropertyWithDefault").getBoolean(), is(true));
+        assertThat(node1.getProperty("notion:stringAutoCreatedPropertyWithDefault").getString(), is("default string value"));
+
+        // Save, and then check that the properties exist ...
+        session.save();
+        assertThat(node1.hasProperty("notion:booleanPropertyWithDefault"), is(false));
+        assertThat(node1.hasProperty("notion:stringPropertyWithDefault"), is(false));
+        assertThat(node1.hasProperty("notion:booleanAutoCreatedPropertyWithDefault"), is(true));
+        assertThat(node1.hasProperty("notion:stringAutoCreatedPropertyWithDefault"), is(true));
+        assertThat(node1.getProperty("notion:booleanAutoCreatedPropertyWithDefault").getBoolean(), is(true));
+        assertThat(node1.getProperty("notion:stringAutoCreatedPropertyWithDefault").getString(), is("default string value"));
+    }
+
     /**
      * Create a tree of nodes that have different name siblings at the leaves.
      * 

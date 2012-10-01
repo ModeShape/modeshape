@@ -15,3 +15,7 @@
 - notion:booleanProperty2 (boolean)
 - notion:longProperty (long)
 - notion:stringProperty (string)
+- notion:booleanCreatedPropertyWithDefault (boolean) = true
+- notion:stringPropertyWithDefault (string) = "default string value"
+- notion:booleanAutoCreatedPropertyWithDefault (boolean) = true autocreated
+- notion:stringAutoCreatedPropertyWithDefault (string) = "default string value" autocreated
