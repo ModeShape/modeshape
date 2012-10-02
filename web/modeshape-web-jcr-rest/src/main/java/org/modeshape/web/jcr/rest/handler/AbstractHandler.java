@@ -1,5 +1,9 @@
 package org.modeshape.web.jcr.rest.handler;
 
+import static org.modeshape.web.jcr.rest.RestHelper.BINARY_METHOD_NAME;
+import static org.modeshape.web.jcr.rest.RestHelper.ITEMS_METHOD_NAME;
+import java.util.ArrayList;
+import java.util.List;
 import javax.jcr.Item;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -15,13 +19,9 @@ import org.modeshape.jcr.api.Logger;
 import org.modeshape.web.jcr.RepositoryManager;
 import org.modeshape.web.jcr.WebLogger;
 import org.modeshape.web.jcr.rest.RestHelper;
-import static org.modeshape.web.jcr.rest.RestHelper.BINARY_METHOD_NAME;
-import static org.modeshape.web.jcr.rest.RestHelper.ITEMS_METHOD_NAME;
 import org.modeshape.web.jcr.rest.model.RestItem;
 import org.modeshape.web.jcr.rest.model.RestNode;
 import org.modeshape.web.jcr.rest.model.RestProperty;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Base class for the different rest handler implementations, to which the rest services delegate operations.
@@ -44,7 +44,7 @@ public abstract class AbstractHandler {
 
     /**
      * Returns an active session for the given workspace name in the named repository.
-     *
+     * 
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded name of the repository in which the session is created
      * @param rawWorkspaceName the URL-encoded name of the workspace to which the session should be connected
@@ -161,7 +161,7 @@ public abstract class AbstractHandler {
 
     protected Node getParentNode( Property property ) throws RepositoryException {
         Node parentNode = property.getParent();
-        if (JcrConstants.JCR_CONTENT.equalsIgnoreCase(parentNode.getName())) {
+        if (JcrConstants.JCR_CONTENT.equalsIgnoreCase(parentNode.getName()) && parentNode.getIndex() == 1) {
             parentNode = parentNode.getParent();
         }
         return parentNode;
@@ -199,6 +199,13 @@ public abstract class AbstractHandler {
         return pathString.startsWith("/") ? pathString : "/" + pathString;
     }
 
+    protected String nodeName( Node node ) throws RepositoryException {
+        int index = node.getIndex();
+        String name = node.getName();
+        if (index != 1) name = name + "[" + index + "]";
+        return name;
+    }
+
     private RestNode createRestNode( Session session,
                                      Node node,
                                      String baseUrl,
@@ -209,21 +216,21 @@ public abstract class AbstractHandler {
                                                                                                                     ITEMS_METHOD_NAME,
                                                                                                                     node.getParent()
                                                                                                                         .getPath());
-        RestNode restNode = new RestNode(node.getName(), nodeUrl, parentUrl);
+        RestNode restNode = new RestNode(nodeName(node), nodeUrl, parentUrl);
 
-        for (PropertyIterator propertyIterator = node.getProperties(); propertyIterator.hasNext(); ) {
+        for (PropertyIterator propertyIterator = node.getProperties(); propertyIterator.hasNext();) {
             Property property = propertyIterator.nextProperty();
             restNode.addProperty(createRestProperty(session, property, baseUrl));
         }
 
-        for (NodeIterator nodeIterator = node.getNodes(); nodeIterator.hasNext(); ) {
+        for (NodeIterator nodeIterator = node.getNodes(); nodeIterator.hasNext();) {
             Node childNode = nodeIterator.nextNode();
             RestNode restChild = null;
             if (depth != 0) {
                 restChild = createRestNode(session, childNode, baseUrl, depth - 1);
             } else {
                 String childUrl = RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, childNode.getPath());
-                restChild = new RestNode(childNode.getName(), childUrl, nodeUrl);
+                restChild = new RestNode(nodeName(childNode), childUrl, nodeUrl);
             }
             restNode.addChild(restChild);
         }
