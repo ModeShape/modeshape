@@ -253,6 +253,11 @@ public class JcrNamespaceRegistryTest extends MultiUseAbstractTest {
         registry.unregisterNamespace(prefix);
     }
 
+    @Test( expected = NamespaceException.class )
+    public void shouldNotAllowRegisteringNamespaceWithPrefixThatIsNotValidName() throws Exception {
+        registry.registerNamespace("foo:", "http://example.com");
+    }
+
     @Test
     public void shouldRegisterNewPrefixWithNewUri() throws Exception {
         String prefix = "foo";
