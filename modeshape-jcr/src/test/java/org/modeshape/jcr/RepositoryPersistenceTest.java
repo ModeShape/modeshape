@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import java.io.File;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -142,8 +143,8 @@ public class RepositoryPersistenceTest extends MultiPassAbstractTest {
 
     }
 
-    protected File getFile( String resourcePath ) {
-        return new File(getClass().getClassLoader().getResource(resourcePath).toExternalForm().replace("file:", ""));
+    protected File getFile( String resourcePath ) throws URISyntaxException {
+        return new File(getClass().getClassLoader().getResource(resourcePath).toURI());
     }
 
 }
