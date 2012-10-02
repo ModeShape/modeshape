@@ -1489,6 +1489,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
 
             this.context().terminateAllPools(30, TimeUnit.SECONDS);
+
+            // Shutdown the environment's resources.
+            this.environment().shutdown();
         }
 
         protected void bindIntoJndi() {
