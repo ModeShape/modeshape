@@ -1,8 +1,8 @@
 {
     "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base",
     "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes",
-    "jcr:primaryType":"{http://www.jcp.org/jcr/nt/1.0}nodeType",
-    "jcr:nodeTypeName":"{http://www.jcp.org/jcr/nt/1.0}base",
+    "jcr:primaryType":"nt:nodeType",
+    "jcr:nodeTypeName":"nt:base",
     "jcr:isAbstract":"true",
     "jcr:hasOrderableChildNodes":"false",
     "jcr:isQueryable":"true",
@@ -11,44 +11,44 @@
         "jcr:primaryType":{
             "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base/jcr:primaryType",
             "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base",
-            "jcr:primaryType":"{http://www.jcp.org/jcr/nt/1.0}propertyDefinition",
+            "jcr:primaryType":"nt:propertyDefinition",
             "jcr:onParentVersion":"COMPUTE",
             "jcr:multiple":"false",
             "jcr:protected":"true",
             "jcr:availableQueryOperators":[
-                "{}jcr.operator.equal.to",
-                "{}jcr.operator.greater.than",
-                "{}jcr.operator.greater.than.or.equal.to",
-                "{}jcr.operator.less.than",
-                "{}jcr.operator.less.than.or.equal.to",
-                "{}jcr.operator.like",
-                "{}jcr.operator.not.equal.to"
+                "jcr.operator.equal.to",
+                "jcr.operator.greater.than",
+                "jcr.operator.greater.than.or.equal.to",
+                "jcr.operator.less.than",
+                "jcr.operator.less.than.or.equal.to",
+                "jcr.operator.like",
+                "jcr.operator.not.equal.to"
             ],
             "jcr:requiredType":"NAME",
             "jcr:mandatory":"true",
             "jcr:autoCreated":"true",
-            "jcr:name":"{http://www.jcp.org/jcr/1.0}primaryType"
+            "jcr:name":"jcr:primaryType"
         },
         "jcr:mixinTypes":{
             "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base/jcr:mixinTypes",
             "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base",
-            "jcr:primaryType":"{http://www.jcp.org/jcr/nt/1.0}propertyDefinition",
+            "jcr:primaryType":"nt:propertyDefinition",
             "jcr:onParentVersion":"COMPUTE",
             "jcr:multiple":"true",
             "jcr:protected":"true",
             "jcr:availableQueryOperators":[
-                "{}jcr.operator.equal.to",
-                "{}jcr.operator.greater.than",
-                "{}jcr.operator.greater.than.or.equal.to",
-                "{}jcr.operator.less.than",
-                "{}jcr.operator.less.than.or.equal.to",
-                "{}jcr.operator.like",
-                "{}jcr.operator.not.equal.to"
+                "jcr.operator.equal.to",
+                "jcr.operator.greater.than",
+                "jcr.operator.greater.than.or.equal.to",
+                "jcr.operator.less.than",
+                "jcr.operator.less.than.or.equal.to",
+                "jcr.operator.like",
+                "jcr.operator.not.equal.to"
             ],
             "jcr:requiredType":"NAME",
             "jcr:mandatory":"false",
             "jcr:autoCreated":"false",
-            "jcr:name":"{http://www.jcp.org/jcr/1.0}mixinTypes"
+            "jcr:name":"jcr:mixinTypes"
         }
     }
 }

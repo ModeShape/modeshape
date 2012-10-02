@@ -129,7 +129,7 @@ public abstract class AbstractHandler {
                     return restValueForReference(value, baseUrl, session);
                 }
                 default: {
-                    return value.toString();
+                    return value.getString();
                 }
             }
         } catch (Exception e) {
