@@ -6,13 +6,13 @@
     },
     "rows":[
         {
-            "jcr:path":"/{}testNode/{}child[2]",
+            "jcr:path":"/testNode/child[2]",
             "jcr:score":"0.8575897812843323",
             "foo":"value",
             "mode:uri":"http://localhost:8090/resources/repo/default/items/testNode/child[2]"
         },
         {
-            "jcr:path":"/{}testNode/{}child[3]",
+            "jcr:path":"/testNode/child[3]",
             "jcr:score":"0.8575897812843323",
             "foo":"value",
             "mode:uri":"http://localhost:8090/resources/repo/default/items/testNode/child[3]"

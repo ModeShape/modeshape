@@ -7,7 +7,7 @@
             "valueB"
         ],
         "testProperty":"testValue1",
-        "jcr:primaryType":"{http://www.jcp.org/jcr/nt/1.0}unstructured",
+        "jcr:primaryType":"nt:unstructured",
         "children":{
             "subChild":{
                 "self":"http://localhost:8090/resources/repo/default/items/testNode/child/subChild",
@@ -23,7 +23,7 @@
             "valueB"
         ],
         "testProperty":"testValue1",
-        "jcr:primaryType":"{http://www.jcp.org/jcr/nt/1.0}unstructured"
+        "jcr:primaryType":"nt:unstructured"
     },
     {
         "self":"http://localhost:8090/resources/repo/default/items/testNode/otherChild",
@@ -33,7 +33,7 @@
             "valueB"
         ],
         "testProperty":"testValue1",
-        "jcr:primaryType":"{http://www.jcp.org/jcr/nt/1.0}unstructured",
+        "jcr:primaryType":"nt:unstructured",
         "children":{
             "otherSubChild":{
                 "self":"http://localhost:8090/resources/repo/default/items/testNode/otherChild/otherSubChild",

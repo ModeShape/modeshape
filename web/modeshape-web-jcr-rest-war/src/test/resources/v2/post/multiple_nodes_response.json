@@ -2,7 +2,7 @@
     {
         "self":"http://localhost:8090/resources/repo/default/items/testNode/child",
         "up":"http://localhost:8090/resources/repo/default/items/testNode",
-        "jcr:primaryType":"{http://www.jcp.org/jcr/nt/1.0}unstructured",
+        "jcr:primaryType":"nt:unstructured",
         "multiValuedProperty":[
             "value1",
             "value2"
@@ -12,7 +12,7 @@
     {
         "self":"http://localhost:8090/resources/repo/default/items/testNode/child/subChild",
         "up":"http://localhost:8090/resources/repo/default/items/testNode/child",
-        "jcr:primaryType":"{http://www.jcp.org/jcr/nt/1.0}unstructured",
+        "jcr:primaryType":"nt:unstructured",
         "multiValuedProperty":[
             "value1",
             "value2"
@@ -22,7 +22,7 @@
     {
         "self":"http://localhost:8090/resources/repo/default/items/testNode/otherChild",
         "up":"http://localhost:8090/resources/repo/default/items/testNode",
-        "jcr:primaryType":"{http://www.jcp.org/jcr/nt/1.0}unstructured",
+        "jcr:primaryType":"nt:unstructured",
         "multiValuedProperty":[
             "value1",
             "value2"

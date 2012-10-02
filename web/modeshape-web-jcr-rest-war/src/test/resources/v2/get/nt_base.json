@@ -1,8 +1,8 @@
 {
     "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base",
     "up":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes",
-    "jcr:primaryType":"{http://www.jcp.org/jcr/nt/1.0}nodeType",
-    "jcr:nodeTypeName":"{http://www.jcp.org/jcr/nt/1.0}base",
+    "jcr:primaryType":"nt:nodeType",
+    "jcr:nodeTypeName":"nt:base",
     "jcr:isAbstract":"true",
     "jcr:hasOrderableChildNodes":"false",
     "jcr:isQueryable":"true",

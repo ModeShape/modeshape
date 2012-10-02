@@ -6,9 +6,9 @@
     },
     "rows":[
         {
-            "jcr:path":"/{}testNode",
+            "jcr:path":"/testNode",
             "jcr:score":"0.5728111863136292",
-            "jcr:primaryType":"{http://www.jcp.org/jcr/nt/1.0}unstructured",
+            "jcr:primaryType":"nt:unstructured",
             "mode:uri":"http://localhost:8090/resources/repo/default/items/testNode"
         }
     ]

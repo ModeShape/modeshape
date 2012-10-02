@@ -81,14 +81,14 @@ public final class RestNode extends RestItem {
         JSONObject node = new JSONObject();
         node.put("self", url);
         node.put("up", parentUrl);
-        //properties
-        for (RestProperty restProperty : properties) {
-            if (restProperty.isMultiValue()) {
-                node.put(restProperty.name, restProperty.getValues());
-            } else if (restProperty.getValue() != null) {
-                node.put(restProperty.name, restProperty.getValue());
-            }
-        }
+
+        convertPropertiesToJSON(node);
+        convertChildrenToJSON(node);
+
+        return node;
+    }
+
+    private void convertChildrenToJSON( JSONObject node ) throws JSONException {
         //children
         if (!children.isEmpty()) {
             JSONObject children = new JSONObject();
@@ -97,7 +97,16 @@ public final class RestNode extends RestItem {
             }
             node.put("children", children);
         }
+    }
 
-        return node;
+    private void convertPropertiesToJSON( JSONObject node ) throws JSONException {
+        //properties
+        for (RestProperty restProperty : properties) {
+            if (restProperty.isMultiValue()) {
+                node.put(restProperty.name, restProperty.getValues());
+            } else if (restProperty.getValue() != null) {
+                node.put(restProperty.name, restProperty.getValue());
+            }
+        }
     }
 }

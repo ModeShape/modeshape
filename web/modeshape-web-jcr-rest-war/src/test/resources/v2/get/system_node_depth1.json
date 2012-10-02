@@ -1,12 +1,12 @@
 {
     "self":"http://localhost:8090/resources/repo/default/items/jcr:system",
     "up":"http://localhost:8090/resources/repo/default/items/",
-    "jcr:primaryType":"{http://www.modeshape.org/1.0}system",
+    "jcr:primaryType":"mode:system",
     "children":{
         "jcr:nodeTypes":{
             "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes",
             "up":"http://localhost:8090/resources/repo/default/items/jcr:system",
-            "jcr:primaryType":"{http://www.modeshape.org/1.0}nodeTypes",
+            "jcr:primaryType":"mode:nodeTypes",
             "children":{
                 "nt:base":{
                     "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes/nt:base",
@@ -201,12 +201,12 @@
         "jcr:versionStorage":{
             "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:versionStorage",
             "up":"http://localhost:8090/resources/repo/default/items/jcr:system",
-            "jcr:primaryType":"{http://www.modeshape.org/1.0}versionStorage"
+            "jcr:primaryType":"mode:versionStorage"
         },
         "mode:namespaces":{
             "self":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces",
             "up":"http://localhost:8090/resources/repo/default/items/jcr:system",
-            "jcr:primaryType":"{http://www.modeshape.org/1.0}namespaces",
+            "jcr:primaryType":"mode:namespaces",
             "children":{
                 "jcr":{
                     "self":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces/jcr",
@@ -249,7 +249,7 @@
         "mode:locks":{
             "self":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:locks",
             "up":"http://localhost:8090/resources/repo/default/items/jcr:system",
-            "jcr:primaryType":"{http://www.modeshape.org/1.0}locks"
+            "jcr:primaryType":"mode:locks"
         }
     }
 }
