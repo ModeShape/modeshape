@@ -183,17 +183,18 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
         if (expectedRepositoryName == null) {
             throw new SQLException("Missing repo name from " + info.getUrl());
         }
-        Server server = new Server("http://" + path, info.getUsername(), new String(info.getPassword()));
-        Repository repo = new Repository(expectedRepositoryName, server);
-        workspace = new Workspace(info.getWorkspaceName(), repo);
-        restClient = new JsonRestClient();
 
         // this is only a connection test to confirm a connection can be made and results can be obtained.
         try {
             Set<String> repositoryNames = new TreeSet<String>();
+            restClient = new JsonRestClient();
 
             // First, validate the Server object (in case we're talking to an newer server that uses a different URL for the API
+            Server server = new Server("http://" + path, info.getUsername(), new String(info.getPassword()));
             server = restClient.validate(server);
+
+            Repository repo = new Repository(expectedRepositoryName, server);
+            workspace = new Workspace(info.getWorkspaceName(), repo);
 
             Collection<Repository> repositories = restClient.getRepositories(server);
             for (Repository repository : repositories) {
