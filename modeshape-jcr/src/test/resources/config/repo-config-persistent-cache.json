@@ -6,7 +6,12 @@
     },
     "storage" : {
         "cacheName" : "persistentRepository",
-        "cacheConfiguration" : "config/infinispan-persistent.xml"
+        "cacheConfiguration" : "config/infinispan-persistent.xml",
+        "binaryStorage" : {
+            "type" : "file",
+            "directory": "target/persistent_repository/binaries",
+            "minimumBinarySizeInBytes" : 40
+        }
     },
     "workspaces" : {
         "default" : "default",

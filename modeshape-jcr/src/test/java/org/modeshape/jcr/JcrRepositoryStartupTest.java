@@ -26,9 +26,7 @@ package org.modeshape.jcr;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import java.io.File;
-import java.net.URL;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Session;
@@ -43,7 +41,7 @@ import org.modeshape.common.util.FileUtil;
  * @author rhauch
  * @author hchiorean
  */
-public class JcrRepositoryStartupTest extends AbstractTransactionalTest {
+public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
 
     @Test
     @FixFor( {"MODE-1526", "MODE-1512", "MODE-1617"} )
@@ -153,32 +151,5 @@ public class JcrRepositoryStartupTest extends AbstractTransactionalTest {
                 return null;
             }
         }, repositoryConfigFile);
-    }
-
-    protected void startRunStop( RepositoryOperation operation,
-                                 String repositoryConfigFile ) throws Exception {
-        URL configUrl = getClass().getClassLoader().getResource(repositoryConfigFile);
-        RepositoryConfiguration config = RepositoryConfiguration.read(configUrl);
-        JcrRepository repository = null;
-
-        try {
-            repository = new JcrRepository(config);
-            repository.start();
-
-            operation.setRepository(repository).call();
-        } finally {
-            if (repository != null) {
-                TestingUtil.killRepositoryAndContainer(repository);
-            }
-        }
-    }
-
-    protected abstract class RepositoryOperation implements Callable<Void> {
-        protected JcrRepository repository;
-
-        protected RepositoryOperation setRepository( JcrRepository repository ) {
-            this.repository = repository;
-            return this;
-        }
     }
 }
