@@ -9,6 +9,21 @@
         "testProperty":"testValue",
         "multiValuedProperty":["value1", "value2"]
     },
+    "testNode/child[2]" : {
+        "jcr:primaryType":"nt:unstructured",
+        "testProperty":"testValue",
+        "multiValuedProperty":["value1", "value2"]
+    },
+    "testNode/child[2]/subChild" : {
+        "jcr:primaryType":"nt:unstructured",
+        "testProperty":"testValue",
+        "multiValuedProperty":["value1a", "value2b"]
+    },
+    "testNode/child[2]/subChild[2]" : {
+        "jcr:primaryType":"nt:unstructured",
+        "testProperty":"testValue",
+        "multiValuedProperty":["value3", "value4"]
+    },
     "testNode/otherChild" : {
         "jcr:primaryType":"nt:unstructured",
         "testProperty":"testValue",

@@ -379,6 +379,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         doPost("v2/post/multiple_nodes_request.json", itemsUrl())
                 .isOk()
                 .isJSONArrayLikeFile("v2/post/multiple_nodes_response.json");
+        doGet(itemsUrl(TEST_NODE + "/child[2]")).isJSONObjectLikeFile("v2/get/node_with_sns_children.json");
     }
 
     @Test
