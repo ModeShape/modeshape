@@ -40,6 +40,7 @@ import org.modeshape.common.xml.XmlCharacters;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.NamespaceRegistry.Namespace;
 import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.ValueFormatException;
 
 /**
  * A thread-safe JCR {@link javax.jcr.NamespaceRegistry} implementation that has the standard JCR namespaces pre-registered and
@@ -198,6 +199,28 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
         CheckArg.isNotNull(uri, "uri");
         checkSession();
 
+        // Check the zero-length prefix and zero-length URI ...
+        if (DEFAULT_NAMESPACE_PREFIX.equals(prefix) || DEFAULT_NAMESPACE_URI.equals(uri)) {
+            throw new NamespaceException(JcrI18n.unableToChangeTheDefaultNamespace.text());
+        }
+
+        // Check whether the prefix begins with 'xml' (in any case) ...
+        if (prefix.toLowerCase().startsWith(XML_NAMESPACE_PREFIX)) {
+            throw new NamespaceException(JcrI18n.unableToRegisterNamespaceUsingXmlPrefix.text(prefix, uri));
+        }
+
+        // The prefix must be a valid XML Namespace prefix (i.e., a valid NCName) ...
+        if (!XmlCharacters.isValidName(prefix)) {
+            throw new NamespaceException(JcrI18n.unableToRegisterNamespaceWithInvalidPrefix.text(prefix, uri));
+        }
+
+        // The prefix must also be a valid JCR name ...
+        try {
+            session.nameFactory().create(prefix);
+        } catch (ValueFormatException e) {
+            throw new NamespaceException(JcrI18n.unableToRegisterNamespaceWithInvalidPrefix.text(prefix, uri));
+        }
+
         boolean global = false;
         switch (behavior) {
             case SESSION:
@@ -241,21 +264,6 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
                 break;
             default:
                 assert false; // should never happen
-        }
-
-        // Check the zero-length prefix and zero-length URI ...
-        if (DEFAULT_NAMESPACE_PREFIX.equals(prefix) || DEFAULT_NAMESPACE_URI.equals(uri)) {
-            throw new NamespaceException(JcrI18n.unableToChangeTheDefaultNamespace.text());
-        }
-
-        // Check whether the prefix begins with 'xml' (in any case) ...
-        if (prefix.toLowerCase().startsWith(XML_NAMESPACE_PREFIX)) {
-            throw new NamespaceException(JcrI18n.unableToRegisterNamespaceUsingXmlPrefix.text(prefix, uri));
-        }
-
-        // The prefix must be a valid XML Namespace prefix (i.e., a valid NCName) ...
-        if (!XmlCharacters.isValidName(prefix)) {
-            throw new NamespaceException(JcrI18n.unableToRegisterNamespaceWithInvalidPrefix.text(prefix, uri));
         }
 
         // Signal the local node type manager ...
