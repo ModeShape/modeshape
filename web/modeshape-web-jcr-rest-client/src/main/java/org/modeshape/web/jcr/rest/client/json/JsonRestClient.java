@@ -264,14 +264,14 @@ public final class JsonRestClient implements IRestClient {
             switch (version) {
                 case VERSION_1:
                     LOGGER.trace("validate: Found version 2.x server at " + server);
-                    return server;
+                    return server.asValidated(server.getUrl());
                 case VERSION_2:
                     // This is a 3.0 server, and we need to talk to the older "/v1" API ...
                     LOGGER.trace("validate: Found version 3.x server at " + server);
                     String original = server.getUrl().trim();
                     if (!original.endsWith("/")) original = original + "/";
                     String v1Url = original + "v1";
-                    return new Server(v1Url, server.getUser(), server.getPassword());
+                    return server.asValidated(v1Url);
             }
         } finally {
             if (connection != null) {
@@ -817,13 +817,18 @@ public final class JsonRestClient implements IRestClient {
             System.exit(-1);
         }
 
-        Server server = new Server(server_name, user, pwd);
-        Repository repository = new Repository(repo_name, server);
-        Workspace workspace = new Workspace(workspace_name, repository);
-
         JsonRestClient client = new JsonRestClient();
 
+        Server server = new Server(server_name, user, pwd);
+        Workspace workspace = null;
         try {
+            // Validate the connection ...
+            server = client.validate(server);
+
+            // And create the repository & workspace objects
+            Repository repository = new Repository(repo_name, server);
+            workspace = new Workspace(workspace_name, repository);
+
             client.getRepositories(server);
         } catch (Exception e) {
             e.printStackTrace();
