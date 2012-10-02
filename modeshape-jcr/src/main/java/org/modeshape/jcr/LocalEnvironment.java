@@ -80,6 +80,7 @@ public class LocalEnvironment implements Environment {
 
     private final Class<? extends TransactionManagerLookup> transactionManagerLookupClass;
     private final ConcurrentMap<String, CacheContainer> containers = new ConcurrentHashMap<String, CacheContainer>();
+    private volatile boolean shared = false;
 
     public LocalEnvironment() {
         this.transactionManagerLookupClass = DEFAULT_TRANSACTION_MANAGER_LOOKUP_CLASS;
@@ -117,8 +118,21 @@ public class LocalEnvironment implements Environment {
         return null;
     }
 
+    /**
+     * Shutdown this environment, allowing it to reclaim any resources.
+     * <p>
+     * This method does nothing if the environment has been marked as {@link #isShared() shared}.
+     * </p>
+     */
     @Override
     public synchronized void shutdown() {
+        if (!shared) doShutdown();
+    }
+
+    /**
+     * Shutdown all containers and caches.
+     */
+    protected void doShutdown() {
         for (CacheContainer container : containers.values()) {
             shutdown(container);
         }
@@ -291,6 +305,28 @@ public class LocalEnvironment implements Environment {
             if (container == null) container = newContainer;
         }
         return ((EmbeddedCacheManager)container).defineConfiguration(cacheName, configuration);
+    }
+
+    /**
+     * Set whether this environment is shared amongst multiple repositories. Shared environments are not shutdown automatically,
+     * and the application is expected to shutdown all containers and caches. By default, environments are not shared unless this
+     * method is explicitly called with a parameter value of <code>true</code>.
+     * 
+     * @param shared true if this environment is shared, or false otherwise
+     * @see #isShared()
+     */
+    public void setShared( boolean shared ) {
+        this.shared = shared;
+    }
+
+    /**
+     * Return whether this environment is shared amongst multiple repositories.
+     * 
+     * @return true if this environment is shared, or false otherwise
+     * @see #setShared(boolean)
+     */
+    public boolean isShared() {
+        return shared;
     }
 
 }
