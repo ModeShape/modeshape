@@ -1,6 +1,7 @@
 {
     "self":"http://localhost:8090/resources/repo/default/items/testNode",
     "up":"http://localhost:8090/resources/repo/default/items/",
+    "id" : "*",
     "jcr:primaryType":"nt:unstructured",
     "multiValuedProperty":[
         "value1",
@@ -10,7 +11,8 @@
     "children":{
         "childNode":{
             "self":"http://localhost:8090/resources/repo/default/items/testNode/childNode",
-            "up":"http://localhost:8090/resources/repo/default/items/testNode"
+            "up":"http://localhost:8090/resources/repo/default/items/testNode",
+            "id" : "*"
         }
     }
 }

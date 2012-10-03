@@ -23,9 +23,22 @@
  */
 package org.modeshape.web.jcr.rest;
 
+import javax.ws.rs.core.MediaType;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+import org.junit.After;
+import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.StringUtil;
+import org.modeshape.web.jcr.rest.handler.AbstractHandler;
+import sun.net.www.protocol.http.AuthCacheImpl;
+import sun.net.www.protocol.http.AuthCacheValue;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,31 +52,20 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import javax.ws.rs.core.MediaType;
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.modeshape.common.util.IoUtil;
-import org.modeshape.common.util.StringUtil;
-import sun.net.www.protocol.http.AuthCacheImpl;
-import sun.net.www.protocol.http.AuthCacheValue;
 
 /**
  * Test of the ModeShape JCR REST resource. Note that this test case uses a very low-level API to construct requests and
  * deconstruct the responses. Users are encouraged to use a higher-level library to communicate with the REST server (e.g., Apache
  * HTTP Commons).
- * 
+ *
  * @author ?
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 @SuppressWarnings( "restriction" )
 public class JcrResourcesTest {
 
-    private static final List<String> JSON_PROPERTIES_IGNORE_EQUALS = Arrays.asList("jcr:uuid", "jcr:score");
+    private static final List<String> JSON_PROPERTIES_IGNORE_EQUALS = Arrays.asList("jcr:uuid", "jcr:score",
+                                                                                    AbstractHandler.NODE_ID_CUSTOM_PROPERTY);
 
     /**
      * The name of the repository is dictated by the "repository-config.json" configuration file loaded by the
@@ -221,7 +223,8 @@ public class JcrResourcesTest {
     @Test
     public void shouldPostNodeToValidPathWithPrimaryType() throws Exception {
         // http://localhost:8090/resources/v1/repo/default/items/testNode
-        doPost(nodeWithPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isCreated().isJSONObjectLikeFile(nodeWithPrimaryTypeResponse());
+        doPost(nodeWithPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isCreated().isJSONObjectLikeFile(
+                nodeWithPrimaryTypeResponse());
     }
 
     protected String nodeWithPrimaryTypeRequest() {
@@ -235,8 +238,8 @@ public class JcrResourcesTest {
     @Test
     public void shouldPostNodeToValidPathWithoutPrimaryType() throws Exception {
         // http://localhost:8090/resources/v1/repo/default/items/testNode
-        doPost(nodeWithoutPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isCreated()
-                                                                    .isJSONObjectLikeFile(nodeWithoutPrimaryTypeResponse());
+        doPost(nodeWithoutPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isCreated().isJSONObjectLikeFile(
+                nodeWithoutPrimaryTypeResponse());
     }
 
     protected String nodeWithoutPrimaryTypeRequest() {
@@ -557,20 +560,24 @@ public class JcrResourcesTest {
             writer.append(lineSeparator).flush();
             try {
                 byte[] buffer = new byte[1024];
-                for (int length = 0; (length = is.read(buffer)) > 0;) {
+                for (int length = 0; (length = is.read(buffer)) > 0; ) {
                     output.write(buffer, 0, length);
                 }
                 output.flush();
             } finally {
-                if (is != null) try {
-                    is.close();
-                } catch (IOException ignore) {
+                if (is != null) {
+                    try {
+                        is.close();
+                    } catch (IOException ignore) {
+                    }
                 }
             }
             writer.append(lineSeparator).flush(); // lineSeparator is important! It indicates end of binary boundary.
             writer.append("--").append(boundary).append("--").append(lineSeparator);
         } finally {
-            if (writer != null) writer.close();
+            if (writer != null) {
+                writer.close();
+            }
         }
         return new Response(connection);
     }
@@ -635,7 +642,7 @@ public class JcrResourcesTest {
             JSONObject expectedJSON = (JSONObject)expected;
             JSONObject actualJSON = (JSONObject)actual;
 
-            for (Iterator<?> keyIterator = expectedJSON.keys(); keyIterator.hasNext();) {
+            for (Iterator<?> keyIterator = expectedJSON.keys(); keyIterator.hasNext(); ) {
                 String key = keyIterator.next().toString();
                 assertTrue("Actual JSON object does not contain key: " + key, actualJSON.has(key));
 
