@@ -101,18 +101,24 @@
         <hamcrest.version>1.1</hamcrest.version>
         <mockito.all.version>1.8.4</mockito.all.version>
 
+        <!-- ***************** -->
+        <!-- Repository Deployment URLs -->
+        <!-- ***************** -->
+        <jboss.releases.repo.url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
+        <jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
+
     </properties>
 
-    <!--
-         This section defines the default dependency settings inherited by
-         child projects. Note that this section does not add dependencies, but
-         rather provide default settings.
-     -->
-    <dependencyManagement>
-        <dependencies>
-          
-          <!-- Nothing is specified in the parent -->
-
-        </dependencies>
-    </dependencyManagement>
+    <distributionManagement>
+      <repository>
+        <id>jboss-releases-repository</id>
+        <name>JBoss Releases Repository</name>
+        <url>${jboss.releases.repo.url}</url>
+      </repository>
+      <snapshotRepository>
+        <id>jboss-snapshots-repository</id>
+        <name>JBoss Snapshots Repository</name>
+        <url>${jboss.snapshots.repo.url}</url>
+      </snapshotRepository>
+    </distributionManagement>
 </project>
