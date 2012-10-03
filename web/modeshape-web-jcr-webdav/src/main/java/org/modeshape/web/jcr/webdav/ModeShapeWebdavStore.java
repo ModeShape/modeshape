@@ -34,14 +34,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
-import javax.jcr.Item;
-import javax.jcr.NoSuchWorkspaceException;
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.PathNotFoundException;
-import javax.jcr.Property;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
+import javax.jcr.*;
+import javax.jcr.AccessDeniedException;
 import javax.servlet.http.HttpServletRequest;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
@@ -52,7 +46,7 @@ import org.modeshape.web.jcr.RepositoryManager;
 import org.modeshape.webdav.ITransaction;
 import org.modeshape.webdav.IWebdavStore;
 import org.modeshape.webdav.StoredObject;
-import org.modeshape.webdav.exceptions.WebdavException;
+import org.modeshape.webdav.exceptions.*;
 
 /**
  * Implementation of the {@code IWebdavStore} interface that uses a JCR repository as a backing store.
@@ -155,7 +149,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             contentMapper.createFolder(parentNode, resourceName);
 
         } catch (RepositoryException re) {
-            throw new WebdavException(re);
+            throw translate(re);
         }
     }
 
@@ -197,7 +191,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             contentMapper.createFile(parentNode, resourceName);
 
         } catch (RepositoryException re) {
-            throw new WebdavException(re);
+            throw translate(re);
         }
 
     }
@@ -230,7 +224,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             logger.trace("WebDAV -> children: " + children);
             return children.toArray(new String[children.size()]);
         } catch (RepositoryException re) {
-            throw new WebdavException(re);
+            throw translate(re);
         }
     }
 
@@ -260,7 +254,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         } catch (IOException ioe) {
             throw new WebdavException(ioe);
         } catch (RepositoryException re) {
-            throw new WebdavException(re);
+            throw translate(re);
         }
     }
 
@@ -279,7 +273,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         } catch (IOException ioe) {
             throw new WebdavException(ioe);
         } catch (RepositoryException re) {
-            throw new WebdavException(re);
+            throw translate(re);
         }
     }
 
@@ -340,7 +334,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         } catch (IOException ioe) {
             throw new WebdavException(ioe);
         } catch (RepositoryException re) {
-            throw new WebdavException(re);
+            throw translate(re);
         }
         return ob;
     }
@@ -368,7 +362,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         } catch (PathNotFoundException pnfe) {
             // Return silently
         } catch (RepositoryException re) {
-            throw new WebdavException(re);
+            throw translate(re);
         }
     }
 
@@ -408,7 +402,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
 
             return contentMapper.setContent(node, resourceName, content, contentType, characterEncoding);
         } catch (RepositoryException re) {
-            throw new WebdavException(re);
+            throw translate(re);
         } catch (IOException ioe) {
             throw new WebdavException(ioe);
         } catch (RuntimeException t) {
@@ -647,6 +641,21 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                 }
                 sessions.clear();
             }
+        }
+    }
+
+    /**
+     * Converts the JCR Exceptions to WebDAV ones.
+     */
+    private WebdavException translate(RepositoryException exception){
+        if(exception instanceof AccessDeniedException){
+            return new org.modeshape.webdav.exceptions.AccessDeniedException(exception);
+        } else if(exception instanceof LoginException){
+            return new org.modeshape.webdav.exceptions.AccessDeniedException(exception);
+        } else if(exception instanceof PathNotFoundException){
+            return new ObjectNotFoundException(exception);
+        } else {
+            return new WebdavException(exception);
         }
     }
 

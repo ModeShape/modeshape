@@ -52,100 +52,103 @@ public class DoMkcol extends AbstractMethod {
                          HttpServletResponse resp ) throws IOException, LockFailedException {
         LOG.trace("-- " + this.getClass().getName());
 
-        if (!readOnly) {
-            String path = getRelativePath(req);
-            String parentPath = getParentPath(getCleanPath(path));
+        if (readOnly) {
+            resp.sendError(WebdavStatus.SC_FORBIDDEN);
+            return;
+        }
+        String path = getRelativePath(req);
+        String parentPath = getParentPath(getCleanPath(path));
 
-            Hashtable<String, Integer> errorList = new Hashtable<String, Integer>();
+        Hashtable<String, Integer> errorList = new Hashtable<String, Integer>();
 
-            if (!isUnlocked(transaction, req, resourceLocks, parentPath)) {
-                resp.sendError(WebdavStatus.SC_FORBIDDEN);
+        if (!isUnlocked(transaction, req, resourceLocks, parentPath)) {
+            resp.sendError(WebdavStatus.SC_FORBIDDEN);
+            return;
+        }
+
+        String tempLockOwner = "doMkcol" + System.currentTimeMillis() + req.toString();
+
+
+        StoredObject parentSo, so = null;
+        try {
+            if (!resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
+                LOG.debug("Resource lock failed.");
+                resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
                 return;
             }
-
-            String tempLockOwner = "doMkcol" + System.currentTimeMillis() + req.toString();
-
-            if (resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
-                StoredObject parentSo, so = null;
-                try {
-                    parentSo = store.getStoredObject(transaction, parentPath);
-                    if (parentSo == null) {
-                        // parent not exists
-                        resp.sendError(WebdavStatus.SC_CONFLICT);
+            parentSo = store.getStoredObject(transaction, parentPath);
+            if (parentSo == null) {
+                // parent not exists
+                LOG.debug("Parent not exists for "+path);
+                resp.sendError(WebdavStatus.SC_CONFLICT);
+                return;
+            }
+            if (parentPath != null && parentSo.isFolder()) {
+                so = store.getStoredObject(transaction, path);
+                if (so == null) {
+                    store.createFolder(transaction, path);
+                    resp.setStatus(WebdavStatus.SC_CREATED);
+                    return;
+                }
+                // object already exists
+                if (so.isNullResource()) {
+                    LockedObject nullResourceLo = resourceLocks.getLockedObjectByPath(transaction, path);
+                    if (nullResourceLo == null) {
+                        resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
                         return;
                     }
-                    if (parentPath != null && parentSo.isFolder()) {
-                        so = store.getStoredObject(transaction, path);
-                        if (so == null) {
-                            store.createFolder(transaction, path);
-                            resp.setStatus(WebdavStatus.SC_CREATED);
-                        } else {
-                            // object already exists
-                            if (so.isNullResource()) {
+                    String nullResourceLockToken = nullResourceLo.getID();
+                    String[] lockTokens = getLockIdFromIfHeader(req);
+                    String lockToken = null;
+                    if (lockTokens != null) {
+                        lockToken = lockTokens[0];
+                    } else {
+                        resp.sendError(WebdavStatus.SC_BAD_REQUEST);
+                        return;
+                    }
+                    if (lockToken.equals(nullResourceLockToken)) {
+                        so.setNullResource(false);
+                        so.setFolder(true);
 
-                                LockedObject nullResourceLo = resourceLocks.getLockedObjectByPath(transaction, path);
-                                if (nullResourceLo == null) {
-                                    resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
-                                    return;
-                                }
-                                String nullResourceLockToken = nullResourceLo.getID();
-                                String[] lockTokens = getLockIdFromIfHeader(req);
-                                String lockToken = null;
-                                if (lockTokens != null) {
-                                    lockToken = lockTokens[0];
-                                } else {
-                                    resp.sendError(WebdavStatus.SC_BAD_REQUEST);
-                                    return;
-                                }
-                                if (lockToken.equals(nullResourceLockToken)) {
-                                    so.setNullResource(false);
-                                    so.setFolder(true);
-
-                                    String[] nullResourceLockOwners = nullResourceLo.getOwner();
-                                    String owner = null;
-                                    if (nullResourceLockOwners != null) {
-                                        owner = nullResourceLockOwners[0];
-                                    }
-
-                                    if (resourceLocks.unlock(transaction, lockToken, owner)) {
-                                        resp.setStatus(WebdavStatus.SC_CREATED);
-                                    } else {
-                                        resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
-                                    }
-
-                                } else {
-                                    errorList.put(path, WebdavStatus.SC_LOCKED);
-                                    sendReport(req, resp, errorList);
-                                }
-
-                            } else {
-                                String methodsAllowed = DeterminableMethod.determineMethodsAllowed(so);
-                                resp.addHeader("Allow", methodsAllowed);
-                                resp.sendError(WebdavStatus.SC_METHOD_NOT_ALLOWED);
-                            }
+                        String[] nullResourceLockOwners = nullResourceLo.getOwner();
+                        String owner = null;
+                        if (nullResourceLockOwners != null) {
+                            owner = nullResourceLockOwners[0];
                         }
 
-                    } else if (parentPath != null && parentSo.isResource()) {
-                        String methodsAllowed = DeterminableMethod.determineMethodsAllowed(parentSo);
-                        resp.addHeader("Allow", methodsAllowed);
-                        resp.sendError(WebdavStatus.SC_METHOD_NOT_ALLOWED);
+                        if (resourceLocks.unlock(transaction, lockToken, owner)) {
+                            resp.setStatus(WebdavStatus.SC_CREATED);
+                        } else {
+                            resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
+                        }
 
                     } else {
-                        resp.sendError(WebdavStatus.SC_FORBIDDEN);
+                        errorList.put(path, WebdavStatus.SC_LOCKED);
+                        sendReport(req, resp, errorList);
                     }
-                } catch (AccessDeniedException e) {
-                    resp.sendError(WebdavStatus.SC_FORBIDDEN);
-                } catch (WebdavException e) {
-                    resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
-                } finally {
-                    resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
-                }
-            } else {
-                resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
-            }
 
-        } else {
+                } else {
+                    String methodsAllowed = DeterminableMethod.determineMethodsAllowed(so);
+                    resp.addHeader("Allow", methodsAllowed);
+                    resp.sendError(WebdavStatus.SC_METHOD_NOT_ALLOWED);
+                }
+
+            } else if (parentPath != null && parentSo.isResource()) {
+                String methodsAllowed = DeterminableMethod.determineMethodsAllowed(parentSo);
+                resp.addHeader("Allow", methodsAllowed);
+                resp.sendError(WebdavStatus.SC_METHOD_NOT_ALLOWED);
+
+            } else {
+                resp.sendError(WebdavStatus.SC_FORBIDDEN);
+            }
+        } catch (AccessDeniedException e) {
+            LOG.debug(e, "Access denied for "+path);
             resp.sendError(WebdavStatus.SC_FORBIDDEN);
+        } catch (WebdavException e) {
+            LOG.debug(e, "Error for "+path);
+            resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
+        } finally {
+            resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
         }
     }
 
