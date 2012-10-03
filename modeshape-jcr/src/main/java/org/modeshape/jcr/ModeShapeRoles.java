@@ -116,9 +116,4 @@ public interface ModeShapeRoles {
      * Constant containing the "admin" role name.
      */
     public static final String ADMIN = "admin";
-    /**
-     * Constant containing the "connect" role name.
-     */
-    public static final String CONNECT = "connect";
-
 }
