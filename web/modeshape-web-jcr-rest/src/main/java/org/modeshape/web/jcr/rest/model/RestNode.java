@@ -28,6 +28,8 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * A REST representation of a {@link javax.jcr.Node}
@@ -36,8 +38,9 @@ import java.util.List;
  */
 public final class RestNode extends RestItem {
 
-    private final List<RestProperty> properties;
+    private final List<RestProperty> jcrProperties;
     private final List<RestNode> children;
+    private final Map<String, String> customProperties;
 
     /**
      * Creates a new rest node
@@ -50,8 +53,9 @@ public final class RestNode extends RestItem {
                      String url,
                      String parentUrl ) {
         super(name, url, parentUrl);
-        properties = new ArrayList<RestProperty>();
+        jcrProperties = new ArrayList<RestProperty>();
         children = new ArrayList<RestNode>();
+        customProperties = new TreeMap<String, String>();
     }
 
     /**
@@ -66,13 +70,24 @@ public final class RestNode extends RestItem {
     }
 
     /**
-     * Adds a new property to this node.
+     * Adds a new jcr property to this node.
      *
      * @param property a {@code non-null} {@link RestProperty}
      * @return this rest node.
      */
-    public RestNode addProperty( RestProperty property ) {
-        properties.add(property);
+    public RestNode addJcrProperty( RestProperty property ) {
+        jcrProperties.add(property);
+        return this;
+    }
+
+    /**
+     * Adds a custom property to this node, meaning a property which is not among the standard JCR properties
+     * @param name a {@code non-null} String, representing the name of the custom property
+     * @param value a {@code non-null} String, representing the value of the custom property
+     * @return this instance, with the custom property added
+     */
+    public RestNode addCustomProperty (String name, String value)  {
+        customProperties.put(name, value);
         return this;
     }
 
@@ -82,13 +97,13 @@ public final class RestNode extends RestItem {
         node.put("self", url);
         node.put("up", parentUrl);
 
-        convertPropertiesToJSON(node);
-        convertChildrenToJSON(node);
-
+        addCustomProperties(node);
+        addJcrProperties(node);
+        addChildren(node);
         return node;
     }
 
-    private void convertChildrenToJSON( JSONObject node ) throws JSONException {
+    private void addChildren( JSONObject node ) throws JSONException {
         //children
         if (!children.isEmpty()) {
             JSONObject children = new JSONObject();
@@ -99,14 +114,21 @@ public final class RestNode extends RestItem {
         }
     }
 
-    private void convertPropertiesToJSON( JSONObject node ) throws JSONException {
+    private void addJcrProperties( JSONObject node ) throws JSONException {
         //properties
-        for (RestProperty restProperty : properties) {
+        for (RestProperty restProperty : jcrProperties) {
             if (restProperty.isMultiValue()) {
                 node.put(restProperty.name, restProperty.getValues());
             } else if (restProperty.getValue() != null) {
                 node.put(restProperty.name, restProperty.getValue());
             }
+        }
+    }
+
+    private void addCustomProperties( JSONObject node ) throws JSONException {
+        //custom properties
+        for (String customPropertyName : customProperties.keySet()) {
+            node.put(customPropertyName, customProperties.get(customPropertyName));
         }
     }
 }

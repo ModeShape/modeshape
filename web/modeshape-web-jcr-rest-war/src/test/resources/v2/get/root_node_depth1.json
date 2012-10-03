@@ -1,29 +1,35 @@
 {
     "self":"http://localhost:8090/resources/repo/default/items/",
     "up":"http://localhost:8090/resources/repo",
+    "id" : "*",
     "jcr:primaryType":"mode:root",
     "jcr:uuid":"32a6fcb7505d64/",
     "children":{
         "jcr:system":{
             "self":"http://localhost:8090/resources/repo/default/items/jcr:system",
             "up":"http://localhost:8090/resources/repo/default/items/",
+            "id" : "*",
             "jcr:primaryType":"mode:system",
             "children":{
                 "jcr:nodeTypes":{
                     "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:nodeTypes",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system"
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system",
+                    "id" : "*"
                 },
                 "jcr:versionStorage":{
                     "self":"http://localhost:8090/resources/repo/default/items/jcr:system/jcr:versionStorage",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system"
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system",
+                    "id" : "*"
                 },
                 "mode:namespaces":{
                     "self":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:namespaces",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system"
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system",
+                    "id" : "*"
                 },
                 "mode:locks":{
                     "self":"http://localhost:8090/resources/repo/default/items/jcr:system/mode:locks",
-                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system"
+                    "up":"http://localhost:8090/resources/repo/default/items/jcr:system",
+                    "id" : "*"
                 }
             }
         }

@@ -36,6 +36,11 @@ public abstract class AbstractHandler {
     public static final String EMPTY_REPOSITORY_NAME = "<default>";
 
     /**
+     * The name of the custom property which will contain the node id
+     */
+    public static final String NODE_ID_CUSTOM_PROPERTY = "id";
+
+    /**
      * Name to be used when the workspace name is empty string as {@code "//"} is not a valid path.
      */
     protected static final String EMPTY_WORKSPACE_NAME = "<default>";
@@ -212,18 +217,20 @@ public abstract class AbstractHandler {
                                      int depth ) throws RepositoryException {
         String nodeUrl = RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, node.getPath());
         boolean isRoot = node.getPath().equals("/");
-        String parentUrl = isRoot ? RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, "..", "..") : RestHelper.urlFrom(baseUrl,
-                                                                                                                    ITEMS_METHOD_NAME,
-                                                                                                                    node.getParent()
-                                                                                                                        .getPath());
-        RestNode restNode = new RestNode(nodeName(node), nodeUrl, parentUrl);
+        String parentUrl = isRoot ?
+                RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, "..", "..") : RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, node.getParent().getPath());
 
-        for (PropertyIterator propertyIterator = node.getProperties(); propertyIterator.hasNext();) {
+        RestNode restNode = new RestNode(node.getName(), nodeUrl, parentUrl);
+        restNode.addCustomProperty(NODE_ID_CUSTOM_PROPERTY, node.getIdentifier());
+
+        //add the properties
+        for (PropertyIterator propertyIterator = node.getProperties(); propertyIterator.hasNext(); ) {
             Property property = propertyIterator.nextProperty();
-            restNode.addProperty(createRestProperty(session, property, baseUrl));
+            restNode.addJcrProperty(createRestProperty(session, property, baseUrl));
         }
 
-        for (NodeIterator nodeIterator = node.getNodes(); nodeIterator.hasNext();) {
+        //add the children
+        for (NodeIterator nodeIterator = node.getNodes(); nodeIterator.hasNext(); ) {
             Node childNode = nodeIterator.nextNode();
             RestNode restChild = null;
             if (depth != 0) {
@@ -232,6 +239,7 @@ public abstract class AbstractHandler {
                 String childUrl = RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, childNode.getPath());
                 restChild = new RestNode(nodeName(childNode), childUrl, nodeUrl);
             }
+            restChild.addCustomProperty(NODE_ID_CUSTOM_PROPERTY, childNode.getIdentifier());
             restNode.addChild(restChild);
         }
         return restNode;
