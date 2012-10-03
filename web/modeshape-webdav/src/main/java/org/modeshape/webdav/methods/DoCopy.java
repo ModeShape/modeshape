@@ -58,30 +58,33 @@ public class DoCopy extends AbstractMethod {
         LOG.trace("-- " + this.getClass().getName());
 
         String path = getRelativePath(req);
-        if (!readOnly) {
-
-            String tempLockOwner = "doCopy" + System.currentTimeMillis() + req.toString();
-            if (resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
-                try {
-                    copyResource(transaction, req, resp);
-                } catch (AccessDeniedException e) {
-                    resp.sendError(WebdavStatus.SC_FORBIDDEN);
-                } catch (ObjectAlreadyExistsException e) {
-                    resp.sendError(WebdavStatus.SC_CONFLICT, req.getRequestURI());
-                } catch (ObjectNotFoundException e) {
-                    resp.sendError(WebdavStatus.SC_NOT_FOUND, req.getRequestURI());
-                } catch (WebdavException e) {
-                    resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
-                } finally {
-                    resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
-                }
-            } else {
-                resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
-            }
-        } else {
+        if (readOnly) {
             resp.sendError(WebdavStatus.SC_FORBIDDEN);
+            return;
         }
-
+        String tempLockOwner = "doCopy" + System.currentTimeMillis() + req.toString();
+        try {
+            if (!resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
+                LOG.debug("Resource lock failed.");
+                resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
+                return;
+            }
+            copyResource(transaction, req, resp);
+        } catch (AccessDeniedException e) {
+            LOG.debug(e, "Access denied for "+path);
+            resp.sendError(WebdavStatus.SC_FORBIDDEN);
+        } catch (ObjectAlreadyExistsException e) {
+            LOG.debug(e, "Conflict for "+path);
+            resp.sendError(WebdavStatus.SC_CONFLICT, req.getRequestURI());
+        } catch (ObjectNotFoundException e) {
+            LOG.debug(e, "Not found for "+path);
+            resp.sendError(WebdavStatus.SC_NOT_FOUND, req.getRequestURI());
+        } catch (WebdavException e) {
+            LOG.debug(e, "Error for "+path);
+            resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
+        } finally {
+            resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
+       }
     }
 
     /**
