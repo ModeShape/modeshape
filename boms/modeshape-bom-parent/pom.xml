@@ -38,6 +38,15 @@
         <url>http://issues.jboss.org/browse/MODE</url>
     </issueManagement>
 
+    <developers>
+        <developer>
+            <id>modeshape.org</id>
+            <name>ModeShape Community</name>
+            <organization>modeshape.org</organization>
+            <organizationUrl>http://modeshape.org</organizationUrl>
+        </developer>
+    </developers>
+
     <properties>
 
         <!-- Versions of non-ModeShape dependencies -->
