@@ -56,7 +56,7 @@ public class ModelAttributes {
             super.validateParameter(parameterName, value); // checks null
             String str = value.asString();
             if (!ModeShapeRoles.ADMIN.equals(str) && !ModeShapeRoles.READONLY.equals(str)
-                && !ModeShapeRoles.READWRITE.equals(str) && !ModeShapeRoles.CONNECT.equals(str)) {
+                && !ModeShapeRoles.READWRITE.equals(str)) {
                 throw new OperationFailedException("Invalid anonymous role name: '" + str + "'");
             }
         }
@@ -152,8 +152,7 @@ public class ModelAttributes {
                                                                                                                                                 ModelKeys.ANONYMOUS_ROLE,
                                                                                                                                                 ModelType.STRING).setAllowExpression(true)
                                                                                                                                                                  .setAllowNull(true)
-                                                                                                                                                                 .setDefaultValue(new ModelNode().add(new ModelNode().set(ModeShapeRoles.CONNECT))
-                                                                                                                                                                                                 .add(new ModelNode().set(ModeShapeRoles.ADMIN))
+                                                                                                                                                                 .setDefaultValue(new ModelNode().add(new ModelNode().set(ModeShapeRoles.ADMIN))
                                                                                                                                                                                                  .add(new ModelNode().set(ModeShapeRoles.READONLY))
                                                                                                                                                                                                  .add(new ModelNode().set(ModeShapeRoles.READWRITE)))
                                                                                                                                                                  .setValidator(ROLE_NAME_VALIDATOR)

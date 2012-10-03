@@ -24,6 +24,7 @@
 
 package org.modeshape.web.jcr.rest;
 
+import javax.jcr.LoginException;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
@@ -111,6 +112,15 @@ public final class ExceptionMappers {
         @Override
         public Response toResponse( RepositoryException exception ) {
             return exceptionResponse(exception, Response.Status.BAD_REQUEST);
+        }
+    }
+
+    @Provider
+    public static class LoginExceptionMapper implements ExceptionMapper<LoginException> {
+
+        @Override
+        public Response toResponse( LoginException exception ) {
+            return exceptionResponse(exception, Response.Status.UNAUTHORIZED);
         }
     }
 

@@ -160,11 +160,11 @@
         </xs:documentation>
       </xs:annotation>
     </xs:attribute>
-    <xs:attribute name="anonymous-roles" type="roleNames" default="connect readonly readwrite admin">
+    <xs:attribute name="anonymous-roles" type="roleNames" default="readonly readwrite admin">
       <xs:annotation>
         <xs:documentation>The space-separated names of the roles for anonymous users.
           Anonymous logins will be disabled if the roles consists of an empty string.
-          By default, the roles are 'connect', 'readonly', 'readwrite', and 'admin'.
+          By default, the roles are 'readonly', 'readwrite', and 'admin'.
         </xs:documentation>
       </xs:annotation>
     </xs:attribute>

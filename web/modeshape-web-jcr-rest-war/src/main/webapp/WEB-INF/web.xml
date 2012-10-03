@@ -1,112 +1,112 @@
 <?xml version="1.0"?>
 <!DOCTYPE web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
-                         "http://java.sun.com/dtd/web-app_2_3.dtd">
-	<!--
-		ModeShape (http://www.modeshape.org) See the COPYRIGHT.txt file
-		distributed with this work for information regarding copyright
-		ownership. Some portions may be licensed to Red Hat, Inc. under one or
-		more contributor license agreements. See the AUTHORS.txt file in the
-		distribution for a full listing of individual contributors. ModeShape
-		is free software. Unless otherwise indicated, all code in ModeShape is
-		licensed to you under the terms of the GNU Lesser General Public
-		License as published by the Free Software Foundation; either version
-		2.1 of the License, or (at your option) any later version. ModeShape
-		is distributed in the hope that it will be useful, but WITHOUT ANY
-		WARRANTY; without even the implied warranty of MERCHANTABILITY or
-		FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
-		License for more details. You should have received a copy of the GNU
-		Lesser General Public License along with this software; if not, write
-		to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
-		Boston, MA 02110-1301 USA, or see the FSF site: http://www.fsf.org.
-	-->
+        "http://java.sun.com/dtd/web-app_2_3.dtd">
+<!--
+        ModeShape (http://www.modeshape.org) See the COPYRIGHT.txt file
+        distributed with this work for information regarding copyright
+        ownership. Some portions may be licensed to Red Hat, Inc. under one or
+        more contributor license agreements. See the AUTHORS.txt file in the
+        distribution for a full listing of individual contributors. ModeShape
+        is free software. Unless otherwise indicated, all code in ModeShape is
+        licensed to you under the terms of the GNU Lesser General Public
+        License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version. ModeShape
+        is distributed in the hope that it will be useful, but WITHOUT ANY
+        WARRANTY; without even the implied warranty of MERCHANTABILITY or
+        FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+        License for more details. You should have received a copy of the GNU
+        Lesser General Public License along with this software; if not, write
+        to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+        Boston, MA 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+    -->
 <web-app>
-	<display-name>ModeShape JCR RESTful Interface</display-name>
+    <display-name>ModeShape JCR RESTful Interface</display-name>
 
-	<!--
-		This servlet uses the ServiceLoader to find a RepositoryFactory that returns a non-null
-        Repository instance. (This is the idiomatic way to obtain a JCR Repository.)
-        This parameter defines the location of the configuration file, or can specify
-        the JNDI location of the Repository or Repositories implementation.
-        (If the object in JNDI is a ModeShape Repositories instance, then this web application
-        will support multiple repositories.)
+    <!--
+         This servlet uses the ServiceLoader to find a RepositoryFactory that returns a non-null
+         Repository instance. (This is the idiomatic way to obtain a JCR Repository.)
+         This parameter defines the location of the configuration file, or can specify
+         the JNDI location of the Repository or Repositories implementation.
+         (If the object in JNDI is a ModeShape Repositories instance, then this web application
+         will support multiple repositories.)
 
-        If a file is specified, ModeShape will first check for a file at this path in the filesystem.
-		If not file exists at this path, ModeShape will attempt to load this as a resource
-		from the classpath.
-	-->
-	<context-param>
-		<param-name>org.modeshape.jcr.URL</param-name>
-		<param-value>file:/repository-config.json</param-value>
-	</context-param>
+         If a file is specified, ModeShape will first check for a file at this path in the filesystem.
+         If not file exists at this path, ModeShape will attempt to load this as a resource
+         from the classpath.
+     -->
+    <context-param>
+        <param-name>org.modeshape.jcr.URL</param-name>
+        <param-value>file:/repository-config.json</param-value>
+    </context-param>
 
-	<!--
-		This parameter defines the JAX-RS application class, which is really just a metadata class
-		that lets the JAX-RS engine (RESTEasy in this case) know which classes implement pieces
-		of the JAX-RS specification like exception handling and resource serving.
-		
-		This should not be modified. 
-	 -->
-	<context-param>
-		<param-name>javax.ws.rs.Application</param-name>
-		<param-value>org.modeshape.web.jcr.rest.JcrApplication</param-value>
-	</context-param>
+    <!--
+         This parameter defines the JAX-RS application class, which is really just a metadata class
+         that lets the JAX-RS engine (RESTEasy in this case) know which classes implement pieces
+         of the JAX-RS specification like exception handling and resource serving.
 
-	<!-- Required parameter for RESTEasy - should not be modified -->
-	<listener>
-		<listener-class>org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap</listener-class>
-	</listener>
+         This should not be modified.
+      -->
+    <context-param>
+        <param-name>javax.ws.rs.Application</param-name>
+        <param-value>org.modeshape.web.jcr.rest.JcrApplication</param-value>
+    </context-param>
 
-	<!-- Required parameter for ModeShape REST - should not be modified -->
-	<listener>
-		<listener-class>org.modeshape.web.jcr.ModeShapeJcrDeployer</listener-class>
-	</listener>
+    <!-- Required parameter for RESTEasy - should not be modified -->
+    <listener>
+        <listener-class>org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap</listener-class>
+    </listener>
 
-	<!-- Required parameter for RESTEasy - should not be modified -->
-	<servlet>
-		<servlet-name>Resteasy</servlet-name>
-		<servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher</servlet-class>
-	</servlet>
+    <!-- Required parameter for ModeShape REST - should not be modified -->
+    <listener>
+        <listener-class>org.modeshape.web.jcr.ModeShapeJcrDeployer</listener-class>
+    </listener>
 
-	<!-- Required parameter for ModeShape REST - should not be modified -->
-	<servlet-mapping>
-		<servlet-name>Resteasy</servlet-name>
-		<url-pattern>/*</url-pattern>
-	</servlet-mapping>
+    <!-- Required parameter for RESTEasy - should not be modified -->
+    <servlet>
+        <servlet-name>Resteasy</servlet-name>
+        <servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher</servlet-class>
+    </servlet>
 
-	<!-- 
-		The ModeShape REST implementation leverages the HTTP credentials to for authentication and authorization
-		within the JCR repository.  It makes no sense to try to log into the JCR repository without credentials,
-		so this constraint helps lock down the repository.
-		
-		This should generally not be modified. 
-	-->
-	<security-constraint>
-		<display-name>ModeShape REST</display-name>
-		<web-resource-collection>
-			<web-resource-name>RestEasy</web-resource-name>
-			<url-pattern>/*</url-pattern>
-		</web-resource-collection>
-		<auth-constraint>
-			<!--  
-				A user must be assigned this role to connect to any JCR repository, in addition to needing the READONLY
-				or READWRITE roles to actually read or modify the data.  This is not used internally, so another
-				role could be substituted here.
-			-->
-			<role-name>connect</role-name>
-		</auth-constraint>
-	</security-constraint>
+    <!-- Required parameter for ModeShape REST - should not be modified -->
+    <servlet-mapping>
+        <servlet-name>Resteasy</servlet-name>
+        <url-pattern>/*</url-pattern>
+    </servlet-mapping>
 
-	<!--  
-		Any auth-method will work for ModeShape.  BASIC is used this example for simplicity.
-	 -->
-	<login-config>
-		<auth-method>BASIC</auth-method>
-	</login-config>
+    <!--
+         The ModeShape REST implementation leverages the HTTP credentials to for authentication and authorization
+         within the JCR repository.  It makes no sense to try to log into the JCR repository without credentials,
+         so this constraint helps lock down the repository.
 
-	<!-- 
-		This must match the role-name in the auth-constraint above. 
-	 -->
-	<security-role>
-		<role-name>connect</role-name>
-	</security-role>
+         This should generally not be modified.
+     -->
+    <security-constraint>
+        <display-name>ModeShape REST</display-name>
+        <web-resource-collection>
+            <web-resource-name>RestEasy</web-resource-name>
+            <url-pattern>/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <!--
+               A user must be assigned this role to connect to this web application, in addition to needing the READONLY,
+               READWRITE or ADMIN roles to actually connect to the repository, read or modify the data.
+               This is not used internally, so another role could be substituted here.
+               -->
+            <role-name>connect</role-name>
+        </auth-constraint>
+    </security-constraint>
+
+    <!--
+         Any auth-method will work for ModeShape.  BASIC is used this example for simplicity.
+      -->
+    <login-config>
+        <auth-method>BASIC</auth-method>
+    </login-config>
+
+    <!--
+         This must match the role-name in the auth-constraint above.
+      -->
+    <security-role>
+        <role-name>connect</role-name>
+    </security-role>
 </web-app>

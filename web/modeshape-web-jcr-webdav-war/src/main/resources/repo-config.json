@@ -8,7 +8,7 @@
     },
     "security" : {
         "anonymous" : {
-            "roles" : ["readonly","readwrite","admin", "connect"],
+            "roles" : ["readonly","readwrite","admin"],
             "useOnFailedLogin" : false
         },
         "providers" : [
