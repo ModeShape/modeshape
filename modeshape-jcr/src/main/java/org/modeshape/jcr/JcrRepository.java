@@ -954,6 +954,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final BackupService backupService;
         private final InitialContentImporter initialContentImporter;
         private final SystemContentInitializer systemContentInitializer;
+        private final NodeTypesImporter nodeTypesImporter;
 
         protected RunningState() throws Exception {
             this(null, null);
@@ -1204,6 +1205,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             // Set up the initial content importer
             this.initialContentImporter = new InitialContentImporter(config.getInitialContent(), this);
+
+            // Set up the node types importer
+            this.nodeTypesImporter = new NodeTypesImporter(config.getNodeTypes(), this);
         }
 
         protected Transactions createTransactions( TransactionMode mode,
@@ -1225,14 +1229,16 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
          */
         protected final void postInitialize() throws Exception {
             this.sequencers.initialize();
-            final InitialContentImporter importer = initialContentImporter;
+
+            //import the preconfigured node types before the initial content, in case the latter use custom types
+            this.nodeTypesImporter.importNodeTypes();
+
+            // import initial content for each of the workspaces (this has to be done after the running state has "started"
             this.cache.runSystemOneTimeInitializationOperation(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
-                    // import initial content for each of the workspaces (this has to be done after the running state has
-                    // "started"
                     for (String workspaceName : repositoryCache().getWorkspaceNames()) {
-                        importer.importInitialContent(workspaceName);
+                        initialContentImporter.importInitialContent(workspaceName);
                     }
                     return null;
                 }

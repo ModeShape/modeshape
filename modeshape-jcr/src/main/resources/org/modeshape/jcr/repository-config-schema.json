@@ -917,7 +917,15 @@
                 "description" : {
                     "type" : "string",
                     "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                },
+                }
+            }
+        },
+        "node-types" : {
+            "type" : "array",
+            "description" : "The set of cnd files which should be imported at start-up",
+            "items" : {
+                "type" : "string",
+                "description" : "A list of cnd files which are accessible on the classpath, from which initial content will be imported"
             }
         }
     }
