@@ -34,9 +34,8 @@ import javax.jcr.SimpleCredentials;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.ClassUtil;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.api.JaasCredentials;
@@ -71,9 +70,8 @@ public class JaasProvider implements AuthenticationProvider {
         // and need to provide a way to properly resolve the JAAS Subject)...
         JaasProvider.SubjectResolver subjectResolver = null;
         try {
-            // Try to find the JACC PolicyContext class, which is entirely optional and provided only in J2EE containers
-            // ...
-            ClassUtil.loadClassStrict("javax.security.jacc.PolicyContext");
+            // Try to find the JACC PolicyContext class, which is entirely optional and provided only in J2EE containers ...
+            getClass().getClassLoader().loadClass("javax.security.jacc.PolicyContext");
             subjectResolver = new JaccSubjectResolver();
             Logger.getLogger(getClass())
                   .debug("Enabling optional JACC approach for resolving the JAAS Subject (typically in J2EE containers)");

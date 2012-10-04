@@ -404,11 +404,6 @@ public class MappedListAttributeDefinition extends ListAttributeDefinition imple
             return this;
         }
 
-        public Builder setAlternates( final String... alternates ) {
-            builder.setAlternates(alternates);
-            return this;
-        }
-
         public Builder setFlags( final AttributeAccess.Flag... flags ) {
             builder.setFlags(flags);
             return this;

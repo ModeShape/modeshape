@@ -28,5 +28,9 @@
 
     <dependencies>
         <module name="javax.api" export="true"/>
+        <!-- For logging ... -->
+        <module name="org.slf4j"/>
+        <module name="org.slf4j.impl"/>
+        <module name="org.jboss.logging"/>
     </dependencies>
 </module>
