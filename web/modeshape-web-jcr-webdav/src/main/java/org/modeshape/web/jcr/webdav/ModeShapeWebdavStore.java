@@ -34,8 +34,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
-import javax.jcr.*;
 import javax.jcr.AccessDeniedException;
+import javax.jcr.Item;
+import javax.jcr.LoginException;
+import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.Node;
+import javax.jcr.NodeIterator;
+import javax.jcr.PathNotFoundException;
+import javax.jcr.Property;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.servlet.http.HttpServletRequest;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
@@ -46,7 +54,8 @@ import org.modeshape.web.jcr.RepositoryManager;
 import org.modeshape.webdav.ITransaction;
 import org.modeshape.webdav.IWebdavStore;
 import org.modeshape.webdav.StoredObject;
-import org.modeshape.webdav.exceptions.*;
+import org.modeshape.webdav.exceptions.ObjectNotFoundException;
+import org.modeshape.webdav.exceptions.WebdavException;
 
 /**
  * Implementation of the {@code IWebdavStore} interface that uses a JCR repository as a backing store.
@@ -646,13 +655,16 @@ public class ModeShapeWebdavStore implements IWebdavStore {
 
     /**
      * Converts the JCR Exceptions to WebDAV ones.
+     * 
+     * @param exception the repository exception
+     * @return the WebDAV exception
      */
-    private WebdavException translate(RepositoryException exception){
-        if(exception instanceof AccessDeniedException){
+    private WebdavException translate( RepositoryException exception ) {
+        if (exception instanceof AccessDeniedException) {
             return new org.modeshape.webdav.exceptions.AccessDeniedException(exception);
-        } else if(exception instanceof LoginException){
+        } else if (exception instanceof LoginException) {
             return new org.modeshape.webdav.exceptions.AccessDeniedException(exception);
-        } else if(exception instanceof PathNotFoundException){
+        } else if (exception instanceof PathNotFoundException) {
             return new ObjectNotFoundException(exception);
         } else {
             return new WebdavException(exception);
