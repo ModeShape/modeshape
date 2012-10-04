@@ -48,7 +48,6 @@
         <module name="javax.servlet.api"/>
         <module name="javax.resource.api"/>
         <!-- For logging ... -->
-        <module name="org.slf4j"/>
         <module name="org.jboss.logging"/>
         <!-- For the subsystem ... -->
         <module name="org.jboss.as.controller"/>

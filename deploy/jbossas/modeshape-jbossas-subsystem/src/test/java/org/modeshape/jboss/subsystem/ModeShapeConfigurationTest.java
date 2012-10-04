@@ -187,6 +187,9 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         String subsystemXml = readResource("modeshape-sample-config.xml");
         validate(subsystemXml);
 
+        // TODO: AS7.2 Use this next line in AS7.2 (but it doesn't work in 7.1.1!) ...
+        // KernelServices services = super.createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT)
+        // .setSubsystemXml(subsystemXml).build();
         KernelServices services = super.installInController(AdditionalInitialization.MANAGEMENT, subsystemXml);
 
         // Get the model and the persisted xml from the controller
@@ -271,6 +274,10 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     private KernelServices buildSubsystem() throws IOException, FileNotFoundException, Exception {
         String subsystemXml = readResource("modeshape-sample-config.xml");
 
+        // TODO: AS7.2 Use this next line in AS7.2 (but it doesn't work in 7.1.1!) ...
+        // KernelServices services = super.createKernelServicesBuilder(null)
+        // .setSubsystemXml(subsystemXml)
+        // .build();
         KernelServices services = super.installInController(subsystemXml);
         return services;
     }

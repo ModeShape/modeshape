@@ -44,6 +44,9 @@ public class ModeShapeRootResource extends SimpleResourceDefinition {
     @Override
     public void registerOperations( ManagementResourceRegistration resourceRegistration ) {
         super.registerOperations(resourceRegistration);
+        // TODO: AS7.2 Use this next line in AS7.2 (but it doesn't work in 7.1.1!) ...
+        // resourceRegistration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION,
+        // GenericSubsystemDescribeHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(DESCRIBE,
                                                       GenericSubsystemDescribeHandler.INSTANCE,
                                                       GenericSubsystemDescribeHandler.INSTANCE,

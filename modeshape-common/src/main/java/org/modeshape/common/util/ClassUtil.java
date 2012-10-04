@@ -183,19 +183,6 @@ public final class ClassUtil {
         return true;
     }
 
-    /**
-     * Loads the class using either the current thread's context class loader or, if that is null, the system class loader.
-     * 
-     * @param classname name of the class to load
-     * @return the class
-     * @throws ClassNotFoundException if the class could not be found
-     */
-    public static Class<?> loadClassStrict( String classname ) throws ClassNotFoundException {
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        if (cl == null) cl = ClassLoader.getSystemClassLoader();
-        return cl.loadClass(classname);
-    }
-
     private ClassUtil() {
     }
 }
