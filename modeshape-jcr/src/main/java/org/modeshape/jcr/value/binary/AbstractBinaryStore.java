@@ -131,9 +131,7 @@ public abstract class AbstractBinaryStore implements BinaryStore {
             CountDownLatch latch = extractors.getWorkerLatch(binary.getKey(), false);
             if (latch == null) {
                 // There is no latch, so just compute the text here ...
-                extractors.extract(this, binary, new TextExtractorContext(detector()));
-                // Find the latch again ...
-                latch = extractors.getWorkerLatch(binary.getKey(), false);
+                latch = extractors.extract(this, binary, new TextExtractorContext(detector()));
             }
             // There was a latch, so wait till the work is done ...
             if (latch != null && latch.await(DEFAULT_LATCH_WAIT_IN_SECONDS, TimeUnit.SECONDS)) {

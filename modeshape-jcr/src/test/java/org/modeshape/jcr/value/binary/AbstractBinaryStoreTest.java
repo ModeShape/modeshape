@@ -188,7 +188,6 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         BinaryStore binaryStore = getBinaryStore();
         binaryStore.setTextExtractors(extractors);
 
-        //make sure the binary is random, so we avoid the cases when the latches are already present (see TextExtractors)
         byte[] randomBinary = new byte[1024];
         RANDOM.nextBytes(randomBinary);
 
