@@ -1074,6 +1074,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             newChild = mutable().createChild(cache, desiredKey, childName, ptProp);
         }
 
+        //Check if the child node is referenceable
+        if (capabilities.getNodeType(childPrimaryNodeTypeName).isNodeType(JcrMixLexicon.REFERENCEABLE)) {
+            newChild.setProperty(cache, propFactory.create(JcrLexicon.UUID, session.nodeIdentifier(newChild.getKey())));
+        }
+
         // And get or create the JCR node ...
         AbstractJcrNode jcrNode = session.node(newChild.getKey(), null, key());
 
@@ -2326,6 +2331,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (wasReferenceable && !isReferenceable()) {
             // Need to remove the 'jcr:uuid' reference ...
             mutable.removeProperty(cache, JcrLexicon.UUID);
+        } else if (isReferenceable() && !mutable.hasProperty(JcrLexicon.UUID, cache)) {
+            mutable.setProperty(cache, session.propertyFactory().create(JcrLexicon.UUID, getIdentifier()));
         }
 
         // And auto-create any properties that are defined by the new primary type ...

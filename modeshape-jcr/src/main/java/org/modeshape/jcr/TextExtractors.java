@@ -98,19 +98,20 @@ public final class TextExtractors {
         return null;
     }
 
-    public void extract( AbstractBinaryStore store,
-                         BinaryValue binaryValue,
-                         TextExtractor.Context context ) {
+    public CountDownLatch extract( AbstractBinaryStore store,
+                                   BinaryValue binaryValue,
+                                   TextExtractor.Context context ) {
         if (!extractionEnabled()) {
-            return;
+            return null;
         }
         if (binaryValue instanceof InMemoryBinaryValue) {
             // We never extract the text for binary values this way ...
-            return;
+            return null;
         }
         CheckArg.isNotNull(binaryValue, "binaryValue");
         CountDownLatch latch = getWorkerLatch(binaryValue.getKey(), true);
         extractingQueue.execute(new Worker(store, binaryValue, context, latch));
+        return latch;
     }
 
     public CountDownLatch getWorkerLatch( BinaryKey binaryKey,
