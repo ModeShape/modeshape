@@ -187,4 +187,23 @@ public class JcrNodeTest extends MultiUseAbstractTest {
             childIdx--;
         }
     }
+
+    @Test
+    @FixFor( "MODE-1663" )
+    public void shouldMakeReferenceableNodesUsingCustomTypes() throws Exception {
+        Node cars = session.getNode("/Cars");
+        cars.addNode("referenceableCar1", "car:referenceableCar");
+        Node refCar = cars.addNode("referenceableCar2");
+        refCar.setPrimaryType("car:referenceableCar");
+
+        session.save();
+
+        Node referenceableCar1 = session.getNode("/Cars/referenceableCar1");
+        String uuid = referenceableCar1.getProperty(JcrLexicon.UUID.getString()).getString();
+        assertEquals(referenceableCar1.getIdentifier(), uuid);
+
+        Node referenceableCar2 = session.getNode("/Cars/referenceableCar2");
+        uuid = referenceableCar2.getProperty(JcrLexicon.UUID.getString()).getString();
+        assertEquals(referenceableCar2.getIdentifier(), uuid);
+    }
 }

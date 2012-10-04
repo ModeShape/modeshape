@@ -1719,7 +1719,6 @@ public class JcrSession implements Session {
                 String etagValue = node.getEtag(cache);
                 node.setProperty(cache, propertyFactory.create(JcrLexicon.ETAG, etagValue));
             }
-
         }
     }
 }

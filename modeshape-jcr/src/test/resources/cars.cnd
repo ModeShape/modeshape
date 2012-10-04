@@ -48,4 +48,6 @@
   - car:wheelbaseInInches (double) < '(0,]'                // any value greater than 0
   - car:engine (string)
   - car:alternateModels (reference) multiple < 'car:Car'
+
+[car:referenceableCar] > car:Car, mix:referenceable
   
