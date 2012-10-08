@@ -24,6 +24,7 @@
 
 package org.modeshape.test.integration;
 
+import javax.jcr.Session;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import java.io.File;
@@ -42,21 +43,21 @@ import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.api.JcrConstants;
 
 /**
- * Arquillian integration tests that checks if the workspace-specific and defalu initial content has been imported correctly (see
- * standalone-modeshape.xml)
- * 
+ * Arquillian integration tests that checks if certain "preconfiguration features" work correctly (see standalone-modeshape.xml)
+ * Among the preconfiguration features, there is: initial content import, node types import.
+ *
  * @author Horia Chiorean
  */
 
 @RunWith( Arquillian.class )
-public class InitialContentIntegrationTest {
+public class PreconfiguredRepositoryIntegrationTest {
 
-    @Resource( mappedName = "/jcr/initialContentRepo" )
+    @Resource( mappedName = "/jcr/preconfiguredRepository" )
     private JcrRepository repository;
 
     @Deployment
     public static WebArchive createDeployment() {
-        WebArchive archive = ShrinkWrap.create(WebArchive.class, "initial-content-test.war");
+        WebArchive archive = ShrinkWrap.create(WebArchive.class, "preconfiguredRepository-test.war");
         // Add our custom Manifest, which has the additional Dependencies entry ...
         archive.setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
         return archive;
@@ -103,6 +104,16 @@ public class InitialContentIntegrationTest {
 
         Node cars = session.getNode("/cars");
         assertEquals(JcrConstants.NT_UNSTRUCTURED, cars.getPrimaryNodeType().getName());
+    }
+
+    @Test
+    public void shouldImportNodeTypes() throws Exception {
+        Session session = repository.login();
+        session.getRootNode().addNode("car", "car:Car");
+        session.save();
+
+        Node car = session.getNode("/car");
+        assertEquals("car:Car", car.getPrimaryNodeType().getName());
     }
 
 }

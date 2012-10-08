@@ -55,7 +55,9 @@ public enum Element {
     SLAVE_FILE_INDEX_STORAGE("slave-file-index-storage"),
     WORKSPACE("workspace"),
     WORKSPACES("workspaces"),
-    INITIAL_CONTENT("initial-content");
+    INITIAL_CONTENT("initial-content"),
+    NODE_TYPES("node-types"),
+    NODE_TYPE("node-type");
 
     private final String name;
 

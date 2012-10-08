@@ -190,11 +190,11 @@
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
                     <file-store passivation="false" path="modeshape/store/artifacts" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
-                <local-cache name="initialContentRepo">
+                <local-cache name="preconfiguredRepository">
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store passivation="false" path="modeshape/store/initialContentRepo" relative-to="jboss.server.data.dir" purge="false"/>
+                    <file-store passivation="false" path="modeshape/store/preconfiguredRepository" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
             </cache-container>
         </subsystem>
@@ -282,7 +282,7 @@
                     <text-extractor name="tika-extractor" classname="tika" module="org.modeshape.extractor.tika"/>
                 </text-extractors>
             </repository>
-            <repository name="initialContentRepo">
+            <repository name="preconfiguredRepository">
                <workspaces>
                    <workspace name="default"/>
                    <workspace name="other"/>
@@ -295,6 +295,9 @@
                    <!--Defines a default initial content which will be imported in all the workspaces which don't have smth configured-->
                    <initial-content>initial-content-default.xml</initial-content>
                </workspaces>
+                <node-types>
+                    <node-type>custom.cnd</node-type>
+                </node-types>
             </repository>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>

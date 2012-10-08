@@ -78,6 +78,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         ModelAttributes.CLUSTER_STACK.marshallAsAttribute(repository, false, writer);
 
         // Nested elements ...
+        writeNodeTypes(writer, repository);
         writeWorkspaces(writer, repository);
         writeIndexing(writer, repository);
         writeIndexStorage(writer, repository);
@@ -86,6 +87,22 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         writeSequencing(writer, repository);
         writeTextExtraction(writer, repository);
         writer.writeEndElement();
+    }
+
+    private void writeNodeTypes( XMLExtendedStreamWriter writer,
+                                 ModelNode repository ) throws XMLStreamException {
+        boolean started = false;
+
+        if (has(repository, ModelKeys.NODE_TYPES)) {
+            started = startIfNeeded(writer, Element.NODE_TYPES, started);
+            List<ModelNode> nodeTypes = repository.get(ModelKeys.NODE_TYPES).asList();
+            for (ModelNode nodeType : nodeTypes) {
+                writer.writeStartElement(Element.NODE_TYPE.getLocalName());
+                writer.writeCharacters(nodeType.asString());
+                writer.writeEndElement();
+            }
+            writer.writeEndElement();
+        }
     }
 
     private void writeWorkspaces( XMLExtendedStreamWriter writer,
