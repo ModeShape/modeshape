@@ -23,25 +23,30 @@
  */
 package org.modeshape.web.jcr;
 
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.Set;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.api.JndiRepositoryFactory;
+import org.modeshape.jcr.api.Logger;
 import org.modeshape.jcr.api.NamedRepository;
 import org.modeshape.jcr.api.Repositories;
 import org.modeshape.jcr.api.RepositoryFactory;
 import org.modeshape.jcr.api.ServletCredentials;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.Set;
 
 /**
  * Manager for accessing JCR Repository instances. This manager uses the idiomatic way to find JCR Repository (and ModeShape
@@ -49,6 +54,8 @@ import org.modeshape.jcr.api.ServletCredentials;
  */
 @ThreadSafe
 public class RepositoryManager {
+
+    private static final Logger LOGGER = WebLogger.getLogger(RepositoryManager.class);
 
     private static final Map<String, Object> factoryParams = new HashMap<String, Object>();
     private static final Map<String, Object> immutableFactoryParams = Collections.unmodifiableMap(factoryParams);
@@ -144,7 +151,16 @@ public class RepositoryManager {
         return repository;
     }
 
+    /**
+     * //TODO author=Horia Chiorean date=10/8/12 description=This is only temporary and should be removed after 3.0.Final
+     * //when the design of the repository containers/repository factories has cleared
+     */
     public static Set<String> getJcrRepositoryNames() {
+        Set<String> jndiNames = searchJNDIForRepositoryNames(immutableFactoryParams);
+        if (!jndiNames.isEmpty()) {
+            return jndiNames;
+        }
+
         Set<String> names = new HashSet<String>();
 
         // Go through all the RepositoryFactory instances and see if any can be shutdown ...
@@ -163,17 +179,10 @@ public class RepositoryManager {
                             names.add(name);
                         }
                     } catch (RepositoryException e) {
-                        // do nothing ...
+                        LOGGER.warn(e, "Error retrieving repository");
                     }
                 }
                 names.addAll(repositories.getRepositoryNames());
-            } else if (factory instanceof JndiRepositoryFactory) {
-                JndiRepositoryFactory jndiFactory = (JndiRepositoryFactory)factory;
-                try {
-                    names.addAll(jndiFactory.getRepositoryNames(immutableFactoryParams));
-                } catch (RepositoryException e) {
-                    // do nothing ...
-                }
             } else {
                 try {
                     Repository repository = factory.getRepository(immutableFactoryParams);
@@ -183,6 +192,7 @@ public class RepositoryManager {
                     }
                 } catch (RepositoryException e) {
                     // do nothing ...
+                    LOGGER.warn(e, "Error retrieving repository");
                 }
             }
         }
@@ -191,6 +201,54 @@ public class RepositoryManager {
         }
 
         return names;
+    }
+
+    /**
+     * //TODO author=Horia Chiorean date=10/8/12 description=This is only temporary and should be removed after 3.0.Final
+     * //when the design of the repository containers/repository factories has cleared
+     */
+    private static Set<String> searchJNDIForRepositoryNames( Map<String, Object> parameters ) {
+        if (parameters == null || !parameters.containsKey(RepositoryFactory.URL)) {
+            return Collections.emptySet();
+        }
+        String urlString = parameters.get(RepositoryFactory.URL).toString();
+
+
+        URL url = null;
+        try {
+            url = new URL(urlString);
+        } catch (MalformedURLException e) {
+            LOGGER.warn("Invalid URL:" + urlString);
+            return Collections.emptySet();
+        }
+
+        if (!"jndi".equals(url.getProtocol())) {
+            // This URL is not a JNDI URL and therefore we don't understand it ...
+            return Collections.emptySet();
+        }
+
+        String jndiName = url.getPath();
+        try {
+            Hashtable<String, Object> icParams = new Hashtable<String, Object>();
+            icParams.putAll(parameters);
+            InitialContext ic = new InitialContext(icParams);
+
+            Object ob = ic.lookup(jndiName);
+            if (ob instanceof NamedRepository) {
+                // The object in JNDI is a Repository, so simply return it ...
+                return Collections.singleton(((NamedRepository)ob).getName());
+
+            } else if (ob instanceof Repositories) {
+                // The object in JNDI was a Repositories object that allows us to look up the Repository by name
+                Repositories repos = (Repositories)ob;
+
+                // Now look up the repository by name ...
+                return repos.getRepositoryNames();
+            }
+        } catch (NamingException ne) {
+            LOGGER.warn(ne, "Exception while searching JNDI");
+        }
+        return Collections.emptySet();
     }
 
     static void shutdown() {

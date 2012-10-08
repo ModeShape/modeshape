@@ -21,8 +21,14 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.api;
+package org.modeshape.jcr.factory;
 
+import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import org.modeshape.jcr.api.Repositories;
+import org.modeshape.jcr.api.RepositoryFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
@@ -30,10 +36,6 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
-import javax.jcr.Repository;
-import javax.jcr.RepositoryException;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 
 /**
  * Service provider for the JCR2 {@code RepositoryFactory} interface. This class provides a single public method,
@@ -75,8 +77,8 @@ import javax.naming.NamingException;
  * String repoName = &quot;myRepository&quot;;
  * 
  * Map&lt;String, String&gt; parameters = new HashMap&lt;String, String&gt;();
- * parameters.put(org.modeshape.jcr.api.JndiRepositoryFactory.URL, jndiUrl);
- * parameters.put(org.modeshape.jcr.api.JndiRepositoryFactory.REPOSITORY_NAME, repoName);
+ * parameters.put(org.modeshape.jcr.factory.JndiRepositoryFactory.URL, jndiUrl);
+ * parameters.put(org.modeshape.jcr.factory.JndiRepositoryFactory.REPOSITORY_NAME, repoName);
  * 
  * Repository repository = null;
  * for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
@@ -86,11 +88,9 @@ import javax.naming.NamingException;
  * </pre>
  * 
  * @see #getRepository(Map)
- * @see RepositoryFactory#getRepository(Map)
+ * @see org.modeshape.jcr.api.RepositoryFactory#getRepository(Map)
  */
 public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
-
-    private static final Set<String> EMPTY_NAME_SET = Collections.emptySet();
 
     /**
      * The name of the key for the ModeShape JCR URL in the parameter map.
@@ -101,7 +101,7 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
      * String jndiUrl = &quot;jndi:jcr/local/myRepository&quot;;
      * 
      * Map&lt;String, String&gt; parameters = new HashMap&lt;String, String&gt;();
-     * parameters.put(org.modeshape.jcr.api.JndiRepositoryFactory.URL, configUrl);
+     * parameters.put(org.modeshape.jcr.factory.JndiRepositoryFactory.URL, configUrl);
      * 
      * Repository repository = null;
      * for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
@@ -116,7 +116,7 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
 
     /**
      * The name of the key for the ModeShape JCR repository name in the parameter map. This can be used as with a {@link #URL URL}
-     * that contains the JNDI name of a {@link Repositories} implementation.
+     * that contains the JNDI name of a {@link org.modeshape.jcr.api.Repositories} implementation.
      * <p>
      * For example:
      * 
@@ -125,8 +125,8 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
      * String repoName = &quot;myRepository&quot;;
      * 
      * Map&lt;String, String&gt; parameters = new HashMap&lt;String, String&gt;();
-     * parameters.put(org.modeshape.jcr.api.JndiRepositoryFactory.URL, jndiUrl);
-     * parameters.put(org.modeshape.jcr.api.JndiRepositoryFactory.REPOSITORY_NAME, repoName);
+     * parameters.put(org.modeshape.jcr.factory.JndiRepositoryFactory.URL, jndiUrl);
+     * parameters.put(org.modeshape.jcr.factory.JndiRepositoryFactory.REPOSITORY_NAME, repoName);
      * 
      * Repository repository = null;
      * for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
@@ -159,7 +159,7 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
         return getRepositoryFromJndi(url, parameters);
     }
 
-    protected URL getUrlFrom( Map<String, Object> parameters ) {
+    private URL getUrlFrom( Map<String, Object> parameters ) {
         if (parameters == null) return null;
         Object rawUrl = parameters.get(RepositoryFactory.URL);
         if (rawUrl == null) {
@@ -171,7 +171,7 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
         if (rawUrl instanceof URL) {
             url = (URL)rawUrl;
         } else {
-            url = urlFor(rawUrl.toString(), null);
+            url = urlFor(rawUrl.toString());
         }
         return url;
     }
@@ -205,22 +205,13 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
      * {@link MalformedURLException}, but may throw a {@link NullPointerException} if {@code jcrUrl} is null.
      * 
      * @param jcrUrl the string representation of an URL that should be converted into an URL; may not be null
-     * @param repoName the optional name of the repository; may be null
      * @return the URL version of {@code jcrUrl} if {@code jcrUrl} is a valid URL, otherwise null
      */
-    private URL urlFor( String jcrUrl,
-                        String repoName ) {
+    private URL urlFor( String jcrUrl) {
         assert jcrUrl != null;
         assert !jcrUrl.isEmpty();
         try {
-            if (repoName != null) {
-                repoName = repoName.trim();
-                String queryParam = "?" + REPOSITORY_NAME_PARAM + "=";
-                if (repoName.length() != 0 && !jcrUrl.contains(queryParam)) {
-                    jcrUrl = jcrUrl + queryParam + repoName;
-                }
-            }
-            return new URL(jcrUrl.toString());
+            return new URL(jcrUrl);
         } catch (MalformedURLException mue) {
             return null;
         }
@@ -246,7 +237,7 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
      * Attempts to look up a {@link Repository} at the given JNDI name. All parameters in the parameters map are passed to the
      * {@link InitialContext} constructor in a {@link Hashtable}.
      * 
-     * @param url the URL containing the JNDI name of the {@link Repository} or {@link Repositories} instance; may not be null
+     * @param url the URL containing the JNDI name of the {@link Repository} or {@link org.modeshape.jcr.api.Repositories} instance; may not be null
      * @param parameters any additional parameters that should be passed to the {@code InitialContext}'s constructor; may be empty
      *        or null
      * @return the Repository object from JNDI, if one exists at the given name
@@ -281,47 +272,4 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
             return null;
         }
     }
-
-    /**
-     * Get the names of the available repositories given the supplied parameters (which must have a URL pointing to a
-     * {@link Repositories} object).
-     * 
-     * @param parameters map of string key/value pairs as repository arguments or <code>null</code> if none are provided and a
-     *        client wishes to connect to a default repository.
-     * @return the immutable set of repository names provided by this server; may be empty if the implementation does not
-     *         understand the passed <code>parameters</code>.
-     * @throws RepositoryException if if no suitable repository is found or another error occurs.
-     * @throws RepositoryException
-     */
-    public Set<String> getRepositoryNames( Map<String, Object> parameters ) throws RepositoryException {
-        URL url = getUrlFrom(parameters);
-        if (url == null) return EMPTY_NAME_SET;
-
-        if (!"jndi".equals(url.getProtocol())) {
-            // This URL is not a JNDI URL and therefore we don't understand it ...
-            return EMPTY_NAME_SET;
-        }
-
-        String jndiName = url.getPath();
-        try {
-            InitialContext ic = new InitialContext(hashtable(parameters));
-
-            Object ob = ic.lookup(jndiName);
-            if (ob instanceof NamedRepository) {
-                // The object in JNDI is a Repository, so simply return it ...
-                return Collections.singleton(((NamedRepository)ob).getName());
-
-            } else if (ob instanceof Repositories) {
-                // The object in JNDI was a Repositories object that allows us to look up the Repository by name
-                Repositories repos = (Repositories)ob;
-
-                // Now look up the repository by name ...
-                return repos.getRepositoryNames();
-            }
-        } catch (NamingException ne) {
-            // do nothing ...
-        }
-        return EMPTY_NAME_SET;
-    }
-
 }

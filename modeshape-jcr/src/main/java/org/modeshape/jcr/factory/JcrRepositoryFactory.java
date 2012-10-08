@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr;
+package org.modeshape.jcr.factory;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -41,6 +41,11 @@ import javax.naming.NamingException;
 import org.infinispan.schematic.document.ParsingException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.JcrRepository;
+import org.modeshape.jcr.ModeShapeEngine;
+import org.modeshape.jcr.NoSuchRepositoryException;
+import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.Repositories;
 import org.modeshape.jcr.api.RepositoryFactory;
 
@@ -80,7 +85,7 @@ import org.modeshape.jcr.api.RepositoryFactory;
  * the JCR repository located in JNDI at the name "jcr/local/my_repository". Note that the use of such URLs requires that the
  * repository already be registered in JNDI at that location.</li>
  * <li><strong>JNDI location of engine and repository name</strong> - The URL contains the location in JNDI of an existing
- * ModeShape {@link ModeShapeEngine engine} instance and the name of the <code>javax.jcr.Repository</code> repository as a URL
+ * ModeShape {@link org.modeshape.jcr.ModeShapeEngine engine} instance and the name of the <code>javax.jcr.Repository</code> repository as a URL
  * query parameter. For example, "<code>jndi:jcr/local?repositoryName=my_repository</code>" identifies a ModeShape engine
  * registered in JNDI at "jcr/local", and looks in that engine for a JCR repository named "<code>my_repository</code>".</li>
  * <li><strong>Location of a repository configuration</strong> - The URL contains a location that is resolvable to a configuration
@@ -119,7 +124,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
     /**
      * The name of the URL parameter that specifies the repository name.
      */
-    public static final String REPOSITORY_NAME_PARAM = org.modeshape.jcr.api.JndiRepositoryFactory.REPOSITORY_NAME_PARAM;
+    public static final String REPOSITORY_NAME_PARAM = org.modeshape.jcr.factory.JndiRepositoryFactory.REPOSITORY_NAME_PARAM;
 
     static {
         ENGINE.start();
