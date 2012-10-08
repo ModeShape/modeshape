@@ -47,7 +47,7 @@ import org.xml.sax.SAXException;
  * <p>
  * Note that if the "repositoryName" property is not specified or is empty, the factory will register the ModeShape engine at the
  * supplied location in JNDI. This approach is compatible with the traditional JNDI URLs used with the
- * {@link JcrRepositoryFactory JCR 2.0-style RepositoryFactory}.
+ * {@link org.modeshape.jcr.factory.JcrRepositoryFactory JCR 2.0-style RepositoryFactory}.
  * </p>
  */
 public class JndiRepositoryFactory implements ObjectFactory {

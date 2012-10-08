@@ -1,1 +1,2 @@
-org.modeshape.jcr.JcrRepositoryFactory # ModeShape JCR Implementation
+org.modeshape.jcr.factory.JcrRepositoryFactory
+org.modeshape.jcr.factory.JndiRepositoryFactory

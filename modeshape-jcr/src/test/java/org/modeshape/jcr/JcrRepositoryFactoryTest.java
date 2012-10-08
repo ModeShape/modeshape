@@ -23,19 +23,20 @@
  */
 package org.modeshape.jcr;
 
+import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import org.junit.After;
 import static org.junit.Assert.assertThat;
+import org.junit.Test;
+import org.modeshape.jcr.api.RepositoryFactory;
+import org.modeshape.jcr.factory.JcrRepositoryFactory;
 import java.util.Collections;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
-import javax.jcr.Repository;
-import javax.jcr.RepositoryException;
-import org.junit.After;
-import org.junit.Test;
-import org.modeshape.jcr.api.RepositoryFactory;
 
 public class JcrRepositoryFactoryTest extends AbstractTransactionalTest {
 
@@ -95,7 +96,7 @@ public class JcrRepositoryFactoryTest extends AbstractTransactionalTest {
 
     protected Repository repositoryFor( Map<String, String> parameters ) {
         Repository repository;
-        for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
+        for (javax.jcr.RepositoryFactory factory : ServiceLoader.load(javax.jcr.RepositoryFactory.class)) {
             try {
                 repository = factory.getRepository(parameters);
                 if (repository != null) return repository;
