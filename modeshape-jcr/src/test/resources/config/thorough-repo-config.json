@@ -99,5 +99,6 @@
         }
     },
     "clustering" : {
-    }
+    },
+    "node-types" : ["file1.cnd", "file2.cnd"]
 }

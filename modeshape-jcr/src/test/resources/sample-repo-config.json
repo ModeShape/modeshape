@@ -20,6 +20,7 @@
             "*" : "default.xml"
         }
     },
+    "node-types" : ["file1.cnd", "file2.cnd"],
     "security" : {
         "anonymous" : {
             "roles" : ["readonly","readwrite","admin"],

@@ -94,6 +94,11 @@ public class ModelAttributes {
     };
     private static final ParameterValidator WORKSPACE_NAME_VALIDATOR = new ModelTypeValidator(ModelType.STRING, false, false,
                                                                                               true);
+    private static final ParameterValidator NODE_TYPE_VALIDATOR = new ModelTypeValidator(ModelType.STRING, false, false,
+                                                                                              true);
+    private static final ParameterValidator INITIAL_CONTENT_VALIDATOR = new ModelTypeValidator(ModelType.PROPERTY, false, false, true);
+    private static final ParameterValidator DEFAULT_INITIAL_CONTENT_VALIDATOR = new ModelTypeValidator(ModelType.STRING, true, false,
+                                                                                              true);
     private static final ParameterValidator INDEX_FORMAT_VALIDATOR = new RegexValidator("LUCENE_(3[0-9]{1,2}|CURRENT)", true);
     private static final ParameterValidator REBUILD_INDEXES_VALIDATOR = new EnumValidator<QueryRebuild>(QueryRebuild.class,
                                                                                                         false, true);
@@ -463,15 +468,32 @@ public class ModelAttributes {
                                                                                                                  ModelType.STRING)
                                                                                 .setAllowExpression(false)
                                                                                 .setAllowNull(true)
+                                                                                .setValidator(DEFAULT_INITIAL_CONTENT_VALIDATOR)
+                                                                                .setFlags(AttributeAccess.Flag.RESTART_NONE)
                                                                                 .build();
 
     public static final ListAttributeDefinition WORKSPACES_INITIAL_CONTENT = MappedListAttributeDefinition.Builder.of(ModelKeys.WORKSPACES_INITIAL_CONTENT,
                                                                                                                      new MappedAttributeDefinitionBuilder(ModelKeys.INITIAL_CONTENT,
-                                                                                                                                                         ModelType.PROPERTY).setAllowNull(false)
+                                                                                                                                                          ModelType.PROPERTY).setAllowNull(false)
+                                                                                                                                                                             .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                                                             .setValidator(INITIAL_CONTENT_VALIDATOR)
                                                                                                                                                         .build())
                                                                             .setAllowNull(true)
                                                                             .setMinSize(0)
                                                                             .build();
+
+    public static final ListAttributeDefinition NODE_TYPES = MappedListAttributeDefinition.Builder.of(ModelKeys.NODE_TYPES,
+                                                                                                      new MappedAttributeDefinitionBuilder(ModelKeys.NODE_TYPE,
+                                                                                                                                           ModelType.STRING)
+                                                                                                                                               .setAllowExpression(true)
+                                                                                                                                               .setAllowNull(false)
+                                                                                                                                               .setValidator(NODE_TYPE_VALIDATOR)
+                                                                                                                                               .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                               .build())
+                                                                                                          .setAllowNull(true)
+                                                                                                          .setMinSize(0)
+                                                                                                          .build();
+
 
 
     public static final SimpleAttributeDefinition PROPERTY = new SimpleAttributeDefinition(ModelKeys.PROPERTY,
@@ -622,7 +644,7 @@ public class ModelAttributes {
     public static final AttributeDefinition[] SUBSYSTEM_ATTRIBUTES = {};
 
     public static final AttributeDefinition[] REPOSITORY_ATTRIBUTES = {CACHE_NAME, CACHE_CONTAINER, JNDI_NAME, ENABLE_MONITORING,
-        SECURITY_DOMAIN, ANONYMOUS_ROLES, ANONYMOUS_USERNAME, USE_ANONYMOUS_IF_AUTH_FAILED, DEFAULT_WORKSPACE,
+        SECURITY_DOMAIN, ANONYMOUS_ROLES, ANONYMOUS_USERNAME, USE_ANONYMOUS_IF_AUTH_FAILED, NODE_TYPES, DEFAULT_WORKSPACE,
         PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, DEFAULT_INITIAL_CONTENT, WORKSPACES_INITIAL_CONTENT, MINIMUM_BINARY_SIZE, THREAD_POOL, BATCH_SIZE, READER_STRATEGY,
         MODE, SYSTEM_CONTENT_MODE, ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME, ANALYZER_MODULE,
         REBUILD_INDEXES_UPON_STARTUP, CLUSTER_NAME, CLUSTER_STACK,};

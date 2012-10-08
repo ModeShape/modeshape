@@ -32,6 +32,13 @@
           </xs:documentation>
         </xs:annotation>
       </xs:element>
+      
+     <xs:element name="node-types" type="node-types" minOccurs="0" maxOccurs="1">
+         <xs:annotation>
+             <xs:documentation>The definition of node type (CND) files that should be import on repository start-up
+             </xs:documentation>
+         </xs:annotation>
+     </xs:element>
 
       <xs:element name="authenticators" type="authenticators" minOccurs="0" maxOccurs="1">
         <xs:annotation>
@@ -241,6 +248,16 @@
           workspaces. The default value is 'true'.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
+  </xs:complexType>
+    
+  <xs:complexType name="node-types">
+      <xs:sequence minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="node-type" type="xs:string" minOccurs="1" maxOccurs="unbounded">
+            <xs:annotation>
+                <xs:documentation>The uri of a CND file which will be loaded at repository startup</xs:documentation>
+            </xs:annotation>
+        </xs:element>
+      </xs:sequence>
   </xs:complexType>
 
   <xs:simpleType name="initial-content">

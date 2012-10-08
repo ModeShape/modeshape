@@ -74,6 +74,7 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.clustering.DefaultChannelProvider;
+import org.modeshape.jcr.query.model.TypeSystem;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.value.binary.AbstractBinaryStore;
@@ -274,6 +275,11 @@ public class RepositoryConfiguration {
          * The name of the field under which initial content can be specified for workspaces
          */
         public static final String INITIAL_CONTENT = "initialContent";
+
+        /**
+         * The name of the field using which initial cnd files can be specified
+         */
+        public static final String NODE_TYPES = "node-types";
 
         /**
          * The default value which symbolizes "all" the workspaces, meaning the initial content should be imported for each of the
@@ -937,6 +943,24 @@ public class RepositoryConfiguration {
      */
     public InitialContent getInitialContent() {
         return new InitialContent(doc.getDocument(FieldName.WORKSPACES));
+    }
+
+    /**
+     * Returns a list with the cnd files which should be loaded at startup.
+     *
+     * @return a {@code non-null} string list
+     */
+    public List<String> getNodeTypes() {
+        List<String> result = new ArrayList<String>();
+
+        List<?> configuredNodeTypes = doc.getArray(FieldName.NODE_TYPES);
+        if (configuredNodeTypes != null) {
+            for (Object configuredNodeType : configuredNodeTypes) {
+                result.add(configuredNodeType.toString());
+            }
+        }
+
+        return result;
     }
 
     /**

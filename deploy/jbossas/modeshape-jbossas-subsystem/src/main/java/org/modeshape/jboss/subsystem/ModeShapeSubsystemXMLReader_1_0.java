@@ -153,6 +153,9 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                 case WORKSPACES:
                     parseWorkspaces(reader, address, repository);
                     break;
+                case NODE_TYPES:
+                    parseNodeTypes(reader, repository);
+                    break;
                 case INDEXING:
                     parseIndexing(reader, address, repository);
                     break;
@@ -225,6 +228,22 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         if (binaryStorage != null) repositories.add(binaryStorage);
         repositories.addAll(sequencers);
         repositories.addAll(textExtractors);
+    }
+
+    private void parseNodeTypes( XMLExtendedStreamReader reader,
+                                 ModelNode repository ) throws XMLStreamException {
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case NODE_TYPE: {
+                    repository.get(ModelKeys.NODE_TYPES).add(reader.getElementText());
+                    break;
+                }
+                default: {
+                    throw ParseUtils.unexpectedElement(reader);
+                }
+            }
+        }
     }
 
     private void addBinaryStorageConfiguration( final List<ModelNode> repositories,

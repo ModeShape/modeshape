@@ -437,6 +437,9 @@ public final class JcrI18n {
 
     public static I18n errorDuringInitialInitialization;
 
+    public static I18n cannotLoadCndFile;
+    public static I18n errorReadingCndFile;
+
     static {
         try {
             I18n.initialize(JcrI18n.class);

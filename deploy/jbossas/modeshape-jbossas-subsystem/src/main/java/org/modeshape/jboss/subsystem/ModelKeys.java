@@ -120,4 +120,7 @@ public class ModelKeys {
     static final String WORKSPACES_INITIAL_CONTENT = "workspaces-initial-content";
     static final String INITIAL_CONTENT = "initial-content";
 
+    static final String NODE_TYPES = "node-types";
+    static final String NODE_TYPE = "node-type";
+
 }

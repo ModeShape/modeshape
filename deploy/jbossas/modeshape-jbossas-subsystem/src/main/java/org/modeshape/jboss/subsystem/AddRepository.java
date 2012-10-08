@@ -126,6 +126,14 @@ public class AddRepository extends AbstractAddStepHandler {
         EditableDocument monitoring = configDoc.getOrCreateDocument(FieldName.MONITORING);
         monitoring.set(FieldName.MONITORING_ENABLED, enableMonitoring);
 
+        //Initial node-types if configured
+        if (model.hasDefined(ModelKeys.NODE_TYPES)) {
+            EditableArray nodeTypesArray = configDoc.getOrCreateArray(FieldName.NODE_TYPES);
+            for (ModelNode nodeType : model.get(ModelKeys.NODE_TYPES).asList()) {
+                nodeTypesArray.add(nodeType.asString());
+            }
+        }
+
         // Workspace information is on the repository model node (unlike the XML) ...
         EditableDocument workspacesDoc = configDoc.getOrCreateDocument(FieldName.WORKSPACES);
         boolean allowWorkspaceCreation = attribute(context, model, ModelAttributes.ALLOW_WORKSPACE_CREATION).asBoolean();
