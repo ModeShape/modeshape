@@ -440,6 +440,10 @@ public final class JcrI18n {
     public static I18n cannotLoadCndFile;
     public static I18n errorReadingCndFile;
 
+    public static I18n invalidUrl;
+    public static I18n timeoutWhileShuttingRepositoryDown;
+    public static I18n repositoryNotFound;
+
     static {
         try {
             I18n.initialize(JcrI18n.class);

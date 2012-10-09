@@ -27,9 +27,9 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import org.junit.After;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.modeshape.jcr.api.RepositoryFactory;
 import org.modeshape.jcr.factory.JcrRepositoryFactory;
@@ -51,7 +51,7 @@ public class JcrRepositoryFactoryTest extends AbstractTransactionalTest {
     }
 
     @Test
-    public void shouldReturnRepositoryFromConfigurationFile() {
+    public void shouldReturnRepositoryFromConfigurationFile() throws RepositoryException {
         url = "file:src/test/resources/config/simple-repo-config.json";
         params = Collections.singletonMap(RepositoryFactory.URL, url);
 
@@ -60,7 +60,7 @@ public class JcrRepositoryFactoryTest extends AbstractTransactionalTest {
     }
 
     @Test
-    public void shouldReturnRepositoryFromConfigurationClasspathResourceUsingFileScheme() {
+    public void shouldReturnRepositoryFromConfigurationClasspathResourceUsingFileScheme() throws RepositoryException {
         url = "file:///config/simple-repo-config.json";
         params = Collections.singletonMap(RepositoryFactory.URL, url);
 
@@ -69,7 +69,7 @@ public class JcrRepositoryFactoryTest extends AbstractTransactionalTest {
     }
 
     @Test
-    public void shouldReturnSameRepositoryFromSameConfigurationFile() {
+    public void shouldReturnSameRepositoryFromSameConfigurationFile() throws RepositoryException {
         url = "file:///config/simple-repo-config.json";
         params = Collections.singletonMap(RepositoryFactory.URL, url);
 
@@ -83,26 +83,37 @@ public class JcrRepositoryFactoryTest extends AbstractTransactionalTest {
     }
 
     @Test
-    public void shouldNotReturnRepositoryForInvalidUrl() {
-        url = "file:?Test Repository Source";
-        assertThat(repositoryFor(Collections.singletonMap(RepositoryFactory.URL, url)), is(nullValue()));
+    public void shouldNotReturnRepositoryForInvalidUrl() throws RepositoryException {
+        try {
+            url = "file:?Test Repository Source";
+            repositoryFor(Collections.singletonMap(RepositoryFactory.URL, url));
+            fail("Expected repository exception");
+        } catch (RepositoryException e) {
+            //expected
+        }
 
-        url = "file:src/test/resources/nonExistentFile";
-        assertThat(repositoryFor(Collections.singletonMap(RepositoryFactory.URL, url)), is(nullValue()));
+        try {
+            url = "file:src/test/resources/nonExistentFile";
+            repositoryFor(Collections.singletonMap(RepositoryFactory.URL, url));
+            fail("Expected repository exception");
+        } catch (RepositoryException e) {
+            //expected
+        }
 
-        url = "file:src/test/resources/nonExistentFile";
-        assertThat(repositoryFor(Collections.singletonMap(RepositoryFactory.URL, url)), is(nullValue()));
+        try {
+            url = "file:src/test/resources/nonExistentFile";
+            repositoryFor(Collections.singletonMap(RepositoryFactory.URL, url));
+            fail("Expected repository exception");
+        } catch (RepositoryException e) {
+            //expected
+        }
     }
 
-    protected Repository repositoryFor( Map<String, String> parameters ) {
+    protected Repository repositoryFor( Map<String, String> parameters ) throws RepositoryException {
         Repository repository;
         for (javax.jcr.RepositoryFactory factory : ServiceLoader.load(javax.jcr.RepositoryFactory.class)) {
-            try {
                 repository = factory.getRepository(parameters);
                 if (repository != null) return repository;
-            } catch (RepositoryException re) {
-                throw new IllegalStateException(re);
-            }
         }
 
         return null;

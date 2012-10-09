@@ -31,11 +31,9 @@ import org.modeshape.jcr.api.Repositories;
 import org.modeshape.jcr.api.RepositoryFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.Set;
 
 /**
  * Service provider for the JCR2 {@code RepositoryFactory} interface. This class provides a single public method,
@@ -43,50 +41,50 @@ import java.util.Set;
  * <p>
  * The canonical way to get a reference to this class is to use the {@link ServiceLoader}. For example, when the
  * {@link Repository} instance is registered in JNDI, the following code will find it via the ServiceLoader:
- * 
+ *
  * <pre>
  * String jndiUrl = &quot;jndi:jcr/local/myRepository&quot;;
  * Map parameters = Collections.singletonMap(JndiRepositoryFactory.URL, configUrl);
  * Repository repository;
- * 
+ *
  * for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
  *     repository = factory.getRepository(parameters);
  *     if (repository != null) break;
  * }
  * </pre>
- * 
+ *
  * Or, if the ModeShape engine is registered in JNDI at "jcr/local", the same technique can be used with a slightly modified URL
  * parameter:
- * 
+ *
  * <pre>
  * String jndiUrl = &quot;jndi:jcr/local?repositoryName=myRepository&quot;; // Different URL
  * Map parameters = Collections.singletonMap(JndiRepositoryFactory.URL, configUrl);
  * Repository repository;
- * 
+ *
  * for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
  *     repository = factory.getRepository(parameters);
  *     if (repository != null) break;
  * }
  * </pre>
- * 
+ *
  * Alternatively, the repository name can be provided completely separately from the JNDI URL (again, if the ModeShape engine is
  * registered in JNDI at "jcr/local"):
- * 
+ *
  * <pre>
  * String jndiUrl = &quot;jndi:jcr/local&quot;;
  * String repoName = &quot;myRepository&quot;;
- * 
+ *
  * Map&lt;String, String&gt; parameters = new HashMap&lt;String, String&gt;();
  * parameters.put(org.modeshape.jcr.factory.JndiRepositoryFactory.URL, jndiUrl);
  * parameters.put(org.modeshape.jcr.factory.JndiRepositoryFactory.REPOSITORY_NAME, repoName);
- * 
+ *
  * Repository repository = null;
  * for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
  *     repository = factory.getRepository(parameters);
  *     if (repository != null) break;
  * }
  * </pre>
- * 
+ *
  * @see #getRepository(Map)
  * @see org.modeshape.jcr.api.RepositoryFactory#getRepository(Map)
  */
@@ -96,20 +94,20 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
      * The name of the key for the ModeShape JCR URL in the parameter map.
      * <p>
      * For example, define a URL that points to the configuration file for your repository:
-     * 
+     *
      * <pre>
      * String jndiUrl = &quot;jndi:jcr/local/myRepository&quot;;
-     * 
+     *
      * Map&lt;String, String&gt; parameters = new HashMap&lt;String, String&gt;();
      * parameters.put(org.modeshape.jcr.factory.JndiRepositoryFactory.URL, configUrl);
-     * 
+     *
      * Repository repository = null;
      * for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
      *     repository = factory.getRepository(parameters);
      *     if (repository != null) break;
      * }
      * </pre>
-     * 
+     *
      * </p>
      */
     public static final String URL = RepositoryFactory.URL;
@@ -119,22 +117,22 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
      * that contains the JNDI name of a {@link org.modeshape.jcr.api.Repositories} implementation.
      * <p>
      * For example:
-     * 
+     *
      * <pre>
      * String jndiUrl = &quot;jndi:jcr/local&quot;;
      * String repoName = &quot;myRepository&quot;;
-     * 
+     *
      * Map&lt;String, String&gt; parameters = new HashMap&lt;String, String&gt;();
      * parameters.put(org.modeshape.jcr.factory.JndiRepositoryFactory.URL, jndiUrl);
      * parameters.put(org.modeshape.jcr.factory.JndiRepositoryFactory.REPOSITORY_NAME, repoName);
-     * 
+     *
      * Repository repository = null;
      * for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
      *     repository = factory.getRepository(parameters);
      *     if (repository != null) break;
      * }
      * </pre>
-     * 
+     *
      * </p>
      */
     public static final String REPOSITORY_NAME = RepositoryFactory.REPOSITORY_NAME;
@@ -144,11 +142,13 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
      */
     public static final String REPOSITORY_NAME_PARAM = "repositoryName";
 
-    @SuppressWarnings( {"rawtypes", "unchecked"} )
+    @SuppressWarnings( { "rawtypes", "unchecked" } )
     @Override
     public Repository getRepository( Map parameters ) throws RepositoryException {
         URL url = getUrlFrom(parameters);
-        if (url == null) return null;
+        if (url == null) {
+            return null;
+        }
 
         if (!"jndi".equals(url.getProtocol())) {
             // This URL is not a JNDI URL and therefore we don't understand it ...
@@ -160,7 +160,9 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
     }
 
     private URL getUrlFrom( Map<String, Object> parameters ) {
-        if (parameters == null) return null;
+        if (parameters == null) {
+            return null;
+        }
         Object rawUrl = parameters.get(RepositoryFactory.URL);
         if (rawUrl == null) {
             return null;
@@ -203,11 +205,11 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
     /**
      * Convenience method to convert a {@code String} into an {@code URL}. This method never throws a
      * {@link MalformedURLException}, but may throw a {@link NullPointerException} if {@code jcrUrl} is null.
-     * 
+     *
      * @param jcrUrl the string representation of an URL that should be converted into an URL; may not be null
      * @return the URL version of {@code jcrUrl} if {@code jcrUrl} is a valid URL, otherwise null
      */
-    private URL urlFor( String jcrUrl) {
+    private URL urlFor( String jcrUrl ) {
         assert jcrUrl != null;
         assert !jcrUrl.isEmpty();
         try {
@@ -219,7 +221,7 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
 
     /**
      * Returns a hashtable with the same key/value mappings as the given map
-     * 
+     *
      * @param map the set of key/value mappings to convert; may not be null
      * @return a hashtable with the same key/value mappings as the given map; may be empty, never null
      */
@@ -236,17 +238,19 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
     /**
      * Attempts to look up a {@link Repository} at the given JNDI name. All parameters in the parameters map are passed to the
      * {@link InitialContext} constructor in a {@link Hashtable}.
-     * 
+     *
      * @param url the URL containing the JNDI name of the {@link Repository} or {@link org.modeshape.jcr.api.Repositories} instance; may not be null
      * @param parameters any additional parameters that should be passed to the {@code InitialContext}'s constructor; may be empty
-     *        or null
+     * or null
      * @return the Repository object from JNDI, if one exists at the given name
      * @throws RepositoryException if there is a problem obtaining the repository
      */
     private Repository getRepositoryFromJndi( URL url,
                                               Map<String, Object> parameters ) throws RepositoryException {
         String jndiName = url.getPath();
-        if (jndiName == null) return null;
+        if (jndiName == null) {
+            return null;
+        }
 
         // There should be a parameter with the name ...
         try {
@@ -269,7 +273,7 @@ public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
             }
             return null;
         } catch (NamingException ne) {
-            return null;
+            throw new RepositoryException(ne);
         }
     }
 }
