@@ -183,7 +183,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      */
     @Override
     @SuppressWarnings( {"unchecked", "rawtypes"} )
-    public Repository getRepository( Map parameters ) {
+    public Repository getRepository( Map parameters ) throws RepositoryException {
         LOG.debug("Trying to load ModeShape JCR Repository with parameters: " + parameters);
         if (parameters == null) return null;
 
@@ -211,7 +211,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
 
     protected Repository getRepository( URL url,
                                         String repositoryName,
-                                        Map<String, Object> parameters ) {
+                                        Map<String, Object> parameters ) throws RepositoryException {
 
         // See if the URL refers to a Repository instance in JNDI, which is probably what would be required
         // when registering particular repository instances rather than the engine (e.g., via JndiRepositoryFactory).
@@ -226,10 +226,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
             if (repositoryName == null || repo.getName().equals(repositoryName)) return repo;
         }
 
-        LOG.debug("Could not load or find a ModeShape repository named '{0}' using the URL '{1}' and params: {2}",
-                  repositoryName,
-                  url,
-                  parameters);
+        LOG.warn(JcrI18n.repositoryNotFound, repositoryName, url, parameters);
         return null;
     }
 
@@ -287,7 +284,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * @return a {@code ModeShapeEngine} that was initialized from the given configuration file or null if no engine could be
      *         initialized from that file without errors.
      */
-    private JcrRepository getRepositoryFromConfigFile( URL configUrl ) {
+    private JcrRepository getRepositoryFromConfigFile( URL configUrl ) throws RepositoryException {
         assert configUrl != null;
 
         try {
@@ -343,7 +340,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
                     // Try reading from the classpath ...
                     try {
                         String path = classpathResource(configUrl);
-                        if (path.length() == 0) throw e;
+                        if (path == null) throw e;
                         config = RepositoryConfiguration.read(path);
                     } catch (Throwable t) {
                         // This didn't work, so throw the original exception
@@ -373,13 +370,12 @@ public class JcrRepositoryFactory implements RepositoryFactory {
             JcrRepository repository = engine.deploy(config);
             repository.start();
             return repository;
-        } catch (RepositoryException err) {
-            LOG.debug(err, "Unable to start repository for configuration file at '{0}': {1}", configUrl, err.getMessage());
-            return null;
+        }
+        catch (RepositoryException err) {
+            throw err;
         } catch (Exception err) {
-            LOG.debug(err, "Unable to start repository for configuration file at '{0}': {1}", configUrl, err.getMessage());
-            return null;
-        } 
+            throw new RepositoryException(err);
+        }
     }
 
     private String classpathResource( URL url ) {
@@ -421,7 +417,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      */
     private Repository getRepositoryFromJndi( String jndiName,
                                               String repositoryName,
-                                              Map<String, Object> parameters ) {
+                                              Map<String, Object> parameters ) throws RepositoryException {
         if (parameters == null) parameters = Collections.emptyMap();
 
         // There should be a parameter with the name ...
@@ -473,18 +469,14 @@ public class JcrRepositoryFactory implements RepositoryFactory {
                 // Since we also have JndiRepositoryFactory, we can just return null without warning anyone ...
             } else if (ob instanceof Repositories) {
                 Repositories repos = (Repositories)ob;
-                try {
-                    return repos.getRepository(repositoryName);
-                } catch (RepositoryException e) {
-                    LOG.warn(JcrI18n.repositoryNotFoundInEngineAtJndiLocation, repositoryName, jndiName);
-                }
+                return repos.getRepository(repositoryName);
             } else if (ob instanceof Repository) {
                 // Just return the repository instance ...
                 return (Repository)ob;
             }
             return null;
         } catch (NamingException ne) {
-            return null;
+            throw new RepositoryException(ne);
         }
     }
 
@@ -502,6 +494,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
             LOG.error(e, JcrI18n.errorShuttingDownJcrRepositoryFactory);
             return false;
         } catch (TimeoutException e) {
+            LOG.warn(e, JcrI18n.timeoutWhileShuttingRepositoryDown);
             return false;
         }
     }
@@ -568,9 +561,9 @@ public class JcrRepositoryFactory implements RepositoryFactory {
                     jcrUrl = jcrUrl + queryParam + repoName;
                 }
             }
-            return new URL(jcrUrl.toString());
+            return new URL(jcrUrl);
         } catch (MalformedURLException mue) {
-            LOG.debug("Could not parse URL: " + mue.getMessage());
+            LOG.warn(mue, JcrI18n.invalidUrl, jcrUrl);
             return null;
         }
     }
