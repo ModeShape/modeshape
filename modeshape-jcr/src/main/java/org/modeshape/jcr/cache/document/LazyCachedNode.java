@@ -23,14 +23,6 @@
  */
 package org.modeshape.jcr.cache.document;
 
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.JcrLexicon;
@@ -48,6 +40,15 @@ import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.Property;
+import java.io.Serializable;
+import java.lang.ref.WeakReference;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This is an immutable {@link CachedNode} implementation that lazily loads its content. Technically each instance modifies its
@@ -70,16 +71,12 @@ public class LazyCachedNode implements CachedNode, Serializable {
     private transient ChildReference parentReferenceToSelf;
 
     /**
-     * the reference of the parent set when the above reference is set/changed. Need to be kept in sync to detect stale SNS data
-     * See MODE-1613 for more information
+     * the reference of the parent set when the above reference is set/changed. Needs to be kept in sync to detect stale SNS data
+     * (see MODE-1613 for more information). Also, to avoid memory leaks, this should not be a strong reference.
      */
-    private transient CachedNode parentReferenceToSelfParent;
+    private transient WeakReference<CachedNode> parentReferenceToSelfParentRef;
     private transient boolean propertiesFullyLoaded = false;
     private transient ChildReferences childReferences;
-
-    public LazyCachedNode( NodeKey key ) {
-        this.key = key;
-    }
 
     public LazyCachedNode( NodeKey key,
                            Document document ) {
@@ -176,11 +173,16 @@ public class LazyCachedNode implements CachedNode, Serializable {
      *         (which can happen if this node is used while in the midst of being (re)moved.
      */
     protected ChildReference parentReferenceToSelf( WorkspaceCache cache ) {
-        if (parentReferenceToSelf != null && parentReferenceToSelfParent != null) {
-            //we have a cached child reference, but we need to check that the reference isn't stale (it could happen for SNS)
+        if (parentReferenceToSelfParentRef == null || parentReferenceToSelfParentRef.get() == null) {
+            //either we don't have a parent reference at all yet, or it has been reclaimed by the GC so we need to reset parentRefToSelf
+            parentReferenceToSelf = null;
+        }
+        else if (parentReferenceToSelf != null ) {
+            //we have a cached child reference and a parent reference, but we need to check that the reference isn't stale (it could happen for SNS)
             CachedNode parentFromCache = parent(cache);
+            CachedNode parentReferenceToSelfParent = parentReferenceToSelfParentRef.get();
             if (parentReferenceToSelfParent != parentFromCache) {
-                //the parent coming from the ws cache (possibly the db) is different that what we have cached, so we need to
+                //the parent coming from the ws cache (possibly the "db") is different that what we have cached, so we need to
                 //retrieve it again
                 parentReferenceToSelf = null;
             }
@@ -193,9 +195,10 @@ public class LazyCachedNode implements CachedNode, Serializable {
                 parentReferenceToSelf = cache.childReferenceForRoot();
             } else {
                 parentReferenceToSelf = parent.getChildReferences(cache).getChild(key);
-                parentReferenceToSelfParent = parent;
+                parentReferenceToSelfParentRef = new WeakReference<CachedNode>(parent);
             }
         }
+
         if (parentReferenceToSelf == null) {
             // This node references a parent, but that parent no longer has a child reference to this node. Perhaps this node is
             // in the midst of being moved or removed. Either way, we don't have much choice but to throw an exception about
