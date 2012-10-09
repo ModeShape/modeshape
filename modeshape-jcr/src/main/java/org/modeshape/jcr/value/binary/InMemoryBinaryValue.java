@@ -29,14 +29,16 @@ import java.io.InputStream;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.BinaryValue;
 
 /**
  * An implementation of {@link BinaryValue} that keeps the binary data in-memory.
  */
 @Immutable
 public class InMemoryBinaryValue extends AbstractBinary {
+
+    private static final BinaryKey INVALID_KEY = new BinaryKey("invalid");
 
     private static final long serialVersionUID = 2L;
 
@@ -46,7 +48,7 @@ public class InMemoryBinaryValue extends AbstractBinary {
 
     public InMemoryBinaryValue( BinaryStore store,
                                 byte[] bytes ) {
-        super(bytes != null ? BinaryKey.keyFor(bytes) : new BinaryKey("invalid"));
+        super(bytes != null ? BinaryKey.keyFor(bytes) : INVALID_KEY); // only need this until the CheckArg fails
         CheckArg.isNotNull(bytes, "bytes");
         this.bytes = bytes;
         this.store = store;

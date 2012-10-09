@@ -45,30 +45,42 @@ public class SecureHash {
     /**
      * Commonly-used hashing algorithms.
      */
+    @Immutable
     public enum Algorithm {
-        MD2("MD2", "The MD2 message digest algorithm as defined in RFC 1319"),
-        MD5("MD5", "The MD5 message digest algorithm as defined in RFC 1321"),
-        SHA_1("SHA-1", "The Secure Hash Algorithm, as defined in Secure Hash Standard, NIST FIPS 180-1"),
+        MD2("MD2", 128, "The MD2 message digest algorithm as defined in RFC 1319"),
+        MD5("MD5", 128, "The MD5 message digest algorithm as defined in RFC 1321"),
+        SHA_1("SHA-1", 160, "The Secure Hash Algorithm, as defined in Secure Hash Standard, NIST FIPS 180-1"),
         SHA_256(
                 "SHA-256",
+                256,
                 "New hash algorithms for which the draft Federal Information Processing Standard 180-2, "
                 + "Secure Hash Standard (SHS) is now available.  SHA-256 is a 256-bit hash function intended to provide 128 bits of "
                 + "security against collision attacks."),
         SHA_384(
                 "SHA-384",
+                384,
                 "New hash algorithms for which the draft Federal Information Processing Standard 180-2, "
                 + "Secure Hash Standard (SHS) is now available.  A 384-bit hash may be obtained by truncating the SHA-512 output."),
         SHA_512(
                 "SHA-512",
+                512,
                 "New hash algorithms for which the draft Federal Information Processing Standard 180-2, "
                 + "Secure Hash Standard (SHS) is now available.  SHA-512 is a 512-bit hash function intended to provide 256 bits of security.");
-        private String name;
-        private String description;
+        private final String name;
+        private final String description;
+        private final int numberOfBits;
+        private final int numberOfBytes;
+        private final int numberOfHexChars;
 
         private Algorithm( String name,
+                           int numberOfBits,
                            String description ) {
+            assert numberOfBits % 8 == 0;
             this.name = name;
             this.description = description;
+            this.numberOfBits = numberOfBits;
+            this.numberOfBytes = this.numberOfBits / 8;
+            this.numberOfHexChars = this.numberOfBits / 4;
         }
 
         public String digestName() {
@@ -77,6 +89,33 @@ public class SecureHash {
 
         public String description() {
             return this.description;
+        }
+
+        /**
+         * Get the length of the hexadecimal representation.
+         * 
+         * @return the number of hexadecimal characters
+         */
+        public int getHexadecimalStringLength() {
+            return numberOfHexChars;
+        }
+
+        /**
+         * Get the length of the hexadecimal representation.
+         * 
+         * @return the number of hexadecimal characters
+         */
+        public int getNumberOfBytes() {
+            return numberOfBytes;
+        }
+
+        /**
+         * Get the number of bits that make up a digest.
+         * 
+         * @return the number of bits
+         */
+        public int getNumberOfBits() {
+            return numberOfBits;
         }
 
         @Override
