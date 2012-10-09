@@ -37,9 +37,34 @@ import org.modeshape.common.util.StringUtil;
 public class BinaryKey implements Serializable, Comparable<BinaryKey> {
     private static final long serialVersionUID = 1L;
 
+    private static final SecureHash.Algorithm ALGORITHM = SecureHash.Algorithm.SHA_1;
+
+    public static int maxHexadecimalLength() {
+        return ALGORITHM.getHexadecimalStringLength();
+    }
+
+    public static int minHexadecimalLength() {
+        return ALGORITHM.getHexadecimalStringLength();
+    }
+
+    /**
+     * Determine if the supplied hexadecimal string is potentially a binary key by checking the format of the string.
+     * 
+     * @param hexadecimalStr the hexadecimal string; may be null
+     * @return true if the supplied string is a properly formatted hexadecimal representation of a binary key, or false otherwise
+     */
+    public static boolean isProperlyFormattedKey( String hexadecimalStr ) {
+        if (hexadecimalStr == null) return false;
+        // Length is expected to be the same as the digest ...
+        final int length = hexadecimalStr.length();
+        if (length != ALGORITHM.getHexadecimalStringLength()) return false;
+        // The characters all must be hexadecimal digits ...
+        return StringUtil.isHexString(hexadecimalStr);
+    }
+
     public static BinaryKey keyFor( byte[] content ) {
         try {
-            byte[] hash = SecureHash.getHash(SecureHash.Algorithm.SHA_1, content);
+            byte[] hash = SecureHash.getHash(ALGORITHM, content);
             return new BinaryKey(hash);
         } catch (NoSuchAlgorithmException e) {
             throw new SystemFailureException(e);
