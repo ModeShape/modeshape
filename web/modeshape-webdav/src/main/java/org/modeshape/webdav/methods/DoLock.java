@@ -200,12 +200,15 @@ public class DoLock extends AbstractMethod {
                 return;
             }
             nullSo = store.getStoredObject(transaction, path);
-            // define the newly created resource as null-resource
-            nullSo.setNullResource(true);
+            if (nullSo == null) {
+                resp.setStatus(WebdavStatus.SC_NOT_FOUND);
+            } else {
+                // define the newly created resource as null-resource
+                nullSo.setNullResource(true);
 
-            // Thats the locking itself
-            executeLock(transaction, req, resp);
-
+                // Thats the locking itself
+                executeLock(transaction, req, resp);
+            }
         } catch (LockFailedException e) {
             sendLockFailError(req, resp);
         } catch (WebdavException e) {

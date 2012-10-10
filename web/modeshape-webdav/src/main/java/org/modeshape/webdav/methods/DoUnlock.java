@@ -67,11 +67,14 @@ public class DoUnlock extends DeterminableMethod {
 
                         if (resourceLocks.unlock(transaction, lockId, owner)) {
                             StoredObject so = store.getStoredObject(transaction, path);
-                            if (so.isNullResource()) {
-                                store.removeObject(transaction, path);
+                            if (so == null) {
+                                resp.setStatus(WebdavStatus.SC_NOT_FOUND);
+                            } else {
+                                if (so.isNullResource()) {
+                                    store.removeObject(transaction, path);
+                                }
+                                resp.setStatus(WebdavStatus.SC_NO_CONTENT);
                             }
-
-                            resp.setStatus(WebdavStatus.SC_NO_CONTENT);
                         } else {
                             LOG.trace("DoUnlock failure at " + lo.getPath());
                             resp.sendError(WebdavStatus.SC_METHOD_FAILURE);

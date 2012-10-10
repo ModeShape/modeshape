@@ -54,6 +54,10 @@ public class DoGet extends DoHead {
 
         try {
             StoredObject so = store.getStoredObject(transaction, path);
+            if (so == null) {
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
             if (so.isNullResource()) {
                 String methodsAllowed = DeterminableMethod.determineMethodsAllowed(so);
                 resp.addHeader("Allow", methodsAllowed);

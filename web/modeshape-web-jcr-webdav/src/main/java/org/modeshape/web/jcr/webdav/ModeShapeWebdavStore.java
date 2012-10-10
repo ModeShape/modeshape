@@ -65,6 +65,12 @@ import org.modeshape.webdav.exceptions.WebdavException;
  */
 public class ModeShapeWebdavStore implements IWebdavStore {
 
+    /**
+     * OS X attempts to create ".DS_Store" files to store a folder's icon positions and background image. We choose not to store
+     * these in our implementation, so we ignore requests to create them.
+     */
+    private static final String DS_STORE_SUFFIX = ".DS_Store";
+
     private static final ThreadLocal<HttpServletRequest> THREAD_LOCAL_REQUEST = new ThreadLocal<HttpServletRequest>();
 
     /** OSX workaround */
@@ -168,7 +174,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         resourceUri = removeTrailingSlash(resourceUri);
 
         // Mac OS X workaround from Drools Guvnor
-        if (resourceUri.endsWith(".DS_Store")) return;
+        if (resourceUri.endsWith(DS_STORE_SUFFIX)) return;
 
         int ind = resourceUri.lastIndexOf('/');
         String parentUri = resourceUri.substring(0, ind + 1);
@@ -296,7 +302,8 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             logger.trace("WebDAV getStoredObject at \"" + uri + "\"");
             ResolvedRequest resolved = resolveRequest(transaction, uri);
             logger.debug("WebDAV getStoredObject at \"" + uri + "\" resolved to \"" + resolved + "\"");
-            if (resolved.getPath() == null) {
+            String path = resolved.getPath();
+            if (path == null) {
                 // It does not resolve to the path of a node, so see if the repository/workspace exist ...
                 if (repositoryAndWorkspaceExist(transaction, resolved)) {
                     ob.setFolder(true);
@@ -307,6 +314,13 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                     return ob;
                 }
                 // It does not exist, so return null
+                return null;
+            }
+
+            int ind = path.lastIndexOf('/');
+            String resourceName = path.substring(ind + 1);
+            if (resourceName.startsWith("._")) {
+                // OS-X uses these hidden files ...
                 return null;
             }
 
@@ -351,10 +365,8 @@ public class ModeShapeWebdavStore implements IWebdavStore {
     @Override
     public void removeObject( ITransaction transaction,
                               String uri ) {
-        int ind = uri.lastIndexOf('/');
-        String resourceName = uri.substring(ind + 1);
-
         // Mac OS X workaround from Drools Guvnor
+        String resourceName = resourceNameFromResourcePath(uri);
         if (resourceName.startsWith("._")) {
             OSX_DOUBLE_DATA.put(uri, null);
             return;
@@ -375,6 +387,11 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         }
     }
 
+    protected String resourceNameFromResourcePath( String path ) {
+        int ind = path.lastIndexOf('/');
+        return path.substring(ind + 1);
+    }
+
     @Override
     public long setResourceContent( ITransaction transaction,
                                     String resourceUri,
@@ -384,10 +401,8 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         // Mac OS X workaround from Drools Guvnor
         if (resourceUri.endsWith(".DS_Store")) return 0;
 
-        int ind = resourceUri.lastIndexOf('/');
-        String resourceName = resourceUri.substring(ind + 1);
-
         // Mac OS X workaround from Drools Guvnor
+        String resourceName = resourceNameFromResourcePath(resourceUri);
         if (resourceName.startsWith("._")) {
             try {
                 OSX_DOUBLE_DATA.put(resourceUri, IoUtil.readBytes(content));

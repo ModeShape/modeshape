@@ -167,7 +167,7 @@ public class DoPropfind extends AbstractMethod {
             } catch (AccessDeniedException e) {
                 resp.sendError(WebdavStatus.SC_FORBIDDEN);
             } catch (WebdavException e) {
-                LOG.warn(new TextI18n("Sending internal error!"));
+                LOG.warn(e, new TextI18n("Sending internal error!"));
                 resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
             } catch (ServletException e) {
                 LOG.error(e, new TextI18n("Cannot create the xml document builder"));
@@ -250,6 +250,7 @@ public class DoPropfind extends AbstractMethod {
                                   String mimeType ) throws WebdavException {
 
         StoredObject so = store.getStoredObject(transaction, path);
+        if (so == null) return;
 
         boolean isFolder = so.isFolder();
         final String creationdate = creationDateFormat(so.getCreationDate());

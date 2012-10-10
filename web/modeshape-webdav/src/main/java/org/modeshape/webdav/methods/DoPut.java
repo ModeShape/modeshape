@@ -142,7 +142,9 @@ public class DoPut extends AbstractMethod {
                     long resourceLength = store.setResourceContent(transaction, path, req.getInputStream(), null, null);
 
                     so = store.getStoredObject(transaction, path);
-                    if (resourceLength != -1) {
+                    if (so == null) {
+                        resp.setStatus(WebdavStatus.SC_NOT_FOUND);
+                    } else if (resourceLength != -1) {
                         so.setResourceLength(resourceLength);
                     }
                     // Now lets report back what was actually saved
