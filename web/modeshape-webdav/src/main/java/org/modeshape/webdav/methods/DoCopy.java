@@ -71,20 +71,20 @@ public class DoCopy extends AbstractMethod {
             }
             copyResource(transaction, req, resp);
         } catch (AccessDeniedException e) {
-            LOG.debug(e, "Access denied for "+path);
+            LOG.debug(e, "Access denied for " + path);
             resp.sendError(WebdavStatus.SC_FORBIDDEN);
         } catch (ObjectAlreadyExistsException e) {
-            LOG.debug(e, "Conflict for "+path);
+            LOG.debug(e, "Conflict for " + path);
             resp.sendError(WebdavStatus.SC_CONFLICT, req.getRequestURI());
         } catch (ObjectNotFoundException e) {
-            LOG.debug(e, "Not found for "+path);
+            LOG.debug(e, "Not found for " + path);
             resp.sendError(WebdavStatus.SC_NOT_FOUND, req.getRequestURI());
         } catch (WebdavException e) {
-            LOG.debug(e, "Error for "+path);
+            LOG.debug(e, "Error for " + path);
             resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
             resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
-       }
+        }
     }
 
     /**
@@ -221,6 +221,10 @@ public class DoCopy extends AbstractMethod {
                        HttpServletResponse resp ) throws WebdavException, IOException {
 
         StoredObject sourceSo = store.getStoredObject(transaction, sourcePath);
+        if (sourceSo == null) {
+            resp.setStatus(WebdavStatus.SC_NOT_FOUND);
+            return;
+        }
         if (sourceSo.isResource()) {
             store.createResource(transaction, destinationPath);
             long resourceLength = store.setResourceContent(transaction,
@@ -279,6 +283,10 @@ public class DoCopy extends AbstractMethod {
                 children[i] = "/" + children[i];
                 try {
                     childSo = store.getStoredObject(transaction, (sourcePath + children[i]));
+                    if (childSo == null) {
+                        errorList.put(destinationPath + children[i], WebdavStatus.SC_NOT_FOUND);
+                        continue;
+                    }
                     if (childSo.isResource()) {
                         store.createResource(transaction, destinationPath + children[i]);
                         long resourceLength = store.setResourceContent(transaction,

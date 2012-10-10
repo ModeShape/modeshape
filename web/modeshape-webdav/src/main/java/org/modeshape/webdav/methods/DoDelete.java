@@ -84,13 +84,13 @@ public class DoDelete extends AbstractMethod {
                 sendReport(req, resp, errorList);
             }
         } catch (AccessDeniedException e) {
-            LOG.debug(e, "Access denied for "+path);
+            LOG.debug(e, "Access denied for " + path);
             resp.sendError(WebdavStatus.SC_FORBIDDEN);
         } catch (ObjectAlreadyExistsException e) {
-            LOG.debug(e, "Conflict for "+path);
+            LOG.debug(e, "Conflict for " + path);
             resp.sendError(WebdavStatus.SC_NOT_FOUND, req.getRequestURI());
         } catch (WebdavException e) {
-            LOG.debug(e, "Error for "+path);
+            LOG.debug(e, "Error for " + path);
             resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
             resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
@@ -156,6 +156,10 @@ public class DoDelete extends AbstractMethod {
             children[i] = "/" + children[i];
             try {
                 so = store.getStoredObject(transaction, path + children[i]);
+                if (so == null) {
+                    errorList.put(path + children[i], WebdavStatus.SC_NOT_FOUND);
+                    continue;
+                }
                 if (so.isResource()) {
                     store.removeObject(transaction, path + children[i]);
 
