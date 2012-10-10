@@ -78,6 +78,8 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     private static final int MIN_KEY_LENGTH = BinaryKey.maxHexadecimalLength() + SUFFIX_LENGTH;
     private static final int MAX_KEY_LENGTH = MIN_KEY_LENGTH;
 
+    private static final int RETRY_COUNT = 5;
+
     private final Logger logger;
     private LockFactory lockFactory;
     private CacheContainer cacheContainer;
@@ -171,6 +173,17 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         return caches;
     }
 
+    private void putMetadata( final String metadataKey,
+                              final Metadata metadata ) throws IOException {
+        new RetryOperation() {
+            @Override
+            protected boolean call() {
+                metadataCache.put(metadataKey, metadata);
+                return true;
+            }
+        }.doTry();
+    }
+
     @Override
     public BinaryValue storeValue( InputStream inputStream ) throws BinaryStoreException, SystemFailureException {
         try {
@@ -186,20 +199,15 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             try {
                 // check if binary data already exists
                 final String metadataKey = metadataKeyFrom(binaryKey);
-                final Metadata checkMetadata = metadataCache.get(metadataKey);
-                if (checkMetadata != null) {
+                Metadata metadata = metadataCache.get(metadataKey);
+                if (metadata != null) {
                     logger.debug("Binary value already exist.");
                     // in case of an unused entry, this entry is from now used
-                    if (checkMetadata.isUnused()) {
-                        checkMetadata.setUsed();
-                        new RetryOperation() {
-                            @Override
-                            protected void call() {
-                                metadataCache.put(metadataKey, checkMetadata);
-                            }
-                        }.doTry();
+                    if (metadata.isUnused()) {
+                        metadata.markAsUsed();
+                        putMetadata(metadataKey, metadata);
                     }
-                    return new StoredBinaryValue(this, binaryKey, checkMetadata.getLength());
+                    return new StoredBinaryValue(this, binaryKey, metadata.getLength());
                 }
 
                 logger.debug("Store binary value into chunks.");
@@ -208,16 +216,8 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
                 ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, dataKey);
                 IoUtil.write(new FileInputStream(tmpFile), chunkOutputStream);
                 // now store metadata
-                final Metadata metadata = new Metadata();
-                metadata.setModificationTime(System.currentTimeMillis());
-                metadata.setNumberChunks(chunkOutputStream.getNumberChunks());
-                metadata.setLength(tmpFile.length());
-                new RetryOperation() {
-                    @Override
-                    protected void call() {
-                        metadataCache.put(metadataKey, metadata);
-                    }
-                }.doTry();
+                metadata = new Metadata(tmpFile.lastModified(), tmpFile.length(), chunkOutputStream.getNumberChunks());
+                putMetadata(metadataKey, metadata);
                 value = new StoredBinaryValue(this, binaryKey, tmpFile.length());
             } finally {
                 lock.unlock();
@@ -252,29 +252,25 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     @Override
     public void markAsUnused( Iterable<BinaryKey> keys ) throws BinaryStoreException {
         for (BinaryKey binaryKey : keys) {
-            Lock lock = lockFactory.writeLock(lockKeyFrom(binaryKey));
-            try {
-                final String metadataKey = metadataKeyFrom(binaryKey);
-                final Metadata tmpMetadata = metadataCache.get(metadataKey);
-                // we use the copy of the original object to avoid changes cache values in case of errors
-                if (tmpMetadata == null || tmpMetadata.isUnused()) {
-                    continue;
-                }
-                // we use the copy of the original object to avoid changes cache values in case of errors
-                final Metadata metadata = tmpMetadata.copy();
-                metadata.setUnused();
-
-                new RetryOperation() {
-                    @Override
-                    protected void call() {
-                        metadataCache.put(metadataKey, metadata);
+            // Try to mark the metadata as unused. We loop here in case other processes (not other threads in this process,
+            // which are handled via locks) are doing the same thing.
+            for (int i = 0; i != RETRY_COUNT; ++i) {
+                Lock lock = lockFactory.writeLock(lockKeyFrom(binaryKey));
+                try {
+                    final String metadataKey = metadataKeyFrom(binaryKey);
+                    final Metadata metadata = metadataCache.get(metadataKey);
+                    // we use the copy of the original object to avoid changes cache values in case of errors
+                    if (metadata == null || metadata.isUnused()) {
+                        continue;
                     }
-                }.doTry();
-            } catch (IOException ex) {
-                logger.debug(ex, "Error during mark binary value unused {0}", binaryKey);
-                throw new BinaryStoreException(JcrI18n.errorMarkingBinaryValuesUnused.text(ex.getCause().getMessage()));
-            } finally {
-                lock.unlock();
+                    metadata.markAsUnusedSince(System.currentTimeMillis());
+                    putMetadata(metadataKey, metadata);
+                } catch (IOException ex) {
+                    logger.debug(ex, "Error during mark binary value unused {0}", binaryKey);
+                    throw new BinaryStoreException(JcrI18n.errorMarkingBinaryValuesUnused.text(ex.getCause().getMessage()), ex);
+                } finally {
+                    lock.unlock();
+                }
             }
         }
     }
@@ -326,7 +322,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             for (String key : result.values()) {
                 InfinispanBinaryStore.Lock lock = lockFactory.writeLock(key);
                 try {
-                    removeBinaryValue(metadataCache, blobCache, key);
+                    removeUnusedBinaryValue(metadataCache, blobCache, key);
                 } finally {
                     lock.unlock();
                 }
@@ -341,7 +337,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
                 if (isValueUnused(metadata, minimumAgeInMS)) {
                     InfinispanBinaryStore.Lock lock = lockFactory.writeLock(key);
                     try {
-                        removeBinaryValue(metadataCache, blobCache, key);
+                        removeUnusedBinaryValue(metadataCache, blobCache, key);
                     } finally {
                         lock.unlock();
                     }
@@ -359,7 +355,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
                     if (isValueUnused(metadata, minimumAgeInMS)) {
                         InfinispanBinaryStore.Lock lock = lockFactory.writeLock((String)key);
                         try {
-                            removeBinaryValue(metadataCache, blobCache, (String)key);
+                            removeUnusedBinaryValue(metadataCache, blobCache, (String)key);
                         } finally {
                             lock.unlock();
                         }
@@ -381,15 +377,15 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         return System.currentTimeMillis() - metadata.unusedSince() > minimumAgeInMS;
     }
 
-    static void removeBinaryValue( final Cache<String, Metadata> metadataCache,
-                                   final Cache<String, byte[]> blobCache,
-                                   final String metadataKey ) {
+    static void removeUnusedBinaryValue( final Cache<String, Metadata> metadataCache,
+                                         final Cache<String, byte[]> blobCache,
+                                         final String metadataKey ) {
         Metadata metadata = metadataCache.get(metadataKey);
         // double check != null
         if (metadata == null || !metadata.isUnused()) {
             return;
         }
-        // the metadata entry itself
+        // the metadata entry itself, and do this first in case there's an error
         metadataCache.remove(metadataKey);
         // Remove the metadata suffix ...
         final String key = metadataKey.replace(META_SUFFIX, "");
@@ -426,12 +422,11 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
 
     @Override
     protected String getStoredMimeType( BinaryValue binary ) throws BinaryStoreException {
-        Metadata metadata = metadataCache.get(metadataKeyFrom(binary.getKey()));
+        BinaryKey key = binary.getKey();
+        Metadata metadata = metadataCache.get(metadataKeyFrom(key));
         if (metadata == null) {
-            throw new BinaryStoreException(
-                                           JcrI18n.errorStoringMimeType.text(JcrI18n.unableToFindBinaryValue.text(binary.getKey(),
-                                                                                                                  "Infinispan cache "
-                                                                                                                  + metadataCache.getName())));
+            String msg = JcrI18n.unableToFindBinaryValueInCache.text(key, metadataCache.getName());
+            throw new BinaryStoreException(JcrI18n.errorStoringMimeType.text(msg));
         }
         return metadata.getMimeType();
     }
@@ -443,22 +438,13 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         Lock lock = lockFactory.writeLock(lockKeyFrom(key));
         try {
             final String metadataKeyStr = metadataKeyFrom(key);
-            Metadata tmpMetadata = metadataCache.get(metadataKeyStr);
-            if (tmpMetadata == null) {
-                throw new BinaryStoreException(
-                                               JcrI18n.errorStoringMimeType.text(JcrI18n.unableToFindBinaryValue.text(key,
-                                                                                                                      "Infinispan cache "
-                                                                                                                      + metadataCache.getName())));
+            Metadata metadata = metadataCache.get(metadataKeyStr);
+            if (metadata == null) {
+                String msg = JcrI18n.unableToFindBinaryValueInCache.text(key, metadataCache.getName());
+                throw new BinaryStoreException(JcrI18n.errorStoringMimeType.text(msg));
             }
-            // we use the copy of the original object to avoid changes cache values in case of errors
-            final Metadata metadata = tmpMetadata.copy();
-            metadata.setMimeType(mimeType);
-            new RetryOperation() {
-                @Override
-                protected void call() {
-                    metadataCache.put(metadataKeyStr, metadata);
-                }
-            }.doTry();
+            // Note that it's okay if another process intercedes at this point, because it should be idempotent ...
+            putMetadata(metadataKeyStr, metadata.withMimeType(mimeType));
         } catch (IOException ex) {
             logger.debug(ex, "Error during store of mime type for {0}", key);
             throw new BinaryStoreException(JcrI18n.errorStoringMimeType.text(ex.getCause().getMessage()));
@@ -473,10 +459,8 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         final String metadataKeyStr = metadataKeyFrom(key);
         Metadata metadata = metadataCache.get(metadataKeyStr);
         if (metadata == null) {
-            throw new BinaryStoreException(
-                                           JcrI18n.errorStoringMimeType.text(JcrI18n.unableToFindBinaryValue.text(key,
-                                                                                                                  "Infinispan cache "
-                                                                                                                  + metadataCache.getName())));
+            String msg = JcrI18n.unableToFindBinaryValueInCache.text(key, metadataCache.getName());
+            throw new BinaryStoreException(JcrI18n.errorStoringMimeType.text(msg));
         }
         if (metadata.getNumberTextChunks() == 0) {
             return null;
@@ -499,11 +483,10 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             final String metadataKey = metadataKeyFrom(key);
             final Metadata metadata = metadataCache.get(metadataKey);
             if (metadata == null) {
-                throw new BinaryStoreException(
-                                               JcrI18n.errorStoringMimeType.text(JcrI18n.unableToFindBinaryValue.text(key,
-                                                                                                                      "Infinispan cache "
-                                                                                                                      + metadataCache.getName())));
+                String msg = JcrI18n.unableToFindBinaryValueInCache.text(key, metadataCache.getName());
+                throw new BinaryStoreException(JcrI18n.errorStoringMimeType.text(msg));
             }
+            // Note that it's okay if another process intercedes at this point, because it should be idempotent ...
             final String textKey = textKeyFrom(key);
             ChunkOutputStream chunkOutputStream = null;
             try {
@@ -512,13 +495,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             } finally {
                 IoUtil.closeQuietly(chunkOutputStream);
             }
-            metadata.setNumberTextChunks(chunkOutputStream.getNumberChunks());
-            new RetryOperation() {
-                @Override
-                protected void call() {
-                    metadataCache.put(metadataKey, metadata);
-                }
-            }.doTry();
+            putMetadata(metadataKey, metadata.withNumberOfTextChunks(chunkOutputStream.getNumberChunks()));
         } catch (IOException ex) {
             logger.debug(ex, "Error during store of extracted text for {0}", key);
             throw new BinaryStoreException(JcrI18n.errorStoringExtractedText.text(ex.getCause().getMessage()));

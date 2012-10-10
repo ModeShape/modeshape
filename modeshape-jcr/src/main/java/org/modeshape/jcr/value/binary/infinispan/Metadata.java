@@ -28,19 +28,42 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
-public class Metadata implements Externalizable {
+public final class Metadata implements Externalizable {
 
-    protected long length;
-    protected int numberChunks;
-    protected long modificationTime;
-    protected long unusedSince;
-    protected String mimeType;
-    protected int numberTextChunks;
+    /* These are not final because of the #readExternal method */
+    private long length;
+    private int numberChunks;
+    private long modificationTime;
+    private long unusedSince;
+    private String mimeType;
+    private int numberTextChunks;
 
-    public Metadata() {
+    public Metadata( long modificationTime,
+                     long length,
+                     int numberOfChunks ) {
+        this.length = length;
+        this.modificationTime = modificationTime;
+        this.numberChunks = numberOfChunks;
+        this.unusedSince = 0L;
+        this.mimeType = null;
+        this.numberTextChunks = 0;
     }
 
-    public Metadata( Metadata metadata ) {
+    protected Metadata( long modificationTime,
+                        long length,
+                        int numberOfChunks,
+                        long unusedSince,
+                        String mimeType,
+                        int numberTextChunks ) {
+        this.length = length;
+        this.modificationTime = modificationTime;
+        this.numberChunks = numberOfChunks;
+        this.unusedSince = unusedSince;
+        this.mimeType = mimeType;
+        this.numberTextChunks = numberTextChunks;
+    }
+
+    protected Metadata( Metadata metadata ) {
         length = metadata.length;
         numberChunks = metadata.numberChunks;
         modificationTime = metadata.modificationTime;
@@ -57,44 +80,60 @@ public class Metadata implements Externalizable {
         return length;
     }
 
-    public void setLength( long length ) {
-        this.length = length;
-    }
+    // public void setLength( long length ) {
+    // this.length = length;
+    // }
 
     public long getModificationTime() {
         return modificationTime;
     }
 
-    public void setModificationTime( long modificationTime ) {
-        this.modificationTime = modificationTime;
-    }
+    // public void setModificationTime( long modificationTime ) {
+    // this.modificationTime = modificationTime;
+    // }
 
     public String getMimeType() {
         return mimeType;
     }
 
-    public void setMimeType( String mimeType ) {
-        this.mimeType = mimeType;
+    public Metadata withMimeType( String mimeType ) {
+        return new Metadata(modificationTime, length, numberChunks, unusedSince, mimeType, numberTextChunks);
     }
+
+    // public void setMimeType( String mimeType ) {
+    // this.mimeType = mimeType;
+    // }
 
     public int getNumberTextChunks() {
         return numberTextChunks;
     }
 
-    public void setNumberTextChunks( int numberTextChunks ) {
-        this.numberTextChunks = numberTextChunks;
+    public Metadata withNumberOfTextChunks( int numberTextChunks ) {
+        return new Metadata(modificationTime, length, numberChunks, unusedSince, mimeType, numberTextChunks);
     }
+
+    // public void setNumberTextChunks( int numberTextChunks ) {
+    // this.numberTextChunks = numberTextChunks;
+    // }
 
     public int getNumberChunks() {
         return numberChunks;
     }
 
-    public void setNumberChunks( int numberChunks ) {
-        this.numberChunks = numberChunks;
-    }
+    // public void setNumberChunks( int numberChunks ) {
+    // this.numberChunks = numberChunks;
+    // }
 
     public boolean isUnused() {
         return unusedSince > 0;
+    }
+
+    public void markAsUnusedSince( long unusedSince ) {
+        this.unusedSince = unusedSince;
+    }
+
+    public void markAsUsed() {
+        this.unusedSince = 0L;
     }
 
     /**
@@ -104,13 +143,13 @@ public class Metadata implements Externalizable {
         return unusedSince;
     }
 
-    public void setUnused() {
-        unusedSince = System.currentTimeMillis();
-    }
-
-    public void setUsed() {
-        unusedSince = 0;
-    }
+    // public void setUnused() {
+    // unusedSince = System.currentTimeMillis();
+    // }
+    //
+    // public void setUsed() {
+    // unusedSince = 0;
+    // }
 
     @Override
     public void writeExternal( ObjectOutput out ) throws IOException {
