@@ -1,262 +1,279 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors.
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ * 
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
 package org.modeshape.jcr;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-import javax.naming.Context;
-import javax.naming.Name;
+import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.naming.RefAddr;
-import javax.naming.Reference;
-import javax.naming.event.EventContext;
-import javax.naming.event.NamespaceChangeListener;
-import javax.naming.event.NamingEvent;
-import javax.naming.event.NamingExceptionEvent;
-import javax.naming.spi.ObjectFactory;
-import org.modeshape.common.logging.Logger;
-import org.xml.sax.SAXException;
+import org.modeshape.jcr.api.Repositories;
+import org.modeshape.jcr.api.RepositoryFactory;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.ServiceLoader;
 
 /**
- * The {@code JndiRepositoryFactory} class provides a means of initializing and accessing {@link Repository repositories} in a
- * JNDI tree. <h2>Example JNDI Configurations</h2> <h3>Tomcat 5.5</h3>
+ * Service provider for the JCR2 {@code RepositoryFactory} interface. This class provides a single public method,
+ * {@link #getRepository(Map)}, that enables finding a JCR repository that is registered in JNDI.
  * <p>
- * The following configuration can be added to added to server.xml in Tomcat 5.5 to initialize a {@code JcrRepository} and add it
- * to the JNDI tree.
- * 
+ * The canonical way to get a reference to this class is to use the {@link ServiceLoader}. For example, when the
+ * {@link Repository} instance is registered in JNDI, the following code will find it via the ServiceLoader:
+ *
  * <pre>
- *   &lt;GlobalNamingResources&gt;
- *         &lt;!-- Other configuration omitted --&gt;
- *      &lt;Resource name=&quot;jcr/local&quot; auth=&quot;Container&quot;
- *           type=&quot;javax.jcr.Repository&quot;
- *           factory=&quot;org.modeshape.jcr.JndiRepositoryFactory&quot;
- *           configFile=&quot;/path/to/repository-config.json&quot;
- *           repositoryName=&quot;Test Repository Source&quot;
- *           /&gt;
- *   &lt;/GlobalNamingResources&gt;
+ * String jndiUrl = &quot;jndi:jcr/local/myRepository&quot;;
+ * Map parameters = Collections.singletonMap(JndiRepositoryFactory.URL, configUrl);
+ * Repository repository;
+ *
+ * for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
+ *     repository = factory.getRepository(parameters);
+ *     if (repository != null) break;
+ * }
  * </pre>
- * 
- * This will create a repository loaded from the or file &quot;/path/to/configRepository.xml&quot; and return the JCR repository
- * named &quot;Test Repository Source&quot;. The name of the repository will be used to more quickly look up the repository if it
- * has been previously loaded.
- * </p>
- * <p>
- * Note that if the "repositoryName" property is not specified or is empty, the factory will register the ModeShape engine at the
- * supplied location in JNDI. This approach is compatible with the traditional JNDI URLs used with the
- * {@link org.modeshape.jcr.factory.JcrRepositoryFactory JCR 2.0-style RepositoryFactory}.
- * </p>
+ *
+ * Or, if the ModeShape engine is registered in JNDI at "jcr/local", the same technique can be used with a slightly modified URL
+ * parameter:
+ *
+ * <pre>
+ * String jndiUrl = &quot;jndi:jcr/local?repositoryName=myRepository&quot;; // Different URL
+ * Map parameters = Collections.singletonMap(JndiRepositoryFactory.URL, configUrl);
+ * Repository repository;
+ *
+ * for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
+ *     repository = factory.getRepository(parameters);
+ *     if (repository != null) break;
+ * }
+ * </pre>
+ *
+ * Alternatively, the repository name can be provided completely separately from the JNDI URL (again, if the ModeShape engine is
+ * registered in JNDI at "jcr/local"):
+ *
+ * <pre>
+ * String jndiUrl = &quot;jndi:jcr/local&quot;;
+ * String repoName = &quot;myRepository&quot;;
+ *
+ * Map&lt;String, String&gt; parameters = new HashMap&lt;String, String&gt;();
+ * parameters.put(org.modeshape.jcr.JndiRepositoryFactory.URL, jndiUrl);
+ * parameters.put(org.modeshape.jcr.JndiRepositoryFactory.REPOSITORY_NAME, repoName);
+ *
+ * Repository repository = null;
+ * for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
+ *     repository = factory.getRepository(parameters);
+ *     if (repository != null) break;
+ * }
+ * </pre>
+ *
+ * @see #getRepository(Map)
+ * @see org.modeshape.jcr.api.RepositoryFactory#getRepository(Map)
  */
-public class JndiRepositoryFactory implements ObjectFactory {
-
-    private static final String CONFIG_FILE = "configFile";
-    private static final String CONFIG_FILES = "configFiles";
-    private static final String REPOSITORY_NAME = "repositoryName";
-
-    private static final ModeShapeEngine engine = new ModeShapeEngine();
-    protected static final Logger log = Logger.getLogger(JndiRepositoryFactory.class);
+public class JndiRepositoryFactory implements javax.jcr.RepositoryFactory {
 
     /**
-     * Method that shuts down the JDNI repository factory's engine, usually for testing purposes.
-     * 
-     * @return a future that allows the caller to block until the engine is shutdown; any error during shutdown will be thrown
-     *         when {@link Future#get() getting} the result from the future, where the exception is wrapped in a
-     *         {@link ExecutionException}. The value returned from the future will always be true if the engine shutdown (or was
-     *         not running), or false if the engine is still running.
-     */
-    static Future<Boolean> shutdown() {
-        return engine.shutdown();
-    }
-
-    /**
-     * Get or initialize the JCR Repository instance as described by the supplied configuration file and repository name.
-     * 
-     * @param configFileName the name of the file containing the configuration information for the {@code ModeShapeEngine}; may
-     *        not be null. This method will first attempt to load this file as a resource from the classpath. If no resource with
-     *        the given name exists, the name will be treated as a file name and loaded from the file system. May be null if the
-     *        repository should already exist.
-     * @param repositoryName the name of the repository; may be null if the repository name is to be read from the configuration
-     *        file (note that this does require parsing the configuration file)
-     * @param nameCtx the naming context used to register a removal listener to shut down the repository when removed from JNDI;
-     *        may be null
-     * @param jndiName the name in JNDI where the repository is to be found
-     * @return the JCR repository instance
-     * @throws IOException if there is an error or problem reading the configuration resource at the supplied path
-     * @throws RepositoryException if the repository could not be started
-     * @throws NamingException if there is an error registering the namespace listener
-     */
-    private static synchronized JcrRepository getRepository( String configFileName,
-                                                             String repositoryName,
-                                                             final Context nameCtx,
-                                                             final Name jndiName )
-        throws IOException, RepositoryException, NamingException {
-
-        if (repositoryName != null) {
-            // Make sure the engine is running ...
-            engine.start();
-
-            // See if we can shortcut the process by using the name ...
-            try {
-                JcrRepository repository = engine.getRepository(repositoryName);
-                switch (repository.getState()) {
-                    case STARTING:
-                    case RUNNING:
-                        return repository;
-                    default:
-                        log.error(JcrI18n.repositoryIsNotRunningOrHasBeenShutDown, repositoryName);
-                        return null;
-                }
-            } catch (NoSuchRepositoryException e) {
-                if (configFileName == null) {
-                    // No configuration file given, so we can't do anything ...
-                    throw e;
-                }
-                // Nothing found, so continue ...
-            }
-        }
-
-        RepositoryConfiguration config = RepositoryConfiguration.read(configFileName);
-        if (repositoryName == null) repositoryName = config.getName();
-        else if (!repositoryName.equals(config.getName())) {
-            // The repository
-            log.error(JcrI18n.repositoryNameDoesNotMatchConfigurationName, repositoryName, config.getName(), configFileName);
-        }
-
-        // Try to deploy and start the repository ...
-        JcrRepository repository = engine.deploy(config);
-        try {
-            engine.startRepository(repository.getName()).get();
-        } catch (InterruptedException e) {
-            Thread.interrupted();
-            throw new RepositoryException(e);
-        } catch (ExecutionException e) {
-            throw new RepositoryException(e.getCause());
-        }
-
-        // Register the JNDI listener, to shut down the repository when removed from JNDI ...
-        if (nameCtx instanceof EventContext) {
-            EventContext evtCtx = (EventContext)nameCtx;
-
-            NamespaceChangeListener listener = new NamespaceChangeListener() {
-
-                @Override
-                public void namingExceptionThrown( NamingExceptionEvent evt ) {
-                    evt.getException().printStackTrace();
-                }
-
-                @Override
-                public void objectAdded( NamingEvent evt ) {
-                    // do nothing ...
-                }
-
-                @SuppressWarnings( "synthetic-access" )
-                @Override
-                public void objectRemoved( NamingEvent evt ) {
-                    Object oldObject = evt.getOldBinding().getObject();
-                    if (!(oldObject instanceof JcrRepository)) return;
-
-                    JcrRepository repository = (JcrRepository)oldObject;
-                    String repoName = repository.getName();
-                    try {
-                        engine.shutdownRepository(repoName).get();
-                    } catch (NoSuchRepositoryException e) {
-                        // Ignore this ...
-                    } catch (InterruptedException ie) {
-                        log.error(ie, JcrI18n.errorWhileShuttingDownRepositoryInJndi, repoName, jndiName);
-                        // Thread.interrupted();
-                    } catch (ExecutionException e) {
-                        log.error(e.getCause(), JcrI18n.errorWhileShuttingDownRepositoryInJndi, repoName, jndiName);
-                    } finally {
-                        // Try to shutdown the repository only if there are no more running repositories.
-                        // IOW, shutdown but do not force shutdown of running repositories ...
-                        engine.shutdown(false); // no need to block on the futured returned by 'shutdown(boolean)'
-                    }
-                }
-
-                @Override
-                public void objectRenamed( NamingEvent evt ) {
-                    // do nothing ...
-                }
-
-            };
-
-            evtCtx.addNamingListener(jndiName, EventContext.OBJECT_SCOPE, listener);
-        }
-
-        return repository;
-    }
-
-    /**
-     * Creates an {@code JcrRepository} or ModeShape engine using the reference information specified.
+     * The name of the key for the ModeShape JCR URL in the parameter map.
      * <p>
-     * This method first attempts to convert the {@code obj} parameter into a {@link Reference reference to JNDI configuration
-     * information}. If that is successful, a {@link ModeShapeEngine} will be created (if not previously created by a call to this
-     * method) and it will be configured from the resource or file at the location specified by the {@code configFile} key in the
-     * reference. After the configuration is successful, the {@link ModeShapeEngine#getRepository(String) ModeShapeEngine} will be
-     * queried} for the repository with the name specified by the value of the @{code repositoryName} key in the reference.
+     * For example, define a URL that points to the configuration file for your repository:
+     *
+     * <pre>
+     * String jndiUrl = &quot;jndi:jcr/local/myRepository&quot;;
+     *
+     * Map&lt;String, String&gt; parameters = new HashMap&lt;String, String&gt;();
+     * parameters.put(org.modeshape.jcr.JndiRepositoryFactory.URL, configUrl);
+     *
+     * Repository repository = null;
+     * for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
+     *     repository = factory.getRepository(parameters);
+     *     if (repository != null) break;
+     * }
+     * </pre>
+     *
      * </p>
-     * 
-     * @param obj the reference to the JNDI configuration information; must be a non-null instance of {@link Reference}
-     * @param name the name of the object
-     * @param nameCtx used to register the ModeShape engine when no repository name is provided in the Reference obj
-     * @param environment ignored
-     * @return the object registered in JDNI, which will be the named repository name or (if no repository name is given) the
-     *         ModeShape engine; never null
-     * @throws IOException if there is an error or problem reading the configuration resource at the supplied path
-     * @throws SAXException if the contents of the configuration resource are not valid XML
-     * @throws NamingException if there is an error registering the namespace listener
-     * @throws RepositoryException if the {@link ModeShapeEngine#start() ModeShapeEngine could not be started}, the named
-     *         repository does not exist in the given configuration resource, or the named repository could not be created
      */
+    public static final String URL = RepositoryFactory.URL;
+
+    /**
+     * The name of the key for the ModeShape JCR repository name in the parameter map. This can be used as with a {@link #URL URL}
+     * that contains the JNDI name of a {@link org.modeshape.jcr.api.Repositories} implementation.
+     * <p>
+     * For example:
+     *
+     * <pre>
+     * String jndiUrl = &quot;jndi:jcr/local&quot;;
+     * String repoName = &quot;myRepository&quot;;
+     *
+     * Map&lt;String, String&gt; parameters = new HashMap&lt;String, String&gt;();
+     * parameters.put(org.modeshape.jcr.JndiRepositoryFactory.URL, jndiUrl);
+     * parameters.put(org.modeshape.jcr.JndiRepositoryFactory.REPOSITORY_NAME, repoName);
+     *
+     * Repository repository = null;
+     * for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
+     *     repository = factory.getRepository(parameters);
+     *     if (repository != null) break;
+     * }
+     * </pre>
+     *
+     * </p>
+     */
+    public static final String REPOSITORY_NAME = RepositoryFactory.REPOSITORY_NAME;
+
+    /**
+     * The name of the URL parameter that specifies the repository name.
+     */
+    public static final String REPOSITORY_NAME_PARAM = "repositoryName";
+
+    @SuppressWarnings( { "rawtypes", "unchecked" } )
     @Override
-    public Object getObjectInstance( Object obj,
-                                     final Name name,
-                                     final Context nameCtx,
-                                     Hashtable<?, ?> environment )
-        throws IOException, SAXException, RepositoryException, NamingException {
-        if (!(obj instanceof Reference)) return null;
-        Reference ref = (Reference)obj;
-
-        // Get the name of the repository
-        RefAddr repositoryName = ref.get(REPOSITORY_NAME);
-        String repoName = repositoryName != null ? repositoryName.getContent().toString() : null;
-
-        // Get the configuration file
-        RefAddr configFileRef = ref.get(CONFIG_FILE);
-        String configFile = configFileRef != null ? configFileRef.getContent().toString() : null;
-
-        RefAddr configFilesRef = ref.get(CONFIG_FILES);
-        Set<String> configFiles = configFilesRef != null ? parseStrings(configFilesRef.getContent().toString()) : null;
-
-        engine.start();
-        if (repoName != null && configFile != null) {
-            // Start the named repository ...
-            return getRepository(configFile, repoName, nameCtx, name);
+    public Repository getRepository( Map parameters ) throws RepositoryException {
+        URL url = getUrlFrom(parameters);
+        if (url == null) {
+            return null;
         }
-        if (configFiles != null) {
-            // Start the configured repositories ...
-            for (String file : configFiles) {
-                getRepository(file, null, nameCtx, name);
+
+        if (!"jndi".equals(url.getProtocol())) {
+            // This URL is not a JNDI URL and therefore we don't understand it ...
+            return null;
+        }
+
+        // Now try to look up the repository in JNDI ...
+        return getRepositoryFromJndi(url, parameters);
+    }
+
+    private URL getUrlFrom( Map<String, Object> parameters ) {
+        if (parameters == null) {
+            return null;
+        }
+        Object rawUrl = parameters.get(RepositoryFactory.URL);
+        if (rawUrl == null) {
+            return null;
+        }
+
+        // Convert the raw value to a URL object ...
+        URL url = null;
+        if (rawUrl instanceof URL) {
+            url = (URL)rawUrl;
+        } else {
+            url = urlFor(rawUrl.toString());
+        }
+        return url;
+    }
+
+    protected String getRepositoryNameFrom( URL url,
+                                            Map<String, Object> parameters ) {
+        if (parameters != null) {
+            // First look in the parameters ...
+            Object repoName = parameters.get(REPOSITORY_NAME);
+            if (repoName != null) {
+                return repoName.toString();
             }
-            return engine;
+        }
+
+        // Then look for a query parameter in the URL ...
+        String query = url.getQuery();
+        if (query != null) {
+            for (String keyValuePair : query.split("&")) {
+                String[] splitPair = keyValuePair.split("=");
+
+                if (splitPair.length == 2 && REPOSITORY_NAME_PARAM.equals(splitPair[0])) {
+                    return splitPair[1];
+                }
+            }
         }
         return null;
     }
 
-    protected Set<String> parseStrings( String value ) {
-        if (value == null) return null;
-        value = value.trim();
-        if (value == null) return null;
-        Set<String> result = new HashSet<String>();
-        for (String strValue : value.split(",")) {
-            if (strValue == null) continue;
-            strValue = strValue.trim();
-            if (strValue == null) continue;
-            result.add(strValue);
+    /**
+     * Convenience method to convert a {@code String} into an {@code URL}. This method never throws a
+     * {@link MalformedURLException}, but may throw a {@link NullPointerException} if {@code jcrUrl} is null.
+     *
+     * @param jcrUrl the string representation of an URL that should be converted into an URL; may not be null
+     * @return the URL version of {@code jcrUrl} if {@code jcrUrl} is a valid URL, otherwise null
+     */
+    private URL urlFor( String jcrUrl ) {
+        assert jcrUrl != null;
+        assert !jcrUrl.isEmpty();
+        try {
+            return new URL(jcrUrl);
+        } catch (MalformedURLException mue) {
+            return null;
         }
-        return result;
+    }
+
+    /**
+     * Returns a hashtable with the same key/value mappings as the given map
+     *
+     * @param map the set of key/value mappings to convert; may not be null
+     * @return a hashtable with the same key/value mappings as the given map; may be empty, never null
+     */
+    private Hashtable<String, String> hashtable( Map<String, Object> map ) {
+        assert map != null;
+        Hashtable<String, String> hash = new Hashtable<String, String>(map.size());
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            Object value = entry.getValue();
+            hash.put(entry.getKey(), value != null ? value.toString() : null);
+        }
+        return hash;
+    }
+
+    /**
+     * Attempts to look up a {@link Repository} at the given JNDI name. All parameters in the parameters map are passed to the
+     * {@link InitialContext} constructor in a {@link Hashtable}.
+     *
+     * @param url the URL containing the JNDI name of the {@link Repository} or {@link org.modeshape.jcr.api.Repositories} instance; may not be null
+     * @param parameters any additional parameters that should be passed to the {@code InitialContext}'s constructor; may be empty
+     * or null
+     * @return the Repository object from JNDI, if one exists at the given name
+     * @throws RepositoryException if there is a problem obtaining the repository
+     */
+    private Repository getRepositoryFromJndi( URL url,
+                                              Map<String, Object> parameters ) throws RepositoryException {
+        String jndiName = url.getPath();
+        if (jndiName == null) {
+            return null;
+        }
+
+        // There should be a parameter with the name ...
+        try {
+            InitialContext ic = new InitialContext(hashtable(parameters));
+
+            Object ob = ic.lookup(jndiName);
+            if (ob instanceof Repository) {
+                // The object in JNDI is a Repository, so simply return it ...
+                return (Repository)ob;
+
+            } else if (ob instanceof Repositories) {
+                // The object in JNDI was a Repositories object that allows us to look up the Repository by name
+                Repositories repos = (Repositories)ob;
+
+                // Get the name from the parameters or the URL ...
+                String repositoryName = getRepositoryNameFrom(url, parameters);
+
+                // Now look up the repository by name ...
+                return repos.getRepository(repositoryName);
+            }
+            return null;
+        } catch (NamingException ne) {
+            throw new RepositoryException(ne);
+        }
     }
 }

@@ -32,7 +32,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.modeshape.jcr.api.RepositoryFactory;
-import org.modeshape.jcr.factory.JcrRepositoryFactory;
 import java.util.Collections;
 import java.util.Map;
 import java.util.ServiceLoader;
