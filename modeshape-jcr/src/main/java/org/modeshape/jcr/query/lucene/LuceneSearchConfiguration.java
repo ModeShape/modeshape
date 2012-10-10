@@ -64,6 +64,16 @@ public abstract class LuceneSearchConfiguration implements SearchConfiguration {
         if (value != null) this.properties.setProperty(name, value);
     }
 
+    protected void setProperty( String name,
+                                String value,
+                                String defaultValue) {
+        if (value != null) {
+            this.properties.setProperty(name, value);
+        } else if (defaultValue != null) {
+            this.properties.setProperty(name, defaultValue);
+        }
+    }
+
     @SuppressWarnings( "deprecation" )
     public Version getVersion() {
         Version version = Version.valueOf(this.properties.getProperty("hibernate.search.lucene_version"));

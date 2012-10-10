@@ -167,28 +167,9 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
             // Get the index storage configuration ...
             IndexStorage indexStorageConfig = indexStorageConfigInjector.getValue();
-            Document queryConfig = null;
-            if (indexStorageConfig != null) {
-                queryConfig = indexStorageConfig.getQueryConfiguration();
-            } else {
-                // We'll use the default index storage, but this will be overwritten by the *IndexStorageAdd operation
-                // (that we're dependent upon). The default for non-AS7 ModeShape repositories is to use
-                // RAM index storage, but in AS7 we want to by default store the indexes on the filesystem in the
-                // AS7 data directory.
-                // We'll do this by setting a path relative to the data directory, and then injecting
-                // the "${jboss.server.data.dir}/modeshape" path into the repository service
-                // (which will then update the configuration prior to deployment) ...
-                EditableDocument query = Schematic.newDocument();
-                EditableDocument indexing = query.getOrCreateDocument(FieldName.INDEXING);
-                EditableDocument indexStorage = query.getOrCreateDocument(FieldName.INDEX_STORAGE);
-                EditableDocument backend = indexing.getOrCreateDocument(FieldName.INDEXING_BACKEND);
-                query.set(FieldName.REBUILD_UPON_STARTUP, QueryRebuild.IF_MISSING.toString().toLowerCase());
-                backend.set(FieldName.TYPE, FieldValue.INDEXING_BACKEND_TYPE_LUCENE);
-                indexStorage.set(FieldName.TYPE, FieldValue.INDEX_STORAGE_FILESYSTEM);
-                String dataDirPath = dataDirectoryPathInjector.getValue();
-                indexStorage.set(FieldName.INDEX_STORAGE_LOCATION, dataDirPath + "/" + repositoryName + "/indexes");
-                queryConfig = query;
-            }
+            assert indexStorageConfig != null;
+
+            Document queryConfig = indexStorageConfig.getQueryConfiguration();
             assert queryConfig != null;
 
             // Get the binary storage configuration ...

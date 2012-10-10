@@ -298,6 +298,7 @@
                 <node-types>
                     <node-type>custom.cnd</node-type>
                 </node-types>
+                <cache-index-storage cache-container-jndi-name="java:jboss/infinispan/container/modeshape"/>
             </repository>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>

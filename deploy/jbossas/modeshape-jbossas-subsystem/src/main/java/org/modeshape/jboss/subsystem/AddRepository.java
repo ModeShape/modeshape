@@ -55,6 +55,7 @@ import org.jboss.msc.service.ServiceTarget;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jboss.service.BinaryStorage;
 import org.modeshape.jboss.service.IndexStorage;
+import org.modeshape.jboss.service.IndexStorageService;
 import org.modeshape.jboss.service.ReferenceFactoryService;
 import org.modeshape.jboss.service.RepositoryService;
 import org.modeshape.jcr.JcrRepository;
@@ -281,8 +282,7 @@ public class AddRepository extends AbstractAddStepHandler {
 
         // Add (optional) dependency to the index storage service, which captures the properties for the index storage
         // (if they were specified in the model nodes) ...
-        builder.addDependency(DependencyType.OPTIONAL,
-                              ModeShapeServiceNames.indexStorageServiceName(repositoryName),
+        builder.addDependency(ModeShapeServiceNames.indexStorageServiceName(repositoryName),
                               IndexStorage.class,
                               repositoryService.getIndexStorageConfigInjector());
 
@@ -330,11 +330,19 @@ public class AddRepository extends AbstractAddStepHandler {
                                                           target));
         builder.addDependency(dataDirServiceName, String.class, repositoryService.getDataDirectoryPathInjector());
 
+        // Add the default index storage service which will provide the indexing configuration
+        IndexStorageService defaultIndexService = new IndexStorageService(repositoryName);
+        ServiceBuilder<IndexStorage> indexBuilder = target.addService(ModeShapeServiceNames.indexStorageServiceName(
+                repositoryName), defaultIndexService);
+        indexBuilder.addDependency(dataDirServiceName, String.class, defaultIndexService.getDataDirectoryPathInjector());
+        indexBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
+
         // Now add the controller for the RepositoryService ...
         builder.setInitialMode(ServiceController.Mode.ACTIVE);
         newControllers.add(builder.install());
         newControllers.add(referenceBuilder.install());
         newControllers.add(binderBuilder.install());
+        newControllers.add(indexBuilder.install());
 
     }
 
