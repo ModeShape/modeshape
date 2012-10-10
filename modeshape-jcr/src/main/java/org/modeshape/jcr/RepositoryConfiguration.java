@@ -74,7 +74,6 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.clustering.DefaultChannelProvider;
-import org.modeshape.jcr.query.model.TypeSystem;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.value.binary.AbstractBinaryStore;
@@ -947,7 +946,7 @@ public class RepositoryConfiguration {
 
     /**
      * Returns a list with the cnd files which should be loaded at startup.
-     *
+     * 
      * @return a {@code non-null} string list
      */
     public List<String> getNodeTypes() {
