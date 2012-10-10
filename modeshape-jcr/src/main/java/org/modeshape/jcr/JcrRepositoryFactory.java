@@ -119,7 +119,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
     /**
      * The name of the URL parameter that specifies the repository name.
      */
-    public static final String REPOSITORY_NAME_PARAM = JndiRepositoryFactory.REPOSITORY_NAME_PARAM;
+    public static final String REPOSITORY_NAME_PARAM = JndiJcrRepositoryFactory.REPOSITORY_NAME_PARAM;
 
     static {
         ENGINE.start();
@@ -209,7 +209,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
                                         Map<String, Object> parameters ) throws RepositoryException {
 
         // See if the URL refers to a Repository instance in JNDI, which is probably what would be required
-        // when registering particular repository instances rather than the engine (e.g., via JndiRepositoryFactory).
+        // when registering particular repository instances rather than the engine (e.g., via JndiJcrRepositoryFactory).
         // This enables JCR-2.0-style lookups while using JCR-1.0-style of registering individual Repository instances in JNDI.
         if ("jndi".equals(url.getProtocol())) {
             Repository repository = getRepositoryFromJndi(url.getPath(), repositoryName, parameters);
@@ -461,7 +461,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
                         }
                     }
                 }
-                // Since we also have JndiRepositoryFactory, we can just return null without warning anyone ...
+                // Since we also have JndiJcrRepositoryFactory, we can just return null without warning anyone ...
             } else if (ob instanceof Repositories) {
                 Repositories repos = (Repositories)ob;
                 return repos.getRepository(repositoryName);

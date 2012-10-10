@@ -1,2 +1,2 @@
 org.modeshape.jcr.JcrRepositoryFactory
-org.modeshape.jcr.JndiRepositoryFactory
+org.modeshape.jcr.JndiJcrRepositoryFactory
