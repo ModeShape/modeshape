@@ -80,9 +80,10 @@ import org.modeshape.jcr.api.RepositoryFactory;
  * the JCR repository located in JNDI at the name "jcr/local/my_repository". Note that the use of such URLs requires that the
  * repository already be registered in JNDI at that location.</li>
  * <li><strong>JNDI location of engine and repository name</strong> - The URL contains the location in JNDI of an existing
- * ModeShape {@link org.modeshape.jcr.ModeShapeEngine engine} instance and the name of the <code>javax.jcr.Repository</code> repository as a URL
- * query parameter. For example, "<code>jndi:jcr/local?repositoryName=my_repository</code>" identifies a ModeShape engine
- * registered in JNDI at "jcr/local", and looks in that engine for a JCR repository named "<code>my_repository</code>".</li>
+ * ModeShape {@link org.modeshape.jcr.ModeShapeEngine engine} instance and the name of the <code>javax.jcr.Repository</code>
+ * repository as a URL query parameter. For example, "<code>jndi:jcr/local?repositoryName=my_repository</code>" identifies a
+ * ModeShape engine registered in JNDI at "jcr/local", and looks in that engine for a JCR repository named "
+ * <code>my_repository</code>".</li>
  * <li><strong>Location of a repository configuration</strong> - The URL contains a location that is resolvable to a configuration
  * file for the repository. If the configuration file has not already been loaded by the factory, then the configuration file is
  * read and used to deploy a new repository; subsequent uses of the same URL will return the previously deployed repository
@@ -278,6 +279,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * @param configUrl the URL to the file in the file system or relative to the classpath; may not be null
      * @return a {@code ModeShapeEngine} that was initialized from the given configuration file or null if no engine could be
      *         initialized from that file without errors.
+     * @throws RepositoryException if there is an error attempting to get the repository
      */
     private JcrRepository getRepositoryFromConfigFile( URL configUrl ) throws RepositoryException {
         assert configUrl != null;
@@ -365,8 +367,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
             JcrRepository repository = engine.deploy(config);
             repository.start();
             return repository;
-        }
-        catch (RepositoryException err) {
+        } catch (RepositoryException err) {
             throw err;
         } catch (Exception err) {
             throw new RepositoryException(err);
@@ -409,6 +410,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * @param parameters any additional parameters that should be passed to the {@code InitialContext}'s constructor; may be empty
      *        or null
      * @return the Repository object from JNDI, if one exists at the given name
+     * @throws RepositoryException if there is an error attempting to get the repository
      */
     private Repository getRepositoryFromJndi( String jndiName,
                                               String repositoryName,

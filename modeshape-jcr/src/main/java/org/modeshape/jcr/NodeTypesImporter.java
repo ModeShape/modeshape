@@ -24,20 +24,20 @@
 
 package org.modeshape.jcr;
 
-import javax.jcr.RepositoryException;
-import javax.jcr.nodetype.NodeTypeDefinition;
-import org.modeshape.common.collection.Problems;
-import org.modeshape.common.collection.SimpleProblems;
-import org.modeshape.common.logging.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.NodeTypeDefinition;
+import org.modeshape.common.collection.Problems;
+import org.modeshape.common.collection.SimpleProblems;
+import org.modeshape.common.logging.Logger;
 
 /**
  * Class which performs the import of the optional, repository configured node-types
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public final class NodeTypesImporter {
@@ -71,7 +71,8 @@ public final class NodeTypesImporter {
     }
 
     private List<NodeTypeDefinition> parseCNDFile( String cndFile ) {
-        InputStream cndFileStream = runningState.environment().getClassLoader(NodeTypesImporter.class.getClassLoader())
+        InputStream cndFileStream = runningState.environment()
+                                                .getClassLoader(NodeTypesImporter.class.getClassLoader())
                                                 .getResourceAsStream(cndFile);
 
         if (cndFileStream == null) {
@@ -86,9 +87,8 @@ public final class NodeTypesImporter {
             if (importProblems.hasErrors()) {
                 importProblems.writeTo(LOGGER);
                 return Collections.emptyList();
-            } else {
-                return cndImporter.getNodeTypeDefinitions();
             }
+            return cndImporter.getNodeTypeDefinitions();
         } catch (IOException e) {
             LOGGER.error(e, JcrI18n.errorReadingCndFile, cndFile);
             return Collections.emptyList();
