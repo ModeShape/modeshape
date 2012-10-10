@@ -24,20 +24,20 @@
 
 package org.modeshape.web.jcr.rest;
 
-import javax.ws.rs.core.MediaType;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import javax.ws.rs.core.MediaType;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.web.jcr.rest.handler.RestBinaryHandler;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 
 /**
  * Unit test for the v2 version of the rest service: {@link ModeShapeRestService}
- *
+ * 
  * @author Horia Chiorean
  */
 public class ModeShapeRestServiceTest extends JcrResourcesTest {
@@ -241,11 +241,11 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     public void shouldRetrieveBinaryPropertyValue() throws Exception {
         doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        doGet(binaryUrl(TEST_NODE, binaryPropertyName()))
-                .isOk()
-                .hasMimeType(MediaType.TEXT_PLAIN)
-                .hasContentDisposition(RestBinaryHandler.DEFAULT_CONTENT_DISPOSITION_PREFIX + TEST_NODE)
-                .copyInputStream(bos);
+        doGet(binaryUrl(TEST_NODE, binaryPropertyName())).isOk()
+                                                         .hasMimeType(MediaType.TEXT_PLAIN)
+                                                         .hasContentDisposition(RestBinaryHandler.DEFAULT_CONTENT_DISPOSITION_PREFIX
+                                                                                + TEST_NODE)
+                                                         .copyInputStream(bos);
         assertTrue(bos.size() > 0);
         assertEquals("testValue", new String(bos.toByteArray()));
     }
@@ -259,12 +259,11 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         doPost(nodeWithBinaryProperty(), itemsUrl(TEST_NODE)).isCreated();
         String mimeType = MediaType.TEXT_XML;
         String contentDisposition = "inline;filename=TestFile.txt";
-        String urlParams = "?mimeType=" + RestHelper.URL_ENCODER.encode(mimeType) + "&contentDisposition=" + RestHelper
-                .URL_ENCODER.encode(contentDisposition);
-        doGet(binaryUrl(TEST_NODE, binaryPropertyName()) + urlParams)
-                .isOk()
-                .hasMimeType(mimeType)
-                .hasContentDisposition(contentDisposition);
+        String urlParams = "?mimeType=" + RestHelper.URL_ENCODER.encode(mimeType) + "&contentDisposition="
+                           + RestHelper.URL_ENCODER.encode(contentDisposition);
+        doGet(binaryUrl(TEST_NODE, binaryPropertyName()) + urlParams).isOk()
+                                                                     .hasMimeType(mimeType)
+                                                                     .hasContentDisposition(contentDisposition);
     }
 
     @Test
@@ -282,13 +281,10 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @Test
     public void shouldCreateBinaryProperty() throws Exception {
         doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
-        doPost(fileStream("v2/post/binary.pdf"), binaryUrl(TEST_NODE, binaryPropertyName()))
-                .isCreated()
-                .isJSONObjectLikeFile(newBinaryProperty());
+        doPost(fileStream("v2/post/binary.pdf"), binaryUrl(TEST_NODE, binaryPropertyName())).isCreated()
+                                                                                            .isJSONObjectLikeFile(newBinaryProperty());
         ByteArrayOutputStream actualBinaryContent = new ByteArrayOutputStream();
-        doGet(binaryUrl(TEST_NODE, binaryPropertyName()))
-                .isOk()
-                .copyInputStream(actualBinaryContent);
+        doGet(binaryUrl(TEST_NODE, binaryPropertyName())).isOk().copyInputStream(actualBinaryContent);
 
         byte[] expectedBinaryContent = IoUtil.readBytes(fileStream("v2/post/binary.pdf"));
         assertArrayEquals(expectedBinaryContent, actualBinaryContent.toByteArray());
@@ -329,10 +325,10 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @Test
     public void shouldCreateBinaryValueViaMultiPartRequest() throws Exception {
         doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
-        doPostMultiPart(fileStream("v2/post/binary.pdf"), "file", binaryUrl(TEST_NODE, binaryPropertyName()),
-                        MediaType.APPLICATION_OCTET_STREAM)
-                .isCreated()
-                .isJSONObjectLikeFile(newBinaryProperty());
+        doPostMultiPart(fileStream("v2/post/binary.pdf"),
+                        "file",
+                        binaryUrl(TEST_NODE, binaryPropertyName()),
+                        MediaType.APPLICATION_OCTET_STREAM).isCreated().isJSONObjectLikeFile(newBinaryProperty());
     }
 
     @Test
@@ -347,9 +343,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
 
     @Test
     public void shouldImportCNDFile() throws Exception {
-        doPost(fileStream(nodeTypesCND()), nodeTypesUrl())
-                .isOk()
-                .isJSONArrayLikeFile(cndImportResponse());
+        doPost(fileStream(nodeTypesCND()), nodeTypesUrl()).isOk().isJSONArrayLikeFile(cndImportResponse());
     }
 
     private String cndImportResponse() {
@@ -362,23 +356,20 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
 
     @Test
     public void shouldImportCNDFileViaMultiPartRequest() throws Exception {
-        doPostMultiPart(fileStream(nodeTypesCND()), "file", nodeTypesUrl(), MediaType.TEXT_PLAIN)
-                .isOk()
-                .isJSONArrayLikeFile(cndImportResponse());
+        doPostMultiPart(fileStream(nodeTypesCND()), "file", nodeTypesUrl(), MediaType.TEXT_PLAIN).isOk()
+                                                                                                 .isJSONArrayLikeFile(cndImportResponse());
     }
 
     @Test
     public void importingCNDViaWrongHTMLElementNameShouldFail() throws Exception {
-        doPostMultiPart(fileStream(nodeTypesCND()), "invalidHTML", nodeTypesUrl(), MediaType.TEXT_PLAIN)
-                .isBadRequest();
+        doPostMultiPart(fileStream(nodeTypesCND()), "invalidHTML", nodeTypesUrl(), MediaType.TEXT_PLAIN).isBadRequest();
     }
 
     @Test
     public void shouldCreateMultipleNodes() throws Exception {
         doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
-        doPost("v2/post/multiple_nodes_request.json", itemsUrl())
-                .isOk()
-                .isJSONArrayLikeFile("v2/post/multiple_nodes_response.json");
+        doPost("v2/post/multiple_nodes_request.json", itemsUrl()).isOk()
+                                                                 .isJSONArrayLikeFile("v2/post/multiple_nodes_response.json");
         doGet(itemsUrl(TEST_NODE + "/child[2]")).isJSONObjectLikeFile("v2/get/node_with_sns_children.json");
     }
 
@@ -386,13 +377,12 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     public void shouldEditMultipleNodes() throws Exception {
         doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
         doPost("v2/post/multiple_nodes_request.json", itemsUrl()).isOk();
-        doPut("v2/put/multiple_nodes_edit_request.json", itemsUrl())
-                .isOk()
-                .isJSONArrayLikeFile("v2/put/multiple_nodes_edit_response.json");
+        doPut("v2/put/multiple_nodes_edit_request.json", itemsUrl()).isOk()
+                                                                    .isJSONArrayLikeFile("v2/put/multiple_nodes_edit_response.json");
     }
 
     @Test
-    @Ignore("A limitation of HTTPUrlConnection prevents this test from running. Consider enabling it if/when switching to Http Client")
+    @Ignore( "A limitation of HTTPUrlConnection prevents this test from running. Consider enabling it if/when switching to Http Client" )
     public void shouldDeleteMultipleNodes() throws Exception {
         doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
         doPost("v2/post/multiple_nodes_request.json", itemsUrl()).isOk();
@@ -406,5 +396,21 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
 
     private String nodeTypesUrl( String... additionalPathSegments ) {
         return RestHelper.urlFrom(REPOSITORY_NAME + "/default/" + RestHelper.NODE_TYPES_METHOD_NAME, additionalPathSegments);
+    }
+
+    @Test
+    public void shouldGetNodeByIdentifier() throws Exception {
+        // Create the node using the path (there is no ID-based option to do this) ...
+        Response response = doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
+        String id = response.hasNodeIdentifier();
+        // Get by ID ...
+        response = doGet(nodesUrl(id)).isJSONObjectLike(response);
+
+        // Update by ID ...
+        response = doPut("v2/put/node_with_binary_property.json", nodesUrl(id)).isOk()
+                                                                               .isJSONObjectLikeFile("v2/put/node_with_binary_property_after_edit.json");
+
+        // Delete by ID ...
+        doDelete(nodesUrl(id)).isDeleted();
     }
 }

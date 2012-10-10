@@ -567,8 +567,8 @@ public class ItemHandler extends AbstractHandler {
         return property;
     }
 
-    private Node updateNode( Node node,
-                             JSONObject jsonItem ) throws RepositoryException, JSONException {
+    protected Node updateNode( Node node,
+                               JSONObject jsonItem ) throws RepositoryException, JSONException {
         VersionableChanges changes = new VersionableChanges(node.getSession());
         try {
             node = updateNode(node, jsonItem, changes);
