@@ -23,57 +23,43 @@
  */
 package org.modeshape.jcr.value.binary.infinispan;
 
+import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
-import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.junit.AfterClass;
-import org.junit.Ignore;
-import org.modeshape.jcr.value.binary.AbstractBinaryStoreTest;
-import org.modeshape.jcr.value.binary.BinaryStore;
+import org.junit.BeforeClass;
 
-public abstract class AbstractInfinispanStoreTest extends AbstractBinaryStoreTest {
+public class InfinispanLocalBinaryStoreWithSingleCacheTest extends AbstractInfinispanStoreTest {
 
-    protected static DefaultCacheManager cacheManager;
-    private static final String BLOB = "blob";
-    private static final String METADATA = "metadata";
-
-    protected static InfinispanBinaryStore binaryStore;
+    private static final String CACHE_NAME = "singleCache";
 
     @AfterClass
     public static void afterClass() {
-        // First stop the caches ...
-        stopAdditionalCaches();
+        cacheManager.getCache(CACHE_NAME).stop();
+        cacheManager.removeCache(CACHE_NAME);
         InfinispanTestUtil.afterClassShutdown(cacheManager);
-        // Then the store ...
         binaryStore.shutdown();
-    }
-
-    private static void stopAdditionalCaches() {
-        cacheManager.getCache(METADATA).stop();
-        cacheManager.removeCache(METADATA);
-        cacheManager.getCache(BLOB).stop();
-        cacheManager.removeCache(BLOB);
     }
 
     protected static void startBinaryStore( Configuration metadataConfiguration,
                                             Configuration blobConfiguration ) {
-        cacheManager.defineConfiguration(METADATA, metadataConfiguration);
-        cacheManager.startCache(METADATA);
+        cacheManager.defineConfiguration(CACHE_NAME, metadataConfiguration);
+        cacheManager.startCache(CACHE_NAME);
 
-        cacheManager.defineConfiguration(BLOB, blobConfiguration);
-        cacheManager.startCache(BLOB);
-
-        binaryStore = new InfinispanBinaryStore(cacheManager, true, METADATA, BLOB);
+        binaryStore = new InfinispanBinaryStore(cacheManager, true, CACHE_NAME, CACHE_NAME);
         binaryStore.start();
     }
 
-    @Override
-    protected BinaryStore getBinaryStore() {
-        return binaryStore;
-    }
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        cacheManager = InfinispanTestUtil.beforeClassStartup(false);
 
-    @Override
-    @Ignore( "The infinispan binary stored do no support this operation" )
-    public void shouldReturnAllStoredKeys() throws Exception {
+        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
+        configurationBuilder.clustering().cacheMode(CacheMode.LOCAL);
+        Configuration blobConfiguration = configurationBuilder.build();
 
+        Configuration metadataConfiguration = configurationBuilder.build();
+
+        startBinaryStore(metadataConfiguration, blobConfiguration);
     }
 }

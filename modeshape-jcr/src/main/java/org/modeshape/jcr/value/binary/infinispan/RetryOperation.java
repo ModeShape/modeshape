@@ -41,14 +41,13 @@ abstract class RetryOperation {
         logger = Logger.getLogger(getClass());
     }
 
-    public void doTry() throws IOException {
+    public boolean doTry() throws IOException {
         boolean sleepInterrupted = false;
         int failures = 0;
         IOException lastException = null;
         while (!sleepInterrupted && failures <= RETRIES) {
             try {
-                call();
-                return;
+                return call();
             } catch (IOException ex) {
                 lastException = ex;
             } catch (Exception ex) {
@@ -71,5 +70,5 @@ abstract class RetryOperation {
         throw lastException;
     }
 
-    protected abstract void call() throws IOException;
+    protected abstract boolean call() throws IOException;
 }

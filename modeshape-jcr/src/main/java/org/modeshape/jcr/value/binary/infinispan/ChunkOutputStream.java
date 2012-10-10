@@ -23,12 +23,11 @@
  */
 package org.modeshape.jcr.value.binary.infinispan;
 
-import org.infinispan.Cache;
-import org.modeshape.common.logging.Logger;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import org.infinispan.Cache;
+import org.modeshape.common.logging.Logger;
 
 /**
  * This stream writes data as chunks into separate cache entries.
@@ -45,7 +44,8 @@ class ChunkOutputStream extends OutputStream {
     private boolean closed;
     protected int chunkIndex;
 
-    public ChunkOutputStream(Cache<String, byte[]> blobCache, String keyPrefix) {
+    public ChunkOutputStream( Cache<String, byte[]> blobCache,
+                              String keyPrefix ) {
         logger = Logger.getLogger(getClass());
         this.blobCache = blobCache;
         this.keyPrefix = keyPrefix;
@@ -55,12 +55,12 @@ class ChunkOutputStream extends OutputStream {
     /**
      * @return Number of chunks stored.
      */
-    public int getNumberChunks(){
+    public int getNumberChunks() {
         return chunkIndex;
     }
 
     @Override
-    public void write(int b) throws IOException {
+    public void write( int b ) throws IOException {
         if (chunkBuffer.size() == CHUNKSIZE) {
             storeBufferInBLOBCache();
         }
@@ -68,8 +68,10 @@ class ChunkOutputStream extends OutputStream {
     }
 
     @Override
-    public void write(byte[] b, int off, int len) throws IOException {
-        if(len + chunkBuffer.size() <= CHUNKSIZE){
+    public void write( byte[] b,
+                       int off,
+                       int len ) throws IOException {
+        if (len + chunkBuffer.size() <= CHUNKSIZE) {
             chunkBuffer.write(b, off, len);
         } else {
             int storeLength = CHUNKSIZE - chunkBuffer.size();
@@ -82,7 +84,7 @@ class ChunkOutputStream extends OutputStream {
     @Override
     public void close() throws IOException {
         logger.debug("Close. Buffer size at close: {0}", chunkBuffer.size());
-        if(closed){
+        if (closed) {
             logger.debug("Stream already closed.");
             return;
         }
@@ -95,14 +97,21 @@ class ChunkOutputStream extends OutputStream {
 
     private void storeBufferInBLOBCache() throws IOException {
         final byte[] chunk = chunkBuffer.toByteArray();
-        new RetryOperation(){
-            @Override
-            protected void call() {
-                String chunkKey = keyPrefix +"-"+chunkIndex;
-                logger.debug("Store chunk {0}", chunkKey);
-                blobCache.put(chunkKey, chunk);
-            }
-        }.doTry();
+        try {
+            new RetryOperation() {
+                @Override
+                protected boolean call() {
+                    String chunkKey = keyPrefix + "-" + chunkIndex;
+                    logger.debug("Store chunk {0}", chunkKey);
+                    blobCache.put(chunkKey, chunk);
+                    return true;
+                }
+            }.doTry();
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
         chunkIndex++;
         chunkBuffer.reset();
     }

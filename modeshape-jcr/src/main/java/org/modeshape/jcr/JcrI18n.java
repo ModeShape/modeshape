@@ -403,6 +403,7 @@ public final class JcrI18n {
     public static I18n unableToPersistBinaryValueToFileSystemStore;
     public static I18n unableToDeleteTemporaryFile;
     public static I18n unableToFindBinaryValue;
+    public static I18n unableToFindBinaryValueInCache;
     public static I18n tempDirectorySystemPropertyMustBeSet;
     public static I18n tempDirectoryLocation;
     public static I18n errorReadingBinaryValue;
