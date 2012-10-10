@@ -44,17 +44,28 @@ public class AddCacheIndexStorage extends AbstractAddIndexStorage {
     protected void writeIndexStorageConfiguration( final OperationContext context,
                                                    final ModelNode storage,
                                                    EditableDocument indexStorage ) throws OperationFailedException {
-        String lockCache = ModelAttributes.LOCK_CACHE_NAME.resolveModelAttribute(context, storage).asString();
-        String dataCache = ModelAttributes.DATA_CACHE_NAME.resolveModelAttribute(context, storage).asString();
-        String metaCache = ModelAttributes.METADATA_CACHE_NAME.resolveModelAttribute(context, storage).asString();
-        String containerJndiName = ModelAttributes.CACHE_CONTAINER_JNDI_NAME.resolveModelAttribute(context, storage).asString();
-        int chunkSize = ModelAttributes.CHUNK_SIZE.resolveModelAttribute(context, storage).asInt();
         indexStorage.set(FieldName.TYPE, FieldValue.INDEX_STORAGE_INFINISPAN);
-        indexStorage.set(FieldName.INDEX_STORAGE_INFINISPAN_LOCK_CACHE, lockCache);
-        indexStorage.set(FieldName.INDEX_STORAGE_INFINISPAN_DATA_CACHE, dataCache);
-        indexStorage.set(FieldName.INDEX_STORAGE_INFINISPAN_META_CACHE, metaCache);
-        indexStorage.set(FieldName.INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES, chunkSize);
+
+        String containerJndiName = ModelAttributes.CACHE_CONTAINER_JNDI_NAME.resolveModelAttribute(context, storage).asString();
         indexStorage.set(FieldName.INDEX_STORAGE_INFINISPAN_CONTAINER, containerJndiName);
+
+        int chunkSize = ModelAttributes.CHUNK_SIZE.resolveModelAttribute(context, storage).asInt();
+        indexStorage.set(FieldName.INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES, chunkSize);
+
+        if (storage.hasDefined(ModelKeys.LOCK_CACHE_NAME)) {
+            String lockCache = ModelAttributes.LOCK_CACHE_NAME.resolveModelAttribute(context, storage).asString();
+            indexStorage.set(FieldName.INDEX_STORAGE_INFINISPAN_LOCK_CACHE, lockCache);
+        }
+
+        if (storage.hasDefined(ModelKeys.DATA_CACHE_NAME)) {
+            String dataCache = ModelAttributes.DATA_CACHE_NAME.resolveModelAttribute(context, storage).asString();
+            indexStorage.set(FieldName.INDEX_STORAGE_INFINISPAN_DATA_CACHE, dataCache);
+        }
+
+        if (storage.hasDefined(ModelKeys.METADATA_CACHE_NAME)) {
+            String metaCache = ModelAttributes.METADATA_CACHE_NAME.resolveModelAttribute(context, storage).asString();
+            indexStorage.set(FieldName.INDEX_STORAGE_INFINISPAN_META_CACHE, metaCache);
+        }
     }
     
     @Override
