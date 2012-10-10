@@ -18,8 +18,8 @@ import org.modeshape.jcr.api.Repositories;
 public class JndiRepositoryFactoryTest extends AbstractTransactionalTest {
     private static final String JCR_REPOSITORY_NAME = "Test Repository";
 
-    private JndiRepositoryFactory factory = new JndiRepositoryFactory();
-    private Reference reference = new Reference(JndiRepositoryFactory.class.getName());
+    private JndiManagedRepositoryFactory factory = new JndiManagedRepositoryFactory();
+    private Reference reference = new Reference(JndiManagedRepositoryFactory.class.getName());
     private RefAddr configFile;
     private RefAddr repositoryName = new StringRefAddr("repositoryName", JCR_REPOSITORY_NAME);
 
@@ -30,7 +30,7 @@ public class JndiRepositoryFactoryTest extends AbstractTransactionalTest {
 
     @After
     public void afterEach() throws Exception {
-        JndiRepositoryFactory.shutdown().get();
+        JndiManagedRepositoryFactory.shutdown().get();
     }
 
     @Test

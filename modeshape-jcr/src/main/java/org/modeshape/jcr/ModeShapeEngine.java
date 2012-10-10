@@ -316,7 +316,7 @@ public class ModeShapeEngine implements Repositories {
         }
     }
 
-    public Set<String> getRepositoryKeys() {
+    protected Set<String> getRepositoryKeys() {
         checkRunning();
 
         final Lock lock = this.lock.readLock();

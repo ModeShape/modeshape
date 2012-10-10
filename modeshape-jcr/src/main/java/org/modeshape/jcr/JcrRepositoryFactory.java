@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.factory;
+package org.modeshape.jcr;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -41,11 +41,6 @@ import javax.naming.NamingException;
 import org.infinispan.schematic.document.ParsingException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
-import org.modeshape.jcr.JcrI18n;
-import org.modeshape.jcr.JcrRepository;
-import org.modeshape.jcr.ModeShapeEngine;
-import org.modeshape.jcr.NoSuchRepositoryException;
-import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.Repositories;
 import org.modeshape.jcr.api.RepositoryFactory;
 
@@ -124,7 +119,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
     /**
      * The name of the URL parameter that specifies the repository name.
      */
-    public static final String REPOSITORY_NAME_PARAM = org.modeshape.jcr.factory.JndiRepositoryFactory.REPOSITORY_NAME_PARAM;
+    public static final String REPOSITORY_NAME_PARAM = JndiRepositoryFactory.REPOSITORY_NAME_PARAM;
 
     static {
         ENGINE.start();

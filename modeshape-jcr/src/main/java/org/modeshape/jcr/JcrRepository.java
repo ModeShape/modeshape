@@ -273,7 +273,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      * @throws IOException if there is a problem with the specified Infinispan configuration file
      * @throws Exception if there is a problem with underlying resource setup
      */
-    public void start() throws Exception {
+    void start() throws Exception {
         doStart();
     }
 
