@@ -27,6 +27,7 @@ import org.infinispan.schematic.document.EditableDocument;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
+import org.modeshape.jcr.RepositoryConfiguration;
 
 /**
  * 
@@ -42,7 +43,7 @@ public class AddRamIndexStorage extends AbstractAddIndexStorage {
     protected void writeIndexStorageConfiguration( final OperationContext context,
                                                    final ModelNode storage,
                                                    EditableDocument indexStorage ) {
-
+        indexStorage.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.INDEX_STORAGE_RAM);
     }
     
     @Override

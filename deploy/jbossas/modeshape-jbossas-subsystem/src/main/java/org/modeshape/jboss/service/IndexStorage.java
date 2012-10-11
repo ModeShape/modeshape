@@ -23,7 +23,9 @@
  */
 package org.modeshape.jboss.service;
 
+import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.jcr.RepositoryConfiguration;
 
 /**
  * 
@@ -37,6 +39,20 @@ public class IndexStorage {
                   EditableDocument queryConfig ) {
         this.repositoryName = repositoryName;
         this.queryConfig = queryConfig;
+    }
+
+    static IndexStorage defaultStorage(String repositoryName, String dataDirPath) {
+        EditableDocument query = Schematic.newDocument();
+
+        EditableDocument indexing = query.getOrCreateDocument(RepositoryConfiguration.FieldName.INDEXING);
+        EditableDocument indexStorage = query.getOrCreateDocument(RepositoryConfiguration.FieldName.INDEX_STORAGE);
+        EditableDocument backend = indexing.getOrCreateDocument(RepositoryConfiguration.FieldName.INDEXING_BACKEND);
+        query.set(RepositoryConfiguration.FieldName.REBUILD_UPON_STARTUP, RepositoryConfiguration.QueryRebuild.IF_MISSING.toString().toLowerCase());
+        backend.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.INDEXING_BACKEND_TYPE_LUCENE);
+        indexStorage.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.INDEX_STORAGE_FILESYSTEM);
+        indexStorage.set(RepositoryConfiguration.FieldName.INDEX_STORAGE_LOCATION, dataDirPath + "/" + repositoryName + "/indexes");
+
+        return new IndexStorage(repositoryName, query);
     }
 
     /**

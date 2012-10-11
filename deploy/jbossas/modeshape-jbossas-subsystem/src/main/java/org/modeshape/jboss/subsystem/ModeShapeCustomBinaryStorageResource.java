@@ -35,7 +35,7 @@ public class ModeShapeCustomBinaryStorageResource extends SimpleResourceDefiniti
     private ModeShapeCustomBinaryStorageResource() {
         super(ModeShapeExtension.CUSTOM_BINARY_STORAGE_PATH,
               ModeShapeExtension.getResourceDescriptionResolver(ModelKeys.REPOSITORY, ModelKeys.CUSTOM_BINARY_STORAGE),
-              AddCacheBinaryStorage.INSTANCE, RemoveBinaryStorage.INSTANCE);
+              AddCustomBinaryStorage.INSTANCE, RemoveBinaryStorage.INSTANCE);
     }
 
     @Override

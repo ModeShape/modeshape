@@ -82,7 +82,7 @@ public class ZipSequencer extends Sequencer {
                 try {
                     zipInputStream.close();
                 } catch (Exception e) {
-                    getLogger().warn("Cannot close zip input stream", e);
+                    getLogger().warn(e, "Cannot close zip input stream");
                 }
             }
         }

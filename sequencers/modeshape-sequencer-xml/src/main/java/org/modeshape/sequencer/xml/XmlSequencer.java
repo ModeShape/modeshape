@@ -147,7 +147,7 @@ public class XmlSequencer extends Sequencer {
                 reader.setFeature(featureName, value);
             }
         } catch (SAXException e) {
-            getLogger().warn("Cannot set feature " + featureName, e);
+            getLogger().warn(e, "Cannot set feature " + featureName);
         }
     }
 
