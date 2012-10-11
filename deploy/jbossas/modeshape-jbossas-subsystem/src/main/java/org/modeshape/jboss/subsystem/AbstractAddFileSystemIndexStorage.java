@@ -55,8 +55,8 @@ public abstract class AbstractAddFileSystemIndexStorage extends AbstractAddIndex
     protected void addControllersAndDependencies( String repositoryName,
                                                   IndexStorageService service,
                                                   List<ServiceController<?>> newControllers,
+                                                  ServiceBuilder<IndexStorage> builder,
                                                   ServiceTarget target ) {
-        ServiceBuilder<IndexStorage> builder = null;
         if (indexStoragePathInDataDirectory != null) {
             // Add a controller that creates the required directory ...
             ServiceName serviceName = ModeShapeServiceNames.indexStorageDirectoryServiceName(repositoryName);
@@ -65,7 +65,6 @@ public abstract class AbstractAddFileSystemIndexStorage extends AbstractAddIndex
                                                               ModeShapeExtension.DATA_DIR_VARIABLE,
                                                               target));
             // and add dependency on this path ...
-            builder = target.addService(serviceName, service);
             builder.addDependency(serviceName, String.class, service.getIndexStorageBasePathInjector());
         }
         if (indexSourcePathInDataDirectory != null) {
@@ -75,14 +74,7 @@ public abstract class AbstractAddFileSystemIndexStorage extends AbstractAddIndex
                                                               indexSourcePathInDataDirectory,
                                                               ModeShapeExtension.DATA_DIR_VARIABLE,
                                                               target));
-            // and add dependency on this path ...
-            if (builder == null) {
-                builder = target.addService(serviceName, service);
-            }
             builder.addDependency(serviceName, String.class, service.getIndexStorageSourceBasePathInjector());
-        }
-        if (builder != null) {
-            newControllers.add(builder.install());
         }
     }
 }

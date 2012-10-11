@@ -34,8 +34,11 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.modeshape.jboss.service.IndexStorage;
 import org.modeshape.jboss.service.IndexStorageService;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
@@ -77,7 +80,7 @@ public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
 
         // Build the 'query' document (except for the extractors) ...
         EditableDocument query = Schematic.newDocument();
-        String rebuild = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP.resolveModelAttribute(context, storage).asString();
+        String rebuild = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP.resolveModelAttribute(context, storage).asString().toLowerCase();
         query.set(FieldName.REBUILD_UPON_STARTUP, rebuild);
 
         // Build the 'query/indexing' nested document ...
@@ -93,9 +96,15 @@ public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
         writeIndexingBackendConfiguration(context, storage, backend);
 
         IndexStorageService service = new IndexStorageService(repositoryName, query);
+        ServiceName serviceName = ModeShapeServiceNames.indexStorageServiceName(repositoryName);
+        ServiceBuilder<IndexStorage> indexBuilder = target.addService(serviceName, service);
+        indexBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
-        addControllersAndDependencies(repositoryName, service, newControllers, target);
+        addControllersAndDependencies(repositoryName, service, newControllers, indexBuilder, target);
 
+        //A default index service should've already been added by AddRepository, so we remove it here
+        context.removeService(serviceName);
+        newControllers.add(indexBuilder.install());
     }
 
     protected abstract void writeIndexStorageConfiguration( final OperationContext context,
@@ -120,6 +129,7 @@ public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
     protected void addControllersAndDependencies( String repositoryName,
                                                   IndexStorageService service,
                                                   List<ServiceController<?>> newControllers,
+                                                  ServiceBuilder<IndexStorage> builder,
                                                   ServiceTarget target ) throws OperationFailedException {
     }
 }

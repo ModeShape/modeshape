@@ -34,11 +34,20 @@ public class IndexStorageService implements Service<IndexStorage> {
 
     private final InjectedValue<String> indexStorageBasePathInjector = new InjectedValue<String>();
     private final InjectedValue<String> indexStorageSourceBasePathInjector = new InjectedValue<String>();
+    private final InjectedValue<String> dataDirectoryPathInjector = new InjectedValue<String>();
+
 
     private final IndexStorage indexStorage;
+    private final String repositoryName;
+
+    public IndexStorageService(String repositoryName) {
+        this.indexStorage = null;
+        this.repositoryName = repositoryName;
+    }
 
     public IndexStorageService( String repositoryName,
                                 EditableDocument queryConfig ) {
+        this.repositoryName = repositoryName;
         this.indexStorage = new IndexStorage(repositoryName, queryConfig);
     }
 
@@ -80,8 +89,18 @@ public class IndexStorageService implements Service<IndexStorage> {
         return indexStorageSourceBasePathInjector;
     }
 
+    /**
+     * @return the injector used to set the data directory for this repository
+     */
+    public InjectedValue<String> getDataDirectoryPathInjector() {
+        return dataDirectoryPathInjector;
+    }
+
     @Override
     public IndexStorage getValue() throws IllegalStateException, IllegalArgumentException {
+        if (indexStorage == null) {
+            return IndexStorage.defaultStorage(this.repositoryName, dataDirectoryPathInjector.getValue());
+        }
         return indexStorage;
     }
 
