@@ -1,0 +1,2 @@
+00000000001111111111222222222233333333334444444444
+This is a flat file that will be parsed into cols.
