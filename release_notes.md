@@ -1,12 +1,12 @@
 # Release Notes for ModeShape &version;
 
-The ModeShape &version; release is the first candidate release (CR) of our new architecture, and is suitable
-only for testing and previewing features. APIs and storage formats are not expected to change,
-though they may still change before the final release.
+The ModeShape &version; release is the second candidate release (CR) of our new architecture.
+There are no known issues, but this release should be used only for testing and previewing features.
+It is very unlikely (though still possible) that APIs and storage formats will change before 3.0.0.Final.
 
 ## What's new
 
-&version; provides a feature complete fast, distributed, hierarchical database that clients
+&version; provides a fast, distributed, hierarchical database that clients
 work with via the standard JCR 2.0 (JSR-283) API. ModeShape 3.0 is a major upgrade over 2.x
 and offers significant improvements in performance and scalability, while retaining all of
 ModeShape 2's JCR-related features. ModeShape 3.0 has complete integration with JBoss AS 7.1
