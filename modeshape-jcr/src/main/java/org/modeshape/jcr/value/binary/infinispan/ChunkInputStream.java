@@ -86,6 +86,9 @@ class ChunkInputStream extends InputStream {
 
     @Override
     public int available() {
+        if (buffer == null) {
+            fillBuffer();
+        }
         return buffer.length - indexInBuffer;
     }
 

@@ -23,8 +23,6 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import java.util.List;
 import javax.transaction.TransactionManager;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
@@ -38,6 +36,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceVerificationHandler;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import org.jboss.as.controller.services.path.RelativePathService;
 import org.jboss.as.naming.ManagedReferenceFactory;
 import org.jboss.as.naming.ServiceBasedNamingStore;
@@ -48,12 +47,12 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceBuilder.DependencyType;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jboss.service.BinaryStorage;
+import org.modeshape.jboss.service.BinaryStorageService;
 import org.modeshape.jboss.service.IndexStorage;
 import org.modeshape.jboss.service.IndexStorageService;
 import org.modeshape.jboss.service.ReferenceFactoryService;
@@ -63,6 +62,7 @@ import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
+import java.util.List;
 
 public class AddRepository extends AbstractAddStepHandler {
 
@@ -280,16 +280,13 @@ public class AddRepository extends AbstractAddStepHandler {
                               ModuleLoader.class,
                               repositoryService.getModuleLoaderInjector());
 
-        // Add (optional) dependency to the index storage service, which captures the properties for the index storage
-        // (if they were specified in the model nodes) ...
+        // Add dependency to the index storage service, which captures the properties for the index storage
         builder.addDependency(ModeShapeServiceNames.indexStorageServiceName(repositoryName),
                               IndexStorage.class,
                               repositoryService.getIndexStorageConfigInjector());
 
-        // Add (optional) dependency to the binaries storage service, which captures the properties for the binaries storage
-        // (if they were specified in the model nodes) ...
-        builder.addDependency(DependencyType.OPTIONAL,
-                              ModeShapeServiceNames.binaryStorageServiceName(repositoryName),
+        // Add dependency to the binaries storage service, which captures the properties for the binaries storage
+        builder.addDependency(ModeShapeServiceNames.binaryStorageServiceName(repositoryName),
                               BinaryStorage.class,
                               repositoryService.getBinaryStorageInjector());
 
@@ -337,13 +334,20 @@ public class AddRepository extends AbstractAddStepHandler {
         indexBuilder.addDependency(dataDirServiceName, String.class, defaultIndexService.getDataDirectoryPathInjector());
         indexBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
+        // Add the default binary storage service which will provide the binary configuration
+        BinaryStorageService defaultBinaryService = new BinaryStorageService(repositoryName);
+        ServiceBuilder<BinaryStorage> binaryStorageBuilder = target.addService(ModeShapeServiceNames.binaryStorageServiceName(
+                repositoryName), defaultBinaryService);
+        binaryStorageBuilder.addDependency(dataDirServiceName, String.class, defaultBinaryService.getDataDirectoryPathInjector());
+        binaryStorageBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
+
         // Now add the controller for the RepositoryService ...
         builder.setInitialMode(ServiceController.Mode.ACTIVE);
         newControllers.add(builder.install());
         newControllers.add(referenceBuilder.install());
         newControllers.add(binderBuilder.install());
         newControllers.add(indexBuilder.install());
-
+        newControllers.add(binaryStorageBuilder.install());
     }
 
     protected void writeIndexingBackendConfiguration( final OperationContext context,

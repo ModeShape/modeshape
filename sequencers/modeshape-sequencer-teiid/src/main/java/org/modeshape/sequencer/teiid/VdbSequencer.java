@@ -187,7 +187,7 @@ public class VdbSequencer extends Sequencer {
                 try {
                     vdbStream.close();
                 } catch (final Exception e) {
-                    getLogger().warn(TeiidI18n.errorClosingVdbFile.text(inputProperty.getPath(), e.getMessage()), e);
+                    getLogger().warn(e, TeiidI18n.errorClosingVdbFile.text(inputProperty.getPath(), e.getMessage()));
                 }
             }
         }

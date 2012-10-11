@@ -35,37 +35,34 @@ import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
 public class BinaryStorageService implements Service<BinaryStorage> {
 
-    private final Injector<CacheContainer> binaryManagerInjector;
-    private final InjectedValue<String> binaryStorageBasePathInjector = new InjectedValue<String>();
+    private final Injector<CacheContainer> binaryManagerInjector = new Injector<CacheContainer>() {
+        @Override
+        public void inject( CacheContainer value ) throws InjectionException {
+            binaryStorage.setCacheContainer(value);
+        }
 
-    private final EditableDocument binaryConfig;
-    protected final BinaryStorage binaryStorage;
+        @Override
+        public void uninject() {
+            binaryStorage.setCacheContainer(null);
+        }
+    };
+    private final InjectedValue<String> binaryStorageBasePathInjector = new InjectedValue<String>();
+    private final InjectedValue<String> dataDirectoryPathInjector = new InjectedValue<String>();
+
+    private final String repositoryName;
+    private final BinaryStorage binaryStorage;
 
     public BinaryStorageService( String repositoryName,
                                  EditableDocument binaryConfig ) {
-        this.binaryConfig = binaryConfig;
-        this.binaryStorage = new BinaryStorage(repositoryName, binaryConfig);
-        this.binaryManagerInjector = new Injector<CacheContainer>() {
-            @Override
-            public void inject( CacheContainer value ) throws InjectionException {
-                binaryStorage.setCacheContainer(value);
-            }
-
-            @Override
-            public void uninject() {
-                binaryStorage.setCacheContainer(null);
-            }
-        };
+        this.repositoryName = repositoryName;
+        this.binaryStorage = new BinaryStorage(binaryConfig);
     }
 
-    /**
-     * Get the repository name.
-     * 
-     * @return repositoryName
-     */
-    public String getRepositoryName() {
-        return binaryStorage.getRepositoryName();
+    public BinaryStorageService( String repositoryName ) {
+        this.repositoryName = repositoryName;
+        this.binaryStorage = null;
     }
+
 
     private String getBinaryStorageBasePath() {
         return appendDirDelim(binaryStorageBasePathInjector.getOptionalValue());
@@ -94,7 +91,14 @@ public class BinaryStorageService implements Service<BinaryStorage> {
 
     @Override
     public BinaryStorage getValue() throws IllegalStateException, IllegalArgumentException {
-        return binaryStorage;
+        return binaryStorage != null ? binaryStorage : BinaryStorage.defaultStorage(repositoryName, dataDirectoryPathInjector.getValue());
+    }
+
+    /**
+     * @return the injector used to retrieve the path to the data directory
+     */
+    public InjectedValue<String> getDataDirectoryPathInjector() {
+        return dataDirectoryPathInjector;
     }
 
     @Override
@@ -107,6 +111,7 @@ public class BinaryStorageService implements Service<BinaryStorage> {
 
         String binaryStorageBasePath = getBinaryStorageBasePath();
         if (binaryStorageBasePath != null) {
+            EditableDocument binaryConfig = binaryStorage.getBinaryConfiguration();
             // Set the binary storage directory ...
             String relativePath = binaryConfig.getString(FieldName.DIRECTORY);
             if (relativePath != null) {

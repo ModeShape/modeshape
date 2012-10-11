@@ -36,6 +36,7 @@ import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.modeshape.jboss.service.BinaryStorage;
 import org.modeshape.jboss.service.BinaryStorageService;
@@ -72,16 +73,19 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
         EditableDocument binaries = Schematic.newDocument();
         writeBinaryStorageConfiguration(repositoryName, context, model, binaries);
 
-        // Now create the service ...
+        // Remove the default service, added by "AddRepository"
+        ServiceName serviceName = ModeShapeServiceNames.binaryStorageServiceName(repositoryName);
+        context.removeService(serviceName);
+
+        // Now create the new service ...
         BinaryStorageService service = new BinaryStorageService(repositoryName, binaries);
 
-        ServiceBuilder<BinaryStorage> builder = target.addService(ModeShapeServiceNames.binaryStorageServiceName(repositoryName),
-                                                                  service);
+        ServiceBuilder<BinaryStorage> builder = target.addService(serviceName, service);
+
         // Add dependencies to the various data directories ...
         addControllersAndDependencies(repositoryName, service, builder, newControllers, target);
         builder.setInitialMode(ServiceController.Mode.ACTIVE);
         newControllers.add(builder.install());
-
     }
 
     protected abstract void writeBinaryStorageConfiguration( String repositoryName,
