@@ -24,49 +24,41 @@
 package org.modeshape.jboss.service;
 
 import org.infinispan.manager.CacheContainer;
-import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.Schematic;
+import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.jcr.RepositoryConfiguration;
 
 /**
  * 
  */
 public class BinaryStorage {
 
-    private final String repositoryName;
-    private final Document binaryConfig;
+    private final EditableDocument binaryConfig;
     private CacheContainer cacheContainer;
 
-    BinaryStorage( String repositoryName,
-                   Document binaryConfig ) {
-        this.repositoryName = repositoryName;
+    BinaryStorage( EditableDocument binaryConfig ) {
         this.binaryConfig = binaryConfig;
     }
 
-    /**
-     * @return repositoryName
-     */
-    public String getRepositoryName() {
-        return repositoryName;
-    }
-
-    /**
-     * @return binaryConfig
-     */
-    public Document getBinaryConfiguration() {
+    EditableDocument getBinaryConfiguration() {
         return binaryConfig;
     }
 
-    /**
-     * @return cacheContainer
-     */
-    public CacheContainer getCacheContainer() {
+    CacheContainer getCacheContainer() {
         return cacheContainer;
     }
 
-    /**
-     * @param cacheContainer Sets cacheContainer to the specified value.
-     */
     void setCacheContainer( CacheContainer cacheContainer ) {
         this.cacheContainer = cacheContainer;
+    }
+
+    static BinaryStorage defaultStorage(String repositoryName, String dataDirPath) {
+        // By default, store the binaries in the data directory ...
+        EditableDocument binaries = Schematic.newDocument();
+        binaries.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.BINARY_STORAGE_TYPE_FILE);
+        binaries.set(RepositoryConfiguration.FieldName.DIRECTORY, dataDirPath + "/" + repositoryName + "/binaries");
+
+        return new BinaryStorage(binaries);
     }
 
 }

@@ -100,6 +100,15 @@
                     </security>
                 </datasource>
 
+                <datasource jndi-name="java:jboss/datasources/ModeshapeBinaryDS" pool-name="ModeshapeBinaryDS" enabled="true" use-java-context="true">
+                    <connection-url>jdbc:h2:mem:modeshapeBinary;DB_CLOSE_DELAY=-1</connection-url>
+                    <driver>h2</driver>
+                    <security>
+                        <user-name>sa</user-name>
+                        <password>sa</password>
+                    </security>
+                </datasource>
+
                 <datasource jndi-name="java:/datasources/ModeShapeDS" enabled="true" use-java-context="true" pool-name="ModeShapeDS">
                     <connection-url>jdbc:jcr:jndi:jcr?repositoryName=artifacts</connection-url>
                     <driver>modeshape</driver>
@@ -197,10 +206,14 @@
                     <file-store passivation="false" path="modeshape/store/preconfiguredRepository" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
                 <local-cache name="indexes" batching="true">
-                    <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
-                    <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
                     <file-store passivation="false" path="modeshape/store/indexes-ispn" relative-to="jboss.server.data.dir" purge="false"/>
+                </local-cache>
+            </cache-container>
+            <cache-container name="binary-cache-container" default-cache="binary-fs">
+                <local-cache name="binary-fs">
+                    <transaction mode="NON_XA"/>
+                    <file-store passivation="false" path="modeshape/binary-store/ispn" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
             </cache-container>
         </subsystem>
@@ -287,6 +300,8 @@
                 <text-extractors>
                     <text-extractor name="tika-extractor" classname="tika" module="org.modeshape.extractor.tika"/>
                 </text-extractors>
+                <cache-binary-storage data-cache-name="binary-fs" cache-container="binary-cache-container"/>
+                <!--<db-binary-storage data-source-jndi-name="java:jboss/datasources/ModeshapeBinaryDS"/>-->
             </repository>
             <repository name="preconfiguredRepository">
                <workspaces>

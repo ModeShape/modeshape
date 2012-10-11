@@ -23,8 +23,6 @@
  */
 package org.modeshape.jboss.service;
 
-import java.util.ArrayList;
-import java.util.List;
 import javax.jcr.RepositoryException;
 import javax.transaction.TransactionManager;
 import org.infinispan.manager.CacheContainer;
@@ -57,8 +55,8 @@ import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
-import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
-import org.modeshape.jcr.RepositoryConfiguration.QueryRebuild;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A <code>RepositoryService</code> instance is the service responsible for initializing a {@link JcrRepository} in the ModeShape
@@ -173,18 +171,10 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
             assert queryConfig != null;
 
             // Get the binary storage configuration ...
-            Document binaryConfig = null;
             BinaryStorage binaryStorageConfig = binaryStorageInjector.getValue();
-            if (binaryStorageConfig != null) {
-                binaryConfig = binaryStorageConfig.getBinaryConfiguration();
-            } else {
-                // By default, store the binaries in the data directory ...
-                EditableDocument binaries = Schematic.newDocument();
-                binaries.set(FieldName.TYPE, FieldValue.BINARY_STORAGE_TYPE_FILE);
-                String dataDirPath = dataDirectoryPathInjector.getValue();
-                binaries.set(FieldName.DIRECTORY, dataDirPath + "/" + repositoryName + "/binaries");
-                binaryConfig = binaries;
-            }
+            assert binaryStorageConfig != null;
+            Document binaryConfig = binaryStorageConfig.getBinaryConfiguration();
+            assert binaryConfig != null;
 
             // Create a new configuration document ...
             EditableDocument config = Schematic.newDocument(repositoryConfiguration.getDocument());

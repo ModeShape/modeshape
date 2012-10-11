@@ -380,7 +380,6 @@ public class RepositoryConfiguration {
         public static final String PATH_EXPRESSIONS = "pathExpressions";
         public static final String JDBC_DRIVER_CLASS = "driverClass";
         public static final String CONNECTION_URL = "connectionURL";
-        public static final String DATASOURCE_JNDI_LOCATION = "jndiLocation";
         /**
          * The name for the field (under "sequencing" and "query") specifying the thread pool that should be used for sequencing.
          * By default, all repository instances will use the same thread pool within the engine. To use a dedicated thread pool
@@ -1084,7 +1083,7 @@ public class RepositoryConfiguration {
                 String connectionURL = binaryStorage.getString(FieldName.CONNECTION_URL);
                 String username = binaryStorage.getString(FieldName.USER_NAME);
                 String password = binaryStorage.getString(FieldName.USER_PASSWORD);
-                String dataSourceJndi = binaryStorage.getString(FieldName.DATASOURCE_JNDI_LOCATION);
+                String dataSourceJndi = binaryStorage.getString(FieldName.DATA_SOURCE_JNDI_NAME);
                 if (StringUtil.isBlank(dataSourceJndi)) {
                     // Use the connection properties ...
                     store = new DatabaseBinaryStore(driverClass, connectionURL, username, password);

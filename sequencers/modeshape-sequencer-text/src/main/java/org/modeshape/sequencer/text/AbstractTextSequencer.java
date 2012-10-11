@@ -83,7 +83,7 @@ public abstract class AbstractTextSequencer extends Sequencer {
                     reader.close();
                 }
             } catch (Exception e) {
-                getLogger().warn("Cannot close reader ", e);
+                getLogger().warn(e, "Cannot close reader ");
             }
         }
         return true;

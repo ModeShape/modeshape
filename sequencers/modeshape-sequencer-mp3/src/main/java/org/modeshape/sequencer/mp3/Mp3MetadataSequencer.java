@@ -94,7 +94,7 @@ public class Mp3MetadataSequencer extends Sequencer {
             return true;
 
         } catch (Exception e) {
-            getLogger().error("Cannot sequence mp3 content ", e);
+            getLogger().error(e, "Cannot sequence mp3 content ");
             return false;
         }
     }
