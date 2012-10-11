@@ -1230,7 +1230,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected final void postInitialize() throws Exception {
             this.sequencers.initialize();
 
-            //import the preconfigured node types before the initial content, in case the latter use custom types
+            // import the preconfigured node types before the initial content, in case the latter use custom types
             this.nodeTypesImporter.importNodeTypes();
 
             // import initial content for each of the workspaces (this has to be done after the running state has "started"
@@ -1238,7 +1238,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 @Override
                 public Void call() throws Exception {
                     for (String workspaceName : repositoryCache().getWorkspaceNames()) {
-                        initialContentImporter.importInitialContent(workspaceName);
+                        initialContentImporter().importInitialContent(workspaceName);
                     }
                     return null;
                 }
@@ -1363,7 +1363,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return backupService;
         }
 
-        protected final InitialContentImporter initialContentImporter() {
+        final InitialContentImporter initialContentImporter() {
             return initialContentImporter;
         }
 

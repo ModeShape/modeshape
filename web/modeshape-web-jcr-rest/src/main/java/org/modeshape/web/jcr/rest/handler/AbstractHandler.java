@@ -177,6 +177,11 @@ public abstract class AbstractHandler {
         return isRootPath(path) ? session.getRootNode() : session.getItem(path);
     }
 
+    protected Node nodeWithId( String id,
+                               Session session ) throws RepositoryException {
+        return session.getNodeByIdentifier(id);
+    }
+
     protected boolean isRootPath( String path ) {
         return "/".equals(path) || "".equals(path);
     }
@@ -217,20 +222,22 @@ public abstract class AbstractHandler {
                                      int depth ) throws RepositoryException {
         String nodeUrl = RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, node.getPath());
         boolean isRoot = node.getPath().equals("/");
-        String parentUrl = isRoot ?
-                RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, "..", "..") : RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, node.getParent().getPath());
+        String parentUrl = isRoot ? RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, "..", "..") : RestHelper.urlFrom(baseUrl,
+                                                                                                                    ITEMS_METHOD_NAME,
+                                                                                                                    node.getParent()
+                                                                                                                        .getPath());
 
         RestNode restNode = new RestNode(node.getName(), nodeUrl, parentUrl);
         restNode.addCustomProperty(NODE_ID_CUSTOM_PROPERTY, node.getIdentifier());
 
-        //add the properties
-        for (PropertyIterator propertyIterator = node.getProperties(); propertyIterator.hasNext(); ) {
+        // add the properties
+        for (PropertyIterator propertyIterator = node.getProperties(); propertyIterator.hasNext();) {
             Property property = propertyIterator.nextProperty();
             restNode.addJcrProperty(createRestProperty(session, property, baseUrl));
         }
 
-        //add the children
-        for (NodeIterator nodeIterator = node.getNodes(); nodeIterator.hasNext(); ) {
+        // add the children
+        for (NodeIterator nodeIterator = node.getNodes(); nodeIterator.hasNext();) {
             Node childNode = nodeIterator.nextNode();
             RestNode restChild = null;
             if (depth != 0) {

@@ -23,22 +23,9 @@
  */
 package org.modeshape.web.jcr.rest;
 
-import javax.ws.rs.core.MediaType;
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-import org.junit.After;
-import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
-import org.modeshape.common.util.IoUtil;
-import org.modeshape.common.util.StringUtil;
-import org.modeshape.web.jcr.rest.handler.AbstractHandler;
-import sun.net.www.protocol.http.AuthCacheImpl;
-import sun.net.www.protocol.http.AuthCacheValue;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,19 +39,33 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import javax.ws.rs.core.MediaType;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.StringUtil;
+import org.modeshape.web.jcr.rest.handler.AbstractHandler;
+import sun.net.www.protocol.http.AuthCacheImpl;
+import sun.net.www.protocol.http.AuthCacheValue;
 
 /**
  * Test of the ModeShape JCR REST resource. Note that this test case uses a very low-level API to construct requests and
  * deconstruct the responses. Users are encouraged to use a higher-level library to communicate with the REST server (e.g., Apache
  * HTTP Commons).
- *
+ * 
  * @author ?
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 @SuppressWarnings( "restriction" )
 public class JcrResourcesTest {
 
-    private static final List<String> JSON_PROPERTIES_IGNORE_EQUALS = Arrays.asList("jcr:uuid", "jcr:score",
+    private static final List<String> JSON_PROPERTIES_IGNORE_EQUALS = Arrays.asList("jcr:uuid",
+                                                                                    "jcr:score",
                                                                                     AbstractHandler.NODE_ID_CUSTOM_PROPERTY);
 
     /**
@@ -223,8 +224,7 @@ public class JcrResourcesTest {
     @Test
     public void shouldPostNodeToValidPathWithPrimaryType() throws Exception {
         // http://localhost:8090/resources/v1/repo/default/items/testNode
-        doPost(nodeWithPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isCreated().isJSONObjectLikeFile(
-                nodeWithPrimaryTypeResponse());
+        doPost(nodeWithPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isCreated().isJSONObjectLikeFile(nodeWithPrimaryTypeResponse());
     }
 
     protected String nodeWithPrimaryTypeRequest() {
@@ -238,8 +238,8 @@ public class JcrResourcesTest {
     @Test
     public void shouldPostNodeToValidPathWithoutPrimaryType() throws Exception {
         // http://localhost:8090/resources/v1/repo/default/items/testNode
-        doPost(nodeWithoutPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isCreated().isJSONObjectLikeFile(
-                nodeWithoutPrimaryTypeResponse());
+        doPost(nodeWithoutPrimaryTypeRequest(), itemsUrl(TEST_NODE)).isCreated()
+                                                                    .isJSONObjectLikeFile(nodeWithoutPrimaryTypeResponse());
     }
 
     protected String nodeWithoutPrimaryTypeRequest() {
@@ -485,6 +485,10 @@ public class JcrResourcesTest {
         return RestHelper.urlFrom(REPOSITORY_NAME + "/default/" + RestHelper.ITEMS_METHOD_NAME, additionalPathSegments);
     }
 
+    protected String nodesUrl( String... additionalPathSegments ) {
+        return RestHelper.urlFrom(REPOSITORY_NAME + "/default/" + RestHelper.NODES_METHOD_NAME, additionalPathSegments);
+    }
+
     protected String queryUrl( String... additionalPathSegments ) {
         return RestHelper.urlFrom(REPOSITORY_NAME + "/default/" + RestHelper.QUERY_METHOD_NAME, additionalPathSegments);
     }
@@ -560,7 +564,7 @@ public class JcrResourcesTest {
             writer.append(lineSeparator).flush();
             try {
                 byte[] buffer = new byte[1024];
-                for (int length = 0; (length = is.read(buffer)) > 0; ) {
+                for (int length = 0; (length = is.read(buffer)) > 0;) {
                     output.write(buffer, 0, length);
                 }
                 output.flush();
@@ -642,7 +646,7 @@ public class JcrResourcesTest {
             JSONObject expectedJSON = (JSONObject)expected;
             JSONObject actualJSON = (JSONObject)actual;
 
-            for (Iterator<?> keyIterator = expectedJSON.keys(); keyIterator.hasNext(); ) {
+            for (Iterator<?> keyIterator = expectedJSON.keys(); keyIterator.hasNext();) {
                 String key = keyIterator.next().toString();
                 assertTrue("Actual JSON object does not contain key: " + key, actualJSON.has(key));
 
@@ -700,6 +704,7 @@ public class JcrResourcesTest {
     protected final class Response {
 
         private final HttpURLConnection connection;
+        private String responseString;
 
         protected Response( HttpURLConnection connection ) {
             this.connection = connection;
@@ -765,7 +770,17 @@ public class JcrResourcesTest {
             String expectedJSONString = IoUtil.read(fileStream(pathToExpectedJSON));
             JSONObject expectedObject = new JSONObject(expectedJSONString);
 
-            JSONObject responseObject = new JSONObject(responseString(connection));
+            JSONObject responseObject = new JSONObject(responseString());
+            assertJSON(expectedObject, responseObject);
+
+            return this;
+        }
+
+        protected Response isJSONObjectLike( Response otherResponse ) throws Exception {
+            isJSON();
+            JSONObject expectedObject = otherResponse.json();
+
+            JSONObject responseObject = new JSONObject(responseString());
             assertJSON(expectedObject, responseObject);
 
             return this;
@@ -776,16 +791,44 @@ public class JcrResourcesTest {
             String expectedJSONString = IoUtil.read(fileStream(pathToExpectedJSON));
             JSONArray expectedArray = new JSONArray(expectedJSONString);
 
-            JSONArray responseObject = new JSONArray(responseString(connection));
+            JSONArray responseObject = new JSONArray(responseString());
             assertJSON(expectedArray, responseObject);
 
             return this;
+        }
+
+        protected String hasNodeIdentifier() throws Exception {
+            JSONObject responseObject = new JSONObject(responseString());
+            String id = responseObject.getString("id");
+            assertNotNull(id);
+            assertTrue(id.trim().length() != 0);
+            return id;
         }
 
         protected Response copyInputStream( OutputStream destination ) throws IOException {
             assert destination != null;
             IoUtil.write(connection.getInputStream(), destination);
             return this;
+        }
+
+        protected JSONObject json() throws Exception {
+            return new JSONObject(responseString());
+        }
+
+        protected String responseString() throws IOException {
+            if (responseString == null) {
+                responseString = JcrResourcesTest.this.responseString(connection);
+            }
+            return responseString;
+        }
+
+        @Override
+        public String toString() {
+            try {
+                return responseString();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

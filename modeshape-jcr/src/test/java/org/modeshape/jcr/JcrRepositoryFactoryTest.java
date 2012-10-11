@@ -23,19 +23,19 @@
  */
 package org.modeshape.jcr;
 
-import javax.jcr.Repository;
-import javax.jcr.RepositoryException;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import org.junit.After;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import org.junit.Test;
-import org.modeshape.jcr.api.RepositoryFactory;
 import java.util.Collections;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
+import org.junit.After;
+import org.junit.Test;
+import org.modeshape.jcr.api.RepositoryFactory;
 
 public class JcrRepositoryFactoryTest extends AbstractTransactionalTest {
 
@@ -82,13 +82,13 @@ public class JcrRepositoryFactoryTest extends AbstractTransactionalTest {
     }
 
     @Test
-    public void shouldNotReturnRepositoryForInvalidUrl() throws RepositoryException {
+    public void shouldNotReturnRepositoryForInvalidUrl() {
         try {
             url = "file:?Test Repository Source";
             repositoryFor(Collections.singletonMap(RepositoryFactory.URL, url));
             fail("Expected repository exception");
         } catch (RepositoryException e) {
-            //expected
+            // expected
         }
 
         try {
@@ -96,7 +96,7 @@ public class JcrRepositoryFactoryTest extends AbstractTransactionalTest {
             repositoryFor(Collections.singletonMap(RepositoryFactory.URL, url));
             fail("Expected repository exception");
         } catch (RepositoryException e) {
-            //expected
+            // expected
         }
 
         try {
@@ -104,15 +104,15 @@ public class JcrRepositoryFactoryTest extends AbstractTransactionalTest {
             repositoryFor(Collections.singletonMap(RepositoryFactory.URL, url));
             fail("Expected repository exception");
         } catch (RepositoryException e) {
-            //expected
+            // expected
         }
     }
 
     protected Repository repositoryFor( Map<String, String> parameters ) throws RepositoryException {
         Repository repository;
         for (javax.jcr.RepositoryFactory factory : ServiceLoader.load(javax.jcr.RepositoryFactory.class)) {
-                repository = factory.getRepository(parameters);
-                if (repository != null) return repository;
+            repository = factory.getRepository(parameters);
+            if (repository != null) return repository;
         }
 
         return null;

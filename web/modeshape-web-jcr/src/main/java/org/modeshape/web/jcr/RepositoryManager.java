@@ -23,6 +23,16 @@
  */
 package org.modeshape.web.jcr;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.Set;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -37,16 +47,6 @@ import org.modeshape.jcr.api.NamedRepository;
 import org.modeshape.jcr.api.Repositories;
 import org.modeshape.jcr.api.RepositoryFactory;
 import org.modeshape.jcr.api.ServletCredentials;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.Set;
 
 /**
  * Manager for accessing JCR Repository instances. This manager uses the idiomatic way to find JCR Repository (and ModeShape
@@ -151,9 +151,9 @@ public class RepositoryManager {
         return repository;
     }
 
-    /**
-     * //TODO author=Horia Chiorean date=10/8/12 description=This is only temporary and should be removed after 3.0.Final
-     * //when the design of the repository containers/repository factories has cleared
+    /*
+     * //TODO author=Horia Chiorean date=10/8/12 description=This is only temporary and should be removed after 3.0.Final //when
+     * the design of the repository containers/repository factories has cleared
      */
     public static Set<String> getJcrRepositoryNames() {
         Set<String> jndiNames = searchJNDIForRepositoryNames(immutableFactoryParams);
@@ -203,7 +203,7 @@ public class RepositoryManager {
         return names;
     }
 
-    /**
+    /*
      * //TODO author=Horia Chiorean date=10/8/12 description=This is only temporary and should be removed after 3.0.Final
      * //when the design of the repository containers/repository factories has cleared
      */
@@ -212,7 +212,6 @@ public class RepositoryManager {
             return Collections.emptySet();
         }
         String urlString = parameters.get(RepositoryFactory.URL).toString();
-
 
         URL url = null;
         try {
