@@ -404,11 +404,11 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         Response response = doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
         String id = response.hasNodeIdentifier();
         // Get by ID ...
-        response = doGet(nodesUrl(id)).isJSONObjectLike(response);
+        doGet(nodesUrl(id)).isJSONObjectLike(response);
 
         // Update by ID ...
-        response = doPut("v2/put/node_with_binary_property.json", nodesUrl(id)).isOk()
-                                                                               .isJSONObjectLikeFile("v2/put/node_with_binary_property_after_edit.json");
+        doPut(nodeWithBinaryProperty(), nodesUrl(id)).isOk().isJSONObjectLikeFile(
+                nodeBinaryPropertyAfterEdit());
 
         // Delete by ID ...
         doDelete(nodesUrl(id)).isDeleted();
