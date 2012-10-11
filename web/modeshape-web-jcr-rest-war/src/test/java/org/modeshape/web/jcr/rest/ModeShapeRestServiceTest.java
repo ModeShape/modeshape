@@ -379,6 +379,7 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         doPost("v2/post/multiple_nodes_request.json", itemsUrl()).isOk();
         doPut("v2/put/multiple_nodes_edit_request.json", itemsUrl()).isOk()
                                                                     .isJSONArrayLikeFile("v2/put/multiple_nodes_edit_response.json");
+        // System.out.println("*****  GET: \n" + doGet(itemsUrl(TEST_NODE)));
     }
 
     @Test
@@ -404,13 +405,15 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         Response response = doPost((String)null, itemsUrl(TEST_NODE)).isCreated();
         String id = response.hasNodeIdentifier();
         // Get by ID ...
-        doGet(nodesUrl(id)).isJSONObjectLike(response);
+        response = doGet(nodesUrl(id)).isJSONObjectLike(response);
+        // System.out.println("**** GET-BY-ID: \n" + response);
 
         // Update by ID ...
-        doPut(nodeWithBinaryProperty(), nodesUrl(id)).isOk().isJSONObjectLikeFile(
-                nodeBinaryPropertyAfterEdit());
+        response = doPut(nodeWithBinaryProperty(), nodesUrl(id)).isOk().isJSONObjectLikeFile(nodeBinaryPropertyAfterEdit());
+        // System.out.println("**** GET-BY-ID: \n" + response);
 
         // Delete by ID ...
-        doDelete(nodesUrl(id)).isDeleted();
+        response = doDelete(nodesUrl(id)).isDeleted();
+        // System.out.println("**** GET-BY-ID: \n" + response);
     }
 }

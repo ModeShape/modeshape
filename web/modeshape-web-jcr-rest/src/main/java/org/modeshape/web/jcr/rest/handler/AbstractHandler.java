@@ -38,7 +38,7 @@ public abstract class AbstractHandler {
     /**
      * The name of the custom property which will contain the node id
      */
-    public static final String NODE_ID_CUSTOM_PROPERTY = "id";
+    public static final String NODE_ID_CUSTOM_PROPERTY = RestNode.ID_FIELD_NAME;
 
     /**
      * Name to be used when the workspace name is empty string as {@code "//"} is not a valid path.
@@ -226,9 +226,7 @@ public abstract class AbstractHandler {
                                                                                                                     ITEMS_METHOD_NAME,
                                                                                                                     node.getParent()
                                                                                                                         .getPath());
-
-        RestNode restNode = new RestNode(node.getName(), nodeUrl, parentUrl);
-        restNode.addCustomProperty(NODE_ID_CUSTOM_PROPERTY, node.getIdentifier());
+        RestNode restNode = new RestNode(node.getName(), node.getIdentifier(), nodeUrl, parentUrl);
 
         // add the properties
         for (PropertyIterator propertyIterator = node.getProperties(); propertyIterator.hasNext();) {
@@ -244,9 +242,8 @@ public abstract class AbstractHandler {
                 restChild = createRestNode(session, childNode, baseUrl, depth - 1);
             } else {
                 String childUrl = RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, childNode.getPath());
-                restChild = new RestNode(nodeName(childNode), childUrl, nodeUrl);
+                restChild = new RestNode(nodeName(childNode), childNode.getIdentifier(), childUrl, nodeUrl);
             }
-            restChild.addCustomProperty(NODE_ID_CUSTOM_PROPERTY, childNode.getIdentifier());
             restNode.addChild(restChild);
         }
         return restNode;
