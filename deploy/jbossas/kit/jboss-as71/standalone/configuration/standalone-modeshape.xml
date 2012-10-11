@@ -196,6 +196,12 @@
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
                     <file-store passivation="false" path="modeshape/store/preconfiguredRepository" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
+                <local-cache name="indexes" batching="true">
+                    <!-- ModeShape requires transactions -->
+                    <transaction mode="NON_XA"/>
+                    <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
+                    <file-store passivation="false" path="modeshape/store/indexes-ispn" relative-to="jboss.server.data.dir" purge="false"/>
+                </local-cache>
             </cache-container>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:modeshape:1.0">
@@ -298,7 +304,7 @@
                 <node-types>
                     <node-type>custom.cnd</node-type>
                 </node-types>
-                <cache-index-storage cache-container-jndi-name="java:jboss/infinispan/container/modeshape"/>
+                <cache-index-storage cache-container-jndi-name="java:jboss/infinispan/container/modeshape" data-cache-name="indexes"/>
             </repository>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>
