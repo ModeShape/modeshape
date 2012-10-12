@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.NoSuchWorkspaceException;
-import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.junit.Before;
@@ -78,12 +77,18 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
     }
 
     @Test
+    @Ignore
     public void shouldBackupRepositoryWithMultipleWorkspaces() throws Exception {
         loadContent();
         Problems problems = session().getWorkspace().getRepositoryManager().backupRepository(backupDirectory);
         assertNoProblems(problems);
 
+        assertContentInWorkspace(repository(), "default");
+        assertContentInWorkspace(repository(), "ws2");
+        assertContentInWorkspace(repository(), "ws3");
+
         // Start up a new repository
+        ((LocalEnvironment) environment).setShared(true);
         RepositoryConfiguration config = RepositoryConfiguration.read("config/restore-repo-config.json").with(environment);
         JcrRepository newRepository = new JcrRepository(config);
         try {
@@ -94,11 +99,39 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
             try {
                 Problems restoreProblems = newSession.getWorkspace().getRepositoryManager().restoreRepository(backupDirectory);
                 assertNoProblems(restoreProblems);
+
+                assertContentInWorkspace(newRepository, null);
+                assertContentInWorkspace(newRepository, "ws2");
+                assertContentInWorkspace(newRepository, "ws3");
             } finally {
                 newSession.logout();
             }
         } finally {
             newRepository.shutdown().get(10, TimeUnit.SECONDS);
+        }
+    }
+
+    private void assertContentInWorkspace( JcrRepository newRepository,
+                                           String workspaceName ) throws RepositoryException {
+        JcrSession session = workspaceName != null ? newRepository.login(workspaceName) : newRepository.login();
+
+        try {
+            session.getNode("/Cars/Hybrid");
+            session.getNode("/Cars/Hybrid/Toyota Prius");
+            session.getNode("/Cars/Hybrid/Toyota Highlander");
+            session.getNode("/Cars/Hybrid/Nissan Altima");
+            session.getNode("/Cars/Sports/Aston Martin DB9");
+            session.getNode("/Cars/Sports/Infiniti G37");
+            session.getNode("/Cars/Luxury/Cadillac DTS");
+            session.getNode("/Cars/Luxury/Bentley Continental");
+            session.getNode("/Cars/Luxury/Lexus IS350");
+            session.getNode("/Cars/Utility/Land Rover LR2");
+            session.getNode("/Cars/Utility/Land Rover LR3");
+            session.getNode("/Cars/Utility/Hummer H3");
+            session.getNode("/Cars/Utility/Ford F-150");
+            session.getNode("/Cars/Utility/Toyota Land Cruiser");
+        } finally {
+            session.logout();
         }
     }
 
@@ -110,9 +143,9 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
     }
 
     protected void loadContent() throws Exception {
-        importIntoWorkspace("default", "io/generated-1-system-view.xml");
-        importIntoWorkspace("ws2", "io/generated-2-system-view.xml");
-        importIntoWorkspace("ws3", "io/generated-3-system-view.xml");
+        importIntoWorkspace("default", "io/cars-system-view.xml");
+        importIntoWorkspace("ws2", "io/cars-system-view.xml");
+        importIntoWorkspace("ws3", "io/cars-system-view.xml");
     }
 
     protected void importIntoWorkspace( String workspaceName,
@@ -127,13 +160,7 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
             session = repository().login(workspaceName);
         }
         try {
-            Node testNode = session().getRootNode().addNode("testContent-" + workspaceName);
-            session().save();
-            Stopwatch sw = new Stopwatch();
-            sw.start();
-            importContent(testNode, resourcePath, ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
-            sw.stop();
-            // System.out.println("Time to import: " + sw.getTotalDuration());
+            importContent(session.getRootNode(), resourcePath, ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
         } finally {
             session.logout();
         }

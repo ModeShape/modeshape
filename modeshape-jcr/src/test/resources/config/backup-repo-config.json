@@ -1,14 +1,12 @@
 {
     "name" : "Backup Repository",
     "storage" : {
-        "transactionManagerLookup" = "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
+        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
     },
     "query" : {
         "indexStorage" : {
-            "type" : "filesystem",
-            "location" : "target/backupArea/backRepo/indexes",
-            "lockingStrategy" : "simple",
-            "fileSystemAccessType" : "auto"
+            "type" : "ram"
         }
-    }
+    },
+    "node-types" : ["cnd/cars.cnd"]
 }
