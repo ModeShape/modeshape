@@ -21,15 +21,14 @@
               async-max-queue-size="1"
               analyzer-classname="org.apache.lucene.analysis.standard.StandardAnalyzer"
               analyzer-module="something" />
-            
-    <cache-index-storage 
+
+      <cache-index-storage
               format="LUCENE_CURRENT"
               data-cache-name="sample-index-data"
               metadata-cache-name="sample-index-metadata"
               lock-cache-name="sample-index-locks"
-              cache-container-jndi-name="modeshape">
-    </cache-index-storage>
-    <sequencers>
+              cache-container="modeshape"/>
+      <sequencers>
       <sequencer name="modeshape-sequencer-ddl" classname="ddl" path-expression="//a/b" />
       <sequencer name="modeshape-sequencer-java" classname="java" path-expression="//a/b" />
     </sequencers>

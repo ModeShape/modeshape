@@ -23,6 +23,7 @@
  */
 package org.modeshape.jboss.service;
 
+import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.document.EditableDocument;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
@@ -35,12 +36,12 @@ public class IndexStorageService implements Service<IndexStorage> {
     private final InjectedValue<String> indexStorageBasePathInjector = new InjectedValue<String>();
     private final InjectedValue<String> indexStorageSourceBasePathInjector = new InjectedValue<String>();
     private final InjectedValue<String> dataDirectoryPathInjector = new InjectedValue<String>();
-
+    private final InjectedValue<CacheContainer> cacheContainerInjectedValue = new InjectedValue<CacheContainer>();
 
     private final IndexStorage indexStorage;
     private final String repositoryName;
 
-    public IndexStorageService(String repositoryName) {
+    public IndexStorageService( String repositoryName ) {
         this.indexStorage = null;
         this.repositoryName = repositoryName;
     }
@@ -48,16 +49,7 @@ public class IndexStorageService implements Service<IndexStorage> {
     public IndexStorageService( String repositoryName,
                                 EditableDocument queryConfig ) {
         this.repositoryName = repositoryName;
-        this.indexStorage = new IndexStorage(repositoryName, queryConfig);
-    }
-
-    /**
-     * Get the repository name.
-     * 
-     * @return repositoryName
-     */
-    public String getRepositoryName() {
-        return indexStorage.getRepositoryName();
+        this.indexStorage = new IndexStorage(queryConfig);
     }
 
     private String getIndexStorageBasePath() {
@@ -96,12 +88,19 @@ public class IndexStorageService implements Service<IndexStorage> {
         return dataDirectoryPathInjector;
     }
 
+    /**
+     * @return the injector used to set a custom ISPN cache container
+     */
+    public InjectedValue<CacheContainer> getCacheContainerInjectedValue() {
+        return cacheContainerInjectedValue;
+    }
+
     @Override
     public IndexStorage getValue() throws IllegalStateException, IllegalArgumentException {
-        if (indexStorage == null) {
-            return IndexStorage.defaultStorage(this.repositoryName, dataDirectoryPathInjector.getValue());
-        }
-        return indexStorage;
+        IndexStorage result = indexStorage == null ? IndexStorage.defaultStorage(this.repositoryName, dataDirectoryPathInjector
+                .getValue()) : indexStorage;
+        result.setCacheContainer(cacheContainerInjectedValue.getOptionalValue());
+        return result;
     }
 
     @Override

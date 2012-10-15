@@ -416,10 +416,10 @@
         </xs:documentation>
       </xs:annotation>
     </xs:attribute>
-    <xs:attribute name="cache-container-jndi-name" type="xs:string" use="required">
+    <xs:attribute name="cache-container" type="xs:string" use="required">
       <xs:annotation>
-        <xs:documentation>The name in JNDI for the Infinispan cache container that contains the caches for storing
-          the indexes.</xs:documentation>
+        <xs:documentation>The name of the Infinispan cache container in which the caches can be found
+            for storing the indexes. This should be different from the repository cache and should have batching enabled</xs:documentation>
       </xs:annotation>
     </xs:attribute>
     <xs:attribute name="chunk-size" type="xs:int" default="16834">

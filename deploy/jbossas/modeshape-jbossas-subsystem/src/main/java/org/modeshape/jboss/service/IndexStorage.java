@@ -23,6 +23,7 @@
  */
 package org.modeshape.jboss.service;
 
+import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.RepositoryConfiguration;
@@ -32,12 +33,13 @@ import org.modeshape.jcr.RepositoryConfiguration;
  */
 public class IndexStorage {
 
-    private final String repositoryName;
     private final EditableDocument queryConfig;
+    /**
+     * Optional member, which will be set only if an ISPN cache is configured
+     */
+    private CacheContainer cacheContainer;
 
-    IndexStorage( String repositoryName,
-                  EditableDocument queryConfig ) {
-        this.repositoryName = repositoryName;
+    IndexStorage( EditableDocument queryConfig ) {
         this.queryConfig = queryConfig;
     }
 
@@ -52,20 +54,21 @@ public class IndexStorage {
         indexStorage.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.INDEX_STORAGE_FILESYSTEM);
         indexStorage.set(RepositoryConfiguration.FieldName.INDEX_STORAGE_LOCATION, dataDirPath + "/" + repositoryName + "/indexes");
 
-        return new IndexStorage(repositoryName, query);
-    }
-
-    /**
-     * @return repositoryName
-     */
-    public String getRepositoryName() {
-        return repositoryName;
+        return new IndexStorage(query);
     }
 
     /**
      * @return the repository's query configuration
      */
-    public EditableDocument getQueryConfiguration() {
+    EditableDocument getQueryConfiguration() {
         return queryConfig;
+    }
+
+    CacheContainer getCacheContainer() {
+        return cacheContainer;
+    }
+
+    void setCacheContainer( CacheContainer cacheContainer ) {
+        this.cacheContainer = cacheContainer;
     }
 }

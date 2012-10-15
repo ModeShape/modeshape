@@ -43,7 +43,6 @@ public class ModelKeys {
     static final String BINARY_STORAGE_TYPE = "binary-storage-type";
     static final String STORAGE_TYPE = "storage-type";
     static final String CACHE_CONTAINER = "cache-container";
-    static final String CACHE_CONTAINER_JNDI_NAME = "cache-container-jndi-name";
     static final String CACHE_NAME = "cache-name";
     static final String CLUSTER_NAME = "cluster-name";
     static final String CLUSTER_STACK = "cluster-stack";

@@ -233,11 +233,11 @@ public class ModelAttributes {
                                                                                                                           .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                           .build();
 
-    public static final SimpleAttributeDefinition CACHE_CONTAINER_JNDI_NAME = new MappedAttributeDefinitionBuilder(
-                                                                                                                   ModelKeys.CACHE_CONTAINER_JNDI_NAME,
-                                                                                                                   ModelType.STRING).setXmlName(Attribute.CACHE_CONTAINER_JNDI_NAME.getLocalName())
+    public static final SimpleAttributeDefinition INDEX_STORAGE_CACHE_CONTAINER = new MappedAttributeDefinitionBuilder(
+                                                                                                                   ModelKeys.CACHE_CONTAINER,
+                                                                                                                   ModelType.STRING).setXmlName(Attribute.CACHE_CONTAINER.getLocalName())
                                                                                                                                     .setAllowExpression(false)
-                                                                                                                                    .setAllowNull(true)
+                                                                                                                                    .setAllowNull(false)
                                                                                                                                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                                     .build();
 
@@ -663,7 +663,7 @@ public class ModelAttributes {
         CONNECTION_FACTORY_JNDI_NAME, QUEUE_JNDI_NAME, COPY_BUFFER_SIZE, RETRY_MARKER_LOOKUP, RETRY_INITIALIZE_PERIOD};
 
     public static final AttributeDefinition[] CACHE_INDEX_STORAGE_ATTRIBUTES = {INDEX_STORAGE_TYPE, INDEX_FORMAT,
-        DATA_CACHE_NAME, METADATA_CACHE_NAME, LOCK_CACHE_NAME, CACHE_CONTAINER_JNDI_NAME, CHUNK_SIZE,};
+        DATA_CACHE_NAME, METADATA_CACHE_NAME, LOCK_CACHE_NAME, INDEX_STORAGE_CACHE_CONTAINER, CHUNK_SIZE,};
 
     public static final AttributeDefinition[] CUSTOM_INDEX_STORAGE_ATTRIBUTES = {INDEX_STORAGE_TYPE, INDEX_FORMAT, CLASSNAME,
         MODULE,};
