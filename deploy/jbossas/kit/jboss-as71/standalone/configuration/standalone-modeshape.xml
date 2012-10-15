@@ -205,15 +205,17 @@
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
                     <file-store passivation="false" path="modeshape/store/preconfiguredRepository" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
-                <local-cache name="indexes" batching="true">
-                    <transaction mode="NON_XA"/>
-                    <file-store passivation="false" path="modeshape/store/indexes-ispn" relative-to="jboss.server.data.dir" purge="false"/>
-                </local-cache>
             </cache-container>
             <cache-container name="binary-cache-container" default-cache="binary-fs">
                 <local-cache name="binary-fs">
                     <transaction mode="NON_XA"/>
                     <file-store passivation="false" path="modeshape/binary-store/ispn" relative-to="jboss.server.data.dir" purge="false"/>
+                </local-cache>
+            </cache-container>
+            <cache-container name="index-cache-container" default-cache="index-data">
+                <local-cache name="index-data" batching="true">
+                    <transaction mode="NON_XA"/>
+                    <file-store passivation="false" path="modeshape/index-cache-container" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
             </cache-container>
         </subsystem>
@@ -319,7 +321,7 @@
                 <node-types>
                     <node-type>custom.cnd</node-type>
                 </node-types>
-                <cache-index-storage cache-container-jndi-name="java:jboss/infinispan/container/modeshape" data-cache-name="indexes"/>
+                <cache-index-storage cache-container="index-cache-container" data-cache-name="index-data"/>
             </repository>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>

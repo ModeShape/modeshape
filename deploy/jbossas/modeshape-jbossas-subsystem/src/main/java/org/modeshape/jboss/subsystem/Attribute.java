@@ -43,7 +43,6 @@ public enum Attribute {
     ASYNC_MAX_QUEUE_SIZE("async-max-queue-size"),
     BATCH_SIZE("batch-size"),
     CACHE_CONTAINER("cache-container"),
-    CACHE_CONTAINER_JNDI_NAME("cache-container-jndi-name"),
     CACHE_NAME("cache-name"),
     CHANNEL_NAME("channel-name"),
     CHUNK_SIZE("chunk-size"),

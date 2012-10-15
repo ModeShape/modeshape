@@ -23,19 +23,29 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.document.EditableDocument;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceBuilder;
+import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceTarget;
+import org.modeshape.jboss.service.IndexStorage;
+import org.modeshape.jboss.service.IndexStorageService;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
+import java.util.List;
 
 /**
- * 
+ *
  */
 public class AddCacheIndexStorage extends AbstractAddIndexStorage {
 
     public static final AddCacheIndexStorage INSTANCE = new AddCacheIndexStorage();
+
+    private String cacheContainerName = null;
 
     private AddCacheIndexStorage() {
     }
@@ -43,11 +53,11 @@ public class AddCacheIndexStorage extends AbstractAddIndexStorage {
     @Override
     protected void writeIndexStorageConfiguration( final OperationContext context,
                                                    final ModelNode storage,
-                                                   EditableDocument indexStorage ) throws OperationFailedException {
+                                                   EditableDocument indexStorage) throws OperationFailedException {
         indexStorage.set(FieldName.TYPE, FieldValue.INDEX_STORAGE_INFINISPAN);
 
-        String containerJndiName = ModelAttributes.CACHE_CONTAINER_JNDI_NAME.resolveModelAttribute(context, storage).asString();
-        indexStorage.set(FieldName.INDEX_STORAGE_INFINISPAN_CONTAINER, containerJndiName);
+        this.cacheContainerName = ModelAttributes.INDEX_STORAGE_CACHE_CONTAINER.resolveModelAttribute(context, storage).asString();
+        indexStorage.set(FieldName.CACHE_CONFIGURATION, cacheContainerJNDIBinding(cacheContainerName));
 
         int chunkSize = ModelAttributes.CHUNK_SIZE.resolveModelAttribute(context, storage).asInt();
         indexStorage.set(FieldName.INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES, chunkSize);
@@ -67,11 +77,28 @@ public class AddCacheIndexStorage extends AbstractAddIndexStorage {
             indexStorage.set(FieldName.INDEX_STORAGE_INFINISPAN_META_CACHE, metaCache);
         }
     }
-    
+
+    @Override
+    protected void addControllersAndDependencies( String repositoryName,
+                                                  IndexStorageService service,
+                                                  List<ServiceController<?>> newControllers,
+                                                  ServiceBuilder<IndexStorage> builder,
+                                                  ServiceTarget target ) throws OperationFailedException {
+        //there is a cache container different from the cache container of the repository, so we need to inject it
+        //in order for it to be started preemptively
+        builder.addDependency(ServiceName.JBOSS.append("infinispan", this.cacheContainerName), CacheContainer.class,
+                              service.getCacheContainerInjectedValue());
+    }
+
     @Override
     protected void populateModel( ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {
         populate(operation, model, ModelKeys.CACHE_INDEX_STORAGE, ModelAttributes.CACHE_INDEX_STORAGE_ATTRIBUTES);
+    }
+
+
+    private String cacheContainerJNDIBinding( String cacheContainerName ) {
+        return "java:jboss/infinispan/container/" + cacheContainerName;
     }
 
 }

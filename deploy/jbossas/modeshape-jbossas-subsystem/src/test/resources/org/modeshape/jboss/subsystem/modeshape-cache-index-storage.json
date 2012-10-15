@@ -37,7 +37,7 @@
         "text-extractor" : null,
         "use-anonymous-upon-failed-authentication" : false,
         "index-storage" : {"INDEXES" : {
-            "cache-container-jndi-name" : "modeshape",
+            "cache-container" : "modeshape",
             "chunk-size" : null,
             "data-cache-name" : "sample-index-data",
             "index-format" : "LUCENE_CURRENT",
