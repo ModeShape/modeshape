@@ -358,6 +358,9 @@
         <version.jar.plugin>2.4</version.jar.plugin>
         <version.javadoc.plugin>2.8.1</version.javadoc.plugin>
         <version.bundle.plugin>2.3.7</version.bundle.plugin>
+
+        <!--The name of the modeshape-client artifact used by tools-->
+        <client.artifactId>modeshape-client</client.artifactId>
     </properties>
 
     <profiles>

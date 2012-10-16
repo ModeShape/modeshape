@@ -197,7 +197,6 @@
                                     <descriptors>
                                         <descriptor>src/assembly/kit.xml</descriptor>
                                     </descriptors>
-                                    <attach>false</attach>
                                 </configuration>
                             </execution>
                             <!--Creates an assembly which will be included in the binary distribution -->
@@ -223,14 +222,10 @@
                     </plugin>
 
                     <!--
-                       The following ant tasks are used to remove any duplicates from the modeshape-jdbc jar.
-                       Unfortunately, maven has a bug in this regard and there's no way to resolve duplicates using
-                       the 2.0.x version.  So, by using ant, the duplicate files (i.e., META-INF/..)  can
-                       be eliminated.
+                       The following ant tasks are used to remove any duplicates from the modeshape-jdbc jar and to merge the
+                       services.
 
                        Note:  this is all changing in future releases.
-
-                       test dups:  unzip -l modeshape-jdbc-${project.version}-http-jar-with-dependencies.jar | awk '{print $NF}' | sort | uniq -c | grep -v "1 "
                     -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -322,7 +317,7 @@
                                         </concat>
 
                                         <delete file="target/modeshape-jdbc-${project.version}-jar-with-dependencies.jar"/>
-                                        <jar destfile="target/modeshape-jdbc-${project.version}-jar-with-dependencies.jar"
+                                        <jar destfile="target/${client.artifactId}-${project.version}.jar"
                                              basedir="target/temploc">
                                             <manifest>
                                                 <attribute name="Implementation-URL" value="${project.url}"/>
@@ -360,11 +355,10 @@
                                     <goal>install-file</goal>
                                 </goals>
                                 <configuration>
-                                    <file>${project.build.directory}/modeshape-jdbc-${project.version}-jar-with-dependencies.jar</file>
+                                    <file>${project.build.directory}/${client.artifactId}-${project.version}.jar</file>
                                     <groupId>${project.groupId}</groupId>
-                                    <artifactId>${project.artifactId}</artifactId>
+                                    <artifactId>${client.artifactId}</artifactId>
                                     <version>${project.version}</version>
-                                    <classifier>jar-with-dependencies</classifier>
                                     <packaging>jar</packaging>
                                 </configuration>
                             </execution>

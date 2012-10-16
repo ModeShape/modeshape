@@ -102,7 +102,6 @@
                 <include>commons-logging:commons-logging:jar</include>
                 <include>com.googlecode.juniversalchardet:juniversalchardet:jar</include>
                 <include>javassist:javassist:jar</include>
-                <include>net.sf.scannotation:*:jar</include>
                 <include>org.ccil.cowan.tagsoup:*:jar</include>
                 <include>org.gagravarr:*:jar</include>
                 <include>com.googlecode.mp4parser:*:jar</include>

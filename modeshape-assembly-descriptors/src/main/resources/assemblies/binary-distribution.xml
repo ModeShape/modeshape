@@ -60,9 +60,8 @@
             <scope>compile</scope>
             <unpack>false</unpack>
             <includes>
-                <include>*:modeshape-jdbc:*:jar-with-dependencies</include>
+                <include>*:modeshape-client:*</include>
             </includes>
-            <outputFileNameMapping>modeshape-client-${project.version}.jar</outputFileNameMapping>
             <outputDirectory>/client</outputDirectory>
         </dependencySet>
     </dependencySets>

@@ -329,10 +329,10 @@
                     <type>zip</type>
                 </dependency>
 
+                <!--The client artifact is produced during the assembly profile, by the modeshape-jdbc profile -->
                 <dependency>
                     <groupId>org.modeshape</groupId>
-                    <artifactId>modeshape-jdbc</artifactId>
-                    <classifier>jar-with-dependencies</classifier>
+                    <artifactId>${client.artifactId}</artifactId>
                     <version>${project.version}</version>
                 </dependency>
 
@@ -400,6 +400,7 @@
                                 <dependencySourceExclude>org.modeshape:modeshape-integration-tests:*</dependencySourceExclude>
                                 <dependencySourceExclude>org.modeshape:modeshape-jbossas-integration-tests:*</dependencySourceExclude>
                                 <dependencySourceExclude>org.modeshape:*:test:*</dependencySourceExclude>
+                                <dependencySourceExclude>org.modeshape:modeshape-client:*</dependencySourceExclude>
                             </dependencySourceExcludes>
 
                             <links>
