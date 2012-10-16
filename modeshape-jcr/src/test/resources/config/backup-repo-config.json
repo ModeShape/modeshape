@@ -1,11 +1,20 @@
 {
     "name" : "Backup Repository",
     "storage" : {
-        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
+        "cacheName" : "backupRepository",
+        "cacheConfiguration" : "config/backup-repo-config-infinispan.xml",
+        "binaryStorage" : {
+            "type" : "file",
+            "directory": "target/backupArea/backRepo/binaries",
+            "minimumBinarySizeInBytes" : 40
+        }
     },
     "query" : {
         "indexStorage" : {
-            "type" : "ram"
+            "type" : "filesystem",
+            "location" : "target/backupArea/backRepo/indexes",
+            "lockingStrategy" : "simple",
+            "fileSystemAccessType" : "auto"
         }
     },
     "node-types" : ["cnd/cars.cnd"]

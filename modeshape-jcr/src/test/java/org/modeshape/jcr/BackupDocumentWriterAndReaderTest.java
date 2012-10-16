@@ -60,6 +60,8 @@ public class BackupDocumentWriterAndReaderTest {
     public void setUp() throws Exception {
         testDirectory = new File("target/backupArea/writerTests");
         testDirectory.mkdirs();
+        FileUtil.delete(testDirectory);
+        testDirectory.mkdirs();
         problems = new SimpleProblems();
     }
 

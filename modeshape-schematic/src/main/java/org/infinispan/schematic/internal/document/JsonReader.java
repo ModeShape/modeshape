@@ -271,7 +271,7 @@ public class JsonReader {
             @Override
             public Document nextDocument() throws ParsingException {
                 if (tokenizer.isFinished()) return null;
-                return parser.parseDocument();
+                return parser.parseDocument(false);
             }
         };
     }
@@ -353,11 +353,23 @@ public class JsonReader {
         /**
          * Parse the stream for the next JSON document.
          * 
-         * @return the document
+         * @return the document, or null if there are no more documents
          * @throws ParsingException if there is a problem parsing the value
          */
         public Document parseDocument() throws ParsingException {
-            return parseDocument(null);
+            return parseDocument(null, true);
+        }
+
+        /**
+         * Parse the stream for the next JSON document.
+         * 
+         * @param failIfNotValidDocument true if this method should throw an exception if the stream does not contain a valid
+         *        document, or false if null should be returned if there is no valid document on the stream
+         * @return the document, or null if there are no more documents
+         * @throws ParsingException if there is a problem parsing the value
+         */
+        public Document parseDocument( boolean failIfNotValidDocument ) throws ParsingException {
+            return parseDocument(null, failIfNotValidDocument);
         }
 
         protected BasicDocument newDocument() {
@@ -368,12 +380,19 @@ public class JsonReader {
          * Parse the stream for the next JSON document.
          * 
          * @param hasReservedFieldNames the flag that should be set if this document contains field names that are reserved
-         * @return the document
+         * @param failIfNotValidDocument true if this method should throw an exception if the stream does not contain a valid
+         *        document, or false if null should be returned if there is no valid document on the stream
+         * @return the document, or null if there are no more documents
          * @throws ParsingException if there is a problem parsing the value
          */
-        protected Document parseDocument( AtomicBoolean hasReservedFieldNames ) throws ParsingException {
+        protected Document parseDocument( AtomicBoolean hasReservedFieldNames,
+                                          boolean failIfNotValidDocument ) throws ParsingException {
             if (tokens.nextUsefulChar() != '{') {
-                throw tokens.error("JSON documents must begin with a '{' character");
+                if (failIfNotValidDocument) {
+                    throw tokens.error("JSON documents must begin with a '{' character");
+                }
+                // otherwise just return ...
+                return null;
             }
             BasicDocument doc = newDocument();
             do {
@@ -424,7 +443,8 @@ public class JsonReader {
             BasicArray array = new BasicArray();
             do {
                 // Peek at the next character on the stream ...
-                switch (tokens.peek()) {
+                char c = tokens.peek();
+                switch (c) {
                     case 0:
                         throw tokens.error("JSON arrays must end with a ']' character");
                     case ']':
@@ -478,7 +498,7 @@ public class JsonReader {
                 case '{':
                     // Nested object ...
                     AtomicBoolean hasReservedFieldNames = new AtomicBoolean();
-                    Document doc = parseDocument(hasReservedFieldNames);
+                    Document doc = parseDocument(hasReservedFieldNames, true);
                     if (!hasReservedFieldNames.get()) {
                         return doc;
                     }
@@ -1150,9 +1170,11 @@ public class JsonReader {
                                 }
                                 break;
                             default:
-                                // No other characters are valid escaped sequences ...
-                                throw error("Unknown escaped character '" + c + "' at line " + lineNumber + ", column "
-                                            + columnNumber);
+                                // No other characters are valid escaped sequences, so this is actually just a backslash
+                                // followed by the current character c. So append the backslash ...
+                                sb.append('\\');
+                                // then the character ...
+                                break;
                         }
                         sb.append(c);
                         break;

@@ -1,5 +1,7 @@
 package org.infinispan.schematic.internal.document;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -242,7 +244,7 @@ public class CompactJsonWriterTest {
             System.out.println(actual);
             System.out.println(expected);
         }
-        assert expected.equals(actual);
+        assertThat(actual, is(expected));
     }
 
 }

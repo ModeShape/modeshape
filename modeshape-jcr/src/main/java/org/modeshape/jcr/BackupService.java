@@ -418,20 +418,25 @@ public class BackupService {
                 try {
                     // PHASE 1:
                     // Perform the backup of the repository cache content ...
+                    int counter = 0;
                     Sequence<String> sequence = InfinispanUtil.getAllKeys(documentStore.getCache());
                     while (true) {
                         String key = sequence.next();
                         if (key == null) break;
                         SchematicEntry entry = documentStore.get(key);
-                        if (entry != null) writeToContentArea(entry);
+                        if (entry != null) {
+                            writeToContentArea(entry);
+                            ++counter;
+                        }
                     }
+                    LOGGER.debug("Wrote {0} documents to {1}", counter, backupDirectory.getAbsolutePath());
 
                     // PHASE 2:
                     // Write out the repository metadata document (which may have not changed) ...
                     NodeKey metadataKey = repositoryCache.getRepositoryMetadataDocumentKey();
                     SchematicEntry entry = documentStore.get(metadataKey.toString());
                     writeToContentArea(entry);
-                } catch (Exception e){
+                } catch (Exception e) {
                     I18n msg = JcrI18n.problemObtainingDocumentsToBackup;
                     this.problems.addError(msg, repositoryName(), backupLocation(), e.getMessage());
                 } finally {
@@ -449,13 +454,16 @@ public class BackupService {
                 // PHASE 3:
                 // Perform the backup of the binary store ...
                 try {
+                    int counter = 0;
                     for (BinaryKey binaryKey : binaryStore.getAllBinaryKeys()) {
                         try {
                             writeToContentArea(binaryKey, binaryStore.getInputStream(binaryKey));
+                            ++counter;
                         } catch (BinaryStoreException e) {
                             problems.addError(JcrI18n.problemsWritingBinaryToBackup, binaryKey, backupLocation(), e.getMessage());
                         }
                     }
+                    LOGGER.debug("Wrote {0} binary values to {1}", counter, binaryDirectory.getAbsolutePath());
                 } catch (BinaryStoreException e) {
                     I18n msg = JcrI18n.problemsGettingBinaryKeysFromBinaryStore;
                     problems.addError(msg, repositoryName(), backupLocation(), e.getMessage());
@@ -463,13 +471,16 @@ public class BackupService {
 
                 // PHASE 4:
                 // Write all of the binary files that were added during the changes made while we worked ...
+                int counter = 0;
                 for (BinaryKey binaryKey : observer.getUsedBinaryKeys()) {
                     try {
                         writeToContentArea(binaryKey, binaryStore.getInputStream(binaryKey));
+                        ++counter;
                     } catch (BinaryStoreException e) {
                         problems.addError(JcrI18n.problemsWritingBinaryToBackup, binaryKey, backupLocation(), e.getMessage());
                     }
                 }
+                LOGGER.debug("Wrote {0} recent binary values to {1}", counter, binaryDirectory.getAbsolutePath());
 
                 // PHASE 5:
                 // And now write all binary keys for the binaries that were recorded as unused by the observer ...
@@ -568,7 +579,7 @@ public class BackupService {
                                            repositoryName(),
                                            backupLocation(),
                                            e2.getMessage());
-                } catch (CacheLoaderException e2){
+                } catch (CacheLoaderException e2) {
                     I18n msg = JcrI18n.problemObtainingDocumentsToBackup;
                     this.problems.addError(msg, repositoryName(), backupLocation(), e2.getMessage());
                 } catch (ExecutionException e2) {
@@ -629,11 +640,17 @@ public class BackupService {
 
         protected void restoreDocuments( File directory ) {
             BackupDocumentReader reader = new BackupDocumentReader(directory, DOCUMENTS_FILENAME_PREFIX, problems);
+            LOGGER.debug("Restoring documents from {0}", directory.getAbsolutePath());
+            int count = 0;
             while (true) {
                 Document doc = reader.read();
                 if (doc == null) break;
                 documentStore.put(doc);
+
+                ++count;
+                LOGGER.debug("restoring {0} doc {1}", (count + 1), doc);
             }
+            LOGGER.debug("Restored {0} documents from {1}", count, directory.getAbsolutePath());
         }
     }
 }

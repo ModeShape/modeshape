@@ -71,29 +71,26 @@ public final class BackupDocumentReader {
      */
     public Document read() {
         try {
-            if (stream == null) {
-                // Open the stream to the next file ...
-                stream = openNextFile();
+            do {
                 if (stream == null) {
-                    // No more files to read ...
-                    return null;
+                    // Open the stream to the next file ...
+                    stream = openNextFile();
+                    if (stream == null) {
+                        // No more files to read ...
+                        return null;
+                    }
+                    documents = Json.readMultiple(stream);
                 }
-                documents = Json.readMultiple(stream);
-            }
-            try {
-                return documents.nextDocument();
-            } catch (IOException e) {
+                try {
+                    Document doc = documents.nextDocument();
+                    if (doc != null) return doc;
+                } catch (IOException e) {
+                    // We'll just continue ...
+                }
                 // Close the stream and try opening the next stream ...
                 close(stream);
-                stream = openNextFile();
-                if (stream == null) {
-                    // No more files to read ...
-                    return null;
-                }
-                // And try reading this new stream ...
-                documents = Json.readMultiple(stream);
-                return documents.nextDocument();
-            }
+                stream = null;
+            } while (true);
         } catch (IOException e) {
             problems.addError(JcrI18n.problemsWritingDocumentToBackup, currentFile.getAbsolutePath(), e.getMessage());
             return null;

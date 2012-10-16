@@ -37,6 +37,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Array;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
@@ -166,7 +168,47 @@ public class CompactJsonWriter implements JsonWriter {
 
     protected void write( String value,
                           Writer writer ) throws IOException {
-        writer.append('"').append(value).append('"');
+        // We need to escape certain characters found within the string ...
+        writer.append('"');
+        CharacterIterator iter = new StringCharacterIterator(value);
+        for (char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
+            switch (c) {
+                case '"':
+                case '\'':
+                    // Escape the (single- or double-) quote characters ..
+                    writer.append('\\').append(c);
+                    break;
+                case '\\':
+                    // The character might be an escape sequence, which we need to esacape ...
+                    writer.append('\\');
+                    char next = iter.next();
+                    switch (next) {
+                        case CharacterIterator.DONE:
+                            // This was the last character, so it's not escaped ..
+                            writer.append(c);
+                            break;
+                        case 'b':
+                        case 'f':
+                        case 'n':
+                        case 'r':
+                        case 't':
+                        case 'u':
+                            // This IS an escape sequence, and we've already written the backslash to escape this
+                            // sequence. So next we can write the sequence.
+                            writer.append('\\').append(next);
+                            break;
+                        default:
+                            // It's not an escape sequence that we care about. We've already written the backslash,
+                            // so just write the character ...
+                            writer.append(next);
+                    }
+                    break;
+                default:
+                    writer.append(c);
+                    break;
+            }
+        }
+        writer.append('"');
     }
 
     protected void write( Symbol value,
