@@ -415,7 +415,15 @@ public abstract class JoinComponent extends ProcessingComponent {
                     // support for the join conditions.
                     //
                     // See http://en.wikipedia.org/wiki/Join_(SQL)#Inner_join
-                    return leftValue != null && leftValue.equals(rightValue);
+                    if (leftValue == null) return false;
+                    if (leftValue instanceof Object[]) {
+                        // Look for a single match in one of the values ...
+                        for (Object leftV : (Object[])leftValue) {
+                            if (leftV.equals(rightValue)) return true;
+                        }
+                        return false;
+                    }
+                    return leftValue.equals(rightValue);
                 }
             };
         } else if (condition instanceof ChildNodeJoinCondition) {
@@ -476,6 +484,36 @@ public abstract class JoinComponent extends ProcessingComponent {
             };
         }
         throw new IllegalArgumentException();
+    }
+
+    protected static Comparator<Object> arrayAwareComparator( final Comparator<Object> comparator ) {
+        return new Comparator<Object>() {
+            @Override
+            public int compare( Object o1,
+                                Object o2 ) {
+                // Standard equi-joins treat nulls differently than one might expect:
+                //
+                // "NULL will never match any other value (not even NULL itself), unless the join condition
+                // explicitly uses the IS NULL or IS NOT NULL predicates." JCR doesn't have "IS NULL" or "IS NOT NULL"
+                // support for the join conditions.
+                //
+                // See http://en.wikipedia.org/wiki/Join_(SQL)#Inner_join
+                if (o1 == null) return -1;
+                if (o2 == null) return 1;
+                if (o1 instanceof Object[]) {
+                    // Look for a single match in one of the values ...
+                    int firstResult = 0;
+                    boolean first = false;
+                    for (Object leftValue : (Object[])o1) {
+                        int result = comparator.compare(leftValue, o2);
+                        if (result == 0) return 0;
+                        if (first) firstResult = result;
+                    }
+                    return firstResult;
+                }
+                return comparator.compare(o1, o2);
+            }
+        };
     }
 
     /**

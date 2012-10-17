@@ -1455,15 +1455,16 @@ public class JcrSession implements Session {
      * session's root. This method is used for reference resolving.
      * 
      * @param key the node key; may be null
+     * @param rootKey the key of the root node in the workspace; may not be null
      * @return true if the node key is considered foreign, false otherwise.
      */
-    protected boolean isForeignKey( NodeKey key ) {
+    public static boolean isForeignKey( NodeKey key,
+                                        NodeKey rootKey ) {
         if (key == null) {
             return false;
         }
         String nodeWorkspaceKey = key.getWorkspaceKey();
 
-        NodeKey rootKey = cache().getRootKey();
         boolean sameWorkspace = rootKey.getWorkspaceKey().equals(nodeWorkspaceKey);
         boolean sameSource = rootKey.getSourceKey().equalsIgnoreCase(key.getSourceKey());
         return !sameWorkspace || !sameSource;
@@ -1473,11 +1474,35 @@ public class JcrSession implements Session {
      * Returns a string representing a node's identifier, based on whether the node is foreign or not.
      * 
      * @param key the node key; may be null
+     * @param rootKey the key of the root node in the workspace; may not be null
      * @return the identifier for the node; never null
      * @see javax.jcr.Node#getIdentifier()
      */
-    protected String nodeIdentifier( NodeKey key ) {
-        return isForeignKey(key) ? key.toString() : key.getIdentifier();
+    public static String nodeIdentifier( NodeKey key,
+                                         NodeKey rootKey ) {
+        return isForeignKey(key, rootKey) ? key.toString() : key.getIdentifier();
+    }
+
+    /**
+     * Checks if the node given key is foreign by comparing the source key & workspace key against the same keys from this
+     * session's root. This method is used for reference resolving.
+     * 
+     * @param key the node key; may be null
+     * @return true if the node key is considered foreign, false otherwise.
+     */
+    protected final boolean isForeignKey( NodeKey key ) {
+        return isForeignKey(key, cache.getRootKey());
+    }
+
+    /**
+     * Returns a string representing a node's identifier, based on whether the node is foreign or not.
+     * 
+     * @param key the node key; may be null
+     * @return the identifier for the node; never null
+     * @see javax.jcr.Node#getIdentifier()
+     */
+    protected final String nodeIdentifier( NodeKey key ) {
+        return nodeIdentifier(key, cache.getRootKey());
     }
 
     @Override
