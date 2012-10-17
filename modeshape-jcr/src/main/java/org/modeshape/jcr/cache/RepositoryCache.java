@@ -45,6 +45,7 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.ModeShape;
 import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.value.DateTime;
@@ -73,6 +74,13 @@ public class RepositoryCache implements Observable {
     private static final Logger LOGGER = Logger.getLogger(RepositoryCache.class);
 
     private static final String SYSTEM_METADATA_IDENTIFIER = "jcr:system/mode:metadata";
+    private static final String REPOSITORY_INFO_KEY = "repository:info";
+    private static final String REPOSITORY_NAME_FIELD_NAME = "repositoryName";
+    private static final String REPOSITORY_KEY_FIELD_NAME = "repositoryKey";
+    private static final String REPOSITORY_SOURCE_NAME_FIELD_NAME = "sourceName";
+    private static final String REPOSITORY_SOURCE_KEY_FIELD_NAME = "sourceKey";
+    private static final String REPOSITORY_CREATED_AT_FIELD_NAME = "createdAt";
+    private static final String REPOSITORY_CREATED_WITH_MODESHAPE_VERSION_FIELD_NAME = "createdWithModeShapeVersion";
 
     private final ExecutionContext context;
     private final RepositoryConfiguration configuration;
@@ -104,20 +112,44 @@ public class RepositoryCache implements Observable {
         this.configuration = configuration;
         this.database = database;
         this.minimumBinarySizeInBytes.set(configuration.getBinaryStorage().getMinimumBinarySizeInBytes());
-        this.name = configuration.getName();
-        this.repoKey = NodeKey.keyForSourceName(this.name);
-        this.sourceKey = NodeKey.keyForSourceName(configuration.getStoreName());
-        this.rootNodeId = RepositoryConfiguration.ROOT_NODE_ID;
-        this.logger = Logger.getLogger(getClass());
-        this.workspaceCachesByName = new ConcurrentHashMap<String, WorkspaceCache>();
         this.sessionContext = sessionContext;
         this.workspaceCacheManager = workspaceCacheContainer;
+        this.logger = Logger.getLogger(getClass());
+        this.rootNodeId = RepositoryConfiguration.ROOT_NODE_ID;
+        this.name = configuration.getName();
+        this.workspaceCachesByName = new ConcurrentHashMap<String, WorkspaceCache>();
+        this.workspaceNames = new CopyOnWriteArraySet<String>(configuration.getAllWorkspaceNames());
 
-        // Initialize the workspaces ..
+        SchematicEntry repositoryInfo = this.database.get(REPOSITORY_INFO_KEY);
+        if (repositoryInfo == null) {
+            // Must be a new repository (or one created before 3.0.0.Final) ...
+            this.repoKey = NodeKey.keyForSourceName(this.name);
+            this.sourceKey = NodeKey.keyForSourceName(configuration.getStoreName());
+            DateTime now = context.getValueFactories().getDateFactory().create();
+            // Store this info in the repository info document ...
+            EditableDocument doc = Schematic.newDocument();
+            doc.setString(REPOSITORY_NAME_FIELD_NAME, this.name);
+            doc.setString(REPOSITORY_KEY_FIELD_NAME, this.repoKey);
+            doc.setString(REPOSITORY_SOURCE_NAME_FIELD_NAME, configuration.getStoreName());
+            doc.setString(REPOSITORY_SOURCE_KEY_FIELD_NAME, this.sourceKey);
+            doc.setDate(REPOSITORY_CREATED_AT_FIELD_NAME, now.toDate());
+            doc.setString(REPOSITORY_CREATED_WITH_MODESHAPE_VERSION_FIELD_NAME, ModeShape.getVersion());
+            this.database.put(REPOSITORY_INFO_KEY, doc, null);
+            repositoryInfo = this.database.get(REPOSITORY_INFO_KEY);
+        } else {
+            // Get the repository key and source key from the repository info document ...
+            Document info = repositoryInfo.getContentAsDocument();
+            String repoName = info.getString(REPOSITORY_NAME_FIELD_NAME, this.name);
+            String sourceName = info.getString(REPOSITORY_SOURCE_NAME_FIELD_NAME, configuration.getStoreName());
+            this.repoKey = info.getString(REPOSITORY_KEY_FIELD_NAME, NodeKey.keyForSourceName(repoName));
+            this.sourceKey = info.getString(REPOSITORY_SOURCE_KEY_FIELD_NAME, NodeKey.keyForSourceName(sourceName));
+        }
+
         this.systemWorkspaceName = RepositoryConfiguration.SYSTEM_WORKSPACE_NAME;
         String systemWorkspaceKey = NodeKey.keyForWorkspaceName(systemWorkspaceName);
         this.systemMetadataKey = new NodeKey(this.sourceKey, systemWorkspaceKey, SYSTEM_METADATA_IDENTIFIER);
-        this.workspaceNames = new CopyOnWriteArraySet<String>(configuration.getAllWorkspaceNames());
+
+        // Initialize the workspaces ..
         refreshWorkspaces(false);
 
         // this.eventBus = eventBus;

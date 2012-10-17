@@ -28,11 +28,15 @@ import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryResult;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -46,6 +50,7 @@ import org.modeshape.jcr.api.Problems;
 public class RepositoryRestoreTest extends SingleUseAbstractTest {
 
     private File backupDirectory;
+    private File backupDirectory2;
 
     @Override
     protected RepositoryConfiguration createRepositoryConfiguration( String repositoryName,
@@ -58,8 +63,10 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
     public void beforeEach() throws Exception {
         File backupArea = new File("target/backupArea");
         backupDirectory = new File(backupArea, "repoBackups");
+        backupDirectory2 = new File(backupArea, "repoBackupsAfter");
         FileUtil.delete(backupArea);
         backupDirectory.mkdirs();
+        backupDirectory2.mkdirs();
         new File(backupArea, "backRepo").mkdirs();
         new File(backupArea, "restoreRepo").mkdirs();
         super.beforeEach();
@@ -77,7 +84,6 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @Ignore
     public void shouldBackupRepositoryWithMultipleWorkspaces() throws Exception {
         loadContent();
         Problems problems = session().getWorkspace().getRepositoryManager().backupRepository(backupDirectory);
@@ -88,7 +94,7 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
         assertContentInWorkspace(repository(), "ws3");
 
         // Start up a new repository
-        ((LocalEnvironment) environment).setShared(true);
+        ((LocalEnvironment)environment).setShared(true);
         RepositoryConfiguration config = RepositoryConfiguration.read("config/restore-repo-config.json").with(environment);
         JcrRepository newRepository = new JcrRepository(config);
         try {
@@ -99,15 +105,60 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
             try {
                 Problems restoreProblems = newSession.getWorkspace().getRepositoryManager().restoreRepository(backupDirectory);
                 assertNoProblems(restoreProblems);
-
-                assertContentInWorkspace(newRepository, null);
-                assertContentInWorkspace(newRepository, "ws2");
-                assertContentInWorkspace(newRepository, "ws3");
             } finally {
                 newSession.logout();
             }
+
+            // Before we assert the content, create a backup of it (for comparison purposes when debugging) ...
+            newSession = newRepository.login();
+            try {
+                Problems backupProblems = newSession.getWorkspace().getRepositoryManager().backupRepository(backupDirectory2);
+                assertNoProblems(backupProblems);
+            } finally {
+                newSession.logout();
+            }
+
+            assertWorkspaces(newRepository, "default", "ws2", "ws3");
+
+            assertContentInWorkspace(newRepository, null);
+            assertContentInWorkspace(newRepository, "ws2");
+            assertContentInWorkspace(newRepository, "ws3");
+            queryContentInWorkspace(newRepository, null);
         } finally {
             newRepository.shutdown().get(10, TimeUnit.SECONDS);
+        }
+    }
+
+    private void assertWorkspaces( JcrRepository newRepository,
+                                   String... workspaceNames ) throws RepositoryException {
+        Set<String> expectedNames = new HashSet<String>();
+        for (String expectedName : workspaceNames) {
+            expectedNames.add(expectedName);
+        }
+
+        Set<String> actualNames = new HashSet<String>();
+        JcrSession session = newRepository.login();
+        try {
+            for (String actualName : session.getWorkspace().getAccessibleWorkspaceNames()) {
+                actualNames.add(actualName);
+            }
+        } finally {
+            session.logout();
+        }
+
+        assertThat(actualNames, is(expectedNames));
+    }
+
+    private void queryContentInWorkspace( JcrRepository newRepository,
+                                          String workspaceName ) throws RepositoryException {
+        JcrSession session = newRepository.login();
+        try {
+            String statement = "SELECT [car:model], [car:year], [car:msrp] FROM [car:Car] AS car";
+            Query query = session.getWorkspace().getQueryManager().createQuery(statement, Query.JCR_SQL2);
+            QueryResult results = query.execute();
+            assertThat(results.getRows().getSize(), is(13L));
+        } finally {
+            session.logout();
         }
     }
 
@@ -116,6 +167,8 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
         JcrSession session = workspaceName != null ? newRepository.login(workspaceName) : newRepository.login();
 
         try {
+            session.getRootNode();
+            session.getNode("/Cars");
             session.getNode("/Cars/Hybrid");
             session.getNode("/Cars/Hybrid/Toyota Prius");
             session.getNode("/Cars/Hybrid/Toyota Highlander");

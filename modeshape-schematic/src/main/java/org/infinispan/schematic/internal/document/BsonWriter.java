@@ -41,6 +41,7 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Document.Field;
 import org.infinispan.schematic.document.MaxKey;
 import org.infinispan.schematic.document.MinKey;
+import org.infinispan.schematic.document.Null;
 import org.infinispan.schematic.document.ObjectId;
 import org.infinispan.schematic.document.Symbol;
 import org.infinispan.schematic.document.ThreadSafe;
@@ -149,6 +150,8 @@ public class BsonWriter {
             write(name, (MaxKey)object, output);
         } else if (object instanceof MinKey) {
             write(name, (MinKey)object, output);
+        } else if (object instanceof Null) { // do this last because it is rare ...
+            writeNull(name, output);
         } else {
             throw new RuntimeException("Unable to serialize type \'" + object.getClass() + "\" to BSON");
         }
