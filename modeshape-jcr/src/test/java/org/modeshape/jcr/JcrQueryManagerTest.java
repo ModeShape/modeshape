@@ -104,7 +104,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     private static final boolean WRITE_INDEXES_TO_FILE = false;
 
     /** The total number of nodes at or below '/jcr:system' */
-    protected static final int TOTAL_SYSTEM_NODE_COUNT = 243;
+    protected static final int TOTAL_SYSTEM_NODE_COUNT = 245;
 
     /** The total number of nodes excluding '/jcr:system' */
     protected static final int TOTAL_NON_SYSTEM_NODE_COUNT = 25;
@@ -163,6 +163,18 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         return prefixEach(allColumnNames(), selectorName + ".");
     }
 
+    protected static String[] typedColumnNames() {
+        return new String[] {"notion:booleanProperty", "notion:booleanProperty2", "notion:stringProperty",
+            "notion:booleanCreatedPropertyWithDefault", "notion:stringPropertyWithDefault",
+            "notion:booleanAutoCreatedPropertyWithDefault", "notion:stringAutoCreatedPropertyWithDefault", "notion:longProperty",
+            "notion:singleReference", "notion:multipleReferences", "jcr:primaryType", "jcr:mixinTypes", "jcr:name", "jcr:path",
+            "jcr:score", "mode:depth", "mode:localName"};
+    }
+
+    protected static String[] typedColumnNames( String selectorName ) {
+        return prefixEach(typedColumnNames(), selectorName + ".");
+    }
+
     protected static String[] searchColumnNames() {
         return new String[] {};
     }
@@ -208,22 +220,32 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
                 // Create a branch that contains some same-name-siblings ...
                 Node other = session.getRootNode().addNode("Other", "nt:unstructured");
                 Node a = other.addNode("NodeA", "nt:unstructured");
+                a.addMixin("mix:referenceable");
                 a.setProperty("something", "value3 quick brown fox");
                 a.setProperty("somethingElse", "value2");
                 a.setProperty("propA", "value1");
                 Node other2 = other.addNode("NodeA", "nt:unstructured");
+                other2.addMixin("mix:referenceable");
                 other2.setProperty("something", "value2 quick brown cat wearing hat");
                 other2.setProperty("propB", "value1");
                 other2.setProperty("propC", "value2");
                 Node other3 = other.addNode("NodeA", "nt:unstructured");
+                other3.addMixin("mix:referenceable");
                 other3.setProperty("something", new String[] {"black dog", "white dog"});
                 other3.setProperty("propB", "value1");
                 other3.setProperty("propC", "value3");
+                Value[] refValues = new Value[2];
+                refValues[0] = session.getValueFactory().createValue(other2);
+                refValues[1] = session.getValueFactory().createValue(other3);
+                other3.setProperty("otherNode", a);
+                other3.setProperty("otherNodes", refValues);
                 Node c = other.addNode("NodeC", "notion:typed");
                 c.setProperty("notion:booleanProperty", true);
                 c.setProperty("notion:booleanProperty2", false);
                 c.setProperty("propD", "value4");
                 c.setProperty("propC", "value1");
+                c.setProperty("notion:singleReference", a);
+                c.setProperty("notion:multipleReferences", refValues);
                 session.getRootNode().addNode("NodeB", "nt:unstructured").setProperty("myUrl", "http://www.acme.com/foo/bar");
                 session.save();
 
@@ -1197,6 +1219,131 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, new String[] {"car.jcr:name", "category.jcr:primaryType"});
     }
 
+    @FixFor( "MODE-1679" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindReferenceableNodes() throws RepositoryException {
+        String sql = "SELECT [jcr:uuid] FROM [mix:referenceable]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 4L);
+        assertResultsHaveColumns(result, new String[] {"jcr:uuid"});
+    }
+
+    @FixFor( "MODE-1679" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindJcrUuidOfNodeWithPathCriteria() throws RepositoryException {
+        String sql = "SELECT [jcr:uuid] FROM [mix:referenceable] AS node WHERE PATH(node) = '/Other/NodeA[2]'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+        assertResultsHaveColumns(result, new String[] {"jcr:uuid"});
+    }
+
+    @FixFor( "MODE-1679" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindNodesOfParticularPrimaryType() throws RepositoryException {
+        String sql = "SELECT [notion:singleReference], [notion:multipleReferences] FROM [notion:typed]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+        assertResultsHaveColumns(result, "notion:singleReference", "notion:multipleReferences");
+    }
+
+    @FixFor( "MODE-1679" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithSingleReferenceConstraintUsingSubquery() throws RepositoryException {
+        String sql = "SELECT [notion:singleReference] FROM [notion:typed] WHERE [notion:singleReference] IN ( SELECT [jcr:uuid] FROM [mix:referenceable] AS node WHERE PATH(node) = '/Other/NodeA')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+        assertResultsHaveColumns(result, "notion:singleReference");
+    }
+
+    @FixFor( "MODE-1679" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithSingleReferenceConstraintUsingStringIdentifier()
+        throws RepositoryException {
+        String id = session.getNode("/Other/NodeA").getIdentifier();
+        assertThat(id, is(notNullValue()));
+        String sql = "SELECT [notion:singleReference] FROM [notion:typed] AS typed WHERE [notion:singleReference] = '" + id + "'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+        assertResultsHaveColumns(result, "notion:singleReference");
+    }
+
+    @FixFor( "MODE-1679" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithSingleReferenceConstraintUsingJoin() throws RepositoryException {
+        String sql = "SELECT typed.* FROM [notion:typed] AS typed JOIN [mix:referenceable] AS target ON typed.[notion:singleReference] = target.[jcr:uuid] WHERE PATH(target) = '/Other/NodeA'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+        assertResultsHaveColumns(result, typedColumnNames("typed"));
+    }
+
+    @FixFor( "MODE-1679" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithMultipleReferenceConstraintUsingSubquery()
+        throws RepositoryException {
+        String sql = "SELECT [notion:multipleReferences] FROM [notion:typed] WHERE [notion:multipleReferences] IN ( SELECT [jcr:uuid] FROM [mix:referenceable] AS node WHERE PATH(node) = '/Other/NodeA[2]')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+        assertResultsHaveColumns(result, "notion:multipleReferences");
+    }
+
+    @FixFor( "MODE-1679" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithMultipleReferenceConstraintUsingStringIdentifier()
+        throws RepositoryException {
+        String id = session.getNode("/Other/NodeA[2]").getIdentifier();
+        assertThat(id, is(notNullValue()));
+        String sql = "SELECT [notion:multipleReferences] FROM [notion:typed] AS typed WHERE [notion:multipleReferences] = '" + id
+                     + "'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+        assertResultsHaveColumns(result, "notion:multipleReferences");
+    }
+
+    @FixFor( "MODE-1679" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithMultipleReferenceConstraintUsingJoin() throws RepositoryException {
+        String sql = "SELECT typed.* FROM [notion:typed] AS typed JOIN [mix:referenceable] AS target ON typed.[notion:multipleReferences] = target.[jcr:uuid] WHERE PATH(target) = '/Other/NodeA[2]'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+        assertResultsHaveColumns(result, typedColumnNames("typed"));
+    }
+
     @FixFor( "MODE-934" )
     @Test
     public void shouldParseQueryWithUnqualifiedPathInSelectOfJcrSql2Query() throws RepositoryException {
@@ -1403,7 +1550,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1259L);
+        assertResults(query, result, 1271L);
         assertResultsHaveColumns(result, new String[] {"myfirstnodetypes.jcr:path", "mythirdnodetypes.mode:depth",
             "mysecondnodetypes.mode:depth", "mythirdnodetypes.jcr:path", "mysecondnodetypes.jcr:path",
             "mythirdnodetypes.jcr:mixinTypes", "mythirdnodetypes.jcr:score", "myfirstnodetypes.jcr:score",

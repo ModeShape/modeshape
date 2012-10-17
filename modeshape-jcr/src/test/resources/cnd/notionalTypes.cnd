@@ -19,3 +19,5 @@
 - notion:stringPropertyWithDefault (string) = "default string value"
 - notion:booleanAutoCreatedPropertyWithDefault (boolean) = true autocreated
 - notion:stringAutoCreatedPropertyWithDefault (string) = "default string value" autocreated
+- notion:singleReference (reference)
+- notion:multipleReferences (reference) multiple

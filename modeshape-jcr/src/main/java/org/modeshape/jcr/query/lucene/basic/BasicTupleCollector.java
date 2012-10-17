@@ -36,6 +36,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 import org.infinispan.schematic.document.NotThreadSafe;
+import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeCache;
@@ -54,6 +55,7 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.basic.NodeKeyReference;
 
 /**
  * The {@link BasicLuceneSchema} does not store any fields in the indexes, with the exception of the document identifier in which
@@ -87,6 +89,7 @@ public class BasicTupleCollector extends TupleCollector {
     private String lastWorkspaceName;
     private NodeCache lastWorkspaceCache;
     private PathCache lastWorkspacePathCache;
+    private NodeKey lastWorkspaceRootKey;
 
     public BasicTupleCollector( QueryContext queryContext,
                                 Columns columns ) {
@@ -181,6 +184,7 @@ public class BasicTupleCollector extends TupleCollector {
             lastWorkspaceName = workspace;
             lastWorkspaceCache = queryContext.getNodeCache(workspace);
             lastWorkspacePathCache = repositoryPathCache.getPathCache(workspace, lastWorkspaceCache);
+            lastWorkspaceRootKey = lastWorkspaceCache.getRootKey();
         }
         CachedNode node = lastWorkspaceCache.getNode(key);
 
@@ -204,10 +208,10 @@ public class BasicTupleCollector extends TupleCollector {
                     if (property.isEmpty()) continue;
                     if (property.isMultiple()) {
                         Object[] values = property.getValuesAsArray();
-                        tuple[i] = values;
+                        tuple[i] = filterValues(values);
                     } else {
                         Object firstValue = property.getFirstValue();
-                        tuple[i] = firstValue;
+                        tuple[i] = filterValue(firstValue);
                     }
                 }
 
@@ -222,6 +226,31 @@ public class BasicTupleCollector extends TupleCollector {
             }
         }
         return 0.0f;
+    }
+
+    private Object filterValue( Object value ) {
+        if (value instanceof NodeKeyReference) {
+            NodeKeyReference ref = (NodeKeyReference)value;
+            // Return the identifier of the node ...
+            return JcrSession.nodeIdentifier(ref.getNodeKey(), lastWorkspaceRootKey);
+        }
+        return value;
+    }
+
+    private Object[] filterValues( Object[] values ) {
+        Object[] result = null;
+        final int length = values.length;
+        for (int i = 0; i != length; ++i) {
+            final Object value = values[i];
+            Object filtered = filterValue(value);
+            if (filtered != value) {
+                if (result == null) {
+                    result = new Object[length];
+                }
+                result[i] = filtered;
+            }
+        }
+        return result != null ? result : values;
     }
 
     @Override
