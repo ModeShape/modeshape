@@ -35,6 +35,8 @@ import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryResult;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -121,6 +123,7 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
             assertContentInWorkspace(newRepository, null);
             assertContentInWorkspace(newRepository, "ws2");
             assertContentInWorkspace(newRepository, "ws3");
+            queryContentInWorkspace(newRepository, null);
         } finally {
             newRepository.shutdown().get(10, TimeUnit.SECONDS);
         }
@@ -144,6 +147,19 @@ public class RepositoryRestoreTest extends SingleUseAbstractTest {
         }
 
         assertThat(actualNames, is(expectedNames));
+    }
+
+    private void queryContentInWorkspace( JcrRepository newRepository,
+                                          String workspaceName ) throws RepositoryException {
+        JcrSession session = newRepository.login();
+        try {
+            String statement = "SELECT [car:model], [car:year], [car:msrp] FROM [car:Car] AS car";
+            Query query = session.getWorkspace().getQueryManager().createQuery(statement, Query.JCR_SQL2);
+            QueryResult results = query.execute();
+            assertThat(results.getRows().getSize(), is(13L));
+        } finally {
+            session.logout();
+        }
     }
 
     private void assertContentInWorkspace( JcrRepository newRepository,

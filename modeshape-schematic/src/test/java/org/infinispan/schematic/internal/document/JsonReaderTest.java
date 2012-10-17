@@ -97,7 +97,7 @@ public class JsonReaderTest {
             Document doc = seq.nextDocument();
             if (doc == null) break;
             ++count;
-            System.out.println("Read document " + count + " --> " + doc);
+            // System.out.println("Read document " + count + " --> " + doc);
         }
         assertThat(count, is(265));
     }

@@ -11,10 +11,7 @@
     },
     "query" : {
         "indexStorage" : {
-            "type" : "filesystem",
-            "location" : "target/backupArea/backRepo/indexes",
-            "lockingStrategy" : "simple",
-            "fileSystemAccessType" : "auto"
+            "type" : "ram",
         }
     },
     "node-types" : ["cnd/cars.cnd"]
