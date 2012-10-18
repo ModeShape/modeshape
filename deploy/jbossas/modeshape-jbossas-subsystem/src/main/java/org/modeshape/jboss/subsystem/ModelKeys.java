@@ -32,6 +32,7 @@ public class ModelKeys {
 
     static final String ACCESS_TYPE = "access-type";
     static final String ALLOW_WORKSPACE_CREATION = "allow-workspace-creation";
+    static final String WORKSPACES_CACHE_CONTAINER = "workspaces-cache-container";
     static final String ANALYZER_CLASSNAME = "indexing-analyzer-classname";
     static final String ANALYZER_MODULE = "indexing-analyzer-module";
     static final String ANONYMOUS_ROLE = "anonymous-role";

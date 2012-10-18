@@ -135,6 +135,14 @@ public class ModelAttributes {
                                                                                                                                                                            FieldName.ALLOW_CREATION)
                                                                                                                                     .build();
 
+    public static final SimpleAttributeDefinition WORKSPACES_CACHE_CONTAINER = new MappedAttributeDefinitionBuilder(
+                                                                                                                  ModelKeys.WORKSPACES_CACHE_CONTAINER,
+                                                                                                                  ModelType.STRING).setXmlName(Attribute.CACHE_CONTAINER.getLocalName())
+                                                                                                                                    .setAllowExpression(true)
+                                                                                                                                    .setAllowNull(true)
+                                                                                                                                    .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                    .build();
+
     public static final SimpleAttributeDefinition ANALYZER_CLASSNAME = new MappedAttributeDefinitionBuilder(
                                                                                                             ModelKeys.ANALYZER_CLASSNAME,
                                                                                                             ModelType.STRING).setXmlName(Attribute.ANALYZER_CLASSNAME.getLocalName())
@@ -645,7 +653,7 @@ public class ModelAttributes {
 
     public static final AttributeDefinition[] REPOSITORY_ATTRIBUTES = {CACHE_NAME, CACHE_CONTAINER, JNDI_NAME, ENABLE_MONITORING,
         SECURITY_DOMAIN, ANONYMOUS_ROLES, ANONYMOUS_USERNAME, USE_ANONYMOUS_IF_AUTH_FAILED, NODE_TYPES, DEFAULT_WORKSPACE,
-        PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, DEFAULT_INITIAL_CONTENT, WORKSPACES_INITIAL_CONTENT, MINIMUM_BINARY_SIZE, THREAD_POOL, BATCH_SIZE, READER_STRATEGY,
+        PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, WORKSPACES_CACHE_CONTAINER, DEFAULT_INITIAL_CONTENT, WORKSPACES_INITIAL_CONTENT, MINIMUM_BINARY_SIZE, THREAD_POOL, BATCH_SIZE, READER_STRATEGY,
         MODE, SYSTEM_CONTENT_MODE, ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME, ANALYZER_MODULE,
         REBUILD_INDEXES_UPON_STARTUP, CLUSTER_NAME, CLUSTER_STACK,};
 

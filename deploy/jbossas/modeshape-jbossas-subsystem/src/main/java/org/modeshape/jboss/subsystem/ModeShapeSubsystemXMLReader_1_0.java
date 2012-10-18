@@ -284,6 +284,10 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                     case DEFAULT_WORKSPACE:
                         ModelAttributes.DEFAULT_WORKSPACE.parseAndSetParameter(attrValue, repository, reader);
                         break;
+                    case CACHE_CONTAINER: {
+                        ModelAttributes.WORKSPACES_CACHE_CONTAINER.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    }
                     default:
                         throw ParseUtils.unexpectedAttribute(reader, i);
                 }

@@ -90,6 +90,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         parse(readResource("modeshape-node-types-config.xml"));
     }
 
+    @Test
+    public void testOutputPersistanceOfConfigurationWithWorkspacesCacheContainer() throws Exception {
+        parse(readResource("modeshape-workspaces-cache-config.xml"));
+    }
+
     /* // todo replace with dmr format not json
     @Test
     public void testOutputPersistance() throws Exception {

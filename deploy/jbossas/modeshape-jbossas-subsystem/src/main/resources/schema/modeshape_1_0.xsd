@@ -248,6 +248,13 @@
           workspaces. The default value is 'true'.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
+    <xs:attribute name="cache-container" type="xs:string" use="optional">
+          <xs:annotation>
+              <xs:documentation>The name of the Infinispan cache container in which the workspace caches reside. If not provider,
+                  a default configuration file is used.
+              </xs:documentation>
+          </xs:annotation>
+      </xs:attribute>
   </xs:complexType>
     
   <xs:complexType name="node-types">
@@ -464,7 +471,7 @@
     <xs:attribute name="cache-container" type="xs:string">
       <xs:annotation>
         <xs:documentation>The name of the Infinispan cache container in which the caches can be found
-          for storing the indexes. If not provided, the repository's cache container will be used.</xs:documentation>
+          for storing the binary values. If not provided, the repository's cache container will be used.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
   </xs:complexType>
