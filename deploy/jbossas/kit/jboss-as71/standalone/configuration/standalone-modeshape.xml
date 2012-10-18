@@ -218,6 +218,14 @@
                     <file-store passivation="false" path="modeshape/index-cache-container" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
             </cache-container>
+            <!--Sample workspace cache container which should really be used only in special cases, when the provided default is not enough-->
+            <cache-container name="ws-cache-container" default-cache="ws-cache">
+                <local-cache name="ws-cache">
+                    <transaction mode="NON_XA"/>
+                    <eviction strategy="LRU" max-entries="100"/>
+                    <expiration lifespan="10000" interval="1000" max-idle="5000"/>
+                </local-cache>
+            </cache-container>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:modeshape:1.0">
             <!-- A sample repository that uses the "sample" cache in the "modeshape" container. All content, binary values,
@@ -306,7 +314,7 @@
                 <!--<db-binary-storage data-source-jndi-name="java:jboss/datasources/ModeshapeBinaryDS"/>-->
             </repository>
             <repository name="preconfiguredRepository">
-               <workspaces>
+               <workspaces cache-container="ws-cache-container">
                    <workspace name="default"/>
                    <workspace name="other"/>
                    <workspace name="extra">

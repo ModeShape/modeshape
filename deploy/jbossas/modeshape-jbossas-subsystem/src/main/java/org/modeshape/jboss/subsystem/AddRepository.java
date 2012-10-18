@@ -276,6 +276,17 @@ public class AddRepository extends AbstractAddStepHandler {
                               CacheContainer.class,
                               repositoryService.getCacheManagerInjector());
 
+        // Add dependency, if necessary, to the workspaces cache container
+        String workspacesCacheContainer = attribute(context, model, ModelAttributes.WORKSPACES_CACHE_CONTAINER, null);
+        if (workspacesCacheContainer != null && !workspacesCacheContainer.toLowerCase().equalsIgnoreCase(namedContainer)) {
+            //there is a different ISPN container configured for the ws caches
+            builder.addDependency(ServiceName.JBOSS.append("infinispan", workspacesCacheContainer),
+                                  CacheContainer.class,
+                                  repositoryService.getWorkspacesCacheContainerInjector());
+            //the name is a constant which will be resolved later by the RepositoryService
+            workspacesDoc.set(FieldName.WORKSPACE_CACHE_CONFIGURATION, RepositoryService.WORKSPACES_CONTAINER_NAME);
+        }
+
         builder.addDependency(Services.JBOSS_SERVICE_MODULE_LOADER,
                               ModuleLoader.class,
                               repositoryService.getModuleLoaderInjector());

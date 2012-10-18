@@ -66,11 +66,13 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
     public static final String CONTENT_CONTAINER_NAME = "content";
     public static final String BINARY_STORAGE_CONTAINER_NAME = "binaries";
+    public static final String WORKSPACES_CONTAINER_NAME = "workspaces";
 
     private static final Logger LOG = Logger.getLogger(RepositoryService.class.getPackage().getName());
 
     private final InjectedValue<ModeShapeEngine> engineInjector = new InjectedValue<ModeShapeEngine>();
     private final InjectedValue<CacheContainer> cacheManagerInjector = new InjectedValue<CacheContainer>();
+    private final InjectedValue<CacheContainer> workspacesCacheContainerInjector = new InjectedValue<CacheContainer>();
     private final InjectedValue<TransactionManager> txnMgrInjector = new InjectedValue<TransactionManager>();
     private final InjectedValue<ChannelFactory> channelFactoryInjector = new InjectedValue<ChannelFactory>();
     private final InjectedValue<IndexStorage> indexStorageConfigInjector = new InjectedValue<IndexStorage>();
@@ -103,6 +105,9 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
         if (BINARY_STORAGE_CONTAINER_NAME.equals(name)) {
             BinaryStorage storage = binaryStorageInjector.getValue();
             container = storage.getCacheContainer();
+        }
+        if (WORKSPACES_CONTAINER_NAME.equals(name)) {
+            container = workspacesCacheContainerInjector.getValue();
         }
         if (container == null) {
             container = cacheManagerInjector.getValue();
@@ -410,6 +415,13 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
      */
     public InjectedValue<ModuleLoader> getModuleLoaderInjector() {
         return moduleLoaderInjector;
+    }
+
+    /**
+     * @return the injector used to set the workspaces cache container
+     */
+    public InjectedValue<CacheContainer> getWorkspacesCacheContainerInjector() {
+        return workspacesCacheContainerInjector;
     }
 
     private ModuleLoader moduleLoader() {
