@@ -231,12 +231,12 @@
                     <transaction mode="NON_XA"/>
                 </local-cache>
             </cache-container>
+            <!--Sample workspace cache container which should really be used only in special cases, where the when default is not enough-->
             <cache-container name="ws-cache-container" default-cache="ws-cache">
                 <local-cache name="ws-cache">
                     <transaction mode="NON_XA"/>
                     <eviction strategy="LRU" max-entries="100"/>
                     <expiration lifespan="10000" interval="1000" max-idle="5000"/>
-                    <file-store passivation="false" path="modeshape/ws-cache-container" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
             </cache-container>
         </subsystem>
