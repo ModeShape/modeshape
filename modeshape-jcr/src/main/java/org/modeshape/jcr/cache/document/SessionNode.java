@@ -724,14 +724,6 @@ public class SessionNode implements MutableCachedNode {
         addOrRemoveReferrers(cache, property, true);
     }
 
-    private boolean isReference( Property property ) {
-        if (property == null || property.isEmpty()) {
-            return false;
-        }
-        Object firstValue = property.getFirstValue();
-        return firstValue != null && firstValue instanceof NodeKeyReference;
-    }
-
     protected void removeAllReferences( SessionCache cache ) {
         for (Iterator<Property> it = this.getProperties(cache); it.hasNext();) {
             Property property = it.next();
@@ -743,7 +735,7 @@ public class SessionNode implements MutableCachedNode {
                                          Property property,
                                          boolean add ) {
 
-        if (!isReference(property)) {
+        if (property == null || !property.isReference()) {
             return;
         }
 

@@ -89,7 +89,6 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
-import org.modeshape.jcr.value.basic.NodeKeyReference;
 
 /**
  * A writable {@link SessionCache} implementation capable of making transient changes and saving them.
@@ -1118,7 +1117,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // Look for outgoing references that need to be cleaned up ...
                     for (Iterator<Property> it = persisted.getProperties(workspace); it.hasNext();) {
                         Property property = it.next();
-                        if (isReference(property)) {
+                        if (property != null && property.isReference()) {
                             // We need to get the node in the session's cache ...
                             this.changedNodes.remove(nodeKey); // we put REMOVED a dozen lines up ...
                             node = this.mutable(nodeKey);
@@ -1163,14 +1162,6 @@ public class WritableSessionCache extends AbstractSessionCache {
     @Override
     public boolean isDestroyed( NodeKey key ) {
         return changedNodes.get(key) == REMOVED;
-    }
-
-    private boolean isReference( Property property ) {
-        if (property == null || property.isEmpty()) {
-            return false;
-        }
-        Object firstValue = property.getFirstValue();
-        return firstValue != null && firstValue instanceof NodeKeyReference;
     }
 
     @Override

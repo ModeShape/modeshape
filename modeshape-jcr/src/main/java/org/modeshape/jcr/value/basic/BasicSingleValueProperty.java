@@ -66,6 +66,11 @@ public class BasicSingleValueProperty extends BasicProperty {
     }
 
     @Override
+    public boolean isReference() {
+        return getFirstValue() instanceof NodeKeyReference;
+    }
+
+    @Override
     public int size() {
         return 1;
     }

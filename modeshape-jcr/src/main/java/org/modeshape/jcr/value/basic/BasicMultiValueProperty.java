@@ -86,13 +86,18 @@ public class BasicMultiValueProperty extends BasicProperty {
     }
 
     @Override
+    public boolean isReference() {
+        return getFirstValue() instanceof NodeKeyReference;
+    }
+
+    @Override
     public int size() {
         return values != null ? values.size() : 0;
     }
 
     @Override
     public Object getFirstValue() {
-        return values != null ? values.get(0) : null;
+        return size() == 0 ? null : values.get(0);
     }
 
     @Override
