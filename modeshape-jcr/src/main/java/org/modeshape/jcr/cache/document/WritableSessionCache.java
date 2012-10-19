@@ -26,6 +26,7 @@ package org.modeshape.jcr.cache.document;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -88,6 +89,7 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.basic.NodeKeyReference;
 
 /**
  * A writable {@link SessionCache} implementation capable of making transient changes and saving them.
@@ -1096,6 +1098,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                 // Find the node in the session and/or workspace ...
                 SessionNode node = this.changedNodes.put(nodeKey, REMOVED);
+                boolean cleanupReferences = false;
                 ChildReferences children = null;
                 if (node != null) {
                     if (node == REMOVED) continue;
@@ -1105,14 +1108,29 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // we need to preserve any existing transient referrer changes for the node which we're removing, as they can
                     // influence ref integrity
                     referrerChangesForRemovedNodes.put(nodeKey, node.getReferrerChanges());
-                    // cleanup (remove) all outgoing references from this node to other nodes
-                    node.removeAllReferences(this);
+                    cleanupReferences = true;
                 } else {
                     // The node did not exist in the session, so get it from the workspace ...
                     addToChangedNodes.add(nodeKey);
                     CachedNode persisted = workspace.getNode(nodeKey);
                     if (persisted == null) continue;
                     children = persisted.getChildReferences(workspace);
+                    // Look for outgoing references that need to be cleaned up ...
+                    for (Iterator<Property> it = persisted.getProperties(workspace); it.hasNext();) {
+                        Property property = it.next();
+                        if (isReference(property)) {
+                            // We need to get the node in the session's cache ...
+                            this.changedNodes.remove(nodeKey); // we put REMOVED a dozen lines up ...
+                            node = this.mutable(nodeKey);
+                            if (node != null) cleanupReferences = true;
+                            this.changedNodes.put(nodeKey, REMOVED);
+                        }
+                    }
+                }
+                if (cleanupReferences) {
+                    assert node != null;
+                    // cleanup (remove) all outgoing references from this node to other nodes
+                    node.removeAllReferences(this);
                 }
 
                 // Now find all of the children ...
@@ -1145,6 +1163,14 @@ public class WritableSessionCache extends AbstractSessionCache {
     @Override
     public boolean isDestroyed( NodeKey key ) {
         return changedNodes.get(key) == REMOVED;
+    }
+
+    private boolean isReference( Property property ) {
+        if (property == null || property.isEmpty()) {
+            return false;
+        }
+        Object firstValue = property.getFirstValue();
+        return firstValue != null && firstValue instanceof NodeKeyReference;
     }
 
     @Override
