@@ -1,6 +1,6 @@
 # Release Notes for ModeShape &version;
 
-The ModeShape &version; release is the second candidate release (CR) of our new architecture.
+The ModeShape &version; release is the third candidate release (CR) of our new architecture.
 There are no known issues, but this release should be used only for testing and previewing features.
 It is very unlikely (though still possible) that APIs and storage formats will change before 3.0.0.Final.
 
@@ -36,8 +36,8 @@ while the repository is in use.
 repositories are still in use.
 - Sessions now immediately see all changes persisted/committed by other sessions, although
 transient changes made by the session always take precedence.
-- Support for participation in JTA and XA transactions, allowing (container-managed or bean-managed)
-EJBs and JCR clients that programmatically use XA transactions to commit the changes in the transactions.
+- Support for participation in JTA transactions, allowing (container-managed or bean-managed)
+EJBs and JCR clients that programmatically use transactions to commit the changes in the transactions.
 - New monitoring API with over a dozen metrics.
 - New sequencing API, so sequencers now use the JCR API to get at the content being processed
 and create/update the derived content. Sequencers can also dynamically register namespaces and
@@ -162,8 +162,9 @@ If any issues are found, please log a bug report in our JIRA.
 - Asynchronous sequencing operations, within completion notified via events
 
 One feature not related to the JCR 2.0 API is enabling a repository to access the content in 
-external systems (e.g., file system, SVN, JDBC, JCR, etc.). This has been pushed to 3.1 
-(roughly 6 weeks after 3.0.0.Final) so that we could release 3.0 earlier with full support for JCR 2.0.
+external systems (e.g., file system, SVN, JDBC, JCR, etc.). This feature was in 2.x but
+has been pushed to 3.1 (roughly 6 weeks after 3.0.0.Final) so that we could release 3.0 
+earlier with full support for JCR 2.0.
 
 
 ## Bug Fixes, Features, and other Issues
