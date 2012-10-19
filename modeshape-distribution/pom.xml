@@ -539,7 +539,7 @@
                                 <descriptorRef>source-distribution</descriptorRef>
                                 <!-- Build both AS7 distributions -->
                                 <descriptorRef>jbossas-71-distribution</descriptorRef>
-                                <descriptorRef>jbossas-72-distribution</descriptorRef>
+                                <!--descriptorRef>jbossas-72-distribution</descriptorRef-->
                             </descriptorRefs>
                         </configuration>
                     </plugin>
@@ -565,7 +565,7 @@
                             <descriptorRefs>
                                 <!-- Build both AS7 distributions -->
                                 <descriptorRef>jbossas-71-distribution</descriptorRef>
-                                <descriptorRef>jbossas-72-distribution</descriptorRef>
+                                <!--descriptorRef>jbossas-72-distribution</descriptorRef-->
                             </descriptorRefs>
                         </configuration>
                     </plugin>
