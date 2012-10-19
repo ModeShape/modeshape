@@ -109,6 +109,13 @@ public interface Property extends Iterable<Object>, Comparable<Property>, Readab
     boolean isEmpty();
 
     /**
+     * Determine whether this property contains reference values, based upon the first value in the property.
+     * 
+     * @return true if this property is a reference property, or false otherwise
+     */
+    boolean isReference();
+
+    /**
      * Obtain the property's first value in its natural form. This is equivalent to calling
      * <code>isEmpty() ? null : iterator().next()</code>
      * 

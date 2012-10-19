@@ -60,6 +60,11 @@ public class BasicEmptyProperty extends BasicProperty {
     public boolean isSingle() {
         return false;
     }
+    
+    @Override
+    public boolean isReference() {
+        return false;
+    }
 
     @Override
     public int size() {

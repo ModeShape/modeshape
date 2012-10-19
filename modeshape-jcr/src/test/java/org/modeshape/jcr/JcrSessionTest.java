@@ -721,6 +721,66 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         assertFalse(session.getRootNode().hasNode("referenceable"));
     }
 
+    @FixFor( "MODE-1685" )
+    @Test
+    public void shouldEnforceReferentialIntegrityWhenRemovingNodes() throws Exception {
+        JcrValueFactory valueFactory = session.getValueFactory();
+
+        Node targetNode = session.getRootNode().addNode("target");
+        targetNode.addMixin(JcrMixLexicon.REFERENCEABLE.toString());
+        Node parentNode = session.getRootNode().addNode("parent");
+        Node childNode = parentNode.addNode("child");
+        childNode.setProperty("ref1", valueFactory.createValue(targetNode, false));
+        session.save();
+
+        // Delete the target - there are references to this node, so we can't remove ...
+        try {
+            targetNode.remove();
+            session.save();
+            fail("Expected a referential integrity exception");
+        } catch (ReferentialIntegrityException e) {
+            // expected
+        }
+    }
+
+    @FixFor( "MODE-1685" )
+    @Test
+    public void shouldCheckReferentialIntegrityOfSubgraphWhenRemovingNodes() throws Exception {
+        JcrValueFactory valueFactory = session.getValueFactory();
+
+        Node targetNode = session.getRootNode().addNode("target");
+        targetNode.addMixin(JcrMixLexicon.REFERENCEABLE.toString());
+        Node parentNode = session.getRootNode().addNode("parent");
+        Node childNode = parentNode.addNode("child");
+        childNode.setProperty("ref1", valueFactory.createValue(targetNode, false));
+        session.save();
+
+        // Delete the parent (which will delete the child and the reference to the target ...
+        parentNode.remove();
+        session.save();
+
+        // Delete the target - there should be no references ...
+        targetNode.remove();
+        session.save();
+    }
+
+    @FixFor( "MODE-1685" )
+    @Test
+    public void shouldNotEnforceReferentialIntegrityOfWeakReferenceWhenRemovingNodes() throws Exception {
+        JcrValueFactory valueFactory = session.getValueFactory();
+
+        Node targetNode = session.getRootNode().addNode("target");
+        targetNode.addMixin(JcrMixLexicon.REFERENCEABLE.toString());
+        Node parentNode = session.getRootNode().addNode("parent");
+        Node childNode = parentNode.addNode("child");
+        childNode.setProperty("ref1", valueFactory.createValue(targetNode, true));
+        session.save();
+
+        // Delete the target - there should be no strong references, but the weak is okay and won't prevent removal ...
+        targetNode.remove();
+        session.save();
+    }
+
     @Test
     @FixFor( "MODE-1613" )
     public void shouldMoveSNSAndNotCorruptThePathsOfRemainingSiblings() throws Exception {
