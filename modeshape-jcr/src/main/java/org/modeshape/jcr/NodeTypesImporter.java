@@ -45,9 +45,9 @@ import org.modeshape.jcr.value.NamespaceRegistry;
  */
 public final class NodeTypesImporter {
 
-    private static final Logger LOGGER = Logger.getLogger(NodeTypesImporter.class);
+    protected static final Logger LOGGER = Logger.getLogger(NodeTypesImporter.class);
 
-    private final JcrRepository.RunningState runningState;
+    protected final JcrRepository.RunningState runningState;
     private final List<String> nodeTypesFiles;
 
     public NodeTypesImporter( List<String> nodeTypesFiles,
@@ -62,7 +62,7 @@ public final class NodeTypesImporter {
         }
 
         List<NodeTypeDefinition> nodeTypeDefinitions = new ArrayList<NodeTypeDefinition>();
-        Set<NamespaceRegistry.Namespace> namespaces  = new HashSet<NamespaceRegistry.Namespace>();
+        Set<NamespaceRegistry.Namespace> namespaces = new HashSet<NamespaceRegistry.Namespace>();
         for (String cndFile : nodeTypesFiles) {
             CndImportOperation cndImportOperation = new CndImportOperation();
             cndImportOperation.execute(cndFile);
@@ -83,6 +83,9 @@ public final class NodeTypesImporter {
     private final class CndImportOperation {
         private List<NodeTypeDefinition> nodeTypeDefinitions = Collections.emptyList();
         private Set<NamespaceRegistry.Namespace> namespaces = Collections.emptySet();
+
+        protected CndImportOperation() {
+        }
 
         void execute( String cndFile ) {
             InputStream cndFileStream = runningState.environment()
