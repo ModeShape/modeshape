@@ -38,6 +38,9 @@ public final class Metadata implements Externalizable {
     private String mimeType;
     private int numberTextChunks;
 
+    public Metadata() {
+    }
+
     public Metadata( long modificationTime,
                      long length,
                      int numberOfChunks ) {
