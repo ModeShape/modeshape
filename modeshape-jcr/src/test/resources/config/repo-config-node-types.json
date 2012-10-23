@@ -8,5 +8,5 @@
         "default" : "default",
         "allowCreation" : true
     },
-    "node-types" : ["cnd/cars.cnd", "cnd/aircraft.cnd"]
+    "node-types" : ["cnd/cars.cnd", "cnd/aircraft.cnd", "cnd/unusedNamespaces.cnd"]
 }
