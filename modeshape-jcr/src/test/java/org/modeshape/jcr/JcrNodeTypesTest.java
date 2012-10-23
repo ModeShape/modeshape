@@ -24,9 +24,11 @@
 
 package org.modeshape.jcr;
 
+import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import static junit.framework.Assert.assertEquals;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 
 /**
  * Unit test for the node-types feature, which allows initial cnd files to be pre-configured in a repository
@@ -37,8 +39,7 @@ public class JcrNodeTypesTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldRegisterCustomNodeTypeAtStartup() throws Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream(
-                "config/repo-config-node-types.json"));
+        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream("config/repo-config-node-types.json"));
 
         validateNodesWithCustomTypes();
     }
@@ -49,6 +50,17 @@ public class JcrNodeTypesTest extends SingleUseAbstractTest {
                 "config/repo-config-invalid-node-types.json"));
 
         validateNodesWithCustomTypes();
+    }
+
+    @Test
+    @FixFor( "MODE-1687" )
+    public void shouldRegisterBothUsedAndUnusedNamespacesFromCNDFile() throws Exception {
+        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream("config/repo-config-node-types.json"));
+        NamespaceRegistry namespaceRegistry = session.getWorkspace().getNamespaceRegistry();
+        assertEquals("http://www.modeshape.org/examples/cars/1.0", namespaceRegistry.getURI("car"));
+        assertEquals("http://www.modeshape.org/examples/aircraft/1.0", namespaceRegistry.getURI("air"));
+        assertEquals("http://www.test1.com", namespaceRegistry.getURI("test1"));
+        assertEquals("http://www.test2.com", namespaceRegistry.getURI("test2"));
     }
 
     private void validateNodesWithCustomTypes() throws RepositoryException {
