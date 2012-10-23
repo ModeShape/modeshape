@@ -89,6 +89,9 @@ public class ModelKeys {
     static final String USE_ANONYMOUS_IF_AUTH_FAILED = "use-anonymous-upon-failed-authentication";
 
     static final String AUTHENTICATORS = "authenticators";
+    static final String AUTHENTICATOR = "authenticator";
+    static final String AUTHENTICATOR_CLASSNAME = "classname";
+    static final String AUTHENTICATOR_MODULE = "module";
 
     static final String BINARY_STORAGE = "binary-storage";
     static final String FILE_BINARY_STORAGE = "file-binary-storage";

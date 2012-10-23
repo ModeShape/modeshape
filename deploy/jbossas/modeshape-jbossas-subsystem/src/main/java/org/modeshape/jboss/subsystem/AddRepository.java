@@ -23,6 +23,8 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import java.util.List;
 import javax.transaction.TransactionManager;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
@@ -36,7 +38,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceVerificationHandler;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import org.jboss.as.controller.services.path.RelativePathService;
 import org.jboss.as.naming.ManagedReferenceFactory;
 import org.jboss.as.naming.ServiceBasedNamingStore;
@@ -62,7 +63,6 @@ import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
-import java.util.List;
 
 public class AddRepository extends AbstractAddStepHandler {
 
@@ -127,7 +127,7 @@ public class AddRepository extends AbstractAddStepHandler {
         EditableDocument monitoring = configDoc.getOrCreateDocument(FieldName.MONITORING);
         monitoring.set(FieldName.MONITORING_ENABLED, enableMonitoring);
 
-        //Initial node-types if configured
+        // Initial node-types if configured
         if (model.hasDefined(ModelKeys.NODE_TYPES)) {
             EditableArray nodeTypesArray = configDoc.getOrCreateArray(FieldName.NODE_TYPES);
             for (ModelNode nodeType : model.get(ModelKeys.NODE_TYPES).asList()) {
@@ -221,26 +221,7 @@ public class AddRepository extends AbstractAddStepHandler {
         EditableDocument servlet = Schematic.newDocument();
         servlet.set(FieldName.CLASSNAME, "servlet");
         servlet.set(FieldName.NAME, "Authenticator that uses the Servlet context");
-        providers.addDocument(servlet);
-
-        // Custom authenticators ...
-        if (model.hasDefined(ModelKeys.AUTHENTICATORS)) {
-            ModelNode authenticators = model.get(ModelKeys.AUTHENTICATORS);
-            for (String name : authenticators.keys()) {
-                ModelNode authenticator = authenticators.get(name);
-                EditableDocument authDoc = Schematic.newDocument();
-                for (String key : authenticator.keys()) {
-                    String value = authenticator.get(key).asString();
-                    if (key.equals(ModelKeys.CLASSNAME)) {
-                        key = FieldName.CLASSNAME;
-                    } else if (key.equals(ModelKeys.MODULE)) {
-                        key = FieldName.CLASSLOADER;
-                    }
-                    authDoc.set(key, value);
-                }
-                providers.add(authDoc);
-            }
-        }
+        providers.add(servlet);
 
         // Clustering and the JGroups channel ...
         if (clusterChannelName != null) {
@@ -279,11 +260,11 @@ public class AddRepository extends AbstractAddStepHandler {
         // Add dependency, if necessary, to the workspaces cache container
         String workspacesCacheContainer = attribute(context, model, ModelAttributes.WORKSPACES_CACHE_CONTAINER, null);
         if (workspacesCacheContainer != null && !workspacesCacheContainer.toLowerCase().equalsIgnoreCase(namedContainer)) {
-            //there is a different ISPN container configured for the ws caches
+            // there is a different ISPN container configured for the ws caches
             builder.addDependency(ServiceName.JBOSS.append("infinispan", workspacesCacheContainer),
                                   CacheContainer.class,
                                   repositoryService.getWorkspacesCacheContainerInjector());
-            //the name is a constant which will be resolved later by the RepositoryService
+            // the name is a constant which will be resolved later by the RepositoryService
             workspacesDoc.set(FieldName.WORKSPACE_CACHE_CONFIGURATION, RepositoryService.WORKSPACES_CONTAINER_NAME);
         }
 
@@ -340,15 +321,15 @@ public class AddRepository extends AbstractAddStepHandler {
 
         // Add the default index storage service which will provide the indexing configuration
         IndexStorageService defaultIndexService = new IndexStorageService(repositoryName);
-        ServiceBuilder<IndexStorage> indexBuilder = target.addService(ModeShapeServiceNames.indexStorageServiceName(
-                repositoryName), defaultIndexService);
+        ServiceBuilder<IndexStorage> indexBuilder = target.addService(ModeShapeServiceNames.indexStorageServiceName(repositoryName),
+                                                                      defaultIndexService);
         indexBuilder.addDependency(dataDirServiceName, String.class, defaultIndexService.getDataDirectoryPathInjector());
         indexBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
         // Add the default binary storage service which will provide the binary configuration
         BinaryStorageService defaultBinaryService = new BinaryStorageService(repositoryName);
-        ServiceBuilder<BinaryStorage> binaryStorageBuilder = target.addService(ModeShapeServiceNames.binaryStorageServiceName(
-                repositoryName), defaultBinaryService);
+        ServiceBuilder<BinaryStorage> binaryStorageBuilder = target.addService(ModeShapeServiceNames.binaryStorageServiceName(repositoryName),
+                                                                               defaultBinaryService);
         binaryStorageBuilder.addDependency(dataDirServiceName, String.class, defaultBinaryService.getDataDirectoryPathInjector());
         binaryStorageBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 

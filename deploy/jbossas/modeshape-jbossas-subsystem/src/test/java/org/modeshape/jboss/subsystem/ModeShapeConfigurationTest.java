@@ -91,6 +91,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
+    public void testOutputPersistanceOfConfigurationWithCustomAuthenticators() throws Exception {
+        parse(readResource("modeshape-custom-authenticators-config.xml"));
+    }
+
+    @Test
     public void testOutputPersistanceOfConfigurationWithWorkspacesCacheContainer() throws Exception {
         parse(readResource("modeshape-workspaces-cache-config.xml"));
     }
@@ -169,20 +174,32 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         public void testOutputPersistanceOfConfigurationWithMinimalRepository() throws Exception {
         roundTrip("modeshape-minimal-config.xml", "modeshape-minimal-config.json");
         }
+    */
+    @Ignore
+    @Test
+    public void testOutputPersistanceOfConfigurationWithAuthenticators() throws Exception {
+        roundTrip("modeshape-custom-authenticators-config.xml", "modeshape-custom-authenticators-config.json");
+    }
 
-        protected void roundTrip( String filenameOfInputXmlConfig,
-        String filenameOfExpectedJson ) throws Exception {
+    protected void roundTrip( String filenameOfInputXmlConfig,
+                              String filenameOfExpectedJson ) throws Exception {
         String subsystemXml = readResource(filenameOfInputXmlConfig);
 
         String json = readResource(filenameOfExpectedJson);
+        System.out.println("JSON: " + json);
         ModelNode testModel = filterValues(ModelNode.fromJSONString(json));
         String triggered = outputModel(testModel);
+        System.out.println("Triggered: " + triggered);
 
         KernelServices services = super.installInController(AdditionalInitialization.MANAGEMENT, subsystemXml);
 
         // Get the model and the persisted xml from the controller
         ModelNode model = services.readWholeModel();
+        System.out.println("Original Model: " + testModel);
+        System.out.println("Re-read  Model: " + model);
         String marshalled = services.getPersistedSubsystemXml();
+
+        System.out.println("Marshalled: " + marshalled);
 
         compare(ModelNode.fromJSONString(json), model);
         compare(testModel, model);
@@ -190,7 +207,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         // The input XML contains some default values, and the marshalled value doesn't contain the defaults;
         // therefore we cannot compare them directly (though they are equivalent) ...
         // Assert.assertEquals(normalizeXML(subsystemXml), normalizeXML(marshalled));
-        }*/
+    }
 
     @Test
     public void testSchema() throws Exception {

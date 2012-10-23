@@ -43,6 +43,11 @@ public class ModeShapeServiceNames {
         return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "text-extractors", extractorName);
     }
 
+    public static ServiceName authenticatorServiceName( String repositoryName,
+                                                        String authenticatorName ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "authenticators", authenticatorName);
+    }
+
     public static ServiceName dataDirectoryServiceName( String name ) {
         return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "data");
     }

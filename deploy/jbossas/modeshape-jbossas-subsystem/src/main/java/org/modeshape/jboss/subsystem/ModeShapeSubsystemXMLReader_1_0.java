@@ -147,6 +147,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         ModelNode binaryStorage = null;
         List<ModelNode> sequencers = new ArrayList<ModelNode>();
         List<ModelNode> textExtractors = new ArrayList<ModelNode>();
+        List<ModelNode> authenticators = new ArrayList<ModelNode>();
         while (reader.hasNext() && (reader.nextTag() != XMLStreamConstants.END_ELEMENT)) {
             Element element = Element.forName(reader.getLocalName());
             switch (element) {
@@ -206,7 +207,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
 
                 // Sequencing ...
                 case AUTHENTICATORS:
-                    parseAuthenticators(reader, address, repository);
+                    authenticators = parseAuthenticators(reader, repositoryName);
                     break;
 
                 // Sequencing ...
@@ -228,6 +229,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         if (binaryStorage != null) repositories.add(binaryStorage);
         repositories.addAll(sequencers);
         repositories.addAll(textExtractors);
+        repositories.addAll(authenticators);
     }
 
     private void parseNodeTypes( XMLExtendedStreamReader reader,
@@ -798,54 +800,63 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         return storageType;
     }
 
-    private void parseAuthenticators( final XMLExtendedStreamReader reader,
-                                      final ModelNode parentAddress,
-                                      final ModelNode repository ) throws XMLStreamException {
+    private List<ModelNode> parseAuthenticators( final XMLExtendedStreamReader reader,
+                                                 final String repositoryName ) throws XMLStreamException {
         requireNoAttributes(reader);
 
+        List<ModelNode> authenticators = new ArrayList<ModelNode>();
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
-                case AUTHENTICATOR: {
-                    parseAuthenticator(reader, repository);
+                case AUTHENTICATOR:
+                    parseAuthenticator(reader, repositoryName, authenticators);
                     break;
-                }
-                default: {
+                default:
                     throw ParseUtils.unexpectedElement(reader);
-                }
             }
         }
+
+        return authenticators;
     }
 
     private void parseAuthenticator( final XMLExtendedStreamReader reader,
-                                     final ModelNode repository ) throws XMLStreamException {
+                                     String repositoryName,
+                                     final List<ModelNode> authenticators ) throws XMLStreamException {
+        final ModelNode authenticator = new ModelNode();
+        authenticator.get(OP).set(ADD);
+        String name = null;
+
+        authenticators.add(authenticator);
+
         if (reader.getAttributeCount() > 0) {
-            ModelNode authenticator = new ModelNode();
             for (int i = 0; i < reader.getAttributeCount(); i++) {
                 String attrName = reader.getAttributeLocalName(i);
                 String attrValue = reader.getAttributeValue(i);
                 Attribute attribute = Attribute.forName(attrName);
                 switch (attribute) {
-                    // Set these as properties on the repository ModelNode ...
                     case NAME:
-                        ModelAttributes.NAME.parseAndSetParameter(attrValue, authenticator, reader);
+                        name = attrValue;
                         break;
                     case CLASSNAME:
-                        ModelAttributes.CLASSNAME.parseAndSetParameter(attrValue, authenticator, reader);
-                        if (!authenticator.has(ModelKeys.NAME)) {
-                            ModelAttributes.NAME.parseAndSetParameter(attrValue, authenticator, reader);
-                        }
+                        ModelAttributes.AUTHENTICATOR_CLASSNAME.parseAndSetParameter(attrValue, authenticator, reader);
+                        if (name == null) name = attrValue;
                         break;
                     case MODULE:
                         ModelAttributes.MODULE.parseAndSetParameter(attrValue, authenticator, reader);
                         break;
                     default:
-                        authenticator.get(attrName).set(attrValue);
+                        // extra attributes are allowed to set extractor-specific properties ...
+                        authenticator.get(ModelKeys.PROPERTIES).add(attrName, attrValue);
                         break;
                 }
             }
-            if (authenticator.has(ModelKeys.NAME)) repository.get(ModelKeys.AUTHENTICATORS).add(authenticator);
         }
+
+        authenticator.get(OP_ADDR)
+                     .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                     .add(ModelKeys.REPOSITORY, repositoryName)
+                     .add(ModelKeys.AUTHENTICATOR, name);
+
         requireNoElements(reader);
     }
 

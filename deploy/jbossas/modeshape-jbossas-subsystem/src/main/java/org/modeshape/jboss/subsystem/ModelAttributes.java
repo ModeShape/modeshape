@@ -94,11 +94,11 @@ public class ModelAttributes {
     };
     private static final ParameterValidator WORKSPACE_NAME_VALIDATOR = new ModelTypeValidator(ModelType.STRING, false, false,
                                                                                               true);
-    private static final ParameterValidator NODE_TYPE_VALIDATOR = new ModelTypeValidator(ModelType.STRING, false, false,
-                                                                                              true);
-    private static final ParameterValidator INITIAL_CONTENT_VALIDATOR = new ModelTypeValidator(ModelType.PROPERTY, false, false, true);
-    private static final ParameterValidator DEFAULT_INITIAL_CONTENT_VALIDATOR = new ModelTypeValidator(ModelType.STRING, true, false,
-                                                                                              true);
+    private static final ParameterValidator NODE_TYPE_VALIDATOR = new ModelTypeValidator(ModelType.STRING, false, false, true);
+    private static final ParameterValidator INITIAL_CONTENT_VALIDATOR = new ModelTypeValidator(ModelType.PROPERTY, false, false,
+                                                                                               true);
+    private static final ParameterValidator DEFAULT_INITIAL_CONTENT_VALIDATOR = new ModelTypeValidator(ModelType.STRING, true,
+                                                                                                       false, true);
     private static final ParameterValidator INDEX_FORMAT_VALIDATOR = new RegexValidator("LUCENE_(3[0-9]{1,2}|CURRENT)", true);
     private static final ParameterValidator REBUILD_INDEXES_VALIDATOR = new EnumValidator<QueryRebuild>(QueryRebuild.class,
                                                                                                         false, true);
@@ -136,12 +136,12 @@ public class ModelAttributes {
                                                                                                                                     .build();
 
     public static final SimpleAttributeDefinition WORKSPACES_CACHE_CONTAINER = new MappedAttributeDefinitionBuilder(
-                                                                                                                  ModelKeys.WORKSPACES_CACHE_CONTAINER,
-                                                                                                                  ModelType.STRING).setXmlName(Attribute.CACHE_CONTAINER.getLocalName())
-                                                                                                                                    .setAllowExpression(true)
-                                                                                                                                    .setAllowNull(true)
-                                                                                                                                    .setFlags(AttributeAccess.Flag.RESTART_NONE)
-                                                                                                                                    .build();
+                                                                                                                    ModelKeys.WORKSPACES_CACHE_CONTAINER,
+                                                                                                                    ModelType.STRING).setXmlName(Attribute.CACHE_CONTAINER.getLocalName())
+                                                                                                                                     .setAllowExpression(true)
+                                                                                                                                     .setAllowNull(true)
+                                                                                                                                     .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                     .build();
 
     public static final SimpleAttributeDefinition ANALYZER_CLASSNAME = new MappedAttributeDefinitionBuilder(
                                                                                                             ModelKeys.ANALYZER_CLASSNAME,
@@ -209,6 +209,17 @@ public class ModelAttributes {
                                                                                                                               .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                               .build();
 
+    public static final SimpleAttributeDefinition AUTHENTICATOR_CLASSNAME = new MappedAttributeDefinitionBuilder(
+                                                                                                                 ModelKeys.AUTHENTICATOR_CLASSNAME,
+                                                                                                                 ModelType.STRING).setXmlName(Attribute.CLASSNAME.getLocalName())
+                                                                                                                                  .setAllowExpression(false)
+                                                                                                                                  .setAllowNull(true)
+                                                                                                                                  .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                  .setFieldPathInRepositoryConfiguration(FieldName.SECURITY,
+                                                                                                                                                                         FieldName.PROVIDERS,
+                                                                                                                                                                         FieldName.CLASSNAME)
+                                                                                                                                  .build();
+
     public static final SimpleAttributeDefinition BATCH_SIZE = new MappedAttributeDefinitionBuilder(ModelKeys.BATCH_SIZE,
                                                                                                     ModelType.INT).setXmlName(Attribute.BATCH_SIZE.getLocalName())
                                                                                                                   .setAllowExpression(true)
@@ -242,12 +253,12 @@ public class ModelAttributes {
                                                                                                                           .build();
 
     public static final SimpleAttributeDefinition INDEX_STORAGE_CACHE_CONTAINER = new MappedAttributeDefinitionBuilder(
-                                                                                                                   ModelKeys.CACHE_CONTAINER,
-                                                                                                                   ModelType.STRING).setXmlName(Attribute.CACHE_CONTAINER.getLocalName())
-                                                                                                                                    .setAllowExpression(false)
-                                                                                                                                    .setAllowNull(false)
-                                                                                                                                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                                                                                                                                    .build();
+                                                                                                                       ModelKeys.CACHE_CONTAINER,
+                                                                                                                       ModelType.STRING).setXmlName(Attribute.CACHE_CONTAINER.getLocalName())
+                                                                                                                                        .setAllowExpression(false)
+                                                                                                                                        .setAllowNull(false)
+                                                                                                                                        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                                        .build();
 
     public static final SimpleAttributeDefinition CLUSTER_NAME = new MappedAttributeDefinitionBuilder(ModelKeys.CLUSTER_NAME,
                                                                                                       ModelType.STRING).setXmlName(Attribute.CLUSTER_NAME.getLocalName())
@@ -472,37 +483,36 @@ public class ModelAttributes {
                                                                                                                                                          FieldName.PREDEFINED)
                                                                                                                   .build();
 
-    public static final SimpleAttributeDefinition DEFAULT_INITIAL_CONTENT = new MappedAttributeDefinitionBuilder(ModelKeys.DEFAULT_INITIAL_CONTENT,
-                                                                                                                 ModelType.STRING)
-                                                                                .setAllowExpression(false)
-                                                                                .setAllowNull(true)
-                                                                                .setValidator(DEFAULT_INITIAL_CONTENT_VALIDATOR)
-                                                                                .setFlags(AttributeAccess.Flag.RESTART_NONE)
-                                                                                .build();
+    public static final SimpleAttributeDefinition DEFAULT_INITIAL_CONTENT = new MappedAttributeDefinitionBuilder(
+                                                                                                                 ModelKeys.DEFAULT_INITIAL_CONTENT,
+                                                                                                                 ModelType.STRING).setAllowExpression(false)
+                                                                                                                                  .setAllowNull(true)
+                                                                                                                                  .setValidator(DEFAULT_INITIAL_CONTENT_VALIDATOR)
+                                                                                                                                  .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                  .build();
 
     public static final ListAttributeDefinition WORKSPACES_INITIAL_CONTENT = MappedListAttributeDefinition.Builder.of(ModelKeys.WORKSPACES_INITIAL_CONTENT,
-                                                                                                                     new MappedAttributeDefinitionBuilder(ModelKeys.INITIAL_CONTENT,
-                                                                                                                                                          ModelType.PROPERTY).setAllowNull(false)
-                                                                                                                                                                             .setFlags(AttributeAccess.Flag.RESTART_NONE)
-                                                                                                                                                                             .setValidator(INITIAL_CONTENT_VALIDATOR)
-                                                                                                                                                        .build())
-                                                                            .setAllowNull(true)
-                                                                            .setMinSize(0)
-                                                                            .build();
+                                                                                                                      new MappedAttributeDefinitionBuilder(
+                                                                                                                                                           ModelKeys.INITIAL_CONTENT,
+                                                                                                                                                           ModelType.PROPERTY).setAllowNull(false)
+                                                                                                                                                                              .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                                                              .setValidator(INITIAL_CONTENT_VALIDATOR)
+                                                                                                                                                                              .build())
+                                                                                                                  .setAllowNull(true)
+                                                                                                                  .setMinSize(0)
+                                                                                                                  .build();
 
     public static final ListAttributeDefinition NODE_TYPES = MappedListAttributeDefinition.Builder.of(ModelKeys.NODE_TYPES,
-                                                                                                      new MappedAttributeDefinitionBuilder(ModelKeys.NODE_TYPE,
-                                                                                                                                           ModelType.STRING)
-                                                                                                                                               .setAllowExpression(true)
-                                                                                                                                               .setAllowNull(false)
-                                                                                                                                               .setValidator(NODE_TYPE_VALIDATOR)
-                                                                                                                                               .setFlags(AttributeAccess.Flag.RESTART_NONE)
-                                                                                                                                               .build())
-                                                                                                          .setAllowNull(true)
-                                                                                                          .setMinSize(0)
-                                                                                                          .build();
-
-
+                                                                                                      new MappedAttributeDefinitionBuilder(
+                                                                                                                                           ModelKeys.NODE_TYPE,
+                                                                                                                                           ModelType.STRING).setAllowExpression(true)
+                                                                                                                                                            .setAllowNull(false)
+                                                                                                                                                            .setValidator(NODE_TYPE_VALIDATOR)
+                                                                                                                                                            .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                                            .build())
+                                                                                                  .setAllowNull(true)
+                                                                                                  .setMinSize(0)
+                                                                                                  .build();
 
     public static final SimpleAttributeDefinition PROPERTY = new SimpleAttributeDefinition(ModelKeys.PROPERTY,
                                                                                            ModelType.PROPERTY, true);
@@ -653,9 +663,10 @@ public class ModelAttributes {
 
     public static final AttributeDefinition[] REPOSITORY_ATTRIBUTES = {CACHE_NAME, CACHE_CONTAINER, JNDI_NAME, ENABLE_MONITORING,
         SECURITY_DOMAIN, ANONYMOUS_ROLES, ANONYMOUS_USERNAME, USE_ANONYMOUS_IF_AUTH_FAILED, NODE_TYPES, DEFAULT_WORKSPACE,
-        PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, WORKSPACES_CACHE_CONTAINER, DEFAULT_INITIAL_CONTENT, WORKSPACES_INITIAL_CONTENT, MINIMUM_BINARY_SIZE, THREAD_POOL, BATCH_SIZE, READER_STRATEGY,
-        MODE, SYSTEM_CONTENT_MODE, ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME, ANALYZER_MODULE,
-        REBUILD_INDEXES_UPON_STARTUP, CLUSTER_NAME, CLUSTER_STACK,};
+        PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, WORKSPACES_CACHE_CONTAINER, DEFAULT_INITIAL_CONTENT,
+        WORKSPACES_INITIAL_CONTENT, MINIMUM_BINARY_SIZE, THREAD_POOL, BATCH_SIZE, READER_STRATEGY, MODE, SYSTEM_CONTENT_MODE,
+        ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME, ANALYZER_MODULE, REBUILD_INDEXES_UPON_STARTUP,
+        CLUSTER_NAME, CLUSTER_STACK};
 
     public static final AttributeDefinition[] RAM_INDEX_STORAGE_ATTRIBUTES = {INDEX_STORAGE_TYPE,};
 
@@ -690,4 +701,5 @@ public class ModelAttributes {
 
     public static final AttributeDefinition[] SEQUENCER_ATTRIBUTES = {PATH_EXPRESSIONS, SEQUENCER_CLASSNAME, MODULE, PROPERTIES};
     public static final AttributeDefinition[] TEXT_EXTRACTOR_ATTRIBUTES = {TEXT_EXTRACTOR_CLASSNAME, MODULE, PROPERTIES};
+    public static final AttributeDefinition[] AUTHENTICATOR_ATTRIBUTES = {AUTHENTICATOR_CLASSNAME, MODULE, PROPERTIES};
 }
