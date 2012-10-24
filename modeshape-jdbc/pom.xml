@@ -364,6 +364,29 @@
                             </execution>
                         </executions>
                     </plugin>
+                    <!--Deploy the re-packaged assembly file in the repo, so it can be picked up by the distribution module-->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>deploy</phase>
+                                <goals>
+                                    <goal>deploy-file</goal>
+                                </goals>
+                                <configuration>
+                                    <packaging>jar</packaging>
+                                    <generatePom>true</generatePom>
+                                    <repositoryId>${project.distributionManagement.repository.id}</repositoryId>
+                                    <url>${project.distributionManagement.repository.url}</url>
+                                    <artifactId>${client.artifactId}</artifactId>
+                                    <groupId>${project.groupId}</groupId>
+                                    <version>${project.version}</version>
+                                    <file>${project.build.directory}/${client.artifactId}-${project.version}.jar</file>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
