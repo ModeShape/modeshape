@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-parent</artifactId>
+        <version>3.0-SNAPSHOT</version>
+        <relativePath>../modeshape-parent/pom.xml</relativePath>
+    </parent>
+
+    <!-- The groupId and version values are inherited from parent -->
+    <artifactId>modeshape-client</artifactId>
+    <packaging>pom</packaging>
+    <name>ModeShape Client Jar</name>
+    <description>Library that allows ModeShape Tools to interact with ModeShape</description>
+    <url>http://www.modeshape.org</url>
+
+    <profiles>
+        <profile>
+            <id>assembly</id>
+            <properties>
+                <ant.jdbc.parseDirectory>${project.build.directory}/jdbc_parse</ant.jdbc.parseDirectory>
+            </properties>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-jdbc</artifactId>
+                    <version>${project.version}</version>
+                    <classifier>jar-with-dependencies</classifier>
+                </dependency>
+            </dependencies>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>unpack</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <!-- Copy the jdbc jar with dependencies to a temporary location, which will be then processed by ANT -->
+                                        <artifactItem>
+                                            <groupId>org.modeshape</groupId>
+                                            <artifactId>modeshape-jdbc</artifactId>
+                                            <version>${project.version}</version>
+                                            <classifier>jar-with-dependencies</classifier>
+                                            <outputDirectory>${project.build.directory}</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!--
+                       The following ant tasks are used to remove any duplicates from the modeshape-jdbc jar and to merge the
+                       services.
+
+                       Note:  this is all changing in future releases.
+                    -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>repackage-client-jar</id>
+                                <phase>package</phase>
+                                <configuration>
+                                    <target>
+                                        <unzip src="${project.build.directory}/modeshape-jdbc-${project.version}-jar-with-dependencies.jar"
+                                               dest="${project.build.directory}/tempjars"/>
+
+                                        <unzip src="${project.build.directory}/tempjars/jaxrs-api-${resteasy.version}.jar"
+                                               dest="${ant.jdbc.parseDirectory}"/>
+                                        <unzip src="${project.build.directory}/tempjars/jcr-${jcr.version}.jar"
+                                               dest="${ant.jdbc.parseDirectory}"/>
+
+                                        <unzip src="${project.build.directory}/tempjars/commons-codec-1.4.jar"
+                                               dest="${ant.jdbc.parseDirectory}"/>
+                                        <move file="${ant.jdbc.parseDirectory}/META-INF/LICENSE.txt"
+                                              tofile="${ant.jdbc.parseDirectory}/META-INF/LICENSE_commons-codec.txt"/>
+
+                                        <unzip src="${project.build.directory}/tempjars/commons-logging-1.1.1.jar"
+                                               dest="${ant.jdbc.parseDirectory}"/>
+                                        <move file="${ant.jdbc.parseDirectory}/META-INF/LICENSE"
+                                              tofile="${ant.jdbc.parseDirectory}/META-INF/LICENSE_commons-logging.txt"/>
+                                        <move file="${ant.jdbc.parseDirectory}/META-INF/NOTICE"
+                                              tofile="${ant.jdbc.parseDirectory}/META-INF/NOTICE_commons-logging.txt"/>
+
+                                        <unzip src="${project.build.directory}/tempjars/joda-time-${joda.time.version}.jar"
+                                               dest="${ant.jdbc.parseDirectory}"/>
+                                        <move file="${ant.jdbc.parseDirectory}/META-INF/LICENSE.txt"
+                                              tofile="${ant.jdbc.parseDirectory}/META-INF/LICENSE_joda-time.txt"/>
+                                        <move file="${ant.jdbc.parseDirectory}/META-INF/NOTICE.txt"
+                                              tofile="${ant.jdbc.parseDirectory}/META-INF/NOTICE_joda-time.txt"/>
+
+                                        <unzip src="${project.build.directory}/tempjars/httpclient-${httpclient.version}.jar"
+                                               dest="${ant.jdbc.parseDirectory}"/>
+                                        <move file="${ant.jdbc.parseDirectory}/META-INF/LICENSE.txt"
+                                              tofile="${ant.jdbc.parseDirectory}/META-INF/LICENSE_httpclient.txt"/>
+                                        <move file="${ant.jdbc.parseDirectory}/META-INF/NOTICE.txt"
+                                              tofile="${ant.jdbc.parseDirectory}/META-INF/NOTICE_httpclient.txt"/>
+
+                                        <unzip src="${project.build.directory}/tempjars/httpcore-${httpclient.version}.jar"
+                                               dest="${ant.jdbc.parseDirectory}"/>
+                                        <move file="${ant.jdbc.parseDirectory}/META-INF/LICENSE.txt"
+                                              tofile="${ant.jdbc.parseDirectory}/META-INF/LICENSE_httpcore.txt"/>
+                                        <move file="${ant.jdbc.parseDirectory}/META-INF/NOTICE.txt"
+                                              tofile="${ant.jdbc.parseDirectory}/META-INF/NOTICE_httpcore.txt"/>
+
+                                        <unzip src="${project.build.directory}/tempjars/jettison-${jettison.version}.jar"
+                                               dest="${ant.jdbc.parseDirectory}"/>
+                                        <move file="${ant.jdbc.parseDirectory}/META-INF/LICENSE"
+                                              tofile="${ant.jdbc.parseDirectory}/META-INF/LICENSE_jettison.txt"/>
+
+                                        <unzip src="${project.build.directory}/tempjars/resteasy-jaxrs-${resteasy.version}.jar"
+                                               dest="${ant.jdbc.parseDirectory}"/>
+                                        <move file="${ant.jdbc.parseDirectory}/META-INF/services/javax.ws.rs.ext.Providers"
+                                              tofile="${project.build.directory}/tempproviders/jaxrs_providers"/>
+
+                                        <unzip src="${project.build.directory}/tempjars/resteasy-jaxb-provider-${resteasy.version}.jar"
+                                               dest="${ant.jdbc.parseDirectory}"/>
+                                        <move file="${ant.jdbc.parseDirectory}/META-INF/services/javax.ws.rs.ext.Providers"
+                                              tofile="${project.build.directory}/tempproviders/jaxb_providers"/>
+
+                                        <unzip src="${project.build.directory}/tempjars/resteasy-jettison-provider-${resteasy.version}.jar"
+                                               dest="${ant.jdbc.parseDirectory}"/>
+                                        <move file="${ant.jdbc.parseDirectory}/META-INF/services/javax.ws.rs.ext.Providers"
+                                              tofile="${project.build.directory}/tempproviders/jet_providers"/>
+
+                                        <concat destfile="${ant.jdbc.parseDirectory}/META-INF/services/javax.ws.rs.ext.Providers">
+                                            <fileset file="${project.build.directory}/tempproviders/jaxrs_providers"/>
+                                            <fileset file="${project.build.directory}/tempproviders/jaxb_providers"/>
+                                            <fileset file="${project.build.directory}/tempproviders/jet_providers"/>
+                                        </concat>
+
+                                        <unzip src="${project.build.directory}/tempjars/modeshape-common-${project.version}.jar"
+                                               dest="${ant.jdbc.parseDirectory}"/>
+                                        <unzip src="${project.build.directory}/tempjars/modeshape-jcr-api-${project.version}.jar"
+                                               dest="${ant.jdbc.parseDirectory}"/>
+                                        <unzip src="${project.build.directory}/tempjars/modeshape-web-jcr-rest-client-${project.version}.jar"
+                                               dest="${ant.jdbc.parseDirectory}"/>
+
+                                        <move file="${project.build.directory}/tempjars/META-INF/services/java.sql.Driver"
+                                              tofile="${project.build.directory}/tempdrivers/jdbc_drivers"/>
+                                        <unzip src="${project.build.directory}/tempjars/modeshape-jdbc-local-${project.version}.jar"
+                                               dest="${ant.jdbc.parseDirectory}"/>
+                                        <move file="${ant.jdbc.parseDirectory}/META-INF/services/java.sql.Driver"
+                                              tofile="${project.build.directory}/tempdrivers/jdbc_local_drivers"/>
+
+                                        <copy todir="${ant.jdbc.parseDirectory}/org">
+                                            <fileset dir="${project.build.directory}/tempjars/org"/>
+                                        </copy>
+
+                                        <concat destfile="${ant.jdbc.parseDirectory}/META-INF/services/java.sql.Driver"
+                                                fixlastline="yes">
+                                            <fileset file="${project.build.directory}/tempdrivers/jdbc_drivers"/>
+                                            <fileset file="${project.build.directory}/tempdrivers/jdbc_local_drivers"/>
+                                        </concat>
+
+                                        <delete file="${project.build.directory}/modeshape-jdbc-${project.version}-jar-with-dependencies.jar"/>
+
+                                        <delete dir="${project.build.directory}/tempjars"/>
+                                        <delete dir="${project.build.directory}/tempproviders"/>
+                                        <delete dir="${project.build.directory}/tempdrivers"/>
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <!--Creates & attaches the main jar assembly -->
+                            <execution>
+                                <id>default</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <attach>true</attach>
+                                    <descriptors>
+                                        <descriptor>src/assembly/kit.xml</descriptor>
+                                    </descriptors>
+                                    <appendAssemblyId>false</appendAssemblyId>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>
