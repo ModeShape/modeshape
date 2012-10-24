@@ -983,6 +983,17 @@ public class RepositoryConfiguration {
         return EXTRACTOR_ALIASES.get(alias);
     }
 
+    /**
+     * Returns a fully qualified built-in authentication provider class name mapped to the given alias, or {@code null} if there
+     * isn't such a mapping
+     * 
+     * @param alias the alias
+     * @return the name of the authentication provider class, or null if the alias did not correspond to a built-in class
+     */
+    public static String getBuiltInAuthenticationProviderClassName( String alias ) {
+        return PROVIDER_ALIASES.get(alias);
+    }
+
     @Immutable
     public class InitialContent {
         private final Map<String, String> workspacesInitialContentFiles;

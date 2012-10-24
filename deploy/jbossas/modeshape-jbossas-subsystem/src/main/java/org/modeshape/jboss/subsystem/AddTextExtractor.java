@@ -36,6 +36,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
@@ -100,6 +101,10 @@ public class AddTextExtractor extends AbstractAddStepHandler {
                 props.put(FieldName.CLASSNAME, node.asString());
             } else if (key.equals(ModelKeys.MODULE) && ModelAttributes.MODULE.isMarshallable(operation)) {
                 props.put(FieldName.CLASSLOADER, node.asString());
+            } else if (key.equals(ModelKeys.PROPERTIES)) {
+                for (Property property : node.asPropertyList()) {
+                    props.put(property.getName(), property.getValue().asString());
+                }
             } else {
                 props.put(key, node.asString());
             }
@@ -139,7 +144,8 @@ public class AddTextExtractor extends AbstractAddStepHandler {
             fqExtractorClass = textExtractorClassName;
         }
         // set the classloader to the package name of the sequencer class
-        String extractorModuleName = fqExtractorClass.substring(0, fqExtractorClass.lastIndexOf("."));
+        int index = fqExtractorClass.lastIndexOf(".");
+        String extractorModuleName = index != -1 ? fqExtractorClass.substring(0, index) : fqExtractorClass;
         properties.setProperty(FieldName.CLASSLOADER, extractorModuleName);
     }
 

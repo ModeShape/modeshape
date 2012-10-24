@@ -38,12 +38,12 @@ public class BinaryStorageService implements Service<BinaryStorage> {
     private final Injector<CacheContainer> binaryManagerInjector = new Injector<CacheContainer>() {
         @Override
         public void inject( CacheContainer value ) throws InjectionException {
-            binaryStorage.setCacheContainer(value);
+            binaryStorage().setCacheContainer(value);
         }
 
         @Override
         public void uninject() {
-            binaryStorage.setCacheContainer(null);
+            binaryStorage().setCacheContainer(null);
         }
     };
     private final InjectedValue<String> binaryStorageBasePathInjector = new InjectedValue<String>();
@@ -63,6 +63,9 @@ public class BinaryStorageService implements Service<BinaryStorage> {
         this.binaryStorage = null;
     }
 
+    protected final BinaryStorage binaryStorage() {
+        return binaryStorage;
+    }
 
     private String getBinaryStorageBasePath() {
         return appendDirDelim(binaryStorageBasePathInjector.getOptionalValue());
@@ -91,7 +94,8 @@ public class BinaryStorageService implements Service<BinaryStorage> {
 
     @Override
     public BinaryStorage getValue() throws IllegalStateException, IllegalArgumentException {
-        return binaryStorage != null ? binaryStorage : BinaryStorage.defaultStorage(repositoryName, dataDirectoryPathInjector.getValue());
+        return binaryStorage != null ? binaryStorage : BinaryStorage.defaultStorage(repositoryName,
+                                                                                    dataDirectoryPathInjector.getValue());
     }
 
     /**

@@ -23,12 +23,15 @@
  */
 package org.modeshape.jboss.service;
 
+import java.util.ArrayList;
+import java.util.List;
 import javax.jcr.RepositoryException;
 import javax.transaction.TransactionManager;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Editor;
 import org.jboss.as.clustering.jgroups.ChannelFactory;
@@ -55,8 +58,6 @@ import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * A <code>RepositoryService</code> instance is the service responsible for initializing a {@link JcrRepository} in the ModeShape
@@ -171,12 +172,13 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
             // Get the index storage configuration ...
             IndexStorage indexStorageConfig = indexStorageConfigInjector.getValue();
             assert indexStorageConfig != null;
-            //if there's a cache container, validate that it's different from the repository's
+            // if there's a cache container, validate that it's different from the repository's
             CacheContainer indexStorageCacheContainer = indexStorageConfig.getCacheContainer();
             if (indexStorageCacheContainer != null) {
                 CacheContainer repositoryCacheContainer = getCacheContainer(null);
                 if (indexStorageCacheContainer == repositoryCacheContainer) {
-                    throw new StartException("The repository cache container and the index storage cannot container cannot be the same");
+                    throw new StartException(
+                                             "The repository cache container and the index storage cannot container cannot be the same");
                 }
             }
 
@@ -353,6 +355,72 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
                 Object rawValue = defn.getTypedValue(newValue);
                 // And update the field ...
                 extractor.set(fieldName, rawValue);
+                break;
+            }
+        }
+
+        Changes changes = editor.getChanges();
+        engine.update(repositoryName, changes);
+    }
+
+    /**
+     * Immediately change and apply the specified authenticator field in the current repository configuration to the new value.
+     * 
+     * @param defn the attribute definition for the value; may not be null
+     * @param newValue the new string value
+     * @param authenticatorName the name of the authenticator
+     * @throws RepositoryException if there is a problem obtaining the repository configuration or applying the change
+     * @throws OperationFailedException if there is a problem obtaining the raw value from the supplied model node
+     */
+    public void changeAuthenticatorField( MappedAttributeDefinition defn,
+                                          ModelNode newValue,
+                                          String authenticatorName ) throws RepositoryException, OperationFailedException {
+        ModeShapeEngine engine = getEngine();
+        String repositoryName = repositoryName();
+
+        // Get a snapshot of the current configuration ...
+        RepositoryConfiguration config = engine.getRepositoryConfiguration(repositoryName);
+
+        // Now start to make changes ...
+        Editor editor = config.edit();
+
+        // Find the array of sequencer documents ...
+        EditableDocument security = editor.getOrCreateDocument(FieldName.SECURITY);
+        EditableArray providers = security.getOrCreateArray(FieldName.PROVIDERS);
+
+        // The container should be an array ...
+        for (String configuredAuthenticatorName : providers.keySet()) {
+            // Look for the entry with a name that matches our authenticator name ...
+            if (authenticatorName.equals(configuredAuthenticatorName)) {
+                // Find the document in the array with the name field value that matches ...
+                boolean found = false;
+                for (Object nested : providers) {
+                    if (nested instanceof EditableDocument) {
+                        EditableDocument doc = (EditableDocument)nested;
+                        if (doc.getString(FieldName.NAME).equals(configuredAuthenticatorName)) {
+                            // Change the field ...
+                            String fieldName = defn.getFieldName();
+                            // Get the raw value from the model node ...
+                            Object rawValue = defn.getTypedValue(newValue);
+                            // And update the field ...
+                            doc.set(fieldName, rawValue);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (!found) {
+                    // Add the nested document ...
+                    EditableDocument doc = Schematic.newDocument();
+                    doc.set(FieldName.NAME, configuredAuthenticatorName);
+                    // Set the field ...
+                    String fieldName = defn.getFieldName();
+                    // Get the raw value from the model node ...
+                    Object rawValue = defn.getTypedValue(newValue);
+                    // And update the field ...
+                    doc.set(fieldName, rawValue);
+                    providers.add(doc);
+                }
                 break;
             }
         }

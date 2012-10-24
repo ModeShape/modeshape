@@ -61,43 +61,48 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
-    public void testOutputPersistanceOfConfigurationWithLocalFileIndexStorage() throws Exception {
+    public void testOutputPersistenceOfConfigurationWithLocalFileIndexStorage() throws Exception {
         parse(readResource("modeshape-local-file-index-storage.xml"));
     }
 
     @Test
-    public void testOutputPersistanceOfConfigurationWithCacheIndexStorage() throws Exception {
+    public void testOutputPersistenceOfConfigurationWithCacheIndexStorage() throws Exception {
         parse(readResource("modeshape-cache-index-storage.xml"));
     }
 
     @Test
-    public void testOutputPersistanceOfConfigurationWithFileBinaryStorage() throws Exception {
+    public void testOutputPersistenceOfConfigurationWithFileBinaryStorage() throws Exception {
         parse(readResource("modeshape-file-binary-storage.xml"));
     }
 
     @Test
-    public void testOutputPersistanceOfConfigurationWithCacheBinaryStorage() throws Exception {
+    public void testOutputPersistenceOfConfigurationWithCacheBinaryStorage() throws Exception {
         parse(readResource("modeshape-cache-binary-storage.xml"));
     }
 
     @Test
-    public void testOutputPersistanceOfConfigurationWithWorkspaceInitialContent() throws Exception {
+    public void testOutputPersistenceOfConfigurationWithWorkspaceInitialContent() throws Exception {
         parse(readResource("modeshape-initial-content-config.xml"));
     }
 
     @Test
-    public void testOutputPersistanceOfConfigurationWithNodeTypes() throws Exception {
+    public void testOutputPersistenceOfConfigurationWithNodeTypes() throws Exception {
         parse(readResource("modeshape-node-types-config.xml"));
     }
 
     @Test
-    public void testOutputPersistanceOfConfigurationWithWorkspacesCacheContainer() throws Exception {
+    public void testOutputPersistenceOfConfigurationWithCustomAuthenticators() throws Exception {
+        parse(readResource("modeshape-custom-authenticators-config.xml"));
+    }
+
+    @Test
+    public void testOutputPersistenceOfConfigurationWithWorkspacesCacheContainer() throws Exception {
         parse(readResource("modeshape-workspaces-cache-config.xml"));
     }
 
     /* // todo replace with dmr format not json
     @Test
-    public void testOutputPersistance() throws Exception {
+    public void testOutputPersistence() throws Exception {
     String subsystemXml = readResource("modeshape-sample-config.xml");
 
     String json = readResource("modeshape-sample-config.json");
@@ -117,7 +122,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     */
     /*
     @Test
-    public void testOutputPersistanceOfRelativelyThoroughConfiguration() throws Exception {
+    public void testOutputPersistenceOfRelativelyThoroughConfiguration() throws Exception {
         String subsystemXml = readResource("modeshape-full-config.xml");
 
         String json = readResource("modeshape-full-config.json");
@@ -141,48 +146,60 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
 
     /*
         @Test
-        public void testOutputPersistanceOfConfigurationWithLocalFileIndexStorage() throws Exception {
+        public void testOutputPersistenceOfConfigurationWithLocalFileIndexStorage() throws Exception {
         roundTrip("modeshape-local-file-index-storage.xml", "modeshape-local-file-index-storage.json");
         }
 
         @Test
-        public void testOutputPersistanceOfConfigurationWithCacheIndexStorage() throws Exception {
+        public void testOutputPersistenceOfConfigurationWithCacheIndexStorage() throws Exception {
         roundTrip("modeshape-cache-index-storage.xml", "modeshape-cache-index-storage.json");
         }
 
         @Test
-        public void testOutputPersistanceOfConfigurationWithFileBinaryStorage() throws Exception {
+        public void testOutputPersistenceOfConfigurationWithFileBinaryStorage() throws Exception {
         roundTrip("modeshape-file-binary-storage.xml", "modeshape-file-binary-storage.json");
         }
 
         @Test
-        public void testOutputPersistanceOfConfigurationWithCacheBinaryStorage() throws Exception {
+        public void testOutputPersistenceOfConfigurationWithCacheBinaryStorage() throws Exception {
         roundTrip("modeshape-cache-binary-storage.xml", "modeshape-cache-binary-storage.json");
         }
 
         @Test
-        public void testOutputPersistanceOfConfigurationWithClustering() throws Exception {
+        public void testOutputPersistenceOfConfigurationWithClustering() throws Exception {
         roundTrip("modeshape-clustered-config.xml", "modeshape-clustered-config.json");
         }
 
         @Test
-        public void testOutputPersistanceOfConfigurationWithMinimalRepository() throws Exception {
+        public void testOutputPersistenceOfConfigurationWithMinimalRepository() throws Exception {
         roundTrip("modeshape-minimal-config.xml", "modeshape-minimal-config.json");
         }
+    */
+    @Ignore
+    @Test
+    public void testOutputPersistenceOfConfigurationWithAuthenticators() throws Exception {
+        roundTrip("modeshape-custom-authenticators-config.xml", "modeshape-custom-authenticators-config.json");
+    }
 
-        protected void roundTrip( String filenameOfInputXmlConfig,
-        String filenameOfExpectedJson ) throws Exception {
+    protected void roundTrip( String filenameOfInputXmlConfig,
+                              String filenameOfExpectedJson ) throws Exception {
         String subsystemXml = readResource(filenameOfInputXmlConfig);
 
         String json = readResource(filenameOfExpectedJson);
+        System.out.println("JSON: " + json);
         ModelNode testModel = filterValues(ModelNode.fromJSONString(json));
         String triggered = outputModel(testModel);
+        System.out.println("Triggered: " + triggered);
 
         KernelServices services = super.installInController(AdditionalInitialization.MANAGEMENT, subsystemXml);
 
         // Get the model and the persisted xml from the controller
         ModelNode model = services.readWholeModel();
+        System.out.println("Original Model: " + testModel);
+        System.out.println("Re-read  Model: " + model);
         String marshalled = services.getPersistedSubsystemXml();
+
+        System.out.println("Marshalled: " + marshalled);
 
         compare(ModelNode.fromJSONString(json), model);
         compare(testModel, model);
@@ -190,7 +207,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         // The input XML contains some default values, and the marshalled value doesn't contain the defaults;
         // therefore we cannot compare them directly (though they are equivalent) ...
         // Assert.assertEquals(normalizeXML(subsystemXml), normalizeXML(marshalled));
-        }*/
+    }
 
     @Test
     public void testSchema() throws Exception {

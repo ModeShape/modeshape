@@ -80,10 +80,10 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         // Nested elements ...
         writeNodeTypes(writer, repository);
         writeWorkspaces(writer, repository);
+        writeAuthenticators(writer, repository);
         writeIndexing(writer, repository);
         writeIndexStorage(writer, repository);
         writeBinaryStorage(writer, repository);
-        writeAuthenticators(writer, repository);
         writeSequencing(writer, repository);
         writeTextExtraction(writer, repository);
         writer.writeEndElement();
@@ -367,20 +367,23 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
 
     private void writeAuthenticators( XMLExtendedStreamWriter writer,
                                       ModelNode repository ) throws XMLStreamException {
-        if (has(repository, ModelKeys.AUTHENTICATORS)) {
-            ModelNode indexing = repository.get(ModelKeys.AUTHENTICATORS);
+        if (has(repository, ModelKeys.AUTHENTICATOR)) {
             writer.writeStartElement(Element.AUTHENTICATORS.getLocalName());
-            for (String key : indexing.keys()) {
-                if (ModelKeys.NAME.equals(key)) {
-                    ModelAttributes.NAME.marshallAsAttribute(indexing, writer);
-                } else if (ModelKeys.CLASSNAME.equals(key)) {
-                    ModelAttributes.CLASSNAME.marshallAsAttribute(indexing, writer);
-                } else if (ModelKeys.MODULE.equals(key)) {
-                    ModelAttributes.MODULE.marshallAsAttribute(indexing, writer);
-                } else {
-                    ModelNode param = indexing.get(key);
-                    writer.writeAttribute(key, param.asString());
+            for (Property authenticator : repository.get(ModelKeys.AUTHENTICATOR).asPropertyList()) {
+                writer.writeStartElement(Element.AUTHENTICATOR.getLocalName());
+                writer.writeAttribute(Attribute.NAME.getLocalName(), authenticator.getName());
+                ModelNode prop = authenticator.getValue();
+                ModelAttributes.AUTHENTICATOR_CLASSNAME.marshallAsAttribute(prop, writer);
+                ModelAttributes.MODULE.marshallAsAttribute(prop, writer);
+
+                // Write out the extra properties ...
+                if (has(prop, ModelKeys.PROPERTIES)) {
+                    ModelNode properties = prop.get(ModelKeys.PROPERTIES);
+                    for (Property property : properties.asPropertyList()) {
+                        writer.writeAttribute(property.getName(), property.getValue().asString());
+                    }
                 }
+                writer.writeEndElement();
             }
             writer.writeEndElement();
         }
