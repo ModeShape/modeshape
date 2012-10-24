@@ -52,12 +52,12 @@ public class AuthenticatorWriteAttributeHandler extends AbstractRepositoryConfig
                                    RepositoryService repositoryService,
                                    MappedAttributeDefinition defn,
                                    ModelNode newValue ) throws RepositoryException, OperationFailedException {
-        String extractorName = extractorName(operation);
-        repositoryService.changeAuthenticatorField(defn, newValue, extractorName);
+        String authenticatorName = authenticatorName(operation);
+        repositoryService.changeAuthenticatorField(defn, newValue, authenticatorName);
         return true;
     }
 
-    protected final String extractorName( ModelNode operation ) {
+    protected final String authenticatorName( ModelNode operation ) {
         PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
         return address.getLastElement().getValue();
     }

@@ -46,7 +46,7 @@ import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
 /**
- * {@link Service} implementation which exposes ModeShape's text extraction feature.
+ * {@link Service} implementation which exposes ModeShape's custom authenticators.
  */
 public class AuthenticatorService implements Service<JcrRepository> {
 
