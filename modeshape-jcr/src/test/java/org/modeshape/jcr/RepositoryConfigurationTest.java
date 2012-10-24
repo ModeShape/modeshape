@@ -135,6 +135,21 @@ public class RepositoryConfigurationTest {
     }
 
     @Test
+    public void shouldSuccessfullyValidateJndiBasedDataStoreBinaryStorageConfiguration() {
+        assertValid("config/database-jndi-binary-storage.json");
+    }
+
+    @Test
+    public void shouldSuccessfullyValidateDriverBasedBinaryStorageConfiguration() {
+        assertValid("config/database-url-binary-storage.json");
+    }
+
+    @Test
+    public void shouldSuccessfullyValidateCustomBinaryStorageConfiguration() {
+        assertValid("config/custom-binary-storage.json");
+    }
+
+    @Test
     public void shouldNotSuccessfullyValidateSampleRepositoryConfigurationWithIndexStorageOnFilesystemAndExtraProperties() {
         assertNotValid(1, "config/invalid-index-storage-config-filesystem.json");
     }

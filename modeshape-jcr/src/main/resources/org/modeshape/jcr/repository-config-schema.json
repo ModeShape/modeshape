@@ -114,13 +114,53 @@
                             "properties" : {
                                 "type" : {
                                     "type" : "string",
-                                    "description" : "The specification of the database binary store, which stores BINARY values in a JDBC-compatible database.",
+                                    "description" : "The specification of the database binary store, which stores BINARY values in a JDBC-compatible database accessed through a JDBC DataSource registered in JNDI.",
                                     "enum" : [ "database" ]
                                 },
                                 "dataSourceJndiName" : {
                                     "type" : "string",
                                     "description" : "The name in JNDI where the JDBC DataSource is registered that should be used for binary storage.",
                                     "required" : true,
+                                },
+                                "minimumBinarySizeInBytes" : {
+                                    "type" : "integer",
+                                    "default" : 4096,
+                                    "description" : "The size threshold that dictates whether String and binary values should be stored in the binary store. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                },
+                            }
+                        },
+                        {
+                            "type" : "object",
+                            "additionalProperties" : true,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of the database binary store, which stores BINARY values in a JDBC-compatible database accessed through a JDBC connection established by specifying the driver class, URL, and other properties",
+                                    "enum" : [ "database" ]
+                                },
+                                "driverClass" : {
+                                    "type" : "string",
+                                    "description" : "The full-qualified name of the JDBC driver class.",
+                                    "required" : true,
+                                },
+                                "url" : {
+                                    "type" : "string",
+                                    "description" : "The URL to be used to establish the database connection.",
+                                    "required" : true,
+                                },
+                                "username" : {
+                                    "type" : "string",
+                                    "description" : "The (optional) username for the database connection. Many JDBC drivers accept specifying the username in the URL.",
+                                    "required" : false,
+                                },
+                                "password" : {
+                                    "type" : "string",
+                                    "description" : "The (optional) password for the database connection. Many JDBC drivers accept specifying the password in the URL.",
+                                    "required" : false,
                                 },
                                 "minimumBinarySizeInBytes" : {
                                     "type" : "integer",
@@ -155,6 +195,35 @@
                                 "cacheConfiguration" : {
                                     "type" : "string",
                                     "description" : "The name of the Infinispan configuration file for creating a new cache manager. If a file could not be found (on the thread context classloader, on the application's classpath, or on the system classpath), then the name is assumed to reference an existing Infinispan CacheContainer instance via a valid JNDI name or as the name of a service as defined by the local environment. If not specified or no such container is found, then the same cache manager used for the content storage will be used."
+                                },
+                                "minimumBinarySizeInBytes" : {
+                                    "type" : "integer",
+                                    "default" : 4096,
+                                    "description" : "The size threshold that dictates whether String and binary values should be stored in the binary store. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                },
+                            }
+                        },
+                        {
+                            "type" : "object",
+                            "additionalProperties" : true,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of a custom binary store.",
+                                    "enum" : [ "custom" ]
+                                },
+                                "classname" : {
+                                    "type" : "string",
+                                    "required" : true,
+                                    "description" : "The fully-qualified name of the 'org.modeshape.jcr.value.binary.BinaryStore' implementation class."
+                                },
+                                "classloader" : {
+                                    "type" : "string",
+                                    "description" : "The optional name of the classloader that should be used to load the BinaryStore implementation class. If empty or not provided, the classpath accessible to ModeShape will be used."
                                 },
                                 "minimumBinarySizeInBytes" : {
                                     "type" : "integer",

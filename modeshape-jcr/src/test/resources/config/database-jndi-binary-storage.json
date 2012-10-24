@@ -1,0 +1,10 @@
+{
+    "name" : "Test Repository",
+    "storage" : {
+        "binaryStorage" : {
+            "type"  : "database",
+            "dataSourceJndiName" : "java:/myDataSource"
+        }
+    }
+    
+}
