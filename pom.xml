@@ -98,6 +98,7 @@
         <profile>
             <id>assembly</id>
             <modules>
+                <module>modeshape-client</module>
                 <module>demos</module>
                 <module>modeshape-distribution</module>
                 <module>integration</module>
