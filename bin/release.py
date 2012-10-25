@@ -374,6 +374,7 @@ def release():
   
   # Step 2: Update version in tagged files
   prettyprint("Step 2: Updating version number in source files", Levels.INFO)
+  maven_clean()
   update_versions(version)
   prettyprint("Step 2: Complete", Levels.INFO)
   

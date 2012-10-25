@@ -392,6 +392,11 @@ class DryRunUploader(DryRun):
   def upload(self, fr, to, type):
     self.copy(fr, "%s/%s/%s" % (self.location_root, type, to))    
 
+def maven_clean():
+  """Cleans the distribution in the current working dir"""
+  mvn_command = ["mvn","-Passembly","clean"]
+  subprocess.check_call(mvn_command)
+
 def maven_build_distribution(version):
   """Builds the distribution in the current working dir"""
   mvn_commands = [["clean", "install", "-Passembly"],["deploy","-Passembly","-DskipTests"]]
