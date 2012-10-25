@@ -1,8 +1,8 @@
 # Release Notes for ModeShape &version;
 
-The ModeShape &version; release is the third candidate release (CR) of our new architecture.
-There are no known issues, but this release should be used only for testing and previewing features.
-It is very unlikely (though still possible) that APIs and storage formats will change before 3.0.0.Final.
+The ModeShape &version; release is the first stable release of our new architecture.
+It's been a long journey with fourteen different alphas, betas, and candidate releases.
+But this is a huge improvement over the 2.x series. We hope you enjoy it!
 
 ## What's new
 
@@ -168,5 +168,6 @@ earlier with full support for JCR 2.0.
 
 
 ## Bug Fixes, Features, and other Issues
-The following are the bugs, features and other issues that have been fixed in this release:
+
+The following are the bugs, features and other issues that have been fixed in the 3.0.0.Final release:
 
