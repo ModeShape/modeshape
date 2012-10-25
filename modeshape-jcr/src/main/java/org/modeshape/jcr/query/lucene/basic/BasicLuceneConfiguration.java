@@ -163,9 +163,9 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
         setProperty("hibernate.search.worker.batch_size", batchSize);
         setProperty("hibernate.search.lucene_version", indexFormat);
         setProperty("hibernate.search.reader.strategy", readerStrategy);
-        setProperty("hibernate.search.worker.execution", mode); // sync or async
-        setProperty("hibernate.search.worker.thread_pool.size", asyncThreadPoolSize);
-        setProperty("hibernate.search.worker.buffer_queue.max", asyncMaxQueueSize);
+        setProperty("hibernate.search.default.worker.execution", mode); // sync or async
+        setProperty("hibernate.search.default.worker.thread_pool.size", asyncThreadPoolSize);
+        setProperty("hibernate.search.default.worker.buffer_queue.max", asyncMaxQueueSize);
 
         for (Object keyObj : indexing.keySet()) {
             String key = keyObj.toString();
