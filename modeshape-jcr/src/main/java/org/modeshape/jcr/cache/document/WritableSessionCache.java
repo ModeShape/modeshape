@@ -42,7 +42,6 @@ import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
@@ -554,7 +553,7 @@ public class WritableSessionCache extends AbstractSessionCache {
     private void checkNodeNotRemovedByAnotherTransaction( MutableCachedNode node ) {
         String keyString = node.getKey().toString();
         // if the node is not new and also missing from the document, another transaction has deleted it
-        if (!node.isNew() && !workspaceCache.database().containsKey(keyString)) {
+        if (!node.isNew() && !workspaceCache.documentStore().containsKey(keyString)) {
             throw new DocumentNotFoundException(keyString);
         }
     }
@@ -704,8 +703,8 @@ public class WritableSessionCache extends AbstractSessionCache {
         String processKey = workspaceCache().getProcessKey();
         RecordingChanges changes = new RecordingChanges(processKey, repositoryKey, workspaceName);
 
-        // Get the database ...
-        SchematicDb database = workspaceCache.database();
+        // Get the documentStore ...
+        DocumentStore documentStore = workspaceCache.documentStore();
         DocumentTranslator translator = workspaceCache.translator();
 
         PathCache sessionPaths = new PathCache(this);
@@ -731,10 +730,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // if there were any referrer changes for the removed nodes, we need to process them
                     ReferrerChanges referrerChanges = referrerChangesForRemovedNodes.get(key);
                     if (referrerChanges != null) {
-                        EditableDocument doc = database.get(keyStr).editDocumentContent();
+                        EditableDocument doc = documentStore.get(keyStr).editDocumentContent();
                         translator.changeReferrers(doc, referrerChanges);
                     }
-                    // Note 1: Do not actually remove the document from the database yet; see below (note 2)
+                    // Note 1: Do not actually remove the document from the documentStore yet; see below (note 2)
                 }
                 // Otherwise, the removed node was created in the session (but not ever persisted),
                 // so we don't have to do anything ...
@@ -763,9 +762,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                     }
 
                 } else {
-                    SchematicEntry nodeEntry = database.get(keyStr);
+                    SchematicEntry nodeEntry = documentStore.get(keyStr);
                     if (nodeEntry == null) {
-                        // Could not find the entry in the database, which means it was deleted by someone else
+                        // Could not find the entry in the documentStore, which means it was deleted by someone else
                         // just moments before we got our transaction to save ...
                         throw new DocumentNotFoundException(keyStr);
                     }
@@ -863,7 +862,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 MutableChildReferences appended = node.appended(false);
                 if ((changedChildren == null || changedChildren.isEmpty()) && (appended != null && !appended.isEmpty())) {
                     // Just appended children ...
-                    translator.changeChildren(key, doc, changedChildren, appended);
+                    translator.changeChildren(doc, changedChildren, appended);
                 } else if (changedChildren != null && !changedChildren.isEmpty()) {
                     if (!changedChildren.getRemovals().isEmpty()) {
                         // This node is not being removed (or added), but it has removals, and we have to calculate the paths
@@ -884,7 +883,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     }
 
                     // Now change the children ...
-                    translator.changeChildren(key, doc, changedChildren, appended);
+                    translator.changeChildren(doc, changedChildren, appended);
 
                     // Generate events for renames, as this is only captured in the parent node ...
                     Map<NodeKey, Name> newNames = changedChildren.getNewNames();
@@ -942,13 +941,13 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                 if (node.isNew()) {
                     // We need to create the schematic entry for the new node ...
-                    if (database.putIfAbsent(keyStr, doc, metadata) != null) {
+                    if (documentStore.putIfAbsent(keyStr, doc, metadata) != null) {
                         if (replacedNodes != null && replacedNodes.contains(key)) {
                             // Then a node is being removed and recreated with the same key ...
-                            database.put(keyStr, doc, metadata);
+                            documentStore.put(keyStr, doc, metadata);
                         } else if (removedNodes != null && removedNodes.contains(key)) {
                             // Then a node is being removed and recreated with the same key ...
-                            database.put(keyStr, doc, metadata);
+                            documentStore.put(keyStr, doc, metadata);
                             removedNodes.remove(key);
                         } else {
                             // We couldn't create the entry because one already existed ...
@@ -1014,8 +1013,8 @@ public class WritableSessionCache extends AbstractSessionCache {
             // we need to collect the referrers at the end only, so that other potential changes in references have been computed
             Set<NodeKey> referrers = new HashSet<NodeKey>();
             for (NodeKey removedKey : removedNodes) {
-                // we need the current document from the database, because this differs from what's persisted
-                Document doc = database.get(removedKey.toString()).getContentAsDocument();
+                // we need the current document from the documentStore, because this differs from what's persisted
+                Document doc = documentStore.get(removedKey.toString()).getContentAsDocument();
                 referrers.addAll(translator.getReferrers(doc, ReferenceType.STRONG));
             }
             // check referential integrity ...
@@ -1025,11 +1024,11 @@ public class WritableSessionCache extends AbstractSessionCache {
                 throw new ReferentialIntegrityException(removedNodes, referrers);
             }
 
-            // Now remove all of the nodes from the database.
+            // Now remove all of the nodes from the documentStore.
             // Note 2: we do this last because the children are removed from their parent before the removal is handled above
             // (see Node 1), meaning getting the path and other information for removed nodes never would work properly.
             for (NodeKey removedKey : removedNodes) {
-                database.remove(removedKey.toString());
+                documentStore.remove(removedKey.toString());
             }
 
             // And record the removals via the monitor ...
