@@ -57,6 +57,7 @@ import org.modeshape.jcr.cache.change.Observable;
 import org.modeshape.jcr.cache.change.RecordingChanges;
 import org.modeshape.jcr.cache.change.WorkspaceAdded;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
+import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.ReadOnlySessionCache;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
@@ -84,7 +85,7 @@ public class RepositoryCache implements Observable {
 
     private final ExecutionContext context;
     private final RepositoryConfiguration configuration;
-    private final SchematicDb database;
+    private final DocumentStore documentStore;
     private final ConcurrentHashMap<String, WorkspaceCache> workspaceCachesByName;
     private final AtomicLong minimumBinarySizeInBytes = new AtomicLong();
     private final String name;
@@ -102,7 +103,7 @@ public class RepositoryCache implements Observable {
     private final CacheContainer workspaceCacheManager;
 
     public RepositoryCache( ExecutionContext context,
-                            SchematicDb database,
+                            DocumentStore documentStore,
                             RepositoryConfiguration configuration,
                             ContentInitializer initializer,
                             SessionEnvironment sessionContext,
@@ -110,7 +111,7 @@ public class RepositoryCache implements Observable {
                             CacheContainer workspaceCacheContainer ) {
         this.context = context;
         this.configuration = configuration;
-        this.database = database;
+        this.documentStore = documentStore;
         this.minimumBinarySizeInBytes.set(configuration.getBinaryStorage().getMinimumBinarySizeInBytes());
         this.sessionContext = sessionContext;
         this.workspaceCacheManager = workspaceCacheContainer;
@@ -120,7 +121,7 @@ public class RepositoryCache implements Observable {
         this.workspaceCachesByName = new ConcurrentHashMap<String, WorkspaceCache>();
         this.workspaceNames = new CopyOnWriteArraySet<String>(configuration.getAllWorkspaceNames());
 
-        SchematicEntry repositoryInfo = this.database.get(REPOSITORY_INFO_KEY);
+        SchematicEntry repositoryInfo = this.documentStore.get(REPOSITORY_INFO_KEY);
         if (repositoryInfo == null) {
             // Must be a new repository (or one created before 3.0.0.Final) ...
             this.repoKey = NodeKey.keyForSourceName(this.name);
@@ -134,8 +135,8 @@ public class RepositoryCache implements Observable {
             doc.setString(REPOSITORY_SOURCE_KEY_FIELD_NAME, this.sourceKey);
             doc.setDate(REPOSITORY_CREATED_AT_FIELD_NAME, now.toDate());
             doc.setString(REPOSITORY_CREATED_WITH_MODESHAPE_VERSION_FIELD_NAME, ModeShape.getVersion());
-            this.database.put(REPOSITORY_INFO_KEY, doc, null);
-            repositoryInfo = this.database.get(REPOSITORY_INFO_KEY);
+            this.documentStore.put(REPOSITORY_INFO_KEY, doc, null);
+            repositoryInfo = this.documentStore.get(REPOSITORY_INFO_KEY);
         } else {
             // Get the repository key and source key from the repository info document ...
             Document info = repositoryInfo.getContentAsDocument();
@@ -187,6 +188,9 @@ public class RepositoryCache implements Observable {
             logger.debug("Found existing '{0}' workspace in repository '{1}'", systemWorkspaceName, name);
         }
         this.systemKey = systemRef.getKey();
+
+        //set the local source key in the document store
+        this.documentStore.setLocalSourceKey(this.sourceKey);
     }
 
     protected Name name( String name ) {
@@ -255,17 +259,17 @@ public class RepositoryCache implements Observable {
 
     protected void refreshWorkspaces( boolean update ) {
         // Read the node document ...
-        DocumentTranslator translator = new DocumentTranslator(context, database, minimumBinarySizeInBytes.get());
+        DocumentTranslator translator = new DocumentTranslator(context, documentStore, minimumBinarySizeInBytes.get());
         Set<String> workspaceNames = new HashSet<String>(this.workspaceNames);
         String systemMetadataKeyStr = this.systemMetadataKey.toString();
-        SchematicEntry entry = database.get(systemMetadataKeyStr);
+        SchematicEntry entry = documentStore.get(systemMetadataKeyStr);
         if (entry == null) {
             // it doesn't exist, so set it up ...
             PropertyFactory propFactory = context.getPropertyFactory();
             EditableDocument doc = Schematic.newDocument();
             translator.setKey(doc, systemMetadataKey);
             translator.setProperty(doc, propFactory.create(name("workspaces"), workspaceNames), null);
-            entry = database.putIfAbsent(systemMetadataKeyStr, doc, null);
+            entry = documentStore.putIfAbsent(systemMetadataKeyStr, doc, null);
             // we'll need to read the entry if one was inserted between 'containsKey' and 'putIfAbsent' ...
         }
         if (entry != null) {
@@ -286,7 +290,7 @@ public class RepositoryCache implements Observable {
                 PropertyFactory propFactory = context.getPropertyFactory();
                 translator.setProperty(editable, propFactory.create(name("workspaces"), workspaceNames), null);
                 // we need to update the cache immediately, so the changes are persisted
-                database.replace(systemMetadataKeyStr, editable, entry.getMetadata());
+                documentStore.replace(systemMetadataKeyStr, editable, entry.getMetadata());
             }
         }
     }
@@ -494,16 +498,16 @@ public class RepositoryCache implements Observable {
 
             // Create the root document for this workspace ...
             EditableDocument rootDoc = Schematic.newDocument();
-            DocumentTranslator trans = new DocumentTranslator(context, database, Long.MAX_VALUE);
+            DocumentTranslator trans = new DocumentTranslator(context, documentStore, Long.MAX_VALUE);
             trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.ROOT), null);
             trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKey.toString()), null);
 
-            database.putIfAbsent(rootKey.toString(), rootDoc, null);
+            documentStore.putIfAbsent(rootKey.toString(), rootDoc, null);
 
             // Create/get the Infinispan cache that we'll use within the WorkspaceCache, using the cache manager's
             // default configuration ...
             Cache<NodeKey, CachedNode> nodeCache = workspaceCacheManager.getCache(cacheNameForWorkspace(name));
-            cache = new WorkspaceCache(context, getKey(), name, database, minimumBinarySizeInBytes.get(), rootKey, nodeCache,
+            cache = new WorkspaceCache(context, getKey(), name, documentStore, minimumBinarySizeInBytes.get(), rootKey, nodeCache,
                                        changeBus);
 
             WorkspaceCache existing = workspaceCachesByName.putIfAbsent(name, cache);

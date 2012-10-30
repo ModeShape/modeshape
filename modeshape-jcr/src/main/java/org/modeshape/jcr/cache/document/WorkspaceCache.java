@@ -49,7 +49,7 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
 
     private final DocumentTranslator translator;
     private final ExecutionContext context;
-    private final SchematicDb database;
+    private final DocumentStore documentStore;
     private final ConcurrentMap<NodeKey, CachedNode> nodesByKey;
     private final NodeKey rootKey;
     private final ChildReference childReferenceForRoot;
@@ -65,15 +65,15 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
     public WorkspaceCache( ExecutionContext context,
                            String repositoryKey,
                            String workspaceName,
-                           SchematicDb database,
+                           DocumentStore documentStore,
                            long largeValueSize,
                            NodeKey rootKey,
                            ConcurrentMap<NodeKey, CachedNode> cache,
                            ChangeSetListener changeSetListener ) {
         this.context = context;
-        this.database = database;
+        this.documentStore = documentStore;
         this.changeSetListener = changeSetListener;
-        this.translator = new DocumentTranslator(context, database, largeValueSize);
+        this.translator = new DocumentTranslator(context, documentStore, largeValueSize);
         this.rootKey = rootKey;
         this.childReferenceForRoot = new ChildReference(rootKey, Path.ROOT_NAME, 1);
         this.repositoryKey = repositoryKey;
@@ -131,13 +131,13 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         return pathFactory().createRootPath();
     }
 
-    final SchematicDb database() {
-        return database;
+    final DocumentStore documentStore() {
+        return documentStore;
     }
 
     final Document documentFor( String key ) {
         // Look up the information in the database ...
-        SchematicEntry entry = database.get(key);
+        SchematicEntry entry = documentStore.get(key);
         if (entry == null) {
             // There is no such node ...
             return null;

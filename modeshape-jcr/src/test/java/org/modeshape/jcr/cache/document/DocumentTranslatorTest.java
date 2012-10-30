@@ -53,7 +53,7 @@ public class DocumentTranslatorTest extends AbstractSessionCacheTest {
     @Test
     public void shouldNotSplitDocumentWithChildReferenceBlocksThatAreAlreadyTooSmall() throws Exception {
         NodeKey key = new NodeKey("source1works1-childB");
-        SchematicEntry entry = workspaceCache.database().get(key.toString());
+        SchematicEntry entry = workspaceCache.documentStore().get(key.toString());
         EditableDocument doc = entry.editDocumentContent();
         EditableArray children = doc.getArray(DocumentTranslator.CHILDREN);
         String nextBlock = doc.getDocument(DocumentTranslator.CHILDREN_INFO).getString(DocumentTranslator.NEXT_BLOCK);
@@ -64,14 +64,14 @@ public class DocumentTranslatorTest extends AbstractSessionCacheTest {
     @Test
     public void shouldMergeDocumentWithTooSmallChildReferencesSegmentInFirstBlock() throws Exception {
         NodeKey key = new NodeKey("source1works1-childB");
-        SchematicEntry entry = workspaceCache.database().get(key.toString());
+        SchematicEntry entry = workspaceCache.documentStore().get(key.toString());
         EditableDocument doc = entry.editDocumentContent();
         EditableArray children = doc.getArray(DocumentTranslator.CHILDREN);
         String nextBlock = doc.getDocument(DocumentTranslator.CHILDREN_INFO).getString(DocumentTranslator.NEXT_BLOCK);
         workspaceCache.translator().mergeChildren(key, doc, children, true, nextBlock);
 
         // Refetch the document, which should no longer be segmented ...
-        entry = workspaceCache.database().get(key.toString());
+        entry = workspaceCache.documentStore().get(key.toString());
         doc = entry.editDocumentContent();
         assertInfo(entry, 2, null, null, true, 0);
         children = doc.getArray(DocumentTranslator.CHILDREN);
@@ -94,7 +94,7 @@ public class DocumentTranslatorTest extends AbstractSessionCacheTest {
 
         // Optimize the storage ...
         NodeKey key = nodeB.getKey();
-        SchematicEntry entry = workspaceCache.database().get(key.toString());
+        SchematicEntry entry = workspaceCache.documentStore().get(key.toString());
         EditableDocument doc = entry.editDocumentContent();
         workspaceCache.translator().optimizeChildrenBlocks(key, doc, 9, 5);
 
@@ -114,7 +114,7 @@ public class DocumentTranslatorTest extends AbstractSessionCacheTest {
 
         // Optimize the storage ...
         NodeKey key = nodeB.getKey();
-        SchematicEntry entry = workspaceCache.database().get(key.toString());
+        SchematicEntry entry = workspaceCache.documentStore().get(key.toString());
         EditableDocument doc = entry.editDocumentContent();
         workspaceCache.translator().optimizeChildrenBlocks(key, doc, 5, 3); // will merge into a single block ...
         workspaceCache.translator().optimizeChildrenBlocks(key, doc, 5, 3); // will split into two blocks ...
@@ -164,7 +164,7 @@ public class DocumentTranslatorTest extends AbstractSessionCacheTest {
     }
 
     protected Document document( NodeKey key ) {
-        SchematicEntry entry = workspaceCache.database().get(key.toString());
+        SchematicEntry entry = workspaceCache.documentStore().get(key.toString());
         return entry.getContentAsDocument();
     }
 

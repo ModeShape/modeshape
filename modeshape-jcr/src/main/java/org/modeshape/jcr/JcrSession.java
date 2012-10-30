@@ -214,7 +214,7 @@ public class JcrSession implements Session {
     }
 
     protected SchematicEntry entryForNode( NodeKey nodeKey ) throws RepositoryException {
-        SchematicEntry entry = repository.database().get(nodeKey.toString());
+        SchematicEntry entry = repository.documentStore().get(nodeKey.toString());
         if (entry == null) {
             throw new PathNotFoundException(nodeKey.toString());
         }

@@ -88,6 +88,9 @@ import org.modeshape.jcr.value.binary.InMemoryBinaryValue;
 public class DocumentTranslator {
 
     public static final String SHA1 = "sha1";
+    public static final String SHA1_FIELD = "$sha1";
+    public static final String LENGTH = "len";
+    public static final String LENGTH_FIELD = "$len";
     public static final String PARENT = "parent";
     public static final String LARGE_VALUE = "value";
     public static final String PROPERTIES = "properties";
@@ -104,7 +107,7 @@ public class DocumentTranslator {
     public static final String STRONG = "strong";
     public static final String REFERENCE_COUNT = "refCount";
 
-    private final SchematicDb database;
+    private final DocumentStore documentStore;
     private final AtomicLong largeStringSize = new AtomicLong();
     private final ExecutionContext context;
     private final PropertyFactory propertyFactory;
@@ -125,9 +128,9 @@ public class DocumentTranslator {
     private final TextDecoder decoder = NoOpEncoder.getInstance();
 
     public DocumentTranslator( ExecutionContext context,
-                               SchematicDb database,
+                               DocumentStore documentStore,
                                long largeStringSize ) {
-        this.database = database;
+        this.documentStore = documentStore;
         this.largeStringSize.set(largeStringSize);
         this.context = context;
         this.propertyFactory = this.context.getPropertyFactory();
@@ -635,7 +638,7 @@ public class DocumentTranslator {
                 ChildReferencesInfo docInfo = doc == document ? info : getChildReferencesInfo(doc);
                 if (docInfo != null && docInfo.nextKey != null) {
                     // The children are segmented, so get the next block of children ...
-                    nextEntry = database.get(docInfo.nextKey);
+                    nextEntry = documentStore.get(docInfo.nextKey);
                 }
 
                 if (nextEntry != null) {
@@ -665,7 +668,7 @@ public class DocumentTranslator {
             String lastKey = info != null ? info.lastKey : null;
             if (lastKey != null && !lastKey.equals(lastDocKey)) {
                 // Find the last document ...
-                SchematicEntry lastBlockEntry = database.get(lastKey);
+                SchematicEntry lastBlockEntry = documentStore.get(lastKey);
                 lastDoc = lastBlockEntry.editDocumentContent();
             } else {
                 lastKey = null;
@@ -785,11 +788,6 @@ public class DocumentTranslator {
             this.lastKey = lastKey;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#toString()
-         */
         @Override
         public String toString() {
             return "totalSize: " + totalSize + "; blockSize: " + blockSize + "; nextKey: " + nextKey + "; lastKey: " + lastKey;
@@ -1007,7 +1005,7 @@ public class DocumentTranslator {
             // This is a large value ...
             String sha1 = binary.getHexHash();
             long size = binary.getSize();
-            Document ref = Schematic.newDocument("$sha1", sha1, "$len", size);
+            Document ref = Schematic.newDocument(SHA1_FIELD, sha1, "$len", size);
 
             // Find the document metadata and increment the usage count ...
             incrementBinaryReferenceCount(binary.getKey(), unusedBinaryKeys);
@@ -1034,12 +1032,12 @@ public class DocumentTranslator {
         // Find the document metadata and increment the usage count ...
         String sha1 = binaryKey.toString();
         String key = keyForBinaryReferenceDocument(sha1);
-        SchematicEntry entry = database.get(key);
+        SchematicEntry entry = documentStore.get(key);
         if (entry == null) {
             // The document doesn't yet exist, so create it ...
             Document metadata = Schematic.newDocument(SHA1, sha1, REFERENCE_COUNT, 1L);
             Document content = Schematic.newDocument();
-            database.put(key, metadata, content);
+            documentStore.put(key, metadata, content);
         } else {
             EditableDocument sha1Usage = entry.editDocumentContent();
             Long countValue = sha1Usage.getLong(REFERENCE_COUNT);
@@ -1066,10 +1064,10 @@ public class DocumentTranslator {
             }
         } else if (fieldValue instanceof Document) {
             Document docValue = (Document)fieldValue;
-            String sha1 = docValue.getString("sha1");
+            String sha1 = docValue.getString(SHA1);
             if (sha1 != null) {
                 // Find the document metadata and increment the usage count ...
-                SchematicEntry entry = database.get(sha1 + "-usage");
+                SchematicEntry entry = documentStore.get(sha1 + "-usage");
                 EditableDocument sha1Usage = entry.editDocumentContent();
                 Long countValue = sha1Usage.getLong(REFERENCE_COUNT);
                 if (countValue == null) return true;
@@ -1150,9 +1148,9 @@ public class DocumentTranslator {
             if (!Null.matches(valueStr = doc.getString("$uri"))) {
                 return uris.create(valueStr);
             }
-            if (!Null.matches(valueStr = doc.getString("$sha1"))) {
+            if (!Null.matches(valueStr = doc.getString(SHA1_FIELD))) {
                 String sha1 = valueStr;
-                long size = doc.getLong("$len");
+                long size = doc.getLong(LENGTH_FIELD);
                 try {
                     return binaries.find(new BinaryKey(sha1), size);
                 } catch (BinaryStoreException e) {
@@ -1202,7 +1200,7 @@ public class DocumentTranslator {
         // return BINARY for the large String value).
 
         // Look up the large value in the database ...
-        SchematicEntry entry = database.get(sha1);
+        SchematicEntry entry = documentStore.get(sha1);
         if (entry == null) {
             // The large value is no longer there, so return null ...
             return null;
@@ -1233,7 +1231,7 @@ public class DocumentTranslator {
                                         int targetCountPerBlock,
                                         int tolerance ) {
         if (document == null) {
-            SchematicEntry entry = database.get(key.toString());
+            SchematicEntry entry = documentStore.get(key.toString());
             if (entry == null) return;
             document = entry.editDocumentContent();
             if (document == null) return;
@@ -1292,7 +1290,7 @@ public class DocumentTranslator {
 
                 // Find the next block ...
                 if (nextKey != null) {
-                    SchematicEntry nextEntry = database.get(nextKey);
+                    SchematicEntry nextEntry = documentStore.get(nextKey);
                     doc = nextEntry.editDocumentContent();
                     docKey = new NodeKey(nextKey);
                 } else {
@@ -1383,7 +1381,7 @@ public class DocumentTranslator {
             blockDoc.setArray(CHILDREN, blockChildren);
 
             // Now persist the new document ...
-            database.put(blockKey, blockDoc, null);
+            documentStore.put(blockKey, blockDoc, null);
 
             // And get ready for the next block ...
             if (!isLast) {
@@ -1445,7 +1443,7 @@ public class DocumentTranslator {
         SchematicEntry nextEntry = null;
         String nextBlocksNext = null;
         while (nextBlock != null) {
-            nextEntry = database.get(nextBlock);
+            nextEntry = documentStore.get(nextBlock);
             Document nextDoc = nextEntry.getContentAsDocument();
             List<?> nextChildren = nextDoc.getArray(CHILDREN);
             Document nextInfo = nextDoc.getDocument(CHILDREN_INFO);
@@ -1483,7 +1481,7 @@ public class DocumentTranslator {
 
         // Now that we've updated the input document, delete any entries that are no longer needed ...
         for (String deleteKey : toBeDeleted) {
-            database.remove(deleteKey);
+            documentStore.remove(deleteKey);
         }
 
         return nextBlocksNext;

@@ -45,13 +45,14 @@ import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
 import org.junit.Before;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.jcr.cache.document.DocumentStore;
 
 /**
  * An abstract base class for unit tests that require an testable SchematicDb instance.
  */
 public abstract class AbstractSchematicDbTest {
 
-    private SchematicDb db;
+    private DocumentStore documentStore;
     private EmbeddedCacheManager cm;
     private TransactionManager tm;
     private Logger logger;
@@ -67,8 +68,8 @@ public abstract class AbstractSchematicDbTest {
 
         cm = TestCacheManagerFactory.createCacheManager(configurationBuilder);
         // Now create the SchematicDb ...
-        db = Schematic.get(cm, "documents");
-        tm = TestingUtil.getTransactionManager(db.getCache());
+        documentStore = new DocumentStore(Schematic.get(cm, "documents"));
+        tm = TestingUtil.getTransactionManager(documentStore.localCache());
     }
 
     @After
@@ -76,7 +77,7 @@ public abstract class AbstractSchematicDbTest {
         try {
             TestingUtil.killCacheManagers(cm);
         } finally {
-            db = null;
+            documentStore = null;
             tm = null;
         }
     }
@@ -85,8 +86,8 @@ public abstract class AbstractSchematicDbTest {
         return tm;
     }
 
-    protected SchematicDb database() {
-        return db;
+    protected DocumentStore documentStore() {
+        return documentStore;
     }
 
     protected EmbeddedCacheManager cacheManager() {
@@ -115,7 +116,7 @@ public abstract class AbstractSchematicDbTest {
                         Document content = dataDoc.getDocument("content");
                         Document metadata = dataDoc.getDocument("metadata");
                         String key = metadata.getString("id");
-                        db.put(key, content, metadata);
+                        documentStore.put(key, content, metadata);
                     }
                 }
             }
