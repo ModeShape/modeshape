@@ -50,7 +50,7 @@ public class JcrXaSession extends JcrSession implements XAResource {
     }
 
     protected final XAResource delegate() {
-        return repository.database().getCache().getAdvancedCache().getXAResource();
+        return repository.documentStore().xaResource();
     }
 
     @Override

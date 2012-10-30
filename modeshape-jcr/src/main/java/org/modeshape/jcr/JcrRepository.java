@@ -23,34 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.security.AccessControlContext;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
@@ -70,8 +42,6 @@ import org.hibernate.search.backend.TransactionContext;
 import org.infinispan.Cache;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicDb;
-import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.Editor;
@@ -115,6 +85,7 @@ import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.cache.change.WorkspaceAdded;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
+import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetectors;
 import org.modeshape.jcr.query.QueryIndexing;
@@ -140,6 +111,34 @@ import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryUsageChangeSetListener;
 import org.modeshape.jcr.value.binary.infinispan.InfinispanBinaryStore;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.security.AccessControlContext;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * 
@@ -403,8 +402,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return true;
     }
 
-    protected final SchematicDb database() {
-        return runningState().database();
+    protected final DocumentStore documentStore() {
+        return runningState().documentStore();
     }
 
     protected final String repositoryName() {
@@ -884,7 +883,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         if (running == null) return Collections.emptyList();
 
         List<Cache<?, ?>> caches = new ArrayList<Cache<?, ?>>();
-        caches.add(running.database().getCache());
+        caches.add(running.documentStore().localCache());
         // Add the binary store's cache, if there is one ...
         BinaryStore store = running.binaryStore();
         if (store instanceof InfinispanBinaryStore) {
@@ -920,7 +919,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     protected class RunningState {
 
         private final RepositoryConfiguration config;
-        private final SchematicDb database;
+        private final DocumentStore documentStore;
         private final RepositoryCache cache;
         private final AuthenticationProviders authenticators;
         private final Credentials anonymousCredentialsIfSuppliedCredentialsFail;
@@ -1009,8 +1008,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // reuse the existing storage-related components ...
                 this.cache = other.cache;
                 this.context = other.context;
-                this.database = other.database;
-                this.txnMgr = database.getCache().getAdvancedCache().getTransactionManager();
+                this.documentStore = other.documentStore;
+                this.txnMgr = documentStore.transactionManager();
                 MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
                 this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
                 if (change.largeValueChanged) {
@@ -1039,9 +1038,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // find the Schematic database and Infinispan Cache ...
                 CacheContainer container = config.getContentCacheContainer();
                 String cacheName = config.getCacheName();
-                this.database = Schematic.get(container, cacheName);
-                assert this.database != null;
-                this.txnMgr = this.database.getCache().getAdvancedCache().getTransactionManager();
+                this.documentStore = new DocumentStore(Schematic.get(container, cacheName));
+                this.txnMgr = this.documentStore.transactionManager();
                 MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
                 this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
 
@@ -1066,7 +1064,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // Set up the repository cache ...
                 final SessionEnvironment sessionEnv = new RepositorySessionEnvironment(this.transactions);
                 CacheContainer workspaceCacheContainer = this.config.getWorkspaceContentCacheContainer();
-                this.cache = new RepositoryCache(context, database, config, systemContentInitializer, sessionEnv, changeBus,
+                this.cache = new RepositoryCache(context, documentStore, config, systemContentInitializer, sessionEnv, changeBus,
                                                  workspaceCacheContainer);
 
                 // Set up the node type manager ...
@@ -1281,12 +1279,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return repositoryQueryManager;
         }
 
-        private Cache<String, SchematicEntry> infinispanCache() {
-            return database().getCache();
-        }
-
-        protected final SchematicDb database() {
-            return database;
+        protected final DocumentStore documentStore() {
+            return documentStore;
         }
 
         protected final BinaryStore binaryStore() {
@@ -1306,7 +1300,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         protected final TransactionManager txnManager() {
-            TransactionManager mgr = infinispanCache().getAdvancedCache().getTransactionManager();
+            TransactionManager mgr = documentStore().transactionManager();
             assert mgr != null;
             return mgr;
         }

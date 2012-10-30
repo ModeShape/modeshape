@@ -23,28 +23,10 @@
  */
 package org.modeshape.jcr;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import javax.jcr.RepositoryException;
 import org.infinispan.Cache;
 import org.infinispan.loaders.CacheLoaderException;
 import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
@@ -62,10 +44,28 @@ import org.modeshape.jcr.InfinispanUtil.Sequence;
 import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryCache;
+import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A service used to generate backups from content and restore repository content from backups.
@@ -93,13 +93,14 @@ public class BackupService {
     }
 
     private final RunningState runningState;
-    private final SchematicDb documentStore;
+    private final DocumentStore documentStore;
     private final BinaryStore binaryStore;
     private final RepositoryCache repositoryCache;
 
     protected BackupService( RunningState runningState ) {
         this.runningState = runningState;
-        documentStore = this.runningState.database();
+        //backup restore should not care about federation, hence only the local store should be used
+        documentStore = this.runningState.documentStore().localStore();
         binaryStore = this.runningState.binaryStore();
         repositoryCache = this.runningState.repositoryCache();
     }
@@ -211,13 +212,13 @@ public class BackupService {
         protected final File backupDirectory;
         protected final File changeDirectory;
         protected final File binaryDirectory;
-        protected final SchematicDb documentStore;
+        protected final DocumentStore documentStore;
         protected final BinaryStore binaryStore;
         protected final SimpleProblems problems;
         private final String backupLocation;
 
         protected Activity( File backupDirectory,
-                            SchematicDb documentStore,
+                            DocumentStore documentStore,
                             BinaryStore binaryStore,
                             RepositoryCache repositoryCache ) {
             this.backupDirectory = backupDirectory;
@@ -261,7 +262,7 @@ public class BackupService {
         private BackupDocumentWriter changesWriter;
 
         protected BackupActivity( File backupDirectory,
-                                  SchematicDb documentStore,
+                                  DocumentStore documentStore,
                                   BinaryStore binaryStore,
                                   RepositoryCache repositoryCache,
                                   long documentsPerFile,
@@ -419,7 +420,7 @@ public class BackupService {
                     // PHASE 1:
                     // Perform the backup of the repository cache content ...
                     int counter = 0;
-                    Sequence<String> sequence = InfinispanUtil.getAllKeys(documentStore.getCache());
+                    Sequence<String> sequence = InfinispanUtil.getAllKeys(documentStore.localCache());
                     while (true) {
                         String key = sequence.next();
                         if (key == null) break;
@@ -527,7 +528,7 @@ public class BackupService {
     public static final class RestoreActivity extends Activity {
 
         protected RestoreActivity( File backupDirectory,
-                                   SchematicDb documentStore,
+                                   DocumentStore documentStore,
                                    BinaryStore binaryStore,
                                    RepositoryCache repositoryCache ) {
             super(backupDirectory, documentStore, binaryStore, repositoryCache);
@@ -557,7 +558,7 @@ public class BackupService {
         }
 
         public void removeExistingDocuments() {
-            Cache<String, SchematicEntry> cache = documentStore.getCache();
+            Cache<String, SchematicEntry> cache = documentStore.localCache();
             try {
                 // Try a simple clear ...
                 cache.clear();
