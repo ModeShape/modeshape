@@ -42,7 +42,6 @@ import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
@@ -863,7 +862,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 MutableChildReferences appended = node.appended(false);
                 if ((changedChildren == null || changedChildren.isEmpty()) && (appended != null && !appended.isEmpty())) {
                     // Just appended children ...
-                    translator.changeChildren(key, doc, changedChildren, appended);
+                    translator.changeChildren(doc, changedChildren, appended);
                 } else if (changedChildren != null && !changedChildren.isEmpty()) {
                     if (!changedChildren.getRemovals().isEmpty()) {
                         // This node is not being removed (or added), but it has removals, and we have to calculate the paths
@@ -884,7 +883,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     }
 
                     // Now change the children ...
-                    translator.changeChildren(key, doc, changedChildren, appended);
+                    translator.changeChildren(doc, changedChildren, appended);
 
                     // Generate events for renames, as this is only captured in the parent node ...
                     Map<NodeKey, Name> newNames = changedChildren.getNewNames();

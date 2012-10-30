@@ -30,9 +30,15 @@ import org.infinispan.Cache;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.internal.document.BasicDocument;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.federation.Connector;
+import org.modeshape.jcr.federation.FederatedSchematicEntry;
 import org.modeshape.jcr.value.BinaryKey;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Horia Chiorean (hchiorea@redhat.com)
@@ -41,6 +47,7 @@ public class DocumentStore {
 
     private final SchematicDb database;
     private String localSourceKey;
+    private Map<String, Connector> connectors = Collections.emptyMap();
 
     public DocumentStore( SchematicDb database ) {
         this(database, null);
@@ -65,10 +72,14 @@ public class DocumentStore {
     public SchematicEntry get( String key ) {
         if (isLocal(key)) {
             return database.get(key);
+        } else {
+            Connector connector = connectors.get(sourceKey(key));
+            if (connector != null) {
+                return new FederatedSchematicEntry(connector.get(key));
+            }
         }
         return null;
     }
-
 
     /**
      * Store the supplied document and metadata at the given key.
@@ -83,11 +94,15 @@ public class DocumentStore {
                                        Document metadata ) {
         if (isLocal(key)) {
             return database.putIfAbsent(key, document, metadata);
+        } else {
+            Connector connector = connectors.get(sourceKey(key));
+            if (connector != null) {
+                return new FederatedSchematicEntry(connector.putIfAbsent(key, new BasicDocument(document), new BasicDocument(metadata)));
+            }
         }
 
         return null;
     }
-
 
     /**
      * Store the supplied document and metadata at the given key.
@@ -103,19 +118,13 @@ public class DocumentStore {
                                Document metadata ) {
         if (isLocal(key)) {
             return database.put(key, document, metadata);
+        } else {
+            Connector connector = connectors.get(sourceKey(key));
+            if (connector != null) {
+                return new FederatedSchematicEntry(connector.put(key, new BasicDocument(document), new BasicDocument(metadata)));
+            }
         }
         return null;
-    }
-
-    /**
-     * Store the supplied document in the local db
-     *
-     * @param entryDocument the document that contains the metadata document, content document, and key
-     * @return the entry previously stored at this key, or null if there was no entry with the supplied key
-     * @see #putIfAbsent(String, Document, Document)
-     */
-    public SchematicEntry put( Document entryDocument ) {
-        return database.put(entryDocument);
     }
 
     /**
@@ -127,10 +136,14 @@ public class DocumentStore {
     public SchematicEntry remove( String key ) {
         if (isLocal(key)) {
             return database.remove(key);
+        } else {
+            Connector connector = connectors.get(sourceKey(key));
+            if (connector != null) {
+                return new FederatedSchematicEntry(connector.remove(key));
+            }
         }
         return null;
     }
-
 
     /**
      * Determine whether the database contains an entry with the supplied key.
@@ -141,27 +154,13 @@ public class DocumentStore {
     public boolean containsKey( String key ) {
         if (isLocal(key)) {
             return database.containsKey(key);
+        } else {
+            Connector connector = connectors.get(sourceKey(key));
+            if (connector != null) {
+                return connector.containsKey(key);
+            }
         }
         return false;
-    }
-
-    /**
-     * Replace the existing document and metadata at the given key with the document that is supplied. This method does nothing if
-     * there is not an existing entry at the given key.
-     *
-     * @param key the key or identifier for the document
-     * @param document the new document that is to replace the existing document (or binary content)
-     * @param metadata the metadata that is to be stored with the replacement document; may be null if there is no metadata for
-     * the replacement
-     * @return the entry that was replaced, or null if nothing was replaced
-     */
-    public SchematicEntry replace( String key,
-                                   Document document,
-                                   Document metadata ) {
-        if (isLocal(key)) {
-            return database.replace(key, document, metadata);
-        }
-        return null;
     }
 
     public TransactionManager transactionManager() {
@@ -180,6 +179,38 @@ public class DocumentStore {
         this.localSourceKey = localSourceKey;
     }
 
+    public void setConnectors(List<Connector> connectorList) {
+        for (Connector connector : connectorList) {
+            connectors.put(NodeKey.keyForSourceName(connector.getSourceName()), connector);
+        }
+    }
+    /**
+     * Store the supplied document in the local db
+     *
+     * @param entryDocument the document that contains the metadata document, content document, and key
+     * @return the entry previously stored at this key, or null if there was no entry with the supplied key
+     * @see #putIfAbsent(String, Document, Document)
+     */
+    public SchematicEntry putLocal( Document entryDocument ) {
+        return database.put(entryDocument);
+    }
+
+    /**
+     * Replace the existing document and metadata at the given key with the document that is supplied. This method does nothing if
+     * there is not an existing entry at the given key.
+     *
+     * @param key the key or identifier for the document
+     * @param document the new document that is to replace the existing document (or binary content)
+     * @param metadata the metadata that is to be stored with the replacement document; may be null if there is no metadata for
+     * the replacement
+     * @return the entry that was replaced, or null if nothing was replaced
+     */
+    public SchematicEntry replaceLocal( String key,
+                                        Document document,
+                                        Document metadata ) {
+        return database.replace(key, document, metadata);
+    }
+
     private boolean isLocal( String key ) {
         return StringUtil.isBlank(localSourceKey) //there isn't a local source configured yet (e.g. system startup)
                 || StringUtil.isBlank(key) //the key is empty - there's no way to tell
@@ -194,5 +225,9 @@ public class DocumentStore {
             return true;
         }
         return  (key.endsWith("-ref") && BinaryKey.isProperlyFormattedKey(key.substring(0, key.indexOf("-ref"))));
+    }
+
+    private String sourceKey(String key) {
+        return new NodeKey(key).getSourceKey();
     }
 }

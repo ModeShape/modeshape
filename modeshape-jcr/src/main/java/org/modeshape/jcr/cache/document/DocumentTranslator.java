@@ -609,8 +609,7 @@ public class DocumentTranslator {
         document.setString(KEY, key.toString());
     }
 
-    public void changeChildren( NodeKey key,
-                                EditableDocument document,
+    public void changeChildren( EditableDocument document,
                                 ChangedChildren changedChildren,
                                 ChildReferences appended ) {
         assert !(changedChildren == null && appended == null);
@@ -1375,7 +1374,7 @@ public class DocumentTranslator {
             EditableDocument blockDoc = Schematic.newDocument();
             EditableDocument childInfo = blockDoc.setDocument(CHILDREN_INFO);
             childInfo.setNumber(BLOCK_SIZE, blockChildren.size());
-            if (nextBlockKey != null) childInfo.setString(NEXT_BLOCK, nextBlockKey.toString());
+            if (nextBlockKey != null) childInfo.setString(NEXT_BLOCK, nextBlockKey);
 
             // Write the children ...
             blockDoc.setArray(CHILDREN, blockChildren);

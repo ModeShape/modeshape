@@ -24,12 +24,25 @@
 
 package org.modeshape.jcr.federation;
 
+import javax.jcr.Node;
+import org.modeshape.jcr.JcrSession;
+import org.modeshape.jcr.api.federation.FederationManager;
+
 /**
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class FederationManager {
+public class JcrFederationManager implements FederationManager {
 
-    public void createFederation(String nodePath, String sourceName, String federationPath, String nodeFilters) {
+    private JcrSession session;
 
+    public JcrFederationManager( JcrSession session ) {
+        this.session = session;
+    }
+
+    public Node federateNode( String nodePath,
+                              String sourceName,
+                              String federationPath,
+                              String nodeFilters ) {
+        return null;
     }
 }
