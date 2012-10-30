@@ -646,7 +646,7 @@ public class BackupService {
             while (true) {
                 Document doc = reader.read();
                 if (doc == null) break;
-                documentStore.put(doc);
+                documentStore.putLocal(doc);
 
                 ++count;
                 LOGGER.debug("restoring {0} doc {1}", (count + 1), doc);

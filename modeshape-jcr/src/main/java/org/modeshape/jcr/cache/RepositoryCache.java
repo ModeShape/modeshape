@@ -35,7 +35,6 @@ import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
@@ -290,7 +289,7 @@ public class RepositoryCache implements Observable {
                 PropertyFactory propFactory = context.getPropertyFactory();
                 translator.setProperty(editable, propFactory.create(name("workspaces"), workspaceNames), null);
                 // we need to update the cache immediately, so the changes are persisted
-                documentStore.replace(systemMetadataKeyStr, editable, entry.getMetadata());
+                documentStore.replaceLocal(systemMetadataKeyStr, editable, entry.getMetadata());
             }
         }
     }
