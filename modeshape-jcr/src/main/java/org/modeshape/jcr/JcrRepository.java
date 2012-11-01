@@ -42,6 +42,7 @@ import org.hibernate.search.backend.TransactionContext;
 import org.infinispan.Cache;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
+import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.Editor;
@@ -86,6 +87,9 @@ import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.cache.change.WorkspaceAdded;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
 import org.modeshape.jcr.cache.document.DocumentStore;
+import org.modeshape.jcr.cache.document.LocalDocumentStore;
+import org.modeshape.jcr.federation.ConnectorManager;
+import org.modeshape.jcr.federation.FederatedDocumentStore;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetectors;
 import org.modeshape.jcr.query.QueryIndexing;
@@ -883,7 +887,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         if (running == null) return Collections.emptyList();
 
         List<Cache<?, ?>> caches = new ArrayList<Cache<?, ?>>();
-        caches.add(running.documentStore().localCache());
+        LocalDocumentStore localDocumentStore = running.documentStore().localStore();
+        caches.add(localDocumentStore.localCache());
         // Add the binary store's cache, if there is one ...
         BinaryStore store = running.binaryStore();
         if (store instanceof InfinispanBinaryStore) {
@@ -954,6 +959,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final InitialContentImporter initialContentImporter;
         private final SystemContentInitializer systemContentInitializer;
         private final NodeTypesImporter nodeTypesImporter;
+        private final ConnectorManager connectorManager;
 
         protected RunningState() throws Exception {
             this(null, null);
@@ -1008,6 +1014,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // reuse the existing storage-related components ...
                 this.cache = other.cache;
                 this.context = other.context;
+                this.connectorManager = other.connectorManager;
                 this.documentStore = other.documentStore;
                 this.txnMgr = documentStore.transactionManager();
                 MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
@@ -1038,7 +1045,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // find the Schematic database and Infinispan Cache ...
                 CacheContainer container = config.getContentCacheContainer();
                 String cacheName = config.getCacheName();
-                this.documentStore = new DocumentStore(Schematic.get(container, cacheName));
+                //TODO author=Horia Chiorean date=11/1/12 description=read federation configuration
+                this.connectorManager = new ConnectorManager();
+                SchematicDb database = Schematic.get(container, cacheName);
+                this.documentStore = connectorManager.hasConnectors() ? new FederatedDocumentStore(connectorManager, database)
+                                                                      : new LocalDocumentStore(database);
+//                this.documentStore = new LocalDocumentStore(database);
                 this.txnMgr = this.documentStore.transactionManager();
                 MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
                 this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);

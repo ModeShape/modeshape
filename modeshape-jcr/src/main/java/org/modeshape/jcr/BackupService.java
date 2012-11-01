@@ -44,7 +44,7 @@ import org.modeshape.jcr.InfinispanUtil.Sequence;
 import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryCache;
-import org.modeshape.jcr.cache.document.DocumentStore;
+import org.modeshape.jcr.cache.document.LocalDocumentStore;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.BinaryStore;
@@ -93,7 +93,7 @@ public class BackupService {
     }
 
     private final RunningState runningState;
-    private final DocumentStore documentStore;
+    private final LocalDocumentStore documentStore;
     private final BinaryStore binaryStore;
     private final RepositoryCache repositoryCache;
 
@@ -212,13 +212,13 @@ public class BackupService {
         protected final File backupDirectory;
         protected final File changeDirectory;
         protected final File binaryDirectory;
-        protected final DocumentStore documentStore;
+        protected final org.modeshape.jcr.cache.document.LocalDocumentStore documentStore;
         protected final BinaryStore binaryStore;
         protected final SimpleProblems problems;
         private final String backupLocation;
 
         protected Activity( File backupDirectory,
-                            DocumentStore documentStore,
+                            org.modeshape.jcr.cache.document.LocalDocumentStore documentStore,
                             BinaryStore binaryStore,
                             RepositoryCache repositoryCache ) {
             this.backupDirectory = backupDirectory;
@@ -262,7 +262,7 @@ public class BackupService {
         private BackupDocumentWriter changesWriter;
 
         protected BackupActivity( File backupDirectory,
-                                  DocumentStore documentStore,
+                                  org.modeshape.jcr.cache.document.LocalDocumentStore documentStore,
                                   BinaryStore binaryStore,
                                   RepositoryCache repositoryCache,
                                   long documentsPerFile,
@@ -528,7 +528,7 @@ public class BackupService {
     public static final class RestoreActivity extends Activity {
 
         protected RestoreActivity( File backupDirectory,
-                                   DocumentStore documentStore,
+                                   org.modeshape.jcr.cache.document.LocalDocumentStore documentStore,
                                    BinaryStore binaryStore,
                                    RepositoryCache repositoryCache ) {
             super(backupDirectory, documentStore, binaryStore, repositoryCache);
@@ -646,7 +646,7 @@ public class BackupService {
             while (true) {
                 Document doc = reader.read();
                 if (doc == null) break;
-                documentStore.putLocal(doc);
+                documentStore.put(doc);
 
                 ++count;
                 LOGGER.debug("restoring {0} doc {1}", (count + 1), doc);

@@ -76,7 +76,7 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
         if (engine != null) {
             CacheContainer container = null;
             if (repository != null) {
-                container = repository.documentStore().localCache().getCacheManager();
+                container = repository.documentStore().localStore().localCache().getCacheManager();
             }
             try {
                 // Terminate any existing engine and destroy any content used by the repositories ...

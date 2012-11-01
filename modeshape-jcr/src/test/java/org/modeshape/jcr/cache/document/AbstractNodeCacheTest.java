@@ -146,7 +146,7 @@ public abstract class AbstractNodeCacheTest extends AbstractSchematicDbTest {
                     if (info != null) {
                         String nextBlockKey = info.getString(DocumentTranslator.NEXT_BLOCK);
                         if (nextBlockKey != null) {
-                            SchematicEntry nextEntry = documentStore().get(nextBlockKey);
+                            SchematicEntry nextEntry = schematicDb.get(nextBlockKey);
                             if (nextEntry != null && nextEntry.hasDocumentContent()) {
                                 Document next = nextEntry.getContentAsDocument();
                                 print(next, true);
@@ -466,15 +466,14 @@ public abstract class AbstractNodeCacheTest extends AbstractSchematicDbTest {
 
     @Test
     public void shouldLoadSimpleData() {
-        DocumentStore documentStore = documentStore();
-        assertThat(documentStore.get(ROOT_KEY_WS1.toString()), is(notNullValue()));
-        assertThat(documentStore.get("source1system-jcrsystem"), is(notNullValue()));
-        assertThat(documentStore.get("source1system-jcrnamespaces"), is(notNullValue()));
-        assertThat(documentStore.get("source1works1-childA"), is(notNullValue()));
-        assertThat(documentStore.get("source1works1-childB"), is(notNullValue()));
-        assertThat(documentStore.get("source1works1-childC"), is(notNullValue()));
-        assertThat(documentStore.get(ROOT_KEY_WS2.toString()), is(notNullValue()));
-        assertThat(documentStore.get("source1works2-childX"), is(notNullValue()));
+        assertThat(schematicDb.get(ROOT_KEY_WS1.toString()), is(notNullValue()));
+        assertThat(schematicDb.get("source1system-jcrsystem"), is(notNullValue()));
+        assertThat(schematicDb.get("source1system-jcrnamespaces"), is(notNullValue()));
+        assertThat(schematicDb.get("source1works1-childA"), is(notNullValue()));
+        assertThat(schematicDb.get("source1works1-childB"), is(notNullValue()));
+        assertThat(schematicDb.get("source1works1-childC"), is(notNullValue()));
+        assertThat(schematicDb.get(ROOT_KEY_WS2.toString()), is(notNullValue()));
+        assertThat(schematicDb.get("source1works2-childX"), is(notNullValue()));
     }
 
     @Test
