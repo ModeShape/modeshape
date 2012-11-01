@@ -34,7 +34,7 @@ public class WorkspaceCacheTest extends AbstractNodeCacheTest {
     @Override
     protected NodeCache createCache() {
         ConcurrentMap<NodeKey, CachedNode> nodeCache = new ConcurrentHashMap<NodeKey, CachedNode>();
-        WorkspaceCache workspaceCache = new WorkspaceCache(context, "repo", "ws", documentStore(), 100L, ROOT_KEY_WS1, nodeCache, null);
+        WorkspaceCache workspaceCache = new WorkspaceCache(context, "repo", "ws", new LocalDocumentStore(schematicDb), 100L, ROOT_KEY_WS1, nodeCache, null);
         loadJsonDocuments(resource(resourceNameForWorkspaceContentDocument()));
         return workspaceCache;
     }

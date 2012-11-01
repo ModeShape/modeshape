@@ -38,7 +38,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
@@ -1034,13 +1033,12 @@ public class DocumentTranslator {
         SchematicEntry entry = documentStore.get(key);
         if (entry == null) {
             // The document doesn't yet exist, so create it ...
-            Document metadata = Schematic.newDocument(SHA1, sha1, REFERENCE_COUNT, 1L);
-            Document content = Schematic.newDocument();
-            documentStore.put(key, metadata, content);
+            Document content = Schematic.newDocument(SHA1, sha1, REFERENCE_COUNT, 1L);
+            documentStore.put(key, content);
         } else {
             EditableDocument sha1Usage = entry.editDocumentContent();
             Long countValue = sha1Usage.getLong(REFERENCE_COUNT);
-            sha1Usage.setNumber(REFERENCE_COUNT, countValue != null ? countValue.longValue() + 1 : 1L);
+            sha1Usage.setNumber(REFERENCE_COUNT, countValue != null ? countValue + 1 : 1L);
         }
         // We're using the sha1, so remove it if its in the set of unused binary keys ...
         if (unusedBinaryKeys != null) {
@@ -1070,7 +1068,7 @@ public class DocumentTranslator {
                 EditableDocument sha1Usage = entry.editDocumentContent();
                 Long countValue = sha1Usage.getLong(REFERENCE_COUNT);
                 if (countValue == null) return true;
-                long count = countValue.longValue() - 1;
+                long count = countValue - 1;
                 if (count < 0) {
                     count = 0;
                     // We're not using the binary value anymore ...
@@ -1380,7 +1378,7 @@ public class DocumentTranslator {
             blockDoc.setArray(CHILDREN, blockChildren);
 
             // Now persist the new document ...
-            documentStore.put(blockKey, blockDoc, null);
+            documentStore.put(blockKey, blockDoc);
 
             // And get ready for the next block ...
             if (!isLast) {

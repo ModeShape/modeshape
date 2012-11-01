@@ -742,7 +742,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                 Path newPath = sessionPaths.getPath(node);
                 NodeKey newParent = node.newParent();
                 EditableDocument doc = null;
-                EditableDocument metadata = null;
                 ChangedAdditionalParents additionalParents = node.additionalParents();
 
                 if (node.isNew()) {
@@ -941,13 +940,13 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                 if (node.isNew()) {
                     // We need to create the schematic entry for the new node ...
-                    if (documentStore.putIfAbsent(keyStr, doc, metadata) != null) {
+                    if (documentStore.putIfAbsent(keyStr, doc) != null) {
                         if (replacedNodes != null && replacedNodes.contains(key)) {
                             // Then a node is being removed and recreated with the same key ...
-                            documentStore.put(keyStr, doc, metadata);
+                            documentStore.put(keyStr, doc);
                         } else if (removedNodes != null && removedNodes.contains(key)) {
                             // Then a node is being removed and recreated with the same key ...
-                            documentStore.put(keyStr, doc, metadata);
+                            documentStore.put(keyStr, doc);
                             removedNodes.remove(key);
                         } else {
                             // We couldn't create the entry because one already existed ...

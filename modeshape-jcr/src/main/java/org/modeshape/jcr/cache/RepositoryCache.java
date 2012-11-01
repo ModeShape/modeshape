@@ -134,7 +134,7 @@ public class RepositoryCache implements Observable {
             doc.setString(REPOSITORY_SOURCE_KEY_FIELD_NAME, this.sourceKey);
             doc.setDate(REPOSITORY_CREATED_AT_FIELD_NAME, now.toDate());
             doc.setString(REPOSITORY_CREATED_WITH_MODESHAPE_VERSION_FIELD_NAME, ModeShape.getVersion());
-            this.documentStore.put(REPOSITORY_INFO_KEY, doc, null);
+            this.documentStore.put(REPOSITORY_INFO_KEY, doc);
             repositoryInfo = this.documentStore.get(REPOSITORY_INFO_KEY);
         } else {
             // Get the repository key and source key from the repository info document ...
@@ -268,7 +268,7 @@ public class RepositoryCache implements Observable {
             EditableDocument doc = Schematic.newDocument();
             translator.setKey(doc, systemMetadataKey);
             translator.setProperty(doc, propFactory.create(name("workspaces"), workspaceNames), null);
-            entry = documentStore.putIfAbsent(systemMetadataKeyStr, doc, null);
+            entry = documentStore.putIfAbsent(systemMetadataKeyStr, doc);
             // we'll need to read the entry if one was inserted between 'containsKey' and 'putIfAbsent' ...
         }
         if (entry != null) {
@@ -289,7 +289,7 @@ public class RepositoryCache implements Observable {
                 PropertyFactory propFactory = context.getPropertyFactory();
                 translator.setProperty(editable, propFactory.create(name("workspaces"), workspaceNames), null);
                 // we need to update the cache immediately, so the changes are persisted
-                documentStore.replaceLocal(systemMetadataKeyStr, editable, entry.getMetadata());
+                documentStore.replace(systemMetadataKeyStr, editable);
             }
         }
     }
@@ -501,7 +501,7 @@ public class RepositoryCache implements Observable {
             trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.ROOT), null);
             trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKey.toString()), null);
 
-            documentStore.putIfAbsent(rootKey.toString(), rootDoc, null);
+            documentStore.putIfAbsent(rootKey.toString(), rootDoc);
 
             // Create/get the Infinispan cache that we'll use within the WorkspaceCache, using the cache manager's
             // default configuration ...
