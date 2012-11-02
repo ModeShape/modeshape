@@ -25,7 +25,6 @@
 package org.modeshape.jcr;
 
 import javax.jcr.Node;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.jcr.api.federation.FederationManager;
 import org.modeshape.jcr.federation.ConnectorsManager;
@@ -40,22 +39,39 @@ import static org.junit.Assert.assertNotNull;
 public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
 
     @Test
-    @Ignore
     public void testCreateFederatedNode() throws Exception {
         startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream("config/repo-config-federation.json"));
 
         Node testRoot = session.getRootNode().addNode("testRoot");
+        //link an internal document
         testRoot.addNode("node1");
-        testRoot.addNode("node2");
         session.save();
 
         FederationManager federationManager = session.getWorkspace().getFederationManager();
+        //link the first external document
         federationManager.linkExternalLocation("/testRoot", ConnectorsManager.MockConnector.SOURCE_NAME, "/doc1");
-        assertEquals(3, testRoot.getNodes().getSize());
+        assertEquals(2, testRoot.getNodes().getSize());
 
         Node doc1Federated = session.getNode("/testRoot/federated1");
         assertNotNull(doc1Federated);
+        //TODO author=Horia Chiorean date=11/2/12 description=How do we set the parent back-reference ?
+        //assertEquals(testRoot.getIdentifier(), doc1Federated.getParent().getIdentifier());
         assertEquals("a string", doc1Federated.getProperty("federated1_prop1").getString());
         assertEquals(12, doc1Federated.getProperty("federated1_prop2").getLong());
+
+        //link a second external document with a sub-child
+        federationManager.linkExternalLocation("/testRoot", ConnectorsManager.MockConnector.SOURCE_NAME, "/doc2");
+        assertEquals(3, testRoot.getNodes().getSize());
+
+        Node doc2Federated = session.getNode("/testRoot/federated2");
+        assertNotNull(doc2Federated);
+        //TODO author=Horia Chiorean date=11/2/12 description=How do we set the parent back-reference ?
+        //assertEquals(testRoot.getIdentifier(), doc2Federated.getParent().getIdentifier());
+        assertEquals("another string", doc2Federated.getProperty("federated2_prop1").getString());
+        assertEquals(false, doc2Federated.getProperty("federated2_prop2").getBoolean());
+
+        Node doc2FederatedChild = session.getNode("/testRoot/federated2/federated3");
+        assertNotNull(doc2FederatedChild);
+        assertEquals("yet another string", doc2FederatedChild.getProperty("federated3_prop1").getString());
     }
 }

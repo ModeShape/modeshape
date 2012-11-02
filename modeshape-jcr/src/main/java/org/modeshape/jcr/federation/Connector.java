@@ -28,25 +28,52 @@ import org.infinispan.schematic.document.EditableDocument;
 
 /**
  * SPI of a generic external connector, representing the interface to an external system integrated with ModeShape.
+ * Since it is expected that the documents are well formed (structure-wise), the {@link FederatedDocumentBuilder} class should
+ * be used.
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public interface Connector {
 
+    /**
+     * Returns the name of the source which this connector interfaces with.
+     *
+     * @return a {@code non-null} string.
+     */
     public String getSourceName();
 
-    public EditableDocument getDocument( String id );
+    /**
+     * Returns an {@link EditableDocument} instance representing the document with a given id. The document should have a "proper"
+     * structure for it to be usable by ModeShape.
+     *
+     * @param id a {@code non-null} string
+     * @return either an {@link EditableDocument} instance or {@code null}
+     */
+    public EditableDocument getDocumentById( String id );
 
     /**
-     * A document reference is a document which has only the "id" and the "name" fields.
+     * Returns an {@link EditableDocument} instance representing the document at a given location. The document should contain
+     * at least the {@link org.modeshape.jcr.cache.document.DocumentTranslator#KEY} and {@link org.modeshape.jcr.cache.document.DocumentTranslator#NAME}
+     * fields.
      *
-     * @param location
-     * @return
+     * @param location a {@code non-null} string
+     * @return either an {@link EditableDocument} instance or {@code null}
      */
-    public EditableDocument getDocumentReference( String location );
+    public EditableDocument getDocumentAtLocation( String location );
 
+    /**
+     * Removes the document with the given id.
+     *
+     * @param id a {@code non-null} string.
+     */
     public void removeDocument( String id );
 
+    /**
+     * Checks if a document with the given id exists in the end-source.
+     *
+     * @param id a {@code non-null} string.
+     * @return {@code true} if such a document exists, {@code false} otherwise.
+     */
     public boolean hasDocument( String id );
 
 }

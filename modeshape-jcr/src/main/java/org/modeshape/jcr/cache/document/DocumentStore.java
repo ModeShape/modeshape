@@ -109,14 +109,13 @@ public interface DocumentStore {
     public LocalDocumentStore localStore();
 
     /**
-     * Returns a reference to an external document at a given location. A reference is expected to be a document which has
-     * the {@link DocumentTranslator#KEY} and {@link DocumentTranslator#NAME} fields set.
+     * Returns a reference to an external document at a given location.
      *
      * @param sourceName a {@code non-null} string, the name of an external source.
      * @param documentLocation a {@code non-null} string, representing an external location
      *
-     * @return an {@link EditableDocument} instance with the above fields set, or {@code null} if such a document doesn't exist
+     * @return an {@link EditableDocument} instance or {@code null} if such a document doesn't exist
      */
-    public EditableDocument getExternalDocumentReference( String sourceName,
-                                                          String documentLocation );
+    public EditableDocument getExternalDocumentAtLocation( String sourceName,
+                                                           String documentLocation );
 }
