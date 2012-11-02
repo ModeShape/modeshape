@@ -22,27 +22,40 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.jcr.federation;
+package org.modeshape.jcr;
 
 import javax.jcr.Node;
-import org.modeshape.jcr.JcrSession;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.modeshape.jcr.api.federation.FederationManager;
+import org.modeshape.jcr.federation.ConnectorsManager;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
+ * Unit test for {@link ModeShapeFederationManager}
+ *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class JcrFederationManager implements FederationManager {
+public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
 
-    private JcrSession session;
+    @Test
+    @Ignore
+    public void testCreateFederatedNode() throws Exception {
+        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream("config/repo-config-federation.json"));
 
-    public JcrFederationManager( JcrSession session ) {
-        this.session = session;
-    }
+        Node testRoot = session.getRootNode().addNode("testRoot");
+        testRoot.addNode("node1");
+        testRoot.addNode("node2");
+        session.save();
 
-    public Node federateNode( String nodePath,
-                              String sourceName,
-                              String federationPath,
-                              String nodeFilters ) {
-        return null;
+        FederationManager federationManager = session.getWorkspace().getFederationManager();
+        federationManager.linkExternalLocation("/testRoot", ConnectorsManager.MockConnector.SOURCE_NAME, "/doc1");
+        assertEquals(3, testRoot.getNodes().getSize());
+
+        Node doc1Federated = session.getNode("/testRoot/federated1");
+        assertNotNull(doc1Federated);
+        assertEquals("a string", doc1Federated.getProperty("federated1_prop1").getString());
+        assertEquals(12, doc1Federated.getProperty("federated1_prop2").getLong());
     }
 }

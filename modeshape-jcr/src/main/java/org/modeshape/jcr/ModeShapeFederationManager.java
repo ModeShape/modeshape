@@ -22,33 +22,38 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.jcr.api.federation;
+package org.modeshape.jcr;
 
 import javax.jcr.RepositoryException;
+import org.modeshape.jcr.api.federation.FederationManager;
+import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.document.WritableSessionCache;
 
 /**
- * The federation manager object which provides the entry point into ModeShape's federation system, allowing clients to create
- * federated nodes.
+ * Implementation of the {@link FederationManager} interface.
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public interface FederationManager {
+public class ModeShapeFederationManager implements FederationManager {
 
-    /**
-     * Appends an external node at the given location to an existing node. If this is the first node appended to the existing
-     * node, it will convert the existing node to a federated node.
-     *
-     * @param absNodePath a {@code non-null} string representing the absolute path to an existing node.
-     * @param sourceName a {@code non-null} string representing the name of an external source, configured in the repository.
-     * @param externalLocation {@code non-null} string representing a path in the external source, where the external
-     * node is expected to be located at.
-     * @param filters an optional array of filters.
-     *
-     * @throws RepositoryException if the repository cannot perform the operation.
-     * TODO author=Horia Chiorean date=11/2/12 description=Define filters format
-     */
+    private final JcrSession session;
+
+    public ModeShapeFederationManager( JcrSession session ) {
+        this.session = session;
+    }
+
+    @Override
     public void linkExternalLocation( String absNodePath,
                                       String sourceName,
                                       String externalLocation,
-                                      String... filters ) throws RepositoryException;
+                                      String... filters ) throws RepositoryException {
+        //TODO author=Horia Chiorean date=11/2/12 description=Decide if this is the right level of abstraction
+        //TODO author=Horia Chiorean date=11/2/12 description=Decide how to integrate with session transactions
+        //TODO author=Horia Chiorean date=11/2/12 description=Decide how to use filters
+        NodeKey key = session.getNode(absNodePath).key();
+
+        WritableSessionCache writableSessionCache = (WritableSessionCache)session.spawnSessionCache(false);
+        writableSessionCache.linkExternalLocation(key, sourceName, externalLocation, filters);
+        writableSessionCache.save();
+    }
 }

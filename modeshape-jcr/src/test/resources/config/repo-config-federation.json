@@ -1,0 +1,11 @@
+{
+    "name" : "Federated repository",
+    "storage" : {
+        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
+    },
+    "workspaces" : {
+        "predefined" : ["ws1", "ws2"],
+        "default" : "default",
+        "allowCreation" : true
+    }
+}

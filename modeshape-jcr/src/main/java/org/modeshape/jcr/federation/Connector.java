@@ -24,28 +24,29 @@
 
 package org.modeshape.jcr.federation;
 
-import org.infinispan.schematic.internal.document.BasicDocument;
+import org.infinispan.schematic.document.EditableDocument;
 
 /**
+ * SPI of a generic external connector, representing the interface to an external system integrated with ModeShape.
+ *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public interface Connector {
 
     public String getSourceName();
 
-    public Source getSource();
+    public EditableDocument getDocument( String id );
 
-    public BasicDocument get( String key );
+    /**
+     * A document reference is a document which has only the "id" and the "name" fields.
+     *
+     * @param location
+     * @return
+     */
+    public EditableDocument getDocumentReference( String location );
 
-    public BasicDocument put( String key,
-                              BasicDocument document,
-                              BasicDocument metadata );
+    public void removeDocument( String id );
 
-    public BasicDocument putIfAbsent( String key,
-                                      BasicDocument document,
-                                      BasicDocument metadata );
+    public boolean hasDocument( String id );
 
-    public BasicDocument remove( String key );
-
-    boolean containsKey( String key );
 }

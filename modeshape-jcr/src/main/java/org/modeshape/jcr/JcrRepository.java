@@ -88,7 +88,7 @@ import org.modeshape.jcr.cache.change.WorkspaceAdded;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
-import org.modeshape.jcr.federation.ConnectorManager;
+import org.modeshape.jcr.federation.ConnectorsManager;
 import org.modeshape.jcr.federation.FederatedDocumentStore;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetectors;
@@ -959,7 +959,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final InitialContentImporter initialContentImporter;
         private final SystemContentInitializer systemContentInitializer;
         private final NodeTypesImporter nodeTypesImporter;
-        private final ConnectorManager connectorManager;
+        private final ConnectorsManager connectorManager;
 
         protected RunningState() throws Exception {
             this(null, null);
@@ -1046,7 +1046,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 CacheContainer container = config.getContentCacheContainer();
                 String cacheName = config.getCacheName();
                 //TODO author=Horia Chiorean date=11/1/12 description=read federation configuration
-                this.connectorManager = new ConnectorManager();
+                this.connectorManager = new ConnectorsManager();
                 SchematicDb database = Schematic.get(container, cacheName);
                 this.documentStore = connectorManager.hasConnectors() ? new FederatedDocumentStore(connectorManager, database)
                                                                       : new LocalDocumentStore(database);

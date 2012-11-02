@@ -30,6 +30,7 @@ import org.infinispan.Cache;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.EditableDocument;
 
 /**
  * An implementation of {@link DocumentStore} which always uses the local cache to store/retrieve data and which provides
@@ -71,12 +72,23 @@ public class LocalDocumentStore implements DocumentStore {
         database.put(key, document, null);
     }
 
-    @Override
+    /**
+     * Store the supplied document in the local db
+     *
+     * @param entryDocument the document that contains the metadata document, content document, and key
+     */
     public void put( Document entryDocument ) {
         database.put(entryDocument);
     }
 
-    @Override
+    /**
+     * Replace the existing document and metadata at the given key with the document that is supplied. This method does nothing if
+     * there is not an existing entry at the given key.
+     *
+     * @param key the key or identifier for the document
+     * @param document the new document that is to replace the existing document (or binary content)
+     * the replacement
+     */
     public void replace( String key,
                          Document document ) {
         database.replace(key,  document, null);
@@ -105,6 +117,12 @@ public class LocalDocumentStore implements DocumentStore {
     @Override
     public void setLocalSourceKey( String sourceKey ) {
         //ignore, as this is always local
+    }
+
+    @Override
+    public EditableDocument getExternalDocumentReference( String sourceName,
+                                                          String documentLocation ) {
+        throw new UnsupportedOperationException("External documents are not supported in the local document store");
     }
 
     /**

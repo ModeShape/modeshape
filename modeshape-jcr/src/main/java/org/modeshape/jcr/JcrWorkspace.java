@@ -50,7 +50,6 @@ import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.federation.JcrFederationManager;
 import org.modeshape.jcr.value.InvalidPathException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
@@ -90,7 +89,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     private JcrQueryManager queryManager;
     private JcrObservationManager observationManager;
     private JcrRepositoryManager repositoryManager;
-    private JcrFederationManager federationManager;
+    private ModeShapeFederationManager federationManager;
 
     JcrWorkspace( JcrSession session,
                   String workspaceName ) {
@@ -781,11 +780,13 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         return federationManager();
     }
 
-    final JcrFederationManager federationManager() {
+    final ModeShapeFederationManager federationManager() {
         if (federationManager == null) {
             try {
                 lock.lock();
-                if (federationManager == null) federationManager = new JcrFederationManager(session);
+                if (federationManager == null) {
+                    federationManager = new ModeShapeFederationManager(session);
+                }
             } finally {
                 lock.unlock();
             }
