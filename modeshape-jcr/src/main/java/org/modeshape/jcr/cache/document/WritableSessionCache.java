@@ -1175,4 +1175,16 @@ public class WritableSessionCache extends AbstractSessionCache {
         }
         return sb.toString();
     }
+
+    public void linkExternalLocation( NodeKey key,
+                                      String sourceName,
+                                      String externalLocation,
+                                      String... filters ) {
+        //register the node in the changes, so it can be saved later
+        mutable(key);
+        DocumentStore documentStore = workspaceCache().documentStore();
+        EditableDocument document = documentStore.get(key.toString()).editDocumentContent();
+        DocumentTranslator translator = workspaceCache().translator();
+        translator.addExternalDocuments(document, sourceName, externalLocation);
+    }
 }

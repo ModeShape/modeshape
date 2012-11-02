@@ -28,6 +28,7 @@ import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.EditableDocument;
 
 /**
  * A store which persists/retrieves documents.
@@ -63,24 +64,6 @@ public interface DocumentStore {
      */
     public void put( String key,
                      Document document );
-
-    /**
-     * Store the supplied document in the local db
-     *
-     * @param entryDocument the document that contains the metadata document, content document, and key
-     */
-    public void put( Document entryDocument );
-
-    /**
-     * Replace the existing document and metadata at the given key with the document that is supplied. This method does nothing if
-     * there is not an existing entry at the given key.
-     *
-     * @param key the key or identifier for the document
-     * @param document the new document that is to replace the existing document (or binary content)
-     * the replacement
-     */
-    public void replace( String key,
-                         Document document );
 
     /**
      * Remove the existing document at the given key.
@@ -124,4 +107,16 @@ public interface DocumentStore {
      * @return a non-null {@link LocalDocumentStore} instance.
      */
     public LocalDocumentStore localStore();
+
+    /**
+     * Returns a reference to an external document at a given location. A reference is expected to be a document which has
+     * the {@link DocumentTranslator#KEY} and {@link DocumentTranslator#NAME} fields set.
+     *
+     * @param sourceName a {@code non-null} string, the name of an external source.
+     * @param documentLocation a {@code non-null} string, representing an external location
+     *
+     * @return an {@link EditableDocument} instance with the above fields set, or {@code null} if such a document doesn't exist
+     */
+    public EditableDocument getExternalDocumentReference( String sourceName,
+                                                          String documentLocation );
 }
