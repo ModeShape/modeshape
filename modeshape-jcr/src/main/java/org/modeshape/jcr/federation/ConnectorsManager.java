@@ -28,8 +28,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
-import org.infinispan.schematic.DocumentFactory;
 import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.cache.NodeKey;
 
 /**
@@ -85,18 +85,21 @@ public class ConnectorsManager {
             EditableDocument doc1 = new FederatedDocumentBuilder().createDocument(id1, "federated1")
                                                                   .addProperty("federated1_prop1", "a string")
                                                                   .addProperty("federated1_prop2", 12)
+                                                                  .addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
                                                                   .build();
             documentsByLocation.put("/doc1", doc1);
             documentsById.put(id1, doc1);
 
             String id3 = UUID.randomUUID().toString();
-            EditableDocument doc3 = new FederatedDocumentBuilder().createDocument(id1, "federated3")
+            EditableDocument doc3 = new FederatedDocumentBuilder().createDocument(id3, "federated3")
                                                                   .addProperty("federated3_prop1", "yet another string")
+                                                                  .addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
                                                                   .build();
             String id2 = UUID.randomUUID().toString();
-            EditableDocument doc2 = new FederatedDocumentBuilder().createDocument(id1, "federated2")
+            EditableDocument doc2 = new FederatedDocumentBuilder().createDocument(id2, "federated2")
                                                                   .addProperty("federated2_prop1", "another string")
                                                                   .addProperty("federated2_prop2", Boolean.FALSE)
+                                                                  .addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
                                                                   .addChild(id3, "federated3")
                                                                   .build();
 
@@ -109,8 +112,8 @@ public class ConnectorsManager {
         }
 
         @Override
-        public EditableDocument getDocument( String id ) {
-            return DocumentFactory.newDocument(documentsById.get(id));
+        public EditableDocument getDocumentById( String id ) {
+            return documentsById.get(id);
         }
 
         @Override
@@ -119,8 +122,8 @@ public class ConnectorsManager {
         }
 
         @Override
-        public EditableDocument getDocumentReference( String location ) {
-            return DocumentFactory.newDocument(documentsByLocation.get(location));
+        public EditableDocument getDocumentAtLocation( String location ) {
+            return documentsByLocation.get(location);
         }
 
         @Override

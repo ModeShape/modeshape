@@ -91,7 +91,7 @@ public class LocalDocumentStore implements DocumentStore {
      */
     public void replace( String key,
                          Document document ) {
-        database.replace(key,  document, null);
+        database.replace(key, document, null);
     }
 
     @Override
@@ -120,8 +120,8 @@ public class LocalDocumentStore implements DocumentStore {
     }
 
     @Override
-    public EditableDocument getExternalDocumentReference( String sourceName,
-                                                          String documentLocation ) {
+    public EditableDocument getExternalDocumentAtLocation( String sourceName,
+                                                           String documentLocation ) {
         throw new UnsupportedOperationException("External documents are not supported in the local document store");
     }
 

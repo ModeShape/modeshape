@@ -29,9 +29,10 @@ import org.infinispan.schematic.DocumentFactory;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
+import org.modeshape.jcr.value.Name;
 
 /**
- * Helper class which should be used by {@link Connector} implementation to create {@link EditableDocument} with the correct
+ * Helper class which should be used by {@link Connector} implementations to create {@link EditableDocument}(s) with the correct
  * structure.
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
@@ -67,11 +68,28 @@ public class FederatedDocumentBuilder {
         return createDocument(id, name, null);
     }
 
-    public FederatedDocumentBuilder addProperty( String name,
+    public FederatedDocumentBuilder addProperty( Object name,
                                                  Object value ) {
-        EditableDocument properties = federatedDocument.containsField(DocumentTranslator.PROPERTIES) ? federatedDocument
-                .getDocument(DocumentTranslator.PROPERTIES) : DocumentFactory.newDocument();
-        properties.set(name, value);
+        EditableDocument properties = federatedDocument.getDocument(DocumentTranslator.PROPERTIES);
+        if (properties == null) {
+            properties = DocumentFactory.newDocument();
+            federatedDocument.set(DocumentTranslator.PROPERTIES, properties);
+        }
+
+        //the correct structure of properties is to be grouped by their namespace, so we need to take this into account
+        String propertiesNamespace = "";
+        if (name instanceof Name) {
+            propertiesNamespace = ((Name) name).getNamespaceUri();
+            name = ((Name) name).getLocalName();
+        }
+
+        EditableDocument propertiesUnderNamespace = properties.getDocument(propertiesNamespace);
+        if (propertiesUnderNamespace == null) {
+            propertiesUnderNamespace = DocumentFactory.newDocument();
+            properties.setDocument(propertiesNamespace, propertiesUnderNamespace);
+        }
+        propertiesUnderNamespace.set(name.toString(), value);
+
         return this;
     }
 
@@ -80,10 +98,16 @@ public class FederatedDocumentBuilder {
         EditableArray children = federatedDocument.getArray(DocumentTranslator.CHILDREN);
         if (children == null) {
             children = DocumentFactory.newArray();
-            federatedDocument.set(DocumentTranslator.CHILDREN, children);
+            federatedDocument.setArray(DocumentTranslator.CHILDREN, children);
         }
-        children.addDocument(DocumentFactory.newDocument(DocumentTranslator.KEY, id, DocumentTranslator.NAME, name));
+        EditableDocument childDocument = DocumentFactory.newDocument(DocumentTranslator.KEY, id, DocumentTranslator.NAME, name);
+        childDocument.set(DocumentTranslator.PARENT, getDocumentId());
+        children.addDocument(childDocument);
         return this;
+    }
+
+    private Object getDocumentId() {
+        return federatedDocument.get(DocumentTranslator.KEY);
     }
 
     public EditableDocument build() {

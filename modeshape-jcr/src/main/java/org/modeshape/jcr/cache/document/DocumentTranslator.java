@@ -1593,9 +1593,9 @@ public class DocumentTranslator {
         }
 
         for (String externalLocation : externalLocations) {
-            EditableDocument documentReference = documentStore.getExternalDocumentReference(sourceName, externalLocation);
-            if (documentReference != null) {
-                federatedSegmentsArray.add(documentReference);
+            EditableDocument externalDocument = documentStore.getExternalDocumentAtLocation(sourceName, externalLocation);
+            if (externalDocument != null) {
+                federatedSegmentsArray.add(externalDocument);
             }
         }
     }

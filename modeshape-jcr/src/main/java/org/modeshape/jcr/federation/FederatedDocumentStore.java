@@ -31,6 +31,8 @@ import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
+import org.infinispan.schematic.internal.document.DocumentEditor;
+import org.infinispan.schematic.internal.document.MutableDocument;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.document.DocumentStore;
@@ -97,7 +99,9 @@ public class FederatedDocumentStore implements DocumentStore {
             Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
             if (connector != null) {
                 String docId = documentIdFromNodeKey(key);
-                EditableDocument document = connector.getDocument(docId);
+                EditableDocument document = connector.getDocumentById(docId);
+                //clone the document, so we don't alter the original
+                document = (EditableDocument)document.clone();
                 replaceSourceDocumentIdsWithNodeKeys(document, connector.getSourceName());
                 return document != null ? new FederatedSchematicEntry(document) : null;
             }
@@ -145,14 +149,16 @@ public class FederatedDocumentStore implements DocumentStore {
     }
 
     @Override
-    public EditableDocument getExternalDocumentReference( String sourceName,
-                                                          String documentLocation ) {
+    public EditableDocument getExternalDocumentAtLocation( String sourceName,
+                                                           String documentLocation ) {
         String sourceKey =  NodeKey.keyForSourceName(sourceName);
         Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey);
         EditableDocument document = null;
         if (connector != null) {
-            document = connector.getDocumentReference(documentLocation);
+            document = connector.getDocumentAtLocation(documentLocation);
             if (document != null) {
+                //clone the original so we don't overwrite the values from the connector
+                document = (EditableDocument)document.clone();
                 replaceSourceDocumentIdsWithNodeKeys(document, sourceName);
             }
         }
@@ -189,7 +195,9 @@ public class FederatedDocumentStore implements DocumentStore {
         if (document.containsField(DocumentTranslator.CHILDREN)) {
             EditableArray children = document.getArray(DocumentTranslator.CHILDREN);
             for (Object child : children) {
-                replaceSourceDocumentIdsWithNodeKeys((EditableDocument)child, sourceName);
+                assert child instanceof MutableDocument;
+                EditableDocument editableChild = new DocumentEditor((MutableDocument)child);
+                replaceSourceDocumentIdsWithNodeKeys(editableChild, sourceName);
             }
         }
     }
