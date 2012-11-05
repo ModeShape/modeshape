@@ -23,6 +23,34 @@
  */
 package org.modeshape.jcr;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.security.AccessControlContext;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
@@ -88,7 +116,6 @@ import org.modeshape.jcr.cache.change.WorkspaceAdded;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
-import org.modeshape.jcr.federation.ConnectorsManager;
 import org.modeshape.jcr.federation.FederatedDocumentStore;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetectors;
@@ -115,34 +142,6 @@ import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryUsageChangeSetListener;
 import org.modeshape.jcr.value.binary.infinispan.InfinispanBinaryStore;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.security.AccessControlContext;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * 
@@ -959,7 +958,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final InitialContentImporter initialContentImporter;
         private final SystemContentInitializer systemContentInitializer;
         private final NodeTypesImporter nodeTypesImporter;
-        private final ConnectorsManager connectorManager;
+        private final Connectors connectors;
 
         protected RunningState() throws Exception {
             this(null, null);
@@ -1014,7 +1013,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // reuse the existing storage-related components ...
                 this.cache = other.cache;
                 this.context = other.context;
-                this.connectorManager = other.connectorManager;
+                this.connectors = other.connectors;
                 this.documentStore = other.documentStore;
                 this.txnMgr = documentStore.transactionManager();
                 MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
@@ -1045,12 +1044,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // find the Schematic database and Infinispan Cache ...
                 CacheContainer container = config.getContentCacheContainer();
                 String cacheName = config.getCacheName();
-                //TODO author=Horia Chiorean date=11/1/12 description=read federation configuration
-                this.connectorManager = new ConnectorsManager();
+                List<Component> connectorComponents = config.getFederation().getConnectors();
+                this.connectors = new Connectors(this, connectorComponents);
                 SchematicDb database = Schematic.get(container, cacheName);
-                this.documentStore = connectorManager.hasConnectors() ? new FederatedDocumentStore(connectorManager, database)
-                                                                      : new LocalDocumentStore(database);
-//                this.documentStore = new LocalDocumentStore(database);
+                this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, database) : new LocalDocumentStore(
+                                                                                                                                            database);
+                // this.documentStore = new LocalDocumentStore(database);
                 this.txnMgr = this.documentStore.transactionManager();
                 MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
                 this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
@@ -1238,6 +1237,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
          * @throws Exception if there is a problem during this phase.
          */
         protected final void postInitialize() throws Exception {
+            this.connectors.initialize();
             this.sequencers.initialize();
 
             // import the preconfigured node types before the initial content, in case the latter use custom types

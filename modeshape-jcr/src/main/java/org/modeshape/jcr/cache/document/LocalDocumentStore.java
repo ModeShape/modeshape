@@ -33,9 +33,9 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 
 /**
- * An implementation of {@link DocumentStore} which always uses the local cache to store/retrieve data and which provides
- * some additional methods for exposing local cache information.
- *
+ * An implementation of {@link DocumentStore} which always uses the local cache to store/retrieve data and which provides some
+ * additional methods for exposing local cache information.
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class LocalDocumentStore implements DocumentStore {
@@ -44,7 +44,7 @@ public class LocalDocumentStore implements DocumentStore {
 
     /**
      * Creates a new local store with the given database
-     *
+     * 
      * @param database a {@link SchematicDb} instance which must be non-null.
      */
     public LocalDocumentStore( SchematicDb database ) {
@@ -70,11 +70,17 @@ public class LocalDocumentStore implements DocumentStore {
     @Override
     public void updateDocument( String key,
                                 Document document ) {
-        //do nothing, the way the local store updates is via deltas
+        // do nothing, the way the local store updates is via deltas
     }
 
     /**
-     * @see SchematicDb#putIfAbsent(String, org.infinispan.schematic.document.Document, org.infinispan.schematic.document.Document)
+     * Store the supplied document and metadata at the given key.
+     * 
+     * @param key the key or identifier for the document
+     * @param document the document that is to be stored
+     * @return the existing entry for the supplied key, or null if there was no entry and the put was successful
+     * @see SchematicDb#putIfAbsent(String, org.infinispan.schematic.document.Document,
+     *      org.infinispan.schematic.document.Document)
      */
     public SchematicEntry putIfAbsent( String key,
                                        Document document ) {
@@ -82,6 +88,10 @@ public class LocalDocumentStore implements DocumentStore {
     }
 
     /**
+     * Store the supplied document and metadata at the given key.
+     * 
+     * @param key the key or identifier for the document
+     * @param document the document that is to be stored
      * @see SchematicDb#put(String, org.infinispan.schematic.document.Document, org.infinispan.schematic.document.Document)
      */
     public void put( String key,
@@ -91,7 +101,7 @@ public class LocalDocumentStore implements DocumentStore {
 
     /**
      * Store the supplied document in the local db
-     *
+     * 
      * @param entryDocument the document that contains the metadata document, content document, and key
      */
     public void put( Document entryDocument ) {
@@ -101,10 +111,9 @@ public class LocalDocumentStore implements DocumentStore {
     /**
      * Replace the existing document and metadata at the given key with the document that is supplied. This method does nothing if
      * there is not an existing entry at the given key.
-     *
+     * 
      * @param key the key or identifier for the document
-     * @param document the new document that is to replace the existing document (or binary content)
-     * the replacement
+     * @param document the new document that is to replace the existing document (or binary content) the replacement
      */
     public void replace( String key,
                          Document document ) {
@@ -133,7 +142,7 @@ public class LocalDocumentStore implements DocumentStore {
 
     @Override
     public void setLocalSourceKey( String sourceKey ) {
-        //ignore, as this is always local
+        // ignore, as this is always local
     }
 
     @Override
@@ -144,7 +153,7 @@ public class LocalDocumentStore implements DocumentStore {
 
     /**
      * Returns the local Infinispan cache.
-     *
+     * 
      * @return a {@code non-null} {@link Cache} instance.
      */
     public Cache<String, SchematicEntry> localCache() {
@@ -154,6 +163,6 @@ public class LocalDocumentStore implements DocumentStore {
     @Override
     public void setParent( String federatedNodeKey,
                            String documentKey ) {
-        //do nothing
+        // do nothing
     }
 }

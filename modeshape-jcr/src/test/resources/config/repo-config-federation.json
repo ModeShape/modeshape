@@ -1,7 +1,11 @@
 {
     "name" : "Federated repository",
     "storage" : {
-        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
+        "connectors" : {
+            "mock-source" : {
+                "classname" : "org.modeshape.jcr.federation.MockConnector",
+            }
+        }
     },
     "workspaces" : {
         "predefined" : ["ws1", "ws2"],

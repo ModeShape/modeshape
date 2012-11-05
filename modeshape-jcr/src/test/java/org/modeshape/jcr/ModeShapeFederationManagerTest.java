@@ -28,7 +28,7 @@ import javax.jcr.Node;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.api.federation.FederationManager;
-import org.modeshape.jcr.federation.ConnectorsManager;
+import org.modeshape.jcr.federation.MockConnector;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -58,7 +58,7 @@ public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldLinkExternalNode() throws Exception {
         //link the first external document
-        federationManager.linkExternalLocation("/testRoot", ConnectorsManager.MockConnector.SOURCE_NAME, "/doc1");
+        federationManager.linkExternalLocation("/testRoot", MockConnector.SOURCE_NAME, "/doc1");
         assertEquals(2, testRoot.getNodes().getSize());
 
         Node doc1Federated = session.getNode("/testRoot/federated1");
@@ -68,7 +68,7 @@ public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
         assertEquals(12, doc1Federated.getProperty("federated1_prop2").getLong());
 
         //link a second external document with a sub-child
-        federationManager.linkExternalLocation("/testRoot", ConnectorsManager.MockConnector.SOURCE_NAME, "/doc2");
+        federationManager.linkExternalLocation("/testRoot", MockConnector.SOURCE_NAME, "/doc2");
         assertEquals(3, testRoot.getNodes().getSize());
 
         Node doc2Federated = session.getNode("/testRoot/federated2");
@@ -85,7 +85,7 @@ public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
     @Test
     public void shouldCreateExternalNode() throws Exception {
         //link the first external document
-        federationManager.linkExternalLocation("/testRoot", ConnectorsManager.MockConnector.SOURCE_NAME, "/doc1");
+        federationManager.linkExternalLocation("/testRoot", MockConnector.SOURCE_NAME, "/doc1");
         Node doc1Federated = session.getNode("/testRoot/federated1");
         Node externalNode1 = doc1Federated.addNode("federated1_1", null);
         externalNode1.setProperty("prop1", "a value");
