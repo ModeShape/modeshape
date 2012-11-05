@@ -35,6 +35,7 @@ import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.internal.document.DocumentEditor;
 import org.infinispan.schematic.internal.document.MutableDocument;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.Connectors;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
@@ -42,7 +43,7 @@ import org.modeshape.jcr.cache.document.LocalDocumentStore;
 
 /**
  * An implementation of {@link DocumentStore} which is used when federation is enabled
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class FederatedDocumentStore implements DocumentStore {
@@ -50,11 +51,11 @@ public class FederatedDocumentStore implements DocumentStore {
     private static final String FEDERATED_WORKSPACE_KEY = NodeKey.keyForWorkspaceName("federated_ws");
 
     private final LocalDocumentStore localDocumentStore;
-    private final ConnectorsManager connectorsManager;
+    private final Connectors connectorsManager;
 
     private String localSourceKey;
 
-    public FederatedDocumentStore( ConnectorsManager connectorsManager,
+    public FederatedDocumentStore( Connectors connectorsManager,
                                    SchematicDb localDb ) {
         this.connectorsManager = connectorsManager;
         this.localDocumentStore = new LocalDocumentStore(localDb);
@@ -70,14 +71,13 @@ public class FederatedDocumentStore implements DocumentStore {
                                          Document document ) {
         if (isLocalSource(key)) {
             return localStore().putIfAbsent(key, document);
-        } else {
-            Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
-            if (connector != null) {
-                EditableDocument editableDocument = DocumentFactory.newDocument(document);
-                replaceNodeKeysWithDocumentIds(editableDocument);
-                connector.storeDocument(editableDocument);
-                return null;
-            }
+        }
+        Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
+        if (connector != null) {
+            EditableDocument editableDocument = DocumentFactory.newDocument(document);
+            replaceNodeKeysWithDocumentIds(editableDocument);
+            connector.storeDocument(editableDocument);
+            return null;
         }
         return null;
     }
@@ -102,17 +102,16 @@ public class FederatedDocumentStore implements DocumentStore {
     public SchematicEntry get( String key ) {
         if (isLocalSource(key)) {
             return localStore().get(key);
-        } else {
-            Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
-            if (connector != null) {
-                String docId = documentIdFromNodeKey(key);
-                EditableDocument document = connector.getDocumentById(docId);
-                if (document != null) {
-                    //clone the document, so we don't alter the original
-                    document = (EditableDocument)document.clone();
-                    replaceDocumentIdsWithNodeKeys(document, connector.getSourceName());
-                    return new FederatedSchematicEntry(document);
-                }
+        }
+        Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
+        if (connector != null) {
+            String docId = documentIdFromNodeKey(key);
+            EditableDocument document = connector.getDocumentById(docId);
+            if (document != null) {
+                // clone the document, so we don't alter the original
+                document = (EditableDocument)document.clone();
+                replaceDocumentIdsWithNodeKeys(document, connector.getSourceName());
+                return new FederatedSchematicEntry(document);
             }
         }
         return null;
@@ -122,10 +121,9 @@ public class FederatedDocumentStore implements DocumentStore {
     public boolean containsKey( String key ) {
         if (isLocalSource(key)) {
             return localStore().containsKey(key);
-        } else {
-            Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
-            return connector != null && connector.hasDocument(documentIdFromNodeKey(key));
         }
+        Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
+        return connector != null && connector.hasDocument(documentIdFromNodeKey(key));
     }
 
     @Override
@@ -140,16 +138,19 @@ public class FederatedDocumentStore implements DocumentStore {
         }
     }
 
+    @Override
     public TransactionManager transactionManager() {
-        //TODO author=Horia Chiorean date=11/1/12 description=do we need some other transaction manager ?
+        // TODO author=Horia Chiorean date=11/1/12 description=do we need some other transaction manager ?
         return localStore().transactionManager();
     }
 
+    @Override
     public XAResource xaResource() {
-        //TODO author=Horia Chiorean date=11/1/12 description=do we need some other xaResource ?
+        // TODO author=Horia Chiorean date=11/1/12 description=do we need some other xaResource ?
         return localStore().xaResource();
     }
 
+    @Override
     public void setLocalSourceKey( String localSourceKey ) {
         this.localSourceKey = localSourceKey;
     }
@@ -163,7 +164,7 @@ public class FederatedDocumentStore implements DocumentStore {
         if (connector != null) {
             document = connector.getDocumentAtLocation(documentLocation);
             if (document != null) {
-                //clone the original so we don't overwrite the values from the connector
+                // clone the original so we don't overwrite the values from the connector
                 document = (EditableDocument)document.clone();
                 replaceDocumentIdsWithNodeKeys(document, sourceName);
             }
@@ -182,9 +183,9 @@ public class FederatedDocumentStore implements DocumentStore {
     }
 
     private boolean isLocalSource( String key ) {
-        return !NodeKey.isValidFormat(key) //the key isn't a std key format (probably some internal format)
-                || StringUtil.isBlank(localSourceKey) //there isn't a local source configured yet (e.g. system startup)
-                || key.startsWith(localSourceKey); //the sources differ
+        return !NodeKey.isValidFormat(key) // the key isn't a std key format (probably some internal format)
+               || StringUtil.isBlank(localSourceKey) // there isn't a local source configured yet (e.g. system startup)
+               || key.startsWith(localSourceKey); // the sources differ
 
     }
 
@@ -218,7 +219,7 @@ public class FederatedDocumentStore implements DocumentStore {
         }
         if (document.containsField(DocumentTranslator.PARENT)) {
             String parentKey = document.getString(DocumentTranslator.PARENT);
-            //check to see if the parent key is that of a federated node and if so, do nothing
+            // check to see if the parent key is that of a federated node and if so, do nothing
             if (NodeKey.isValidFormat(parentKey) && NodeKey.sourceKey(parentKey).equalsIgnoreCase(localSourceKey)) {
                 return;
             }
@@ -226,7 +227,7 @@ public class FederatedDocumentStore implements DocumentStore {
         }
     }
 
-    private void replaceNodeKeysWithDocumentIds( EditableDocument editableDocument) {
+    private void replaceNodeKeysWithDocumentIds( EditableDocument editableDocument ) {
         if (editableDocument.containsField(DocumentTranslator.KEY)) {
             String nodeKey = editableDocument.getString(DocumentTranslator.KEY);
             editableDocument.setString(DocumentTranslator.KEY, documentIdFromNodeKey(nodeKey));

@@ -159,11 +159,11 @@ public class DocumentTranslator {
      * Obtain the preferred {@link NodeKey key} for the parent of this node. Because a node can be used in more than once place,
      * it may technically have more than one parent. Therefore, in such cases this method prefers the parent that is in the
      * {@code primaryWorkspaceKey} and, if there is no such parent, the parent that is in the {@code secondaryWorkspaceKey}.
-     *
+     * 
      * @param document the document for the node; may not be null
      * @param primaryWorkspaceKey the key for the workspace in which the parent should preferrably exist; may be null
      * @param secondaryWorkspaceKey the key for the workspace in which the parent should exist if not in the primary workspace;
-     * may be null
+     *        may be null
      * @return the key representing the preferred parent, or null if the document contains no parent reference or if the parent
      *         reference(s) do not have the specified workspace keys
      */
@@ -229,8 +229,8 @@ public class DocumentTranslator {
                 if (key.getWorkspaceKey().equals(primaryWorkspaceKey)) {
                     return key;
                 }
-                if (keyWithSecondaryWorkspaceKey == null && secondaryWorkspaceKey != null && key.getWorkspaceKey().equals(
-                        secondaryWorkspaceKey)) {
+                if (keyWithSecondaryWorkspaceKey == null && secondaryWorkspaceKey != null
+                    && key.getWorkspaceKey().equals(secondaryWorkspaceKey)) {
                     keyWithSecondaryWorkspaceKey = key;
                 }
             }
@@ -784,14 +784,16 @@ public class DocumentTranslator {
         // Materialize the ChildReference objects in the 'children' document ...
         List<ChildReference> internalChildRefsList = childReferencesListFromArray(children);
 
-        // Materialize the ChildReference objects in the 'federated segments' document ...
         List<ChildReference> externalChildRefsList = childReferencesListFromArray(externalSegments);
-        if (!externalChildRefsList.isEmpty()) {
-            String federatedNodeKey = document.getString(KEY);
-            assert federatedNodeKey != null;
-            //set the parent back reference for each of the external segments
-            for (ChildReference externalChild : externalChildRefsList) {
-                documentStore.setParent(federatedNodeKey, externalChild.getKey().toString());
+        if (externalSegments != null) {
+            // Materialize the ChildReference objects in the 'federated segments' document ...
+            if (!externalChildRefsList.isEmpty()) {
+                String federatedNodeKey = document.getString(KEY);
+                assert federatedNodeKey != null;
+                // set the parent back reference for each of the external segments
+                for (ChildReference externalChild : externalChildRefsList) {
+                    documentStore.setParent(federatedNodeKey, externalChild.getKey().toString());
+                }
             }
         }
 
@@ -803,11 +805,12 @@ public class DocumentTranslator {
             ChildReferences federatedChildRefs = ImmutableChildReferences.create(externalChildRefsList);
 
             return ImmutableChildReferences.create(internalChildRefs, info, federatedChildRefs, cache);
-        } else {
-            //There is no segmenting, so just add the federated references at the end
-            internalChildRefsList.addAll(externalChildRefsList);
-            return ImmutableChildReferences.create(internalChildRefsList);
         }
+        if (externalSegments != null) {
+            // There is no segmenting, so just add the federated references at the end
+            internalChildRefsList.addAll(externalChildRefsList);
+        }
+        return ImmutableChildReferences.create(internalChildRefsList);
     }
 
     private List<ChildReference> childReferencesListFromArray( List<?> children ) {
@@ -978,7 +981,7 @@ public class DocumentTranslator {
     /**
      * Given the lists of added & removed referrers (which may contain duplicates), compute the delta with which the count has to
      * be updated in the document
-     *
+     * 
      * @param addedReferrers the list of referrers that was added
      * @param removedReferrers the list of referrers that was removed
      * @return a map(nodekey, delta) pairs
@@ -989,8 +992,8 @@ public class DocumentTranslator {
 
         Set<NodeKey> addedReferrersUnique = new HashSet<NodeKey>(addedReferrers);
         for (NodeKey addedReferrer : addedReferrersUnique) {
-            int referrersCount = Collections.frequency(addedReferrers, addedReferrer) - Collections.frequency(removedReferrers,
-                                                                                                              addedReferrer);
+            int referrersCount = Collections.frequency(addedReferrers, addedReferrer)
+                                 - Collections.frequency(removedReferrers, addedReferrer);
             referrersCountDelta.put(addedReferrer, referrersCount);
         }
 
@@ -1060,9 +1063,7 @@ public class DocumentTranslator {
         if (value instanceof Reference) {
             Reference ref = (Reference)value;
             String key = ref.isWeak() ? "$wref" : "$ref";
-            String refString =
-                    value instanceof NodeKeyReference ? ((NodeKeyReference)value).getNodeKey().toString() : this.strings.create(
-                            ref);
+            String refString = value instanceof NodeKeyReference ? ((NodeKeyReference)value).getNodeKey().toString() : this.strings.create(ref);
             boolean isForeign = (value instanceof NodeKeyReference) && ((NodeKeyReference)value).isForeign();
             return Schematic.newDocument(key, refString, "$foreign", isForeign);
         }
@@ -1095,7 +1096,7 @@ public class DocumentTranslator {
 
     /**
      * Increment the reference count for the stored binary value with the supplied SHA-1 hash.
-     *
+     * 
      * @param binaryKey the key for the binary value; never null
      * @param unusedBinaryKeys the set of binary keys that are considered unused; may be null
      */
@@ -1122,7 +1123,7 @@ public class DocumentTranslator {
 
     /**
      * Decrement the reference count for the binary value.
-     *
+     * 
      * @param fieldValue the value in the document that may contain a binary value reference; may be null
      * @param unusedBinaryKeys the set of binary keys that are considered unused; may be null
      * @return true if the binary value is no longer referenced, or false otherwise
@@ -1297,7 +1298,7 @@ public class DocumentTranslator {
      * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
      * a session sees as "persisted" state and the reality.
      * </p>
-     *
+     * 
      * @param key
      * @param document
      * @param targetCountPerBlock
@@ -1388,22 +1389,21 @@ public class DocumentTranslator {
      * <p>
      * Note this method returns very quickly if the method determines that there is no work to do.
      * </p>
-     *
      * <p>
      * Note that this method changes the underlying db as well as the given document, so *it must* be called either from a
      * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
      * a session sees as "persisted" state and the reality.
      * </p>
-     *
+     * 
      * @param key the key for the document whose children are to be split; may not be null
      * @param document the document whose children are to be split; may not be null
      * @param children the children that are to be split; may not be null
      * @param targetCountPerBlock the goal for the number of children in each block; must be positive
      * @param tolerance a tolerance that when added to and subtraced from the <code>targetCountPerBlock</code> gives an acceptable
-     * range for the number of children; must be positive but smaller than <code>targetCountPerBlock</code>
+     *        range for the number of children; must be positive but smaller than <code>targetCountPerBlock</code>
      * @param isFirst true if the supplied document is the first node document, or false if it is a block document
      * @param nextBlock the key for the next block of children; may be null if the supplied document is the last document and
-     * there is no next block
+     *        there is no next block
      * @return true if the children were split, or false if no changes were made
      */
     protected boolean splitChildren( NodeKey key,
@@ -1497,19 +1497,18 @@ public class DocumentTranslator {
      * empty or contains no children, it will be deleted its next block merged. Note that this merging is performed, even if the
      * resulting number of children is considered 'too-large' (as such 'too-large' blocks will be optimized at a subsequent
      * optimization pass).
-     *
      * <p>
      * Note that this method changes the underlying db as well as the given document, so *it must* be called either from a
      * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
      * a session sees as "persisted" state and the reality.
      * </p>
-     *
+     * 
      * @param key the key for the document whose children are to be merged with the next block; may not be null
      * @param document the document to be modified with the next block's children; may not be null
      * @param children the children into which are to be merged the next block's children; may not be null
      * @param isFirst true if the supplied document is the first node document, or false if it is a block document
      * @param nextBlock the key for the next block of children; may be null if the supplied document is the last document and
-     * there is no next block
+     *        there is no next block
      * @return the key for the block of children that is after blocks that are removed; may be null if the supplied document is
      *         the last block
      */
@@ -1576,7 +1575,7 @@ public class DocumentTranslator {
 
     /**
      * Checks if the given document is already locked
-     *
+     * 
      * @param doc the document
      * @return true if the change was made successfully, or false otherwise
      */
@@ -1585,11 +1584,13 @@ public class DocumentTranslator {
     }
 
     /**
-     * Given an existing document appends one or more external documents to it by using the {@link org.modeshape.jcr.federation.FederatedDocumentStore}
-     * to retrieve the references to the documents at that location.
-     *
-     * @param document a {@code non-null} {@link EditableDocument} representing the document of a local node to which one or more external documents
-     * should be added.
+     * Given an existing document appends one or more external documents to it by using the
+     * {@link org.modeshape.jcr.federation.FederatedDocumentStore} to retrieve the references to the documents at that location.
+     * 
+     * @param document a {@code non-null} {@link EditableDocument} representing the document of a local node to which one or more
+     *        external documents should be added.
+     * @param sourceName the name of the source that contains the external documents
+     * @param externalLocations the locations of the external documents that should be added to the supplied document
      */
     public void addExternalDocuments( EditableDocument document,
                                       String sourceName,
