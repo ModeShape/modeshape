@@ -26,6 +26,7 @@ package org.modeshape.jcr.api;
 import java.util.concurrent.Future;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.RepositoryException;
+import org.modeshape.jcr.api.federation.FederationManager;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.query.QueryManager;
 
@@ -114,4 +115,5 @@ public interface Workspace extends javax.jcr.Workspace {
      */
     Future<Boolean> reindexAsync( String path ) throws RepositoryException;
 
+    FederationManager getFederationManager() throws RepositoryException;
 }

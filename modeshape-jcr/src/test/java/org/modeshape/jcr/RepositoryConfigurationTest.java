@@ -165,6 +165,11 @@ public class RepositoryConfigurationTest {
     }
 
     @Test
+    public void shouldSuccessfullyValidateFederationConfiguration() {
+        assertValid("config/repo-config-federation.json");
+    }
+
+    @Test
     public void shouldAlwaysReturnNonNullSecurityComponent() {
         RepositoryConfiguration config = new RepositoryConfiguration("repoName");
         assertThat(config.getSecurity(), is(notNullValue()));

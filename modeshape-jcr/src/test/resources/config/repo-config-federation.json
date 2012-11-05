@@ -1,0 +1,15 @@
+{
+    "name" : "Federated repository",
+    "storage" : {
+        "connectors" : {
+            "mock-source" : {
+                "classname" : "org.modeshape.jcr.federation.MockConnector",
+            }
+        }
+    },
+    "workspaces" : {
+        "predefined" : ["ws1", "ws2"],
+        "default" : "default",
+        "allowCreation" : true
+    }
+}

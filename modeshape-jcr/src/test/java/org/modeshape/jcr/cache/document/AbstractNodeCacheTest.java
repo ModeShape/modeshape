@@ -146,7 +146,7 @@ public abstract class AbstractNodeCacheTest extends AbstractSchematicDbTest {
                     if (info != null) {
                         String nextBlockKey = info.getString(DocumentTranslator.NEXT_BLOCK);
                         if (nextBlockKey != null) {
-                            SchematicEntry nextEntry = database().get(nextBlockKey);
+                            SchematicEntry nextEntry = schematicDb.get(nextBlockKey);
                             if (nextEntry != null && nextEntry.hasDocumentContent()) {
                                 Document next = nextEntry.getContentAsDocument();
                                 print(next, true);
@@ -466,14 +466,14 @@ public abstract class AbstractNodeCacheTest extends AbstractSchematicDbTest {
 
     @Test
     public void shouldLoadSimpleData() {
-        assertThat(database().get(ROOT_KEY_WS1.toString()), is(notNullValue()));
-        assertThat(database().get("source1system-jcrsystem"), is(notNullValue()));
-        assertThat(database().get("source1system-jcrnamespaces"), is(notNullValue()));
-        assertThat(database().get("source1works1-childA"), is(notNullValue()));
-        assertThat(database().get("source1works1-childB"), is(notNullValue()));
-        assertThat(database().get("source1works1-childC"), is(notNullValue()));
-        assertThat(database().get(ROOT_KEY_WS2.toString()), is(notNullValue()));
-        assertThat(database().get("source1works2-childX"), is(notNullValue()));
+        assertThat(schematicDb.get(ROOT_KEY_WS1.toString()), is(notNullValue()));
+        assertThat(schematicDb.get("source1system-jcrsystem"), is(notNullValue()));
+        assertThat(schematicDb.get("source1system-jcrnamespaces"), is(notNullValue()));
+        assertThat(schematicDb.get("source1works1-childA"), is(notNullValue()));
+        assertThat(schematicDb.get("source1works1-childB"), is(notNullValue()));
+        assertThat(schematicDb.get("source1works1-childC"), is(notNullValue()));
+        assertThat(schematicDb.get(ROOT_KEY_WS2.toString()), is(notNullValue()));
+        assertThat(schematicDb.get("source1works2-childX"), is(notNullValue()));
     }
 
     @Test
