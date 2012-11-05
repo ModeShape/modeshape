@@ -25,6 +25,8 @@
 package org.modeshape.jcr;
 
 import javax.jcr.Node;
+import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.jcr.api.federation.FederationManager;
 import org.modeshape.jcr.federation.ConnectorsManager;
@@ -38,16 +40,24 @@ import static org.junit.Assert.assertNotNull;
  */
 public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
 
-    @Test
-    public void testCreateFederatedNode() throws Exception {
+
+    private FederationManager federationManager;
+    private AbstractJcrNode testRoot;
+
+    @Before
+    public void before() throws Exception {
         startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream("config/repo-config-federation.json"));
 
-        Node testRoot = session.getRootNode().addNode("testRoot");
+        testRoot = session.getRootNode().addNode("testRoot");
         //link an internal document
         testRoot.addNode("node1");
         session.save();
 
-        FederationManager federationManager = session.getWorkspace().getFederationManager();
+        federationManager = session.getWorkspace().getFederationManager();
+    }
+
+    @Test
+    public void shouldLinkExternalNode() throws Exception {
         //link the first external document
         federationManager.linkExternalLocation("/testRoot", ConnectorsManager.MockConnector.SOURCE_NAME, "/doc1");
         assertEquals(2, testRoot.getNodes().getSize());
@@ -73,5 +83,20 @@ public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
         Node doc2FederatedChild = session.getNode("/testRoot/federated2/federated3");
         assertNotNull(doc2FederatedChild);
         assertEquals("yet another string", doc2FederatedChild.getProperty("federated3_prop1").getString());
+    }
+
+    @Test
+    @Ignore
+    public void shouldCreateExternalNode() throws Exception {
+        //link the first external document
+        federationManager.linkExternalLocation("/testRoot", ConnectorsManager.MockConnector.SOURCE_NAME, "/doc1");
+        Node doc1Federated = session.getNode("/testRoot/federated1");
+        doc1Federated.addNode("federated1_1", null);
+        session.save();
+
+        Node federated1_1 = doc1Federated.getNode("federated1_1");
+        assertNotNull(federated1_1);
+        assertEquals(doc1Federated, federated1_1.getParent());
+        assertEquals(1, doc1Federated.getNodes().getSize());
     }
 }

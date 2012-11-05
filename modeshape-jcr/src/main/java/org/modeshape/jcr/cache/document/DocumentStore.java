@@ -52,18 +52,16 @@ public interface DocumentStore {
      * @param document the document that is to be stored
      * @return the existing entry for the supplied key, or null if there was no entry and the put was successful
      */
-    public SchematicEntry putIfAbsent( String key,
-                                       Document document );
+    public SchematicEntry storeDocument( String key,
+                                         Document document );
 
     /**
-     * Store the supplied document and metadata at the given key.
+     * Updates the content of the document at the given key with the given document.
      *
      * @param key the key or identifier for the document
-     * @param document the document that is to be stored
-     * @see #putIfAbsent(String, Document)
+     * @param document the content with which the existing document should be updated
      */
-    public void put( String key,
-                     Document document );
+    public void updateDocument(String key, Document document);
 
     /**
      * Remove the existing document at the given key.

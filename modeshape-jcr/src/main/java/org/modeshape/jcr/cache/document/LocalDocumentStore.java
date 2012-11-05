@@ -44,6 +44,7 @@ public class LocalDocumentStore implements DocumentStore {
 
     /**
      * Creates a new local store with the given database
+     *
      * @param database a {@link SchematicDb} instance which must be non-null.
      */
     public LocalDocumentStore( SchematicDb database ) {
@@ -61,12 +62,28 @@ public class LocalDocumentStore implements DocumentStore {
     }
 
     @Override
+    public SchematicEntry storeDocument( String key,
+                                         Document document ) {
+        return putIfAbsent(key, document);
+    }
+
+    @Override
+    public void updateDocument( String key,
+                                Document document ) {
+        //do nothing, the way the local store updates is via deltas
+    }
+
+    /**
+     * @see SchematicDb#putIfAbsent(String, org.infinispan.schematic.document.Document, org.infinispan.schematic.document.Document)
+     */
     public SchematicEntry putIfAbsent( String key,
                                        Document document ) {
         return database.putIfAbsent(key, document, null);
     }
 
-    @Override
+    /**
+     * @see SchematicDb#put(String, org.infinispan.schematic.document.Document, org.infinispan.schematic.document.Document)
+     */
     public void put( String key,
                      Document document ) {
         database.put(key, document, null);

@@ -65,28 +65,30 @@ public class FederatedDocumentStore implements DocumentStore {
     }
 
     @Override
-    public SchematicEntry putIfAbsent( String key,
-                                       Document document ) {
+    public SchematicEntry storeDocument( String key,
+                                         Document document ) {
         if (isLocalSource(key)) {
             return localStore().putIfAbsent(key, document);
         } else {
             Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
             if (connector != null) {
-                //TODO author=Horia Chiorean date=11/1/12 description=write to connector
+                connector.storeDocument(document);
+                return null;
             }
         }
         return null;
     }
 
     @Override
-    public void put( String key,
-                     Document document ) {
+    public void updateDocument( String key,
+                                Document document ) {
         if (isLocalSource(key)) {
-            localStore().put(key, document);
+            localStore().updateDocument(key, document);
         } else {
             Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
             if (connector != null) {
-                //TODO author=Horia Chiorean date=11/1/12 description=write to connector
+                String documentId = documentIdFromNodeKey(key);
+                connector.updateDocument(documentId, document);
             }
         }
     }
@@ -115,10 +117,7 @@ public class FederatedDocumentStore implements DocumentStore {
             return localStore().containsKey(key);
         } else {
             Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
-            if (connector != null) {
-                return connector.hasDocument(documentIdFromNodeKey(key));
-            }
-            return false;
+            return connector != null && connector.hasDocument(documentIdFromNodeKey(key));
         }
     }
 
@@ -151,7 +150,7 @@ public class FederatedDocumentStore implements DocumentStore {
     @Override
     public EditableDocument getExternalDocumentAtLocation( String sourceName,
                                                            String documentLocation ) {
-        String sourceKey =  NodeKey.keyForSourceName(sourceName);
+        String sourceKey = NodeKey.keyForSourceName(sourceName);
         Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey);
         EditableDocument document = null;
         if (connector != null) {

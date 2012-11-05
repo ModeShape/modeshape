@@ -26,6 +26,7 @@ package org.modeshape.jcr.federation;
 
 import java.util.Map;
 import org.infinispan.schematic.DocumentFactory;
+import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
@@ -43,6 +44,10 @@ public class FederatedDocumentBuilder {
 
     public FederatedDocumentBuilder() {
         this.federatedDocument = DocumentFactory.newDocument();
+    }
+
+    public FederatedDocumentBuilder(Document document) {
+        this.federatedDocument = DocumentFactory.newDocument(document);
     }
 
     public FederatedDocumentBuilder createDocument( String id,
@@ -108,6 +113,11 @@ public class FederatedDocumentBuilder {
 
     private Object getDocumentId() {
         return federatedDocument.get(DocumentTranslator.KEY);
+    }
+
+    public FederatedDocumentBuilder merge(Document document) {
+        federatedDocument.putAll(document);
+        return this;
     }
 
     public EditableDocument build() {

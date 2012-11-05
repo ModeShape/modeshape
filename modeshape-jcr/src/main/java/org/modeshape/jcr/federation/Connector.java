@@ -24,6 +24,7 @@
 
 package org.modeshape.jcr.federation;
 
+import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 
 /**
@@ -75,5 +76,20 @@ public interface Connector {
      * @return {@code true} if such a document exists, {@code false} otherwise.
      */
     public boolean hasDocument( String id );
+
+    /**
+     * Stores the given document.
+     *
+     * @param document a {@code non-null} {@link org.infinispan.schematic.document.Document} instance.
+     */
+    public void storeDocument(Document document);
+
+    /**
+     * Updates the document with the given id.
+     *
+     * @param id a {@code non-null} string representing the id of a document
+     * @param document a {@code non-null} {@link org.infinispan.schematic.document.Document} instance.
+     */
+    public void updateDocument(String id, Document document);
 
 }

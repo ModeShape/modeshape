@@ -1100,7 +1100,7 @@ public class DocumentTranslator {
         if (entry == null) {
             // The document doesn't yet exist, so create it ...
             Document content = Schematic.newDocument(SHA1, sha1, REFERENCE_COUNT, 1L);
-            documentStore.put(key, content);
+            documentStore.localStore().put(key, content);
         } else {
             EditableDocument sha1Usage = entry.editDocumentContent();
             Long countValue = sha1Usage.getLong(REFERENCE_COUNT);
@@ -1456,7 +1456,7 @@ public class DocumentTranslator {
             blockDoc.setArray(CHILDREN, blockChildren);
 
             // Now persist the new document ...
-            documentStore.put(blockKey, blockDoc);
+            documentStore.localStore().put(blockKey, blockDoc);
 
             // And get ready for the next block ...
             if (!isLast) {
