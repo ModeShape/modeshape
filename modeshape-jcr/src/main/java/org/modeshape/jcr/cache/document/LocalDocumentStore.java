@@ -150,4 +150,10 @@ public class LocalDocumentStore implements DocumentStore {
     public Cache<String, SchematicEntry> localCache() {
         return database.getCache();
     }
+
+    @Override
+    public void setParent( String federatedNodeKey,
+                           String documentKey ) {
+        //do nothing
+    }
 }

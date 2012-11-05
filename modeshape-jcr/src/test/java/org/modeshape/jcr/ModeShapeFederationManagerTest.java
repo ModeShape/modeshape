@@ -26,7 +26,6 @@ package org.modeshape.jcr;
 
 import javax.jcr.Node;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.jcr.api.federation.FederationManager;
 import org.modeshape.jcr.federation.ConnectorsManager;
@@ -64,8 +63,7 @@ public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
 
         Node doc1Federated = session.getNode("/testRoot/federated1");
         assertNotNull(doc1Federated);
-        //TODO author=Horia Chiorean date=11/2/12 description=How do we set the parent back-reference ?
-        //assertEquals(testRoot.getIdentifier(), doc1Federated.getParent().getIdentifier());
+        assertEquals(testRoot.getIdentifier(), doc1Federated.getParent().getIdentifier());
         assertEquals("a string", doc1Federated.getProperty("federated1_prop1").getString());
         assertEquals(12, doc1Federated.getProperty("federated1_prop2").getLong());
 
@@ -75,8 +73,7 @@ public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
 
         Node doc2Federated = session.getNode("/testRoot/federated2");
         assertNotNull(doc2Federated);
-        //TODO author=Horia Chiorean date=11/2/12 description=How do we set the parent back-reference ?
-        //assertEquals(testRoot.getIdentifier(), doc2Federated.getParent().getIdentifier());
+        assertEquals(testRoot.getIdentifier(), doc2Federated.getParent().getIdentifier());
         assertEquals("another string", doc2Federated.getProperty("federated2_prop1").getString());
         assertEquals(false, doc2Federated.getProperty("federated2_prop2").getBoolean());
 
@@ -86,17 +83,19 @@ public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @Ignore
     public void shouldCreateExternalNode() throws Exception {
         //link the first external document
         federationManager.linkExternalLocation("/testRoot", ConnectorsManager.MockConnector.SOURCE_NAME, "/doc1");
         Node doc1Federated = session.getNode("/testRoot/federated1");
-        doc1Federated.addNode("federated1_1", null);
+        Node externalNode1 = doc1Federated.addNode("federated1_1", null);
+        externalNode1.setProperty("prop1", "a value");
         session.save();
 
         Node federated1_1 = doc1Federated.getNode("federated1_1");
         assertNotNull(federated1_1);
         assertEquals(doc1Federated, federated1_1.getParent());
         assertEquals(1, doc1Federated.getNodes().getSize());
+        assertNotNull(session.getNode("/testRoot/federated1/federated1_1"));
+        assertEquals("a value", federated1_1.getProperty("prop1").getString());
     }
 }

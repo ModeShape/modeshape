@@ -26,6 +26,7 @@ package org.modeshape.jcr.federation;
 
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
+import org.infinispan.schematic.DocumentFactory;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
@@ -72,7 +73,9 @@ public class FederatedDocumentStore implements DocumentStore {
         } else {
             Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
             if (connector != null) {
-                connector.storeDocument(document);
+                EditableDocument editableDocument = DocumentFactory.newDocument(document);
+                replaceNodeKeysWithDocumentIds(editableDocument);
+                connector.storeDocument(editableDocument);
                 return null;
             }
         }
@@ -88,7 +91,9 @@ public class FederatedDocumentStore implements DocumentStore {
             Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
             if (connector != null) {
                 String documentId = documentIdFromNodeKey(key);
-                connector.updateDocument(documentId, document);
+                EditableDocument editableDocument = DocumentFactory.newDocument(document);
+                replaceNodeKeysWithDocumentIds(editableDocument);
+                connector.updateDocument(documentId, editableDocument);
             }
         }
     }
@@ -102,10 +107,12 @@ public class FederatedDocumentStore implements DocumentStore {
             if (connector != null) {
                 String docId = documentIdFromNodeKey(key);
                 EditableDocument document = connector.getDocumentById(docId);
-                //clone the document, so we don't alter the original
-                document = (EditableDocument)document.clone();
-                replaceSourceDocumentIdsWithNodeKeys(document, connector.getSourceName());
-                return document != null ? new FederatedSchematicEntry(document) : null;
+                if (document != null) {
+                    //clone the document, so we don't alter the original
+                    document = (EditableDocument)document.clone();
+                    replaceDocumentIdsWithNodeKeys(document, connector.getSourceName());
+                    return new FederatedSchematicEntry(document);
+                }
             }
         }
         return null;
@@ -158,10 +165,20 @@ public class FederatedDocumentStore implements DocumentStore {
             if (document != null) {
                 //clone the original so we don't overwrite the values from the connector
                 document = (EditableDocument)document.clone();
-                replaceSourceDocumentIdsWithNodeKeys(document, sourceName);
+                replaceDocumentIdsWithNodeKeys(document, sourceName);
             }
         }
         return document;
+    }
+
+    @Override
+    public void setParent( String federatedNodeKey,
+                           String documentKey ) {
+        Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(documentKey));
+        if (connector != null) {
+            String documentId = documentIdFromNodeKey(documentKey);
+            connector.setParent(federatedNodeKey, documentId);
+        }
     }
 
     private boolean isLocalSource( String key ) {
@@ -185,8 +202,8 @@ public class FederatedDocumentStore implements DocumentStore {
         return new NodeKey(nodeKey).getIdentifier();
     }
 
-    private void replaceSourceDocumentIdsWithNodeKeys( EditableDocument document,
-                                                       String sourceName ) {
+    private void replaceDocumentIdsWithNodeKeys( EditableDocument document,
+                                                 String sourceName ) {
         if (document.containsField(DocumentTranslator.KEY)) {
             String sourceDocumentId = document.getString(DocumentTranslator.KEY);
             document.setString(DocumentTranslator.KEY, documentIdToNodeKey(sourceName, sourceDocumentId));
@@ -196,8 +213,35 @@ public class FederatedDocumentStore implements DocumentStore {
             for (Object child : children) {
                 assert child instanceof MutableDocument;
                 EditableDocument editableChild = new DocumentEditor((MutableDocument)child);
-                replaceSourceDocumentIdsWithNodeKeys(editableChild, sourceName);
+                replaceDocumentIdsWithNodeKeys(editableChild, sourceName);
             }
+        }
+        if (document.containsField(DocumentTranslator.PARENT)) {
+            String parentKey = document.getString(DocumentTranslator.PARENT);
+            //check to see if the parent key is that of a federated node and if so, do nothing
+            if (NodeKey.isValidFormat(parentKey) && NodeKey.sourceKey(parentKey).equalsIgnoreCase(localSourceKey)) {
+                return;
+            }
+            document.setString(DocumentTranslator.PARENT, documentIdToNodeKey(sourceName, parentKey));
+        }
+    }
+
+    private void replaceNodeKeysWithDocumentIds( EditableDocument editableDocument) {
+        if (editableDocument.containsField(DocumentTranslator.KEY)) {
+            String nodeKey = editableDocument.getString(DocumentTranslator.KEY);
+            editableDocument.setString(DocumentTranslator.KEY, documentIdFromNodeKey(nodeKey));
+        }
+        if (editableDocument.containsField(DocumentTranslator.CHILDREN)) {
+            EditableArray children = editableDocument.getArray(DocumentTranslator.CHILDREN);
+            for (Object child : children) {
+                assert child instanceof MutableDocument;
+                EditableDocument editableChild = new DocumentEditor((MutableDocument)child);
+                replaceNodeKeysWithDocumentIds(editableChild);
+            }
+        }
+        if (editableDocument.containsField(DocumentTranslator.PARENT)) {
+            String nodeKey = editableDocument.getString(DocumentTranslator.PARENT);
+            editableDocument.setString(DocumentTranslator.PARENT, documentIdFromNodeKey(nodeKey));
         }
     }
 }
