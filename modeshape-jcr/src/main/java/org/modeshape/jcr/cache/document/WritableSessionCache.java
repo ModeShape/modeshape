@@ -940,13 +940,13 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                 if (node.isNew()) {
                     // We need to create the schematic entry for the new node ...
-                    if (documentStore.putIfAbsent(keyStr, doc) != null) {
+                    if (documentStore.storeDocument(keyStr, doc) != null) {
                         if (replacedNodes != null && replacedNodes.contains(key)) {
                             // Then a node is being removed and recreated with the same key ...
-                            documentStore.put(keyStr, doc);
+                            documentStore.localStore().put(keyStr, doc);
                         } else if (removedNodes != null && removedNodes.contains(key)) {
                             // Then a node is being removed and recreated with the same key ...
-                            documentStore.put(keyStr, doc);
+                            documentStore.localStore().put(keyStr, doc);
                             removedNodes.remove(key);
                         } else {
                             // We couldn't create the entry because one already existed ...
@@ -954,6 +954,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         }
                     }
                 } else {
+                    documentStore.updateDocument(keyStr, doc);
                     boolean isSameWorkspace = workspaceCache().getWorkspaceKey()
                                                               .equalsIgnoreCase(node.getKey().getWorkspaceKey());
                     // only update the indexes if the node we're working with is in the same workspace as the current workspace.

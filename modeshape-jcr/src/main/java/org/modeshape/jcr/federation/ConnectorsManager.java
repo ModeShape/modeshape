@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.cache.NodeKey;
@@ -81,7 +82,7 @@ public class ConnectorsManager {
             documentsByLocation = new HashMap<String, EditableDocument>();
             documentsById = new HashMap<String, EditableDocument>();
 
-            String id1 = UUID.randomUUID().toString();
+            String id1 = newId();
             EditableDocument doc1 = new FederatedDocumentBuilder().createDocument(id1, "federated1")
                                                                   .addProperty("federated1_prop1", "a string")
                                                                   .addProperty("federated1_prop2", 12)
@@ -90,12 +91,12 @@ public class ConnectorsManager {
             documentsByLocation.put("/doc1", doc1);
             documentsById.put(id1, doc1);
 
-            String id3 = UUID.randomUUID().toString();
+            String id3 = newId();
             EditableDocument doc3 = new FederatedDocumentBuilder().createDocument(id3, "federated3")
                                                                   .addProperty("federated3_prop1", "yet another string")
                                                                   .addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
                                                                   .build();
-            String id2 = UUID.randomUUID().toString();
+            String id2 = newId();
             EditableDocument doc2 = new FederatedDocumentBuilder().createDocument(id2, "federated2")
                                                                   .addProperty("federated2_prop1", "another string")
                                                                   .addProperty("federated2_prop2", Boolean.FALSE)
@@ -109,6 +110,10 @@ public class ConnectorsManager {
             documentsByLocation.put("/doc2/doc3", doc3);
             documentsById.put(id2, doc2);
             documentsById.put(id3, doc3);
+        }
+
+        private static String newId() {
+            return UUID.randomUUID().toString();
         }
 
         @Override
@@ -143,6 +148,23 @@ public class ConnectorsManager {
         @Override
         public boolean hasDocument( String id ) {
             return documentsById.containsKey(id);
+        }
+
+        @Override
+        public void storeDocument( Document document ) {
+            String id = newId();
+            documentsById.put(id, new FederatedDocumentBuilder(document).build());
+        }
+
+        @Override
+        public void updateDocument( String id,
+                                    Document document ) {
+            if (!documentsById.containsKey(id)) {
+                return;
+            }
+            EditableDocument existingDocument = documentsById.get(id);
+            EditableDocument mergedDocument = new FederatedDocumentBuilder(existingDocument).merge(document).build();
+            documentsById.put(id, mergedDocument);
         }
     }
 }

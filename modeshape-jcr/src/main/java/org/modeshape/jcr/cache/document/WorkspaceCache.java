@@ -170,6 +170,7 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         if (node == null) {
             // Load the node from the database ...
             Document doc = documentFor(key);
+            //TODO author=Horia Chiorean date=11/5/12 description=For federation we need to configure at least the TTL for each document
             if (doc != null) {
                 // Create a new node and put into this cache ...
                 CachedNode newNode = new LazyCachedNode(key, doc);
