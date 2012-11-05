@@ -46,7 +46,7 @@ public class FederatedDocumentBuilder {
         this.federatedDocument = DocumentFactory.newDocument();
     }
 
-    public FederatedDocumentBuilder(Document document) {
+    public FederatedDocumentBuilder( Document document ) {
         this.federatedDocument = DocumentFactory.newDocument(document);
     }
 
@@ -69,7 +69,7 @@ public class FederatedDocumentBuilder {
     }
 
     public FederatedDocumentBuilder createDocument( String id,
-                                                    String name) {
+                                                    String name ) {
         return createDocument(id, name, null);
     }
 
@@ -84,8 +84,8 @@ public class FederatedDocumentBuilder {
         //the correct structure of properties is to be grouped by their namespace, so we need to take this into account
         String propertiesNamespace = "";
         if (name instanceof Name) {
-            propertiesNamespace = ((Name) name).getNamespaceUri();
-            name = ((Name) name).getLocalName();
+            propertiesNamespace = ((Name)name).getNamespaceUri();
+            name = ((Name)name).getLocalName();
         }
 
         EditableDocument propertiesUnderNamespace = properties.getDocument(propertiesNamespace);
@@ -111,11 +111,25 @@ public class FederatedDocumentBuilder {
         return this;
     }
 
-    private Object getDocumentId() {
-        return federatedDocument.get(DocumentTranslator.KEY);
+    public String getDocumentId() {
+        return federatedDocument.getString(DocumentTranslator.KEY);
+
     }
 
-    public FederatedDocumentBuilder merge(Document document) {
+    public String getParentId() {
+        return federatedDocument.getString(DocumentTranslator.PARENT);
+    }
+
+    public String getName() {
+        return federatedDocument.getString(DocumentTranslator.NAME);
+    }
+
+    public FederatedDocumentBuilder setParent( String id ) {
+        federatedDocument.setString(DocumentTranslator.PARENT, id);
+        return this;
+    }
+
+    public FederatedDocumentBuilder merge( Document document ) {
         federatedDocument.putAll(document);
         return this;
     }

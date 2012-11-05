@@ -785,19 +785,27 @@ public class DocumentTranslator {
         List<ChildReference> internalChildRefsList = childReferencesListFromArray(children);
 
         // Materialize the ChildReference objects in the 'federated segments' document ...
-        List<ChildReference> federatedChildRefsList = childReferencesListFromArray(externalSegments);
+        List<ChildReference> externalChildRefsList = childReferencesListFromArray(externalSegments);
+        if (!externalChildRefsList.isEmpty()) {
+            String federatedNodeKey = document.getString(KEY);
+            assert federatedNodeKey != null;
+            //set the parent back reference for each of the external segments
+            for (ChildReference externalChild : externalChildRefsList) {
+                documentStore.setParent(federatedNodeKey, externalChild.getKey().toString());
+            }
+        }
 
         // Now look at the 'childrenInfo' document for info about the next block of children ...
         ChildReferencesInfo info = getChildReferencesInfo(document);
         if (info != null) {
             // The children are segmented ...
             ChildReferences internalChildRefs = ImmutableChildReferences.create(internalChildRefsList);
-            ChildReferences federatedChildRefs = ImmutableChildReferences.create(federatedChildRefsList);
+            ChildReferences federatedChildRefs = ImmutableChildReferences.create(externalChildRefsList);
 
             return ImmutableChildReferences.create(internalChildRefs, info, federatedChildRefs, cache);
         } else {
             //There is no segmenting, so just add the federated references at the end
-            internalChildRefsList.addAll(federatedChildRefsList);
+            internalChildRefsList.addAll(externalChildRefsList);
             return ImmutableChildReferences.create(internalChildRefsList);
         }
     }

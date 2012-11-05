@@ -92,4 +92,11 @@ public interface Connector {
      */
     public void updateDocument(String id, Document document);
 
+    /**
+     * Sets the federated node id as the parent of the document with the given id.
+     *
+     * @param federatedNodeId a {@code non-null} string representing the id (key) of a federated node
+     * @param documentId a {@code non-null} string representing the id of a document.
+     */
+    public void setParent(String federatedNodeId, String documentId);
 }

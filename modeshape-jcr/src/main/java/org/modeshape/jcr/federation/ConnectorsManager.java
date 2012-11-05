@@ -152,8 +152,10 @@ public class ConnectorsManager {
 
         @Override
         public void storeDocument( Document document ) {
-            String id = newId();
-            documentsById.put(id, new FederatedDocumentBuilder(document).build());
+            FederatedDocumentBuilder federatedDocumentBuilder = new FederatedDocumentBuilder(document);
+            String documentId = federatedDocumentBuilder.getDocumentId();
+            assert documentId != null;
+            documentsById.put(documentId, federatedDocumentBuilder.build());
         }
 
         @Override
@@ -165,6 +167,16 @@ public class ConnectorsManager {
             EditableDocument existingDocument = documentsById.get(id);
             EditableDocument mergedDocument = new FederatedDocumentBuilder(existingDocument).merge(document).build();
             documentsById.put(id, mergedDocument);
+        }
+
+        @Override
+        public void setParent( String federatedNodeId,
+                               String documentId ) {
+            EditableDocument document = documentsById.get(documentId);
+            if (document != null) {
+                EditableDocument updatedDoc = new FederatedDocumentBuilder(document).setParent(federatedNodeId).build();
+                documentsById.put(documentId, updatedDoc);
+            }
         }
     }
 }

@@ -116,4 +116,12 @@ public interface DocumentStore {
      */
     public EditableDocument getExternalDocumentAtLocation( String sourceName,
                                                            String documentLocation );
+
+    /**
+     * Sets the federated node id as the parent of the document with the given id.
+     *
+     * @param federatedNodeKey a {@code non-null} string representing the id (key) of a federated node
+     * @param documentKey a {@code non-null} string representing the id of a document.
+     */
+    public void setParent(String federatedNodeKey, String documentKey);
 }
