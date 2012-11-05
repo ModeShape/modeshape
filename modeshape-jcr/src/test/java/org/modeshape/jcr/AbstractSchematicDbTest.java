@@ -51,7 +51,8 @@ import org.modeshape.common.logging.Logger;
  */
 public abstract class AbstractSchematicDbTest {
 
-    private SchematicDb db;
+    protected SchematicDb schematicDb;
+
     private EmbeddedCacheManager cm;
     private TransactionManager tm;
     private Logger logger;
@@ -67,8 +68,8 @@ public abstract class AbstractSchematicDbTest {
 
         cm = TestCacheManagerFactory.createCacheManager(configurationBuilder);
         // Now create the SchematicDb ...
-        db = Schematic.get(cm, "documents");
-        tm = TestingUtil.getTransactionManager(db.getCache());
+        schematicDb = Schematic.get(cm, "documents");
+        tm = TestingUtil.getTransactionManager(schematicDb.getCache());
     }
 
     @After
@@ -76,17 +77,13 @@ public abstract class AbstractSchematicDbTest {
         try {
             TestingUtil.killCacheManagers(cm);
         } finally {
-            db = null;
+            schematicDb = null;
             tm = null;
         }
     }
 
     protected TransactionManager txnManager() {
         return tm;
-    }
-
-    protected SchematicDb database() {
-        return db;
     }
 
     protected EmbeddedCacheManager cacheManager() {
@@ -115,7 +112,7 @@ public abstract class AbstractSchematicDbTest {
                         Document content = dataDoc.getDocument("content");
                         Document metadata = dataDoc.getDocument("metadata");
                         String key = metadata.getString("id");
-                        db.put(key, content, metadata);
+                        schematicDb.put(key, content, metadata);
                     }
                 }
             }

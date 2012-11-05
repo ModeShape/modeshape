@@ -56,6 +56,10 @@ public class BasicDocument extends LinkedHashMap<String, Object> implements Muta
         super();
     }
 
+    public BasicDocument(Document document) {
+        putAll(document);
+    }
+
     public BasicDocument( int initialCapacity ) {
         super(initialCapacity);
     }

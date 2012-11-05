@@ -95,6 +95,8 @@ public final class JcrI18n {
     public static I18n errorInAuthenticationProvider;
     public static I18n unableToInitializeSequencer;
     public static I18n unableToInitializeTextExtractor;
+    public static I18n unableToInitializeConnector;
+    public static I18n requiredFieldNotSetInConnector;
 
     public static I18n rootNodeHasNoParent;
     public static I18n rootNodeIsNotProperty;
