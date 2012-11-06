@@ -56,21 +56,6 @@ public class FederatedDocumentBuilder implements DocumentBuilder {
         this.federatedDocument = DocumentFactory.newDocument(document);
     }
 
-    public FederatedDocumentBuilder createDocument( String id,
-                                                    String name,
-                                                    Map<String, ?> properties ) {
-        createDocument(id, name);
-        if (properties != null) {
-            EditableDocument propertiesDoc = DocumentFactory.newDocument();
-            for (String propertyName : properties.keySet()) {
-                propertiesDoc.set(propertyName, properties.get(propertyName));
-            }
-            federatedDocument.set(DocumentTranslator.PROPERTIES, propertiesDoc);
-        }
-
-        return this;
-    }
-
     @Override
     public FederatedDocumentBuilder createDocument( String id,
                                                     String name ) {
