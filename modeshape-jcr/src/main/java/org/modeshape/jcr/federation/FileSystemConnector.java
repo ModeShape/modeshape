@@ -37,12 +37,49 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.SecureHash.Algorithm;
+import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.binary.AbstractBinary;
 
 /**
- * {@link Connector} implementation that exposes a single directory on the local file system.
+ * {@link Connector} implementation that exposes a single directory on the local file system. This connector has several
+ * properties that must be configured via the {@link RepositoryConfiguration}:
+ * <ul>
+ * <li><strong><code>directoryPath</code></strong> - The path to the file or folder that is to be accessed by this connector.</li>
+ * <li><strong><code>exclusionPattern</code></strong> - Optional property that specifies a regular expression that is used to
+ * determine which files and folders in the underlying file system are not exposed through this connector. Files and folders with
+ * a name that matches the provided regular expression will <i>not</i> be exposed by this source.</li>
+ * <li><strong><code>inclusionPattern</code></strong> - Optional property that specifies a regular expression that is used to
+ * determine which files and folders in the underlying file system are exposed through this connector. Files and folders with a
+ * name that matches the provided regular expression will be exposed by this source.</li>
+ * </ul>
+ * Inclusion and exclusion patterns can be used separately or in combination. For example, consider these cases:
+ * <table cellspacing="0" cellpadding="1" border="1">
+ * <tr>
+ * <th>Inclusion Pattern</th>
+ * <th>Exclusion Pattern</th>
+ * <th>Examples</th>
+ * </tr>
+ * <tr>
+ * <td>(.+)\\.txt$</td>
+ * <td></td>
+ * <td>Includes only files and directories whose names end in "<code>.txt</code>" (e.g., "<code>something.txt</code>" ), but does
+ * not include files and other folders such as "<code>something.jar</code>" or "<code>something.txt.zip</code>".</td>
+ * </tr>
+ * <tr>
+ * <td>(.+)\\.txt$</td>
+ * <td>my.txt</td>
+ * <td>Includes only files and directories whose names end in "<code>.txt</code>" (e.g., "<code>something.txt</code>" ) with the
+ * exception of "<code>my.txt</code>", and does not include files and other folders such as "<code>something.jar</code>" or "
+ * <code>something.txt.zip</code>".</td>
+ * </tr>
+ * <tr>
+ * <td>my.txt</td>
+ * <td>.+</td>
+ * <td>Excludes all files and directories except any named "<code>my.txt</code>".</td>
+ * </tr>
+ * </table>
  */
 public class FileSystemConnector extends Connector {
 
