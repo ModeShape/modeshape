@@ -791,6 +791,7 @@ public class DocumentTranslator {
                 String federatedNodeKey = document.getString(KEY);
                 assert federatedNodeKey != null;
                 // set the parent back reference for each of the external segments
+                //TODO author=Horia Chiorean date=11/6/12 description=This is probably only a temporary solution
                 for (ChildReference externalChild : externalChildRefsList) {
                     documentStore.setParent(federatedNodeKey, externalChild.getKey().toString());
                 }
@@ -802,9 +803,9 @@ public class DocumentTranslator {
         if (info != null) {
             // The children are segmented ...
             ChildReferences internalChildRefs = ImmutableChildReferences.create(internalChildRefsList);
-            ChildReferences federatedChildRefs = ImmutableChildReferences.create(externalChildRefsList);
+            ChildReferences externalChildRefs = ImmutableChildReferences.create(externalChildRefsList);
 
-            return ImmutableChildReferences.create(internalChildRefs, info, federatedChildRefs, cache);
+            return ImmutableChildReferences.create(internalChildRefs, info, externalChildRefs, cache);
         }
         if (externalSegments != null) {
             // There is no segmenting, so just add the federated references at the end

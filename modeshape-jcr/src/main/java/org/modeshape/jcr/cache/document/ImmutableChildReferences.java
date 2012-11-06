@@ -25,10 +25,12 @@ package org.modeshape.jcr.cache.document;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.EmptyIterator;
@@ -61,9 +63,16 @@ public class ImmutableChildReferences {
 
     public static ChildReferences create( ChildReferences first,
                                           ChildReferencesInfo segmentingInfo,
-                                          ChildReferences federatedReferences,
                                           WorkspaceCache cache ) {
-        return new Segmented(cache, first, segmentingInfo, federatedReferences);
+        return new Segmented(cache, first, segmentingInfo);
+    }
+
+    public static ChildReferences create( ChildReferences first,
+                                          ChildReferencesInfo segmentingInfo,
+                                          ChildReferences externalReferences,
+                                          WorkspaceCache cache ) {
+        Segmented segmentedReferences = new Segmented(cache, first, segmentingInfo);
+        return ! externalReferences.isEmpty() ? new FederatedReferences(segmentedReferences, externalReferences) : segmentedReferences;
     }
 
     @Immutable
@@ -366,21 +375,18 @@ public class ImmutableChildReferences {
         protected final WorkspaceCache cache;
         protected final long totalSize;
         private Segment firstSegment;
-        private ChildReferences federatedReferences;
 
         public Segmented( WorkspaceCache cache,
                           ChildReferences firstSegment,
-                          ChildReferencesInfo info,
-                          ChildReferences federatedReferences) {
+                          ChildReferencesInfo info) {
             this.cache = cache;
             this.totalSize = info.totalSize;
             this.firstSegment = new Segment(firstSegment, info.nextKey);
-            this.federatedReferences = federatedReferences;
         }
 
         @Override
         public long size() {
-            return totalSize + this.federatedReferences.size();
+            return totalSize;
         }
 
         @Override
@@ -391,7 +397,6 @@ public class ImmutableChildReferences {
                 result += segment.getReferences().getChildCount(name);
                 segment = segment.next(cache);
             }
-            result += federatedReferences.getChildCount(name);
             return result;
         }
 
@@ -408,7 +413,6 @@ public class ImmutableChildReferences {
                 }
                 segment = segment.next(cache);
             }
-            result = federatedReferences.getChild(name, snsIndex, context);
             return result;
         }
 
@@ -421,7 +425,7 @@ public class ImmutableChildReferences {
                 }
                 segment = segment.next(cache);
             }
-            return federatedReferences.hasChild(key);
+            return false;
         }
 
         @Override
@@ -441,7 +445,6 @@ public class ImmutableChildReferences {
                 }
                 segment = segment.next(cache);
             }
-            result = federatedReferences.getChild(key, context);
             return result;
         }
 
@@ -609,6 +612,82 @@ public class ImmutableChildReferences {
                 }
                 segment = segment.next;
             }
+            return sb;
+        }
+    }
+
+    public static class FederatedReferences extends AbstractChildReferences {
+
+        private final ChildReferences internalReferences;
+        private final ChildReferences externalReferences;
+
+        FederatedReferences( ChildReferences externalReferences,
+                                    ChildReferences internalReferences ) {
+            this.externalReferences = externalReferences;
+            this.internalReferences = internalReferences;
+        }
+
+        @Override
+        public long size() {
+            return externalReferences.size() + internalReferences.size();
+        }
+
+        @Override
+        public int getChildCount( Name name ) {
+            return externalReferences.getChildCount(name) + internalReferences.getChildCount(name);
+        }
+
+        @Override
+        public ChildReference getChild( Name name,
+                                        int snsIndex,
+                                        Context context ) {
+            ChildReference nonFederatedRef = internalReferences.getChild(name, snsIndex, context);
+            if (nonFederatedRef != null) {
+                return nonFederatedRef;
+            } else {
+                return externalReferences.getChild(name, snsIndex, context);
+            }
+        }
+
+        @Override
+        public boolean hasChild( NodeKey key ) {
+            return externalReferences.hasChild(key) || internalReferences.hasChild(key);
+        }
+
+        @Override
+        public ChildReference getChild( NodeKey key ) {
+            return getChild(key, new BasicContext());
+        }
+
+        @Override
+        public ChildReference getChild( NodeKey key,
+                                        Context context ) {
+            ChildReference nonFederatedRef = internalReferences.getChild(key, context);
+            if (nonFederatedRef != null) {
+                return nonFederatedRef;
+            } else {
+                return externalReferences.getChild(key, context);
+            }
+        }
+
+        @Override
+        public Iterator<ChildReference> iterator() {
+            return new UnionIterator<ChildReference>(internalReferences.iterator(), externalReferences);
+        }
+
+        @Override
+        public Iterator<NodeKey> getAllKeys() {
+            Set<NodeKey> externalKeys = new HashSet<NodeKey>();
+            for (Iterator<NodeKey> externalKeysIterator = externalReferences.getAllKeys(); externalKeysIterator.hasNext(); ){
+                externalKeys.add(externalKeysIterator.next());
+            }
+            return new UnionIterator<NodeKey>(internalReferences.getAllKeys(), externalKeys);
+        }
+
+        @Override
+        public StringBuilder toString( StringBuilder sb ) {
+            sb.append("<external references=").append(externalReferences.toString());
+            sb.append(">, <internal references=").append(internalReferences.toString()).append(">");
             return sb;
         }
     }
