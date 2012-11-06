@@ -170,6 +170,11 @@ public class RepositoryConfigurationTest {
     }
 
     @Test
+    public void shouldSuccessfullyValidateFileSystemFederationConfiguration() {
+        assertValid("config/repo-config-filesystem-federation.json");
+    }
+
+    @Test
     public void shouldAlwaysReturnNonNullSecurityComponent() {
         RepositoryConfiguration config = new RepositoryConfiguration("repoName");
         assertThat(config.getSecurity(), is(notNullValue()));

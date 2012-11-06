@@ -376,7 +376,7 @@ public class RepositoryConfiguration {
         public static final String EXTRACTORS = "extractors";
         public static final String SEQUENCING = "sequencing";
         public static final String SEQUENCERS = "sequencers";
-        public static final String CONNECTORS = "connectors";
+        public static final String EXTERNAL_SOURCES = "externalSources";
         public static final String PATH_EXPRESSION = "pathExpression";
         public static final String PATH_EXPRESSIONS = "pathExpressions";
         public static final String JDBC_DRIVER_CLASS = "driverClass";
@@ -1826,7 +1826,7 @@ public class RepositoryConfiguration {
      * @return the sequencing configuration; never null
      */
     public Federation getFederation() {
-        return new Federation(doc.getDocument(FieldName.STORAGE));
+        return new Federation(doc);
     }
 
     /**
@@ -1898,14 +1898,14 @@ public class RepositoryConfiguration {
         }
 
         /**
-         * Get the ordered list of connectors. All connectors are configured with this list.
+         * Get the list of connector configurations.
          * 
          * @return the immutable list of connectors; never null but possibly empty
          */
         public List<Component> getConnectors() {
             Problems problems = new SimpleProblems();
             List<Component> components = readComponents(federation,
-                                                        FieldName.CONNECTORS,
+                                                        FieldName.EXTERNAL_SOURCES,
                                                         FieldName.CLASSNAME,
                                                         CONNECTOR_ALIASES,
                                                         problems);
@@ -1914,12 +1914,12 @@ public class RepositoryConfiguration {
         }
 
         /**
-         * Get the ordered list of sequencers. All sequencers are configured with this list.
+         * Validate the list of connector configurations.
          * 
-         * @param problems the container for problems reading the sequencer information; may not be null
+         * @param problems the container for problems reading the configuration information; may not be null
          */
         protected void validateConnectors( Problems problems ) {
-            readComponents(federation, FieldName.CONNECTORS, FieldName.CLASSNAME, CONNECTOR_ALIASES, problems);
+            readComponents(federation, FieldName.EXTERNAL_SOURCES, FieldName.CLASSNAME, CONNECTOR_ALIASES, problems);
         }
     }
 
