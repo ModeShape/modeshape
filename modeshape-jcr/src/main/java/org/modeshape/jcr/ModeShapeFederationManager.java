@@ -43,17 +43,14 @@ public class ModeShapeFederationManager implements FederationManager {
     }
 
     @Override
-    public void linkExternalLocation( String absNodePath,
-                                      String sourceName,
-                                      String externalLocation,
-                                      String... filters ) throws RepositoryException {
-        //TODO author=Horia Chiorean date=11/2/12 description=Decide if this is the right level of abstraction
-        //TODO author=Horia Chiorean date=11/2/12 description=Decide how to integrate with session transactions
-        //TODO author=Horia Chiorean date=11/2/12 description=Decide how to use filters
+    public void createExternalProjection( String absNodePath,
+                                          String sourceName,
+                                          String externalPath,
+                                          String alias ) throws RepositoryException {
         NodeKey key = session.getNode(absNodePath).key();
 
         WritableSessionCache writableSessionCache = (WritableSessionCache)session.spawnSessionCache(false);
-        writableSessionCache.linkExternalLocation(key, sourceName, externalLocation, filters);
+        writableSessionCache.createExternalProjection(key, sourceName, externalPath, alias);
         writableSessionCache.save();
     }
 }

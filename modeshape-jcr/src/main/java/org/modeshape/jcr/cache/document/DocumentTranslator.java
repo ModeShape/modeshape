@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
+import org.infinispan.schematic.DocumentFactory;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Binary;
@@ -49,6 +50,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.NoOpEncoder;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.TextEncoder;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.value.DateTime;
@@ -159,11 +161,11 @@ public class DocumentTranslator {
      * Obtain the preferred {@link NodeKey key} for the parent of this node. Because a node can be used in more than once place,
      * it may technically have more than one parent. Therefore, in such cases this method prefers the parent that is in the
      * {@code primaryWorkspaceKey} and, if there is no such parent, the parent that is in the {@code secondaryWorkspaceKey}.
-     * 
+     *
      * @param document the document for the node; may not be null
      * @param primaryWorkspaceKey the key for the workspace in which the parent should preferrably exist; may be null
      * @param secondaryWorkspaceKey the key for the workspace in which the parent should exist if not in the primary workspace;
-     *        may be null
+     * may be null
      * @return the key representing the preferred parent, or null if the document contains no parent reference or if the parent
      *         reference(s) do not have the specified workspace keys
      */
@@ -784,19 +786,8 @@ public class DocumentTranslator {
         // Materialize the ChildReference objects in the 'children' document ...
         List<ChildReference> internalChildRefsList = childReferencesListFromArray(children);
 
+        // Materialize the ChildReference objects in the 'federated segments' document ...
         List<ChildReference> externalChildRefsList = childReferencesListFromArray(externalSegments);
-        if (externalSegments != null) {
-            // Materialize the ChildReference objects in the 'federated segments' document ...
-            if (!externalChildRefsList.isEmpty()) {
-                String federatedNodeKey = document.getString(KEY);
-                assert federatedNodeKey != null;
-                // set the parent back reference for each of the external segments
-                //TODO author=Horia Chiorean date=11/6/12 description=This is probably only a temporary solution
-                for (ChildReference externalChild : externalChildRefsList) {
-                    documentStore.setParent(federatedNodeKey, externalChild.getKey().toString());
-                }
-            }
-        }
 
         // Now look at the 'childrenInfo' document for info about the next block of children ...
         ChildReferencesInfo info = getChildReferencesInfo(document);
@@ -982,7 +973,7 @@ public class DocumentTranslator {
     /**
      * Given the lists of added & removed referrers (which may contain duplicates), compute the delta with which the count has to
      * be updated in the document
-     * 
+     *
      * @param addedReferrers the list of referrers that was added
      * @param removedReferrers the list of referrers that was removed
      * @return a map(nodekey, delta) pairs
@@ -993,8 +984,8 @@ public class DocumentTranslator {
 
         Set<NodeKey> addedReferrersUnique = new HashSet<NodeKey>(addedReferrers);
         for (NodeKey addedReferrer : addedReferrersUnique) {
-            int referrersCount = Collections.frequency(addedReferrers, addedReferrer)
-                                 - Collections.frequency(removedReferrers, addedReferrer);
+            int referrersCount = Collections.frequency(addedReferrers, addedReferrer) - Collections.frequency(removedReferrers,
+                                                                                                              addedReferrer);
             referrersCountDelta.put(addedReferrer, referrersCount);
         }
 
@@ -1064,7 +1055,9 @@ public class DocumentTranslator {
         if (value instanceof Reference) {
             Reference ref = (Reference)value;
             String key = ref.isWeak() ? "$wref" : "$ref";
-            String refString = value instanceof NodeKeyReference ? ((NodeKeyReference)value).getNodeKey().toString() : this.strings.create(ref);
+            String refString =
+                    value instanceof NodeKeyReference ? ((NodeKeyReference)value).getNodeKey().toString() : this.strings.create(
+                            ref);
             boolean isForeign = (value instanceof NodeKeyReference) && ((NodeKeyReference)value).isForeign();
             return Schematic.newDocument(key, refString, "$foreign", isForeign);
         }
@@ -1097,7 +1090,7 @@ public class DocumentTranslator {
 
     /**
      * Increment the reference count for the stored binary value with the supplied SHA-1 hash.
-     * 
+     *
      * @param binaryKey the key for the binary value; never null
      * @param unusedBinaryKeys the set of binary keys that are considered unused; may be null
      */
@@ -1124,7 +1117,7 @@ public class DocumentTranslator {
 
     /**
      * Decrement the reference count for the binary value.
-     * 
+     *
      * @param fieldValue the value in the document that may contain a binary value reference; may be null
      * @param unusedBinaryKeys the set of binary keys that are considered unused; may be null
      * @return true if the binary value is no longer referenced, or false otherwise
@@ -1299,7 +1292,7 @@ public class DocumentTranslator {
      * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
      * a session sees as "persisted" state and the reality.
      * </p>
-     * 
+     *
      * @param key
      * @param document
      * @param targetCountPerBlock
@@ -1395,16 +1388,16 @@ public class DocumentTranslator {
      * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
      * a session sees as "persisted" state and the reality.
      * </p>
-     * 
+     *
      * @param key the key for the document whose children are to be split; may not be null
      * @param document the document whose children are to be split; may not be null
      * @param children the children that are to be split; may not be null
      * @param targetCountPerBlock the goal for the number of children in each block; must be positive
      * @param tolerance a tolerance that when added to and subtraced from the <code>targetCountPerBlock</code> gives an acceptable
-     *        range for the number of children; must be positive but smaller than <code>targetCountPerBlock</code>
+     * range for the number of children; must be positive but smaller than <code>targetCountPerBlock</code>
      * @param isFirst true if the supplied document is the first node document, or false if it is a block document
      * @param nextBlock the key for the next block of children; may be null if the supplied document is the last document and
-     *        there is no next block
+     * there is no next block
      * @return true if the children were split, or false if no changes were made
      */
     protected boolean splitChildren( NodeKey key,
@@ -1503,13 +1496,13 @@ public class DocumentTranslator {
      * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
      * a session sees as "persisted" state and the reality.
      * </p>
-     * 
+     *
      * @param key the key for the document whose children are to be merged with the next block; may not be null
      * @param document the document to be modified with the next block's children; may not be null
      * @param children the children into which are to be merged the next block's children; may not be null
      * @param isFirst true if the supplied document is the first node document, or false if it is a block document
      * @param nextBlock the key for the next block of children; may be null if the supplied document is the last document and
-     *        there is no next block
+     * there is no next block
      * @return the key for the block of children that is after blocks that are removed; may be null if the supplied document is
      *         the last block
      */
@@ -1576,7 +1569,7 @@ public class DocumentTranslator {
 
     /**
      * Checks if the given document is already locked
-     * 
+     *
      * @param doc the document
      * @return true if the change was made successfully, or false otherwise
      */
@@ -1585,28 +1578,41 @@ public class DocumentTranslator {
     }
 
     /**
-     * Given an existing document appends one or more external documents to it by using the
-     * {@link org.modeshape.jcr.federation.FederatedDocumentStore} to retrieve the references to the documents at that location.
-     * 
-     * @param document a {@code non-null} {@link EditableDocument} representing the document of a local node to which one or more
-     *        external documents should be added.
-     * @param sourceName the name of the source that contains the external documents
-     * @param externalLocations the locations of the external documents that should be added to the supplied document
+     * Given an existing document adds a new federated segment with the given alias pointing to the external document located
+     * at {@code externalPath}
+     *
+     * @param document a {@code non-null} {@link EditableDocument} representing the document of a local node to which the federated
+     * segment should be appended.
+     * @param sourceName a {@code non-null} string, the name of the source where {@code externalPath} will be resolved
+     * @param externalPath a {@code non-null} string the location in the external source which points to an external node
+     * @param alias an optional string representing the name under which the federated segment will be linked. In effect, this
+     * represents the name of a child reference. If not present, the {@code externalPath} will be used.
+     *
+     * Note that the name of the federated segment (either coming from {@code externalPath} or {@code alias}) should not
+     * contain the "/" character. If it does, this will be removed.
      */
-    public void addExternalDocuments( EditableDocument document,
-                                      String sourceName,
-                                      String... externalLocations ) {
+    public void addFederatedSegment( EditableDocument document,
+                                     String sourceName,
+                                     String externalPath,
+                                     String alias ) {
         EditableArray federatedSegmentsArray = document.getArray(FEDERATED_SEGMENTS);
         if (federatedSegmentsArray == null) {
             federatedSegmentsArray = Schematic.newArray();
             document.set(FEDERATED_SEGMENTS, federatedSegmentsArray);
         }
 
-        for (String externalLocation : externalLocations) {
-            EditableDocument externalDocument = documentStore.getExternalDocumentAtLocation(sourceName, externalLocation);
-            if (externalDocument != null) {
-                federatedSegmentsArray.add(externalDocument);
+        String parentKey = document.getString(KEY);
+        String externalNodeKey = documentStore.createExternalProjection(parentKey, sourceName, externalPath);
+        if (!StringUtil.isBlank(externalNodeKey)) {
+            String segmentName = !StringUtil.isBlank(alias) ? alias : externalPath;
+            if (segmentName.endsWith("/")) {
+                segmentName = segmentName.substring(0, segmentName.length() - 1);
             }
+            if (segmentName.contains("/")) {
+                segmentName = segmentName.substring(segmentName.lastIndexOf("/") + 1);
+            }
+            EditableDocument federatedSegment = DocumentFactory.newDocument(KEY, externalNodeKey, NAME, segmentName);
+            federatedSegmentsArray.add(federatedSegment);
         }
     }
 }

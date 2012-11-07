@@ -24,27 +24,28 @@
 
 package org.modeshape.jcr.federation;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
-import org.infinispan.schematic.DocumentFactory;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.schematic.internal.document.DocumentEditor;
-import org.infinispan.schematic.internal.document.MutableDocument;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.Connectors;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.document.DocumentStore;
-import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
 
 /**
  * An implementation of {@link DocumentStore} which is used when federation is enabled
- * 
+ *
  * @author Horia Chiorean (hchiorea@redhat.com)
+ *         //TODO author=Horia Chiorean date=11/7/12 description=The externalProjectionKeyToFederatedNodeKey should be marshalled to/from the
+ *         system area somehow, at repository shutdown/startup
  */
 public class FederatedDocumentStore implements DocumentStore {
 
@@ -52,6 +53,7 @@ public class FederatedDocumentStore implements DocumentStore {
 
     private final LocalDocumentStore localDocumentStore;
     private final Connectors connectorsManager;
+    private final Map<String, String> externalProjectionKeyToFederatedNodeKey;
 
     private String localSourceKey;
 
@@ -59,6 +61,7 @@ public class FederatedDocumentStore implements DocumentStore {
                                    SchematicDb localDb ) {
         this.connectorsManager = connectorsManager;
         this.localDocumentStore = new LocalDocumentStore(localDb);
+        this.externalProjectionKeyToFederatedNodeKey = new HashMap<String, String>();
     }
 
     @Override
@@ -74,10 +77,8 @@ public class FederatedDocumentStore implements DocumentStore {
         }
         Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
         if (connector != null) {
-            EditableDocument editableDocument = DocumentFactory.newDocument(document);
-            replaceNodeKeysWithDocumentIds(editableDocument);
+            EditableDocument editableDocument = replaceNodeKeysWithDocumentIds(document);
             connector.storeDocument(editableDocument);
-            return null;
         }
         return null;
     }
@@ -90,9 +91,8 @@ public class FederatedDocumentStore implements DocumentStore {
         } else {
             Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
             if (connector != null) {
+                EditableDocument editableDocument = replaceNodeKeysWithDocumentIds(document);
                 String documentId = documentIdFromNodeKey(key);
-                EditableDocument editableDocument = DocumentFactory.newDocument(document);
-                replaceNodeKeysWithDocumentIds(editableDocument);
                 connector.updateDocument(documentId, editableDocument);
             }
         }
@@ -106,12 +106,11 @@ public class FederatedDocumentStore implements DocumentStore {
         Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
         if (connector != null) {
             String docId = documentIdFromNodeKey(key);
-            EditableDocument document = connector.getDocumentById(docId);
+            Document document = connector.getDocumentById(docId);
             if (document != null) {
                 // clone the document, so we don't alter the original
-                document = (EditableDocument)document.clone();
-                replaceDocumentIdsWithNodeKeys(document, connector.getSourceName());
-                return new FederatedSchematicEntry(document);
+                EditableDocument editableDocument = replaceDocumentIdsWithNodeKeys(document, connector.getSourceName());
+                return new FederatedSchematicEntry(editableDocument);
             }
         }
         return null;
@@ -156,36 +155,26 @@ public class FederatedDocumentStore implements DocumentStore {
     }
 
     @Override
-    public EditableDocument getExternalDocumentAtLocation( String sourceName,
-                                                           String documentLocation ) {
+    public String createExternalProjection( String federatedNodeKey,
+                                            String sourceName,
+                                            String externalPath ) {
         String sourceKey = NodeKey.keyForSourceName(sourceName);
         Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey);
-        EditableDocument document = null;
         if (connector != null) {
-            document = connector.getDocumentAtLocation(documentLocation);
-            if (document != null) {
-                // clone the original so we don't overwrite the values from the connector
-                document = (EditableDocument)document.clone();
-                replaceDocumentIdsWithNodeKeys(document, sourceName);
+            String documentId = connector.getDocumentId(externalPath);
+            if (documentId != null) {
+                String nodeKey = documentIdToNodeKey(sourceName, documentId);
+                externalProjectionKeyToFederatedNodeKey.put(nodeKey, federatedNodeKey);
+                return nodeKey;
             }
         }
-        return document;
-    }
-
-    @Override
-    public void setParent( String federatedNodeKey,
-                           String documentKey ) {
-        Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(documentKey));
-        if (connector != null) {
-            String documentId = documentIdFromNodeKey(documentKey);
-            connector.setParent(federatedNodeKey, documentId);
-        }
+        return null;
     }
 
     private boolean isLocalSource( String key ) {
         return !NodeKey.isValidFormat(key) // the key isn't a std key format (probably some internal format)
-               || StringUtil.isBlank(localSourceKey) // there isn't a local source configured yet (e.g. system startup)
-               || key.startsWith(localSourceKey); // the sources differ
+                || StringUtil.isBlank(localSourceKey) // there isn't a local source configured yet (e.g. system startup)
+                || key.startsWith(localSourceKey); // the sources differ
 
     }
 
@@ -203,46 +192,74 @@ public class FederatedDocumentStore implements DocumentStore {
         return new NodeKey(nodeKey).getIdentifier();
     }
 
-    private void replaceDocumentIdsWithNodeKeys( EditableDocument document,
-                                                 String sourceName ) {
-        if (document.containsField(DocumentTranslator.KEY)) {
-            String sourceDocumentId = document.getString(DocumentTranslator.KEY);
-            document.setString(DocumentTranslator.KEY, documentIdToNodeKey(sourceName, sourceDocumentId));
+    private EditableDocument replaceDocumentIdsWithNodeKeys( Document externalDocument,
+                                                             String sourceName ) {
+        Connector.DocumentReader reader = new FederatedDocumentReader(externalDocument);
+        Connector.DocumentWriter writer = new FederatedDocumentWriter(null, externalDocument);
+
+        //replace document id with node key
+        String sourceDocumentId = reader.getDocumentId();
+        assert sourceDocumentId != null;
+        String externalDocumentKey = documentIdToNodeKey(sourceName, sourceDocumentId);
+        writer.setId(externalDocumentKey);
+
+        //replace the id of each parent and add the optional federated parent
+        List<String> parentKeys = new ArrayList<String>();
+        for (String parentId : reader.getParentIds()) {
+            String parentKey =  documentIdToNodeKey(sourceName, parentId);
+            parentKeys.add(parentKey);
         }
-        if (document.containsField(DocumentTranslator.CHILDREN)) {
-            EditableArray children = document.getArray(DocumentTranslator.CHILDREN);
-            for (Object child : children) {
-                assert child instanceof MutableDocument;
-                EditableDocument editableChild = new DocumentEditor((MutableDocument)child);
-                replaceDocumentIdsWithNodeKeys(editableChild, sourceName);
-            }
+
+        String federatedParentKey = externalProjectionKeyToFederatedNodeKey.get(externalDocumentKey);
+        if (!StringUtil.isBlank(federatedParentKey)) {
+            parentKeys.add(federatedParentKey);
         }
-        if (document.containsField(DocumentTranslator.PARENT)) {
-            String parentKey = document.getString(DocumentTranslator.PARENT);
-            // check to see if the parent key is that of a federated node and if so, do nothing
-            if (NodeKey.isValidFormat(parentKey) && NodeKey.sourceKey(parentKey).equalsIgnoreCase(localSourceKey)) {
-                return;
-            }
-            document.setString(DocumentTranslator.PARENT, documentIdToNodeKey(sourceName, parentKey));
+        writer.setParents(parentKeys);
+
+        //process each child in the same way
+        List<Document> updatedChildren = new ArrayList<Document>();
+        for (EditableDocument child : reader.getChildren()) {
+            EditableDocument childWithReplacedIds = replaceDocumentIdsWithNodeKeys(child, sourceName);
+            updatedChildren.add(childWithReplacedIds);
         }
+        writer.setChildren(updatedChildren);
+
+        return writer.document();
     }
 
-    private void replaceNodeKeysWithDocumentIds( EditableDocument editableDocument ) {
-        if (editableDocument.containsField(DocumentTranslator.KEY)) {
-            String nodeKey = editableDocument.getString(DocumentTranslator.KEY);
-            editableDocument.setString(DocumentTranslator.KEY, documentIdFromNodeKey(nodeKey));
+    private EditableDocument replaceNodeKeysWithDocumentIds( Document document ) {
+        Connector.DocumentReader reader = new FederatedDocumentReader(document);
+        Connector.DocumentWriter writer = new FederatedDocumentWriter(null, document);
+
+        //replace node key with document id
+        String documentNodeKey = reader.getDocumentId();
+        assert documentNodeKey != null;
+        String externalDocumentId = documentIdFromNodeKey(documentNodeKey);
+        writer.setId(externalDocumentId);
+
+        //replace the node key with the id of each parent and remove the optional federated parent
+        List<String> parentKeys = reader.getParentIds();
+        String federatedParentKey = externalProjectionKeyToFederatedNodeKey.get(documentNodeKey);
+        if (!StringUtil.isBlank(federatedParentKey)) {
+            parentKeys.remove(federatedParentKey);
         }
-        if (editableDocument.containsField(DocumentTranslator.CHILDREN)) {
-            EditableArray children = editableDocument.getArray(DocumentTranslator.CHILDREN);
-            for (Object child : children) {
-                assert child instanceof MutableDocument;
-                EditableDocument editableChild = new DocumentEditor((MutableDocument)child);
-                replaceNodeKeysWithDocumentIds(editableChild);
-            }
+
+        List<String> parentIds = new ArrayList<String>();
+        for (String parentKey : parentKeys) {
+            String parentId =  documentIdFromNodeKey(parentKey);
+            parentIds.add(parentId);
         }
-        if (editableDocument.containsField(DocumentTranslator.PARENT)) {
-            String nodeKey = editableDocument.getString(DocumentTranslator.PARENT);
-            editableDocument.setString(DocumentTranslator.PARENT, documentIdFromNodeKey(nodeKey));
+        writer.setParents(parentIds);
+
+        //process each child in the same way
+        List<Document> updatedChildren = new ArrayList<Document>();
+        for (EditableDocument child : reader.getChildren()) {
+            EditableDocument childWithReplacedIds = replaceNodeKeysWithDocumentIds(child);
+            updatedChildren.add(childWithReplacedIds);
         }
+        writer.setChildren(updatedChildren);
+
+        return writer.document();
     }
+
 }

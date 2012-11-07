@@ -25,6 +25,7 @@
 package org.modeshape.jcr.federation;
 
 import java.io.IOException;
+import java.util.List;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import org.infinispan.schematic.document.Document;
@@ -42,7 +43,7 @@ import org.modeshape.jcr.value.ValueFormatException;
 
 /**
  * SPI of a generic external connector, representing the interface to an external system integrated with ModeShape. Since it is
- * expected that the documents are well formed (structure-wise), the {@link FederatedDocumentBuilder} class should be used.
+ * expected that the documents are well formed (structure-wise), the {@link FederatedDocumentWriter} class should be used.
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
@@ -178,23 +179,21 @@ public abstract class Connector {
     public abstract void shutdown();
 
     /**
-     * Returns an {@link EditableDocument} instance representing the document with a given id. The document should have a "proper"
+     * Returns a {@link Document} instance representing the document with a given id. The document should have a "proper"
      * structure for it to be usable by ModeShape.
      * 
      * @param id a {@code non-null} string
-     * @return either an {@link EditableDocument} instance or {@code null}
+     * @return either an {@link Document} instance or {@code null}
      */
-    public abstract EditableDocument getDocumentById( String id );
+    public abstract Document getDocumentById( String id );
 
     /**
-     * Returns an {@link EditableDocument} instance representing the document at a given location. The document should contain at
-     * least the {@link org.modeshape.jcr.cache.document.DocumentTranslator#KEY} and
-     * {@link org.modeshape.jcr.cache.document.DocumentTranslator#NAME} fields.
+     * Returns the id of an external node located at the given path.
      * 
-     * @param location a {@code non-null} string
-     * @return either an {@link EditableDocument} instance or {@code null}
+     * @param path a {@code non-null} string representing an exeternal path.
+     * @return either the id of the document or {@code null}
      */
-    public abstract EditableDocument getDocumentAtLocation( String location );
+    public abstract String getDocumentId( String path );
 
     /**
      * Removes the document with the given id.
@@ -228,15 +227,6 @@ public abstract class Connector {
                                          Document document );
 
     /**
-     * Sets the federated node id as the parent of the document with the given id.
-     * 
-     * @param federatedNodeId a {@code non-null} string representing the id (key) of a federated node
-     * @param documentId a {@code non-null} string representing the id of a document.
-     */
-    public abstract void setParent( String federatedNodeId,
-                                    String documentId );
-
-    /**
      * Utility method that checks whether the field with the supplied name is set.
      * 
      * @param fieldValue the value of the field
@@ -250,13 +240,16 @@ public abstract class Connector {
         }
     }
 
-    protected DocumentBuilder newDocument( String id,
-                                           String name ) {
-        return new FederatedDocumentBuilder(context).createDocument(id, name);
+    protected DocumentWriter newDocument( String id ) {
+        return new FederatedDocumentWriter(context).setId(id);
     }
 
-    protected DocumentBuilder newDocument( Document document ) {
-        return new FederatedDocumentBuilder(context, document);
+    protected DocumentWriter newDocument( Document document ) {
+        return new FederatedDocumentWriter(context, document);
+    }
+
+    protected DocumentReader readDocument(Document document) {
+        return new FederatedDocumentReader(document);
     }
 
     /**
@@ -326,32 +319,43 @@ public abstract class Connector {
         return factories().getNameFactory().create(namespaceUri, localName, decoder);
     }
 
-    public static interface DocumentBuilder {
-        public DocumentBuilder createDocument( String id,
-                                               String name );
+    public static interface DocumentWriter {
+        public DocumentWriter setId( String id );
 
-        public DocumentBuilder addProperty( String name,
+        public DocumentWriter addProperty( String name,
                                             Object value );
 
-        public DocumentBuilder addProperty( Name name,
+        public DocumentWriter addProperty( Name name,
                                             Object value );
 
-        public DocumentBuilder addChild( String id,
+        public DocumentWriter addChild( String id,
                                          String name );
 
-        public DocumentBuilder addChild( String id,
+        public DocumentWriter addChild( String id,
                                          Name name );
 
+        public DocumentWriter setParents( String...parentIds );
+
+        public DocumentWriter setParents( List<String> parentIds );
+
+        public DocumentWriter merge( Document document );
+
+        public EditableDocument document();
+
+        FederatedDocumentWriter addChild( EditableDocument child );
+
+        FederatedDocumentWriter setChildren( List<Document> children );
+    }
+
+    public static interface DocumentReader {
         public String getDocumentId();
 
-        public String getParentId();
+        public List<String> getParentIds();
 
         public String getName();
 
-        public DocumentBuilder setParent( String id );
+        List<EditableDocument> getChildren();
 
-        public DocumentBuilder merge( Document document );
-
-        public EditableDocument build();
+        Document document();
     }
 }

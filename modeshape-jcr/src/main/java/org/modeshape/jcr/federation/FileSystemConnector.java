@@ -180,38 +180,40 @@ public class FileSystemConnector extends Connector {
     }
 
     @Override
-    public EditableDocument getDocumentById( String id ) {
-        return getDocumentAtLocation(id);
+    public Document getDocumentById( String id ) {
+        File file = fileFor(id);
+        boolean isResource = isContentNode(id);
+        DocumentWriter writer = newDocument(id);
+        if (isResource) {
+            FileSystemBinaryValue binaryValue = binaryFor(file);
+            writer.addProperty(JCR_PRIMARY_TYPE, NT_RESOURCE);
+            writer.addProperty(JCR_DATA, binaryValue);
+            writer.addProperty(JCR_MIME_TYPE, binaryValue.getMimeType());
+            writer.addProperty(JCR_ENCODING, null); // We don't really know this
+            writer.addProperty(JCR_LAST_MODIFIED, factories().getDateFactory().create(file.lastModified()));
+            writer.addProperty(JCR_LAST_MODIFIED_BY, null); // ignored
+        } else if (file.isFile()) {
+            writer.addProperty(JCR_PRIMARY_TYPE, NT_FILE);
+            writer.addProperty(JCR_CREATED, factories().getDateFactory().create(file.lastModified()));
+            writer.addProperty(JCR_CREATED_BY, null); // ignored
+            writer.addChild(id + JCR_CONTENT_SUFFIX, JCR_CONTENT);
+        } else {
+            writer.addProperty(JCR_PRIMARY_TYPE, NT_FOLDER);
+            writer.addProperty(JCR_CREATED, factories().getDateFactory().create(file.lastModified()));
+            writer.addProperty(JCR_CREATED_BY, null); // ignored
+            for (String childName : file.list(filenameFilter)) {
+                writer.addChild(id + DELIMITER + childName, childName);
+            }
+        }
+        return writer.document();
+
     }
 
     @Override
-    public EditableDocument getDocumentAtLocation( String location ) {
-        String id = location; // this connector treats the ID as the path
+    public String getDocumentId( String path ) {
+        String id = path; // this connector treats the ID as the path
         File file = fileFor(id);
-        boolean isResource = isContentNode(id);
-        DocumentBuilder builder = newDocument(id, file.getName());
-        if (isResource) {
-            FileSystemBinaryValue binaryValue = binaryFor(file);
-            builder.addProperty(JCR_PRIMARY_TYPE, NT_RESOURCE);
-            builder.addProperty(JCR_DATA, binaryValue);
-            builder.addProperty(JCR_MIME_TYPE, binaryValue.getMimeType());
-            builder.addProperty(JCR_ENCODING, null); // We don't really know this
-            builder.addProperty(JCR_LAST_MODIFIED, factories().getDateFactory().create(file.lastModified()));
-            builder.addProperty(JCR_LAST_MODIFIED_BY, null); // ignored
-        } else if (file.isFile()) {
-            builder.addProperty(JCR_PRIMARY_TYPE, NT_FILE);
-            builder.addProperty(JCR_CREATED, factories().getDateFactory().create(file.lastModified()));
-            builder.addProperty(JCR_CREATED_BY, null); // ignored
-            builder.addChild(id + JCR_CONTENT_SUFFIX, JCR_CONTENT);
-        } else {
-            builder.addProperty(JCR_PRIMARY_TYPE, NT_FOLDER);
-            builder.addProperty(JCR_CREATED, factories().getDateFactory().create(file.lastModified()));
-            builder.addProperty(JCR_CREATED_BY, null); // ignored
-            for (String childName : file.list(filenameFilter)) {
-                builder.addChild(id + DELIMITER + childName, childName);
-            }
-        }
-        return builder.build();
+        return file.exists() ? id : null;
     }
 
     @Override
@@ -229,11 +231,6 @@ public class FileSystemConnector extends Connector {
     @Override
     public void updateDocument( String id,
                                 Document document ) {
-    }
-
-    @Override
-    public void setParent( String federatedNodeId,
-                           String documentId ) {
     }
 
     protected static class InclusionExclusionFilenameFilter implements java.io.FilenameFilter {

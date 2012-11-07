@@ -32,15 +32,13 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
-import org.modeshape.jcr.cache.NodeKey;
 
 @Deprecated
 public class MockConnector extends Connector {
     public static final String SOURCE_NAME = "mock-source";
-    public static final String SOURCE_KEY = NodeKey.keyForSourceName(SOURCE_NAME);
 
     private final Map<String, EditableDocument> documentsByLocation = new HashMap<String, EditableDocument>();
-    private final Map<String, EditableDocument> documentsById = new HashMap<String, EditableDocument>();
+    private final Map<String, Document> documentsById = new HashMap<String, Document>();
 
     private static String newId() {
         return UUID.randomUUID().toString();
@@ -51,23 +49,23 @@ public class MockConnector extends Connector {
                             NodeTypeManager nodeTypeManager ) /*throws RepositoryException, IOException*/{
 
         String id1 = newId();
-        EditableDocument doc1 = newDocument(id1, "federated1").addProperty(nameFrom("federated1_prop1"), "a string")
+        EditableDocument doc1 = newDocument(id1).addProperty(nameFrom("federated1_prop1"), "a string")
                                                               .addProperty("federated1_prop2", 12)
                                                               .addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
-                                                              .build();
+                                                              .document();
         documentsByLocation.put("/doc1", doc1);
         documentsById.put(id1, doc1);
 
         String id3 = newId();
-        EditableDocument doc3 = newDocument(id3, "federated3").addProperty("federated3_prop1", "yet another string")
+        EditableDocument doc3 = newDocument(id3).addProperty("federated3_prop1", "yet another string")
                                                               .addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
-                                                              .build();
+                                                              .document();
         String id2 = newId();
-        EditableDocument doc2 = newDocument(id2, "federated2").addProperty("federated2_prop1", "another string")
+        EditableDocument doc2 = newDocument(id2).addProperty("federated2_prop1", "another string")
                                                               .addProperty("federated2_prop2", Boolean.FALSE)
                                                               .addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
                                                               .addChild(id3, "federated3")
-                                                              .build();
+                                                              .document();
 
         documentsByLocation.put("/doc2", doc2);
         documentsByLocation.put("/doc2/doc3", doc3);
@@ -76,7 +74,7 @@ public class MockConnector extends Connector {
     }
 
     @Override
-    public EditableDocument getDocumentById( String id ) {
+    public Document getDocumentById( String id ) {
         return documentsById.get(id);
     }
 
@@ -86,13 +84,14 @@ public class MockConnector extends Connector {
     }
 
     @Override
-    public EditableDocument getDocumentAtLocation( String location ) {
-        return documentsByLocation.get(location);
+    public String getDocumentId( String path ) {
+        EditableDocument document = documentsByLocation.get(path);
+        return document != null ? readDocument(document).getDocumentId() : null;
     }
 
     @Override
     public void removeDocument( String id ) {
-        EditableDocument doc = documentsById.remove(id);
+        Document doc = documentsById.remove(id);
         if (doc != null) {
             for (Iterator<Map.Entry<String, EditableDocument>> iterator = documentsByLocation.entrySet().iterator(); iterator.hasNext();) {
                 Map.Entry<String, EditableDocument> entry = iterator.next();
@@ -111,10 +110,10 @@ public class MockConnector extends Connector {
 
     @Override
     public void storeDocument( Document document ) {
-        DocumentBuilder builder = newDocument(document);
-        String documentId = builder.getDocumentId();
+        DocumentReader reader = readDocument(document);
+        String documentId = reader.getDocumentId();
         assert documentId != null;
-        documentsById.put(documentId, builder.build());
+        documentsById.put(documentId, document);
     }
 
     @Override
@@ -123,19 +122,9 @@ public class MockConnector extends Connector {
         if (!documentsById.containsKey(id)) {
             return;
         }
-        EditableDocument existingDocument = documentsById.get(id);
-        EditableDocument mergedDocument = newDocument(existingDocument).merge(document).build();
+        Document existingDocument = documentsById.get(id);
+        EditableDocument mergedDocument = newDocument(existingDocument).merge(document).document();
         documentsById.put(id, mergedDocument);
-    }
-
-    @Override
-    public void setParent( String federatedNodeId,
-                           String documentId ) {
-        EditableDocument document = documentsById.get(documentId);
-        if (document != null) {
-            EditableDocument updatedDoc = newDocument(document).setParent(federatedNodeId).build();
-            documentsById.put(documentId, updatedDoc);
-        }
     }
 
     @Override

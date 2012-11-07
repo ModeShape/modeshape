@@ -30,7 +30,6 @@ import org.infinispan.Cache;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableDocument;
 
 /**
  * An implementation of {@link DocumentStore} which always uses the local cache to store/retrieve data and which provides some
@@ -146,9 +145,10 @@ public class LocalDocumentStore implements DocumentStore {
     }
 
     @Override
-    public EditableDocument getExternalDocumentAtLocation( String sourceName,
-                                                           String documentLocation ) {
-        throw new UnsupportedOperationException("External documents are not supported in the local document store");
+    public String createExternalProjection( String federatedNodeKey,
+                                            String sourceName,
+                                            String externalPath ) {
+        throw new UnsupportedOperationException("External projections are not supported in the local document store");
     }
 
     /**
@@ -158,11 +158,5 @@ public class LocalDocumentStore implements DocumentStore {
      */
     public Cache<String, SchematicEntry> localCache() {
         return database.getCache();
-    }
-
-    @Override
-    public void setParent( String federatedNodeKey,
-                           String documentKey ) {
-        // do nothing
     }
 }

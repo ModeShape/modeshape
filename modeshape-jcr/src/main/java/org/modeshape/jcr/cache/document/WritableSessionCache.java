@@ -107,7 +107,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Create a new SessionCache that can be used for making changes to the workspace.
-     * 
+     *
      * @param context the execution context; may not be null
      * @param workspaceCache the (shared) workspace cache; may not be null
      * @param sessionContext the context for the session; may not be null
@@ -214,7 +214,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Returns the list of changed nodes at or below the given path, starting with the children.
-     * 
+     *
      * @param nodePath the path of the parent node
      * @return the list of changed nodes
      */
@@ -325,10 +325,10 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Persist the changes within a transaction.
-     * 
+     *
      * @throws LockFailureException if a requested lock could not be made
      * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
-     *         document
+     * document
      * @throws DocumentNotFoundException if one of the modified documents was removed by another session
      */
     @Override
@@ -337,7 +337,9 @@ public class WritableSessionCache extends AbstractSessionCache {
     }
 
     protected void save( PreSave preSaveOperation ) {
-        if (!this.hasChanges()) return;
+        if (!this.hasChanges()) {
+            return;
+        }
 
         ChangeSet events = null;
         Lock lock = this.lock.writeLock();
@@ -349,7 +351,9 @@ public class WritableSessionCache extends AbstractSessionCache {
             if (preSaveOperation != null) {
                 SaveContext saveContext = new BasicSaveContext(context());
                 for (MutableCachedNode node : this.changedNodes.values()) {
-                    if (node == REMOVED) continue;
+                    if (node == REMOVED) {
+                        continue;
+                    }
                     checkNodeNotRemovedByAnotherTransaction(node);
                     preSaveOperation.process(node, saveContext);
 
@@ -377,7 +381,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                 txn.uponCompletion(new TransactionFunction() {
                     @Override
                     public void transactionComplete() {
-                        if (changes != null && monitor != null) monitor.recordChanged(changes.changedNodes().size());
+                        if (changes != null && monitor != null) {
+                            monitor.recordChanged(changes.changedNodes().size());
+                        }
                         clearState();
                     }
                 });
@@ -500,8 +506,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                     @Override
                     public void transactionComplete() {
                         if (monitor != null) {
-                            if (changes1 != null) monitor.recordChanged(changes1.changedNodes().size());
-                            if (changes2 != null) monitor.recordChanged(changes2.changedNodes().size());
+                            if (changes1 != null) {
+                                monitor.recordChanged(changes1.changedNodes().size());
+                            }
+                            if (changes2 != null) {
+                                monitor.recordChanged(changes2.changedNodes().size());
+                            }
                         }
                         clearState();
                         that.clearState();
@@ -562,13 +572,13 @@ public class WritableSessionCache extends AbstractSessionCache {
      * This method saves the changes made by both sessions within a single transaction. <b>Note that this must be used with
      * caution, as this method attempts to get write locks on both sessions, meaning they <i>cannot<i> be concurrently used
      * elsewhere (otherwise deadlocks might occur).</b>
-     * 
+     *
      * @param toBeSaved the set of keys identifying the nodes whose changes should be saved; may not be null
      * @param other the other session
      * @param preSaveOperation the pre-save operation
      * @throws LockFailureException if a requested lock could not be made
      * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
-     *         document
+     * document
      * @throws DocumentNotFoundException if one of the modified documents was removed by another session
      */
     @Override
@@ -630,8 +640,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                     @Override
                     public void transactionComplete() {
                         if (monitor != null) {
-                            if (changes1 != null) monitor.recordChanged(changes1.changedNodes().size());
-                            if (changes2 != null) monitor.recordChanged(changes2.changedNodes().size());
+                            if (changes1 != null) {
+                                monitor.recordChanged(changes1.changedNodes().size());
+                            }
+                            if (changes2 != null) {
+                                monitor.recordChanged(changes2.changedNodes().size());
+                            }
                         }
                         clearState(savedNodesInOrder);
                         that.clearState();
@@ -681,13 +695,13 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Persist the changes within an already-established transaction.
-     * 
+     *
      * @param changedNodesInOrder the nodes that are to be persisted; may not be null
      * @param monitor the monitor for these changes; may be null if not needed
      * @return the ChangeSet encapsulating the changes that were made
      * @throws LockFailureException if a requested lock could not be made
      * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
-     *         document
+     * document
      * @throws DocumentNotFoundException if one of the modified documents was removed by another session
      */
     @GuardedBy( "lock" )
@@ -757,7 +771,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // should be there and shouldn't require a looking in the cache...
                         Name primaryType = node.getPrimaryType(this);
                         Set<Name> mixinTypes = node.getMixinTypes(this);
-                        monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties().values());
+                        monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes,
+                                          node.changedProperties().values());
                     }
 
                 } else {
@@ -787,8 +802,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                     MixinChanges mixinChanges = node.mixinChanges(false);
                     if (mixinChanges != null && !mixinChanges.isEmpty()) {
                         Property oldProperty = translator.getProperty(doc, JcrLexicon.MIXIN_TYPES);
-                        translator.addPropertyValues(doc, JcrLexicon.MIXIN_TYPES, true, mixinChanges.getAdded(), unusedBinaryKeys);
-                        translator.removePropertyValues(doc, JcrLexicon.MIXIN_TYPES, mixinChanges.getRemoved(), unusedBinaryKeys);
+                        translator.addPropertyValues(doc, JcrLexicon.MIXIN_TYPES, true, mixinChanges.getAdded(),
+                                                     unusedBinaryKeys);
+                        translator.removePropertyValues(doc, JcrLexicon.MIXIN_TYPES, mixinChanges.getRemoved(),
+                                                        unusedBinaryKeys);
                         // the property was changed ...
                         Property newProperty = translator.getProperty(doc, JcrLexicon.MIXIN_TYPES);
                         if (oldProperty == null) {
@@ -872,7 +889,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                                 Path oldPath = workspacePaths.getPath(persistent);
                                 if (appended != null && appended.hasChild(persistent.getKey())) {
                                     // the same node has been both removed and appended => reordered at the end
-                                    ChildReference appendedChildRef = node.getChildReferences(this).getChild(persistent.getKey());
+                                    ChildReference appendedChildRef = node.getChildReferences(this).getChild(
+                                            persistent.getKey());
                                     newPath = pathFactory().create(sessionPaths.getPath(node), appendedChildRef.getSegment());
                                     changes.nodeReordered(persistent.getKey(), node.getKey(), newPath, oldPath, null);
                                 }
@@ -906,16 +924,16 @@ public class WritableSessionCache extends AbstractSessionCache {
                     for (SessionNode.Insertions insertion : insertionsByBeforeKey.values()) {
                         for (ChildReference insertedRef : insertion.inserted()) {
                             CachedNode insertedNodePersistent = workspaceCache.getNode(insertedRef);
-                            Path nodeOldPath = insertedNodePersistent != null ? workspacePaths.getPath(insertedNodePersistent) : null;
+                            Path nodeOldPath = insertedNodePersistent != null ? workspacePaths.getPath(insertedNodePersistent)
+                                                                              : null;
 
                             CachedNode insertedBeforeNode = workspaceCache.getNode(insertion.insertedBefore());
                             Path insertedBeforePath = workspacePaths.getPath(insertedBeforeNode);
 
                             Path nodeNewPath = null;
                             if (nodeOldPath != null) {
-                                boolean isSnsReordering = nodeOldPath.getLastSegment()
-                                                                     .getName()
-                                                                     .equals(insertedBeforePath.getLastSegment().getName());
+                                boolean isSnsReordering = nodeOldPath.getLastSegment().getName().equals(
+                                        insertedBeforePath.getLastSegment().getName());
                                 nodeNewPath = isSnsReordering ? insertedBeforePath : nodeOldPath;
                             } else {
                                 // there is no old path, which means the node is new and reordered at the same time (most likely
@@ -923,10 +941,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                                 nodeNewPath = sessionPaths.getPath(changedNodes.get(insertedRef.getKey()));
                             }
 
-                            changes.nodeReordered(insertedRef.getKey(),
-                                                  node.getKey(),
-                                                  nodeNewPath,
-                                                  nodeOldPath,
+                            changes.nodeReordered(insertedRef.getKey(), node.getKey(), nodeNewPath, nodeOldPath,
                                                   insertedBeforePath);
                         }
                     }
@@ -955,8 +970,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                     }
                 } else {
                     documentStore.updateDocument(keyStr, doc);
-                    boolean isSameWorkspace = workspaceCache().getWorkspaceKey()
-                                                              .equalsIgnoreCase(node.getKey().getWorkspaceKey());
+                    boolean isSameWorkspace = workspaceCache().getWorkspaceKey().equalsIgnoreCase(
+                            node.getKey().getWorkspaceKey());
                     // only update the indexes if the node we're working with is in the same workspace as the current workspace.
                     // when linking/un-linking nodes (e.g. shareable node or jcr:system) this condition will be false.
                     // the downside of this is that there may be cases (e.g. back references when working with versions) in which
@@ -1032,7 +1047,9 @@ public class WritableSessionCache extends AbstractSessionCache {
             }
 
             // And record the removals via the monitor ...
-            if (monitor != null) monitor.recordRemove(workspaceName, removedNodes);
+            if (monitor != null) {
+                monitor.recordRemove(workspaceName, removedNodes);
+            }
         }
 
         if (!unusedBinaryKeys.isEmpty()) {
@@ -1062,7 +1079,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                 }
                 // Otherwise, a node with the same key was removed by this session before creating a new
                 // node with the same ID ...
-                if (replacedNodes == null) replacedNodes = new HashSet<NodeKey>();
+                if (replacedNodes == null) {
+                    replacedNodes = new HashSet<NodeKey>();
+                }
                 replacedNodes.add(key);
             }
             changedNodesInOrder.add(key);
@@ -1099,7 +1118,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                 boolean cleanupReferences = false;
                 ChildReferences children = null;
                 if (node != null) {
-                    if (node == REMOVED) continue;
+                    if (node == REMOVED) {
+                        continue;
+                    }
                     // There was a node within this cache ...
                     children = node.getChildReferences(this);
                     removed.put(nodeKey, node);
@@ -1111,16 +1132,20 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // The node did not exist in the session, so get it from the workspace ...
                     addToChangedNodes.add(nodeKey);
                     CachedNode persisted = workspace.getNode(nodeKey);
-                    if (persisted == null) continue;
+                    if (persisted == null) {
+                        continue;
+                    }
                     children = persisted.getChildReferences(workspace);
                     // Look for outgoing references that need to be cleaned up ...
-                    for (Iterator<Property> it = persisted.getProperties(workspace); it.hasNext();) {
+                    for (Iterator<Property> it = persisted.getProperties(workspace); it.hasNext(); ) {
                         Property property = it.next();
                         if (property != null && property.isReference()) {
                             // We need to get the node in the session's cache ...
                             this.changedNodes.remove(nodeKey); // we put REMOVED a dozen lines up ...
                             node = this.mutable(nodeKey);
-                            if (node != null) cleanupReferences = true;
+                            if (node != null) {
+                                cleanupReferences = true;
+                            }
                             this.changedNodes.put(nodeKey, REMOVED);
                         }
                     }
@@ -1170,22 +1195,24 @@ public class WritableSessionCache extends AbstractSessionCache {
         sb.append("Session ").append(context().getId()).append(" to workspace '").append(workspaceCache.getWorkspaceName());
         for (NodeKey key : changedNodesInOrder) {
             SessionNode changes = changedNodes.get(key);
-            if (changes == null) continue;
+            if (changes == null) {
+                continue;
+            }
             sb.append("\n ");
             sb.append(changes.getString(reg));
         }
         return sb.toString();
     }
 
-    public void linkExternalLocation( NodeKey key,
-                                      String sourceName,
-                                      String externalLocation,
-                                      String... filters ) {
+    public void createExternalProjection( NodeKey key,
+                                          String sourceName,
+                                          String externalPath,
+                                          String alias ) {
         //register the node in the changes, so it can be saved later
         mutable(key);
         DocumentStore documentStore = workspaceCache().documentStore();
         EditableDocument document = documentStore.get(key.toString()).editDocumentContent();
         DocumentTranslator translator = workspaceCache().translator();
-        translator.addExternalDocuments(document, sourceName, externalLocation);
+        translator.addFederatedSegment(document, sourceName, externalPath, alias);
     }
 }

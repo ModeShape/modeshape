@@ -24,59 +24,56 @@
 
 package org.modeshape.jcr.federation;
 
-import java.util.Map;
+import java.util.List;
 import org.infinispan.schematic.DocumentFactory;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
-import org.modeshape.jcr.federation.Connector.DocumentBuilder;
 import org.modeshape.jcr.value.Name;
 
 /**
  * Helper class which should be used by {@link Connector} implementations to create {@link EditableDocument}(s) with the correct
  * structure.
- * 
+ *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class FederatedDocumentBuilder implements DocumentBuilder {
+public class FederatedDocumentWriter implements Connector.DocumentWriter {
 
     private final ExecutionContext context;
     private final EditableDocument federatedDocument;
 
-    public FederatedDocumentBuilder( ExecutionContext context ) {
+    public FederatedDocumentWriter( ExecutionContext context,
+                                    Document document ) {
         this.context = context;
-        this.federatedDocument = DocumentFactory.newDocument();
+        this.federatedDocument = document != null ? DocumentFactory.newDocument(document) : DocumentFactory.newDocument();
     }
 
-    public FederatedDocumentBuilder( ExecutionContext context,
-                                     Document document ) {
-        this.context = context;
-        this.federatedDocument = DocumentFactory.newDocument(document);
+    public FederatedDocumentWriter( ExecutionContext context ) {
+        this(context, null);
     }
 
     @Override
-    public FederatedDocumentBuilder createDocument( String id,
-                                                    String name ) {
+    public FederatedDocumentWriter setId( String id ) {
         assert id != null;
         federatedDocument.set(DocumentTranslator.KEY, id);
-        assert name != null;
-        federatedDocument.set(DocumentTranslator.NAME, name);
         return this;
     }
 
     @Override
-    public FederatedDocumentBuilder addProperty( String name,
-                                                 Object value ) {
+    public FederatedDocumentWriter addProperty( String name,
+                                                Object value ) {
         Name nameObj = context.getValueFactories().getNameFactory().create(name);
         return addProperty(nameObj, value);
     }
 
     @Override
-    public FederatedDocumentBuilder addProperty( Name name,
-                                                 Object value ) {
-        if (value == null) return this;
+    public FederatedDocumentWriter addProperty( Name name,
+                                                Object value ) {
+        if (value == null) {
+            return this;
+        }
         EditableDocument properties = federatedDocument.getDocument(DocumentTranslator.PROPERTIES);
         if (properties == null) {
             properties = DocumentFactory.newDocument();
@@ -96,56 +93,75 @@ public class FederatedDocumentBuilder implements DocumentBuilder {
     }
 
     @Override
-    public FederatedDocumentBuilder addChild( String id,
-                                              Name name ) {
+    public FederatedDocumentWriter addChild( String id,
+                                             Name name ) {
         String nameStr = context.getValueFactories().getStringFactory().create(name);
         return addChild(id, nameStr);
     }
 
     @Override
-    public FederatedDocumentBuilder addChild( String id,
-                                              String name ) {
+    public FederatedDocumentWriter addChild( String id,
+                                             String name ) {
         EditableArray children = federatedDocument.getArray(DocumentTranslator.CHILDREN);
         if (children == null) {
             children = DocumentFactory.newArray();
             federatedDocument.setArray(DocumentTranslator.CHILDREN, children);
         }
-        EditableDocument childDocument = DocumentFactory.newDocument(DocumentTranslator.KEY, id, DocumentTranslator.NAME, name);
-        childDocument.set(DocumentTranslator.PARENT, getDocumentId());
-        children.addDocument(childDocument);
+        children.addDocument(DocumentFactory.newDocument(DocumentTranslator.KEY, id, DocumentTranslator.NAME, name));
         return this;
     }
 
     @Override
-    public String getDocumentId() {
-        return federatedDocument.getString(DocumentTranslator.KEY);
-
-    }
-
-    @Override
-    public String getParentId() {
-        return federatedDocument.getString(DocumentTranslator.PARENT);
-    }
-
-    @Override
-    public String getName() {
-        return federatedDocument.getString(DocumentTranslator.NAME);
-    }
-
-    @Override
-    public FederatedDocumentBuilder setParent( String id ) {
-        federatedDocument.setString(DocumentTranslator.PARENT, id);
+    public FederatedDocumentWriter addChild( EditableDocument child ) {
+        EditableArray children = federatedDocument.getArray(DocumentTranslator.CHILDREN);
+        if (children == null) {
+            children = DocumentFactory.newArray();
+            federatedDocument.setArray(DocumentTranslator.CHILDREN, children);
+        }
+        children.add(child);
         return this;
     }
 
     @Override
-    public FederatedDocumentBuilder merge( Document document ) {
+    public FederatedDocumentWriter setChildren(List<Document> children) {
+        EditableArray childrenArray = federatedDocument.getArray(DocumentTranslator.CHILDREN);
+        childrenArray = DocumentFactory.newArray();
+        federatedDocument.setArray(DocumentTranslator.CHILDREN, childrenArray);
+
+        for (Document child : children) {
+            childrenArray.add(child);
+        }
+        return this;
+    }
+
+    @Override
+    public FederatedDocumentWriter setParents( String...parentIds ) {
+        if (parentIds.length == 1) {
+            federatedDocument.setString(DocumentTranslator.PARENT, parentIds[0]);
+        }
+        if (parentIds.length > 1) {
+            EditableArray parents = DocumentFactory.newArray();
+            for (String parentId : parentIds) {
+                parents.add(parentId);
+            }
+            federatedDocument.setArray(DocumentTranslator.PARENT, parents);
+        }
+        return this;
+    }
+
+    @Override
+    public Connector.DocumentWriter setParents( List<String> parentIds ) {
+        return setParents(parentIds.toArray(new String[parentIds.size()]));
+    }
+
+    @Override
+    public FederatedDocumentWriter merge( Document document ) {
         federatedDocument.putAll(document);
         return this;
     }
 
     @Override
-    public EditableDocument build() {
+    public EditableDocument document() {
         return federatedDocument;
     }
 }
