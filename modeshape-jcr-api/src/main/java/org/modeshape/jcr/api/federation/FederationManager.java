@@ -35,20 +35,21 @@ import javax.jcr.RepositoryException;
 public interface FederationManager {
 
     /**
-     * Appends an external node at the given location to an existing node. If this is the first node appended to the existing
-     * node, it will convert the existing node to a federated node.
+     * Creates an external projection by linking an internal node with an external node, from a given source using an optional alias.
+     * If this is the first node linked to the existing node, it will convert the existing node to a federated node.
      *
-     * @param absNodePath a {@code non-null} string representing the absolute path to an existing node.
+     * @param absNodePath a {@code non-null} string representing the absolute path to an existing internal node.
      * @param sourceName a {@code non-null} string representing the name of an external source, configured in the repository.
-     * @param externalLocation {@code non-null} string representing a path in the external source, where the external
-     * node is expected to be located at.
-     * @param filters an optional array of filters.
+     * @param externalPath a {@code non-null} string representing a path in the external source, where at which there is an external
+     * node that will be linked.
+     * @param alias an optional string representing the name under which the alias should be created. If not present, the {@code externalPath}
+     * will be used as the name of the alias.
      *
      * @throws RepositoryException if the repository cannot perform the operation.
-     * TODO author=Horia Chiorean date=11/2/12 description=Define filters format
+     *
      */
-    public void linkExternalLocation( String absNodePath,
-                                      String sourceName,
-                                      String externalLocation,
-                                      String... filters ) throws RepositoryException;
+    public void createExternalProjection( String absNodePath,
+                                          String sourceName,
+                                          String externalPath,
+                                          String alias) throws RepositoryException;
 }
