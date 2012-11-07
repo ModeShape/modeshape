@@ -456,7 +456,7 @@ public class Paths {
         @Override
         public void writeObject( ObjectOutput output,
                                  Path path ) throws IOException {
-            output.write(path.size());
+            output.writeInt(path.size());
             for (String fieldName : path) {
                 output.writeUTF(fieldName);
             }
