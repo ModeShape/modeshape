@@ -101,6 +101,7 @@ public interface VdbLexicon {
         String IMPORTS = "imports";
         String IMPORT_DATA_POLICIES = "import-data-policies";
         String IMPORT_VDB = "import-vdb";
+        String INDEX_NAME = "indexName";
         String JNDI_NAME = "connection-jndi-name";
         String MAPPED_ROLE_NAME = "mapped-role-name";
         String METADATA = "metadata";

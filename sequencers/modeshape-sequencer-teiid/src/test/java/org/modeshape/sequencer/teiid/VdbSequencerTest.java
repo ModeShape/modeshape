@@ -457,11 +457,56 @@ public class VdbSequencerTest extends AbstractSequencerTest {
     }
 
     @Test
+    public void shouldSequenceVdbPortfolioViewVdb() throws Exception {
+        // Portfolio.vdb is a 7.4 VDB
+        createNodeWithContentFromFile("vdb/PortfolioView.vdb", "vdb/PortfolioView.vdb");
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/PortfolioView.vdb");
+        assertNotNull(outputNode);
+        assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
+    }
+
+    @Test
+    public void shouldSequenceVdbPortfolioVdb() throws Exception {
+        // Portfolio.vdb is a 7.4 VDB
+        createNodeWithContentFromFile("vdb/Portfolio.vdb", "vdb/Portfolio.vdb");
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/Portfolio.vdb");
+        assertNotNull(outputNode);
+        assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
+        assertThat(outputNode.getNodes().getSize(), is(4L));
+    }
+
+    @Test
+    public void shouldSequenceVdbGatewayVDBVdb() throws Exception {
+        // GatewayVDB.vdb is a 7.7 VDB
+        createNodeWithContentFromFile("vdb/GatewayVDB.vdb", "vdb/GatewayVDB.vdb");
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/GatewayVDB.vdb");
+        assertNotNull(outputNode);
+        assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
+        assertThat(outputNode.getNodes().getSize(), is(1L));
+    }
+
+    @Test
+    public void shouldSequenceVdbBooksOTestVdb() throws Exception {
+        // BooksOTest.vdb is a 7.7 VDB
+        createNodeWithContentFromFile("vdb/BooksOTest.vdb", "vdb/BooksOTest.vdb");
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/BooksOTest.vdb");
+        assertNotNull(outputNode);
+        assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
+        assertThat(outputNode.getNodes().getSize(), is(1L));
+    }
+
+    @Test
     public void shouldSequenceVdbFinancialsLinuxVdb() throws Exception {
         createNodeWithContentFromFile("vdb/Financials_Linux.vdb", "vdb/Financials_Linux.vdb");
         Node outputNode = getOutputNode(this.rootNode, "vdbs/Financials_Linux.vdb");
         assertNotNull(outputNode);
         assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
+        assertThat(outputNode.getNodes().getSize(), is(5L));
+
+        Node modelNode = outputNode.getNode("US_CustomerAccounts_VBL.xmi");
+        assertNotNull(modelNode);
+        assertThat(modelNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.MODEL));
+        assertThat(modelNode.getProperty(VdbLexicon.Model.PATH_IN_VDB).getString(), is("Financials/VirtualBaseLayer/US_CustomerAccounts_VBL.xmi"));
     }
 
     @Test

@@ -47,17 +47,8 @@ import java.io.InputStream;
  */
 public class ModelSequencer extends Sequencer {
 
-    private static final boolean DEBUG = false;
-
     private static final String[] MODEL_FILE_EXTENSIONS = { ".xmi" };
     private static final Logger LOGGER = Logger.getLogger(ModelSequencer.class);
-
-    private void debug( final String message ) {
-        if (DEBUG) {
-            System.err.println(message);
-        }
-        LOGGER.debug(message);
-    }
 
     /**
      * @param modelReader the reader who processed the model file (cannot be <code>null</code>)
@@ -125,29 +116,29 @@ public class ModelSequencer extends Sequencer {
     @Override
     public void initialize( final NamespaceRegistry registry,
                             final NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
-        debug("enter initialize");
+        LOGGER.debug("enter initialize");
 
         super.registerNodeTypes("../xmi.cnd", nodeTypeManager, true);
-        debug("xmi.cnd loaded");
+        LOGGER.debug("xmi.cnd loaded");
 
         super.registerNodeTypes("../mmcore.cnd", nodeTypeManager, true);
-        debug("mmcore.cnd loaded");
+        LOGGER.debug("mmcore.cnd loaded");
 
         super.registerNodeTypes("../jdbc.cnd", nodeTypeManager, true);
-        debug("jdbc.cnd loaded");
+        LOGGER.debug("jdbc.cnd loaded");
 
         super.registerNodeTypes("../relational.cnd", nodeTypeManager, true);
-        debug("relational.cnd loaded");
+        LOGGER.debug("relational.cnd loaded");
 
         super.registerNodeTypes("../transformation.cnd", nodeTypeManager, true);
-        debug("transformation.cnd loaded");
+        LOGGER.debug("transformation.cnd loaded");
 
         // Register some of the namespaces we'll need ...
         registerNamespace(DiagramLexicon.Namespace.PREFIX, DiagramLexicon.Namespace.URI, registry);
         registerNamespace(ModelExtensionDefinitionLexicon.Namespace.PREFIX, // TODO may not need this if MED CND is made
                           ModelExtensionDefinitionLexicon.Namespace.URI,
                           registry);
-        debug("exit initialize");
+        LOGGER.debug("exit initialize");
     }
 
     /**
@@ -171,8 +162,10 @@ public class ModelSequencer extends Sequencer {
         assert (context != null);
         assert (modelOutputNode.isNodeType(CoreLexicon.JcrId.MODEL));
 
-        debug("sequenceModel:model node path=" + modelOutputNode.getPath() + ", model path=" + modelPath + ", vdb model="
-                      + vdbModel);
+        LOGGER.debug("sequenceModel:model node path='{0}', model path='{1}', vdb model='{2}'",
+                     modelOutputNode.getPath(),
+                     modelPath,
+                     vdbModel);
 
         final NamespaceRegistry registry = modelOutputNode.getSession().getWorkspace().getNamespaceRegistry();
         final ModelReader modelReader = new ModelReader(modelPath, this.resolver, registry);
@@ -185,7 +178,7 @@ public class ModelSequencer extends Sequencer {
         }
 
         // stream was not sequenced
-        debug("sequenceModel:model not sequenced at path '" + modelPath + "'");
+        LOGGER.debug("sequenceModel:model not sequenced at path '{0}'", modelPath);
         return false;
     }
 

@@ -122,7 +122,6 @@ public class VdbManifest implements Comparable<VdbManifest> {
      *   property (property/0..M)  
      */
 
-    private static final boolean DEBUG = false;
     static final Logger LOGGER = Logger.getLogger(VdbManifest.class);
 
     public static VdbManifest read( final InputStream stream,
@@ -274,13 +273,6 @@ public class VdbManifest implements Comparable<VdbManifest> {
     }
 
     protected static class Reader {
-        private void debug( final String message ) {
-            if (DEBUG) {
-                System.err.println(message);
-            }
-            LOGGER.debug(message);
-        }
-
         private VdbDataRole parseDataRole( final XMLStreamReader streamReader ) throws Exception {
             assert VdbLexicon.ManifestIds.DATA_ROLE.equals(streamReader.getLocalName());
 
@@ -305,7 +297,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
                         final String roleName = streamReader.getElementText();
                         dataRole.getMappedRoleNames().add(roleName);
                     } else {
-                        debug("**** unexpected data role element=" + elementName);
+                        LOGGER.debug("**** unexpected data role element={0}", elementName);
                     }
                 } else if (streamReader.isEndElement() && VdbLexicon.ManifestIds.DATA_ROLE.equals(
                         streamReader.getLocalName())) {
@@ -313,12 +305,12 @@ public class VdbManifest implements Comparable<VdbManifest> {
                 } else {
                     if (streamReader.isCharacters()) {
                         if (!StringUtil.isBlank(streamReader.getText())) {
-                            debug("**** unhandled data role event type CHARACTERS=" + streamReader.getText());
+                            LOGGER.debug("**** unhandled data role event type CHARACTERS={0}", streamReader.getText());
                         }
                     } else if (streamReader.isEndElement()) {
-                        debug("**** unhandled data role event type END_ELEMENT=" + streamReader.getLocalName());
+                        LOGGER.debug("**** unhandled data role event type END_ELEMENT={0}", streamReader.getLocalName());
                     } else {
-                        debug("**** unhandled data role event type=" + eventType);
+                        LOGGER.debug("**** unhandled data role event type={0}", eventType);
                     }
                 }
             }
@@ -348,19 +340,19 @@ public class VdbManifest implements Comparable<VdbManifest> {
                         assert (property != null) : "entry property is null";
                         entry.getProperties().put(property.getKey(), property.getValue());
                     } else {
-                        debug("**** unexpected entry element=" + elementName);
+                        LOGGER.debug("**** unexpected entry element={0}", elementName);
                     }
                 } else if (streamReader.isEndElement() && VdbLexicon.ManifestIds.ENTRY.equals(streamReader.getLocalName())) {
                     break;
                 } else {
                     if (streamReader.isCharacters()) {
                         if (!StringUtil.isBlank(streamReader.getText())) {
-                            debug("**** unhandled entry event type CHARACTERS=" + streamReader.getText());
+                            LOGGER.debug("**** unhandled entry event type CHARACTERS={0}", streamReader.getText());
                         }
                     } else if (streamReader.isEndElement()) {
-                        debug("**** unhandled entry event type END_ELEMENT=" + streamReader.getLocalName());
+                        LOGGER.debug("**** unhandled entry event type END_ELEMENT={0}", streamReader.getLocalName());
                     } else {
-                        debug("**** unhandled entry event type=" + eventType);
+                        LOGGER.debug("**** unhandled entry event type={0}", eventType);
                     }
                 }
             }
@@ -408,7 +400,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
                         final String metadata = streamReader.getElementText().trim();
                         model.setModelDefinition(metadata.replaceAll("\\s{2,}", " ")); // collapse whitespace
                     } else {
-                        debug("**** unexpected model element=" + elementName);
+                        LOGGER.debug("**** unexpected model element={0}", elementName);
                     }
                 } else if (streamReader.isEndElement()) {
                     if (VdbLexicon.ManifestIds.SOURCE.equals(streamReader.getLocalName())) {
@@ -416,15 +408,15 @@ public class VdbManifest implements Comparable<VdbManifest> {
                     } else if (VdbLexicon.ManifestIds.MODEL.equals(streamReader.getLocalName())) {
                         break;
                     } else {
-                        debug("**** unhandled model event type END_ELEMENT=" + streamReader.getLocalName());
+                        LOGGER.debug("**** unhandled model event type END_ELEMENT={0}", streamReader.getLocalName());
                     }
                 } else {
                     if (streamReader.isCharacters()) {
                         if (!StringUtil.isBlank(streamReader.getText())) {
-                            debug("**** unhandled model event type CHARACTERS=" + streamReader.getText());
+                            LOGGER.debug("**** unhandled model event type CHARACTERS={0}", streamReader.getText());
                         }
                     } else {
-                        debug("**** unhandled model event type=" + eventType);
+                        LOGGER.debug("**** unhandled model event type={0}", eventType);
                     }
                 }
             }
@@ -438,10 +430,12 @@ public class VdbManifest implements Comparable<VdbManifest> {
             assert (dataRole != null) : "data role is null";
 
             // should not have any attributes
-            for (int i = 0, size = streamReader.getAttributeCount(); i < size; ++i) {
-                final QName name = streamReader.getAttributeName(i);
-                final String value = streamReader.getAttributeValue(i);
-                debug("**** unexpected data role permission attribute name=" + name.getLocalPart() + ", value=" + value);
+            if (LOGGER.isDebugEnabled()) {
+                for (int i = 0, size = streamReader.getAttributeCount(); i < size; ++i) {
+                    final QName name = streamReader.getAttributeName(i);
+                    final String value = streamReader.getAttributeValue(i);
+                    LOGGER.debug("**** unexpected data role permission attribute name={0}, value={1}", name.getLocalPart(), value);
+                }
             }
 
             Permission permission = null;
@@ -474,7 +468,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
                     } else if (VdbLexicon.ManifestIds.ALLOW_UPDATE.equals(elementName)) {
                         update = Boolean.parseBoolean(streamReader.getElementText());
                     } else {
-                        debug("**** unexpected data role permission element=" + elementName);
+                        LOGGER.debug("**** unexpected data role permission element={0}", elementName);
                     }
                 } else if (streamReader.isEndElement() && VdbLexicon.ManifestIds.PERMISSION.equals(
                         streamReader.getLocalName())) {
@@ -494,12 +488,12 @@ public class VdbManifest implements Comparable<VdbManifest> {
                 } else {
                     if (streamReader.isCharacters()) {
                         if (!StringUtil.isBlank(streamReader.getText())) {
-                            debug("**** unhandled data role permission event type CHARACTERS=" + streamReader.getText());
+                            LOGGER.debug("**** unhandled data role permission event type CHARACTERS={0}", streamReader.getText());
                         }
                     } else if (streamReader.isEndElement()) {
-                        debug("**** unhandled data role permission event type END_ELEMENT=" + streamReader.getLocalName());
+                        LOGGER.debug("**** unhandled data role permission event type END_ELEMENT={0}", streamReader.getLocalName());
                     } else {
-                        debug("**** unhandled data role permission event type=" + eventType);
+                        LOGGER.debug("**** unhandled data role permission event type={0}", eventType);
                     }
                 }
             }
@@ -525,7 +519,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
                         assert (property != null) : "translator property is null";
                         translator.getProperties().put(property.getKey(), property.getValue());
                     } else {
-                        debug("**** unexpected data role element=" + elementName);
+                        LOGGER.debug("**** unexpected data role element={0}", elementName);
                     }
                 } else if (streamReader.isEndElement() && VdbLexicon.ManifestIds.TRANSLATOR.equals(
                         streamReader.getLocalName())) {
@@ -533,12 +527,12 @@ public class VdbManifest implements Comparable<VdbManifest> {
                 } else {
                     if (streamReader.isCharacters()) {
                         if (!StringUtil.isBlank(streamReader.getText())) {
-                            debug("**** unhandled translator event type CHARACTERS=" + streamReader.getText());
+                            LOGGER.debug("**** unhandled translator event type CHARACTERS={0}", streamReader.getText());
                         }
                     } else if (streamReader.isEndElement()) {
-                        debug("**** unhandled translator event type END_ELEMENT=" + streamReader.getLocalName());
+                        LOGGER.debug("**** unhandled translator event type END_ELEMENT={0}", streamReader.getLocalName());
                     } else {
-                        debug("**** unhandled translator event type=" + eventType);
+                        LOGGER.debug("**** unhandled translator event type={0}", eventType);
                     }
                 }
             }
@@ -587,7 +581,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
                         assert (importVdb != null) : "importVdb is null";
                         manifest.getImportVdbs().add(importVdb);
                     } else {
-                        debug("**** unexpected VDB element=" + elementName);
+                        LOGGER.debug("**** unexpected VDB element={0}", elementName);
                     }
                 } else if (streamReader.isEndElement() && VdbLexicon.ManifestIds.VDB.equals(streamReader.getLocalName())) {
                     break;
@@ -606,7 +600,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
                 final QName name = streamReader.getAttributeName(i);
                 final String value = streamReader.getAttributeValue(i);
                 attributes.put(name.getLocalPart(), value);
-                debug("data-role attribute name=" + name.getLocalPart() + ", value=" + value);
+                LOGGER.debug("data-role attribute name={0}, value={1}", name.getLocalPart(), value);
             }
 
             // make sure there is a name
@@ -638,8 +632,10 @@ public class VdbManifest implements Comparable<VdbManifest> {
             }
 
             // look for unhandled attributes
-            for (final Map.Entry<String, String> entry : attributes.entrySet()) {
-                debug("**** unexpected data role attribute:name=" + entry.getKey());
+            if (LOGGER.isDebugEnabled()) {
+                for (final Map.Entry<String, String> entry : attributes.entrySet()) {
+                    LOGGER.debug("**** unexpected data role attribute:name={0}", entry.getKey());
+                }
             }
 
             return dataRole;
@@ -654,7 +650,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
                 final QName name = streamReader.getAttributeName(i);
                 final String value = streamReader.getAttributeValue(i);
                 attributes.put(name.getLocalPart(), value);
-                debug("entry attribute name=" + name.getLocalPart() + ", value=" + value);
+                LOGGER.debug("entry attribute name={0}, value={1}", name.getLocalPart(), value);
             }
 
             // make sure there is a path
@@ -668,8 +664,10 @@ public class VdbManifest implements Comparable<VdbManifest> {
             attributes.remove(VdbLexicon.ManifestIds.PATH);
 
             // look for unhandled attributes
-            for (final Map.Entry<String, String> attrib : attributes.entrySet()) {
-                debug("**** unexpected entry attribute:name=" + attrib.getKey());
+            if (LOGGER.isDebugEnabled()) {
+                for (final Map.Entry<String, String> attrib : attributes.entrySet()) {
+                    LOGGER.debug("**** unexpected entry attribute:name={0}", attrib.getKey());
+                }
             }
 
             return entry;
@@ -684,7 +682,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
                 final QName name = streamReader.getAttributeName(i);
                 final String value = streamReader.getAttributeValue(i);
                 attributes.put(name.getLocalPart(), value);
-                debug("import VDB attribute name=" + name.getLocalPart() + ", value=" + value);
+                LOGGER.debug("import VDB attribute name={0}, value={1}", name.getLocalPart(), value);
             }
 
             // make sure there is a name and version
@@ -711,8 +709,10 @@ public class VdbManifest implements Comparable<VdbManifest> {
             }
 
             // look for unhandled attributes
-            for (final Map.Entry<String, String> entry : attributes.entrySet()) {
-                debug("**** unexpected import VDB attribute:name=" + entry.getKey());
+            if (LOGGER.isDebugEnabled()) {
+                for (final Map.Entry<String, String> entry : attributes.entrySet()) {
+                    LOGGER.debug("**** unexpected import VDB attribute:name={0}", entry.getKey());
+                }
             }
 
             return importVdb;
@@ -727,7 +727,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
                 final QName name = streamReader.getAttributeName(i);
                 final String value = streamReader.getAttributeValue(i);
                 attributes.put(name.getLocalPart(), value);
-                debug("model attribute name=" + name.getLocalPart() + ", value=" + value);
+                LOGGER.debug("model attribute name={0}, value={1}", name.getLocalPart(), value);
             }
 
             // make sure there is a model name, type, and path
@@ -755,9 +755,12 @@ public class VdbManifest implements Comparable<VdbManifest> {
             }
 
             // look for unhandled attributes
-            for (final Map.Entry<String, String> entry : attributes.entrySet()) {
-                debug("**** unexpected model attribute:name=" + entry.getKey());
+            if (LOGGER.isDebugEnabled()) {
+                for (final Map.Entry<String, String> entry : attributes.entrySet()) {
+                    LOGGER.debug("**** unexpected model attribute:name={0}", entry.getKey());
+                }
             }
+
             return model;
         }
 
@@ -771,7 +774,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
                 final QName name = streamReader.getAttributeName(i);
                 final String value = streamReader.getAttributeValue(i);
                 attributes.put(name.getLocalPart(), value);
-                debug("model source attribute name=" + name.getLocalPart() + ", value=" + value);
+                LOGGER.debug("model source attribute name={0}, value={1}", name.getLocalPart(), value);
             }
 
             { // set model source name
@@ -802,8 +805,10 @@ public class VdbManifest implements Comparable<VdbManifest> {
             }
 
             // look for unhandled attributes
-            for (final Map.Entry<String, String> entry : attributes.entrySet()) {
-                debug("**** unexpected model source attribute:name=" + entry.getKey());
+            if (LOGGER.isDebugEnabled()) {
+                for (final Map.Entry<String, String> entry : attributes.entrySet()) {
+                    LOGGER.debug("**** unexpected model source attribute:name={0}", entry.getKey());
+                }
             }
 
             assert (((streamReader.next() == XMLStreamConstants.END_ELEMENT) && VdbLexicon.ManifestIds.SOURCE.equals(
@@ -841,7 +846,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
                 if (StringUtil.isBlank(propName) || StringUtil.isBlank(propValue)) {
                     throw new Exception(TeiidI18n.missingPropertyNameOrValue.text());
                 }
-                debug("adding property name=" + propName + ", value=" + propValue);
+                LOGGER.debug("adding property name={0}, value={1}", propName, propValue);
 
                 final int eventType = streamReader.next();
                 assert (eventType == XMLStreamConstants.END_ELEMENT) : "**** unexpected PROPERTY END_ELEMENT of " + eventType;
@@ -862,7 +867,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
                 final QName name = streamReader.getAttributeName(i);
                 final String value = streamReader.getAttributeValue(i);
                 attributes.put(name.getLocalPart(), value);
-                debug("translator attribute name=" + name.getLocalPart() + ", value=" + value);
+                LOGGER.debug("translator attribute name={0}, value={1}", name.getLocalPart(),  value);
             }
 
             // make sure there is a name and type
@@ -886,8 +891,10 @@ public class VdbManifest implements Comparable<VdbManifest> {
                 }
             }
             // look for unhandled attributes
-            for (final Map.Entry<String, String> entry : attributes.entrySet()) {
-                debug("**** unexpected translator attribute:name=" + entry.getKey());
+            if (LOGGER.isDebugEnabled()) {
+                for (final Map.Entry<String, String> entry : attributes.entrySet()) {
+                    LOGGER.debug("**** unexpected translator attribute:name={0}", entry.getKey());
+                }
             }
 
             return translator;
@@ -903,7 +910,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
                 final QName name = streamReader.getAttributeName(i);
                 final String value = streamReader.getAttributeValue(i);
                 attributes.put(name.getLocalPart(), value);
-                debug("model validation error attribute name=" + name.getLocalPart() + ", value=" + value);
+                LOGGER.debug("model validation error attribute name={0}, value={1}", name.getLocalPart(), value);
             }
 
             { // create model problem
@@ -918,8 +925,10 @@ public class VdbManifest implements Comparable<VdbManifest> {
                 model.addProblem(severity, path, message);
             }
             // look for unhandled attributes
-            for (final Map.Entry<String, String> entry : attributes.entrySet()) {
-                debug("**** unexpected model validation error attribute:name=" + entry.getKey());
+            if (LOGGER.isDebugEnabled()) {
+                for (final Map.Entry<String, String> entry : attributes.entrySet()) {
+                    LOGGER.debug("**** unexpected model validation error attribute:name={0}", entry.getKey());
+                }
             }
         }
 
@@ -932,8 +941,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
                 final QName name = streamReader.getAttributeName(i);
                 final String value = streamReader.getAttributeValue(i);
                 attributes.put(name.getLocalPart(), value);
-
-                debug("VDB attribute name=" + name.getLocalPart() + ", value=" + value);
+                LOGGER.debug("VDB attribute name={0}, value={1}", name.getLocalPart(), value);
             }
 
             // set VDB name
@@ -961,8 +969,10 @@ public class VdbManifest implements Comparable<VdbManifest> {
             }
 
             // look for unexpected attributes
-            for (final Map.Entry<String, String> entry : attributes.entrySet()) {
-                debug("**** unexpected VDB attribute:name=" + entry.getKey());
+            if (LOGGER.isDebugEnabled()) {
+                for (final Map.Entry<String, String> entry : attributes.entrySet()) {
+                    LOGGER.debug("**** unexpected VDB attribute:name={0}", entry.getKey());
+                }
             }
 
             return manifest;
@@ -982,7 +992,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
                         manifest = parseVdb(streamReader);
                         assert (manifest != null) : "manifest is null";
                     } else {
-                        debug("**** unhandled vdb read element ****");
+                        LOGGER.debug("**** unhandled vdb read element ****");
                     }
                 }
             }

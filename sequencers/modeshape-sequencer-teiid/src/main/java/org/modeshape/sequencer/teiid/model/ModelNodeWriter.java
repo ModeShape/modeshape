@@ -56,15 +56,6 @@ public final class ModelNodeWriter {
 
     private static final Logger LOGGER = Logger.getLogger(ModelNodeWriter.class);
 
-    private static final boolean DEBUG = false;
-
-    private void debug( final String message ) {
-        if (DEBUG) {
-            System.err.println(message);
-        }
-        LOGGER.debug(message);
-    }
-
     private final Context context;
     private final Map<String, ModelObjectHandler> handlers = new HashMap<String, ModelObjectHandler>();
     private final Node outputNode;
@@ -156,32 +147,32 @@ public final class ModelNodeWriter {
             }
         }
 
-        debug("\n\nmodel write time=" + (System.currentTimeMillis() - startTime));
+        LOGGER.debug("model write time={0}\n\n", (System.currentTimeMillis() - startTime));
 
         return result;
     }
 
     private boolean writeModelObjects() throws Exception {
-        debug("\n\n[begin writeModelObjects()]");
+        LOGGER.debug("[begin writeModelObjects()]");
 
         for (final XmiElement element : this.reader.getElements()) {
             final String nsUri = element.getNamespaceUri();
             final ModelObjectHandler handler = getHandler(nsUri);
 
             if (handler == null) {
-                debug("ModelObjectHandler for namespace " + nsUri + " cannot be found");
+                LOGGER.debug("ModelObjectHandler for namespace {0} cannot be found", nsUri);
                 continue;
             }
 
             handler.process(element, this.outputNode);
         }
 
-        debug("[end writeModelObjects()]\n\n");
+        LOGGER.debug("[end writeModelObjects()]\n\n");
         return true;
     }
 
     public boolean writeUnresolvedReferences() throws Exception {
-        debug("\n\n[begin writeUnresolvedReferences()]");
+        LOGGER.debug("[begin writeUnresolvedReferences()]");
 
         // keep track of the unresolved references that have been resolved so that they can be marked as resolved later
         List<UnresolvedReference> resolvedReferences = new ArrayList<ReferenceResolver.UnresolvedReference>();
@@ -190,7 +181,7 @@ public final class ModelNodeWriter {
             final Node resolved = this.resolver.getNode(entry.getKey());
 
             if (resolved == null) {
-                debug("**** uuid " + entry.getKey() + " is still unresolved during last phase of writing model");
+                LOGGER.debug("**** uuid {0} is still unresolved during last phase of writing model", entry.getKey());
                 continue;
             }
 
@@ -200,7 +191,7 @@ public final class ModelNodeWriter {
             // add mixins
             for (final String mixin : unresolved.getMixins()) {
                 resolved.addMixin(mixin);
-                debug("adding mixin " + mixin + " to resolved node " + resolved.getName());
+                LOGGER.debug("adding mixin {0} to resolved node {1}", mixin, resolved.getName());
             }
 
             { // add properties
@@ -220,8 +211,10 @@ public final class ModelNodeWriter {
                     } else {
                         // single valued
                         resolved.setProperty(propName, property.getValue());
-                        debug("setting property '" + propName + "' with value '" + property.getValue()
-                                      + "' to resolved node " + resolved.getName());
+                        LOGGER.debug("setting property '{0}' with value '{1}' to resolved node {2}",
+                                     propName,
+                                     property.getValue(),
+                                     resolved.getName());
                     }
                 }
             }
@@ -259,8 +252,10 @@ public final class ModelNodeWriter {
                             resolved.setProperty(propertyName, refs.iterator().next());
                         }
                     } else {
-                        debug("**** resolved property does not have property '" + propertyName + "'."
-                              + " The value has " + refs.size() + " reference(s) and first reference is '" + refs.iterator().next());
+                        LOGGER.debug("**** resolved property does not have property '{0}'. The value has {1}  reference(s) and first reference is '{2}'",
+                                     propertyName,
+                                     refs.size(),
+                                     refs.iterator().next());
                     }
                 }
             }
@@ -320,7 +315,7 @@ public final class ModelNodeWriter {
                                     referencer.setProperty(propertyName, weakRef);
                                 }
                             } else {
-                                debug("**** weak reference property could be multi-value here");
+                                LOGGER.debug("**** weak reference property could be multi-value here");
                             }
                         }
                     }
@@ -335,8 +330,7 @@ public final class ModelNodeWriter {
             }
         }
 
-        debug("number unresolved at end=" + this.resolver.getUnresolved().size());
-        debug("[end writeUnresolvedReferences()]\n\n");
+        LOGGER.debug("number unresolved at end={0}\n[end writeUnresolvedReferences()]\n\n", this.resolver.getUnresolved().size());
 
         return true;
     }

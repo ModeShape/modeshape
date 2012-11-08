@@ -58,7 +58,7 @@ public final class RelationalModelObjectHandler extends ModelObjectHandler {
         CheckArg.isNotNull(parentNode, "node");
         CheckArg.isEquals(element.getNamespaceUri(), "namespace URI", URI, "relational URI");
 
-        debug("==== RelationalModelObjectHandler:process:element=" + element.getName());
+        LOGGER.debug("==== RelationalModelObjectHandler:process:element={0}", element.getName());
         final String type = element.getName();
 
         if (ModelId.BASE_TABLE.equals(type)) {
@@ -106,7 +106,7 @@ public final class RelationalModelObjectHandler extends ModelObjectHandler {
                 tableNode = addNode(parentNode, element, URI, JcrId.VIEW);
                 processTable(element, tableNode);
             } else {
-                debug("**** relational '" + ModelId.TABLES + "' type + of '" + xsiType + "' was not processed");
+                LOGGER.debug("**** relational '{0}' type + of '{1}' was not processed", ModelId.TABLES, xsiType);
             }
         } else if (ModelId.TYPE.equals(type)) {
             processType(element, parentNode);
@@ -117,7 +117,7 @@ public final class RelationalModelObjectHandler extends ModelObjectHandler {
             final Node viewNode = addNode(parentNode, element, URI, JcrId.VIEW);
             processTable(element, viewNode);
         } else {
-            debug("**** relational type of " + type + " was not processed");
+            LOGGER.debug("**** relational type of '{0}' was not processed", type);
         }
     }
 
