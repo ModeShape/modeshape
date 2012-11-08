@@ -83,12 +83,23 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
         ensureNamespacePrefixIsValid(newAttribute);
         super.addAttribute(element, newAttribute); // set the parent
 
-        if (XmiLexicon.ModelId.UUID.equals(newAttribute.getName())
-                && XmiLexicon.Namespace.URI.equals(newAttribute.getNamespaceUri())) {
+        if (XmiLexicon.ModelId.UUID.equals(newAttribute.getName())) {
             final String value = newAttribute.getValue();
-
+            
+            // strip off prefix
             if (!StringUtil.isBlank(value) && value.startsWith(CoreLexicon.ModelId.MM_UUID_PREFIX)) {
-                newAttribute.setValue(value.substring(CoreLexicon.ModelId.MM_UUID_PREFIX.length()));
+                String uuid = value.substring(CoreLexicon.ModelId.MM_UUID_PREFIX.length());
+                newAttribute.setValue(uuid);
+
+                if (!XmiLexicon.Namespace.URI.equals(newAttribute.getNamespaceUri())) {
+                    if (this.resolver.getNode(uuid) == null) {
+                        try {
+                            this.resolver.addUnresolvedReference(uuid);
+                        } catch (Exception e) {
+                            // should not happen as making sure node does not exist
+                        }
+                    }
+                }
             }
         }
     }

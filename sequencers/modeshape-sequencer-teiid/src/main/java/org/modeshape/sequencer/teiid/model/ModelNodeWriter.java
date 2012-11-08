@@ -259,7 +259,8 @@ public final class ModelNodeWriter {
                             resolved.setProperty(propertyName, refs.iterator().next());
                         }
                     } else {
-                        debug("**** resolved property is multi-value and is not being processed");
+                        debug("**** resolved property does not have property '" + propertyName + "'."
+                              + " The value has " + refs.size() + " reference(s) and first reference is '" + refs.iterator().next());
                     }
                 }
             }

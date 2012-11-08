@@ -73,6 +73,15 @@ public interface VdbLexicon {
     }
 
     /**
+     * JCR identifiers relating to VDB manifest imported VDBs.
+     */
+    public interface ImportVdb {
+        String IMPORT_DATA_POLICIES = PREFIX + ":importDataPolicies";
+        String IMPORT_VDB = PREFIX + ":importVdb";
+        String VERSION = PREFIX + ":version";
+    }
+
+    /**
      * Constants associated with the VDB namespace that identify VDB manifest identifiers.
      */
     public interface ManifestIds {
@@ -90,8 +99,11 @@ public interface VdbLexicon {
         String DESCRIPTION = "description";
         String ENTRY = "entry";
         String IMPORTS = "imports";
+        String IMPORT_DATA_POLICIES = "import-data-policies";
+        String IMPORT_VDB = "import-vdb";
         String JNDI_NAME = "connection-jndi-name";
         String MAPPED_ROLE_NAME = "mapped-role-name";
+        String METADATA = "metadata";
         String MODEL = "model";
         String NAME = "name";
         String PATH = "path";
@@ -118,13 +130,15 @@ public interface VdbLexicon {
         String BUILT_IN = PREFIX + ":builtIn";
         String CHECKSUM = PREFIX + ":checksum";
         String DESCRIPTION = PREFIX + ":description";
+        String INDEX_NAME = PREFIX + ":indexName";
         String MARKERS = PREFIX + ":markers";
+        String METADATA_TYPE = PREFIX + ":metadataType";
         String MODEL = PREFIX + ":model";
+        String MODEL_DEFINITION = PREFIX + ":modelDefinition";
         String PATH_IN_VDB = PREFIX + ":pathInVdb";
         String SOURCE_JNDI_NAME = PREFIX + ":sourceJndiName";
         String SOURCE_NAME = PREFIX + ":sourceName";
         String SOURCE_TRANSLATOR = PREFIX + ":sourceTranslator";
-        String TYPE = PREFIX + ":type";
         String VISIBLE = PREFIX + ":visible";
 
         /**
@@ -152,8 +166,10 @@ public interface VdbLexicon {
      */
     public interface Vdb {
         String DATA_ROLES = PREFIX + ":dataRoles";
+        String DECLARATIVE_MODEL = PREFIX + ":declarativeModel";
         String DESCRIPTION = PREFIX + ":description";
         String ENTRIES = PREFIX + ":entries";
+        String IMPORT_VDBS = PREFIX + ":importVdbs";
         String MODEL = PREFIX + ":model";
         String ORIGINAL_FILE = PREFIX + ":originalFile";
         String PREVIEW = PREFIX + ":preview";

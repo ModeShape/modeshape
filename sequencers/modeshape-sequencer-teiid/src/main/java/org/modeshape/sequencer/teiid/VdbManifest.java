@@ -56,6 +56,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
      * A VDB has these elements:
      *   description (string/optional)
      *   property (property/0..M)
+     *   import-vdb (import-vdb/0..M)
      *   model (model/0..M)
      *   translator (translator/0..M)
      *   data-role (data-role/0..M)
@@ -139,6 +140,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
     private final List<VdbEntry> entries = new ArrayList<VdbEntry>();
     private final List<VdbModel> models = new ArrayList<VdbModel>();
     private final List<VdbTranslator> translators = new ArrayList<VdbTranslator>();
+    private final List<ImportVdb> importVdbs = new ArrayList<ImportVdb>();
 
     /**
      * @param name the VDB name (cannot be <code>null</code> or empty)
@@ -182,6 +184,13 @@ public class VdbManifest implements Comparable<VdbManifest> {
      */
     public List<VdbEntry> getEntries() {
         return this.entries;
+    }
+
+    /**
+     * @return the import VDBs found in the VDB (never <code>null</code> but can be empty)
+     */
+    public List<ImportVdb> getImportVdbs() {
+        return this.importVdbs;
     }
 
     /**
@@ -391,6 +400,13 @@ public class VdbManifest implements Comparable<VdbManifest> {
                     } else if (VdbLexicon.ManifestIds.DESCRIPTION.equals(elementName)) {
                         final String description = streamReader.getElementText();
                         model.setDescription(description);
+                    } else if (VdbLexicon.ManifestIds.METADATA.equals(elementName)) {
+                        if (streamReader.getAttributeCount() == 1) {
+                            model.setMetadataType(streamReader.getAttributeValue(0));
+                        }
+
+                        final String metadata = streamReader.getElementText().trim();
+                        model.setModelDefinition(metadata.replaceAll("\\s{2,}", " ")); // collapse whitespace
                     } else {
                         debug("**** unexpected model element=" + elementName);
                     }
@@ -566,6 +582,10 @@ public class VdbManifest implements Comparable<VdbManifest> {
                         final VdbEntry entry = parseEntry(streamReader);
                         assert (entry != null) : "entry is null";
                         manifest.getEntries().add(entry);
+                    } else if (VdbLexicon.ManifestIds.IMPORT_VDB.equals(elementName)) {
+                        final ImportVdb importVdb = processImportVdbAttributes(streamReader);
+                        assert (importVdb != null) : "importVdb is null";
+                        manifest.getImportVdbs().add(importVdb);
                     } else {
                         debug("**** unexpected VDB element=" + elementName);
                     }
@@ -655,6 +675,49 @@ public class VdbManifest implements Comparable<VdbManifest> {
             return entry;
         }
 
+        private ImportVdb processImportVdbAttributes( final XMLStreamReader streamReader ) throws Exception {
+            assert VdbLexicon.ManifestIds.IMPORT_VDB.equals(streamReader.getLocalName());
+
+            final Map<String, String> attributes = new HashMap<String, String>();
+
+            for (int i = 0, size = streamReader.getAttributeCount(); i < size; ++i) {
+                final QName name = streamReader.getAttributeName(i);
+                final String value = streamReader.getAttributeValue(i);
+                attributes.put(name.getLocalPart(), value);
+                debug("import VDB attribute name=" + name.getLocalPart() + ", value=" + value);
+            }
+
+            // make sure there is a name and version
+            final String name = attributes.get(VdbLexicon.ManifestIds.NAME);
+            final String version = attributes.get(VdbLexicon.ManifestIds.VERSION);
+
+            if (StringUtil.isBlank(name) || StringUtil.isBlank(version)) {
+                throw new Exception(TeiidI18n.missingImportVdbNameOrVersion.text());
+            }
+
+            // create ImportVdb
+            final ImportVdb importVdb = new ImportVdb(attributes.get(VdbLexicon.ManifestIds.NAME),
+                                                      Integer.parseInt(attributes.get(VdbLexicon.ManifestIds.VERSION)));
+            attributes.remove(VdbLexicon.ManifestIds.NAME);
+            attributes.remove(VdbLexicon.ManifestIds.VERSION);
+
+            { // set import data policies flag
+                final String importDataPolicies = attributes.get(VdbLexicon.ManifestIds.IMPORT_DATA_POLICIES);
+
+                if (!StringUtil.isBlank(importDataPolicies)) {
+                    importVdb.setImportDataPolicies(Boolean.parseBoolean(importDataPolicies));
+                    attributes.remove(VdbLexicon.ManifestIds.IMPORT_DATA_POLICIES);
+                }
+            }
+
+            // look for unhandled attributes
+            for (final Map.Entry<String, String> entry : attributes.entrySet()) {
+                debug("**** unexpected import VDB attribute:name=" + entry.getKey());
+            }
+
+            return importVdb;
+        }
+
         private VdbModel processModelAttributes( final XMLStreamReader streamReader ) throws Exception {
             assert VdbLexicon.ManifestIds.MODEL.equals(streamReader.getLocalName());
 
@@ -672,16 +735,12 @@ public class VdbManifest implements Comparable<VdbManifest> {
             final String type = attributes.get(VdbLexicon.ManifestIds.TYPE);
             String path = attributes.get(VdbLexicon.ManifestIds.PATH);
 
-            if (StringUtil.isBlank(name) || StringUtil.isBlank(type) || StringUtil.isBlank(path)) {
-                throw new Exception(TeiidI18n.missingModelNameTypeOrPath.text());
+            if (!StringUtil.isBlank(path)) {
+                path = path.replaceFirst("^/", "");
             }
 
-            path = path.replaceFirst("^/", "");
-
-            // create model since name, type, path exist
-            final VdbModel model = new VdbModel(attributes.get(VdbLexicon.ManifestIds.NAME),
-                                                attributes.get(VdbLexicon.ManifestIds.TYPE),
-                                                attributes.get(VdbLexicon.ManifestIds.PATH));
+            // create model
+            final VdbModel model = new VdbModel(name, type, path);
             attributes.remove(VdbLexicon.ManifestIds.NAME);
             attributes.remove(VdbLexicon.ManifestIds.TYPE);
             attributes.remove(VdbLexicon.ManifestIds.PATH);
@@ -874,7 +933,7 @@ public class VdbManifest implements Comparable<VdbManifest> {
                 final String value = streamReader.getAttributeValue(i);
                 attributes.put(name.getLocalPart(), value);
 
-                debug("att name=" + name.getLocalPart() + ", value=" + value);
+                debug("VDB attribute name=" + name.getLocalPart() + ", value=" + value);
             }
 
             // set VDB name

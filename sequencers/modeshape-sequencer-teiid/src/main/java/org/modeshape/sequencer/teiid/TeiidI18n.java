@@ -48,7 +48,7 @@ public final class TeiidI18n {
     public static I18n invalidVdbModelNodeType;
     public static I18n missingDataRoleName;
     public static I18n missingEntryPath;
-    public static I18n missingModelNameTypeOrPath;
+    public static I18n missingImportVdbNameOrVersion;
     public static I18n missingPermissionResourceName;
     public static I18n missingPropertyNameOrValue;
     public static I18n missingTranslatorNameOrType;

@@ -24,7 +24,6 @@
 package org.modeshape.sequencer.teiid;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -33,10 +32,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Value;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
+import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
 import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
 
@@ -50,16 +49,6 @@ public class VdbSequencerTest extends AbstractSequencerTest {
         return resourceStream("config/repo-config.json");
     }
 
-    @Ignore
-    // java.util.zip.ZipException: incomplete dynamic bit lengths tree
-    @Test
-    public void shouldSequencePartsSupplierVDB() throws Exception {
-        createNodeWithContentFromFile("model/parts/PartsSupplierVDB.vdb", "model/parts/PartsSupplierVDB.vdb");
-        Node outputNode = getOutputNode(this.rootNode, "vdbs/PartsSupplierVDB.vdb");
-        assertNotNull(outputNode);
-        assertEquals(VdbLexicon.Vdb.VIRTUAL_DATABASE, outputNode.getPrimaryNodeType().getName());
-    }
-
     @Test
     public void shouldHaveValidCnds() throws Exception {
         registerNodeTypes("org/modeshape/sequencer/teiid/xmi.cnd");
@@ -69,7 +58,7 @@ public class VdbSequencerTest extends AbstractSequencerTest {
         registerNodeTypes("org/modeshape/sequencer/teiid/transformation.cnd");
         registerNodeTypes("org/modeshape/sequencer/teiid/vdb.cnd");
     }
-
+    
     @Test
     public void shouldSequenceBooksVDB() throws Exception {
         createNodeWithContentFromFile("BooksVDB.vdb", "model/books/BooksVDB.vdb");
@@ -86,20 +75,20 @@ public class VdbSequencerTest extends AbstractSequencerTest {
         { // child node models
             Node modelNode = outputNode.getNode("BooksProcedures.xmi");
             assertThat(modelNode.getPrimaryNodeType().getName(), is(VdbLexicon.Model.MODEL));
-            assertThat(modelNode.getProperty(VdbLexicon.Model.PATH_IN_VDB).getString(), is("/TestRESTWarGen/BooksProcedures.xmi"));
+            assertThat(modelNode.getProperty(VdbLexicon.Model.PATH_IN_VDB).getString(), is("TestRESTWarGen/BooksProcedures.xmi"));
             assertThat(modelNode.getProperty(VdbLexicon.Model.VISIBLE).getBoolean(), is(false));
             assertThat(modelNode.getProperty(VdbLexicon.Model.BUILT_IN).getBoolean(), is(false));
             assertThat(modelNode.getProperty(VdbLexicon.Model.CHECKSUM).getLong(), is(1855484649L));
             assertThat(modelNode.getProperty(VdbLexicon.Model.DESCRIPTION).getString(), is("This is a model description"));
-            assertThat(modelNode.getProperty(VdbLexicon.Model.TYPE).getString(), is(CoreLexicon.ModelType.VIRTUAL));
+            assertThat(modelNode.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(), is(CoreLexicon.ModelType.VIRTUAL));
             assertThat(modelNode.getProperty("modelClass").getString(), is("Relational"));
             assertThat(modelNode.getProperty("indexName").getString(), is("1159106455.INDEX"));
 
             modelNode = outputNode.getNode("MyBooks.xmi");
             assertThat(modelNode.getPrimaryNodeType().getName(), is(VdbLexicon.Model.MODEL));
-            assertThat(modelNode.getProperty(VdbLexicon.Model.PATH_IN_VDB).getString(), is("/TestRESTWarGen/MyBooks.xmi"));
+            assertThat(modelNode.getProperty(VdbLexicon.Model.PATH_IN_VDB).getString(), is("TestRESTWarGen/MyBooks.xmi"));
             assertThat(modelNode.getProperty(VdbLexicon.Model.VISIBLE).getBoolean(), is(true));
-            assertThat(modelNode.getProperty(VdbLexicon.Model.TYPE).getString(), is(CoreLexicon.ModelType.PHYSICAL));
+            assertThat(modelNode.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(), is(CoreLexicon.ModelType.PHYSICAL));
             assertThat(modelNode.getProperty(VdbLexicon.Model.BUILT_IN).getBoolean(), is(false));
             assertThat(modelNode.getProperty(VdbLexicon.Model.SOURCE_TRANSLATOR).getString(), is("MyBooks_mysql5"));
             assertThat(modelNode.getProperty(VdbLexicon.Model.SOURCE_JNDI_NAME).getString(), is("MyBooks"));
@@ -109,8 +98,8 @@ public class VdbSequencerTest extends AbstractSequencerTest {
 
             modelNode = outputNode.getNode("MyBooksView.xmi");
             assertThat(modelNode.getPrimaryNodeType().getName(), is(VdbLexicon.Model.MODEL));
-            assertThat(modelNode.getProperty(VdbLexicon.Model.TYPE).getString(), is(CoreLexicon.ModelType.VIRTUAL));
-            assertThat(modelNode.getProperty(VdbLexicon.Model.PATH_IN_VDB).getString(), is("/TestRESTWarGen/MyBooksView.xmi"));
+            assertThat(modelNode.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(), is(CoreLexicon.ModelType.VIRTUAL));
+            assertThat(modelNode.getProperty(VdbLexicon.Model.PATH_IN_VDB).getString(), is("TestRESTWarGen/MyBooksView.xmi"));
             assertThat(modelNode.getProperty(VdbLexicon.Model.VISIBLE).getBoolean(), is(true));
             assertThat(modelNode.getProperty(VdbLexicon.Model.BUILT_IN).getBoolean(), is(false));
             assertThat(modelNode.getProperty(VdbLexicon.Model.CHECKSUM).getLong(), is(825941341L));
@@ -269,46 +258,6 @@ public class VdbSequencerTest extends AbstractSequencerTest {
         }
     }
 
-    @Ignore
-    // java.lang.ArrayIndexOutOfBoundsException: 4096
-    @Test
-    public void shouldSequenceVdbForQuickEmployees() throws Exception {
-        createNodeWithContentFromFile("vdb/qe.vdb", "vdb/qe.vdb");
-        Node outputNode = getOutputNode(this.rootNode, "vdbs/qe.vdb");
-        assertNotNull(outputNode);
-        assertEquals(VdbLexicon.Vdb.VIRTUAL_DATABASE, outputNode.getPrimaryNodeType().getName());
-    }
-
-    @Ignore
-    // java.lang.ArrayIndexOutOfBoundsException: 4096
-    @Test
-    public void shouldSequenceVdbForQuickEmployeesWithVersionSpecifiedInFileName() throws Exception {
-        createNodeWithContentFromFile("vdb/qe.2.vdb", "vdb/qe.2.vdb");
-        Node outputNode = getOutputNode(this.rootNode, "vdbs/qe.2.vdb");
-        assertNotNull(outputNode);
-        assertEquals(VdbLexicon.Vdb.VIRTUAL_DATABASE, outputNode.getPrimaryNodeType().getName());
-    }
-
-    @Ignore
-    // java.util.zip.ZipException: invalid block type
-    @Test
-    public void shouldSequenceVdbForPartsFromXml() throws Exception {
-        createNodeWithContentFromFile("vdb/PartsFromXml.vdb", "vdb/PartsFromXml.vdb");
-        Node outputNode = getOutputNode(this.rootNode, "vdbs/PartsFromXml.vdb");
-        assertNotNull(outputNode);
-        assertEquals(VdbLexicon.Vdb.VIRTUAL_DATABASE, outputNode.getPrimaryNodeType().getName());
-    }
-
-    @Ignore
-    // java.util.zip.ZipException: invalid block type
-    @Test
-    public void shouldSequenceVdbForYahooUdfTest() throws Exception {
-        createNodeWithContentFromFile("vdb/YahooUdfTest.vdb", "vdb/YahooUdfTest.vdb");
-        Node outputNode = getOutputNode(this.rootNode, "vdbs/YahooUdfTest.vdb");
-        assertNotNull(outputNode);
-        assertEquals(VdbLexicon.Vdb.VIRTUAL_DATABASE, outputNode.getPrimaryNodeType().getName());
-    }
-
     @Test
     public void shouldExtractVersionInformation() {
         assertVersionInfo("something", "something", 1);
@@ -325,6 +274,235 @@ public class VdbSequencerTest extends AbstractSequencerTest {
         assertVersionInfo("something.  4", "something", 4);
         assertVersionInfo("something.  -4", "something", 4);
         assertVersionInfo("something.  -1234  ", "something", 1234);
+    }
+
+    @Test
+    public void shouldSequenceVdbTopPartsVDB() throws Exception {
+        createNodeWithContentFromFile("vdb/TopPartsVDB.vdb", "vdb/TopPartsVDB.vdb");
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/TopPartsVDB.vdb");
+        assertNotNull(outputNode);
+        assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
+
+        // check import VDB
+        Node importVdbsGroupNode = outputNode.getNode(VdbLexicon.Vdb.IMPORT_VDBS);
+        assertNotNull(importVdbsGroupNode);
+        assertThat(importVdbsGroupNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.IMPORT_VDBS));
+        assertThat(importVdbsGroupNode.getNodes().getSize(), is(1L));
+
+        Node importVdbNode = importVdbsGroupNode.getNode("PartsVDB");
+        assertNotNull(importVdbNode);
+        assertThat(importVdbNode.getPrimaryNodeType().getName(), is(VdbLexicon.ImportVdb.IMPORT_VDB));
+        assertThat(importVdbNode.getProperty(VdbLexicon.ImportVdb.VERSION).getLong(), is(1L));
+        assertThat(importVdbNode.getProperty(VdbLexicon.ImportVdb.IMPORT_DATA_POLICIES).getBoolean(), is(false));
+    }
+
+    @Test
+    public void shouldSequenceVdbBooksVdb() throws Exception {
+        createNodeWithContentFromFile("vdb/BooksVdb.vdb", "vdb/BooksVdb.vdb");
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/BooksVdb.vdb");
+        assertNotNull(outputNode);
+        assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
+
+        // check properties
+        assertThat(outputNode.getProperty(VdbLexicon.Vdb.DESCRIPTION).getString(), is("This is a VDB description"));
+        assertThat(outputNode.getProperty(VdbLexicon.Vdb.VERSION).getLong(), is(1L));
+        assertThat(outputNode.getProperty(VdbLexicon.Vdb.PREVIEW).getBoolean(), is(false));
+        assertThat(outputNode.getProperty("query-timeout").getLong(), is(1000000L));
+
+        { // Books_Oracle model child node
+            Node modelNode = outputNode.getNode("Books_Oracle.xmi");
+            assertThat(modelNode.getPrimaryNodeType().getName(), is(VdbLexicon.Model.MODEL));
+            assertThat(modelNode.getProperty(VdbLexicon.Model.PATH_IN_VDB).getString(), is("BooksProject/Books_Oracle.xmi"));
+            assertThat(modelNode.getProperty(VdbLexicon.Model.VISIBLE).getBoolean(), is(true));
+            assertThat(modelNode.getProperty(VdbLexicon.Model.BUILT_IN).getBoolean(), is(false));
+            assertThat(modelNode.getProperty(VdbLexicon.Model.CHECKSUM).getLong(), is(4164741764L));
+            assertThat(modelNode.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(), is(CoreLexicon.ModelType.PHYSICAL));
+            assertThat(modelNode.getProperty("modelClass").getString(), is("Relational"));
+            assertThat(modelNode.getProperty("indexName").getString(), is("1388555674.INDEX"));
+            assertThat(modelNode.getProperty(VdbLexicon.Model.SOURCE_TRANSLATOR).getString(), is("oracle"));
+            assertThat(modelNode.getProperty(VdbLexicon.Model.SOURCE_JNDI_NAME).getString(), is("Books_Oracle"));
+            assertThat(modelNode.getProperty(VdbLexicon.Model.SOURCE_NAME).getString(), is("Books_Oracle"));
+        }
+
+        { // BooksView model child node
+            Node modelNode = outputNode.getNode("BooksView.xmi");
+            assertThat(modelNode.getPrimaryNodeType().getName(), is(VdbLexicon.Model.MODEL));
+            assertThat(modelNode.getProperty(VdbLexicon.Model.PATH_IN_VDB).getString(), is("BooksProject/BooksView.xmi"));
+            assertThat(modelNode.getProperty(VdbLexicon.Model.VISIBLE).getBoolean(), is(true));
+            assertThat(modelNode.getProperty(VdbLexicon.Model.BUILT_IN).getBoolean(), is(false));
+            assertThat(modelNode.getProperty(VdbLexicon.Model.CHECKSUM).getLong(), is(2513252863L));
+            assertThat(modelNode.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(), is(CoreLexicon.ModelType.VIRTUAL));
+            assertThat(modelNode.getProperty("modelClass").getString(), is("Relational"));
+            assertThat(modelNode.getProperty("indexName").getString(), is("3982965936.INDEX"));
+
+            Node modelImport = modelNode.getNode("Books_Oracle");
+            assertNotNull(modelImport);
+            assertThat(modelImport.getPrimaryNodeType().getName(), is(CoreLexicon.JcrId.IMPORT));
+            assertThat(modelImport.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(), is(CoreLexicon.ModelType.PHYSICAL));
+            assertThat(modelImport.getProperty(CoreLexicon.JcrId.PRIMARY_METAMODEL_URI).getString(), is(RelationalLexicon.Namespace.URI));
+            assertThat(modelImport.getProperty(CoreLexicon.JcrId.MODEL_LOCATION).getString(), is("Books_Oracle.xmi"));
+            assertThat(modelImport.getProperty(CoreLexicon.JcrId.PATH).getString(), is("/BooksProject/Books_Oracle.xmi"));
+        }
+
+        { // data roles child nodes
+            Node dataRolesGroupNode = outputNode.getNode(VdbLexicon.Vdb.DATA_ROLES);
+            assertNotNull(dataRolesGroupNode);
+            assertThat(dataRolesGroupNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.DATA_ROLES));
+            assertThat(dataRolesGroupNode.getNodes().getSize(), is(2L));
+
+            {
+                Node dataRoleNode = dataRolesGroupNode.getNode("Another Data role");
+                assertNotNull(dataRoleNode);
+                assertThat(dataRoleNode.getPrimaryNodeType().getName(), is(VdbLexicon.DataRole.DATA_ROLE));
+                assertThat(dataRoleNode.getProperty(VdbLexicon.DataRole.ALLOW_CREATE_TEMP_TABLES).getBoolean(), is(false));
+                assertThat(dataRoleNode.getProperty(VdbLexicon.DataRole.ANY_AUTHENTICATED).getBoolean(), is(false));
+
+                { // mapped role names
+                    Value[] roleNames = dataRoleNode.getProperty(VdbLexicon.DataRole.MAPPED_ROLE_NAMES).getValues();
+                    assertThat(roleNames.length, is(2));
+                    assertThat("Role name 1".equals(roleNames[0].getString()) || "Role name 1".equals(roleNames[1].getString()),
+                               is(true));
+                    assertThat("Another role name".equals(roleNames[0].getString())
+                               || "Another role name".equals(roleNames[1].getString()),
+                               is(true));
+                }
+
+                { // permissions
+                    Node permissionsGroupNode = dataRoleNode.getNode(VdbLexicon.DataRole.PERMISSIONS);
+                    assertNotNull(permissionsGroupNode);
+                    assertThat(permissionsGroupNode.getPrimaryNodeType().getName(), is(VdbLexicon.DataRole.PERMISSIONS));
+                    assertThat(permissionsGroupNode.getNodes().getSize(), is(1L));
+
+                    Node permNode = permissionsGroupNode.getNode("Books_Oracle");
+                    assertNotNull(permNode);
+                    assertThat(permNode.getPrimaryNodeType().getName(), is(VdbLexicon.DataRole.Permission.PERMISSION));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_CREATE).getBoolean(), is(false));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_READ).getBoolean(), is(true));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_UPDATE).getBoolean(), is(false));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_DELETE).getBoolean(), is(false));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_EXECUTE).getBoolean(), is(false));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_ALTER).getBoolean(), is(false));
+                }
+            }
+
+            {
+                Node dataRoleNode = dataRolesGroupNode.getNode("MyDataRole");
+                assertNotNull(dataRoleNode);
+                assertThat(dataRoleNode.getPrimaryNodeType().getName(), is(VdbLexicon.DataRole.DATA_ROLE));
+                assertThat(dataRoleNode.getProperty(VdbLexicon.DataRole.DESCRIPTION).getString(), is("This is a data role description"));
+                assertThat(dataRoleNode.getProperty(VdbLexicon.DataRole.ALLOW_CREATE_TEMP_TABLES).getBoolean(), is(false));
+                assertThat(dataRoleNode.getProperty(VdbLexicon.DataRole.ANY_AUTHENTICATED).getBoolean(), is(false));
+
+                { // permissions
+                    Node permissionsGroupNode = dataRoleNode.getNode(VdbLexicon.DataRole.PERMISSIONS);
+                    assertNotNull(permissionsGroupNode);
+                    assertThat(permissionsGroupNode.getPrimaryNodeType().getName(), is(VdbLexicon.DataRole.PERMISSIONS));
+                    assertThat(permissionsGroupNode.getNodes().getSize(), is(2L));
+
+                    Node permNode = permissionsGroupNode.getNode("Books_Oracle");
+                    assertNotNull(permNode);
+                    assertThat(permNode.getPrimaryNodeType().getName(), is(VdbLexicon.DataRole.Permission.PERMISSION));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_CREATE).getBoolean(), is(false));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_READ).getBoolean(), is(true));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_UPDATE).getBoolean(), is(true));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_DELETE).getBoolean(), is(true));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_EXECUTE).getBoolean(), is(true));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_ALTER).getBoolean(), is(true));
+
+                    permNode = permissionsGroupNode.getNode("sysadmin");
+                    assertNotNull(permNode);
+                    assertThat(permNode.getPrimaryNodeType().getName(), is(VdbLexicon.DataRole.Permission.PERMISSION));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_CREATE).getBoolean(), is(false));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_READ).getBoolean(), is(true));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_UPDATE).getBoolean(), is(false));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_DELETE).getBoolean(), is(false));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_EXECUTE).getBoolean(), is(false));
+                    assertThat(permNode.getProperty(VdbLexicon.DataRole.Permission.ALLOW_ALTER).getBoolean(), is(false));
+                }
+            }
+        }
+    }
+
+    @Test
+    public void shouldSequenceVdbBqtVdb() throws Exception {
+        createNodeWithContentFromFile("vdb/BqtVdb.vdb", "vdb/BqtVdb.vdb");
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/BqtVdb.vdb", 60);
+        assertNotNull(outputNode);
+        assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
+        assertThat(outputNode.getNodes("*.xmi").getSize(), is(60L));
+
+        // entry child nodes
+        Node entriesGroupNode = outputNode.getNode(VdbLexicon.Vdb.ENTRIES);
+        assertNotNull(entriesGroupNode);
+        assertThat(entriesGroupNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.ENTRIES));
+
+        NodeIterator itr = entriesGroupNode.getNodes();
+        assertThat(itr.getSize(), is(2L));
+    }
+
+    @Test
+    public void shouldSequenceVdbFirstPartsVdb() throws Exception {
+        createNodeWithContentFromFile("vdb/FirstParts.vdb", "vdb/FirstParts.vdb");
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/FirstParts.vdb");
+        assertNotNull(outputNode);
+        assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
+    }
+
+    @Test
+    public void shouldSequenceVdbPartsVdb() throws Exception {
+        createNodeWithContentFromFile("vdb/PartsVdb.vdb", "vdb/PartsVdb.vdb");
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/PartsVdb.vdb");
+        assertNotNull(outputNode);
+        assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
+    }
+
+    @Test
+    public void shouldSequenceVdbFinancialsLinuxVdb() throws Exception {
+        createNodeWithContentFromFile("vdb/Financials_Linux.vdb", "vdb/Financials_Linux.vdb");
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/Financials_Linux.vdb");
+        assertNotNull(outputNode);
+        assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
+    }
+
+    @Test
+    public void shouldSequenceVdbTwitterVdb() throws Exception {
+        createNodeWithContentFromFile("vdb/twitter.vdb", "vdb/twitter.vdb");
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/twitter.vdb", 60);
+        assertNotNull(outputNode);
+        assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
+        assertThat(outputNode.getNodes().getSize(), is(3L)); // 2 models and 1 translator
+
+        { // declarative source model
+            final Node declarativeModelNode = outputNode.getNode("twitter");
+            assertNotNull(declarativeModelNode);
+            assertThat(declarativeModelNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.DECLARATIVE_MODEL));
+            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.VISIBLE).getBoolean(), is(true));
+            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.SOURCE_TRANSLATOR).getString(), is("rest"));
+            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.SOURCE_JNDI_NAME).getString(), is("java:/twitterDS"));
+            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.SOURCE_NAME).getString(), is("twitter"));
+            assertThat(declarativeModelNode.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(), is(CoreLexicon.ModelType.PHYSICAL));
+        }
+
+        { // declarative virtual model
+            final Node declarativeModelNode = outputNode.getNode("twitterview");
+            assertNotNull(declarativeModelNode);
+            assertThat(declarativeModelNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.DECLARATIVE_MODEL));
+            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.VISIBLE).getBoolean(), is(true));
+            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.METADATA_TYPE).getString(), is(VdbModel.DEFAULT_METADATA_TYPE));
+            assertThat(declarativeModelNode.getProperty(CoreLexicon.JcrId.MODEL_TYPE).getString(), is(CoreLexicon.ModelType.VIRTUAL));
+
+            final String metadata = "CREATE VIRTUAL PROCEDURE getTweets(query varchar) RETURNS (created_on varchar(25),"
+                                    + " from_user varchar(25), to_user varchar(25),"
+                                    + " profile_image_url varchar(25), source varchar(25), text varchar(140)) AS"
+                                    + " select tweet.* from"
+                                    + " (call twitter.invokeHTTP(action => 'GET', endpoint =>querystring('',query as \"q\"))) w,"
+                                    + " XMLTABLE('results' passing JSONTOXML('myxml', w.result) columns"
+                                    + " created_on string PATH 'created_at'," + " from_user string PATH 'from_user',"
+                                    + " to_user string PATH 'to_user'," + " profile_image_url string PATH 'profile_image_url',"
+                                    + " source string PATH 'source'," + " text string PATH 'text') tweet;"
+                                    + " CREATE VIEW Tweet AS select * FROM twitterview.getTweets;";
+            assertThat(declarativeModelNode.getProperty(VdbLexicon.Model.MODEL_DEFINITION).getString(), is(metadata));
+        }
     }
 
     protected void assertVersionInfo( String fileNameWithoutExtension,

@@ -80,6 +80,20 @@ public class ModelSequencerTest extends AbstractSequencerTest {
     }
 
     @Test
+    public void shouldSequenceBooksProceduresModel() throws Exception {
+        createNodeWithContentFromFile("BooksProcedures.xmi", "model/books/BooksProcedures.xmi");
+        Node outputNode = getOutputNode(this.rootNode, "models/BooksProcedures.xmi");
+        assertNotNull(outputNode);
+    }
+
+    @Test
+    public void shouldSequenceMyBooksModel() throws Exception {
+        createNodeWithContentFromFile("MyBooks.xmi", "model/books/MyBooks.xmi");
+        Node outputNode = getOutputNode(this.rootNode, "models/MyBooks.xmi");
+        assertNotNull(outputNode);
+    }
+
+    @Test
     public void shouldSequencePartsSupplierVirtualModel() throws Exception {
         createNodeWithContentFromFile("PartsVirtual.xmi", "model/parts/PartsVirtual.xmi");
         Node outputNode = getOutputNode(this.rootNode, "models/PartsVirtual.xmi");
@@ -445,17 +459,6 @@ public class ModelSequencerTest extends AbstractSequencerTest {
         }
     }
 
-    // @Test
-    // public void shouldSequenceBooksAModels() throws Exception {
-    // XmiReader.read(streamFor("/model/books/BookDatatypes.xsd"), null);
-    // XmiReader.read(streamFor("/model/books/Books_SourceA.xmi"), null);
-    // XmiReader.read(streamFor("/model/books/Books_SourceB.xmi"), null);
-    // XmiReader.read(streamFor("/model/books/Books.xsd"), null);
-    // XmiReader.read(streamFor("/model/books/BooksInput.xsd"), null);
-    // XmiReader.read(streamFor("/model/books/BooksWebService.xmi"), null);
-    // XmiReader.read(streamFor("/model/books/BooksXML.xmi"), null);
-    // }
-
     @Test
     public void shouldSequenceOldBooksPhysicalRelationalModelForOracle() throws Exception {
         createNodeWithContentFromFile("BooksO.xmi", "model/old/BooksO.xmi");
@@ -595,10 +598,31 @@ public class ModelSequencerTest extends AbstractSequencerTest {
     }
 
     @Test
+    public void shouldSequencePartsDataModel() throws Exception {
+        createNodeWithContentFromFile("PartsData.xmi", "model/XmlParts/PartsData.xmi");
+        Node outputNode = getOutputNode(this.rootNode, "models/PartsData.xmi");
+        assertNotNull(outputNode);
+    }
+
+    @Test
     public void shouldNotSequenceXmlDocumentModelForEmployees() throws Exception {
         createNodeWithContentFromFile("EmpDoc.xmi", "model/QuickEmployees/EmpDoc.xmi");
         Node outputNode = getOutputNode(this.rootNode, "models/EmpDoc.xmi");
         assertNull(outputNode);
+    }
+
+    @Test
+    public void shouldSequenceEmployeesModel() throws Exception {
+        createNodeWithContentFromFile("Employees.xmi", "model/QuickEmployees/Employees.xmi");
+        Node outputNode = getOutputNode(this.rootNode, "models/Employees.xmi");
+        assertNotNull(outputNode);
+    }
+
+    @Test
+    public void shouldSequenceEmpVModel() throws Exception {
+        createNodeWithContentFromFile("EmpV.xmi", "model/QuickEmployees/EmpV.xmi");
+        Node outputNode = getOutputNode(this.rootNode, "models/EmpV.xmi");
+        assertNotNull(outputNode);
     }
 
     @Test

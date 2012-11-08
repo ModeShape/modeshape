@@ -54,6 +54,7 @@ public interface CoreLexicon {
         String ANNOTATION = "annotations";
         String ANNOTATION_CONTAINER = "AnnotationContainer";
         String DESCRIPTION = "description";
+        String HREF = "href";
         String KEY = "key";
         String KEYWORD = "keywords";
         String MAX_SET_SIZE = "maxSetSize";
@@ -75,6 +76,7 @@ public interface CoreLexicon {
         String SUPPORTS_OUTER_JOIN = "supportsOuterJoin";
         String SUPPORTS_WHERE_ALL = "supportsWhereAll";
         String TAGS = "tags";
+        String UUID = "uuid";
         String VALUE = "value";
         String VISIBLE = "visible";
     }
