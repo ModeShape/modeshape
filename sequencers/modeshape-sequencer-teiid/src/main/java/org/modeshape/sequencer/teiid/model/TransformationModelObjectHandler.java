@@ -53,7 +53,7 @@ public final class TransformationModelObjectHandler extends ModelObjectHandler {
         CheckArg.isNotNull(parentNode, "node");
         CheckArg.isEquals(element.getNamespaceUri(), "namespace URI", URI, "relational URI");
 
-        debug("==== TransformationModelObjectHandler:process:element=" + element.getName());
+        LOGGER.debug("==== TransformationModelObjectHandler:process:element={0}", element.getName());
 
         if (ModelId.TRANSFORMATION_CONTAINER.equals(element.getName())) {
             // just process children
@@ -61,11 +61,11 @@ public final class TransformationModelObjectHandler extends ModelObjectHandler {
                 if (ModelId.TRANSFORMATION_MAPPINGS.equals(kid.getName())) {
                     processMappings(kid);
                 } else {
-                    debug("**** transformation container child of '" + kid.getName() + "' was not processed");
+                    LOGGER.debug("**** transformation container child of '{0}' was not processed", kid.getName());
                 }
             }
         } else {
-            debug("**** transformation type of '" + element.getName() + "' was not processed");
+            LOGGER.debug("**** transformation type of '{0}' was not processed", element.getName());
         }
     }
 
@@ -136,7 +136,7 @@ public final class TransformationModelObjectHandler extends ModelObjectHandler {
         assert (mappings != null);
         assert (ModelId.TRANSFORMATION_MAPPINGS.equals(mappings.getName()));
 
-        debug("=========" + mappings.getName());
+        LOGGER.debug("=========mappings='{0}'", mappings.getName());
         final ReferenceResolver resolver = getResolver();
         final String targetUuid = mappings.getAttributeValue(ModelId.TARGET, URI);
         final String uuid = resolver.resolveInternalReference(targetUuid);
@@ -178,7 +178,7 @@ public final class TransformationModelObjectHandler extends ModelObjectHandler {
             } else if (ModelId.NESTED.equals(kid.getName())) {
                 processNested(kid);
             } else {
-                debug("**** transformation mapping child type of " + kid + " was not processed");
+                LOGGER.debug("**** transformation mapping child type of '{0}' was not processed", kid);
             }
         }
     }

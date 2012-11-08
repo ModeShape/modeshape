@@ -55,18 +55,8 @@ import org.modeshape.sequencer.teiid.model.ReferenceResolver;
 public class VdbSequencer extends Sequencer {
 
     private static final Logger LOGGER = Logger.getLogger(VdbSequencer.class);
-
-    private static final boolean DEBUG = false;
     private static final String MANIFEST_FILE = "META-INF/vdb.xml";
     private static final Pattern VERSION_REGEX = Pattern.compile("(.*)[.]\\s*[+-]?([0-9]+)\\s*$");
-
-    private void debug( final String message ) {
-        if (DEBUG) {
-            System.err.println(message);
-        }
-
-        LOGGER.debug(message);
-    }
 
     /**
      * Utility method to extract the version information from a VDB filename.
@@ -101,7 +91,7 @@ public class VdbSequencer extends Sequencer {
     public boolean execute( final Property inputProperty,
                             final Node outputNode,
                             final Context context ) throws Exception {
-        debug("VdbSequencer.execute called:outputNode name=" + outputNode.getName() + ", path=" + outputNode.getPath());
+        LOGGER.debug("VdbSequencer.execute called:outputNode name='{0}', path='{1}'", outputNode.getName(), outputNode.getPath());
 
         final Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
@@ -116,7 +106,7 @@ public class VdbSequencer extends Sequencer {
                 String entryName = entry.getName();
 
                 if (entryName.endsWith(MANIFEST_FILE)) {
-                    debug("----before reading vdb.xml");
+                    LOGGER.debug("----before reading vdb.xml");
 
                     manifest = VdbManifest.read(vdbStream, context);
                     assert (manifest != null) : "manifest is null";
@@ -148,9 +138,9 @@ public class VdbSequencer extends Sequencer {
                     // create child nodes for declarative models
                     sequenceDeclarativeModels(manifest, outputNode);
 
-                    debug(">>>>done reading vdb.xml\n\n");
+                    LOGGER.debug(">>>>done reading vdb.xml\n\n");
                 } else if (!entry.isDirectory() && this.modelSequencer.hasModelFileExtension(entryName)) {
-                    debug("----before reading model " + entryName);
+                    LOGGER.debug("----before reading model '{0}'", entryName);
 
                     // vdb.xml file should be read first in stream so manifest model should be available
                     if (manifest == null) {
@@ -175,11 +165,12 @@ public class VdbSequencer extends Sequencer {
 
                     if (!sequenced) {
                         modelNode.remove();
+                        LOGGER.debug(">>>>model NOT sequenced '{0}'\n\n", entryName);
                     } else {
-                        debug(">>>>done sequencing model " + entryName + "\n\n");
+                        LOGGER.debug(">>>>done sequencing model '{0}'\n\n", entryName);
                     }
                 } else {
-                    debug("----ignoring resource " + entryName);
+                    LOGGER.debug("----ignoring resource '{0}'", entryName);
                 }
             }
 
@@ -282,6 +273,8 @@ public class VdbSequencer extends Sequencer {
         for (final VdbModel model : manifest.getModels()) {
             // if there is metadata then there is no xmi file
             if (model.isDeclarative()) {
+                LOGGER.debug(">>>>writing declarative model '{0}'", model.getName());
+
                 final Node modelNode = outputNode.addNode(model.getName(), VdbLexicon.Vdb.DECLARATIVE_MODEL);
 
                 // set vdb:abstractModel properties

@@ -42,15 +42,7 @@ import java.util.Stack;
  */
 public class XmiReader {
 
-    protected Logger logger = Logger.getLogger(getClass());
-    protected static final boolean DEBUG = false;
-
-    protected void debug( final String message ) {
-        if (DEBUG) {
-            System.err.println(message);
-        }
-        logger.debug(message);
-    }
+    static final Logger LOGGER = Logger.getLogger(XmiReader.class);
 
     private static String getIndent( final int stackSize ) {
         final StringBuilder indent = new StringBuilder();
@@ -126,7 +118,7 @@ public class XmiReader {
             newAttribute.setValue(streamReader.getAttributeValue(i));
             addAttribute(element, newAttribute);
 
-            debug(getIndent(this.stack.size()) + "  added attribute: " + newAttribute);
+            LOGGER.debug("{0}  added attribute: '{1}'", getIndent(this.stack.size()), newAttribute);
         }
     }
 
@@ -202,7 +194,7 @@ public class XmiReader {
         if (!StringUtil.isBlank(value) && !this.stack.isEmpty()) {
             this.stack.peek().setValue(value);
         } else if (!StringUtil.isBlank(value)) {
-            debug("**** unhandled XmiReader CHARACTERS event type. Character=" + streamReader.getText());
+            LOGGER.debug("**** unhandled XmiReader CHARACTERS event type. Character={0}", streamReader.getText());
         }
     }
 
@@ -216,7 +208,7 @@ public class XmiReader {
         CheckArg.isNotNull(streamReader, "streamReader");
         final XmiElement popped = pop(streamReader);
 
-        debug(getIndent(this.stack.size() + 1) + "end:elementName=" + streamReader.getLocalName() + ", popped=" + popped);
+        LOGGER.debug("{0}end:elementName={1}, popped={2}", getIndent(this.stack.size() + 1), streamReader.getLocalName(), popped);
         return popped;
     }
 
@@ -227,7 +219,7 @@ public class XmiReader {
      */
     protected void handleOtherEvents( final XMLStreamReader streamReader ) {
         CheckArg.isNotNull(streamReader, "streamReader");
-        debug("**** unhandled XmiReader event of type " + streamReader.getEventType());
+        LOGGER.debug("**** unhandled XmiReader event of type {0}", streamReader.getEventType());
     }
 
     /**
@@ -250,7 +242,7 @@ public class XmiReader {
 
         push(element);
 
-        debug(getIndent(this.stack.size()) + "startElement: " + element);
+        LOGGER.debug("{0}startElement: {1}", getIndent(this.stack.size()), element);
 
         // create attributes
         createAttributes(streamReader, element);
@@ -261,7 +253,7 @@ public class XmiReader {
                 final String nsUri = streamReader.getNamespaceURI(i);
                 this.namespaces.put(nsPrefix, nsUri);
 
-                debug("registered namespace " + nsPrefix + '=' + nsUri + " to model");
+                LOGGER.debug("registered namespace {0}={1} to model", nsPrefix, nsUri);
             }
         }
 

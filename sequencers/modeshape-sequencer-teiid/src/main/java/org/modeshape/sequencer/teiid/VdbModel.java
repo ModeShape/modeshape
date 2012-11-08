@@ -171,7 +171,7 @@ public class VdbModel implements Comparable<VdbModel> {
      * @return <code>true</code> if model definition is declared in the VDB manifest and not by an XMI file
      */
     public boolean isDeclarative() {
-        return !getProperties().containsKey(VdbLexicon.Model.INDEX_NAME);
+        return !getProperties().containsKey(VdbLexicon.ManifestIds.INDEX_NAME);
     }
 
     /**

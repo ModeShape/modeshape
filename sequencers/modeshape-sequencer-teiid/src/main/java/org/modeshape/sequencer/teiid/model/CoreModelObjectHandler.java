@@ -80,9 +80,7 @@ public final class CoreModelObjectHandler extends ModelObjectHandler {
         CheckArg.isNotNull(modelNode, "node");
         CheckArg.isEquals(element.getNamespaceUri(), "namespace URI", URI, "relational URI");
 
-        if (DEBUG) {
-            debug("==== CoreModelObjectHandler:process:element=" + element.getName());
-        }
+        LOGGER.debug("==== CoreModelObjectHandler:process:element={0}", element.getName());
 
         final String type = element.getName();
         if (CoreLexicon.ModelId.MODEL_ANNOTATION.equals(type)) {
@@ -133,10 +131,9 @@ public final class CoreModelObjectHandler extends ModelObjectHandler {
                         setProperty(markerNode, VdbLexicon.Model.Marker.MESSAGE, marker.getMessage());
                         setProperty(markerNode, VdbLexicon.Model.Marker.SEVERITY, marker.getSeverity().toString());
 
-                        if (DEBUG) {
-                            debug("added validation marker at path " + marker.getPath() + " and with severity of "
-                                  + marker.getSeverity());
-                        }
+                        LOGGER.debug("added validation marker at path {0} and with severity of {1}",
+                                     marker.getPath(),
+                                     marker.getSeverity());
                     }
                 }
             }
@@ -163,9 +160,7 @@ public final class CoreModelObjectHandler extends ModelObjectHandler {
                 }
             }
 
-            if (DEBUG) {
-                debug("[end writing model annotation]");
-            }
+            LOGGER.debug("[end writing model annotation]");
         } else if (CoreLexicon.ModelId.ANNOTATION_CONTAINER.equals(type)) {
             for (final XmiElement annotation : element.getChildren()) {
                 if (CoreLexicon.ModelId.ANNOTATION.equals(annotation.getName())) {
@@ -185,10 +180,7 @@ public final class CoreModelObjectHandler extends ModelObjectHandler {
                     uuid = getResolver().resolveInternalReference(uuid);
 
                     if (StringUtil.isBlank(uuid)) {
-                        if (DEBUG) {
-                            debug("annotated object UUID is blank");
-                        }
-
+                        LOGGER.debug("annotated object UUID is blank");
                         continue;
                     }
 
@@ -276,33 +268,28 @@ public final class CoreModelObjectHandler extends ModelObjectHandler {
                                 } else if (unresolved != null) {
                                     unresolved.addProperty(key, value, false);
                                 }
-                            } else if (DEBUG) {
+                            } else {
                                 if (node != null) {
-                                    debug("tag " + key + " not added as property of node " + node.getName());
+                                    LOGGER.debug("tag '{0}' not added as property of node '{1}'", key,  node.getName());
                                 } else if (unresolved != null) {
-                                    debug("tag " + key + " not added as property of node " + unresolved.getUuid());
+                                    LOGGER.debug("tag '{0}' not added as property of node '{1}'", key, unresolved.getUuid());
 
                                 }
                             }
-                        } else if (DEBUG) {
-                            debug("Unexpected element processing an annotation: " + child.getName());
+                        } else {
+                            LOGGER.debug("Unexpected element processing an annotation: {0}", child.getName());
                         }
                     }
                 }
             }
         } else {
-            if (DEBUG) {
-                debug("**** core type of " + type + " was not processed");
-            }
+            LOGGER.debug("**** core type of '{0}' was not processed", type);
         }
     }
 
     private void registerMed( final String medPrefix ) {
         assert (medPrefix != null);
         this.meds.add(medPrefix);
-
-        if (DEBUG) {
-            debug("registered MED " + medPrefix);
-        }
+        LOGGER.debug("registered MED '{0}'", medPrefix);
     }
 }
