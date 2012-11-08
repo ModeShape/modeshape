@@ -39,6 +39,7 @@ import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.federation.Connector;
 
 /**
@@ -158,7 +159,9 @@ public class Connectors {
 
     protected Connector instantiateConnector( Component component ) {
         try {
+            // Instantiate the connector and set the 'name' field ...
             Connector connector = component.createInstance(getClass().getClassLoader());
+
             // Set the repository name field ...
             ReflectionUtil.setValue(connector, "repositoryName", repository.name());
 
@@ -183,6 +186,9 @@ public class Connectors {
 
         // Set the execution context instance ...
         ReflectionUtil.setValue(connector, "context", repository.context());
+
+        // Set the execution context instance ...
+        ReflectionUtil.setValue(connector, "translator", getDocumentTranslator());
 
         // Set the MIME type detector ...
         ReflectionUtil.setValue(connector, "mimeTypeDetector", repository.mimeTypeDetector());
@@ -209,6 +215,10 @@ public class Connectors {
 
     public Connector getConnectorForSourceKey( String sourceKey ) {
         return sourceKeyToConnectorMap.get(sourceKey);
+    }
+
+    public DocumentTranslator getDocumentTranslator() {
+        return repository.repositoryCache().getDocumentTranslator();
     }
 
     public boolean hasConnectors() {

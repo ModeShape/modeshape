@@ -68,14 +68,14 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
                            String repositoryKey,
                            String workspaceName,
                            DocumentStore documentStore,
-                           long largeValueSize,
+                           DocumentTranslator translator,
                            NodeKey rootKey,
                            ConcurrentMap<NodeKey, CachedNode> cache,
                            ChangeSetListener changeSetListener ) {
         this.context = context;
         this.documentStore = documentStore;
         this.changeSetListener = changeSetListener;
-        this.translator = new DocumentTranslator(context, documentStore, largeValueSize);
+        this.translator = translator;
         this.rootKey = rootKey;
         this.childReferenceForRoot = new ChildReference(rootKey, Path.ROOT_NAME, 1);
         this.repositoryKey = repositoryKey;
@@ -177,7 +177,10 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
                 CachedNode newNode = new LazyCachedNode(key, doc);
                 Integer cacheTtlSeconds = translator().getCacheTtlSeconds(doc);
                 if (nodesByKey instanceof BasicCache && cacheTtlSeconds != null) {
-                    node = ((BasicCache<NodeKey, CachedNode>) nodesByKey).putIfAbsent(key, newNode, cacheTtlSeconds.longValue(), TimeUnit.SECONDS);
+                    node = ((BasicCache<NodeKey, CachedNode>)nodesByKey).putIfAbsent(key,
+                                                                                     newNode,
+                                                                                     cacheTtlSeconds.longValue(),
+                                                                                     TimeUnit.SECONDS);
                 } else {
                     node = nodesByKey.putIfAbsent(key, newNode);
                 }
@@ -259,12 +262,12 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
 
     /**
      * Checks if this ws cache is empty. An empty cache is considered when the only node key under root is the system key.
-     *
+     * 
      * @return {@code true} if the system key is the only key under root, {@code false} other wise.
      */
     public boolean isEmpty() {
         CachedNode root = getNode(getRootKey());
-        //expect there to be 1 child under root - the system key
+        // expect there to be 1 child under root - the system key
         return root.getChildReferences(this).size() == 1;
     }
 

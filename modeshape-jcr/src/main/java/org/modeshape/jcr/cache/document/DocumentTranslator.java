@@ -109,8 +109,8 @@ public class DocumentTranslator {
     public static final String STRONG = "strong";
     public static final String REFERENCE_COUNT = "refCount";
     /**
-     * A constant that can be used by a connector implementation as a supplementary document field, that indicates the maximum number
-     * of seconds that particular document should be stored in the workspace cache.
+     * A constant that can be used by a connector implementation as a supplementary document field, that indicates the maximum
+     * number of seconds that particular document should be stored in the workspace cache.
      */
     public static final String CACHE_TTL_SECONDS = "cacheTtlSeconds";
 
@@ -157,6 +157,18 @@ public class DocumentTranslator {
         assert this.largeStringSize.get() >= 0;
     }
 
+    public final ValueFactory<String> getStringFactory() {
+        return strings;
+    }
+
+    public final NameFactory getNameFactory() {
+        return names;
+    }
+
+    public final PropertyFactory getPropertyFactory() {
+        return propertyFactory;
+    }
+
     void setLargeValueSize( long largeValueSize ) {
         assert largeValueSize > -1;
         this.largeStringSize.set(largeValueSize);
@@ -166,11 +178,11 @@ public class DocumentTranslator {
      * Obtain the preferred {@link NodeKey key} for the parent of this node. Because a node can be used in more than once place,
      * it may technically have more than one parent. Therefore, in such cases this method prefers the parent that is in the
      * {@code primaryWorkspaceKey} and, if there is no such parent, the parent that is in the {@code secondaryWorkspaceKey}.
-     *
+     * 
      * @param document the document for the node; may not be null
      * @param primaryWorkspaceKey the key for the workspace in which the parent should preferrably exist; may be null
      * @param secondaryWorkspaceKey the key for the workspace in which the parent should exist if not in the primary workspace;
-     * may be null
+     *        may be null
      * @return the key representing the preferred parent, or null if the document contains no parent reference or if the parent
      *         reference(s) do not have the specified workspace keys
      */
@@ -332,6 +344,11 @@ public class DocumentTranslator {
     }
 
     public Property getProperty( Document document,
+                                 String propertyName ) {
+        return getProperty(document, names.create(propertyName));
+    }
+
+    public Property getProperty( Document document,
                                  Name propertyName ) {
         // Get the properties container ...
         Document properties = document.getDocument(PROPERTIES);
@@ -348,6 +365,46 @@ public class DocumentTranslator {
         // Get the property ...
         Object fieldValue = urlProps.get(propertyName.getLocalName());
         return fieldValue == null ? null : propertyFor(propertyName, fieldValue);
+    }
+
+    public Name getPrimaryType( Document document ) {
+        return names.create(getProperty(document, JcrLexicon.PRIMARY_TYPE).getFirstValue());
+    }
+
+    public String getPrimaryTypeName( Document document ) {
+        return strings.create(getProperty(document, JcrLexicon.PRIMARY_TYPE).getFirstValue());
+    }
+
+    public Set<Name> getMixinTypes( Document document ) {
+        Property prop = getProperty(document, JcrLexicon.MIXIN_TYPES);
+        if (prop == null || prop.size() == 0) return Collections.emptySet();
+
+        if (prop.size() == 1) {
+            Name name = names.create(prop.getFirstValue());
+            return Collections.singleton(name);
+        }
+        Set<Name> result = new HashSet<Name>();
+        for (Object value : prop) {
+            Name name = names.create(value);
+            result.add(name);
+        }
+        return result;
+    }
+
+    public Set<String> getMixinTypeNames( Document document ) {
+        Property prop = getProperty(document, JcrLexicon.MIXIN_TYPES);
+        if (prop == null || prop.size() == 0) return Collections.emptySet();
+
+        if (prop.size() == 1) {
+            String name = strings.create(prop.getFirstValue());
+            return Collections.singleton(name);
+        }
+        Set<String> result = new HashSet<String>();
+        for (Object value : prop) {
+            String name = strings.create(value);
+            result.add(name);
+        }
+        return result;
     }
 
     protected Property propertyFor( Name propertyName,
@@ -978,7 +1035,7 @@ public class DocumentTranslator {
     /**
      * Given the lists of added & removed referrers (which may contain duplicates), compute the delta with which the count has to
      * be updated in the document
-     *
+     * 
      * @param addedReferrers the list of referrers that was added
      * @param removedReferrers the list of referrers that was removed
      * @return a map(nodekey, delta) pairs
@@ -989,8 +1046,8 @@ public class DocumentTranslator {
 
         Set<NodeKey> addedReferrersUnique = new HashSet<NodeKey>(addedReferrers);
         for (NodeKey addedReferrer : addedReferrersUnique) {
-            int referrersCount = Collections.frequency(addedReferrers, addedReferrer) - Collections.frequency(removedReferrers,
-                                                                                                              addedReferrer);
+            int referrersCount = Collections.frequency(addedReferrers, addedReferrer)
+                                 - Collections.frequency(removedReferrers, addedReferrer);
             referrersCountDelta.put(addedReferrer, referrersCount);
         }
 
@@ -1060,9 +1117,7 @@ public class DocumentTranslator {
         if (value instanceof Reference) {
             Reference ref = (Reference)value;
             String key = ref.isWeak() ? "$wref" : "$ref";
-            String refString =
-                    value instanceof NodeKeyReference ? ((NodeKeyReference)value).getNodeKey().toString() : this.strings.create(
-                            ref);
+            String refString = value instanceof NodeKeyReference ? ((NodeKeyReference)value).getNodeKey().toString() : this.strings.create(ref);
             boolean isForeign = (value instanceof NodeKeyReference) && ((NodeKeyReference)value).isForeign();
             return Schematic.newDocument(key, refString, "$foreign", isForeign);
         }
@@ -1095,7 +1150,7 @@ public class DocumentTranslator {
 
     /**
      * Increment the reference count for the stored binary value with the supplied SHA-1 hash.
-     *
+     * 
      * @param binaryKey the key for the binary value; never null
      * @param unusedBinaryKeys the set of binary keys that are considered unused; may be null
      */
@@ -1122,7 +1177,7 @@ public class DocumentTranslator {
 
     /**
      * Decrement the reference count for the binary value.
-     *
+     * 
      * @param fieldValue the value in the document that may contain a binary value reference; may be null
      * @param unusedBinaryKeys the set of binary keys that are considered unused; may be null
      * @return true if the binary value is no longer referenced, or false otherwise
@@ -1297,7 +1352,7 @@ public class DocumentTranslator {
      * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
      * a session sees as "persisted" state and the reality.
      * </p>
-     *
+     * 
      * @param key
      * @param document
      * @param targetCountPerBlock
@@ -1393,16 +1448,16 @@ public class DocumentTranslator {
      * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
      * a session sees as "persisted" state and the reality.
      * </p>
-     *
+     * 
      * @param key the key for the document whose children are to be split; may not be null
      * @param document the document whose children are to be split; may not be null
      * @param children the children that are to be split; may not be null
      * @param targetCountPerBlock the goal for the number of children in each block; must be positive
      * @param tolerance a tolerance that when added to and subtraced from the <code>targetCountPerBlock</code> gives an acceptable
-     * range for the number of children; must be positive but smaller than <code>targetCountPerBlock</code>
+     *        range for the number of children; must be positive but smaller than <code>targetCountPerBlock</code>
      * @param isFirst true if the supplied document is the first node document, or false if it is a block document
      * @param nextBlock the key for the next block of children; may be null if the supplied document is the last document and
-     * there is no next block
+     *        there is no next block
      * @return true if the children were split, or false if no changes were made
      */
     protected boolean splitChildren( NodeKey key,
@@ -1501,13 +1556,13 @@ public class DocumentTranslator {
      * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
      * a session sees as "persisted" state and the reality.
      * </p>
-     *
+     * 
      * @param key the key for the document whose children are to be merged with the next block; may not be null
      * @param document the document to be modified with the next block's children; may not be null
      * @param children the children into which are to be merged the next block's children; may not be null
      * @param isFirst true if the supplied document is the first node document, or false if it is a block document
      * @param nextBlock the key for the next block of children; may be null if the supplied document is the last document and
-     * there is no next block
+     *        there is no next block
      * @return the key for the block of children that is after blocks that are removed; may be null if the supplied document is
      *         the last block
      */
@@ -1574,7 +1629,7 @@ public class DocumentTranslator {
 
     /**
      * Checks if the given document is already locked
-     *
+     * 
      * @param doc the document
      * @return true if the change was made successfully, or false otherwise
      */
@@ -1583,18 +1638,17 @@ public class DocumentTranslator {
     }
 
     /**
-     * Given an existing document adds a new federated segment with the given alias pointing to the external document located
-     * at {@code externalPath}
-     *
-     * @param document a {@code non-null} {@link EditableDocument} representing the document of a local node to which the federated
-     * segment should be appended.
+     * Given an existing document adds a new federated segment with the given alias pointing to the external document located at
+     * {@code externalPath}
+     * 
+     * @param document a {@code non-null} {@link EditableDocument} representing the document of a local node to which the
+     *        federated segment should be appended.
      * @param sourceName a {@code non-null} string, the name of the source where {@code externalPath} will be resolved
      * @param externalPath a {@code non-null} string the location in the external source which points to an external node
      * @param alias an optional string representing the name under which the federated segment will be linked. In effect, this
-     * represents the name of a child reference. If not present, the {@code externalPath} will be used.
-     *
-     * Note that the name of the federated segment (either coming from {@code externalPath} or {@code alias}) should not
-     * contain the "/" character. If it does, this will be removed.
+     *        represents the name of a child reference. If not present, the {@code externalPath} will be used. Note that the name
+     *        of the federated segment (either coming from {@code externalPath} or {@code alias}) should not contain the "/"
+     *        character. If it does, this will be removed.
      */
     public void addFederatedSegment( EditableDocument document,
                                      String sourceName,
@@ -1622,12 +1676,13 @@ public class DocumentTranslator {
     }
 
     /**
-     * Returns the value of the {@link org.modeshape.jcr.cache.document.DocumentTranslator#CACHE_TTL_SECONDS} field,
-     * if such a value exists.
+     * Returns the value of the {@link org.modeshape.jcr.cache.document.DocumentTranslator#CACHE_TTL_SECONDS} field, if such a
+     * value exists.
+     * 
      * @param document a {@code non-null} document
      * @return either the value of the above field, or {@code null} if such a value doesn't exist.
      */
-    public Integer getCacheTtlSeconds(Document document) {
+    public Integer getCacheTtlSeconds( Document document ) {
         return document.getInteger(CACHE_TTL_SECONDS);
     }
 }

@@ -24,22 +24,30 @@
 package org.modeshape.jcr.federation;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.regex.Pattern;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.common.util.FileUtil;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.SecureHash.Algorithm;
+import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
+import org.modeshape.jcr.cache.DocumentStoreException;
 import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.BinaryValue;
+import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.binary.AbstractBinary;
 
 /**
@@ -105,7 +113,6 @@ public class FileSystemConnector extends Connector {
      */
     private String directoryPath;
     private File directory;
-    private String leadingPath;
 
     /**
      * The regular expression that, if matched by a file or folder, indicates that the file or folder should be included.
@@ -132,15 +139,19 @@ public class FileSystemConnector extends Connector {
         checkFieldNotNull(directoryPath, "directoryPath");
         directory = new File(directoryPath);
         if (!directory.exists() || !directory.canRead() || !directory.isDirectory()) {
-            throw new RepositoryException(
-                                          "The file system connector expects a readable, existing directory for the 'directoryPath' property.");
+            String msg = JcrI18n.fileConnectorTopLevelDirectoryMissingOrCannotBeRead.text(getSourceName(), "directoryPath");
+            throw new RepositoryException(msg);
         }
-        leadingPath = directory.getAbsolutePath();
 
         // Initialize the filename filter ...
         filenameFilter = new InclusionExclusionFilenameFilter();
         if (exclusionPattern != null) filenameFilter.setExclusionPattern(exclusionPattern);
         if (inclusionPattern != null) filenameFilter.setInclusionPattern(exclusionPattern);
+    }
+
+    @Override
+    public void shutdown() {
+        // do nothing
     }
 
     protected boolean isContentNode( String id ) {
@@ -151,7 +162,7 @@ public class FileSystemConnector extends Connector {
         if (isContentNode(id)) {
             id = id.substring(0, id.length() - JCR_CONTENT_SUFFIX_LENGTH);
         }
-        return new File(leadingPath + "/" + id);
+        return new File(directory, id);
     }
 
     protected FileSystemBinaryValue binaryFor( File file ) {
@@ -167,11 +178,6 @@ public class FileSystemConnector extends Connector {
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public void shutdown() {
-        // do nothing
     }
 
     @Override
@@ -202,6 +208,7 @@ public class FileSystemConnector extends Connector {
             writer.addProperty(JCR_CREATED, factories().getDateFactory().create(file.lastModified()));
             writer.addProperty(JCR_CREATED_BY, null); // ignored
             for (String childName : file.list(filenameFilter)) {
+                // We use identifiers that contain the file/directory name ...
                 writer.addChild(id + DELIMITER + childName, childName);
             }
         }
@@ -220,19 +227,53 @@ public class FileSystemConnector extends Connector {
     public void removeDocument( String id ) {
         File file = fileFor(id);
         if (file.exists()) {
-            file.delete();
+            FileUtil.delete(file); // recursive delete
         }
     }
 
     @Override
     public void storeDocument( Document document ) {
+        // Create a new directory or file described by the document ...
+        DocumentReader reader = readDocument(document);
+        String id = reader.getDocumentId();
+        File file = fileFor(id);
+        File parent = file.getParentFile();
+        if (!parent.exists()) {
+            parent.mkdirs(); // in case they were removed since we created them ...
+        }
+        if (!parent.canWrite()) {
+            String msg = JcrI18n.fileConnectorCannotWriteToDirectory.text(getSourceName(), getClass(), parent.getAbsolutePath());
+            throw new DocumentStoreException(id, msg);
+        }
+        String primaryType = reader.getPrimaryTypeName();
+        try {
+            if (NT_FILE.equals(primaryType)) {
+                file.createNewFile();
+            } else if (NT_FOLDER.equals(primaryType)) {
+                file.mkdir();
+            } else if (NT_RESOURCE.equals(primaryType)) {
+                Property content = reader.getProperty(JCR_DATA);
+                BinaryValue binary = factories().getBinaryFactory().create(content.getFirstValue());
+                OutputStream ostream = new BufferedOutputStream(new FileOutputStream(file));
+                IoUtil.write(binary.getStream(), ostream);
+            }
+        } catch (RepositoryException e) {
+            throw new DocumentStoreException(id, e);
+        } catch (IOException e) {
+            throw new DocumentStoreException(id, e);
+        }
     }
 
     @Override
     public void updateDocument( String id,
                                 Document document ) {
+        // The only thing we can do is create the directory or update the file content, so this is the same thing as storing ...
+        storeDocument(document);
     }
 
+    /**
+     * A {@link FilenameFilter} implementation that supports an inclusion and exclusion pattern.
+     */
     protected static class InclusionExclusionFilenameFilter implements java.io.FilenameFilter {
         private String inclusionPattern = null;
         private String exclusionPattern = null;
@@ -276,25 +317,24 @@ public class FileSystemConnector extends Connector {
             } else {
                 if (exclusionPattern == null) {
                     return inclusion.matcher(string).matches();
-                    // return string.matches(inclusionPattern);
                 }
                 return inclusion.matcher(string).matches() && !exclusion.matcher(string).matches();
-                // return string.matches(inclusionPattern) && !string.matches(exclusionPattern);
             }
         }
     }
 
-    protected static class FileSystemBinaryValue extends AbstractBinary {
+    /**
+     * A {@link BinaryValue} implementation used to read the content of files exposed through this connector.
+     */
+    protected static final class FileSystemBinaryValue extends AbstractBinary {
         private static final long serialVersionUID = 1L;
 
-        private transient File file;
         private final String path;
         private String mimeType;
 
         protected FileSystemBinaryValue( BinaryKey binaryKey,
                                          File file ) {
             super(binaryKey);
-            this.file = file;
             this.path = file.getAbsolutePath();
         }
 
@@ -302,11 +342,8 @@ public class FileSystemConnector extends Connector {
             this.mimeType = mimeType;
         }
 
-        protected File file() {
-            if (this.file == null) {
-                this.file = new File(this.path);
-            }
-            return this.file;
+        private File file() {
+            return new File(this.path);
         }
 
         @Override
@@ -321,13 +358,13 @@ public class FileSystemConnector extends Connector {
 
         @Override
         public long getSize() {
-            return file.getTotalSpace();
+            return file().getTotalSpace();
         }
 
         @Override
         public InputStream getStream() throws RepositoryException {
             try {
-                return new BufferedInputStream(new FileInputStream(file));
+                return new BufferedInputStream(new FileInputStream(file()));
             } catch (FileNotFoundException e) {
                 throw new RepositoryException(e);
             }

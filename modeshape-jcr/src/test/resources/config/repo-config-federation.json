@@ -6,6 +6,10 @@
         "allowCreation" : true
     },
     "externalSources" : {
+        "file-resources" : {
+            "classname" : "org.modeshape.jcr.federation.FileSystemConnector",
+            "directoryPath" : "target/federation/files",
+        },
         "mock-source" : {
             "classname" : "org.modeshape.jcr.federation.MockConnector",
             "cacheTtlSeconds" : 1

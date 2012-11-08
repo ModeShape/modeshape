@@ -24,34 +24,37 @@
 
 package org.modeshape.jcr.federation;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.infinispan.schematic.DocumentFactory;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
-import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
+import org.modeshape.jcr.federation.Connector.DocumentWriter;
 import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.basic.BasicMultiValueProperty;
+import org.modeshape.jcr.value.basic.BasicSingleValueProperty;
 
 /**
  * Helper class which should be used by {@link Connector} implementations to create {@link EditableDocument}(s) with the correct
  * structure.
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class FederatedDocumentWriter implements Connector.DocumentWriter {
 
-    private final ExecutionContext context;
     private final EditableDocument federatedDocument;
+    private final DocumentTranslator translator;
 
-    public FederatedDocumentWriter( ExecutionContext context,
+    public FederatedDocumentWriter( DocumentTranslator translator,
                                     Document document ) {
-        this.context = context;
         this.federatedDocument = document != null ? DocumentFactory.newDocument(document) : DocumentFactory.newDocument();
+        this.translator = translator;
     }
 
-    public FederatedDocumentWriter( ExecutionContext context ) {
-        this(context, null);
+    public FederatedDocumentWriter( DocumentTranslator translator ) {
+        this(translator, null);
     }
 
     @Override
@@ -64,8 +67,24 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
     @Override
     public FederatedDocumentWriter addProperty( String name,
                                                 Object value ) {
-        Name nameObj = context.getValueFactories().getNameFactory().create(name);
+        Name nameObj = translator.getNameFactory().create(name);
         return addProperty(nameObj, value);
+    }
+
+    @Override
+    public DocumentWriter addProperty( String name,
+                                       Object[] values ) {
+        if (values == null) return this;
+        Name nameObj = translator.getNameFactory().create(name);
+        return addProperty(nameObj, values);
+    }
+
+    @Override
+    public DocumentWriter addProperty( String name,
+                                       Object firstValue,
+                                       Object... additionalValues ) {
+        Name nameObj = translator.getNameFactory().create(name);
+        return addProperty(nameObj, firstValue, additionalValues);
     }
 
     @Override
@@ -74,28 +93,35 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
         if (value == null) {
             return this;
         }
-        EditableDocument properties = federatedDocument.getDocument(DocumentTranslator.PROPERTIES);
-        if (properties == null) {
-            properties = DocumentFactory.newDocument();
-            federatedDocument.set(DocumentTranslator.PROPERTIES, properties);
-        }
+        translator.setProperty(federatedDocument, new BasicSingleValueProperty(name, value), null);
+        return this;
+    }
 
-        // the correct structure of properties is to be grouped by their namespace, so we need to take this into account
-        final String propertiesNamespace = name.getNamespaceUri();
-        EditableDocument propertiesUnderNamespace = properties.getDocument(propertiesNamespace);
-        if (propertiesUnderNamespace == null) {
-            propertiesUnderNamespace = DocumentFactory.newDocument();
-            properties.setDocument(propertiesNamespace, propertiesUnderNamespace);
-        }
-        propertiesUnderNamespace.set(name.getLocalName(), value);
+    @Override
+    public DocumentWriter addProperty( Name name,
+                                       Object[] values ) {
+        if (values == null) return this;
+        translator.setProperty(federatedDocument, new BasicMultiValueProperty(name, values), null);
+        return this;
+    }
 
+    @Override
+    public DocumentWriter addProperty( Name name,
+                                       Object firstValue,
+                                       Object... additionalValues ) {
+        List<Object> values = new ArrayList<Object>(1 + additionalValues.length);
+        values.add(firstValue);
+        for (Object value : additionalValues) {
+            values.add(value);
+        }
+        translator.setProperty(federatedDocument, new BasicMultiValueProperty(name, values), null);
         return this;
     }
 
     @Override
     public FederatedDocumentWriter addChild( String id,
                                              Name name ) {
-        String nameStr = context.getValueFactories().getStringFactory().create(name);
+        String nameStr = translator.getStringFactory().create(name);
         return addChild(id, nameStr);
     }
 
@@ -123,7 +149,7 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
     }
 
     @Override
-    public FederatedDocumentWriter setChildren(List<Document> children) {
+    public FederatedDocumentWriter setChildren( List<Document> children ) {
         EditableArray childrenArray = federatedDocument.getArray(DocumentTranslator.CHILDREN);
         childrenArray = DocumentFactory.newArray();
         federatedDocument.setArray(DocumentTranslator.CHILDREN, childrenArray);
@@ -135,7 +161,7 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
     }
 
     @Override
-    public FederatedDocumentWriter setParents( String...parentIds ) {
+    public FederatedDocumentWriter setParents( String... parentIds ) {
         if (parentIds.length == 1) {
             federatedDocument.setString(DocumentTranslator.PARENT, parentIds[0]);
         }

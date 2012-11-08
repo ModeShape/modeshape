@@ -38,14 +38,15 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.Connectors;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.document.DocumentStore;
+import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
 
 /**
  * An implementation of {@link DocumentStore} which is used when federation is enabled
- *
- * @author Horia Chiorean (hchiorea@redhat.com)
- *         //TODO author=Horia Chiorean date=11/7/12 description=The externalProjectionKeyToFederatedNodeKey should be marshalled to/from the
- *         system area somehow, at repository shutdown/startup
+ * 
+ * @author Horia Chiorean (hchiorea@redhat.com) //TODO author=Horia Chiorean date=11/7/12 description=The
+ *         externalProjectionKeyToFederatedNodeKey should be marshalled to/from the system area somehow, at repository
+ *         shutdown/startup
  */
 public class FederatedDocumentStore implements DocumentStore {
 
@@ -54,7 +55,7 @@ public class FederatedDocumentStore implements DocumentStore {
     private final LocalDocumentStore localDocumentStore;
     private final Connectors connectorsManager;
     private final Map<String, String> externalProjectionKeyToFederatedNodeKey;
-
+    private DocumentTranslator translator;
     private String localSourceKey;
 
     public FederatedDocumentStore( Connectors connectorsManager,
@@ -62,6 +63,13 @@ public class FederatedDocumentStore implements DocumentStore {
         this.connectorsManager = connectorsManager;
         this.localDocumentStore = new LocalDocumentStore(localDb);
         this.externalProjectionKeyToFederatedNodeKey = new HashMap<String, String>();
+    }
+
+    protected final DocumentTranslator translator() {
+        if (translator == null) {
+            translator = connectorsManager.getDocumentTranslator();
+        }
+        return translator;
     }
 
     @Override
@@ -119,8 +127,8 @@ public class FederatedDocumentStore implements DocumentStore {
 
     private EditableDocument updateCachingTtl( Connector connector,
                                                EditableDocument editableDocument ) {
-        Connector.DocumentReader reader = new FederatedDocumentReader(editableDocument);
-        //there isn't a specific value set on the document, but the connector has a default value
+        Connector.DocumentReader reader = new FederatedDocumentReader(translator(), editableDocument);
+        // there isn't a specific value set on the document, but the connector has a default value
         if (reader.getCacheTtlSeconds() == null && connector.getCacheTtlSeconds() != null) {
             Connector.DocumentWriter writer = new FederatedDocumentWriter(null, editableDocument);
             writer.setCacheTtlSeconds(connector.getCacheTtlSeconds());
@@ -186,8 +194,8 @@ public class FederatedDocumentStore implements DocumentStore {
 
     private boolean isLocalSource( String key ) {
         return !NodeKey.isValidFormat(key) // the key isn't a std key format (probably some internal format)
-                || StringUtil.isBlank(localSourceKey) // there isn't a local source configured yet (e.g. system startup)
-                || key.startsWith(localSourceKey); // the sources differ
+               || StringUtil.isBlank(localSourceKey) // there isn't a local source configured yet (e.g. system startup)
+               || key.startsWith(localSourceKey); // the sources differ
 
     }
 
@@ -207,16 +215,16 @@ public class FederatedDocumentStore implements DocumentStore {
 
     private EditableDocument replaceDocumentIdsWithNodeKeys( Document externalDocument,
                                                              String sourceName ) {
-        Connector.DocumentReader reader = new FederatedDocumentReader(externalDocument);
-        Connector.DocumentWriter writer = new FederatedDocumentWriter(null, externalDocument);
+        Connector.DocumentReader reader = new FederatedDocumentReader(translator(), externalDocument);
+        Connector.DocumentWriter writer = new FederatedDocumentWriter(translator(), externalDocument);
 
-        //replace document id with node key
+        // replace document id with node key
         String sourceDocumentId = reader.getDocumentId();
         assert sourceDocumentId != null;
         String externalDocumentKey = documentIdToNodeKey(sourceName, sourceDocumentId);
         writer.setId(externalDocumentKey);
 
-        //replace the id of each parent and add the optional federated parent
+        // replace the id of each parent and add the optional federated parent
         List<String> parentKeys = new ArrayList<String>();
         for (String parentId : reader.getParentIds()) {
             String parentKey = documentIdToNodeKey(sourceName, parentId);
@@ -229,7 +237,7 @@ public class FederatedDocumentStore implements DocumentStore {
         }
         writer.setParents(parentKeys);
 
-        //process each child in the same way
+        // process each child in the same way
         List<Document> updatedChildren = new ArrayList<Document>();
         for (EditableDocument child : reader.getChildren()) {
             EditableDocument childWithReplacedIds = replaceDocumentIdsWithNodeKeys(child, sourceName);
@@ -241,16 +249,16 @@ public class FederatedDocumentStore implements DocumentStore {
     }
 
     private EditableDocument replaceNodeKeysWithDocumentIds( Document document ) {
-        Connector.DocumentReader reader = new FederatedDocumentReader(document);
-        Connector.DocumentWriter writer = new FederatedDocumentWriter(null, document);
+        Connector.DocumentReader reader = new FederatedDocumentReader(translator(), document);
+        Connector.DocumentWriter writer = new FederatedDocumentWriter(translator(), document);
 
-        //replace node key with document id
+        // replace node key with document id
         String documentNodeKey = reader.getDocumentId();
         assert documentNodeKey != null;
         String externalDocumentId = documentIdFromNodeKey(documentNodeKey);
         writer.setId(externalDocumentId);
 
-        //replace the node key with the id of each parent and remove the optional federated parent
+        // replace the node key with the id of each parent and remove the optional federated parent
         List<String> parentKeys = reader.getParentIds();
         String federatedParentKey = externalProjectionKeyToFederatedNodeKey.get(documentNodeKey);
         if (!StringUtil.isBlank(federatedParentKey)) {
@@ -264,7 +272,7 @@ public class FederatedDocumentStore implements DocumentStore {
         }
         writer.setParents(parentIds);
 
-        //process each child in the same way
+        // process each child in the same way
         List<Document> updatedChildren = new ArrayList<Document>();
         for (EditableDocument child : reader.getChildren()) {
             EditableDocument childWithReplacedIds = replaceNodeKeysWithDocumentIds(child);

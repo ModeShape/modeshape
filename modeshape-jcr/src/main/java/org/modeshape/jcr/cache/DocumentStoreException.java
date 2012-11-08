@@ -24,46 +24,65 @@
 package org.modeshape.jcr.cache;
 
 /**
- * An exception signalling that a node does not exist.
+ * An exception signalling that a failure occurred within a document store.
  */
-public class DocumentNotFoundException extends DocumentStoreException {
+public class DocumentStoreException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
+    private final String key;
+
     /**
-     * @param key the key for the node that does not exist
+     * @param key the key for the document
      */
-    public DocumentNotFoundException( String key ) {
+    public DocumentStoreException( String key ) {
         super(key);
+        this.key = key;
     }
 
     /**
-     * @param key the key for the node that does not exist
+     * @param key the key for the document
      * @param message the message
      */
-    public DocumentNotFoundException( String key,
-                                      String message ) {
+    public DocumentStoreException( String key,
+                                   String message ) {
         super(message);
+        this.key = key;
     }
 
     /**
-     * @param key the key for the node that does not exist
+     * @param key the key for the document
      * @param cause the cause of this exception
      */
-    public DocumentNotFoundException( String key,
-                                      Throwable cause ) {
+    public DocumentStoreException( String key,
+                                   Throwable cause ) {
         super(key.toString(), cause);
+        this.key = key;
     }
 
     /**
-     * @param key the key for the node that does not exist
+     * @param key the key for the document
      * @param message the message
      * @param cause the cause of this exception
      */
-    public DocumentNotFoundException( String key,
-                                      String message,
-                                      Throwable cause ) {
+    public DocumentStoreException( String key,
+                                   String message,
+                                   Throwable cause ) {
         super(message, cause);
+        this.key = key;
     }
 
+    @Override
+    public String toString() {
+        return super.toString();
+    }
+
+    /**
+     * Get the document key
+     * 
+     * @return the key for the document
+     */
+    public String getKey() {
+        return key;
+    }
 }

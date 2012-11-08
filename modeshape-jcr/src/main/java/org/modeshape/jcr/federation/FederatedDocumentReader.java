@@ -25,25 +25,33 @@
 package org.modeshape.jcr.federation;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.infinispan.schematic.DocumentFactory;
 import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Property;
 
 /**
  * Implementation of a {@link org.modeshape.jcr.federation.Connector.DocumentReader} that be used to obtain "semantic" information
  * from a federated document
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class FederatedDocumentReader implements Connector.DocumentReader {
 
     private final Document federatedDocument;
+    private final DocumentTranslator translator;
 
-    public FederatedDocumentReader( Document federatedDocument ) {
+    public FederatedDocumentReader( DocumentTranslator translator,
+                                    Document federatedDocument ) {
         this.federatedDocument = federatedDocument;
+        this.translator = translator;
     }
 
     @Override
@@ -59,7 +67,7 @@ public class FederatedDocumentReader implements Connector.DocumentReader {
         }
         Object parentFieldValue = federatedDocument.get(DocumentTranslator.PARENT);
         if (parentFieldValue instanceof Array) {
-            for (Array.Entry entry : ((Array) parentFieldValue).getEntries()) {
+            for (Array.Entry entry : ((Array)parentFieldValue).getEntries()) {
                 parents.add(entry.getValue().toString());
             }
         } else {
@@ -84,8 +92,40 @@ public class FederatedDocumentReader implements Connector.DocumentReader {
     }
 
     @Override
-    public String getName() {
-        return federatedDocument.getString(DocumentTranslator.NAME);
+    public Name getPrimaryType() {
+        return translator.getPrimaryType(federatedDocument);
+    }
+
+    @Override
+    public Set<Name> getMixinTypes() {
+        return translator.getMixinTypes(federatedDocument);
+    }
+
+    @Override
+    public String getPrimaryTypeName() {
+        return translator.getPrimaryTypeName(federatedDocument);
+    }
+
+    @Override
+    public Set<String> getMixinTypeNames() {
+        return translator.getMixinTypeNames(federatedDocument);
+    }
+
+    @Override
+    public Map<Name, Property> getProperties() {
+        Map<Name, Property> props = new HashMap<Name, Property>();
+        translator.getProperties(federatedDocument, props);
+        return props;
+    }
+
+    @Override
+    public Property getProperty( Name name ) {
+        return translator.getProperty(federatedDocument, name);
+    }
+
+    @Override
+    public Property getProperty( String name ) {
+        return translator.getProperty(federatedDocument, name);
     }
 
     @Override
