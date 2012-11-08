@@ -110,10 +110,23 @@ public class FederatedDocumentStore implements DocumentStore {
             if (document != null) {
                 // clone the document, so we don't alter the original
                 EditableDocument editableDocument = replaceDocumentIdsWithNodeKeys(document, connector.getSourceName());
+                editableDocument = updateCachingTtl(connector, editableDocument);
                 return new FederatedSchematicEntry(editableDocument);
             }
         }
         return null;
+    }
+
+    private EditableDocument updateCachingTtl( Connector connector,
+                                               EditableDocument editableDocument ) {
+        Connector.DocumentReader reader = new FederatedDocumentReader(editableDocument);
+        //there isn't a specific value set on the document, but the connector has a default value
+        if (reader.getCacheTtlSeconds() == null && connector.getCacheTtlSeconds() != null) {
+            Connector.DocumentWriter writer = new FederatedDocumentWriter(null, editableDocument);
+            writer.setCacheTtlSeconds(connector.getCacheTtlSeconds());
+            return writer.document();
+        }
+        return editableDocument;
     }
 
     @Override
@@ -206,7 +219,7 @@ public class FederatedDocumentStore implements DocumentStore {
         //replace the id of each parent and add the optional federated parent
         List<String> parentKeys = new ArrayList<String>();
         for (String parentId : reader.getParentIds()) {
-            String parentKey =  documentIdToNodeKey(sourceName, parentId);
+            String parentKey = documentIdToNodeKey(sourceName, parentId);
             parentKeys.add(parentKey);
         }
 
@@ -246,7 +259,7 @@ public class FederatedDocumentStore implements DocumentStore {
 
         List<String> parentIds = new ArrayList<String>();
         for (String parentKey : parentKeys) {
-            String parentId =  documentIdFromNodeKey(parentKey);
+            String parentId = documentIdFromNodeKey(parentKey);
             parentIds.add(parentId);
         }
         writer.setParents(parentIds);

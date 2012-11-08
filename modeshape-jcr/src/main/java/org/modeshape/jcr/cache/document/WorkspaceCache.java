@@ -25,6 +25,8 @@ package org.modeshape.jcr.cache.document;
 
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import org.infinispan.api.BasicCache;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
@@ -170,11 +172,15 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         if (node == null) {
             // Load the node from the database ...
             Document doc = documentFor(key);
-            //TODO author=Horia Chiorean date=11/5/12 description=For federation we need to configure at least the TTL for each document
             if (doc != null) {
                 // Create a new node and put into this cache ...
                 CachedNode newNode = new LazyCachedNode(key, doc);
-                node = nodesByKey.putIfAbsent(key, newNode);
+                Integer cacheTtlSeconds = translator().getCacheTtlSeconds(doc);
+                if (nodesByKey instanceof BasicCache && cacheTtlSeconds != null) {
+                    node = ((BasicCache<NodeKey, CachedNode>) nodesByKey).putIfAbsent(key, newNode, cacheTtlSeconds.longValue(), TimeUnit.SECONDS);
+                } else {
+                    node = nodesByKey.putIfAbsent(key, newNode);
+                }
                 if (node == null) node = newNode;
             }
         }

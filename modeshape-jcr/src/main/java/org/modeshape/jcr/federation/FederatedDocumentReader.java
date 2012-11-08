@@ -33,7 +33,7 @@ import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 
 /**
- * Implementation of a {@link org.modeshape.jcr.federation.Connector.DocumentReader} that be used to obtain "semantic" informatin
+ * Implementation of a {@link org.modeshape.jcr.federation.Connector.DocumentReader} that be used to obtain "semantic" information
  * from a federated document
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
@@ -91,5 +91,10 @@ public class FederatedDocumentReader implements Connector.DocumentReader {
     @Override
     public Document document() {
         return federatedDocument;
+    }
+
+    @Override
+    public Integer getCacheTtlSeconds() {
+        return federatedDocument.getInteger(DocumentTranslator.CACHE_TTL_SECONDS);
     }
 }

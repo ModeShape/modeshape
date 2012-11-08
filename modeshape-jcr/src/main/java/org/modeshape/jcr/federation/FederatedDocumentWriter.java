@@ -150,6 +150,12 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
     }
 
     @Override
+    public FederatedDocumentWriter setCacheTtlSeconds( int seconds ) {
+        federatedDocument.setNumber(DocumentTranslator.CACHE_TTL_SECONDS, seconds);
+        return this;
+    }
+
+    @Override
     public Connector.DocumentWriter setParents( List<String> parentIds ) {
         return setParents(parentIds.toArray(new String[parentIds.size()]));
     }
