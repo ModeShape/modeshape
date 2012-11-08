@@ -56,7 +56,7 @@ public final class JdbcModelObjectHandler extends ModelObjectHandler {
         CheckArg.isNotNull(parentNode, "outputNode");
         CheckArg.isEquals(element.getNamespaceUri(), "namespace URI", URI, "JDBC URI");
 
-        debug("==== JdbcModelObjectHandler:process:element=" + element.getName());
+        LOGGER.debug("==== JdbcModelObjectHandler:process:element={0}", element.getName());
         final String type = element.getName();
 
         if (ModelId.SOURCE.equals(type)) {
@@ -71,7 +71,7 @@ public final class JdbcModelObjectHandler extends ModelObjectHandler {
                     break; // only one
                 }
 
-                debug("**** JDBC Source child element type of " + childElement.getName() + " was not processed");
+                LOGGER.debug("**** JDBC Source child element type of '{0}' was not processed", childElement.getName());
             }
         } else if (ModelId.IMPORT_SETTINGS.equals(type)) {
             final Node importSettingNode = addNode(parentNode, element, URI, JcrId.IMPORTED);
@@ -94,11 +94,11 @@ public final class JdbcModelObjectHandler extends ModelObjectHandler {
                     // - jdbcs:includedTableTypes (string) multiple
                     addPropertyValue(importSettingNode, JcrId.INCLUDED_TABLE_TYPES, childElement.getValue());
                 } else {
-                    debug("**** JDBC Import Settings child element type of " + childElement.getName() + " was not processed");
+                    LOGGER.debug("**** JDBC Import Settings child element type of '{0}' was not processed", childElement.getName());
                 }
             }
         } else {
-            debug("**** JDBC type of " + type + " was not processed");
+            LOGGER.debug("**** JDBC type of '{0}' was not processed", type);
         }
     }
 

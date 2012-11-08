@@ -47,8 +47,7 @@ import org.modeshape.sequencer.teiid.xmi.XmiElement;
  */
 public class ReferenceResolver {
 
-    private static final boolean DEBUG = false;
-    private static final Logger LOGGER = Logger.getLogger(ReferenceResolver.class);
+    static final Logger LOGGER = Logger.getLogger(ReferenceResolver.class);
 
     public static final Map<String, String> STANDARD_DATA_TYPE_URLS_BY_UUID;
     public static final Map<String, String> STANDARD_DATA_TYPE_URLS_TO_NAMES;
@@ -142,13 +141,6 @@ public class ReferenceResolver {
         STANDARD_DATA_TYPE_UUIDS_BY_NAMES = Collections.unmodifiableMap(dataTypeUuidsByName);
     }
 
-    void debug( final String message ) {
-        if (DEBUG) {
-            System.err.println(message);
-        }
-        LOGGER.debug(message);
-    }
-
     // key = uuid, value = UnresolvedReference
     private final Map<String, UnresolvedReference> unresolved = new ConcurrentHashMap<String, ReferenceResolver.UnresolvedReference>();
 
@@ -179,7 +171,7 @@ public class ReferenceResolver {
         if (unresolved == null) {
             unresolved = new UnresolvedReference(xmiUuid);
             this.unresolved.put(xmiUuid, unresolved);
-            debug("added " + xmiUuid + " to the list of unresolved references");
+            LOGGER.debug("added '{0}' to the list of unresolved references", xmiUuid);
         }
 
         return unresolved;
@@ -285,7 +277,7 @@ public class ReferenceResolver {
         CheckArg.isNotNull(unresolved, "unresolved");
         final UnresolvedReference resolved = this.unresolved.remove(unresolved.getUuid());
         assert (unresolved == resolved);
-        debug("UUID " + unresolved.getUuid() + " has been resolved");
+        LOGGER.debug("UUID '{0}' has been resolved", unresolved.getUuid());
     }
 
     /**
@@ -420,7 +412,7 @@ public class ReferenceResolver {
             final boolean added = this.mixins.add(newMixin);
 
             if (added) {
-                debug("added mixin '" + newMixin + "' to the unresolved reference " + this.uuid);
+                LOGGER.debug("added mixin '{0}' to the unresolved reference '{1}'", newMixin, this.uuid);
             }
 
             return added;
@@ -445,12 +437,16 @@ public class ReferenceResolver {
                     } else {
                         unresolvedProperty.addValue(propertyValue);
                     }
-                    debug("added multi-valued property '" + propertyName + "' with value '" + propertyValue
-                                  + "' to the unresolved reference " + this.uuid);
+                    LOGGER.debug("added multi-valued property '{0}' with value '{1}' to the unresolved reference '{2}'",
+                                 propertyName,
+                                 propertyValue,
+                                 this.uuid);
                 } else {
                     this.properties.put(propertyName, new UnresolvedProperty(propertyName, propertyValue, false));
-                    debug("added property '" + propertyName + "' with value '" + propertyValue
-                                  + "' to the unresolved reference " + this.uuid);
+                    LOGGER.debug("added property '{0}' with value '{1}' to the unresolved reference '{2}'",
+                                 propertyName,
+                                 propertyValue,
+                                 this.uuid);
                 }
             }
         }

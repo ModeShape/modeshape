@@ -43,16 +43,7 @@ import org.modeshape.sequencer.teiid.xmi.XmiPart;
  */
 public abstract class ModelObjectHandler {
 
-    protected Logger logger = Logger.getLogger(getClass());
-
-    protected static final boolean DEBUG = false;
-
-    protected void debug( final String message ) {
-        if (DEBUG) {
-            System.err.println(message);
-        }
-        logger.debug(message);
-    }
+    protected static final Logger LOGGER = Logger.getLogger(ModelObjectHandler.class);
 
     private Context context; // set by handler framework and is never null
     private ModelReader reader; // set by handler framework and is never null
@@ -89,7 +80,7 @@ public abstract class ModelObjectHandler {
         setProperty(newNode, XmiLexicon.JcrId.UUID, element.getUuid());
         this.resolver.record(element.getUuid(), newNode);
 
-        debug("adding node " + newNode.getName() + " to parent " + parentNode.getName());
+        LOGGER.debug("adding node {0} to parent {1}", newNode.getName(), parentNode.getName());
         return newNode;
     }
 
@@ -130,7 +121,7 @@ public abstract class ModelObjectHandler {
             node.setProperty(propertyName, new Value[] {newValue});
         }
 
-        debug("added a value of " + newValue + " to multi-valued property " + propertyName + " in node " + node.getName());
+        LOGGER.debug("added a value of '{0}' to multi-valued property '{1}' in node '{2}'", newValue, propertyName, node.getName());
     }
 
     /**
@@ -241,7 +232,7 @@ public abstract class ModelObjectHandler {
                 }
             } else {
                 node.setProperty(propertyName, propertyValue);
-                debug(node.getName() + ":setting " + propertyName + " = " + propertyValue);
+                LOGGER.debug("{0}:setting {1} = {2}", node.getName(), propertyName, propertyValue);
             }
         }
     }

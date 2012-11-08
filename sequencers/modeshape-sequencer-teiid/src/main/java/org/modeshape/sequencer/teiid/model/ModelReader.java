@@ -392,23 +392,26 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
         final long startTime = System.currentTimeMillis();
         final List<XmiElement> elements = super.read(stream);
 
-        for (final XmiElement element : elements) {
-            debug("====root model element=" + element.getName());
+        if (LOGGER.isDebugEnabled()) {
+            for (final XmiElement element : elements) {
+                LOGGER.debug("====root model element='{0}'", element.getName());
+            }
+    
+            LOGGER.debug("");
+    
+            for (final Entry<String, XmiElement> uuidMapping : this.resolver.getUuidMappings().entrySet()) {
+                LOGGER.debug("{0}={1}", uuidMapping.getKey(), uuidMapping.getValue());
+            }
+    
+            LOGGER.debug("");
+    
+            for (String uuid : this.resolver.getUnresolved().keySet()) {
+                LOGGER.debug("**** unresolved '{0}'", uuid);
+            }
+    
+            LOGGER.debug("\n\n");
+            LOGGER.debug("model read time={0}", (System.currentTimeMillis() - startTime));
         }
-
-        debug("");
-
-        for (final Entry<String, XmiElement> uuidMapping : this.resolver.getUuidMappings().entrySet()) {
-            debug(uuidMapping.getKey() + '=' + uuidMapping.getValue());
-        }
-
-        debug("");
-
-        for (String uuid : this.resolver.getUnresolved().keySet()) {
-            debug("**** unresolved " + uuid);
-        }
-
-        debug("\n\nmodel read time=" + (System.currentTimeMillis() - startTime));
     }
 
     /**
