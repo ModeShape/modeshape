@@ -44,17 +44,27 @@
  + vdb:translators (vdb:translators) copy
  + vdb:dataRoles (vdb:dataRoles) copy
  + vdb:entries (vdb:entries) copy
- 
-[vdb:model] > mmcore:model
+ + vdb:importVdbs (vdb:importVdbs) copy
+
+[vdb:abstractModel] mixin
  - vdb:description (string)
  - vdb:visible (boolean) = 'true' autocreated
- - vdb:checksum (long)
- - vdb:builtIn (boolean) = 'false' autocreated
- - vdb:pathInVdb (string) mandatory
+ - vdb:pathInVdb (string)
  - vdb:sourceTranslator (string)
  - vdb:sourceJndiName (string)
  - vdb:sourceName (string)
+
+// name is the node name (xmi models)
+[vdb:model] > vdb:abstractModel, mmcore:model
+ - vdb:checksum (long)
+ - vdb:builtIn (boolean) = 'false' autocreated
  + vdb:markers (vdb:markers) = vdb:markers copy
+
+// model name is the node name
+[vdb:declarativeModel] > nt:unstructured, vdb:abstractModel, mix:referenceable
+ - mmcore:modelType (string) = 'PHYSICAL' autocreated < 'PHYSICAL','VIRTUAL'
+ - vdb:metadataType (string) = 'DDL' autocreated
+ - vdb:modelDefinition (string)
 
 [vdb:markers] > nt:unstructured
  + vdb:marker (vdb:marker) = vdb:marker copy sns
@@ -101,3 +111,12 @@
  - vdb:allowDelete (boolean) = 'false' autocreated
  - vdb:allowExecute (boolean) = 'false' autocreated
  - vdb:allowAlter (boolean) = 'false' autocreated
+
+// group node for the VDBs that are imported by a VDB
+[vdb:importVdbs] > nt:unstructured
+ + vdb:importVdb (vdb:importVdb) copy
+ 
+// imported VDB name is node path
+[vdb:importVdb] > nt:unstructured
+ - vdb:version (long) mandatory
+ - vdb:importDataPolicies (boolean)= 'true' autocreated

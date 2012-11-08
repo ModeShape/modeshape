@@ -30,11 +30,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.StringUtil;
+import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
+import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
 
 /**
  * A simple POJO that is used to represent the information for a model read in from a VDB manifest ("vdb.xml").
  */
 public class VdbModel implements Comparable<VdbModel> {
+    
+    /**
+     * The default model definition metadata type. Value is {@value}.
+     */
+    public static final String DEFAULT_METADATA_TYPE = "DDL";
 
     private String description;
     private String name;
@@ -49,17 +57,22 @@ public class VdbModel implements Comparable<VdbModel> {
     private final Set<String> imports = new HashSet<String>();
     private List<ValidationMarker> problems = new ArrayList<ValidationMarker>();
     private final Map<String, String> properties = new HashMap<String, String>();
+    private String metadata; // model definition written in DDL
+    private String metadataType;
 
+    /**
+     * @param name the model name (cannot be <code>null</code> or empty)
+     * @param type the model type (can be <code>null</code> or empty)
+     * @param pathInVdb the model path (can be <code>null</code> or empty)
+     */
     public VdbModel( String name,
                      String type,
                      String pathInVdb ) {
         CheckArg.isNotEmpty(name, "name");
-        CheckArg.isNotEmpty(type, "type");
-        CheckArg.isNotEmpty(pathInVdb, "pathInVdb");
 
         this.name = name;
         this.pathInVdb = pathInVdb;
-        this.type = type;
+        this.type = (StringUtil.isBlank(type) ? CoreLexicon.ModelType.PHYSICAL : type);
     }
 
     /**
@@ -81,6 +94,42 @@ public class VdbModel implements Comparable<VdbModel> {
      */
     public String getName() {
         return name;
+    }
+
+    /**
+     * @return the model DDL definition (can be <code>null</code> or empty)
+     */
+    public String getModelDefinition() {
+        return this.metadata;
+    }
+
+    /**
+     * @param modelDefinition the new model definition (can be <code>null</code> or empty)
+     */
+    public void setModelDefinition( final String modelDefinition ) {
+        this.metadata = modelDefinition;
+    }
+
+    /**
+     * @return the model metadata type associated with the model definition (can be <code>null</code> or empty when there is no metadata)
+     */
+    public String getMetadataType() {
+        if (StringUtil.isBlank(this.metadata)) {
+            return null;
+        }
+
+        if (StringUtil.isBlank(this.metadataType)) {
+            return DEFAULT_METADATA_TYPE;
+        }
+
+        return this.metadataType;
+    }
+
+    /**
+     * @param metadataType the new metadata type (can be <code>null</code> or empty if default type should be used)
+     */
+    public void setMetadataType( final String metadataType ) {
+        this.metadataType = metadataType;
     }
 
     /**
@@ -119,6 +168,13 @@ public class VdbModel implements Comparable<VdbModel> {
     }
 
     /**
+     * @return <code>true</code> if model definition is declared in the VDB manifest and not by an XMI file
+     */
+    public boolean isDeclarative() {
+        return !getProperties().containsKey(VdbLexicon.Model.INDEX_NAME);
+    }
+
+    /**
      * @param builtIn Sets builtIn to the specified value.
      */
     public void setBuiltIn( boolean builtIn ) {
@@ -141,7 +197,7 @@ public class VdbModel implements Comparable<VdbModel> {
 
 
     /**
-     * @return the path in the VDB (never <code>null</code> or empty)
+     * @return the path in the VDB (can be <code>null</code> or empty)
      */
     public String getPathInVdb() {
         return pathInVdb;

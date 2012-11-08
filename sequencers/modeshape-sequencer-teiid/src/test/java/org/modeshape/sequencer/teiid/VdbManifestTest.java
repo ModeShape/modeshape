@@ -28,9 +28,11 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import org.junit.Test;
 import org.modeshape.sequencer.teiid.VdbDataRole.Permission;
@@ -61,7 +63,7 @@ public class VdbManifestTest {
                 assertThat(model1.getType(), is(CoreLexicon.ModelType.VIRTUAL));
                 assertThat(model1.isVisible(), is(false));
                 assertThat(model1.getName(), is("BooksProcedures"));
-                assertThat(model1.getPathInVdb(), is("/TestRESTWarGen/BooksProcedures.xmi"));
+                assertThat(model1.getPathInVdb(), is("TestRESTWarGen/BooksProcedures.xmi"));
                 assertThat(model1.getDescription(), is("This is a model description"));
                 assertThat(model1.getChecksum(), is(1855484649L));
                 assertThat(model1.isBuiltIn(), is(false));
@@ -79,7 +81,7 @@ public class VdbManifestTest {
                 assertThat(model2.getType(), is(CoreLexicon.ModelType.PHYSICAL));
                 assertThat(model2.isVisible(), is(true));
                 assertThat(model2.getName(), is("MyBooks"));
-                assertThat(model2.getPathInVdb(), is("/TestRESTWarGen/MyBooks.xmi"));
+                assertThat(model2.getPathInVdb(), is("TestRESTWarGen/MyBooks.xmi"));
                 assertThat(model2.getDescription(), is(""));
                 assertThat(model2.getChecksum(), is(2550610907L));
                 assertThat(model2.isBuiltIn(), is(false));
@@ -103,7 +105,7 @@ public class VdbManifestTest {
                 assertThat(model3.getType(), is(CoreLexicon.ModelType.VIRTUAL));
                 assertThat(model3.isVisible(), is(true));
                 assertThat(model3.getName(), is("MyBooksView"));
-                assertThat(model3.getPathInVdb(), is("/TestRESTWarGen/MyBooksView.xmi"));
+                assertThat(model3.getPathInVdb(), is("TestRESTWarGen/MyBooksView.xmi"));
                 assertThat(model3.getDescription(), is(""));
                 assertThat(model3.getChecksum(), is(825941341L));
                 assertThat(model3.isBuiltIn(), is(false));
@@ -258,7 +260,7 @@ public class VdbManifestTest {
         assertThat(model.getType(), is(CoreLexicon.ModelType.VIRTUAL));
         assertThat(model.isVisible(), is(true));
         assertThat(model.getName(), is("EmpV"));
-        assertThat(model.getPathInVdb(), is("/QuickEmployees/EmpV.xmi"));
+        assertThat(model.getPathInVdb(), is("QuickEmployees/EmpV.xmi"));
         assertThat(model.getChecksum(), is(2273245105L));
         assertThat(model.isBuiltIn(), is(false));
 
@@ -280,6 +282,56 @@ public class VdbManifestTest {
                    is("Missing or invalid Precision on column with a numeric datatype (See validation Preferences)"));
     }
 
+    @Test
+    public void shouldReadVdbManifestWithModelMetadata() throws Exception {
+        VdbManifest manifest = VdbManifest.read(streamFor("/vdb/declarativeModels-vdb.xml"), null);
+        assertThat(manifest.getName(), is("twitter"));
+        assertThat(manifest.getVersion(), is(1));
+        assertThat(manifest.getDescription(), is("Shows how to call Web Services"));
+
+        // properties
+        Map<String, String> props = manifest.getProperties();
+        assertThat(props.size(), is(1));
+        Entry<String, String> prop = props.entrySet().iterator().next();
+        assertThat(prop.getKey(), is("UseConnectorMetadata"));
+        assertThat(prop.getValue(), is("cached"));
+
+        // models
+        boolean foundSource = false;
+        boolean foundVirtual = false;
+        List<VdbModel> models = manifest.getModels();
+        assertThat(models.size(), is(2));
+
+        for (VdbModel model : models) {
+            if (!foundSource && "twitter".equals(model.getName())) {
+                assertThat(model.getType(), is(CoreLexicon.ModelType.PHYSICAL));
+                assertThat(model.getSourceTranslator(), is("rest"));
+                assertThat(model.getSourceJndiName(), is("java:/twitterDS"));
+                assertThat(model.getSourceName(), is("twitter"));
+                foundSource = true;
+            } else if (!foundVirtual && "twitterview".equals(model.getName())) {
+                assertThat(model.getType(), is(CoreLexicon.ModelType.VIRTUAL));
+                assertThat(model.getMetadataType(), is(VdbModel.DEFAULT_METADATA_TYPE));
+
+                final String metadata = "CREATE VIRTUAL PROCEDURE getTweets(query varchar) RETURNS (created_on varchar(25),"
+                                        + " from_user varchar(25), to_user varchar(25),"
+                                        + " profile_image_url varchar(25), source varchar(25), text varchar(140)) AS"
+                                        + " select tweet.* from"
+                                        + " (call twitter.invokeHTTP(action => 'GET', endpoint =>querystring('',query as \"q\"))) w,"
+                                        + " XMLTABLE('results' passing JSONTOXML('myxml', w.result) columns"
+                                        + " created_on string PATH 'created_at'," + " from_user string PATH 'from_user',"
+                                        + " to_user string PATH 'to_user',"
+                                        + " profile_image_url string PATH 'profile_image_url'," + " source string PATH 'source',"
+                                        + " text string PATH 'text') tweet;"
+                                        + " CREATE VIEW Tweet AS select * FROM twitterview.getTweets;";
+                assertThat(model.getModelDefinition(), is(metadata));
+                foundVirtual = true;
+            } else {
+                fail();
+            }
+        }
+    }
+    
     private InputStream streamFor( String resourcePath ) throws Exception {
         InputStream istream = getClass().getResourceAsStream(resourcePath);
         assertThat(istream, is(notNullValue()));

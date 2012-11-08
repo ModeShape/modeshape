@@ -185,6 +185,7 @@ public class ModelSequencer extends Sequencer {
         }
 
         // stream was not sequenced
+        debug("sequenceModel:model not sequenced at path '" + modelPath + "'");
         return false;
     }
 
