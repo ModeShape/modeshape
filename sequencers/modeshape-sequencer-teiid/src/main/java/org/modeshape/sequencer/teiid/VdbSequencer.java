@@ -23,6 +23,14 @@
  */
 package org.modeshape.sequencer.teiid;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import javax.jcr.Binary;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -40,14 +48,6 @@ import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
 import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
 import org.modeshape.sequencer.teiid.model.ModelSequencer;
 import org.modeshape.sequencer.teiid.model.ReferenceResolver;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 /**
  * A sequencer of Teiid Virtual Database (VDB) files.
@@ -57,15 +57,15 @@ public class VdbSequencer extends Sequencer {
     private static final Logger LOGGER = Logger.getLogger(VdbSequencer.class);
 
     private static final boolean DEBUG = false;
-    private static final String MANIFEST_FILE = "/META-INF/vdb.xml";
+    private static final String MANIFEST_FILE = "META-INF/vdb.xml";
     private static final Pattern VERSION_REGEX = Pattern.compile("(.*)[.]\\s*[+-]?([0-9]+)\\s*$");
 
     private void debug( final String message ) {
         if (DEBUG) {
             System.err.println(message);
         }
-        LOGGER.debug(message);
 
+        LOGGER.debug(message);
     }
 
     /**
@@ -130,6 +130,9 @@ public class VdbSequencer extends Sequencer {
                     outputNode.setProperty(JcrConstants.MODE_SHA1, ((org.modeshape.jcr.api.Binary)binaryValue).getHexHash());
                     setProperty(outputNode, VdbLexicon.Vdb.DESCRIPTION, manifest.getDescription());
 
+                    // create imported VDBs child nodes
+                    sequenceImportVdbs(manifest, outputNode);
+
                     // create translator child nodes
                     sequenceTranslators(manifest, outputNode);
 
@@ -142,23 +145,22 @@ public class VdbSequencer extends Sequencer {
                     // create properties child nodes
                     sequenceProperties(manifest, outputNode);
 
+                    // create child nodes for declarative models
+                    sequenceDeclarativeModels(manifest, outputNode);
+
                     debug(">>>>done reading vdb.xml\n\n");
                 } else if (!entry.isDirectory() && this.modelSequencer.hasModelFileExtension(entryName)) {
                     debug("----before reading model " + entryName);
 
-                    VdbModel vdbModel = null;
-
                     // vdb.xml file should be read first in stream so manifest model should be available
-                    if (manifest != null) {
-                        // remove VDB name from entryName
-                        String pathInVdb = entryName;
-                        final int index = entryName.indexOf('/');
+                    if (manifest == null) {
+                        throw new Exception("VDB manifest file has not been read");
+                    }
 
-                        if (index != -1) {
-                            pathInVdb = entryName.substring(index);
-                        }
+                    final VdbModel vdbModel = manifest.getModel(entryName);
 
-                        vdbModel = manifest.getModel(pathInVdb);
+                    if (vdbModel == null) {
+                        throw new Exception("Model '" + entryName + "' was not found");
                     }
 
                     // call sequencer here after creating node for last part of entry name
@@ -169,10 +171,13 @@ public class VdbSequencer extends Sequencer {
                     }
 
                     final Node modelNode = outputNode.addNode(entryName, VdbLexicon.Vdb.MODEL);
+                    final boolean sequenced = this.modelSequencer.sequenceVdbModel(vdbStream, modelNode, vdbModel, context);
 
-                    this.modelSequencer.sequenceVdbModel(vdbStream, modelNode, vdbModel, context);
-
-                    debug(">>>>done reading model " + entryName + "\n\n");
+                    if (!sequenced) {
+                        modelNode.remove();
+                    } else {
+                        debug(">>>>done sequencing model " + entryName + "\n\n");
+                    }
                 } else {
                     debug("----ignoring resource " + entryName);
                 }
@@ -265,6 +270,37 @@ public class VdbSequencer extends Sequencer {
     }
 
     /**
+     * @param manifest the VDB manifest whose declarative models are being sequenced (cannot be <code>null</code>)
+     * @param outputNode the VDB node (cannot be <code>null</code>)
+     * @throws Exception if an error occurs writing the VDB declarative models
+     */
+    private void sequenceDeclarativeModels( final VdbManifest manifest,
+                                            final Node outputNode ) throws Exception {
+        assert (manifest != null) : "manifest is null";
+        assert (outputNode != null) : "outputNode is null";
+
+        for (final VdbModel model : manifest.getModels()) {
+            // if there is metadata then there is no xmi file
+            if (model.isDeclarative()) {
+                final Node modelNode = outputNode.addNode(model.getName(), VdbLexicon.Vdb.DECLARATIVE_MODEL);
+
+                // set vdb:abstractModel properties
+                setProperty(modelNode, VdbLexicon.Model.DESCRIPTION, model.getDescription());
+                modelNode.setProperty(VdbLexicon.Model.VISIBLE, model.isVisible());
+                setProperty(modelNode, VdbLexicon.Model.PATH_IN_VDB, model.getPathInVdb());
+                setProperty(modelNode, VdbLexicon.Model.SOURCE_TRANSLATOR, model.getSourceTranslator());
+                setProperty(modelNode, VdbLexicon.Model.SOURCE_JNDI_NAME, model.getSourceJndiName());
+                setProperty(modelNode, VdbLexicon.Model.SOURCE_NAME, model.getSourceName());
+
+                // set vdb:declarativeModel properties
+                setProperty(modelNode, CoreLexicon.JcrId.MODEL_TYPE, model.getType());
+                setProperty(modelNode, VdbLexicon.Model.METADATA_TYPE, model.getMetadataType());
+                setProperty(modelNode, VdbLexicon.Model.MODEL_DEFINITION, model.getModelDefinition());                
+            }
+        }
+    }
+
+    /**
      * @param manifest the VDB manifest whose entries are being sequenced (cannot be <code>null</code>)
      * @param outputNode the VDB node (cannot be <code>null</code>)
      * @throws Exception if an error occurs writing the VDB entries
@@ -292,6 +328,29 @@ public class VdbSequencer extends Sequencer {
                         setProperty(entryNode, prop.getKey(), prop.getValue());
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * @param manifest the VDB manifest whose imported VDBs are being sequenced (cannot be <code>null</code>)
+     * @param outputNode the VDB output node where import VDB child nodes will be created (cannot be <code>null</code>)
+     * @throws Exception if an error occurs creating nodes or setting properties
+     */
+    private void sequenceImportVdbs( final VdbManifest manifest,
+                                     final Node outputNode ) throws Exception {
+        assert (manifest != null) : "manifest is null";
+        assert (outputNode != null) : "outputNode is null";
+
+        final List<ImportVdb> importVdbsGroup = manifest.getImportVdbs();
+
+        if (!importVdbsGroup.isEmpty()) {
+            final Node importVdbsGroupNode = outputNode.addNode(VdbLexicon.Vdb.IMPORT_VDBS, VdbLexicon.Vdb.IMPORT_VDBS);
+
+            for (final ImportVdb importVdb : importVdbsGroup) {
+                final Node importVdbNode = importVdbsGroupNode.addNode(importVdb.getName(), VdbLexicon.ImportVdb.IMPORT_VDB);
+                importVdbNode.setProperty(VdbLexicon.ImportVdb.VERSION, importVdb.getVersion());
+                importVdbNode.setProperty(VdbLexicon.ImportVdb.IMPORT_DATA_POLICIES, importVdb.isImportDataPolicies());
             }
         }
     }

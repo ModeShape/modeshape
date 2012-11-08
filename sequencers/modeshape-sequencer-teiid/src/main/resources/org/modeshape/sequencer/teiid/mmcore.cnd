@@ -55,7 +55,6 @@
   - mmcore:modelType (string) = 'UNKNOWN' autocreated < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'
   - mmcore:primaryMetamodelUri (string)
   - mmcore:path (string)
-  - mmcore:name (string)
   - mmcore:modelLocation (string)
 
 [mmcore:annotated] mixin

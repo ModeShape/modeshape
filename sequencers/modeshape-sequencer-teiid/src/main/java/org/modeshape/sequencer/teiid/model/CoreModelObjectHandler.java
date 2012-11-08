@@ -115,7 +115,6 @@ public final class CoreModelObjectHandler extends ModelObjectHandler {
                 setProperty(modelNode, VdbLexicon.Model.SOURCE_TRANSLATOR, vdbModel.getSourceTranslator());
                 setProperty(modelNode, VdbLexicon.Model.SOURCE_NAME, vdbModel.getSourceName());
                 setProperty(modelNode, VdbLexicon.Model.SOURCE_JNDI_NAME, vdbModel.getSourceJndiName());
-                setProperty(modelNode, VdbLexicon.Model.TYPE, vdbModel.getType());
 
                 // write out any model properties from vdb.xml file
                 for (final Entry<String, String> entry : vdbModel.getProperties().entrySet()) {
@@ -150,10 +149,18 @@ public final class CoreModelObjectHandler extends ModelObjectHandler {
                 setProperty(importNode,
                             JcrId.PRIMARY_METAMODEL_URI,
                             modelImport.getAttributeValue(CoreLexicon.ModelId.PRIMARY_METAMODEL_URI, URI));
-                setProperty(importNode, JcrId.PATH, modelImport.getAttributeValue(CoreLexicon.ModelId.PATH, URI));
                 setProperty(importNode,
                             JcrId.MODEL_LOCATION,
                             modelImport.getAttributeValue(CoreLexicon.ModelId.MODEL_LOCATION, URI));
+
+                if (getVdbModel() != null) {
+                    for (String importPath : getVdbModel().getImports()) {
+                        if (importPath.endsWith(modelImport.getAttributeValue(CoreLexicon.ModelId.MODEL_LOCATION, URI))) {
+                            setProperty(importNode, JcrId.PATH, importPath);
+                            break;
+                        }
+                    }
+                }
             }
 
             if (DEBUG) {
@@ -163,6 +170,16 @@ public final class CoreModelObjectHandler extends ModelObjectHandler {
             for (final XmiElement annotation : element.getChildren()) {
                 if (CoreLexicon.ModelId.ANNOTATION.equals(annotation.getName())) {
                     String uuid = annotation.getAttributeValue(CoreLexicon.ModelId.ANNOTATED_OBJECT, URI);
+
+                    if (StringUtil.isBlank(uuid)) {
+                        // see if there is an annotated object child
+                        for (XmiElement child : annotation.getChildren()) {
+                            if (CoreLexicon.ModelId.ANNOTATED_OBJECT.equals(child.getName())) {
+                                uuid = child.getAttributeValue(CoreLexicon.ModelId.HREF, URI);
+                                break;
+                            }
+                        }
+                    }
 
                     // remove any UUID prefix
                     uuid = getResolver().resolveInternalReference(uuid);
