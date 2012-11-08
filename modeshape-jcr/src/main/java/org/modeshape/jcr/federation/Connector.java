@@ -74,6 +74,12 @@ public abstract class Connector {
      */
     private MimeTypeDetector mimeTypeDetector;
 
+    /**
+     * The default maximum number of seconds that a document returned by this connector should be stored in the workspace cache.
+     * This can be overwritten, on a per-document-basis. The field is assigned via reflection.
+     */
+    private Integer cacheTtlSeconds;
+
     private boolean initialized = false;
 
     /**
@@ -129,6 +135,17 @@ public abstract class Connector {
      */
     protected MimeTypeDetector getMimeTypeDetector() {
         return mimeTypeDetector;
+    }
+
+    /**
+     * Returns the default value, for this connector, of the maximum number of seconds an external document should be stored
+     * in the workspace cache.
+     *
+     * @return an {@link Integer} value. If {@code null}, it means that no special value is configured and the default workspace
+     * cache configuration will be used. If negative, it means an entry will be cached forever.
+     */
+    public Integer getCacheTtlSeconds() {
+        return cacheTtlSeconds;
     }
 
     /**
@@ -320,6 +337,7 @@ public abstract class Connector {
     }
 
     public static interface DocumentWriter {
+
         public DocumentWriter setId( String id );
 
         public DocumentWriter addProperty( String name,
@@ -345,6 +363,8 @@ public abstract class Connector {
         FederatedDocumentWriter addChild( EditableDocument child );
 
         FederatedDocumentWriter setChildren( List<Document> children );
+
+        FederatedDocumentWriter setCacheTtlSeconds (int seconds);
     }
 
     public static interface DocumentReader {
@@ -357,5 +377,7 @@ public abstract class Connector {
         List<EditableDocument> getChildren();
 
         Document document();
+
+        Integer getCacheTtlSeconds();
     }
 }

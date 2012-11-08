@@ -8,6 +8,7 @@
     "externalSources" : {
         "mock-source" : {
             "classname" : "org.modeshape.jcr.federation.MockConnector",
+            "cacheTtlSeconds" : 1
         }
     }
 }

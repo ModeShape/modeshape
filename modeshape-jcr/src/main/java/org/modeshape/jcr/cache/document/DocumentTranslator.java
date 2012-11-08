@@ -108,6 +108,11 @@ public class DocumentTranslator {
     public static final String WEAK = "weak";
     public static final String STRONG = "strong";
     public static final String REFERENCE_COUNT = "refCount";
+    /**
+     * A constant that can be used by a connector implementation as a supplementary document field, that indicates the maximum number
+     * of seconds that particular document should be stored in the workspace cache.
+     */
+    public static final String CACHE_TTL_SECONDS = "cacheTtlSeconds";
 
     private final DocumentStore documentStore;
     private final AtomicLong largeStringSize = new AtomicLong();
@@ -1614,5 +1619,15 @@ public class DocumentTranslator {
             EditableDocument federatedSegment = DocumentFactory.newDocument(KEY, externalNodeKey, NAME, segmentName);
             federatedSegmentsArray.add(federatedSegment);
         }
+    }
+
+    /**
+     * Returns the value of the {@link org.modeshape.jcr.cache.document.DocumentTranslator#CACHE_TTL_SECONDS} field,
+     * if such a value exists.
+     * @param document a {@code non-null} document
+     * @return either the value of the above field, or {@code null} if such a value doesn't exist.
+     */
+    public Integer getCacheTtlSeconds(Document document) {
+        return document.getInteger(CACHE_TTL_SECONDS);
     }
 }
