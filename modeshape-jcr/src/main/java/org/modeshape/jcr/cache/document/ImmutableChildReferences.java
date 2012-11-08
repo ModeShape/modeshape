@@ -72,7 +72,7 @@ public class ImmutableChildReferences {
                                           ChildReferences externalReferences,
                                           WorkspaceCache cache ) {
         Segmented segmentedReferences = new Segmented(cache, first, segmentingInfo);
-        return ! externalReferences.isEmpty() ? new FederatedReferences(segmentedReferences, externalReferences) : segmentedReferences;
+        return !externalReferences.isEmpty() ? new FederatedReferences(segmentedReferences, externalReferences) : segmentedReferences;
     }
 
     @Immutable
@@ -378,7 +378,7 @@ public class ImmutableChildReferences {
 
         public Segmented( WorkspaceCache cache,
                           ChildReferences firstSegment,
-                          ChildReferencesInfo info) {
+                          ChildReferencesInfo info ) {
             this.cache = cache;
             this.totalSize = info.totalSize;
             this.firstSegment = new Segment(firstSegment, info.nextKey);
@@ -622,7 +622,7 @@ public class ImmutableChildReferences {
         private final ChildReferences externalReferences;
 
         FederatedReferences( ChildReferences externalReferences,
-                                    ChildReferences internalReferences ) {
+                             ChildReferences internalReferences ) {
             this.externalReferences = externalReferences;
             this.internalReferences = internalReferences;
         }
@@ -644,9 +644,8 @@ public class ImmutableChildReferences {
             ChildReference nonFederatedRef = internalReferences.getChild(name, snsIndex, context);
             if (nonFederatedRef != null) {
                 return nonFederatedRef;
-            } else {
-                return externalReferences.getChild(name, snsIndex, context);
             }
+            return externalReferences.getChild(name, snsIndex, context);
         }
 
         @Override
@@ -665,9 +664,8 @@ public class ImmutableChildReferences {
             ChildReference nonFederatedRef = internalReferences.getChild(key, context);
             if (nonFederatedRef != null) {
                 return nonFederatedRef;
-            } else {
-                return externalReferences.getChild(key, context);
             }
+            return externalReferences.getChild(key, context);
         }
 
         @Override
@@ -678,7 +676,7 @@ public class ImmutableChildReferences {
         @Override
         public Iterator<NodeKey> getAllKeys() {
             Set<NodeKey> externalKeys = new HashSet<NodeKey>();
-            for (Iterator<NodeKey> externalKeysIterator = externalReferences.getAllKeys(); externalKeysIterator.hasNext(); ){
+            for (Iterator<NodeKey> externalKeysIterator = externalReferences.getAllKeys(); externalKeysIterator.hasNext();) {
                 externalKeys.add(externalKeysIterator.next());
             }
             return new UnionIterator<NodeKey>(internalReferences.getAllKeys(), externalKeys);

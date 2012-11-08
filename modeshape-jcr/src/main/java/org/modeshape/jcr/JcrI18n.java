@@ -97,6 +97,8 @@ public final class JcrI18n {
     public static I18n unableToInitializeTextExtractor;
     public static I18n unableToInitializeConnector;
     public static I18n requiredFieldNotSetInConnector;
+    public static I18n fileConnectorCannotWriteToDirectory;
+    public static I18n fileConnectorTopLevelDirectoryMissingOrCannotBeRead;
 
     public static I18n rootNodeHasNoParent;
     public static I18n rootNodeIsNotProperty;

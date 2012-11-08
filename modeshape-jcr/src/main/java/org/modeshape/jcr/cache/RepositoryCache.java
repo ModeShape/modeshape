@@ -85,6 +85,7 @@ public class RepositoryCache implements Observable {
     private final ExecutionContext context;
     private final RepositoryConfiguration configuration;
     private final DocumentStore documentStore;
+    private final DocumentTranslator translator;
     private final ConcurrentHashMap<String, WorkspaceCache> workspaceCachesByName;
     private final AtomicLong minimumBinarySizeInBytes = new AtomicLong();
     private final String name;
@@ -112,6 +113,7 @@ public class RepositoryCache implements Observable {
         this.configuration = configuration;
         this.documentStore = documentStore;
         this.minimumBinarySizeInBytes.set(configuration.getBinaryStorage().getMinimumBinarySizeInBytes());
+        this.translator = new DocumentTranslator(this.context, this.documentStore, this.minimumBinarySizeInBytes.get());
         this.sessionContext = sessionContext;
         this.workspaceCacheManager = workspaceCacheContainer;
         this.logger = Logger.getLogger(getClass());
@@ -188,7 +190,7 @@ public class RepositoryCache implements Observable {
         }
         this.systemKey = systemRef.getKey();
 
-        //set the local source key in the document store
+        // set the local source key in the document store
         this.documentStore.setLocalSourceKey(this.sourceKey);
     }
 
@@ -506,8 +508,7 @@ public class RepositoryCache implements Observable {
             // Create/get the Infinispan cache that we'll use within the WorkspaceCache, using the cache manager's
             // default configuration ...
             Cache<NodeKey, CachedNode> nodeCache = workspaceCacheManager.getCache(cacheNameForWorkspace(name));
-            cache = new WorkspaceCache(context, getKey(), name, documentStore, minimumBinarySizeInBytes.get(), rootKey, nodeCache,
-                                       changeBus);
+            cache = new WorkspaceCache(context, getKey(), name, documentStore, translator, rootKey, nodeCache, changeBus);
 
             WorkspaceCache existing = workspaceCachesByName.putIfAbsent(name, cache);
             if (existing != null) {
@@ -527,6 +528,10 @@ public class RepositoryCache implements Observable {
 
     protected final String cacheNameForWorkspace( String workspaceName ) {
         return this.name + "/" + workspaceName;
+    }
+
+    public final DocumentTranslator getDocumentTranslator() {
+        return this.translator;
     }
 
     void removeWorkspace( String name ) {

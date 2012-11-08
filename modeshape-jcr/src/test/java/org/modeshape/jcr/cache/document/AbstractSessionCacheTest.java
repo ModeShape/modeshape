@@ -53,7 +53,9 @@ public abstract class AbstractSessionCacheTest extends AbstractNodeCacheTest {
     protected NodeCache createCache() {
         listener = new PrintingChangeSetListener();
         ConcurrentMap<NodeKey, CachedNode> nodeCache = new ConcurrentHashMap<NodeKey, CachedNode>();
-        workspaceCache = new WorkspaceCache(context, "repo", "ws", new LocalDocumentStore(schematicDb), 100L, ROOT_KEY_WS1, nodeCache, listener);
+        DocumentStore documentStore = new LocalDocumentStore(schematicDb);
+        DocumentTranslator translator = new DocumentTranslator(context, documentStore, 100L);
+        workspaceCache = new WorkspaceCache(context, "repo", "ws", documentStore, translator, ROOT_KEY_WS1, nodeCache, listener);
         loadJsonDocuments(resource(resourceNameForWorkspaceContentDocument()));
         session1 = createSessionCache(context, workspaceCache);
         session2 = createSessionCache(context, workspaceCache);

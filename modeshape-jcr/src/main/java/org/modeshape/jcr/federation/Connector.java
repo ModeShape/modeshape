@@ -26,6 +26,8 @@ package org.modeshape.jcr.federation;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import org.infinispan.schematic.document.Document;
@@ -35,9 +37,13 @@ import org.modeshape.common.text.TextDecoder;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
+import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
+import org.modeshape.jcr.cache.DocumentNotFoundException;
+import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
+import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFormatException;
 
@@ -55,32 +61,41 @@ public abstract class Connector {
     private Logger logger;
 
     /**
-     * The name of this connector, set via reflection
+     * The name of this connector, set via reflection immediately after instantiation.
      */
     private String name;
 
     /**
-     * The name of the repository that owns this connector, set via reflection
+     * The name of the repository that owns this connector, set via reflection immediately after instantiation.
      */
     private String repositoryName;
 
     /**
-     * The execution context, set via reflection
+     * The execution context, set via reflection before ModeShape calls {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
      */
     private ExecutionContext context;
 
     /**
-     * The MIME type detector, set via reflection
+     * The MIME type detector, set via reflection before ModeShape calls {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
      */
     private MimeTypeDetector mimeTypeDetector;
 
     /**
      * The default maximum number of seconds that a document returned by this connector should be stored in the workspace cache.
-     * This can be overwritten, on a per-document-basis. The field is assigned via reflection.
+     * This can be overwritten, on a per-document-basis. The field is assigned via reflection based upon the configuration of the
+     * external source represented by this connector before ModeShape calls
+     * {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
      */
     private Integer cacheTtlSeconds;
 
     private boolean initialized = false;
+
+    /**
+     * A document translator that is used within the DocumentReader implementation, but which has no DocumentStore reference and
+     * thus is not fully-functional. The field is assigned via reflection before ModeShape calls
+     * {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
+     */
+    private DocumentTranslator translator;
 
     /**
      * Ever connector is expected to have a no-argument constructor, although the class should never initialize any of the data at
@@ -138,11 +153,11 @@ public abstract class Connector {
     }
 
     /**
-     * Returns the default value, for this connector, of the maximum number of seconds an external document should be stored
-     * in the workspace cache.
-     *
+     * Returns the default value, for this connector, of the maximum number of seconds an external document should be stored in
+     * the workspace cache.
+     * 
      * @return an {@link Integer} value. If {@code null}, it means that no special value is configured and the default workspace
-     * cache configuration will be used. If negative, it means an entry will be cached forever.
+     *         cache configuration will be used. If negative, it means an entry will be cached forever.
      */
     public Integer getCacheTtlSeconds() {
         return cacheTtlSeconds;
@@ -231,6 +246,8 @@ public abstract class Connector {
      * Stores the given document.
      * 
      * @param document a {@code non-null} {@link org.infinispan.schematic.document.Document} instance.
+     * @throws DocumentAlreadyExistsException if there is already a new document with the same identifier
+     * @throws DocumentNotFoundException if one of the modified documents was removed by another session
      */
     public abstract void storeDocument( Document document );
 
@@ -258,15 +275,15 @@ public abstract class Connector {
     }
 
     protected DocumentWriter newDocument( String id ) {
-        return new FederatedDocumentWriter(context).setId(id);
+        return new FederatedDocumentWriter(translator).setId(id);
     }
 
     protected DocumentWriter newDocument( Document document ) {
-        return new FederatedDocumentWriter(context, document);
+        return new FederatedDocumentWriter(translator, document);
     }
 
-    protected DocumentReader readDocument(Document document) {
-        return new FederatedDocumentReader(document);
+    protected DocumentReader readDocument( Document document ) {
+        return new FederatedDocumentReader(translator, document);
     }
 
     /**
@@ -341,18 +358,32 @@ public abstract class Connector {
         public DocumentWriter setId( String id );
 
         public DocumentWriter addProperty( String name,
-                                            Object value );
+                                           Object value );
 
         public DocumentWriter addProperty( Name name,
-                                            Object value );
+                                           Object value );
+
+        public DocumentWriter addProperty( String name,
+                                           Object[] values );
+
+        public DocumentWriter addProperty( Name name,
+                                           Object[] values );
+
+        public DocumentWriter addProperty( String name,
+                                           Object firstValue,
+                                           Object... additionalValues );
+
+        public DocumentWriter addProperty( Name name,
+                                           Object firstValue,
+                                           Object... additionalValues );
 
         public DocumentWriter addChild( String id,
-                                         String name );
+                                        String name );
 
         public DocumentWriter addChild( String id,
-                                         Name name );
+                                        Name name );
 
-        public DocumentWriter setParents( String...parentIds );
+        public DocumentWriter setParents( String... parentIds );
 
         public DocumentWriter setParents( List<String> parentIds );
 
@@ -364,7 +395,7 @@ public abstract class Connector {
 
         FederatedDocumentWriter setChildren( List<Document> children );
 
-        FederatedDocumentWriter setCacheTtlSeconds (int seconds);
+        FederatedDocumentWriter setCacheTtlSeconds( int seconds );
     }
 
     public static interface DocumentReader {
@@ -372,12 +403,24 @@ public abstract class Connector {
 
         public List<String> getParentIds();
 
-        public String getName();
-
         List<EditableDocument> getChildren();
 
         Document document();
 
         Integer getCacheTtlSeconds();
+
+        Name getPrimaryType();
+
+        String getPrimaryTypeName();
+
+        Set<Name> getMixinTypes();
+
+        Set<String> getMixinTypeNames();
+
+        Property getProperty( Name name );
+
+        Property getProperty( String name );
+
+        Map<Name, Property> getProperties();
     }
 }

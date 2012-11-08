@@ -24,32 +24,57 @@
 
 package org.modeshape.jcr;
 
-import javax.jcr.Node;
-import javax.jcr.PathNotFoundException;
-import org.junit.Before;
-import org.junit.Test;
-import org.modeshape.jcr.api.federation.FederationManager;
-import org.modeshape.jcr.federation.MockConnector;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import java.io.File;
+import java.io.FileOutputStream;
+import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
+import javax.jcr.RepositoryException;
+import org.junit.Before;
+import org.junit.Test;
+import org.modeshape.common.util.FileUtil;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.jcr.api.federation.FederationManager;
+import org.modeshape.jcr.federation.MockConnector;
 
 /**
  * Unit test for {@link ModeShapeFederationManager}
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
 
+    protected static final String PATH_TO_FILESYSTEM_SOURCE = "target/federation/files";
+    protected static final String FILESYSTEM_SOURCE_NAME = "file-resources";
+    protected static final String TEXT_CONTENT = "Some text content";
+
     private FederationManager federationManager;
     private AbstractJcrNode testRoot;
+    private File testDir;
 
     @Before
     public void before() throws Exception {
+        // Remove and then make the directory for our federation test ...
+        testDir = new File(PATH_TO_FILESYSTEM_SOURCE);
+        if (testDir.exists()) FileUtil.delete(testDir);
+        testDir.mkdirs();
+        // Make some content ...
+        new File(testDir, "dir1").mkdir();
+        new File(testDir, "dir2").mkdir();
+        new File(testDir, "dir3").mkdir();
+        File simpleJson = new File(testDir, "dir3/simple.json");
+        IoUtil.write(getClass().getClassLoader().getResourceAsStream("data/simple.json"), new FileOutputStream(simpleJson));
+        File simpleTxt = new File(testDir, "dir3/simple.txt");
+        IoUtil.write(TEXT_CONTENT, new FileOutputStream(simpleTxt));
+
         startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream("config/repo-config-federation.json"));
 
+        testRoot = session.getRootNode().addNode("testFilesRoot");
         testRoot = session.getRootNode().addNode("testRoot");
-        //link an internal document
         testRoot.addNode("node1");
         session.save();
 
@@ -58,7 +83,7 @@ public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldCreateProjectionWithAlias() throws Exception {
-        //link the first external document
+        // link the first external document
         federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, "/doc1", "federated1");
         assertEquals(2, testRoot.getNodes().getSize());
 
@@ -68,7 +93,7 @@ public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
         assertEquals("a string", doc1Federated.getProperty("federated1_prop1").getString());
         assertEquals(12, doc1Federated.getProperty("federated1_prop2").getLong());
 
-        //link a second external document with a sub-child
+        // link a second external document with a sub-child
         federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, "/doc2", "federated2");
         assertEquals(3, testRoot.getNodes().getSize());
 
@@ -85,7 +110,7 @@ public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldCreateProjectionWithoutAlias() throws Exception {
-        //link the first external document
+        // link the first external document
         federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, "/doc1", null);
         assertEquals(2, testRoot.getNodes().getSize());
 
@@ -100,7 +125,7 @@ public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
     public void shouldCreateExternalNode() throws Exception {
         federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, "/doc1", "federated1");
         Node doc1Federated = session.getNode("/testRoot/federated1");
-        //create an external node with a property and a child
+        // create an external node with a property and a child
         Node externalNode1 = doc1Federated.addNode("federated1_1", null);
         externalNode1.setProperty("prop1", "a value");
         externalNode1.addNode("federated1_1_1", null);
@@ -149,7 +174,65 @@ public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
             session.getNode("/testRoot/federated1/federated1_1");
             fail("External node should've been deleted");
         } catch (PathNotFoundException e) {
-            //expected
+            // expected
         }
     }
+
+    @Test
+    public void shouldReadExistingFileNodesFromExternalFileSystemSource() throws Exception {
+        federationManager.createExternalProjection("/testRoot", FILESYSTEM_SOURCE_NAME, "/", "files");
+        Node files = session.getNode("/testRoot/files");
+        assertThat(files.getName(), is("files"));
+        assertThat(files.getPrimaryNodeType().getName(), is("nt:folder"));
+        Node dir1 = session.getNode("/testRoot/files/dir1");
+        Node dir2 = session.getNode("/testRoot/files/dir2");
+        Node dir3 = session.getNode("/testRoot/files/dir3");
+        Node simpleJson = session.getNode("/testRoot/files/dir3/simple.json");
+        Node simpleText = session.getNode("/testRoot/files/dir3/simple.txt");
+        assertFolder(dir1, "dir1");
+        assertFolder(dir2, "dir2");
+        assertFolder(dir3, "dir3");
+        assertFile(simpleJson, "dir3/simple.json");
+        assertFile(simpleText, "dir3/simple.txt");
+
+        // Look for a node that isn't there ...
+        try {
+            session.getNode("/testRoot/files/dir3/non-existant.oops");
+            fail("Should not have been able to find a non-existing file");
+        } catch (PathNotFoundException e) {
+            // expected
+        }
+
+    }
+
+    protected void assertFolder( Node node,
+                                 String relativeDirPath ) throws RepositoryException {
+        System.out.println("Node: " + node.getPath() + " has a name of " + node.getName());
+        File dir = getTestFile(relativeDirPath);
+        // assertThat(node.getName(), is(dir.getName()));
+        assertThat(node.getIndex(), is(1));
+        assertThat(node.getPrimaryNodeType().getName(), is("nt:folder"));
+        assertThat(node.getProperty("jcr:created").getLong(), is(dir.lastModified()));
+    }
+
+    protected void assertFile( Node node,
+                               String relativeFilePath ) throws RepositoryException {
+        System.out.println("Node: " + node.getPath() + " has a name of " + node.getName());
+        File file = getTestFile(relativeFilePath);
+        long lastModified = file.lastModified();
+        // assertThat(node.getName(), is(file.getName()));
+        assertThat(node.getIndex(), is(1));
+        assertThat(node.getPrimaryNodeType().getName(), is("nt:file"));
+        assertThat(node.getProperty("jcr:created").getLong(), is(lastModified));
+        Node content = node.getNode("jcr:content");
+        // assertThat(node.getName(), is("jcr:content"));
+        assertThat(node.getIndex(), is(1));
+        assertThat(content.getPrimaryNodeType().getName(), is("nt:resource"));
+        assertThat(content.getProperty("jcr:lastModified").getLong(), is(lastModified));
+    }
+
+    protected File getTestFile( String relativePath ) {
+        return new File(testDir, relativePath);
+    }
+
 }

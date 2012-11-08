@@ -28,50 +28,56 @@ import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
+import org.modeshape.jcr.cache.DocumentStoreException;
 
 /**
  * A store which persists/retrieves documents.
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public interface DocumentStore {
 
     /**
      * Get the entry with the supplied key.
-     *
+     * 
      * @param key the key or identifier for the document
      * @return the entry, or null if there was no document with the supplied key
+     * @throws DocumentStoreException if there is a problem retrieving the document
      */
     public SchematicEntry get( String key );
 
     /**
      * Store the supplied document at the given key.
-     *
+     * 
      * @param key the key or identifier for the document
      * @param document the document that is to be stored
      * @return the existing entry for the supplied key, or null if there was no entry and the put was successful
+     * @throws DocumentStoreException if there is a problem storing the document
      */
     public SchematicEntry storeDocument( String key,
                                          Document document );
 
     /**
      * Updates the content of the document at the given key with the given document.
-     *
+     * 
      * @param key the key or identifier for the document
      * @param document the content with which the existing document should be updated
+     * @throws DocumentStoreException if there is a problem updating the document
      */
-    public void updateDocument(String key, Document document);
+    public void updateDocument( String key,
+                                Document document );
 
     /**
      * Remove the existing document at the given key.
-     *
+     * 
      * @param key the key or identifier for the document
+     * @throws DocumentStoreException if there is a problem removing the document
      */
     public void remove( String key );
 
     /**
      * Determine whether the database contains an entry with the supplied key.
-     *
+     * 
      * @param key the key or identifier for the document
      * @return true if the database contains an entry with this key, or false otherwise
      */
@@ -79,40 +85,39 @@ public interface DocumentStore {
 
     /**
      * Sets the value of the local repository source key.
-     *
+     * 
      * @param sourceKey a {@code non-null} string
      */
     public void setLocalSourceKey( String sourceKey );
 
     /**
      * Returns a transaction manager instance which can be used to manage transactions for this document store.
-     *
+     * 
      * @return a {@link TransactionManager} instance, never null.
      */
     public TransactionManager transactionManager();
 
     /**
      * Returns a resource used in distributed transactions
-     *
+     * 
      * @return an {@link XAResource instance} or {@code null}
      */
     public XAResource xaResource();
 
     /**
      * Returns a local store instance which will use the local Infinispan cache to store/retrieve information.
-     *
+     * 
      * @return a non-null {@link LocalDocumentStore} instance.
      */
     public LocalDocumentStore localStore();
 
     /**
-     * Creates an external projection from the federated node with the given key, towards the external node from the
-     * given path, from a source.
-     *
+     * Creates an external projection from the federated node with the given key, towards the external node from the given path,
+     * from a source.
+     * 
      * @param federatedNodeKey a {@code non-null} string, the key of the federated node which will contain the projection
      * @param sourceName a {@code non-null} string, the name of an external source.
      * @param externalPath a {@code non-null} string, representing a path towards a node from the source
-     *
      * @return a {@code non-null} string representing the node key of the external node located at {@code externalPath}.
      */
     public String createExternalProjection( String federatedNodeKey,
