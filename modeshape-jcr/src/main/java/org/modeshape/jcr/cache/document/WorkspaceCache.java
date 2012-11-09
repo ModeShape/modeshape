@@ -147,6 +147,10 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         return entry.getContentAsDocument();
     }
 
+    final Document blockFor( String key ) {
+        return documentStore.getChildrenBlock(key);
+    }
+
     final Document documentFor( NodeKey key ) {
         return documentFor(key.toString());
     }

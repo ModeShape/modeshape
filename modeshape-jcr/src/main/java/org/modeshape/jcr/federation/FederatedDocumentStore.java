@@ -40,6 +40,8 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
+import org.modeshape.jcr.federation.paging.BlockKey;
+import org.modeshape.jcr.federation.paging.Pageable;
 
 /**
  * An implementation of {@link DocumentStore} which is used when federation is enabled
@@ -117,7 +119,7 @@ public class FederatedDocumentStore implements DocumentStore {
             Document document = connector.getDocumentById(docId);
             if (document != null) {
                 // clone the document, so we don't alter the original
-                EditableDocument editableDocument = replaceDocumentIdsWithNodeKeys(document, connector.getSourceName());
+                EditableDocument editableDocument = replaceConnectorIdsWithNodeKeys(document, connector.getSourceName());
                 editableDocument = updateCachingTtl(connector, editableDocument);
                 return new FederatedSchematicEntry(editableDocument);
             }
@@ -192,6 +194,24 @@ public class FederatedDocumentStore implements DocumentStore {
         return null;
     }
 
+    @Override
+    public Document getChildrenBlock( String key ) {
+        if (isLocalSource(key)) {
+            return localStore().getChildrenBlock(key);
+        } else {
+            Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
+            if (connector != null && connector instanceof Pageable) {
+                key = documentIdFromNodeKey(key);
+                BlockKey blockKey = new BlockKey(key);
+                Document childrenBlock = ((Pageable)connector).getChildrenBlock(blockKey);
+                if (childrenBlock != null) {
+                    return replaceConnectorIdsWithNodeKeys(childrenBlock, connector.getSourceName());
+                }
+            }
+        }
+        return null;
+    }
+
     private boolean isLocalSource( String key ) {
         return !NodeKey.isValidFormat(key) // the key isn't a std key format (probably some internal format)
                || StringUtil.isBlank(localSourceKey) // there isn't a local source configured yet (e.g. system startup)
@@ -213,16 +233,18 @@ public class FederatedDocumentStore implements DocumentStore {
         return new NodeKey(nodeKey).getIdentifier();
     }
 
-    private EditableDocument replaceDocumentIdsWithNodeKeys( Document externalDocument,
-                                                             String sourceName ) {
+    private EditableDocument replaceConnectorIdsWithNodeKeys( Document externalDocument,
+                                                              String sourceName ) {
         Connector.DocumentReader reader = new FederatedDocumentReader(translator(), externalDocument);
         Connector.DocumentWriter writer = new FederatedDocumentWriter(translator(), externalDocument);
 
         // replace document id with node key
-        String sourceDocumentId = reader.getDocumentId();
-        assert sourceDocumentId != null;
-        String externalDocumentKey = documentIdToNodeKey(sourceName, sourceDocumentId);
-        writer.setId(externalDocumentKey);
+        String externalDocumentId = reader.getDocumentId();
+        String externalDocumentKey = null;
+        if (!StringUtil.isBlank(externalDocumentId)) {
+            externalDocumentKey = documentIdToNodeKey(sourceName, externalDocumentId);
+            writer.setId(externalDocumentKey);
+        }
 
         // replace the id of each parent and add the optional federated parent
         List<String> parentKeys = new ArrayList<String>();
@@ -231,16 +253,31 @@ public class FederatedDocumentStore implements DocumentStore {
             parentKeys.add(parentKey);
         }
 
-        String federatedParentKey = externalProjectionKeyToFederatedNodeKey.get(externalDocumentKey);
-        if (!StringUtil.isBlank(federatedParentKey)) {
-            parentKeys.add(federatedParentKey);
+        //replace the id of each block (if they exist)
+        EditableDocument childrenInfo = writer.document().getDocument(DocumentTranslator.CHILDREN_INFO);
+        if (childrenInfo != null) {
+            String nextBlockKey = childrenInfo.getString(DocumentTranslator.NEXT_BLOCK);
+            if (!StringUtil.isBlank(nextBlockKey)) {
+                childrenInfo.setString(DocumentTranslator.NEXT_BLOCK, documentIdToNodeKey(sourceName, nextBlockKey));
+            }
+            String lastBlockKey = childrenInfo.getString(DocumentTranslator.LAST_BLOCK);
+            if (!StringUtil.isBlank(lastBlockKey)) {
+                childrenInfo.setString(DocumentTranslator.LAST_BLOCK, documentIdToNodeKey(sourceName, lastBlockKey));
+            }
+        }
+        //create the federated node key - external project back reference
+        if (externalDocumentKey != null) {
+            String federatedParentKey = externalProjectionKeyToFederatedNodeKey.get(externalDocumentKey);
+            if (!StringUtil.isBlank(federatedParentKey)) {
+                parentKeys.add(federatedParentKey);
+            }
         }
         writer.setParents(parentKeys);
 
         // process each child in the same way
         List<Document> updatedChildren = new ArrayList<Document>();
         for (EditableDocument child : reader.getChildren()) {
-            EditableDocument childWithReplacedIds = replaceDocumentIdsWithNodeKeys(child, sourceName);
+            EditableDocument childWithReplacedIds = replaceConnectorIdsWithNodeKeys(child, sourceName);
             updatedChildren.add(childWithReplacedIds);
         }
         writer.setChildren(updatedChildren);

@@ -56,7 +56,7 @@ public class FederatedDocumentReader implements Connector.DocumentReader {
 
     @Override
     public String getDocumentId() {
-        return federatedDocument.getString(DocumentTranslator.KEY);
+        return translator.getKey(federatedDocument);
     }
 
     @Override
