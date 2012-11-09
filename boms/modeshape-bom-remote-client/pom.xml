@@ -4,14 +4,14 @@
     <parent>
         <groupId>org.modeshape.bom</groupId>
         <artifactId>modeshape-bom-parent</artifactId>
-        <version>3.0.0.Final</version>
+        <version>3.0.1-SNAPSHOT</version>
         <relativePath>../modeshape-bom-parent/pom.xml</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.modeshape.bom</groupId>
     <artifactId>modeshape-bom-remote-client</artifactId>
-    <version>3.0.0.Final</version>
+    <version>3.0.1-SNAPSHOT</version>
     <name>ModeShape BOM for remote REST and JDBC clients</name>
 
     <url>http://www.modeshape.org</url>
