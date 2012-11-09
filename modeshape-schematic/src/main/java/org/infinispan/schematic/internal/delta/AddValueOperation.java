@@ -112,7 +112,7 @@ public class AddValueOperation extends ArrayOperation {
         public void writeObject( ObjectOutput output,
                                  AddValueOperation put ) throws IOException {
             output.writeObject(put.parentPath);
-            output.writeObject(put.index);
+            output.writeInt(put.index);
             output.writeObject(put.value);
         }
 
