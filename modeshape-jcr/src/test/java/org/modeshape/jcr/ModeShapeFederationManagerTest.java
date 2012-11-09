@@ -24,6 +24,11 @@
 
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
@@ -39,11 +44,6 @@ import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.federation.FederationManager;
 import org.modeshape.jcr.federation.MockConnector;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  * Unit test for {@link ModeShapeFederationManager}
@@ -184,7 +184,10 @@ public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldNavigateChildrenFromPagedConnector() throws Exception {
-        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.PAGED_DOC_LOCATION, "federated1");
+        federationManager.createExternalProjection("/testRoot",
+                                                   MockConnector.SOURCE_NAME,
+                                                   MockConnector.PAGED_DOC_LOCATION,
+                                                   "federated1");
         Node doc1Federated = session.getNode("/testRoot/federated1");
         NodeIterator nodesIterator = doc1Federated.getNodes();
         assertEquals(3, nodesIterator.getSize());
@@ -225,9 +228,8 @@ public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
 
     protected void assertFolder( Node node,
                                  String relativeDirPath ) throws RepositoryException {
-        System.out.println("Node: " + node.getPath() + " has a name of " + node.getName());
         File dir = getTestFile(relativeDirPath);
-        // assertThat(node.getName(), is(dir.getName()));
+        assertThat(node.getName(), is(dir.getName()));
         assertThat(node.getIndex(), is(1));
         assertThat(node.getPrimaryNodeType().getName(), is("nt:folder"));
         assertThat(node.getProperty("jcr:created").getLong(), is(dir.lastModified()));
@@ -235,16 +237,15 @@ public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
 
     protected void assertFile( Node node,
                                String relativeFilePath ) throws RepositoryException {
-        System.out.println("Node: " + node.getPath() + " has a name of " + node.getName());
         File file = getTestFile(relativeFilePath);
         long lastModified = file.lastModified();
-        // assertThat(node.getName(), is(file.getName()));
+        assertThat(node.getName(), is(file.getName()));
         assertThat(node.getIndex(), is(1));
         assertThat(node.getPrimaryNodeType().getName(), is("nt:file"));
         assertThat(node.getProperty("jcr:created").getLong(), is(lastModified));
         Node content = node.getNode("jcr:content");
-        // assertThat(node.getName(), is("jcr:content"));
-        assertThat(node.getIndex(), is(1));
+        assertThat(content.getName(), is("jcr:content"));
+        assertThat(content.getIndex(), is(1));
         assertThat(content.getPrimaryNodeType().getName(), is("nt:resource"));
         assertThat(content.getProperty("jcr:lastModified").getLong(), is(lastModified));
     }
