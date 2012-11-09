@@ -40,6 +40,7 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
 import org.modeshape.jcr.cache.DocumentNotFoundException;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
+import org.modeshape.jcr.federation.paging.PagingWriter;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
@@ -282,6 +283,14 @@ public abstract class Connector {
         return new FederatedDocumentWriter(translator, document);
     }
 
+    protected PagingWriter newPagedDocument(Document document) {
+        return new PagingWriter(translator, document);
+    }
+
+    protected PagingWriter newPagedDocument() {
+        return new PagingWriter(translator);
+    }
+
     protected DocumentReader readDocument( Document document ) {
         return new FederatedDocumentReader(translator, document);
     }
@@ -383,7 +392,11 @@ public abstract class Connector {
         public DocumentWriter addChild( String id,
                                         Name name );
 
+        public DocumentWriter addChild( EditableDocument child );
+
         public DocumentWriter setParents( String... parentIds );
+
+        public DocumentWriter setParent (String parentId);
 
         public DocumentWriter setParents( List<String> parentIds );
 
@@ -391,9 +404,8 @@ public abstract class Connector {
 
         public EditableDocument document();
 
-        FederatedDocumentWriter addChild( EditableDocument child );
 
-        FederatedDocumentWriter setChildren( List<Document> children );
+        FederatedDocumentWriter setChildren( List<? extends Document> children );
 
         FederatedDocumentWriter setCacheTtlSeconds( int seconds );
     }

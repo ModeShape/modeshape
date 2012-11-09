@@ -180,7 +180,7 @@ public class DocumentTranslator {
      * {@code primaryWorkspaceKey} and, if there is no such parent, the parent that is in the {@code secondaryWorkspaceKey}.
      * 
      * @param document the document for the node; may not be null
-     * @param primaryWorkspaceKey the key for the workspace in which the parent should preferrably exist; may be null
+     * @param primaryWorkspaceKey the key for the workspace in which the parent should preferably exist; may be null
      * @param secondaryWorkspaceKey the key for the workspace in which the parent should exist if not in the primary workspace;
      *        may be null
      * @return the key representing the preferred parent, or null if the document contains no parent reference or if the parent
@@ -702,6 +702,15 @@ public class DocumentTranslator {
         document.setString(KEY, key.toString());
     }
 
+    public void setKey (EditableDocument document, String key) {
+        assert key != null;
+        document.setString(KEY, key);
+    }
+
+    public String getKey (Document document) {
+        return document.getString(KEY);
+    }
+
     public void changeChildren( EditableDocument document,
                                 ChangedChildren changedChildren,
                                 ChildReferences appended ) {
@@ -865,6 +874,22 @@ public class DocumentTranslator {
             internalChildRefsList.addAll(externalChildRefsList);
         }
         return ImmutableChildReferences.create(internalChildRefsList);
+    }
+
+
+    /**
+     * Reads the children of the given block and returns a {@link ChildReferences} instance.
+     * @param block a {@code non-null} {@link Document} representing a block of children
+     * @return a {@code non-null} child references instance
+     */
+    public ChildReferences getChildReferencesFromBlock(Document block) {
+        List<?> children = block.getArray(CHILDREN);
+
+        if (children == null) {
+            return ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
+        }
+
+        return ImmutableChildReferences.create(childReferencesListFromArray(children));
     }
 
     private List<ChildReference> childReferencesListFromArray( List<?> children ) {

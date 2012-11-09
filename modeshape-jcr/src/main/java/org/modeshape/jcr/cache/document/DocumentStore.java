@@ -123,4 +123,12 @@ public interface DocumentStore {
     public String createExternalProjection( String federatedNodeKey,
                                             String sourceName,
                                             String externalPath );
+
+    /**
+     * Returns a document representing a block of children, that has the given key.
+     * @param key a {@code non-null} String the key of the block
+     * @return either a {@link Document} with children and possibly a pointer to the next block, or {@code null} if there isn't
+     * a block with such a key.
+     */
+    public Document getChildrenBlock( String key );
 }

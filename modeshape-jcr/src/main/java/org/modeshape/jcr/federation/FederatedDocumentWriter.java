@@ -60,7 +60,7 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
     @Override
     public FederatedDocumentWriter setId( String id ) {
         assert id != null;
-        federatedDocument.set(DocumentTranslator.KEY, id);
+        translator.setKey(federatedDocument, id);
         return this;
     }
 
@@ -149,7 +149,7 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
     }
 
     @Override
-    public FederatedDocumentWriter setChildren( List<Document> children ) {
+    public FederatedDocumentWriter setChildren( List<? extends Document> children ) {
         EditableArray childrenArray = federatedDocument.getArray(DocumentTranslator.CHILDREN);
         childrenArray = DocumentFactory.newArray();
         federatedDocument.setArray(DocumentTranslator.CHILDREN, childrenArray);
@@ -176,6 +176,11 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
     }
 
     @Override
+    public DocumentWriter setParent( String parentId ) {
+        return setParents(parentId);
+    }
+
+    @Override
     public FederatedDocumentWriter setCacheTtlSeconds( int seconds ) {
         federatedDocument.setNumber(DocumentTranslator.CACHE_TTL_SECONDS, seconds);
         return this;
@@ -195,5 +200,9 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
     @Override
     public EditableDocument document() {
         return federatedDocument;
+    }
+
+    protected DocumentTranslator translator() {
+        return translator;
     }
 }

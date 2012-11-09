@@ -24,14 +24,13 @@
 
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import org.junit.Before;
@@ -40,6 +39,11 @@ import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.federation.FederationManager;
 import org.modeshape.jcr.federation.MockConnector;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * Unit test for {@link ModeShapeFederationManager}
@@ -176,6 +180,20 @@ public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
         } catch (PathNotFoundException e) {
             // expected
         }
+    }
+
+    @Test
+    public void shouldNavigateChildrenFromPagedConnector() throws Exception {
+        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.PAGED_DOC_LOCATION, "federated1");
+        Node doc1Federated = session.getNode("/testRoot/federated1");
+        NodeIterator nodesIterator = doc1Federated.getNodes();
+        assertEquals(3, nodesIterator.getSize());
+
+        List<String> childrenNames = new ArrayList<String>(3);
+        while (nodesIterator.hasNext()) {
+            childrenNames.add(nodesIterator.nextNode().getName());
+        }
+        assertEquals(Arrays.asList("federated4", "federated5", "federated6"), childrenNames);
     }
 
     @Test

@@ -151,6 +151,17 @@ public class LocalDocumentStore implements DocumentStore {
         throw new UnsupportedOperationException("External projections are not supported in the local document store");
     }
 
+    @Override
+    public Document getChildrenBlock( String key ) {
+        // Look up the information in the database ...
+        SchematicEntry entry = get(key);
+        if (entry == null) {
+            // There is no such node ...
+            return null;
+        }
+        return entry.getContentAsDocument();
+    }
+
     /**
      * Returns the local Infinispan cache.
      * 

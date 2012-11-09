@@ -708,12 +708,13 @@ public class ImmutableChildReferences {
 
         public Segment next( WorkspaceCache cache ) {
             if (next == null && nextKey != null) {
-                Document doc = cache.documentFor(nextKey);
-                if (doc == null) {
+                Document blockDoc = cache.blockFor(nextKey);
+                if (blockDoc == null) {
                     throw new DocumentNotFoundException(nextKey);
                 }
-                ChildReferences refs = cache.translator().getChildReferences(cache, doc);
-                ChildReferencesInfo nextNextKey = cache.translator().getChildReferencesInfo(doc);
+                //we only need the direct children of the block to avoid nesting
+                ChildReferences refs = cache.translator().getChildReferencesFromBlock(blockDoc);
+                ChildReferencesInfo nextNextKey = cache.translator().getChildReferencesInfo(blockDoc);
                 next = new Segment(refs, nextNextKey != null ? nextNextKey.nextKey : null);
             }
             return next;
