@@ -30,6 +30,7 @@ import org.infinispan.schematic.SchematicDb;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.SecureHash;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrRepository;
 
 /**
@@ -67,7 +68,7 @@ public final class NodeKey implements Serializable, Comparable<NodeKey> {
      * @return true if the string is of the correct format for a node key, or false if it not the correct format
      */
     public static boolean isValidFormat( String key ) {
-        if (key.length() <= IDENTIFIER_START_INDEX) return false;
+        if (StringUtil.isBlank(key) || key.length() <= IDENTIFIER_START_INDEX) return false;
         return true;
     }
 
@@ -212,6 +213,10 @@ public final class NodeKey implements Serializable, Comparable<NodeKey> {
 
     public static String keyForWorkspaceName( String name ) {
         return sha1(name).substring(0, NodeKey.WORKSPACE_LENGTH);
+    }
+
+    public static String sourceKey( String key ) {
+        return isValidFormat(key) ? key.substring(SOURCE_START_INDEX, SOURCE_END_INDEX) : null;
     }
 
     private static String sha1( String name ) {

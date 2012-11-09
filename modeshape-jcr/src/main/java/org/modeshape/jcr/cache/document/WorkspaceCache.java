@@ -25,6 +25,8 @@ package org.modeshape.jcr.cache.document;
 
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import org.infinispan.api.BasicCache;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
@@ -49,7 +51,7 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
 
     private final DocumentTranslator translator;
     private final ExecutionContext context;
-    private final SchematicDb database;
+    private final DocumentStore documentStore;
     private final ConcurrentMap<NodeKey, CachedNode> nodesByKey;
     private final NodeKey rootKey;
     private final ChildReference childReferenceForRoot;
@@ -65,15 +67,15 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
     public WorkspaceCache( ExecutionContext context,
                            String repositoryKey,
                            String workspaceName,
-                           SchematicDb database,
-                           long largeValueSize,
+                           DocumentStore documentStore,
+                           DocumentTranslator translator,
                            NodeKey rootKey,
                            ConcurrentMap<NodeKey, CachedNode> cache,
                            ChangeSetListener changeSetListener ) {
         this.context = context;
-        this.database = database;
+        this.documentStore = documentStore;
         this.changeSetListener = changeSetListener;
-        this.translator = new DocumentTranslator(context, database, largeValueSize);
+        this.translator = translator;
         this.rootKey = rootKey;
         this.childReferenceForRoot = new ChildReference(rootKey, Path.ROOT_NAME, 1);
         this.repositoryKey = repositoryKey;
@@ -131,18 +133,22 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         return pathFactory().createRootPath();
     }
 
-    final SchematicDb database() {
-        return database;
+    final DocumentStore documentStore() {
+        return documentStore;
     }
 
     final Document documentFor( String key ) {
         // Look up the information in the database ...
-        SchematicEntry entry = database.get(key);
+        SchematicEntry entry = documentStore.get(key);
         if (entry == null) {
             // There is no such node ...
             return null;
         }
         return entry.getContentAsDocument();
+    }
+
+    final Document blockFor( String key ) {
+        return documentStore.getChildrenBlock(key);
     }
 
     final Document documentFor( NodeKey key ) {
@@ -173,7 +179,15 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
             if (doc != null) {
                 // Create a new node and put into this cache ...
                 CachedNode newNode = new LazyCachedNode(key, doc);
-                node = nodesByKey.putIfAbsent(key, newNode);
+                Integer cacheTtlSeconds = translator().getCacheTtlSeconds(doc);
+                if (nodesByKey instanceof BasicCache && cacheTtlSeconds != null) {
+                    node = ((BasicCache<NodeKey, CachedNode>)nodesByKey).putIfAbsent(key,
+                                                                                     newNode,
+                                                                                     cacheTtlSeconds.longValue(),
+                                                                                     TimeUnit.SECONDS);
+                } else {
+                    node = nodesByKey.putIfAbsent(key, newNode);
+                }
                 if (node == null) node = newNode;
             }
         }
@@ -252,12 +266,12 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
 
     /**
      * Checks if this ws cache is empty. An empty cache is considered when the only node key under root is the system key.
-     *
+     * 
      * @return {@code true} if the system key is the only key under root, {@code false} other wise.
      */
     public boolean isEmpty() {
         CachedNode root = getNode(getRootKey());
-        //expect there to be 1 child under root - the system key
+        // expect there to be 1 child under root - the system key
         return root.getChildReferences(this).size() == 1;
     }
 

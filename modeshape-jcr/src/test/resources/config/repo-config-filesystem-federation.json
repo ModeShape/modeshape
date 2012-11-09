@@ -1,0 +1,14 @@
+{
+    "name" : "Federated repository",
+    "workspaces" : {
+        "predefined" : ["ws1", "ws2"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "externalSources" : {
+        "test-resources" : {
+            "classname" : "org.modeshape.jcr.federation.FileSystemConnector",
+            "directoryPath" : "src/test/resources",
+        }
+    }
+}
