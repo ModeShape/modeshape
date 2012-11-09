@@ -115,6 +115,13 @@ public class FileSystemConnector extends Connector {
     private File directory;
 
     /**
+     * A string that is created in the {@link #initialize(NamespaceRegistry, NodeTypeManager)} method that represents the absolute
+     * path to the {@link #directory}. This path is removed from an absolute path of a file to obtain the ID of the node.
+     */
+    private String directoryAbsolutePath;
+    private int directoryAbsolutePathLength;
+
+    /**
      * The regular expression that, if matched by a file or folder, indicates that the file or folder should be included.
      */
     private String inclusionPattern;
@@ -135,13 +142,20 @@ public class FileSystemConnector extends Connector {
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         super.initialize(registry, nodeTypeManager);
 
-        // Validate the connector-specific fields ...
+        // Initialize the directory path field that has been set via reflection when this method is called...
         checkFieldNotNull(directoryPath, "directoryPath");
         directory = new File(directoryPath);
-        if (!directory.exists() || !directory.canRead() || !directory.isDirectory()) {
+        if (!directory.exists() || !directory.isDirectory()) {
             String msg = JcrI18n.fileConnectorTopLevelDirectoryMissingOrCannotBeRead.text(getSourceName(), "directoryPath");
             throw new RepositoryException(msg);
         }
+        if (!directory.canRead() && !directory.setReadable(true)) {
+            String msg = JcrI18n.fileConnectorTopLevelDirectoryMissingOrCannotBeRead.text(getSourceName(), "directoryPath");
+            throw new RepositoryException(msg);
+        }
+        directoryAbsolutePath = directory.getAbsolutePath();
+        if (!directoryAbsolutePath.endsWith(DELIMITER)) directoryAbsolutePath = directoryAbsolutePath + DELIMITER;
+        directoryAbsolutePathLength = directoryAbsolutePath.length() - 1; // does NOT include the delimiter
 
         // Initialize the filename filter ...
         filenameFilter = new InclusionExclusionFilenameFilter();
@@ -159,10 +173,30 @@ public class FileSystemConnector extends Connector {
     }
 
     protected File fileFor( String id ) {
+        assert id.startsWith(DELIMITER);
         if (isContentNode(id)) {
             id = id.substring(0, id.length() - JCR_CONTENT_SUFFIX_LENGTH);
         }
         return new File(directory, id);
+    }
+
+    protected boolean isRoot( String id ) {
+        return DELIMITER.equals(id);
+    }
+
+    protected String idFor( File file ) {
+        String path = file.getAbsolutePath();
+        if (!path.startsWith(directoryAbsolutePath)) {
+            if (directory.getAbsolutePath().equals(path)) {
+                // This is the root
+                return DELIMITER;
+            }
+            String msg = JcrI18n.fileConnectorNodeIdentifierIsNotWithinScopeOfConnector.text(getSourceName(), directoryPath, path);
+            throw new DocumentStoreException(path, msg);
+        }
+        String id = path.substring(directoryAbsolutePathLength);
+        assert id.startsWith(DELIMITER);
+        return id;
     }
 
     protected FileSystemBinaryValue binaryFor( File file ) {
@@ -188,8 +222,10 @@ public class FileSystemConnector extends Connector {
     @Override
     public Document getDocumentById( String id ) {
         File file = fileFor(id);
+        boolean isRoot = isRoot(id);
         boolean isResource = isContentNode(id);
         DocumentWriter writer = newDocument(id);
+        File parentFile = file.getParentFile();
         if (isResource) {
             FileSystemBinaryValue binaryValue = binaryFor(file);
             writer.addProperty(JCR_PRIMARY_TYPE, NT_RESOURCE);
@@ -198,20 +234,26 @@ public class FileSystemConnector extends Connector {
             writer.addProperty(JCR_ENCODING, null); // We don't really know this
             writer.addProperty(JCR_LAST_MODIFIED, factories().getDateFactory().create(file.lastModified()));
             writer.addProperty(JCR_LAST_MODIFIED_BY, null); // ignored
+            parentFile = file;
         } else if (file.isFile()) {
             writer.addProperty(JCR_PRIMARY_TYPE, NT_FILE);
             writer.addProperty(JCR_CREATED, factories().getDateFactory().create(file.lastModified()));
             writer.addProperty(JCR_CREATED_BY, null); // ignored
-            writer.addChild(id + JCR_CONTENT_SUFFIX, JCR_CONTENT);
+            String childId = isRoot ? JCR_CONTENT_SUFFIX : id + JCR_CONTENT_SUFFIX;
+            writer.addChild(childId, JCR_CONTENT);
         } else {
             writer.addProperty(JCR_PRIMARY_TYPE, NT_FOLDER);
             writer.addProperty(JCR_CREATED, factories().getDateFactory().create(file.lastModified()));
             writer.addProperty(JCR_CREATED_BY, null); // ignored
             for (String childName : file.list(filenameFilter)) {
                 // We use identifiers that contain the file/directory name ...
-                writer.addChild(id + DELIMITER + childName, childName);
+                String childId = isRoot ? DELIMITER + childName : id + DELIMITER + childName;
+                writer.addChild(childId, childName);
             }
         }
+        // Set the reference to the parent ...
+        String parentId = idFor(parentFile);
+        writer.setParents(parentId);
         return writer.document();
 
     }
@@ -236,14 +278,34 @@ public class FileSystemConnector extends Connector {
         // Create a new directory or file described by the document ...
         DocumentReader reader = readDocument(document);
         String id = reader.getDocumentId();
+        String parentId = reader.getParentIds().get(0);
         File file = fileFor(id);
         File parent = file.getParentFile();
-        if (!parent.exists()) {
-            parent.mkdirs(); // in case they were removed since we created them ...
-        }
-        if (!parent.canWrite()) {
-            String msg = JcrI18n.fileConnectorCannotWriteToDirectory.text(getSourceName(), getClass(), parent.getAbsolutePath());
-            throw new DocumentStoreException(id, msg);
+        String newParentId = idFor(parent);
+        if (!parentId.equals(newParentId)) {
+            // The node has a new parent (via the 'update' method), meaning it was moved ...
+            File newParent = fileFor(newParentId);
+            File newFile = new File(newParent, file.getName());
+            file.renameTo(newFile);
+            if (!parent.exists()) {
+                parent.mkdirs(); // in case they were removed since we created them ...
+            }
+            if (!parent.canWrite()) {
+                String parentPath = newParent.getAbsolutePath();
+                String msg = JcrI18n.fileConnectorCannotWriteToDirectory.text(getSourceName(), getClass(), parentPath);
+                throw new DocumentStoreException(id, msg);
+            }
+            parent = newParent;
+        } else {
+            // It is the same parent as before ...
+            if (!parent.exists()) {
+                parent.mkdirs(); // in case they were removed since we created them ...
+            }
+            if (!parent.canWrite()) {
+                String parentPath = parent.getAbsolutePath();
+                String msg = JcrI18n.fileConnectorCannotWriteToDirectory.text(getSourceName(), getClass(), parentPath);
+                throw new DocumentStoreException(id, msg);
+            }
         }
         String primaryType = reader.getPrimaryTypeName();
         try {
@@ -251,6 +313,7 @@ public class FileSystemConnector extends Connector {
                 file.createNewFile();
             } else if (NT_FOLDER.equals(primaryType)) {
                 file.mkdir();
+                // TODO: FileSystemConnector -- Should we handle renames and moves here instead?
             } else if (NT_RESOURCE.equals(primaryType)) {
                 Property content = reader.getProperty(JCR_DATA);
                 BinaryValue binary = factories().getBinaryFactory().create(content.getFirstValue());
