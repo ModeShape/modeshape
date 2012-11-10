@@ -29,6 +29,7 @@ import java.util.Set;
 import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.document.Immutable;
 import org.infinispan.schematic.document.Path;
+import org.infinispan.schematic.internal.HashCode;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
@@ -50,7 +51,7 @@ public class RemoveOperation extends Operation {
     public RemoveOperation( Path parentPath,
                             String fieldName,
                             Object oldValue ) {
-        super(parentPath);
+        super(parentPath, HashCode.compute(parentPath, fieldName /*,oldValue*/));
         this.fieldName = fieldName;
         this.oldValue = oldValue;
     }
@@ -86,6 +87,18 @@ public class RemoveOperation extends Operation {
     @Override
     public String toString() {
         return "Remove from '" + parentPath + "' the '" + fieldName + "' field value '" + oldValue + "'";
+    }
+
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj instanceof RemoveOperation) {
+            RemoveOperation other = (RemoveOperation)obj;
+            // Note we don't consider the 'oldValue', since two removes are equivalent based only upon the field name ...
+            return equalsIfNotNull(fieldName, other.fieldName) /*&& equalsIfNotNull(oldValue, other.oldValue)*/
+                   && equalsIfNotNull(getParentPath(), other.getParentPath());
+
+        }
+        return false;
     }
 
     public static final class Externalizer extends SchematicExternalizer<RemoveOperation> {

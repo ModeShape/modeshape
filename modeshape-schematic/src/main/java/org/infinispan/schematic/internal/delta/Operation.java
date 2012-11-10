@@ -39,9 +39,17 @@ import org.infinispan.schematic.internal.document.MutableDocument;
 public abstract class Operation {
 
     protected final Path parentPath;
+    private final int hashCode;
 
-    protected Operation( Path parentPath ) {
+    protected Operation( Path parentPath,
+                         int hashCode ) {
         this.parentPath = parentPath;
+        this.hashCode = hashCode;
+    }
+
+    @Override
+    public final int hashCode() {
+        return hashCode;
     }
 
     public abstract void replay( MutableDocument delegate );
@@ -76,6 +84,14 @@ public abstract class Operation {
         }
         // everything else should be immutable ...
         return value;
+    }
+
+    protected boolean equalsIfNotNull( Object obj1,
+                                       Object obj2 ) {
+        if (obj1 == null) {
+            return obj2 == null;
+        }
+        return obj1.equals(obj2);
     }
 
 }

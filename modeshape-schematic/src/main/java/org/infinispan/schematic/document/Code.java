@@ -79,18 +79,18 @@ public class Code {
                                  Code value ) throws IOException {
             if (value instanceof CodeWithScope) {
                 CodeWithScope withScope = (CodeWithScope)value;
-                output.write(2);
+                output.writeInt(2);
                 output.writeUTF(withScope.getCode());
                 output.writeObject(withScope.getScope());
             } else {
-                output.write(1);
+                output.writeInt(1);
                 output.writeUTF(value.getCode());
             }
         }
 
         @Override
         public Code readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
-            int type = input.read();
+            int type = input.readInt();
             switch (type) {
                 case 1:
                     String code = input.readUTF();
