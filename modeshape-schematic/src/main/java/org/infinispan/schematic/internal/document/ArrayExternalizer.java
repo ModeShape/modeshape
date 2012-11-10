@@ -25,34 +25,37 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
+import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Bson;
-import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
 
-public class DocumentExternalizer extends SchematicExternalizer<Document> {
+public class ArrayExternalizer extends SchematicExternalizer<Array> {
+
+    private static final BsonReader SHARED_READER = new BsonReader();
+
     /** The serialVersionUID */
     private static final long serialVersionUID = 1L;
 
     @Override
     public void writeObject( ObjectOutput output,
-                             Document doc ) throws IOException {
+                             Array array ) throws IOException {
         // Write the type byte ...
         output.writeByte(1);
 
         // Write the BSON ...
-        Bson.write(doc, output);
+        Bson.write(array, output);
     }
 
     @Override
-    public Document readObject( ObjectInput input ) throws IOException {
+    public Array readObject( ObjectInput input ) throws IOException {
         // Read the type byte ...
         int type = input.readByte();
         assert type == 1;
 
         // Read the BSON ...
-        return Bson.read(input);
+        return SHARED_READER.readArray(input);
     }
 
     @Override
@@ -62,7 +65,7 @@ public class DocumentExternalizer extends SchematicExternalizer<Document> {
 
     @SuppressWarnings( "unchecked" )
     @Override
-    public Set<Class<? extends Document>> getTypeClasses() {
-        return Util.<Class<? extends Document>>asSet(BasicDocument.class);
+    public Set<Class<? extends Array>> getTypeClasses() {
+        return Util.<Class<? extends Array>>asSet(BasicArray.class);
     }
 }

@@ -32,6 +32,7 @@ import java.util.Set;
 import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.document.Immutable;
 import org.infinispan.schematic.document.Path;
+import org.infinispan.schematic.internal.HashCode;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.document.MutableArray;
 import org.infinispan.schematic.internal.document.MutableDocument;
@@ -51,7 +52,7 @@ public class ClearOperation extends ArrayOperation {
     private transient List<?> removedValues;
 
     public ClearOperation( Path path ) {
-        super(path);
+        super(path, HashCode.compute(path));
     }
 
     @Override
@@ -83,6 +84,15 @@ public class ClearOperation extends ArrayOperation {
     @Override
     public String toString() {
         return "Clear at '" + parentPath + "' the existing values";
+    }
+
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj instanceof ClearOperation) {
+            ClearOperation that = (ClearOperation)obj;
+            return equalsIfNotNull(getParentPath(), that.getParentPath());
+        }
+        return false;
     }
 
     public static final class Externalizer extends SchematicExternalizer<ClearOperation> {

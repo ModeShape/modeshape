@@ -31,6 +31,7 @@ import java.util.Set;
 import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.document.Array.Entry;
 import org.infinispan.schematic.document.Path;
+import org.infinispan.schematic.internal.HashCode;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.document.MutableArray;
 import org.infinispan.schematic.internal.document.MutableDocument;
@@ -51,7 +52,7 @@ public class RetainAllValuesOperation extends ArrayOperation {
 
     public RetainAllValuesOperation( Path parentPath,
                                      Collection<?> values ) {
-        super(parentPath);
+        super(parentPath, HashCode.compute(parentPath, values));
         this.values = values;
     }
 
@@ -88,6 +89,16 @@ public class RetainAllValuesOperation extends ArrayOperation {
     @Override
     public String toString() {
         return "Retain at '" + parentPath + "' the values: " + values;
+    }
+
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj instanceof RetainAllValuesOperation) {
+            RetainAllValuesOperation other = (RetainAllValuesOperation)obj;
+            return equalsIfNotNull(values, other.values) && equalsIfNotNull(getParentPath(), other.getParentPath());
+
+        }
+        return false;
     }
 
     public static final class Externalizer extends SchematicExternalizer<RetainAllValuesOperation> {

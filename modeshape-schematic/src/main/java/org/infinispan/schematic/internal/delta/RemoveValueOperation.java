@@ -28,6 +28,7 @@ import java.io.ObjectOutput;
 import java.util.Set;
 import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.document.Path;
+import org.infinispan.schematic.internal.HashCode;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.document.MutableArray;
 import org.infinispan.schematic.internal.document.MutableDocument;
@@ -48,7 +49,7 @@ public class RemoveValueOperation extends ArrayOperation {
 
     public RemoveValueOperation( Path parentPath,
                                  Object value ) {
-        super(parentPath);
+        super(parentPath, HashCode.compute(parentPath, value));
         this.value = value;
     }
 
@@ -83,6 +84,16 @@ public class RemoveValueOperation extends ArrayOperation {
     @Override
     public String toString() {
         return "Remove at '" + parentPath + "' the value '" + value + "'";
+    }
+
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj instanceof RemoveValueOperation) {
+            RemoveValueOperation other = (RemoveValueOperation)obj;
+            return equalsIfNotNull(value, other.value) && equalsIfNotNull(getParentPath(), other.getParentPath());
+
+        }
+        return false;
     }
 
     public static final class Externalizer extends SchematicExternalizer<RemoveValueOperation> {

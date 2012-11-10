@@ -73,6 +73,17 @@ public class AddValueIfAbsentOperation extends AddValueOperation {
         return super.toString() + " if absent";
     }
 
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj instanceof AddValueIfAbsentOperation) {
+            AddValueIfAbsentOperation other = (AddValueIfAbsentOperation)obj;
+            return equalsIfNotNull(value, other.value) && index == other.index
+                   && equalsIfNotNull(getParentPath(), other.getParentPath());
+
+        }
+        return false;
+    }
+
     public static final class Externalizer extends SchematicExternalizer<AddValueIfAbsentOperation> {
         private static final long serialVersionUID = 1L;
 

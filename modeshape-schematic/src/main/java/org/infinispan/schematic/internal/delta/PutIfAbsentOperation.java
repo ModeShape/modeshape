@@ -28,6 +28,7 @@ import java.io.ObjectOutput;
 import java.util.Set;
 import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.document.Path;
+import org.infinispan.schematic.internal.HashCode;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
@@ -47,7 +48,7 @@ public class PutIfAbsentOperation extends Operation {
     public PutIfAbsentOperation( Path parentPath,
                                  String fieldName,
                                  Object newValue ) {
-        super(parentPath);
+        super(parentPath, HashCode.compute(parentPath, fieldName, newValue));
         this.fieldName = fieldName;
         this.newValue = newValue;
     }
@@ -86,6 +87,17 @@ public class PutIfAbsentOperation extends Operation {
             parent.put(fieldName, newValue);
             absent = true;
         }
+    }
+
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj instanceof PutIfAbsentOperation) {
+            PutIfAbsentOperation other = (PutIfAbsentOperation)obj;
+            return equalsIfNotNull(fieldName, other.fieldName) && absent == other.absent
+                   && equalsIfNotNull(newValue, other.newValue) && getParentPath().equals(other.getParentPath());
+
+        }
+        return false;
     }
 
     @Override

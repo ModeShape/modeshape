@@ -125,10 +125,10 @@ public final class ObjectId {
         @Override
         public void writeObject( ObjectOutput output,
                                  ObjectId id ) throws IOException {
-            output.write(id.getMachine());
-            output.write(id.getTime());
-            output.write(id.getProcess());
-            output.write(id.getInc());
+            output.writeInt(id.getMachine());
+            output.writeInt(id.getTime());
+            output.writeInt(id.getProcess());
+            output.writeInt(id.getInc());
         }
 
         @Override

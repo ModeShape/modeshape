@@ -83,6 +83,20 @@ public class SchematicEntryDelta implements Delta, DocumentObserver {
         return changeLog == null ? 0 : changeLog.size();
     }
 
+    @Override
+    public int hashCode() {
+        return changeLog.hashCode();
+    }
+
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj instanceof SchematicEntryDelta) {
+            SchematicEntryDelta other = (SchematicEntryDelta)obj;
+            return changeLog.equals(other.changeLog);
+        }
+        return false;
+    }
+
     public static class Externalizer extends SchematicExternalizer<SchematicEntryDelta> {
         private static final long serialVersionUID = 1L;
 

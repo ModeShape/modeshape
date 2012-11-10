@@ -28,6 +28,7 @@ import java.io.ObjectOutput;
 import java.util.Set;
 import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.document.Path;
+import org.infinispan.schematic.internal.HashCode;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
@@ -48,7 +49,7 @@ public class PutOperation extends Operation {
                          String fieldName,
                          Object oldValue,
                          Object newValue ) {
-        super(parentPath);
+        super(parentPath, HashCode.compute(parentPath, fieldName, /*oldValue,*/newValue));
         this.fieldName = fieldName;
         this.oldValue = oldValue;
         this.newValue = newValue;
@@ -87,6 +88,16 @@ public class PutOperation extends Operation {
         MutableDocument parent = mutableParent(delegate);
         assert parent != null;
         parent.put(fieldName, newValue);
+    }
+
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj instanceof PutOperation) {
+            PutOperation other = (PutOperation)obj;
+            return equalsIfNotNull(fieldName, other.fieldName) /*&& equalsIfNotNull(oldValue, other.oldValue)*/
+                   && equalsIfNotNull(newValue, other.newValue) && equalsIfNotNull(getParentPath(), other.getParentPath());
+        }
+        return false;
     }
 
     @Override
