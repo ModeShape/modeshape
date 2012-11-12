@@ -56,15 +56,7 @@ public class BsonReader {
         // Create an object so that this reader is thread safe ...
         DocumentValueFactory valueFactory = VALUE_FACTORY;
         Reader reader = new Reader(new BsonDataInput(new DataInputStream(stream)), valueFactory);
-        // try {
         reader.startDocument();
-        // } catch (IOException e) {
-        // Json.writePretty(reader.endDocument(), System.err);
-        // throw e;
-        // } catch (RuntimeException e) {
-        // Json.writePretty(reader.endDocument(), System.err);
-        // throw e;
-        // }
         return reader.endDocument();
     }
 
@@ -94,15 +86,7 @@ public class BsonReader {
         // Create an object so that this reader is thread safe ...
         DocumentValueFactory valueFactory = VALUE_FACTORY;
         Reader reader = new Reader(new BsonDataInput(new DataInputStream(stream)), valueFactory);
-        // try {
         reader.startArray();
-        // } catch (IOException e) {
-        // Json.writePretty(reader.endDocument(), System.err);
-        // throw e;
-        // } catch (RuntimeException e) {
-        // Json.writePretty(reader.endDocument(), System.err);
-        // throw e;
-        // }
         return (Array)reader.endDocument();
     }
 
