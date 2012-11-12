@@ -73,17 +73,19 @@ public class Code {
 
     public static class Externalizer extends SchematicExternalizer<Code> {
         private static final long serialVersionUID = 1L;
+        private static final int CODE_WITHOUT_SCOPE_TYPE = 1;
+        private static final int CODE_WITH_SCOPE_TYPE = 2;
 
         @Override
         public void writeObject( ObjectOutput output,
                                  Code value ) throws IOException {
             if (value instanceof CodeWithScope) {
                 CodeWithScope withScope = (CodeWithScope)value;
-                output.writeInt(2);
+                output.writeInt(CODE_WITH_SCOPE_TYPE);
                 output.writeUTF(withScope.getCode());
                 output.writeObject(withScope.getScope());
             } else {
-                output.writeInt(1);
+                output.writeInt(CODE_WITHOUT_SCOPE_TYPE);
                 output.writeUTF(value.getCode());
             }
         }
@@ -92,10 +94,10 @@ public class Code {
         public Code readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
             int type = input.readInt();
             switch (type) {
-                case 1:
+                case CODE_WITHOUT_SCOPE_TYPE:
                     String code = input.readUTF();
                     return new Code(code);
-                case 2:
+                case CODE_WITH_SCOPE_TYPE:
                     code = input.readUTF();
                     Document scope = (Document)input.readObject();
                     return new CodeWithScope(code, scope);
