@@ -468,6 +468,19 @@ public class ModeShapeConfigurationTest {
     }
 
     @Test
+    public void shouldReadSavedConfiguration() throws Exception {
+    	StringBuffer path = new StringBuffer();
+		path.append(System.getProperty("java.io.tmpdir"));
+		path.append(File.separator);
+		path.append("shouldReadSavedConfiguration.xml");
+		File tmpFile = new File(path.toString());
+        configuration.storeTo(tmpFile);
+        configuration.loadFrom(tmpFile);
+        assertThat(configuration.getProblems().isEmpty(), is(true));
+    }
+
+    
+    @Test
     public void shouldSaveComplexConfigurationToContentHandler() throws Exception {
         // Update the configuration and save it ...
         configuration.repositorySource("Source1")
