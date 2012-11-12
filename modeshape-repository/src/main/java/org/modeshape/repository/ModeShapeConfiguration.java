@@ -46,6 +46,7 @@ import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.component.ClassLoaderFactory;
 import org.modeshape.common.component.StandardClassLoaderFactory;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.common.xml.StreamingContentHandler;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
@@ -429,8 +430,10 @@ public class ModeShapeConfiguration {
         handler.startDocument();
 
         for (NamespaceRegistry.Namespace namespace : namespaces) {
-            handler.startPrefixMapping(namespace.getPrefix(), namespace.getNamespaceUri());
-            mappedNamespacePrefixes.push(namespace.getPrefix());
+        	if (!StringUtil.isBlank(namespace.getPrefix())){
+        		handler.startPrefixMapping(namespace.getPrefix(), namespace.getNamespaceUri());
+            	mappedNamespacePrefixes.push(namespace.getPrefix());
+            }
         }
 
         exportNode(handler, allContent, allContent.getRoot());
