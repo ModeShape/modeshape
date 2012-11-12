@@ -34,8 +34,6 @@
     </translator>
     <data-role allow-create-temporary-tables="true" any-authenticated="true" name="My Data Role">
         <description>my data role description</description>
-        <mapped-role-name>Sledge</mapped-role-name>
-        <mapped-role-name>Hammer</mapped-role-name>
         <permission>
             <resource-name>BooksProcedures</resource-name>
             <allow-create>false</allow-create>
@@ -63,6 +61,8 @@
             <allow-execute>false</allow-execute>
             <allow-alter>false</allow-alter>
         </permission>
+        <mapped-role-name>Sledge</mapped-role-name>
+        <mapped-role-name>Hammer</mapped-role-name>
     </data-role>
     <entry path="path1">
         <description>This is entry 1 description</description>
