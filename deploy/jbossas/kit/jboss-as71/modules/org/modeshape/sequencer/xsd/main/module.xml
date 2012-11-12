@@ -23,11 +23,11 @@
 <module xmlns="urn:jboss:module:1.1" name="org.modeshape.sequencer.xsd">
     <resources>
         <resource-root path="modeshape-sequencer-xsd-${project.version}.jar" />
-        <resource-root path="xsd-${eclipse.xsd.version}.jar" />
-        <resource-root path="common-${eclipse.emf.common.version}.jar" />
-        <resource-root path="ecore-${eclipse.emf.ecore.version}.jar" />
-        <resource-root path="ecore-change-${eclipse.emf.ecorechange.version}.jar" />
-        <resource-root path="ecore-xmi-${eclipse.emf.ecorexmi.version}.jar" />
+        <resource-root path="xsd-${version.eclipse.xsd}.jar" />
+        <resource-root path="common-${version.eclipse.emf.common}.jar" />
+        <resource-root path="ecore-${version.eclipse.emf.ecore}.jar" />
+        <resource-root path="ecore-change-${version.eclipse.emf.ecorechange}.jar" />
+        <resource-root path="ecore-xmi-${version.eclipse.emf.ecorexmi}.jar" />
     </resources>
 
     <dependencies>

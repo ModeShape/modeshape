@@ -213,7 +213,7 @@
                         <artifactItem>
                             <groupId>org.jboss.as</groupId>
                             <artifactId>jboss-as-dist</artifactId>
-                            <version>${jbossas-version}</version>
+                            <version>${version.jbossas}</version>
                             <type>zip</type>
                             <overWrite>false</overWrite>
                             <outputDirectory>${project.build.directory}</outputDirectory>
@@ -227,7 +227,7 @@
                             <classifier>jbossas-${jbossas7.assembly.descriptor.version}-dist</classifier>
                             <type>zip</type>
                             <overWrite>false</overWrite>
-                            <outputDirectory>${project.build.directory}/jboss-as-${jbossas-version}</outputDirectory>
+                            <outputDirectory>${project.build.directory}/jboss-as-${version.jbossas}</outputDirectory>
                         </artifactItem>
                     </artifactItems>
                 </configuration>

@@ -79,9 +79,9 @@
                                         <unzip src="${project.build.directory}/modeshape-jdbc-${project.version}-jar-with-dependencies.jar"
                                                dest="${project.build.directory}/tempjars"/>
 
-                                        <unzip src="${project.build.directory}/tempjars/jaxrs-api-${resteasy.version}.jar"
+                                        <unzip src="${project.build.directory}/tempjars/jaxrs-api-${version.org.jboss.resteasy}.jar"
                                                dest="${ant.jdbc.parseDirectory}"/>
-                                        <unzip src="${project.build.directory}/tempjars/jcr-${jcr.version}.jar"
+                                        <unzip src="${project.build.directory}/tempjars/jcr-${version.jcr}.jar"
                                                dest="${ant.jdbc.parseDirectory}"/>
 
                                         <unzip src="${project.build.directory}/tempjars/commons-codec-1.4.jar"
@@ -96,43 +96,43 @@
                                         <move file="${ant.jdbc.parseDirectory}/META-INF/NOTICE"
                                               tofile="${ant.jdbc.parseDirectory}/META-INF/NOTICE_commons-logging.txt"/>
 
-                                        <unzip src="${project.build.directory}/tempjars/joda-time-${joda.time.version}.jar"
+                                        <unzip src="${project.build.directory}/tempjars/joda-time-${version.joda-time}.jar"
                                                dest="${ant.jdbc.parseDirectory}"/>
                                         <move file="${ant.jdbc.parseDirectory}/META-INF/LICENSE.txt"
                                               tofile="${ant.jdbc.parseDirectory}/META-INF/LICENSE_joda-time.txt"/>
                                         <move file="${ant.jdbc.parseDirectory}/META-INF/NOTICE.txt"
                                               tofile="${ant.jdbc.parseDirectory}/META-INF/NOTICE_joda-time.txt"/>
 
-                                        <unzip src="${project.build.directory}/tempjars/httpclient-${httpclient.version}.jar"
+                                        <unzip src="${project.build.directory}/tempjars/httpclient-${version.org.apache.httpcomponents.httpclient}.jar"
                                                dest="${ant.jdbc.parseDirectory}"/>
                                         <move file="${ant.jdbc.parseDirectory}/META-INF/LICENSE.txt"
                                               tofile="${ant.jdbc.parseDirectory}/META-INF/LICENSE_httpclient.txt"/>
                                         <move file="${ant.jdbc.parseDirectory}/META-INF/NOTICE.txt"
                                               tofile="${ant.jdbc.parseDirectory}/META-INF/NOTICE_httpclient.txt"/>
 
-                                        <unzip src="${project.build.directory}/tempjars/httpcore-${httpclient.version}.jar"
+                                        <unzip src="${project.build.directory}/tempjars/httpcore-${version.org.apache.httpcomponents.httpclient}.jar"
                                                dest="${ant.jdbc.parseDirectory}"/>
                                         <move file="${ant.jdbc.parseDirectory}/META-INF/LICENSE.txt"
                                               tofile="${ant.jdbc.parseDirectory}/META-INF/LICENSE_httpcore.txt"/>
                                         <move file="${ant.jdbc.parseDirectory}/META-INF/NOTICE.txt"
                                               tofile="${ant.jdbc.parseDirectory}/META-INF/NOTICE_httpcore.txt"/>
 
-                                        <unzip src="${project.build.directory}/tempjars/jettison-${jettison.version}.jar"
+                                        <unzip src="${project.build.directory}/tempjars/jettison-${version.org.codehaus.jettison}.jar"
                                                dest="${ant.jdbc.parseDirectory}"/>
                                         <move file="${ant.jdbc.parseDirectory}/META-INF/LICENSE"
                                               tofile="${ant.jdbc.parseDirectory}/META-INF/LICENSE_jettison.txt"/>
 
-                                        <unzip src="${project.build.directory}/tempjars/resteasy-jaxrs-${resteasy.version}.jar"
+                                        <unzip src="${project.build.directory}/tempjars/resteasy-jaxrs-${version.org.jboss.resteasy}.jar"
                                                dest="${ant.jdbc.parseDirectory}"/>
                                         <move file="${ant.jdbc.parseDirectory}/META-INF/services/javax.ws.rs.ext.Providers"
                                               tofile="${project.build.directory}/tempproviders/jaxrs_providers"/>
 
-                                        <unzip src="${project.build.directory}/tempjars/resteasy-jaxb-provider-${resteasy.version}.jar"
+                                        <unzip src="${project.build.directory}/tempjars/resteasy-jaxb-provider-${version.org.jboss.resteasy}.jar"
                                                dest="${ant.jdbc.parseDirectory}"/>
                                         <move file="${ant.jdbc.parseDirectory}/META-INF/services/javax.ws.rs.ext.Providers"
                                               tofile="${project.build.directory}/tempproviders/jaxb_providers"/>
 
-                                        <unzip src="${project.build.directory}/tempjars/resteasy-jettison-provider-${resteasy.version}.jar"
+                                        <unzip src="${project.build.directory}/tempjars/resteasy-jettison-provider-${version.org.jboss.resteasy}.jar"
                                                dest="${ant.jdbc.parseDirectory}"/>
                                         <move file="${ant.jdbc.parseDirectory}/META-INF/services/javax.ws.rs.ext.Providers"
                                               tofile="${project.build.directory}/tempproviders/jet_providers"/>

@@ -39,7 +39,7 @@
         <module name="org.infinispan" export="true"/>
         <module name="org.joda.time" />
         <module name="org.jgroups" />
-        <module name="org.apache.tika" slot="${tika.version}" services="import"/>
+        <module name="org.apache.tika" slot="${version.tika}" services="import"/>
         <module name="org.apache.lucene" slot="${lucene.module.slot}"/>
         <module name="org.hibernate.search-engine" slot="4.1" export="true"/>
         <!-- For naming ... -->

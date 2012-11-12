@@ -23,7 +23,7 @@
 <module xmlns="urn:jboss:module:1.1" name="org.modeshape.sequencer.mp3">
     <resources>
         <resource-root path="modeshape-sequencer-mp3-${project.version}.jar" />
-        <resource-root path="jaudiotagger-${jaudiotagger.version}.jar" />
+        <resource-root path="jaudiotagger-${version.jaudiotagger}.jar" />
     </resources>
 
     <dependencies>

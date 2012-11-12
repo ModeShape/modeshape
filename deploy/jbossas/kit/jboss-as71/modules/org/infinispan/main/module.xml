@@ -22,7 +22,7 @@
   -->
 <module xmlns="urn:jboss:module:1.1" name="org.infinispan">
     <resources>
-        <resource-root path="infinispan-core-${infinispan.version}.jar"/>
+        <resource-root path="infinispan-core-${version.org.infinispan}.jar"/>
         <resource-root path="modeshape-schematic-${project.version}.jar" />
     </resources>
 

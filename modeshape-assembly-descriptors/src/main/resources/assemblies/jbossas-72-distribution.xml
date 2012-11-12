@@ -86,7 +86,7 @@
         <!-- Module for Tika (self-contained) -->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/org/apache/tika/${tika.version}</outputDirectory>
+            <outputDirectory>modules/org/apache/tika/${version.tika}</outputDirectory>
             <includes>
                 <include>org.apache.tika:*:jar</include>
                 <include>org.apache.commons:commons-compress:jar</include>
@@ -137,16 +137,16 @@
             <includes>
                 <include>org.modeshape:modeshape-sequencer-java:jar</include>
                 <include>javassist:javassist:jar</include>
-                <include>org.eclipse*:common:jar:${eclipse.equinox.common.version}</include>
-                <include>org.eclipse*:core:jar:${eclipse.jdt.core.version}</include>
-                <include>org.eclipse*:resources:jar:${eclipse.core.resources.version}</include>
-                <include>org.eclipse*:expressions:jar:${eclipse.core.expressions.version}</include>
-                <include>org.eclipse*:preferences:jar:${eclipse.equinox.preferences.version}</include>
-                <include>org.eclipse*:runtime:jar:${eclipse.core.runtime.version}</include>
-                <include>org.eclipse*:osgi:jar:${eclipse.osgi.version}</include>
-                <include>org.eclipse*:jobs:jar:${eclipse.core.jobs.version}</include>
-                <include>org.eclipse*:registry:jar:${eclipse.equinox.registry.version}</include>
-                <include>org.eclipse*:contenttype:jar:${eclipse.core.contenttype.version}</include>
+                <include>org.eclipse*:common:jar:${version.eclipse.equinox.common}</include>
+                <include>org.eclipse*:core:jar:${version.eclipse.jdt.core}</include>
+                <include>org.eclipse*:resources:jar:${version.eclipse.core.resources}</include>
+                <include>org.eclipse*:expressions:jar:${version.eclipse.core.expressions}</include>
+                <include>org.eclipse*:preferences:jar:${version.eclipse.equinox.preferences}</include>
+                <include>org.eclipse*:runtime:jar:${version.eclipse.core.runtime}</include>
+                <include>org.eclipse*:osgi:jar:${version.eclipse.osgi}</include>
+                <include>org.eclipse*:jobs:jar:${version.eclipse.core.jobs}</include>
+                <include>org.eclipse*:registry:jar:${version.eclipse.equinox.registry}</include>
+                <include>org.eclipse*:contenttype:jar:${version.eclipse.core.contenttype}</include>
             </includes>
         </dependencySet>
 
@@ -215,11 +215,11 @@
             <outputDirectory>modules/org/modeshape/sequencer/xsd/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-sequencer-xsd:jar</include>
-                <include>org.eclipse*:xsd:jar:${eclipse.xsd.version}</include>
-                <include>org.eclipse*:common:jar:${eclipse.emf.common.version}</include>
-                <include>org.eclipse*:ecore:jar:${eclipse.emf.ecore.version}</include>
-                <include>org.eclipse*:ecore-change:jar:${eclipse.emf.ecorechange.version}</include>
-                <include>org.eclipse*:ecore-xmi:jar:${eclipse.emf.ecorexmi.version}</include>
+                <include>org.eclipse*:xsd:jar:${version.eclipse.xsd}</include>
+                <include>org.eclipse*:common:jar:${version.eclipse.emf.common}</include>
+                <include>org.eclipse*:ecore:jar:${version.eclipse.emf.ecore}</include>
+                <include>org.eclipse*:ecore-change:jar:${version.eclipse.emf.ecorechange}</include>
+                <include>org.eclipse*:ecore-xmi:jar:${version.eclipse.emf.ecorexmi}</include>
             </includes>
         </dependencySet>
 
