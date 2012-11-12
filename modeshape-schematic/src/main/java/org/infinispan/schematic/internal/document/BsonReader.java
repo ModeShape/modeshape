@@ -26,6 +26,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
+import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Bson;
 import org.infinispan.schematic.document.Bson.BinaryType;
 import org.infinispan.schematic.document.Document;
@@ -55,15 +56,7 @@ public class BsonReader {
         // Create an object so that this reader is thread safe ...
         DocumentValueFactory valueFactory = VALUE_FACTORY;
         Reader reader = new Reader(new BsonDataInput(new DataInputStream(stream)), valueFactory);
-        // try {
         reader.startDocument();
-        // } catch (IOException e) {
-        // Json.writePretty(reader.endDocument(), System.err);
-        // throw e;
-        // } catch (RuntimeException e) {
-        // Json.writePretty(reader.endDocument(), System.err);
-        // throw e;
-        // }
         return reader.endDocument();
     }
 
@@ -82,6 +75,36 @@ public class BsonReader {
         return reader.endDocument();
     }
 
+    /**
+     * Read the binary BSON representation from supplied input stream and construct the {@link Array} representation.
+     * 
+     * @param stream the input stream; may not be null
+     * @return the in-memory {@link Document} representation
+     * @throws IOException if there was a problem reading from the stream
+     */
+    public Array readArray( InputStream stream ) throws IOException {
+        // Create an object so that this reader is thread safe ...
+        DocumentValueFactory valueFactory = VALUE_FACTORY;
+        Reader reader = new Reader(new BsonDataInput(new DataInputStream(stream)), valueFactory);
+        reader.startArray();
+        return (Array)reader.endDocument();
+    }
+
+    /**
+     * Read the binary BSON representation from supplied input stream and construct the {@link Document} representation.
+     * 
+     * @param input the input stream; may not be null
+     * @return the in-memory {@link Document} representation
+     * @throws IOException if there was a problem reading from the stream
+     */
+    public Array readArray( DataInput input ) throws IOException {
+        // Create an object so that this reader is thread safe ...
+        DocumentValueFactory valueFactory = VALUE_FACTORY;
+        Reader reader = new Reader(new BsonDataInput(input), valueFactory);
+        reader.startArray();
+        return (Array)reader.endDocument();
+    }
+
     protected static class Reader {
         private final BsonDataInput data;
         private MutableDocument object;
@@ -97,6 +120,10 @@ public class BsonReader {
 
         protected void startDocument() throws IOException {
             object = readDocument(false);
+        }
+
+        protected void startArray() throws IOException {
+            object = readDocument(true);
         }
 
         protected MutableDocument readDocument( boolean array ) throws IOException {

@@ -28,6 +28,7 @@ import java.io.ObjectOutput;
 import java.util.Set;
 import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.document.Path;
+import org.infinispan.schematic.internal.HashCode;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.document.MutableArray;
 import org.infinispan.schematic.internal.document.MutableDocument;
@@ -51,7 +52,7 @@ public class SetValueOperation extends ArrayOperation {
     public SetValueOperation( Path parentPath,
                               Object value,
                               int index ) {
-        super(parentPath);
+        super(parentPath, HashCode.compute(parentPath, value, index));
         this.value = value;
         this.index = index;
     }
@@ -88,6 +89,17 @@ public class SetValueOperation extends ArrayOperation {
     @Override
     public String toString() {
         return "Set at '" + parentPath + "' the value '" + value + "' (at index " + index + ")";
+    }
+
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj instanceof SetValueOperation) {
+            SetValueOperation other = (SetValueOperation)obj;
+            return equalsIfNotNull(value, other.value) && index == other.index
+                   && equalsIfNotNull(getParentPath(), other.getParentPath());
+
+        }
+        return false;
     }
 
     @SerializeWith( Externalizer.class )

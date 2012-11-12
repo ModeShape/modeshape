@@ -98,8 +98,8 @@ public final class Timestamp {
         @Override
         public void writeObject( ObjectOutput output,
                                  Timestamp timestamp ) throws IOException {
-            output.write(timestamp.getInc());
-            output.write(timestamp.getTime());
+            output.writeInt(timestamp.getInc());
+            output.writeInt(timestamp.getTime());
         }
 
         @Override

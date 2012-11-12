@@ -100,8 +100,8 @@ public final class Binary {
         @Override
         public void writeObject( ObjectOutput output,
                                  Binary value ) throws IOException {
-            output.write(value.getType());
-            output.write(value.length());
+            output.writeByte(value.getType());
+            output.writeInt(value.length());
             output.write(value.getBytes());
         }
 

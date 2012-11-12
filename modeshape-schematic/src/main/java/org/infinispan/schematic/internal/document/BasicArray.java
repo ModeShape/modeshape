@@ -65,7 +65,7 @@ import org.infinispan.schematic.internal.schema.DocumentTransformer.SystemProper
  * 
  * @author Randall Hauch <rhauch@redhat.com> (C) 2011 Red Hat Inc.
  */
-@SerializeWith( DocumentExternalizer.class )
+@SerializeWith( ArrayExternalizer.class )
 public class BasicArray implements MutableArray {
 
     private static final long serialVersionUID = 1L;
@@ -728,7 +728,7 @@ public class BasicArray implements MutableArray {
 
         // Record the list of entries that are removed, but start at the end of the values (so the indexes are correct)
         ListIterator<?> iter = this.values.listIterator(size());
-        while (iter.hasNext()) {
+        while (iter.hasPrevious()) {
             int index = iter.previousIndex();
             Object value = iter.previous();
             if (ifMatch == values.contains(value)) {

@@ -40,8 +40,9 @@ import org.infinispan.schematic.internal.document.MutableDocument;
 @Immutable
 public abstract class ArrayOperation extends Operation {
 
-    protected ArrayOperation( Path path ) {
-        super(path);
+    protected ArrayOperation( Path path,
+                              int hashCode ) {
+        super(path, hashCode);
     }
 
     @Override

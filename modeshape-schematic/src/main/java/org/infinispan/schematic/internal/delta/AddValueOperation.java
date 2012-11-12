@@ -28,6 +28,7 @@ import java.io.ObjectOutput;
 import java.util.Set;
 import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.document.Path;
+import org.infinispan.schematic.internal.HashCode;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.document.MutableArray;
 import org.infinispan.schematic.internal.document.MutableDocument;
@@ -51,7 +52,7 @@ public class AddValueOperation extends ArrayOperation {
 
     public AddValueOperation( Path path,
                               Object value ) {
-        super(path);
+        super(path, HashCode.compute(path, value, APPEND_INDEX));
         this.value = value;
         this.index = APPEND_INDEX;
     }
@@ -59,7 +60,7 @@ public class AddValueOperation extends ArrayOperation {
     public AddValueOperation( Path path,
                               Object value,
                               int index ) {
-        super(path);
+        super(path, HashCode.compute(path, value, index));
         this.value = value;
         this.index = index;
     }
@@ -105,6 +106,17 @@ public class AddValueOperation extends ArrayOperation {
         return "Add to '" + parentPath + "' the value '" + value + "'" + (index >= 0 ? " at index " + index : "");
     }
 
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj instanceof AddValueOperation) {
+            AddValueOperation other = (AddValueOperation)obj;
+            return equalsIfNotNull(value, other.value) && index == other.index
+                   && equalsIfNotNull(getParentPath(), other.getParentPath());
+
+        }
+        return false;
+    }
+
     public static final class Externalizer extends SchematicExternalizer<AddValueOperation> {
         private static final long serialVersionUID = 1L;
 
@@ -112,7 +124,7 @@ public class AddValueOperation extends ArrayOperation {
         public void writeObject( ObjectOutput output,
                                  AddValueOperation put ) throws IOException {
             output.writeObject(put.parentPath);
-            output.writeObject(put.index);
+            output.writeInt(put.index);
             output.writeObject(put.value);
         }
 
