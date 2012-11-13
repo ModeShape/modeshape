@@ -1,0 +1,7 @@
+{
+    "name" : "RepositoryWithoutTransactions",
+    "storage" : {
+        "cacheName" : "NoTxRepository",
+        "cacheConfiguration" : "config/no_tx_cache_configuration.xml"
+    }
+}
