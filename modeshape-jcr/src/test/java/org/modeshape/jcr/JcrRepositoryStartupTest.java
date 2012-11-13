@@ -23,8 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 import java.io.File;
 import java.util.UUID;
 import javax.jcr.NoSuchWorkspaceException;
@@ -33,18 +31,20 @@ import javax.jcr.Session;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Tests that related to repeatedly starting/stopping repositories (without another repository configured in the @Before and @After
  * methods).
- * 
+ *
  * @author rhauch
  * @author hchiorean
  */
 public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
 
     @Test
-    @FixFor( {"MODE-1526", "MODE-1512", "MODE-1617"} )
+    @FixFor( { "MODE-1526", "MODE-1512", "MODE-1617" } )
     public void shouldKeepPersistentDataAcrossRestart() throws Exception {
         File contentFolder = new File("target/persistent_repository/store/persistentRepository");
 
@@ -151,5 +151,11 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 return null;
             }
         }, repositoryConfigFile);
+    }
+
+    @FixFor( "MODE-1693" )
+    @Test(expected = IllegalStateException.class)
+    public void shouldNotStartIfTransactionsArentEnabled() throws Exception {
+        startRunStop(null, "config/repo-config-no-transactions.json");
     }
 }
