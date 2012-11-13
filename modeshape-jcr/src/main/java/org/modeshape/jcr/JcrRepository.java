@@ -1011,6 +1011,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.context = other.context;
                 this.database = other.database;
                 this.txnMgr = database.getCache().getAdvancedCache().getTransactionManager();
+                validateTransactionsEnabled();
                 MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
                 this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
                 if (change.largeValueChanged) {
@@ -1042,6 +1043,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.database = Schematic.get(container, cacheName);
                 assert this.database != null;
                 this.txnMgr = this.database.getCache().getAdvancedCache().getTransactionManager();
+                validateTransactionsEnabled();
                 MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
                 this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
 
@@ -1208,6 +1210,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             // Set up the node types importer
             this.nodeTypesImporter = new NodeTypesImporter(config.getNodeTypes(), this);
+        }
+
+        private void validateTransactionsEnabled() {
+            if (txnMgr == null) {
+                throw new IllegalStateException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName()));
+            }
         }
 
         protected Transactions createTransactions( TransactionMode mode,
