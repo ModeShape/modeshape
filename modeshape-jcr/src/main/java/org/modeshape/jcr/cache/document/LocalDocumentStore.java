@@ -120,8 +120,8 @@ public class LocalDocumentStore implements DocumentStore {
     }
 
     @Override
-    public void remove( String key ) {
-        database.remove(key);
+    public boolean remove( String key ) {
+        return database.remove(key) != null;
     }
 
     @Override

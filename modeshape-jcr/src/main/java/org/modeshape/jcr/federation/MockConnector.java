@@ -53,57 +53,56 @@ public class MockConnector extends Connector implements Pageable {
 
     @Override
     public void initialize( NamespaceRegistry registry,
-                            NodeTypeManager nodeTypeManager ) /*throws RepositoryException, IOException*/ {
+                            NodeTypeManager nodeTypeManager ) /*throws RepositoryException, IOException*/{
 
         String id1 = newId();
-        EditableDocument doc1 = newDocument(id1)
-                .addProperty(nameFrom("federated1_prop1"), "a string")
-                .addProperty("federated1_prop2", 12)
-                .addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
-                .document();
+        EditableDocument doc1 = newDocument(id1).addProperty(nameFrom("federated1_prop1"), "a string")
+                                                .addProperty("federated1_prop2", 12)
+                                                .addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
+                                                .document();
         documentsByLocation.put("/doc1", doc1);
         documentsById.put(id1, doc1);
 
         String id2 = newId();
         String id3 = newId();
-        EditableDocument doc3 = newDocument(id3)
-                                    .addProperty("federated3_prop1", "yet another string")
-                                    .addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
-                                    .setParent(id2).document();
+        EditableDocument doc3 = newDocument(id3).addProperty("federated3_prop1", "yet another string")
+                                                .addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
+                                                .setParent(id2)
+                                                .document();
         documentsById.put(id3, doc3);
         documentsByLocation.put("/doc2/doc3", doc3);
 
-
-        EditableDocument doc2 = newDocument(id2)
-                                    .addProperty("federated2_prop1", "another string")
-                                    .addProperty("federated2_prop2", Boolean.FALSE)
-                                    .addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
-                                    .addChild(id3, "federated3").document();
+        EditableDocument doc2 = newDocument(id2).addProperty("federated2_prop1", "another string")
+                                                .addProperty("federated2_prop2", Boolean.FALSE)
+                                                .addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
+                                                .addChild(id3, "federated3")
+                                                .document();
         documentsByLocation.put("/doc2", doc2);
         documentsById.put(id2, doc2);
 
         String id4 = newId();
-        EditableDocument doc4 = newDocument(id4)
-                                    .addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
-                                    .setParent(PAGED_DOCUMENT_ID)
-                                    .document();
+        EditableDocument doc4 = newDocument(id4).addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
+                                                .setParent(PAGED_DOCUMENT_ID)
+                                                .document();
         documentsById.put(id4, doc4);
 
         String id5 = newId();
-        EditableDocument doc5 = newDocument(id5).addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured").setParent(
-                PAGED_DOCUMENT_ID).document();
+        EditableDocument doc5 = newDocument(id5).addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
+                                                .setParent(PAGED_DOCUMENT_ID)
+                                                .document();
         documentsById.put(id5, doc5);
 
         String id6 = newId();
-        EditableDocument doc6 = newDocument(id6).addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured").setParent(
-                PAGED_DOCUMENT_ID).document();
+        EditableDocument doc6 = newDocument(id6).addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
+                                                .setParent(PAGED_DOCUMENT_ID)
+                                                .document();
         documentsById.put(id6, doc6);
 
         EditableDocument pagedDoc = newDocument(PAGED_DOCUMENT_ID).addProperty(JcrLexicon.PRIMARY_TYPE, "nt:unstructured")
-                                        .addChild(id4, "federated4")
-                                        .addChild(id5, "federated5")
-                                        .addChild(id6, "federated6")
-                                        .document();
+                                                                  .addChild(id4, "federated4")
+                                                                  .addChild(id5, "federated5")
+                                                                  .addChild(id6, "federated6")
+                                                                  .document();
         documentsById.put(PAGED_DOCUMENT_ID, pagedDoc);
         documentsByLocation.put(PAGED_DOC_LOCATION, pagedDoc);
     }
@@ -117,9 +116,8 @@ public class MockConnector extends Connector implements Pageable {
             PagingWriter pagingWriter = newPagedDocument(doc);
             pagingWriter.newBlock(children.subList(0, 1), reader.getDocumentId(), String.valueOf(1), 1, children.size());
             return pagingWriter.document();
-        } else {
-            return doc;
         }
+        return doc;
     }
 
     @Override
@@ -134,17 +132,18 @@ public class MockConnector extends Connector implements Pageable {
     }
 
     @Override
-    public void removeDocument( String id ) {
+    public boolean removeDocument( String id ) {
         Document doc = documentsById.remove(id);
         if (doc != null) {
-            for (Iterator<Map.Entry<String, EditableDocument>> iterator = documentsByLocation.entrySet().iterator(); iterator.hasNext(); ) {
+            for (Iterator<Map.Entry<String, EditableDocument>> iterator = documentsByLocation.entrySet().iterator(); iterator.hasNext();) {
                 Map.Entry<String, EditableDocument> entry = iterator.next();
                 if (entry.getValue().equals(doc)) {
                     iterator.remove();
-                    return;
+                    return true;
                 }
             }
         }
+        return false;
     }
 
     @Override
@@ -192,6 +191,6 @@ public class MockConnector extends Connector implements Pageable {
             return newPagedDocument().endBlock(childrenForBlock).document();
         }
         return newPagedDocument().newBlock(childrenForBlock, parentId, String.valueOf(offset + 1), blockSize, children.size())
-                .document();
+                                 .document();
     }
 }

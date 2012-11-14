@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.federation;
+package org.modeshape.jcr.federation.filesystem;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -33,6 +33,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Map;
 import java.util.regex.Pattern;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
@@ -42,11 +43,16 @@ import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.cache.DocumentStoreException;
+import org.modeshape.jcr.cache.document.DocumentTranslator;
+import org.modeshape.jcr.federation.Connector;
+import org.modeshape.jcr.federation.NoExtraPropertiesStorage;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.binary.AbstractBinary;
 
@@ -55,6 +61,11 @@ import org.modeshape.jcr.value.binary.AbstractBinary;
  * properties that must be configured via the {@link RepositoryConfiguration}:
  * <ul>
  * <li><strong><code>directoryPath</code></strong> - The path to the file or folder that is to be accessed by this connector.</li>
+ * <li><strong><code>readOnly</code></strong> - A boolean flag that specifies whether this source can create/modify/remove files
+ * and directories on the file system to reflect changes in the JCR content. By default, sources are not read-only.</li>
+ * <li><strong><code>extraPropertyStorage</code></strong> - An optional string flag that specifies how this source handles "extra"
+ * properties that are not stored via file system attributes. See {@link #extraPropertiesStorage} for details. By default, extra
+ * properties are stored in the same Infinispan cache that the repository uses.</li>
  * <li><strong><code>exclusionPattern</code></strong> - Optional property that specifies a regular expression that is used to
  * determine which files and folders in the underlying file system are not exposed through this connector. Files and folders with
  * a name that matches the provided regular expression will <i>not</i> be exposed by this source.</li>
@@ -107,6 +118,11 @@ public class FileSystemConnector extends Connector {
     private static final String JCR_CONTENT_SUFFIX = DELIMITER + JCR_CONTENT;
     private static final int JCR_CONTENT_SUFFIX_LENGTH = JCR_CONTENT_SUFFIX.length();
 
+    private static final String EXTRA_PROPERTIES_JSON = "json";
+    private static final String EXTRA_PROPERTIES_BSON = "bson";
+    private static final String EXTRA_PROPERTIES_LEGACY = "legacy";
+    private static final String EXTRA_PROPERTIES_ERROR = "error";
+
     /**
      * The string path for a {@link File} object that represents the top-level directory accessed by this connector. This is set
      * via reflection and is required for this connector.
@@ -120,6 +136,13 @@ public class FileSystemConnector extends Connector {
      */
     private String directoryAbsolutePath;
     private int directoryAbsolutePathLength;
+
+    /**
+     * A boolean flag that specifies whether this connector should only read existing files and directories on the file system and
+     * should never write, update, or create files and directories on the file systems. This is set via reflection and defaults to
+     * "<code>false</code>".
+     */
+    private boolean readonly = false;
 
     /**
      * The regular expression that, if matched by a file or folder, indicates that the file or folder should be included.
@@ -137,10 +160,31 @@ public class FileSystemConnector extends Connector {
      */
     private InclusionExclusionFilenameFilter filenameFilter;
 
+    /**
+     * A string that specifies how the "extra" properties are to be stored, where an "extra" property is any JCR property that
+     * cannot be stored natively on the file system as file attributes. This field is set via reflection, and the value is
+     * expected to be one of these valid values:
+     * <ul>
+     * <li>"<code>store</code>" - Any extra properties are stored in the same Infinispan cache where the content is stored. This
+     * is the default and is used if the actual value doesn't match any of the other accepted values.</li>
+     * <li>"<code>json</code>" - Any extra properties are stored in a JSON file next to the file or directory.</li>
+     * <li>"<code>bson</code>" - Any extra propertiesa are stored in a BSON file next to the file or directory.</li>
+     * <li>"<code>legacy</code>" - Any extra properties are stored in a ModeShape 2.x-compatible file next to the file or
+     * directory. This is generally discouraged unless you were using ModeShape 2.x and have a directory structure that already
+     * contains these files.</li>
+     * <li>"<code>error</code>" - An extra properties result in exceptions. This is useful when you don't want to store any extra
+     * properties.</li>
+     * </ul>
+     */
+    private String extraPropertiesStorage;
+
+    private NamespaceRegistry registry;
+
     @Override
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         super.initialize(registry, nodeTypeManager);
+        this.registry = registry;
 
         // Initialize the directory path field that has been set via reflection when this method is called...
         checkFieldNotNull(directoryPath, "directoryPath");
@@ -161,11 +205,37 @@ public class FileSystemConnector extends Connector {
         filenameFilter = new InclusionExclusionFilenameFilter();
         if (exclusionPattern != null) filenameFilter.setExclusionPattern(exclusionPattern);
         if (inclusionPattern != null) filenameFilter.setInclusionPattern(exclusionPattern);
+
+        // Set up the extra properties storage ...
+        if (EXTRA_PROPERTIES_JSON.equalsIgnoreCase(extraPropertiesStorage)) {
+            FileSystemConnectorJsonSidecarStorage store = new FileSystemConnectorJsonSidecarStorage(this);
+            setExtraPropertiesStore(store);
+            filenameFilter.setExtraPropertiesExclusionPattern(store.getExclusionPattern());
+        } else if (EXTRA_PROPERTIES_BSON.equalsIgnoreCase(extraPropertiesStorage)) {
+            FileSystemConnectorBsonSidecarStorage store = new FileSystemConnectorBsonSidecarStorage(this);
+            setExtraPropertiesStore(store);
+            filenameFilter.setExtraPropertiesExclusionPattern(store.getExclusionPattern());
+        } else if (EXTRA_PROPERTIES_LEGACY.equalsIgnoreCase(extraPropertiesStorage)) {
+            FileSystemConnectorLegacySidecarStorage store = new FileSystemConnectorLegacySidecarStorage(this);
+            setExtraPropertiesStore(store);
+            filenameFilter.setExtraPropertiesExclusionPattern(store.getExclusionPattern());
+        } else if (EXTRA_PROPERTIES_ERROR.equalsIgnoreCase(extraPropertiesStorage)) {
+            setExtraPropertiesStore(new NoExtraPropertiesStorage(this));
+        }
+        // otherwise use the default extra properties storage
     }
 
     @Override
     public void shutdown() {
         // do nothing
+    }
+
+    DocumentTranslator getTranslator() {
+        return translator();
+    }
+
+    NamespaceRegistry registry() {
+        return registry;
     }
 
     protected boolean isContentNode( String id ) {
@@ -214,6 +284,22 @@ public class FileSystemConnector extends Connector {
         }
     }
 
+    protected boolean isExcluded( File file ) {
+        return !filenameFilter.accept(file.getParentFile(), file.getName());
+    }
+
+    protected void checkWritable( String id,
+                                  File file ) {
+        if (readonly) {
+            String msg = JcrI18n.fileConnectorIsReadOnly.text(getSourceName(), id, file.getAbsolutePath());
+            throw new DocumentStoreException(id, msg);
+        }
+        if (isExcluded(file)) {
+            String msg = JcrI18n.fileConnectorCannotStoreFileThatIsExcluded.text(getSourceName(), id, file.getAbsolutePath());
+            throw new DocumentStoreException(id, msg);
+        }
+    }
+
     @Override
     public boolean hasDocument( String id ) {
         return fileFor(id).exists();
@@ -222,6 +308,7 @@ public class FileSystemConnector extends Connector {
     @Override
     public Document getDocumentById( String id ) {
         File file = fileFor(id);
+        if (isExcluded(file)) return null;
         boolean isRoot = isRoot(id);
         boolean isResource = isContentNode(id);
         DocumentWriter writer = newDocument(id);
@@ -254,8 +341,12 @@ public class FileSystemConnector extends Connector {
         // Set the reference to the parent ...
         String parentId = idFor(parentFile);
         writer.setParents(parentId);
-        return writer.document();
 
+        // Add the extra properties (if there are any) ...
+        writer.addProperties(extraPropertiesStore().getProperties(id));
+
+        // Return the document ...
+        return writer.document();
     }
 
     @Override
@@ -266,11 +357,12 @@ public class FileSystemConnector extends Connector {
     }
 
     @Override
-    public void removeDocument( String id ) {
+    public boolean removeDocument( String id ) {
         File file = fileFor(id);
-        if (file.exists()) {
-            FileUtil.delete(file); // recursive delete
-        }
+        checkWritable(id, file);
+        if (!file.exists()) return false;
+        FileUtil.delete(file); // recursive delete
+        return true;
     }
 
     @Override
@@ -278,8 +370,53 @@ public class FileSystemConnector extends Connector {
         // Create a new directory or file described by the document ...
         DocumentReader reader = readDocument(document);
         String id = reader.getDocumentId();
+        File file = fileFor(id);
+        checkWritable(id, file);
+        File parent = file.getParentFile();
+        if (!parent.exists()) {
+            parent.mkdirs();
+        }
+        if (!parent.canWrite()) {
+            String parentPath = parent.getAbsolutePath();
+            String msg = JcrI18n.fileConnectorCannotWriteToDirectory.text(getSourceName(), getClass(), parentPath);
+            throw new DocumentStoreException(id, msg);
+        }
+        String primaryType = reader.getPrimaryTypeName();
+        Map<Name, Property> properties = reader.getProperties();
+        ExtraProperties extraProperties = extraPropertiesFor(id, false);
+        extraProperties.addAll(properties).except(JCR_PRIMARY_TYPE, JCR_CREATED, JCR_LAST_MODIFIED, JCR_DATA);
+        try {
+            if (NT_FILE.equals(primaryType)) {
+                file.createNewFile();
+            } else if (NT_FOLDER.equals(primaryType)) {
+                file.mkdirs();
+                // TODO: FileSystemConnector -- Should we handle renames and moves here instead?
+            } else if (isContentNode(id)) {
+                Property content = properties.get(JcrLexicon.DATA);
+                BinaryValue binary = factories().getBinaryFactory().create(content.getFirstValue());
+                OutputStream ostream = new BufferedOutputStream(new FileOutputStream(file));
+                IoUtil.write(binary.getStream(), ostream);
+                if (!NT_RESOURCE.equals(primaryType)) {
+                    // This is the "jcr:content" child, but the primary type is non-standard so record it as an extra property
+                    extraProperties.add(properties.get(JcrLexicon.PRIMARY_TYPE));
+                }
+            }
+            extraProperties.save();
+        } catch (RepositoryException e) {
+            throw new DocumentStoreException(id, e);
+        } catch (IOException e) {
+            throw new DocumentStoreException(id, e);
+        }
+    }
+
+    @Override
+    public void updateDocument( String id,
+                                Document document ) {
+        // Create a new directory or file described by the document ...
+        DocumentReader reader = readDocument(document);
         String parentId = reader.getParentIds().get(0);
         File file = fileFor(id);
+        checkWritable(id, file);
         File parent = file.getParentFile();
         String newParentId = idFor(parent);
         if (!parentId.equals(newParentId)) {
@@ -296,6 +433,10 @@ public class FileSystemConnector extends Connector {
                 throw new DocumentStoreException(id, msg);
             }
             parent = newParent;
+            // Remove the extra properties at the old location ...
+            extraPropertiesStore().removeProperties(id);
+            // Set the id to the new location ...
+            id = idFor(newFile);
         } else {
             // It is the same parent as before ...
             if (!parent.exists()) {
@@ -308,30 +449,31 @@ public class FileSystemConnector extends Connector {
             }
         }
         String primaryType = reader.getPrimaryTypeName();
+        Map<Name, Property> properties = reader.getProperties();
+        ExtraProperties extraProperties = extraPropertiesFor(id, true);
+        extraProperties.addAll(properties).except(JCR_PRIMARY_TYPE, JCR_CREATED, JCR_LAST_MODIFIED, JCR_DATA);
         try {
             if (NT_FILE.equals(primaryType)) {
                 file.createNewFile();
             } else if (NT_FOLDER.equals(primaryType)) {
                 file.mkdir();
                 // TODO: FileSystemConnector -- Should we handle renames and moves here instead?
-            } else if (NT_RESOURCE.equals(primaryType)) {
+            } else if (isContentNode(id)) {
                 Property content = reader.getProperty(JCR_DATA);
                 BinaryValue binary = factories().getBinaryFactory().create(content.getFirstValue());
                 OutputStream ostream = new BufferedOutputStream(new FileOutputStream(file));
                 IoUtil.write(binary.getStream(), ostream);
+                if (!NT_RESOURCE.equals(primaryType)) {
+                    // This is the "jcr:content" child, but the primary type is non-standard so record it as an extra property
+                    extraProperties.add(properties.get(JcrLexicon.PRIMARY_TYPE));
+                }
             }
+            extraProperties.save();
         } catch (RepositoryException e) {
             throw new DocumentStoreException(id, e);
         } catch (IOException e) {
             throw new DocumentStoreException(id, e);
         }
-    }
-
-    @Override
-    public void updateDocument( String id,
-                                Document document ) {
-        // The only thing we can do is create the directory or update the file content, so this is the same thing as storing ...
-        storeDocument(document);
     }
 
     /**
@@ -342,6 +484,7 @@ public class FileSystemConnector extends Connector {
         private String exclusionPattern = null;
         private Pattern inclusion;
         private Pattern exclusion;
+        private Pattern extraPropertiesExclusion;
 
         public void setExclusionPattern( String exclusionPattern ) {
             this.exclusionPattern = exclusionPattern;
@@ -349,6 +492,14 @@ public class FileSystemConnector extends Connector {
                 this.exclusion = null;
             } else {
                 this.exclusion = Pattern.compile(exclusionPattern);
+            }
+        }
+
+        public void setExtraPropertiesExclusionPattern( String exclusionPattern ) {
+            if (exclusionPattern == null) {
+                this.extraPropertiesExclusion = null;
+            } else {
+                this.extraPropertiesExclusion = Pattern.compile(exclusionPattern);
             }
         }
 
@@ -372,17 +523,17 @@ public class FileSystemConnector extends Connector {
         @Override
         public boolean accept( File file,
                                String string ) {
-            if (inclusionPattern == null && exclusionPattern == null) {
+            if (inclusionPattern == null) {
+                // Include unless it matches an exclusion ...
+                if (exclusionPattern != null && exclusion.matcher(string).matches()) return false;
+                if (extraPropertiesExclusion != null && extraPropertiesExclusion.matcher(string).matches()) return false;
                 return true;
-            } else if (inclusionPattern == null && exclusionPattern != null) {
-                return !exclusion.matcher(string).matches();
-                // return !string.matches(exclusionPattern);
-            } else {
-                if (exclusionPattern == null) {
-                    return inclusion.matcher(string).matches();
-                }
-                return inclusion.matcher(string).matches() && !exclusion.matcher(string).matches();
             }
+            // Include ONLY if it matches the inclusion AND not matched by the exclusions ...
+            if (!inclusion.matcher(string).matches()) return false;
+            if (exclusionPattern != null && exclusion.matcher(string).matches()) return false;
+            if (extraPropertiesExclusion != null && extraPropertiesExclusion.matcher(string).matches()) return false;
+            return true;
         }
     }
 

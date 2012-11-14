@@ -6,9 +6,34 @@
         "allowCreation" : true
     },
     "externalSources" : {
-        "test-resources" : {
-            "classname" : "org.modeshape.jcr.federation.FileSystemConnector",
-            "directoryPath" : "src/test/resources",
-        }
+        "readonly-files" : {
+            "classname" : "org.modeshape.jcr.federation.filesystem.FileSystemConnector",
+            "directoryPath" : "target/federation/files-read",
+            "readonly" : true,
+        },
+        "mutable-files-store" : {
+            "classname" : "org.modeshape.jcr.federation.filesystem.FileSystemConnector",
+            "directoryPath" : "target/federation/files-store",
+        },
+        "mutable-files-json" : {
+            "classname" : "filesystem",
+            "directoryPath" : "target/federation/files-json",
+            "extraPropertiesStorage" : "json",
+        },
+        "mutable-files-bson" : {
+            "classname" : "filesystem",
+            "directoryPath" : "target/federation/files-bson",
+            "extraPropertiesStorage" : "bson",
+        },
+        "mutable-files-legacy" : {
+            "classname" : "filesystem",
+            "directoryPath" : "target/federation/files-legacy",
+            "extraPropertiesStorage" : "legacy",
+        },
+        "mutable-files-error" : {
+            "classname" : "filesystem",
+            "directoryPath" : "target/federation/files-error",
+            "extraPropertiesStorage" : "error",
+        },
     }
 }

@@ -34,13 +34,21 @@ import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.nodetype.NodeTypeManager;
+import org.infinispan.schematic.Schematic;
+import org.infinispan.schematic.SchematicEntry;
+import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.util.ReflectionUtil;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
+import org.modeshape.jcr.cache.document.LocalDocumentStore;
 import org.modeshape.jcr.federation.Connector;
+import org.modeshape.jcr.federation.ExtraPropertiesStore;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Property;
 
 /**
  * Class which maintains (based on the configuration) the list of available connectors for a repository.
@@ -193,6 +201,14 @@ public class Connectors {
         // Set the MIME type detector ...
         ReflectionUtil.setValue(connector, "mimeTypeDetector", repository.mimeTypeDetector());
 
+        // Set the ExtraPropertiesStore instance, which is unique to this connector ...
+        LocalDocumentStore store = repository.documentStore().localStore();
+        String name = connector.getSourceName();
+        String sourceKey = NodeKey.keyForSourceName(name);
+        DocumentTranslator translator = getDocumentTranslator();
+        ExtraPropertiesStore defaultExtraPropertiesStore = new LocalDocumentStoreExtraProperties(store, sourceKey, translator);
+        ReflectionUtil.setValue(connector, "extraPropertiesStore", defaultExtraPropertiesStore);
+
         connector.initialize(registry, nodeTypeManager);
 
         // If successful, call the 'postInitialize' method reflectively (due to inability to call directly) ...
@@ -223,5 +239,79 @@ public class Connectors {
 
     public boolean hasConnectors() {
         return !sourceKeyToConnectorMap.isEmpty();
+    }
+
+    protected static class LocalDocumentStoreExtraProperties implements ExtraPropertiesStore {
+        private final LocalDocumentStore localStore;
+        private final String sourceKey;
+        private final DocumentTranslator translator;
+
+        protected LocalDocumentStoreExtraProperties( LocalDocumentStore localStore,
+                                                     String sourceKey,
+                                                     DocumentTranslator translator ) {
+            this.localStore = localStore;
+            this.sourceKey = sourceKey;
+            this.translator = translator;
+            assert this.localStore != null;
+            assert this.sourceKey != null;
+            assert this.translator != null;
+        }
+
+        protected String keyFor( String id ) {
+            return sourceKey + ":" + id;
+        }
+
+        @Override
+        public Map<Name, Property> getProperties( String id ) {
+            String key = keyFor(id);
+            SchematicEntry entry = localStore.get(key);
+            if (entry == null) return NO_PROPERTIES;
+            Document doc = entry.getContentAsDocument();
+            Map<Name, Property> props = new HashMap<Name, Property>();
+            translator.getProperties(doc, props);
+            return props;
+        }
+
+        @Override
+        public boolean removeProperties( String id ) {
+            String key = keyFor(id);
+            return localStore.remove(key);
+        }
+
+        @Override
+        public void storeProperties( String id,
+                                     Map<Name, Property> properties ) {
+            String key = keyFor(id);
+            EditableDocument doc = Schematic.newDocument();
+            for (Map.Entry<Name, Property> entry : properties.entrySet()) {
+                Property property = entry.getValue();
+                if (property != null) {
+                    translator.setProperty(doc, property, null);
+                }
+            }
+            localStore.storeDocument(key, doc);
+        }
+
+        @Override
+        public void updateProperties( String id,
+                                      Map<Name, Property> properties ) {
+            String key = keyFor(id);
+            SchematicEntry entry = localStore.get(key);
+            EditableDocument doc = null;
+            if (entry != null) {
+                doc = entry.editDocumentContent();
+            } else {
+                doc = Schematic.newDocument();
+            }
+            for (Map.Entry<Name, Property> propertyEntry : properties.entrySet()) {
+                Property property = propertyEntry.getValue();
+                if (property != null) {
+                    translator.setProperty(doc, property, null);
+                } else {
+                    translator.removeProperty(doc, propertyEntry.getKey(), null);
+                }
+            }
+            localStore.storeDocument(key, doc);
+        }
     }
 }

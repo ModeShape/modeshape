@@ -26,6 +26,7 @@ package org.modeshape.jcr.federation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.infinispan.schematic.DocumentFactory;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
@@ -33,6 +34,7 @@ import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.federation.Connector.DocumentWriter;
 import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.basic.BasicMultiValueProperty;
 import org.modeshape.jcr.value.basic.BasicSingleValueProperty;
 
@@ -115,6 +117,16 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
             values.add(value);
         }
         translator.setProperty(federatedDocument, new BasicMultiValueProperty(name, values), null);
+        return this;
+    }
+
+    @Override
+    public DocumentWriter addProperties( Map<Name, Property> properties ) {
+        if (properties != null && !properties.isEmpty()) {
+            for (Map.Entry<Name, Property> entry : properties.entrySet()) {
+                translator.setProperty(federatedDocument, entry.getValue(), null);
+            }
+        }
         return this;
     }
 

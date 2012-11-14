@@ -71,9 +71,10 @@ public interface DocumentStore {
      * Remove the existing document at the given key.
      * 
      * @param key the key or identifier for the document
+     * @return true if a document was removed, or false if there was no document with that key
      * @throws DocumentStoreException if there is a problem removing the document
      */
-    public void remove( String key );
+    public boolean remove( String key );
 
     /**
      * Determine whether the database contains an entry with the supplied key.
@@ -126,9 +127,10 @@ public interface DocumentStore {
 
     /**
      * Returns a document representing a block of children, that has the given key.
+     * 
      * @param key a {@code non-null} String the key of the block
-     * @return either a {@link Document} with children and possibly a pointer to the next block, or {@code null} if there isn't
-     * a block with such a key.
+     * @return either a {@link Document} with children and possibly a pointer to the next block, or {@code null} if there isn't a
+     *         block with such a key.
      */
     public Document getChildrenBlock( String key );
 }
