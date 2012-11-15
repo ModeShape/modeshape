@@ -360,6 +360,9 @@ public class FileSystemConnector extends Connector {
     public boolean removeDocument( String id ) {
         File file = fileFor(id);
         checkWritable(id, file);
+        // Remove the extra properties at the old location ...
+        extraPropertiesStore().removeProperties(id);
+        // Now remove the file (if it is there) ...
         if (!file.exists()) return false;
         FileUtil.delete(file); // recursive delete
         return true;
