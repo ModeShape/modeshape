@@ -27,6 +27,8 @@ import java.util.Collections;
 import java.util.Map;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.cache.DocumentStoreException;
+import org.modeshape.jcr.federation.spi.Connector;
+import org.modeshape.jcr.federation.spi.ExtraPropertiesStore;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.ValueFactory;
@@ -42,7 +44,7 @@ public class NoExtraPropertiesStorage implements ExtraPropertiesStore {
     private final String sourceName;
 
     public NoExtraPropertiesStorage( Connector connector ) {
-        strings = connector.factories().getStringFactory();
+        strings = connector.getContext().getValueFactories().getStringFactory();
         sourceName = connector.getSourceName();
     }
 

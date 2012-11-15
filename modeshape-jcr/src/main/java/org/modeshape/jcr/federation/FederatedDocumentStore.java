@@ -42,6 +42,7 @@ import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
 import org.modeshape.jcr.federation.paging.BlockKey;
 import org.modeshape.jcr.federation.paging.Pageable;
+import org.modeshape.jcr.federation.spi.Connector;
 
 /**
  * An implementation of {@link DocumentStore} which is used when federation is enabled

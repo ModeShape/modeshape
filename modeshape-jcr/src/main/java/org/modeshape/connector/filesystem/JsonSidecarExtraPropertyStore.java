@@ -37,7 +37,7 @@ import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Json;
 import org.modeshape.jcr.cache.DocumentStoreException;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
-import org.modeshape.jcr.federation.ExtraPropertiesStore;
+import org.modeshape.jcr.federation.spi.ExtraPropertiesStore;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 
@@ -45,7 +45,7 @@ import org.modeshape.jcr.value.Property;
  * An {@link ExtraPropertiesStore} implementation that stores extra properties in JSON sidecar files adjacent to the actual file
  * or directory corresponding to the external node.
  */
-class FileSystemConnectorJsonSidecarStorage implements ExtraPropertiesStore {
+class JsonSidecarExtraPropertyStore implements ExtraPropertiesStore {
 
     public static final String DEFAULT_EXTENSION = ".modeshape.json";
     public static final String DEFAULT_RESOURCE_EXTENSION = ".content.modeshape.json";
@@ -53,9 +53,10 @@ class FileSystemConnectorJsonSidecarStorage implements ExtraPropertiesStore {
     private final FileSystemConnector connector;
     private final DocumentTranslator translator;
 
-    protected FileSystemConnectorJsonSidecarStorage( FileSystemConnector connector ) {
+    protected JsonSidecarExtraPropertyStore( FileSystemConnector connector,
+                                                     DocumentTranslator translator ) {
         this.connector = connector;
-        this.translator = this.connector.getTranslator();
+        this.translator = translator;
     }
 
     protected String getExclusionPattern() {

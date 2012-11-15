@@ -45,8 +45,8 @@ import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
-import org.modeshape.jcr.federation.Connector;
-import org.modeshape.jcr.federation.ExtraPropertiesStore;
+import org.modeshape.jcr.federation.spi.Connector;
+import org.modeshape.jcr.federation.spi.ExtraPropertiesStore;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 

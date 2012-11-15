@@ -46,7 +46,7 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.cache.DocumentStoreException;
-import org.modeshape.jcr.federation.ExtraPropertiesStore;
+import org.modeshape.jcr.federation.spi.ExtraPropertiesStore;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Property;
@@ -61,7 +61,7 @@ import org.modeshape.jcr.value.ValueFormatException;
  * or directory corresponding to the external node. The format of these legacy files is compatible with thosed used by the
  * ModeShape 2.x file system connector.
  */
-class FileSystemConnectorLegacySidecarStorage implements ExtraPropertiesStore {
+class LegacySidecarExtraPropertyStore implements ExtraPropertiesStore {
 
     /**
      * The regex pattern string used to parse properties. The capture groups are as follows:
@@ -110,7 +110,7 @@ class FileSystemConnectorLegacySidecarStorage implements ExtraPropertiesStore {
     private final TextDecoder decoder = new XmlNameEncoder();
     private final QuoteEncoder quoter = new QuoteEncoder();
 
-    protected FileSystemConnectorLegacySidecarStorage( FileSystemConnector connector ) {
+    protected LegacySidecarExtraPropertyStore( FileSystemConnector connector ) {
         this.connector = connector;
         this.registry = this.connector.registry();
         this.propertyFactory = this.connector.getContext().getPropertyFactory();

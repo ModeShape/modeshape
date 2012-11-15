@@ -33,13 +33,11 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
-import org.modeshape.jcr.federation.Connector;
-import org.modeshape.jcr.federation.Connector.DocumentReader;
 import org.modeshape.jcr.federation.paging.BlockKey;
 import org.modeshape.jcr.federation.paging.Pageable;
 import org.modeshape.jcr.federation.paging.PagingWriter;
+import org.modeshape.jcr.federation.spi.Connector;
 
-@Deprecated
 public class MockConnector extends Connector implements Pageable {
     public static final String SOURCE_NAME = "mock-source";
     public static final String PAGED_DOC_LOCATION = "/pagedDoc";

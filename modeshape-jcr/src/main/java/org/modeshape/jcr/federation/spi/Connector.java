@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.jcr.federation;
+package org.modeshape.jcr.federation.spi;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -43,6 +43,8 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
 import org.modeshape.jcr.cache.DocumentNotFoundException;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
+import org.modeshape.jcr.federation.FederatedDocumentReader;
+import org.modeshape.jcr.federation.FederatedDocumentWriter;
 import org.modeshape.jcr.federation.paging.PagingWriter;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.value.Name;

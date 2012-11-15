@@ -38,8 +38,8 @@ import org.junit.Test;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.connector.filesystem.FileSystemConnectorJsonSidecarStorage;
-import org.modeshape.connector.filesystem.FileSystemConnectorLegacySidecarStorage;
+import org.modeshape.connector.filesystem.JsonSidecarExtraPropertyStore;
+import org.modeshape.connector.filesystem.LegacySidecarExtraPropertyStore;
 import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.Session;
 import org.modeshape.jcr.api.federation.FederationManager;
@@ -179,28 +179,28 @@ public class FileSystemConnectorIntegrationTest extends SingleUseAbstractTest {
 
     protected void assertNoSidecarFile( Projection projection,
                                         String filePath ) {
-        assertThat(projection.getTestFile(filePath + FileSystemConnectorJsonSidecarStorage.DEFAULT_EXTENSION).exists(), is(false));
-        assertThat(projection.getTestFile(filePath + FileSystemConnectorLegacySidecarStorage.DEFAULT_EXTENSION).exists(),
+        assertThat(projection.getTestFile(filePath + JsonSidecarExtraPropertyStore.DEFAULT_EXTENSION).exists(), is(false));
+        assertThat(projection.getTestFile(filePath + LegacySidecarExtraPropertyStore.DEFAULT_EXTENSION).exists(),
                    is(false));
-        assertThat(projection.getTestFile(filePath + FileSystemConnectorJsonSidecarStorage.DEFAULT_RESOURCE_EXTENSION).exists(),
+        assertThat(projection.getTestFile(filePath + JsonSidecarExtraPropertyStore.DEFAULT_RESOURCE_EXTENSION).exists(),
                    is(false));
-        assertThat(projection.getTestFile(filePath + FileSystemConnectorLegacySidecarStorage.DEFAULT_RESOURCE_EXTENSION).exists(),
+        assertThat(projection.getTestFile(filePath + LegacySidecarExtraPropertyStore.DEFAULT_RESOURCE_EXTENSION).exists(),
                    is(false));
     }
 
     protected void assertJsonSidecarFile( Projection projection,
                                           String filePath ) {
-        File sidecarFile = projection.getTestFile(filePath + FileSystemConnectorJsonSidecarStorage.DEFAULT_EXTENSION);
+        File sidecarFile = projection.getTestFile(filePath + JsonSidecarExtraPropertyStore.DEFAULT_EXTENSION);
         if (sidecarFile.exists()) return;
-        sidecarFile = projection.getTestFile(filePath + FileSystemConnectorJsonSidecarStorage.DEFAULT_RESOURCE_EXTENSION);
+        sidecarFile = projection.getTestFile(filePath + JsonSidecarExtraPropertyStore.DEFAULT_RESOURCE_EXTENSION);
         assertThat(sidecarFile.exists(), is(true));
     }
 
     protected void assertLegacySidecarFile( Projection projection,
                                             String filePath ) {
-        File sidecarFile = projection.getTestFile(filePath + FileSystemConnectorLegacySidecarStorage.DEFAULT_EXTENSION);
+        File sidecarFile = projection.getTestFile(filePath + LegacySidecarExtraPropertyStore.DEFAULT_EXTENSION);
         if (sidecarFile.exists()) return;
-        sidecarFile = projection.getTestFile(filePath + FileSystemConnectorLegacySidecarStorage.DEFAULT_RESOURCE_EXTENSION);
+        sidecarFile = projection.getTestFile(filePath + LegacySidecarExtraPropertyStore.DEFAULT_RESOURCE_EXTENSION);
         assertThat(sidecarFile.exists(), is(true));
     }
 

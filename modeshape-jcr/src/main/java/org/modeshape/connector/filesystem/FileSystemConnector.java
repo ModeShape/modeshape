@@ -36,7 +36,6 @@ import java.io.ObjectOutput;
 import java.io.OutputStream;
 import java.net.URL;
 import java.util.Map;
-import java.util.regex.Pattern;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import org.infinispan.schematic.document.Document;
@@ -51,9 +50,8 @@ import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.cache.DocumentStoreException;
-import org.modeshape.jcr.cache.document.DocumentTranslator;
-import org.modeshape.jcr.federation.Connector;
 import org.modeshape.jcr.federation.NoExtraPropertiesStorage;
+import org.modeshape.jcr.federation.spi.Connector;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
@@ -223,11 +221,11 @@ public class FileSystemConnector extends Connector {
 
         // Set up the extra properties storage ...
         if (EXTRA_PROPERTIES_JSON.equalsIgnoreCase(extraPropertiesStorage)) {
-            FileSystemConnectorJsonSidecarStorage store = new FileSystemConnectorJsonSidecarStorage(this);
+            JsonSidecarExtraPropertyStore store = new JsonSidecarExtraPropertyStore(this, translator());
             setExtraPropertiesStore(store);
             filenameFilter.setExtraPropertiesExclusionPattern(store.getExclusionPattern());
         } else if (EXTRA_PROPERTIES_LEGACY.equalsIgnoreCase(extraPropertiesStorage)) {
-            FileSystemConnectorLegacySidecarStorage store = new FileSystemConnectorLegacySidecarStorage(this);
+            LegacySidecarExtraPropertyStore store = new LegacySidecarExtraPropertyStore(this);
             setExtraPropertiesStore(store);
             filenameFilter.setExtraPropertiesExclusionPattern(store.getExclusionPattern());
         } else if (EXTRA_PROPERTIES_NONE.equalsIgnoreCase(extraPropertiesStorage)) {
@@ -241,18 +239,41 @@ public class FileSystemConnector extends Connector {
         // do nothing
     }
 
-    DocumentTranslator getTranslator() {
-        return translator();
-    }
-
+    /**
+     * Get the namespace registry.
+     * 
+     * @return the namespace registry; never null
+     */
     NamespaceRegistry registry() {
         return registry;
     }
 
+    /**
+     * Utility method for determining if the supplied identifier is for the "jcr:content" child node of a file. * Subclasses may
+     * override this method to change the format of the identifiers, but in that case should also override the
+     * {@link #fileFor(String)}, {@link #isRoot(String)}, and {@link #idFor(File)} methods.
+     * 
+     * @param id the identifier; may not be null
+     * @return true if the identifier signals the "jcr:content" child node of a file, or false otherwise
+     * @see #isRoot(String)
+     * @see #fileFor(String)
+     * @see #idFor(File)
+     */
     protected boolean isContentNode( String id ) {
         return id.endsWith(JCR_CONTENT_SUFFIX);
     }
 
+    /**
+     * Utility method for obtaining the {@link File} object that corresponds to the supplied identifier. Subclasses may override
+     * this method to change the format of the identifiers, but in that case should also override the {@link #isRoot(String)},
+     * {@link #isContentNode(String)}, and {@link #idFor(File)} methods.
+     * 
+     * @param id the identifier; may not be null
+     * @return the File object for the given identifier
+     * @see #isRoot(String)
+     * @see #isContentNode(String)
+     * @see #idFor(File)
+     */
     protected File fileFor( String id ) {
         assert id.startsWith(DELIMITER);
         if (isContentNode(id)) {
@@ -261,10 +282,32 @@ public class FileSystemConnector extends Connector {
         return new File(directory, id);
     }
 
+    /**
+     * Utility method for determining if the node identifier is the identifier of the root node in this external source.
+     * Subclasses may override this method to change the format of the identifiers, but in that case should also override the
+     * {@link #fileFor(String)}, {@link #isContentNode(String)}, and {@link #idFor(File)} methods.
+     * 
+     * @param id the identifier; may not be null
+     * @return true if the identifier is for the root of this source, or false otherwise
+     * @see #isContentNode(String)
+     * @see #fileFor(String)
+     * @see #idFor(File)
+     */
     protected boolean isRoot( String id ) {
         return DELIMITER.equals(id);
     }
 
+    /**
+     * Utility method for determining the node identifier for the supplied file. Subclasses may override this method to change the
+     * format of the identifiers, but in that case should also override the {@link #fileFor(String)},
+     * {@link #isContentNode(String)}, and {@link #isRoot(String)} methods.
+     * 
+     * @param file the file; may not be null
+     * @return the node identifier; never null
+     * @see #isRoot(String)
+     * @see #isContentNode(String)
+     * @see #fileFor(String)
+     */
     protected String idFor( File file ) {
         String path = file.getAbsolutePath();
         if (!path.startsWith(directoryAbsolutePath)) {
@@ -280,6 +323,13 @@ public class FileSystemConnector extends Connector {
         return id;
     }
 
+    /**
+     * Utility method for creating a {@link BinaryValue} for the given {@link File} object. Subclasses should rarely override this
+     * method.
+     * 
+     * @param file the file; may not be null
+     * @return the BinaryValue; never null
+     */
     protected BinaryValue binaryFor( File file ) {
         try {
             byte[] sha1 = SecureHash.getHash(Algorithm.SHA_1, file);
@@ -542,67 +592,6 @@ public class FileSystemConnector extends Connector {
             throw new DocumentStoreException(id, e);
         } catch (IOException e) {
             throw new DocumentStoreException(id, e);
-        }
-    }
-
-    /**
-     * A {@link FilenameFilter} implementation that supports an inclusion and exclusion pattern.
-     */
-    protected static class InclusionExclusionFilenameFilter implements java.io.FilenameFilter {
-        private String inclusionPattern = null;
-        private String exclusionPattern = null;
-        private Pattern inclusion;
-        private Pattern exclusion;
-        private Pattern extraPropertiesExclusion;
-
-        public void setExclusionPattern( String exclusionPattern ) {
-            this.exclusionPattern = exclusionPattern;
-            if (exclusionPattern == null) {
-                this.exclusion = null;
-            } else {
-                this.exclusion = Pattern.compile(exclusionPattern);
-            }
-        }
-
-        public void setExtraPropertiesExclusionPattern( String exclusionPattern ) {
-            if (exclusionPattern == null) {
-                this.extraPropertiesExclusion = null;
-            } else {
-                this.extraPropertiesExclusion = Pattern.compile(exclusionPattern);
-            }
-        }
-
-        public void setInclusionPattern( String inclusionPattern ) {
-            this.inclusionPattern = inclusionPattern;
-            if (inclusionPattern == null) {
-                this.inclusion = null;
-            } else {
-                this.inclusion = Pattern.compile(inclusionPattern);
-            }
-        }
-
-        public String getExclusionPattern() {
-            return exclusionPattern;
-        }
-
-        public String getInclusionPattern() {
-            return inclusionPattern;
-        }
-
-        @Override
-        public boolean accept( File file,
-                               String string ) {
-            if (inclusionPattern == null) {
-                // Include unless it matches an exclusion ...
-                if (exclusionPattern != null && exclusion.matcher(string).matches()) return false;
-                if (extraPropertiesExclusion != null && extraPropertiesExclusion.matcher(string).matches()) return false;
-                return true;
-            }
-            // Include ONLY if it matches the inclusion AND not matched by the exclusions ...
-            if (!inclusion.matcher(string).matches()) return false;
-            if (exclusionPattern != null && exclusion.matcher(string).matches()) return false;
-            if (extraPropertiesExclusion != null && extraPropertiesExclusion.matcher(string).matches()) return false;
-            return true;
         }
     }
 
