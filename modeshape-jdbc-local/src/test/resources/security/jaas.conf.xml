@@ -8,9 +8,6 @@
 			<login-module code="org.jboss.security.auth.spi.UsersRolesLoginModule" flag="required">
                 <module-option name="usersProperties">security/tck_users.properties</module-option>
                 <module-option name="rolesProperties">security/tck_roles.properties</module-option>
-				<module-option name="name">1.1</module-option>
-				<module-option name="succeed">true</module-option>
-				<module-option name="throwEx">false</module-option>
 			</login-module>
 		</authentication>
 <!-- 		

@@ -537,6 +537,7 @@
                                 <!-- Build both AS7 distributions -->
                                 <descriptorRef>jbossas-71-distribution</descriptorRef>
                                 <!--descriptorRef>jbossas-72-distribution</descriptorRef-->
+                                <descriptorRef>jbossas-eap-distribution</descriptorRef>
                             </descriptorRefs>
                         </configuration>
                     </plugin>
@@ -560,9 +561,10 @@
                         <configuration>
                             <finalName>modeshape-${project.version}</finalName>
                             <descriptorRefs>
-                                <!-- Build both AS7 distributions -->
+                                <!-- Build  distributions -->
                                 <descriptorRef>jbossas-71-distribution</descriptorRef>
                                 <!--descriptorRef>jbossas-72-distribution</descriptorRef-->
+                                <descriptorRef>jbossas-eap-distribution</descriptorRef>
                             </descriptorRefs>
                         </configuration>
                     </plugin>

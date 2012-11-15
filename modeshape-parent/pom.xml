@@ -254,18 +254,19 @@
         <client.artifactId>modeshape-client</client.artifactId>
 
         <!-- Dependency versions which are either not shared with the ones from product or which should always overwrite those from product
-            Note that ALL test dependencies are overwritten, because they should really affect anything from product
+            Note that ALL test dependencies are overwritten, because they should really affect anything from product. However,
+            since they are overridden, they have the same artifact version as the one from the bom so that we make sure we're
+            really testing the same version.
         -->
         <version.hamcrest>1.1</version.hamcrest>
         <version.junit>4.10</version.junit>
-        <version.org.mockito>1.8.4</version.org.mockito>
-        <version.org.jboss.byteman>1.5.1</version.org.jboss.byteman>
-        <version.org.picketbox.bare>4.0.7.Final</version.org.picketbox.bare>
+        <version.org.mockito>1.8.5</version.org.mockito>
+        <version.org.picketbox.bare>4.0.9.Final</version.org.picketbox.bare>
         <version.jackrabbit.jcr.tck>2.5.1</version.jackrabbit.jcr.tck>
 
         <version.jcr>2.0</version.jcr>
         <version.jackrabbit.lucene>3.6.0</version.jackrabbit.lucene>
-        <version.jbossjta>4.16.2.Final</version.jbossjta>
+        <version.jbossjta>4.16.4.Final</version.jbossjta>
         <version.lucene>3.5.0</version.lucene>
         <lucene.module.slot>3.5</lucene.module.slot>
         <version.lucene.regex>3.0.3</version.lucene.regex>
@@ -276,7 +277,6 @@
         'deploy/jbossas/kit/jboss-as7/modules/org/hibernate/search/engine/main/module.xml' file. Note that Hibernate Search
         forcibly overrides the Jackson libraries -->
         <version.hibernate.search>4.1.1.Final</version.hibernate.search>
-
         <version.hibernate.search.avro>1.5.1</version.hibernate.search.avro>
         <version.hibernate.search.paranamer>2.3</version.hibernate.search.paranamer>
         <version.hibernate.search.snappy>1.0.1-rc3</version.hibernate.search.snappy>
@@ -295,7 +295,6 @@
         <version.embedmongo>1.25</version.embedmongo>
         <version.json.simple>1.1</version.json.simple>
         <version.logback>0.9.29</version.logback>
-        <version.org.javassist>3.11.0.GA</version.org.javassist>
         <version.eclipse.equinox.common>3.3.0-v20070426</version.eclipse.equinox.common>
         <version.eclipse.jdt.core>3.3.0-v_771</version.eclipse.jdt.core>
         <version.eclipse.core.resources>3.3.0-v20070604</version.eclipse.core.resources>
@@ -320,12 +319,47 @@
         <version.org.slf4j>1.6.1</version.org.slf4j>
         <version.log4j>1.2.16</version.log4j>
 
-        <jbossas7.assembly.descriptor.version>71</jbossas7.assembly.descriptor.version>
+        <version.jbossas>7.1.1.Final</version.jbossas>
     </properties>
 
     <profiles>
+
         <profile>
-            <id>shared_dependencies</id>
+            <!--This is the default profile which imports the AS 7.1.2 BOM and uses the dependency versions as defined there-->
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>eap</name>
+                </property>
+            </activation>
+            <properties>
+                <jbossas7.assembly.descriptor.version>eap</jbossas7.assembly.descriptor.version>
+                <!--
+                   //TODO author=Horia Chiorean date=11/14/12 description=This is a hack, caused by the fact that the BOM is broken
+                   //and excluded TOO MANY of the MANDATORY transitive dependencies of those artifacts. See the global
+                   <dependencyManagement> section for specific information.
+                -->
+                <version.org.infinispan>5.1.4.FINAL</version.org.infinispan>
+                <version.org.jboss.resteasy>2.3.3.Final</version.org.jboss.resteasy>
+                <version.org.apache.httpcomponents.httpclient>4.1.2</version.org.apache.httpcomponents.httpclient>
+            </properties>
+            <dependencyManagement>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jboss.as</groupId>
+                        <artifactId>jboss-as-parent</artifactId>
+                        <version>7.1.2.Final</version>
+                        <type>pom</type>
+                        <scope>import</scope>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+        </profile>
+
+        <profile>
+            <!--This is the profile which MUST contain all shared dependency artifacts with the above BOM and which must be
+            mutually exclusive. -->
+            <id>community</id>
             <activation>
                 <property>
                     <name>!eap</name>
@@ -334,16 +368,17 @@
             <properties>
                 <version.joda-time>1.6.2</version.joda-time>
                 <version.org.codehaus.jackson>1.9.2</version.org.codehaus.jackson>
-                <version.org.infinispan>5.1.2.FINAL</version.org.infinispan>
+                <version.org.infinispan>5.1.4.FINAL</version.org.infinispan>
                 <!--Make sure the jgroups version is the same as the one used by ISPN -->
-                <version.org.jgroups>3.0.6.Final</version.org.jgroups>
-                <version.org.jboss.logging.jboss-logging>3.1.0.CR2</version.org.jboss.logging.jboss-logging>
+                <version.org.jgroups>3.0.9.Final</version.org.jgroups>
+                <version.org.jboss.logging.jboss-logging>3.1.1.GA</version.org.jboss.logging.jboss-logging>
 
-                <version.sun.jaxb>2.1.12</version.sun.jaxb>
-                <version.com.h2database>1.2.124</version.com.h2database>
-                <version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.4_spec>1.0.0.Final</version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.4_spec>
-                <version.org.jboss.resteasy>2.3.2.Final</version.org.jboss.resteasy>
-                <version.org.codehaus.jettison>1.1</version.org.codehaus.jettison>
+                <version.org.javassist>3.15.0-GA</version.org.javassist>
+                <version.sun.jaxb>2.2.5</version.sun.jaxb>
+                <version.com.h2database>1.3.161</version.com.h2database>
+                <version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.4_spec>1.0.2.Final</version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.4_spec>
+                <version.org.jboss.resteasy>2.3.3.Final</version.org.jboss.resteasy>
+                <version.org.codehaus.jettison>1.3.1</version.org.codehaus.jettison>
                 <version.org.apache.httpcomponents.httpclient>4.1.2</version.org.apache.httpcomponents.httpclient>
                 <version.wsdl4j>1.6.2</version.wsdl4j>
 
@@ -356,19 +391,10 @@
                     JBOSS AS 7.2
                 -->
                 <!--version.jbossas>7.2.0.Alpha1-SNAPSHOT</version.jbossas-->
-
-                <!--
-                    RHQ
-                -->
-                <!--
-                <org.jboss.rhq.as5.version>1.2.0.GA</org.jboss.rhq.as5.version>
-                <org.rhq.version>1.3.0.GA</org.rhq.version>
-                <rhq.jboss.as5.plugin.version>1.4.0.B01</rhq.jboss.as5.plugin.version>
-                -->
+                <jbossas7.assembly.descriptor.version>71</jbossas7.assembly.descriptor.version>
             </properties>
             <dependencyManagement>
                 <dependencies>
-
                     <dependency>
                         <groupId>org.jboss.spec.javax.security.jacc</groupId>
                         <artifactId>jboss-jacc-api_1.4_spec</artifactId>
@@ -376,29 +402,6 @@
                         <scope>provided</scope>
                     </dependency>
 
-                    <!--
-                        Infinispan
-                    -->
-                    <dependency>
-                        <groupId>org.infinispan</groupId>
-                        <artifactId>infinispan-core</artifactId>
-                        <version>${version.org.infinispan}</version>
-                        <exclusions>
-                            <exclusion>
-                                <groupId>org.codehaus.woodstox</groupId>
-                                <artifactId>woodstox-core-asl</artifactId>
-                            </exclusion>
-                            <exclusion>
-                                <groupId>org.codehaus.woodstox</groupId>
-                                <artifactId>stax2-api</artifactId>
-                            </exclusion>
-                        </exclusions>
-                    </dependency>
-
-                    <!--
-                       JGroups is used for the changes bus, but it's optional. Most of the times though, this will be in the classpath
-                       because of ISPN.
-                    -->
                     <dependency>
                         <groupId>org.jgroups</groupId>
                         <artifactId>jgroups</artifactId>
@@ -444,23 +447,9 @@
                     -->
                     <dependency>
                         <groupId>org.jboss.resteasy</groupId>
-                        <artifactId>resteasy-jaxrs</artifactId>
-                        <version>${version.org.jboss.resteasy}</version>
-                        <exclusions>
-                            <exclusion>
-                                <groupId>org.slf4j</groupId>
-                                <artifactId>slf4j-simple</artifactId>
-                            </exclusion>
-                            <exclusion>
-                                <groupId>org.slf4j</groupId>
-                                <artifactId>jcl-over-slf4j</artifactId>
-                            </exclusion>
-                        </exclusions>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.jboss.resteasy</groupId>
                         <artifactId>resteasy-jaxb-provider</artifactId>
                         <version>${version.org.jboss.resteasy}</version>
+                        <scope>runtime</scope>
                         <exclusions>
                             <exclusion>
                                 <groupId>com.sun.xml.bind</groupId>
@@ -472,11 +461,13 @@
                             </exclusion>
                         </exclusions>
                     </dependency>
+
                     <dependency>
                         <groupId>org.jboss.resteasy</groupId>
                         <artifactId>resteasy-jettison-provider</artifactId>
                         <version>${version.org.jboss.resteasy}</version>
                     </dependency>
+
                     <dependency>
                         <groupId>org.jboss.resteasy</groupId>
                         <artifactId>resteasy-multipart-provider</artifactId>
@@ -492,6 +483,7 @@
                             </exclusion>
                         </exclusions>
                     </dependency>
+
                     <dependency>
                         <groupId>org.codehaus.jettison</groupId>
                         <artifactId>jettison</artifactId>
@@ -506,10 +498,14 @@
                             </exclusion>
                         </exclusions>
                     </dependency>
+
+                    <!--
+                        Sequencers
+                    -->
                     <dependency>
-                        <groupId>org.apache.httpcomponents</groupId>
-                        <artifactId>httpclient</artifactId>
-                        <version>${version.org.apache.httpcomponents.httpclient}</version>
+                        <groupId>org.javassist</groupId>
+                        <artifactId>javassist</artifactId>
+                        <version>${version.org.javassist}</version>
                     </dependency>
 
                     <!--WSDL sequencer-->
@@ -537,22 +533,32 @@
                         <version>${version.jbossas}</version>
                         <scope>provided</scope>
                     </dependency>
+
                     <dependency>
                         <groupId>org.jboss.as</groupId>
                         <artifactId>jboss-as-naming</artifactId>
                         <version>${version.jbossas}</version>
                         <scope>provided</scope>
                     </dependency>
+
                     <dependency>
                         <groupId>org.jboss.as</groupId>
                         <artifactId>jboss-as-clustering-jgroups</artifactId>
                         <version>${version.jbossas}</version>
                         <scope>provided</scope>
                     </dependency>
+
                     <dependency>
                         <groupId>org.jboss.as</groupId>
                         <artifactId>jboss-as-subsystem-test</artifactId>
                         <version>${version.jbossas}</version>
+                        <scope>test</scope>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>com.h2database</groupId>
+                        <artifactId>h2</artifactId>
+                        <version>${version.com.h2database}</version>
                         <scope>test</scope>
                     </dependency>
                 </dependencies>
@@ -630,7 +636,6 @@
                 <dependency>
                     <groupId>com.h2database</groupId>
                     <artifactId>h2</artifactId>
-                    <version>${version.com.h2database}</version>
                     <scope>test</scope>
                 </dependency>
             </dependencies>
@@ -662,33 +667,6 @@
                 <version.org.jboss.logging.jboss-logging>3.1.2.GA</version.org.jboss.logging.jboss-logging>
                 <jbossas7.assembly.descriptor.version>72</jbossas7.assembly.descriptor.version>
             </properties>
-        </profile>
-
-
-        <profile>
-            <id>eap</id>
-            <activation>
-                <property>
-                    <name>eap</name>
-                </property>
-            </activation>
-            <properties>
-                <!--These versions must match the ones from the bom but be redefined here, because ModeShape uses some additional
-                   artifact types to what is defined in the bom -->
-                <version.org.infinispan>5.1.4.FINAL</version.org.infinispan>
-                <version.com.h2database>1.3.161</version.com.h2database>
-            </properties>
-            <dependencyManagement>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.jboss.as</groupId>
-                        <artifactId>jboss-as-parent</artifactId>
-                        <version>7.1.2.Final</version>
-                        <type>pom</type>
-                        <scope>import</scope>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
         </profile>
     </profiles>
 
@@ -916,6 +894,9 @@
          This section defines the default dependency settings inherited by
          child projects. Note that this section does not add dependencies, but
          rather provide default settings.
+
+         NOTE: This sections should contain only the ModeShape-specific dependencies which are not shared with the AS7 bom.
+         These dependencies should be added to the "community" profile.
      -->
     <dependencyManagement>
         <dependencies>
@@ -924,6 +905,13 @@
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-common</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-common</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
@@ -1073,12 +1061,78 @@
                 <scope>test</scope>
             </dependency>
 
+            <!--
+                Infinispan
+                //TODO author=Horia Chiorean date=11/14/12 description=This should not be defined here,
+                //but it is because the AS7 bom excluding too transitive dependencies: jboss-marshaling, jboss-marshaling-river
+                //to name a few
+            -->
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-core</artifactId>
+                <version>${version.org.infinispan}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.codehaus.woodstox</groupId>
+                        <artifactId>woodstox-core-asl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.woodstox</groupId>
+                        <artifactId>stax2-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <!--
+                Infinispan test-jar
+                //TODO author=Horia Chiorean date=11/14/12 description=This should not be defined here,
+                //but it is because the AS7 bom does not include it
+            -->
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-core</artifactId>
+                <version>${version.org.infinispan}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+
+            <!--
+                RestEASY-Jaxrs
+                //TODO author=Horia Chiorean date=11/14/12 description=This should not be defined here,
+                //but it is because the AS7 bom excludes some of RestEASY's MANDATORY dependencies: org.scannotation
+            -->
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>resteasy-jaxrs</artifactId>
+                <version>${version.org.jboss.resteasy}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-simple</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>jcl-over-slf4j</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <!--
+                HttpClient
+                //TODO author=Horia Chiorean date=11/14/12 description=This should not be defined here,
+                //but it is because the AS7 bom excludes some of RestEASY's MANDATORY dependencies: commons-logging
+            -->
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${version.org.apache.httpcomponents.httpclient}</version>
+            </dependency>
+
             <!-- Java Content Repository API -->
             <dependency>
                 <groupId>javax.jcr</groupId>
                 <artifactId>jcr</artifactId>
                 <version>${version.jcr}</version>
-                <scope>compile</scope>
             </dependency>
 
             <dependency>
@@ -1264,15 +1318,6 @@
                 <version>${version.hibernate.search}</version>
             </dependency>
 
-            <!--
-                Sequencers
-            -->
-            <dependency>
-                <groupId>javassist</groupId>
-                <artifactId>javassist</artifactId>
-                <version>${version.org.javassist}</version>
-            </dependency>
-
             <!--Mp3 sequencer-->
             <dependency>
                 <groupId>org</groupId>
@@ -1324,6 +1369,24 @@
                 <groupId>org.eclipse.jdt</groupId>
                 <artifactId>core</artifactId>
                 <version>${version.eclipse.jdt.core}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.eclipse.core.runtime.compatibility</groupId>
+                        <artifactId>auth</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse.equinox</groupId>
+                        <artifactId>app</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse</groupId>
+                        <artifactId>text</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse.core</groupId>
+                        <artifactId>filesystem</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.core</groupId>
@@ -1510,6 +1573,7 @@
                 <version>${version.junit}</version>
                 <scope>test</scope>
             </dependency>
+
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit-dep</artifactId>
@@ -1679,28 +1743,6 @@
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-mock</artifactId>
                 <version>${version.spring.mock}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <!--
-            Byteman Dependencies, used for the bytecode injection during performance tests
-            -->
-            <dependency>
-                <groupId>org.jboss.byteman</groupId>
-                <artifactId>byteman-bmunit</artifactId>
-                <version>${version.org.jboss.byteman}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.byteman</groupId>
-                <artifactId>byteman-install</artifactId>
-                <version>${version.org.jboss.byteman}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.byteman</groupId>
-                <artifactId>byteman</artifactId>
-                <version>${version.org.jboss.byteman}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>

@@ -101,7 +101,6 @@
                 <include>commons-codec:commons-codec:jar</include>
                 <include>commons-logging:commons-logging:jar</include>
                 <include>com.googlecode.juniversalchardet:juniversalchardet:jar</include>
-                <include>javassist:javassist:jar</include>
                 <include>org.ccil.cowan.tagsoup:*:jar</include>
                 <include>org.gagravarr:*:jar</include>
                 <include>com.googlecode.mp4parser:*:jar</include>
@@ -135,7 +134,7 @@
             <useTransitiveDependencies>true</useTransitiveDependencies>
             <includes>
                 <include>org.modeshape:modeshape-sequencer-java:jar</include>
-                <include>javassist:javassist:jar</include>
+                <include>org.javassist:javassist:jar</include>
                 <include>org.eclipse*:common:jar:${version.eclipse.equinox.common}</include>
                 <include>org.eclipse*:core:jar:${version.eclipse.jdt.core}</include>
                 <include>org.eclipse*:resources:jar:${version.eclipse.core.resources}</include>

@@ -33,8 +33,6 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
-            <version>${project.version}</version>
-            <scope>integration-test</scope>
             <type>test-jar</type>
         </dependency>
 

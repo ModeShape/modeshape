@@ -37,6 +37,7 @@
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxrs</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxb-provider</artifactId>
@@ -58,9 +59,7 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
-            <version>${project.version}</version>
             <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
 
         <dependency>

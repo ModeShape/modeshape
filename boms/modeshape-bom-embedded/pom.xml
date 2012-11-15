@@ -302,6 +302,24 @@
                 <groupId>org.eclipse.jdt</groupId>
                 <artifactId>core</artifactId>
                 <version>${version.eclipse.jdt.core}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.eclipse.core.runtime.compatibility</groupId>
+                        <artifactId>auth</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse.equinox</groupId>
+                        <artifactId>app</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse</groupId>
+                        <artifactId>text</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse.core</groupId>
+                        <artifactId>filesystem</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.core</groupId>
@@ -344,9 +362,9 @@
                 <version>${version.eclipse.core.contenttype}</version>
             </dependency>
             <dependency>
-                <groupId>javassist</groupId>
+                <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
-                <version>${version.javassist.javassist}</version>
+                <version>${version.org.javassist}</version>
             </dependency>
             <!--Mp3 sequencer-->
             <dependency>
