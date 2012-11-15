@@ -52,9 +52,8 @@ public class FileSystemConnectorIntegrationTest extends SingleUseAbstractTest {
     private Projection readOnlyProjection;
     private Projection storeProjection;
     private Projection jsonProjection;
-    private Projection bsonProjection;
     private Projection legacyProjection;
-    private Projection errorProjection;
+    private Projection noneProjection;
     private Projection[] projections;
 
     @Before
@@ -62,12 +61,10 @@ public class FileSystemConnectorIntegrationTest extends SingleUseAbstractTest {
         readOnlyProjection = new Projection("readonly-files", "target/federation/files-read");
         storeProjection = new Projection("mutable-files-store", "target/federation/files-store");
         jsonProjection = new Projection("mutable-files-json", "target/federation/files-json");
-        bsonProjection = new Projection("mutable-files-bson", "target/federation/files-bson");
         legacyProjection = new Projection("mutable-files-legacy", "target/federation/files-legacy");
-        errorProjection = new Projection("mutable-files-error", "target/federation/files-error");
+        noneProjection = new Projection("mutable-files-none", "target/federation/files-none");
 
-        projections = new Projection[] {readOnlyProjection, storeProjection, jsonProjection, bsonProjection, legacyProjection,
-            errorProjection};
+        projections = new Projection[] {readOnlyProjection, storeProjection, jsonProjection, legacyProjection, noneProjection};
 
         // Remove and then make the directory for our federation test ...
         for (Projection projection : projections) {
@@ -87,9 +84,8 @@ public class FileSystemConnectorIntegrationTest extends SingleUseAbstractTest {
         readOnlyProjection.create(testRoot, "readonly");
         storeProjection.create(testRoot, "store");
         jsonProjection.create(testRoot, "json");
-        bsonProjection.create(testRoot, "bson");
         legacyProjection.create(testRoot, "legacy");
-        errorProjection.create(testRoot, "error");
+        noneProjection.create(testRoot, "none");
     }
 
     @Test
@@ -97,9 +93,8 @@ public class FileSystemConnectorIntegrationTest extends SingleUseAbstractTest {
         readOnlyProjection.testContent(testRoot, "readonly");
         storeProjection.testContent(testRoot, "store");
         jsonProjection.testContent(testRoot, "json");
-        bsonProjection.testContent(testRoot, "bson");
         legacyProjection.testContent(testRoot, "legacy");
-        errorProjection.testContent(testRoot, "error");
+        noneProjection.testContent(testRoot, "none");
     }
 
     @Test
@@ -163,24 +158,6 @@ public class FileSystemConnectorIntegrationTest extends SingleUseAbstractTest {
     }
 
     @Test
-    public void shouldAllowUpdatingNodesInWritableBsonBasedProjection() throws Exception {
-        Node file = session.getNode("/testRoot/bson/dir3/simple.json");
-        file.addMixin("flex:anyProperties");
-        file.setProperty("extraProp", "extraValue");
-        session.save();
-        assertBsonSidecarFile(bsonProjection, "dir3/simple.json");
-        Node file2 = session.getNode("/testRoot/bson/dir3/simple.json");
-        assertThat(file2.getProperty("extraProp").getString(), is("extraValue"));
-        try {
-            // Make sure the sidecar file can't be seen via JCR ...
-            session.getNode("/testRoot/json/dir3/simple.json.modeshape.bson");
-            fail("found sidecar file as JCR node");
-        } catch (PathNotFoundException e) {
-            // expected
-        }
-    }
-
-    @Test
     public void shouldAllowUpdatingNodesInWritableLegacyBasedProjection() throws Exception {
         Node file = session.getNode("/testRoot/legacy/dir3/simple.json");
         file.addMixin("flex:anyProperties");
@@ -200,11 +177,8 @@ public class FileSystemConnectorIntegrationTest extends SingleUseAbstractTest {
 
     protected void assertNoSidecarFile( Projection projection,
                                         String filePath ) {
-        assertThat(projection.getTestFile(filePath + FileSystemConnectorBsonSidecarStorage.DEFAULT_EXTENSION).exists(), is(false));
         assertThat(projection.getTestFile(filePath + FileSystemConnectorJsonSidecarStorage.DEFAULT_EXTENSION).exists(), is(false));
         assertThat(projection.getTestFile(filePath + FileSystemConnectorLegacySidecarStorage.DEFAULT_EXTENSION).exists(),
-                   is(false));
-        assertThat(projection.getTestFile(filePath + FileSystemConnectorBsonSidecarStorage.DEFAULT_RESOURCE_EXTENSION).exists(),
                    is(false));
         assertThat(projection.getTestFile(filePath + FileSystemConnectorJsonSidecarStorage.DEFAULT_RESOURCE_EXTENSION).exists(),
                    is(false));
@@ -217,14 +191,6 @@ public class FileSystemConnectorIntegrationTest extends SingleUseAbstractTest {
         File sidecarFile = projection.getTestFile(filePath + FileSystemConnectorJsonSidecarStorage.DEFAULT_EXTENSION);
         if (sidecarFile.exists()) return;
         sidecarFile = projection.getTestFile(filePath + FileSystemConnectorJsonSidecarStorage.DEFAULT_RESOURCE_EXTENSION);
-        assertThat(sidecarFile.exists(), is(true));
-    }
-
-    protected void assertBsonSidecarFile( Projection projection,
-                                          String filePath ) {
-        File sidecarFile = projection.getTestFile(filePath + FileSystemConnectorBsonSidecarStorage.DEFAULT_EXTENSION);
-        if (sidecarFile.exists()) return;
-        sidecarFile = projection.getTestFile(filePath + FileSystemConnectorBsonSidecarStorage.DEFAULT_RESOURCE_EXTENSION);
         assertThat(sidecarFile.exists(), is(true));
     }
 

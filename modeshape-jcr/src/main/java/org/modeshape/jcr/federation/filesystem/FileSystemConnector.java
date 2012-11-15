@@ -119,9 +119,8 @@ public class FileSystemConnector extends Connector {
     private static final int JCR_CONTENT_SUFFIX_LENGTH = JCR_CONTENT_SUFFIX.length();
 
     private static final String EXTRA_PROPERTIES_JSON = "json";
-    private static final String EXTRA_PROPERTIES_BSON = "bson";
     private static final String EXTRA_PROPERTIES_LEGACY = "legacy";
-    private static final String EXTRA_PROPERTIES_ERROR = "error";
+    private static final String EXTRA_PROPERTIES_NONE = "none";
 
     /**
      * The string path for a {@link File} object that represents the top-level directory accessed by this connector. This is set
@@ -168,12 +167,11 @@ public class FileSystemConnector extends Connector {
      * <li>"<code>store</code>" - Any extra properties are stored in the same Infinispan cache where the content is stored. This
      * is the default and is used if the actual value doesn't match any of the other accepted values.</li>
      * <li>"<code>json</code>" - Any extra properties are stored in a JSON file next to the file or directory.</li>
-     * <li>"<code>bson</code>" - Any extra propertiesa are stored in a BSON file next to the file or directory.</li>
      * <li>"<code>legacy</code>" - Any extra properties are stored in a ModeShape 2.x-compatible file next to the file or
      * directory. This is generally discouraged unless you were using ModeShape 2.x and have a directory structure that already
      * contains these files.</li>
-     * <li>"<code>error</code>" - An extra properties result in exceptions. This is useful when you don't want to store any extra
-     * properties.</li>
+     * <li>"<code>none</code>" - An extra properties that prevents the storage of extra properties by throwing an exception when
+     * such extra properties are defined.</li>
      * </ul>
      */
     private String extraPropertiesStorage;
@@ -211,15 +209,11 @@ public class FileSystemConnector extends Connector {
             FileSystemConnectorJsonSidecarStorage store = new FileSystemConnectorJsonSidecarStorage(this);
             setExtraPropertiesStore(store);
             filenameFilter.setExtraPropertiesExclusionPattern(store.getExclusionPattern());
-        } else if (EXTRA_PROPERTIES_BSON.equalsIgnoreCase(extraPropertiesStorage)) {
-            FileSystemConnectorBsonSidecarStorage store = new FileSystemConnectorBsonSidecarStorage(this);
-            setExtraPropertiesStore(store);
-            filenameFilter.setExtraPropertiesExclusionPattern(store.getExclusionPattern());
         } else if (EXTRA_PROPERTIES_LEGACY.equalsIgnoreCase(extraPropertiesStorage)) {
             FileSystemConnectorLegacySidecarStorage store = new FileSystemConnectorLegacySidecarStorage(this);
             setExtraPropertiesStore(store);
             filenameFilter.setExtraPropertiesExclusionPattern(store.getExclusionPattern());
-        } else if (EXTRA_PROPERTIES_ERROR.equalsIgnoreCase(extraPropertiesStorage)) {
+        } else if (EXTRA_PROPERTIES_NONE.equalsIgnoreCase(extraPropertiesStorage)) {
             setExtraPropertiesStore(new NoExtraPropertiesStorage(this));
         }
         // otherwise use the default extra properties storage

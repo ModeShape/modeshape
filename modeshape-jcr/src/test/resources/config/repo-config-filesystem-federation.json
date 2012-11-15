@@ -30,10 +30,10 @@
             "directoryPath" : "target/federation/files-legacy",
             "extraPropertiesStorage" : "legacy",
         },
-        "mutable-files-error" : {
+        "mutable-files-none" : {
             "classname" : "filesystem",
-            "directoryPath" : "target/federation/files-error",
-            "extraPropertiesStorage" : "error",
+            "directoryPath" : "target/federation/files-none",
+            "extraPropertiesStorage" : "none",
         },
     }
 }
