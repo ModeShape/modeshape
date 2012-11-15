@@ -7,11 +7,11 @@
     },
     "externalSources" : {
         "file-resources" : {
-            "classname" : "org.modeshape.jcr.federation.FileSystemConnector",
+            "classname" : "filesystem",
             "directoryPath" : "target/federation/files",
         },
         "mock-source" : {
-            "classname" : "org.modeshape.jcr.federation.MockConnector",
+            "classname" : "org.modeshape.connector.testing.mock.MockConnector",
             "cacheTtlSeconds" : 1
         }
     }

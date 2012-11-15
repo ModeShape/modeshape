@@ -25,14 +25,19 @@
 package org.modeshape.jcr.federation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.infinispan.schematic.DocumentFactory;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
-import org.modeshape.jcr.federation.Connector.DocumentWriter;
+import org.modeshape.jcr.federation.spi.Connector;
+import org.modeshape.jcr.federation.spi.Connector.DocumentWriter;
 import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.basic.BasicMultiValueProperty;
 import org.modeshape.jcr.value.basic.BasicSingleValueProperty;
 
@@ -64,10 +69,48 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
         return this;
     }
 
+    protected final Name nameFrom( String name ) {
+        return translator.getNameFactory().create(name);
+    }
+
+    @Override
+    public DocumentWriter setPrimaryType( Name name ) {
+        return addProperty(JcrLexicon.PRIMARY_TYPE, name);
+    }
+
+    @Override
+    public DocumentWriter setPrimaryType( String name ) {
+        return setPrimaryType(nameFrom(name));
+    }
+
+    @Override
+    public DocumentWriter addMixinType( Name name ) {
+        return addPropertyValue(JcrLexicon.MIXIN_TYPES, name);
+    }
+
+    @Override
+    public DocumentWriter addMixinType( String name ) {
+        return addMixinType(nameFrom(name));
+    }
+
+    @Override
+    public DocumentWriter addPropertyValue( Name name,
+                                            Object value ) {
+        boolean knownToBeMultiple = false;
+        translator.addPropertyValues(federatedDocument, name, knownToBeMultiple, Collections.singleton(value), null);
+        return this;
+    }
+
+    @Override
+    public DocumentWriter addPropertyValue( String name,
+                                            Object value ) {
+        return addPropertyValue(nameFrom(name), value);
+    }
+
     @Override
     public FederatedDocumentWriter addProperty( String name,
                                                 Object value ) {
-        Name nameObj = translator.getNameFactory().create(name);
+        Name nameObj = nameFrom(name);
         return addProperty(nameObj, value);
     }
 
@@ -75,7 +118,7 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
     public DocumentWriter addProperty( String name,
                                        Object[] values ) {
         if (values == null) return this;
-        Name nameObj = translator.getNameFactory().create(name);
+        Name nameObj = nameFrom(name);
         return addProperty(nameObj, values);
     }
 
@@ -83,7 +126,7 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
     public DocumentWriter addProperty( String name,
                                        Object firstValue,
                                        Object... additionalValues ) {
-        Name nameObj = translator.getNameFactory().create(name);
+        Name nameObj = nameFrom(name);
         return addProperty(nameObj, firstValue, additionalValues);
     }
 
@@ -115,6 +158,16 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
             values.add(value);
         }
         translator.setProperty(federatedDocument, new BasicMultiValueProperty(name, values), null);
+        return this;
+    }
+
+    @Override
+    public DocumentWriter addProperties( Map<Name, Property> properties ) {
+        if (properties != null && !properties.isEmpty()) {
+            for (Map.Entry<Name, Property> entry : properties.entrySet()) {
+                translator.setProperty(federatedDocument, entry.getValue(), null);
+            }
+        }
         return this;
     }
 

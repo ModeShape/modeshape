@@ -34,11 +34,12 @@ import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
+import org.modeshape.jcr.federation.spi.Connector;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 
 /**
- * Implementation of a {@link org.modeshape.jcr.federation.Connector.DocumentReader} that be used to obtain "semantic" information
+ * Implementation of a {@link org.modeshape.jcr.federation.spi.Connector.DocumentReader} that be used to obtain "semantic" information
  * from a federated document
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)

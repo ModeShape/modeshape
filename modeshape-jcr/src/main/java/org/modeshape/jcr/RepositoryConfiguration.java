@@ -73,6 +73,7 @@ import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.connector.filesystem.FileSystemConnector;
 import org.modeshape.jcr.clustering.DefaultChannelProvider;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
@@ -82,6 +83,7 @@ import org.modeshape.jcr.value.binary.DatabaseBinaryStore;
 import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
 import org.modeshape.jcr.value.binary.infinispan.InfinispanBinaryStore;
+import org.modeshape.sequencer.cnd.CndSequencer;
 
 /**
  * A representation of the configuration for a {@link JcrRepository JCR Repository}.
@@ -601,7 +603,7 @@ public class RepositoryConfiguration {
         aliases.put("servletprovider", servletProvider);
         PROVIDER_ALIASES = Collections.unmodifiableMap(aliases);
 
-        String cndSequencer = "org.modeshape.sequencer.cnd.CndSequencer";
+        String cndSequencer = CndSequencer.class.getName();
         String classfileSequencer = "org.modeshape.sequencer.classfile.ClassFileSequencer";
         String ddlSequencer = "org.modeshape.sequencer.ddl.DdlSequencer";
         String imageSequencer = "org.modeshape.sequencer.image.ImageMetadataSequencer";
@@ -655,7 +657,13 @@ public class RepositoryConfiguration {
 
         SEQUENCER_ALIASES = Collections.unmodifiableMap(aliases);
 
+        String fileSystemConnector = FileSystemConnector.class.getName();
+
         aliases = new HashMap<String, String>();
+        aliases.put("files", fileSystemConnector);
+        aliases.put("filesystem", fileSystemConnector);
+        aliases.put("filesystemconnector", fileSystemConnector);
+
         CONNECTOR_ALIASES = Collections.unmodifiableMap(aliases);
 
         String tikaExtractor = "org.modeshape.extractor.tika.TikaTextExtractor";

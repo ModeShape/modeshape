@@ -22,9 +22,10 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.jcr.federation;
+package org.modeshape.jcr.federation.spi;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,17 +35,22 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.TextDecoder;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
 import org.modeshape.jcr.cache.DocumentNotFoundException;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
+import org.modeshape.jcr.federation.FederatedDocumentReader;
+import org.modeshape.jcr.federation.FederatedDocumentWriter;
 import org.modeshape.jcr.federation.paging.PagingWriter;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFormatException;
 
@@ -83,9 +89,11 @@ public abstract class Connector {
 
     /**
      * The default maximum number of seconds that a document returned by this connector should be stored in the workspace cache.
-     * This can be overwritten, on a per-document-basis. The field is assigned via reflection based upon the configuration of the
-     * external source represented by this connector before ModeShape calls
-     * {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
+     * This can be overwritten, on a per-document-basis.
+     * <p>
+     * The field is assigned via reflection based upon the configuration of the external source represented by this connector
+     * before ModeShape calls {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
+     * </p>
      */
     private Integer cacheTtlSeconds;
 
@@ -93,10 +101,22 @@ public abstract class Connector {
 
     /**
      * A document translator that is used within the DocumentReader implementation, but which has no DocumentStore reference and
-     * thus is not fully-functional. The field is assigned via reflection before ModeShape calls
-     * {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
+     * thus is not fully-functional.
+     * <p>
+     * The field is assigned via reflection before ModeShape calls {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
+     * </p>
      */
     private DocumentTranslator translator;
+
+    /**
+     * A property store that the connector can use to persist "extra" properties that cannot be stored in the external system. The
+     * use of this store is optional, and connectors should store as much information as possible in the external system.
+     * Connectors are also responsible for removing the extra properties for a node when it is removed.
+     * <p>
+     * The field is assigned via reflection before ModeShape calls {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
+     * </p>
+     */
+    private ExtraPropertiesStore extraPropertiesStore;
 
     /**
      * Ever connector is expected to have a no-argument constructor, although the class should never initialize any of the data at
@@ -139,7 +159,7 @@ public abstract class Connector {
      * 
      * @return the context; never null
      */
-    protected ExecutionContext getContext() {
+    public ExecutionContext getContext() {
         return context;
     }
 
@@ -149,7 +169,7 @@ public abstract class Connector {
      * 
      * @return the MIME type detector; never null
      */
-    protected MimeTypeDetector getMimeTypeDetector() {
+    public MimeTypeDetector getMimeTypeDetector() {
         return mimeTypeDetector;
     }
 
@@ -162,6 +182,34 @@ public abstract class Connector {
      */
     public Integer getCacheTtlSeconds() {
         return cacheTtlSeconds;
+    }
+
+    protected ExtraProperties extraPropertiesFor( String id,
+                                                  boolean update ) {
+        return new ExtraProperties(id, update);
+    }
+
+    /**
+     * Get the "extra" properties store. Connectors can directly use this, although it's probably easier to
+     * {@link #extraPropertiesFor(String,boolean) create} an {@link ExtraProperties} object for each node and use it to
+     * {@link ExtraProperties#add(Property) add}, {@link ExtraProperties#remove(Name) remove} and then
+     * {@link ExtraProperties#save() store or update} the extra properties in the extra properties store.
+     * 
+     * @return the storage for extra properties; never null
+     */
+    protected ExtraPropertiesStore extraPropertiesStore() {
+        return extraPropertiesStore;
+    }
+
+    /**
+     * Method that can be called by a connector during {@link #initialize(NamespaceRegistry, NodeTypeManager) initialization} if
+     * it wants to provide its own implementation of an "extra" properties store.
+     * 
+     * @param customExtraPropertiesStore the custom implementation of the ExtraPropertiesStore; may not be null
+     */
+    protected void setExtraPropertiesStore( ExtraPropertiesStore customExtraPropertiesStore ) {
+        CheckArg.isNotNull(customExtraPropertiesStore, "customExtraPropertiesStore");
+        this.extraPropertiesStore = customExtraPropertiesStore;
     }
 
     /**
@@ -232,8 +280,9 @@ public abstract class Connector {
      * Removes the document with the given id.
      * 
      * @param id a {@code non-null} string.
+     * @return true if the document was removed, or false if there was no document with the given id
      */
-    public abstract void removeDocument( String id );
+    public abstract boolean removeDocument( String id );
 
     /**
      * Checks if a document with the given id exists in the end-source.
@@ -275,6 +324,10 @@ public abstract class Connector {
         }
     }
 
+    protected DocumentTranslator translator() {
+        return translator;
+    }
+
     protected DocumentWriter newDocument( String id ) {
         return new FederatedDocumentWriter(translator).setId(id);
     }
@@ -283,7 +336,7 @@ public abstract class Connector {
         return new FederatedDocumentWriter(translator, document);
     }
 
-    protected PagingWriter newPagedDocument(Document document) {
+    protected PagingWriter newPagedDocument( Document document ) {
         return new PagingWriter(translator, document);
     }
 
@@ -302,6 +355,10 @@ public abstract class Connector {
      */
     protected final ValueFactories factories() {
         return context.getValueFactories();
+    }
+
+    protected final PropertyFactory propertyFactory() {
+        return context.getPropertyFactory();
     }
 
     /**
@@ -366,6 +423,14 @@ public abstract class Connector {
 
         public DocumentWriter setId( String id );
 
+        public DocumentWriter setPrimaryType( String name );
+
+        public DocumentWriter setPrimaryType( Name name );
+
+        public DocumentWriter addMixinType( String name );
+
+        public DocumentWriter addMixinType( Name name );
+
         public DocumentWriter addProperty( String name,
                                            Object value );
 
@@ -385,6 +450,14 @@ public abstract class Connector {
         public DocumentWriter addProperty( Name name,
                                            Object firstValue,
                                            Object... additionalValues );
+
+        public DocumentWriter addProperties( Map<Name, Property> properties );
+
+        public DocumentWriter addPropertyValue( String name,
+                                                Object value );
+
+        public DocumentWriter addPropertyValue( Name name,
+                                                Object value );
 
         public DocumentWriter addChild( String id,
                                         String name );
@@ -396,14 +469,13 @@ public abstract class Connector {
 
         public DocumentWriter setParents( String... parentIds );
 
-        public DocumentWriter setParent (String parentId);
+        public DocumentWriter setParent( String parentId );
 
         public DocumentWriter setParents( List<String> parentIds );
 
         public DocumentWriter merge( Document document );
 
         public EditableDocument document();
-
 
         FederatedDocumentWriter setChildren( List<? extends Document> children );
 
@@ -434,5 +506,65 @@ public abstract class Connector {
         Property getProperty( String name );
 
         Map<Name, Property> getProperties();
+    }
+
+    public final class ExtraProperties {
+        private Map<Name, Property> properties = new HashMap<Name, Property>();
+        private final boolean update;
+        private final String id;
+
+        protected ExtraProperties( String id,
+                                   boolean update ) {
+            this.id = id;
+            this.update = update;
+        }
+
+        public ExtraProperties add( Property property ) {
+            this.properties.put(property.getName(), property);
+            return this;
+        }
+
+        public ExtraProperties addAll( Map<Name, Property> properties ) {
+            this.properties.putAll(properties);
+            return this;
+        }
+
+        public ExtraProperties remove( Name propertyName ) {
+            this.properties.put(propertyName, null);
+            return this;
+        }
+
+        public ExtraProperties remove( String propertyName ) {
+            this.properties.put(nameFrom(propertyName), null);
+            return this;
+        }
+
+        public ExtraProperties except( Name... names ) {
+            for (Name name : names) {
+                this.properties.remove(name);
+            }
+            return this;
+        }
+
+        public ExtraProperties except( String... names ) {
+            for (String name : names) {
+                this.properties.remove(nameFrom(name));
+            }
+            return this;
+        }
+
+        public ExtraProperties exceptPrimaryType() {
+            this.properties.remove(JcrLexicon.PRIMARY_TYPE);
+            return this;
+        }
+
+        public void save() {
+            if (update) {
+                extraPropertiesStore().updateProperties(id, properties);
+            } else {
+                extraPropertiesStore().storeProperties(id, properties);
+            }
+            properties.clear();
+        }
     }
 }

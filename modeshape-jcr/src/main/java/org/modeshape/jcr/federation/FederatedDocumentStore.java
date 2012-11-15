@@ -42,6 +42,7 @@ import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
 import org.modeshape.jcr.federation.paging.BlockKey;
 import org.modeshape.jcr.federation.paging.Pageable;
+import org.modeshape.jcr.federation.spi.Connector;
 
 /**
  * An implementation of {@link DocumentStore} which is used when federation is enabled
@@ -149,15 +150,15 @@ public class FederatedDocumentStore implements DocumentStore {
     }
 
     @Override
-    public void remove( String key ) {
+    public boolean remove( String key ) {
         if (isLocalSource(key)) {
-            localStore().remove(key);
-        } else {
-            Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
-            if (connector != null) {
-                connector.removeDocument(documentIdFromNodeKey(key));
-            }
+            return localStore().remove(key);
         }
+        Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
+        if (connector != null) {
+            return connector.removeDocument(documentIdFromNodeKey(key));
+        }
+        return false;
     }
 
     @Override
@@ -198,15 +199,14 @@ public class FederatedDocumentStore implements DocumentStore {
     public Document getChildrenBlock( String key ) {
         if (isLocalSource(key)) {
             return localStore().getChildrenBlock(key);
-        } else {
-            Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
-            if (connector != null && connector instanceof Pageable) {
-                key = documentIdFromNodeKey(key);
-                BlockKey blockKey = new BlockKey(key);
-                Document childrenBlock = ((Pageable)connector).getChildrenBlock(blockKey);
-                if (childrenBlock != null) {
-                    return replaceConnectorIdsWithNodeKeys(childrenBlock, connector.getSourceName());
-                }
+        }
+        Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
+        if (connector != null && connector instanceof Pageable) {
+            key = documentIdFromNodeKey(key);
+            BlockKey blockKey = new BlockKey(key);
+            Document childrenBlock = ((Pageable)connector).getChildrenBlock(blockKey);
+            if (childrenBlock != null) {
+                return replaceConnectorIdsWithNodeKeys(childrenBlock, connector.getSourceName());
             }
         }
         return null;
@@ -253,7 +253,7 @@ public class FederatedDocumentStore implements DocumentStore {
             parentKeys.add(parentKey);
         }
 
-        //replace the id of each block (if they exist)
+        // replace the id of each block (if they exist)
         EditableDocument childrenInfo = writer.document().getDocument(DocumentTranslator.CHILDREN_INFO);
         if (childrenInfo != null) {
             String nextBlockKey = childrenInfo.getString(DocumentTranslator.NEXT_BLOCK);
@@ -265,7 +265,7 @@ public class FederatedDocumentStore implements DocumentStore {
                 childrenInfo.setString(DocumentTranslator.LAST_BLOCK, documentIdToNodeKey(sourceName, lastBlockKey));
             }
         }
-        //create the federated node key - external project back reference
+        // create the federated node key - external project back reference
         if (externalDocumentKey != null) {
             String federatedParentKey = externalProjectionKeyToFederatedNodeKey.get(externalDocumentKey);
             if (!StringUtil.isBlank(federatedParentKey)) {

@@ -107,7 +107,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
 /**
  * 
  */
-public class JcrSession implements Session {
+public class JcrSession implements org.modeshape.jcr.api.Session {
 
     private static final String[] NO_ATTRIBUTES_NAMES = new String[] {};
 
