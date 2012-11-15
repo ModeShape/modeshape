@@ -104,6 +104,7 @@ public final class JcrI18n {
     public static I18n fileConnectorCannotStoreFileThatIsExcluded;
     public static I18n couldNotStoreProperties;
     public static I18n couldNotStoreProperty;
+    public static I18n couldNotGetMimeType;
 
     public static I18n rootNodeHasNoParent;
     public static I18n rootNodeIsNotProperty;

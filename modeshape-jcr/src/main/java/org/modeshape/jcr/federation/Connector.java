@@ -421,6 +421,14 @@ public abstract class Connector {
 
         public DocumentWriter setId( String id );
 
+        public DocumentWriter setPrimaryType( String name );
+
+        public DocumentWriter setPrimaryType( Name name );
+
+        public DocumentWriter addMixinType( String name );
+
+        public DocumentWriter addMixinType( Name name );
+
         public DocumentWriter addProperty( String name,
                                            Object value );
 
@@ -442,6 +450,12 @@ public abstract class Connector {
                                            Object... additionalValues );
 
         public DocumentWriter addProperties( Map<Name, Property> properties );
+
+        public DocumentWriter addPropertyValue( String name,
+                                                Object value );
+
+        public DocumentWriter addPropertyValue( Name name,
+                                                Object value );
 
         public DocumentWriter addChild( String id,
                                         String name );
