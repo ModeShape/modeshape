@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.jcr.federation.filesystem;
+package org.modeshape.connector.filesystem;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -38,6 +38,8 @@ import org.junit.Test;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.connector.filesystem.FileSystemConnectorJsonSidecarStorage;
+import org.modeshape.connector.filesystem.FileSystemConnectorLegacySidecarStorage;
 import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.Session;
 import org.modeshape.jcr.api.federation.FederationManager;

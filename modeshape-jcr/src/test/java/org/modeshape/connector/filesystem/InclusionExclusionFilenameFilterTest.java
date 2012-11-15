@@ -21,13 +21,13 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.federation.filesystem;
+package org.modeshape.connector.filesystem;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
-import org.modeshape.jcr.federation.filesystem.FileSystemConnector.InclusionExclusionFilenameFilter;
+import org.modeshape.connector.filesystem.FileSystemConnector.InclusionExclusionFilenameFilter;
 
 /**
  * @author johnament

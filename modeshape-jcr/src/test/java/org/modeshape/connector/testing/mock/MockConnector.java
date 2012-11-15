@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.federation;
+package org.modeshape.connector.testing.mock;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -33,6 +33,8 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
+import org.modeshape.jcr.federation.Connector;
+import org.modeshape.jcr.federation.Connector.DocumentReader;
 import org.modeshape.jcr.federation.paging.BlockKey;
 import org.modeshape.jcr.federation.paging.Pageable;
 import org.modeshape.jcr.federation.paging.PagingWriter;

@@ -42,8 +42,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.connector.testing.mock.MockConnector;
 import org.modeshape.jcr.api.federation.FederationManager;
-import org.modeshape.jcr.federation.MockConnector;
 
 /**
  * Unit test for {@link ModeShapeFederationManager}

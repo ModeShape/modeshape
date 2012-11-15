@@ -7,23 +7,18 @@
     },
     "externalSources" : {
         "readonly-files" : {
-            "classname" : "org.modeshape.jcr.federation.filesystem.FileSystemConnector",
+            "classname" : "org.modeshape.connector.filesystem.FileSystemConnector",
             "directoryPath" : "target/federation/files-read",
             "readonly" : true,
         },
         "mutable-files-store" : {
-            "classname" : "org.modeshape.jcr.federation.filesystem.FileSystemConnector",
+            "classname" : "filesystem",
             "directoryPath" : "target/federation/files-store",
         },
         "mutable-files-json" : {
             "classname" : "filesystem",
             "directoryPath" : "target/federation/files-json",
             "extraPropertiesStorage" : "json",
-        },
-        "mutable-files-bson" : {
-            "classname" : "filesystem",
-            "directoryPath" : "target/federation/files-bson",
-            "extraPropertiesStorage" : "bson",
         },
         "mutable-files-legacy" : {
             "classname" : "filesystem",
