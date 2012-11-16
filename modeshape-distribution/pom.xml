@@ -547,7 +547,7 @@
         </profile>
         <profile>
             <!--
-              This profile is enabled by default and only builds the distributions required 
+              This profile is enabled by default and only builds the distributions required
               by the integration tests.
             -->
             <id>integration</id>
