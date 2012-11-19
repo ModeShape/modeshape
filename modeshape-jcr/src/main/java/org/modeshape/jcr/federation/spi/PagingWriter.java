@@ -39,7 +39,6 @@ public interface PagingWriter {
      * Creates a new page of children in its underlying document. The underlying document can be either the document of an external node,
      * or the document of another page.
      *
-     * @param childrenFromCurrentPage a {@code non-null} {@link List} of children representing the children that should go in this page
      * @param parentId a {@code non-null} String representing the identifier of the parent (owning) document
      * @param nextPageOffset a {@code non-null} String representing the offset of the next page. The meaning of the offset isn't
      * defined and it's up to each connector to define it.
@@ -47,8 +46,7 @@ public interface PagingWriter {
      * @param totalChildCount an integer which indicates the total number of children
      * @return the current writer instance
      */
-    public PagingWriter addPage( List<? extends Document> childrenFromCurrentPage,
-                                 String parentId,
+    public PagingWriter addPage( String parentId,
                                  String nextPageOffset,
                                  long blockSize,
                                  long totalChildCount );
@@ -57,24 +55,15 @@ public interface PagingWriter {
      * Creates a new page of children in its underlying document. The underlying document can be either the document of an external node,
      * or the document of another page.
      *
-     * @param childrenFromCurrentPage a {@code non-null} {@link List} of children representing the children that should go in this page
-     * @param parentId a {@code non-null} String representing the identifier of the parent (owning) document
-     * @param nextPageOffset a {@code non-null} int representing a numeric offset of the next page.
-     * @param blockSize an integer which indicates the size of the next block of children
-     * @param totalChildCount an integer which indicates the total number of children
-     * @return the current writer instance
+     *
+      * @param parentId a {@code non-null} String representing the identifier of the parent (owning) document
+      * @param nextPageOffset a {@code non-null} int representing a numeric offset of the next page.
+      * @param blockSize an integer which indicates the size of the next block of children
+      * @param totalChildCount an integer which indicates the total number of children
+      * @return the current writer instance
      */
-    public PagingWriter addPage( List<? extends Document> childrenFromCurrentPage,
-                                 String parentId,
+    public PagingWriter addPage( String parentId,
                                  int nextPageOffset,
                                  long blockSize,
                                  long totalChildCount );
-
-    /**
-     * Creates a document with a given list of children representing a final page of children.
-     *
-     * @param children a non-null {@link List} of children representing the children that should go in the last page
-     * @return the current writer instance
-     */
-    public PagingWriter lastPage( List<? extends Document> children );
 }

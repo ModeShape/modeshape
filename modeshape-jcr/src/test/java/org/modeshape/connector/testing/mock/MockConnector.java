@@ -105,9 +105,10 @@ public class MockConnector extends Connector implements Pageable {
         if (PAGED_DOCUMENT_ID.equals(id)) {
             DocumentReader reader = readDocument(doc);
             List<? extends Document> children = reader.getChildren();
-            DocumentWriter writer = newDocument(id);
-            writer.setPrimaryType(JcrNtLexicon.UNSTRUCTURED);
-            writer.addPage(children.subList(0, 1), reader.getDocumentId(), String.valueOf(1), 1, children.size());
+            DocumentWriter writer = newDocument(id)
+                    .setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
+                    .setChildren(children.subList(0,1))
+                    .addPage(reader.getDocumentId(), 1, 1, children.size());
             return writer.document();
         }
         return doc;
@@ -161,8 +162,7 @@ public class MockConnector extends Connector implements Pageable {
         }
 
         DocumentReader changes = readDocument(document);
-        DocumentWriter updatedDocument = newDocument(id).setChildren(changes.getChildren()).setProperties(
-                changes.getProperties());
+        DocumentWriter updatedDocument = newDocument(id).setChildren(changes.getChildren()).setProperties(changes.getProperties());
         documentsById.put(id, updatedDocument.document());
     }
 
@@ -172,7 +172,7 @@ public class MockConnector extends Connector implements Pageable {
     }
 
     @Override
-    public Document getChildrenPage( PageKey pageKey ) {
+    public Document getChildren( PageKey pageKey ) {
         String parentId = pageKey.getParentId();
         Document doc = documentsById.get(parentId);
         assert doc != null;
@@ -181,12 +181,12 @@ public class MockConnector extends Connector implements Pageable {
 
         int blockSize = (int)pageKey.getBlockSize();
         int offset = pageKey.getOffsetInt();
-        List<? extends Document> childrenForBlock = children.subList(offset, offset + blockSize);
 
-        DocumentWriter writer = newDocument(parentId);
+        DocumentWriter writer = newDocument(parentId).setChildren(children.subList(offset, offset + blockSize));
         if (offset + blockSize == children.size()) {
-            return writer.lastPage(childrenForBlock).document();
+            return writer.document();
+        } else  {
+            return writer.addPage(parentId, offset + 1, blockSize, children.size()).document();
         }
-        return writer.addPage(childrenForBlock, parentId, offset + 1, blockSize, children.size()).document();
     }
 }

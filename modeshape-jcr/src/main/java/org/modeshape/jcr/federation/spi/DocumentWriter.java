@@ -248,19 +248,15 @@ public interface DocumentWriter extends PagingWriter {
     public DocumentWriter setCacheTtlSeconds( int seconds );
 
     @Override
-    DocumentWriter addPage( List<? extends Document> childrenFromCurrentPage,
-                            String parentId,
+    DocumentWriter addPage( String parentId,
                             int nextPageOffset,
                             long blockSize,
                             long totalChildCount );
 
     @Override
-    DocumentWriter addPage( List<? extends Document> childrenFromCurrentPage,
-                            String parentId,
+    DocumentWriter addPage( String parentId,
                             String nextPageOffset,
                             long blockSize,
                             long totalChildCount );
 
-    @Override
-    DocumentWriter lastPage( List<? extends Document> children );
 }

@@ -48,9 +48,10 @@ import org.modeshape.jcr.federation.spi.Connector;
 /**
  * An implementation of {@link DocumentStore} which is used when federation is enabled
  * 
- * @author Horia Chiorean (hchiorea@redhat.com) //TODO author=Horia Chiorean date=11/7/12 description=The
- *         externalProjectionKeyToFederatedNodeKey should be marshalled to/from the system area somehow, at repository
- *         shutdown/startup
+ * @author Horia Chiorean (hchiorea@redhat.com)
+ *
+ * TODO author=Horia Chiorean date=11/7/12 description=The externalProjectionKeyToFederatedNodeKey
+ * should be marshalled to/from the system area somehow, at repository shutdown/startup
  */
 public class FederatedDocumentStore implements DocumentStore {
 
@@ -205,7 +206,7 @@ public class FederatedDocumentStore implements DocumentStore {
         if (connector != null && connector instanceof Pageable) {
             key = documentIdFromNodeKey(key);
             PageKey blockKey = new PageKey(key);
-            Document childrenBlock = ((Pageable)connector).getChildrenPage(blockKey);
+            Document childrenBlock = ((Pageable)connector).getChildren(blockKey);
             if (childrenBlock != null) {
                 return replaceConnectorIdsWithNodeKeys(childrenBlock, connector.getSourceName());
             }

@@ -243,45 +243,28 @@ public class FederatedDocumentWriter implements DocumentWriter {
     }
 
     @Override
-    public DocumentWriter addPage( List<? extends Document> childrenFromCurrentPage,
-                                 String parentId,
-                                 int nextPageOffset,
-                                 long blockSize,
-                                 long totalChildCount ) {
-        return addPage(childrenFromCurrentPage, parentId, String.valueOf(nextPageOffset), blockSize, totalChildCount);
+    public DocumentWriter addPage( String parentId,
+                                   int nextPageOffset,
+                                   long blockSize,
+                                   long totalChildCount ) {
+        return addPage(parentId, String.valueOf(nextPageOffset), blockSize, totalChildCount);
     }
 
     @Override
-    public DocumentWriter addPage( List<? extends Document> childrenFromCurrentPage,
-                                 String parentId,
-                                 String nextPageOffset,
-                                 long blockSize,
-                                 long totalChildCount ) {
-        //sets only the children from the current page
-        setChildren(childrenFromCurrentPage);
-        //adds a new block at the end
-        addChildrenPage(parentId, nextPageOffset, blockSize, totalChildCount);
-        return this;    }
-
-    @Override
-    public DocumentWriter lastPage( List<? extends Document> children ) {
-        setChildren(children);
-        return this;
-    }
-
-    private void addChildrenPage( String parentId,
-                                  String offset,
-                                  long blockSize,
-                                  long totalChildCount ) {
+    public DocumentWriter addPage( String parentId,
+                                   String nextPageOffset,
+                                   long blockSize,
+                                   long totalChildCount ) {
         EditableDocument childrenInfo = document().getDocument(DocumentTranslator.CHILDREN_INFO);
         if (childrenInfo == null) {
             childrenInfo = DocumentFactory.newDocument();
             document().setDocument(DocumentTranslator.CHILDREN_INFO, childrenInfo);
         }
-        PageKey blockKey = new PageKey(parentId, offset, blockSize);
         childrenInfo.setNumber(DocumentTranslator.COUNT, totalChildCount);
         childrenInfo.setNumber(DocumentTranslator.BLOCK_SIZE, blockSize);
-        childrenInfo.setString(DocumentTranslator.NEXT_BLOCK, blockKey.toString());
+        PageKey pageKey = new PageKey(parentId, nextPageOffset, blockSize);
+        childrenInfo.setString(DocumentTranslator.NEXT_BLOCK, pageKey.toString());
+        return this;
     }
 
     protected DocumentTranslator translator() {

@@ -37,13 +37,12 @@ import org.modeshape.jcr.federation.PageKey;
 public interface Pageable {
 
     /**
-     * Returns a document which represents a page of children. In order to add a next page,
-     * {@link PagingWriter#addPage(java.util.List, String, String, long, long)}
-     * should be used to add a next block to the current block. If there aren't any more blocks {@link PagingWriter#lastPage(java.util.List)}
-     * can be used.
+     * Returns a document which represents a page of children. In order to add a next page, {@link PagingWriter#addPage(String, String, long, long)}
+     * should be used to add a new page of children.
      *
-     * @param pageKey a {@code non-null} {@link org.modeshape.jcr.federation.PageKey} instance, which offers information about a block
-     * @return either a {@code non-null} block document or {@code null} indicating that such a block doesn't exist
+     * @param pageKey a {@code non-null} {@link org.modeshape.jcr.federation.PageKey} instance, which offers information
+     * about the page that should be retrieved.
+     * @return either a {@code non-null} page document or {@code null} indicating that such a page doesn't exist
      */
-    public Document getChildrenPage( PageKey pageKey );
+    public Document getChildren( PageKey pageKey );
 }
