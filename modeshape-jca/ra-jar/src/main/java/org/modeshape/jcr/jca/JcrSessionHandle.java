@@ -282,13 +282,7 @@ public class JcrSessionHandle implements Session, XAResource{
     }
 
     private XAResource getXAResource() throws XAException {
-        Session session = session();
-        if (session instanceof XAResource) {
-            return (XAResource) session;
-        } else {
-            throw new XAException(
-                    "XA transactions are not supported with " + session);
-        }
+        return (XAResource) session();
     }
 
     @Override
