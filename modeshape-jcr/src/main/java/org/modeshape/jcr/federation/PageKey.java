@@ -22,15 +22,15 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.jcr.federation.paging;
+package org.modeshape.jcr.federation;
 
 /**
- * The key used to uniquely identify a block of children. In order for a connector to be able to do so, a block key
- * is formed by joining together the id of the owning document, the offset of the block and the size of the block.
+ * The key used to uniquely identify a page of children. A page key
+ * is formed by joining together the id of the owning document, the offset of the page and the size of the block.
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public final class BlockKey {
+public final class PageKey {
 
     private static final String SEPARATOR = "#";
 
@@ -44,7 +44,7 @@ public final class BlockKey {
      * @param key a {@code non-null} string
      * @throws IllegalArgumentException if the string is not correctly formed.
      */
-    public BlockKey( String key ) {
+    public PageKey( String key ) {
         String[] parts = key.split(SEPARATOR);
         if (parts.length != 3) {
             throw new IllegalArgumentException("Invalid block key string " + key + " . Expected parentId|offset|blockSize");
@@ -58,11 +58,19 @@ public final class BlockKey {
         }
     }
 
-    protected BlockKey( String parentId,
-                        String offset,
-                        long blockSize ) {
+    protected PageKey( String parentId,
+                       String offset,
+                       long blockSize ) {
         this.blockSize = blockSize;
         this.offset = offset;
+        this.parentId = parentId;
+    }
+
+    protected PageKey( String parentId,
+                       int offset,
+                       long blockSize ) {
+        this.blockSize = blockSize;
+        this.offset = String.valueOf(offset);
         this.parentId = parentId;
     }
 
@@ -80,8 +88,22 @@ public final class BlockKey {
      *
      * @return a {@code non-null} String
      */
-    public String getOffset() {
+    public String getOffsetString() {
         return offset;
+    }
+
+    /**
+     * Returns the integer representation of the offset, if the offset is convertible to an integer. Otherwise, {@code null}
+     * is returned.
+     *
+     * @return the int representation of the offset, or null.
+     */
+    public Integer getOffsetInt() {
+        try {
+            return Integer.valueOf(offset);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     /**

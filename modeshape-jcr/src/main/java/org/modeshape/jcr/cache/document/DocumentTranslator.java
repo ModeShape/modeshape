@@ -751,7 +751,7 @@ public class DocumentTranslator {
                     assert docInfo != null;
                     lastDocKey = docInfo.nextKey;
                 } else {
-                    if (doc == document) {
+                    if (doc == document && doc.containsField(CHILDREN_INFO)) {
                         // This is still the first document, so there shouldn't be a block size ...
                         EditableDocument childInfo = doc.getDocument(CHILDREN_INFO);
                         childInfo.remove(BLOCK_SIZE);

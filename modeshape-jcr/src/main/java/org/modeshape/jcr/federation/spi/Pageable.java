@@ -22,9 +22,10 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.jcr.federation.paging;
+package org.modeshape.jcr.federation.spi;
 
 import org.infinispan.schematic.document.Document;
+import org.modeshape.jcr.federation.PageKey;
 
 /**
  * Marker interface that should be implemented by {@link org.modeshape.jcr.federation.spi.Connector}(s) that want to expose children
@@ -36,12 +37,13 @@ import org.infinispan.schematic.document.Document;
 public interface Pageable {
 
     /**
-     * Returns a document which represents a block of children. In order to add a next block, {@link PagingWriter#newBlock(java.util.List, String, String, long, long)}
-     * should be used to add a next block to the current block. If there aren't any more blocks {@link PagingWriter#endBlock(java.util.List)}
+     * Returns a document which represents a page of children. In order to add a next page,
+     * {@link PagingWriter#addPage(java.util.List, String, String, long, long)}
+     * should be used to add a next block to the current block. If there aren't any more blocks {@link PagingWriter#lastPage(java.util.List)}
      * can be used.
      *
-     * @param blockKey a {@code non-null} {@link BlockKey} instance, which offers information about a block
+     * @param pageKey a {@code non-null} {@link org.modeshape.jcr.federation.PageKey} instance, which offers information about a block
      * @return either a {@code non-null} block document or {@code null} indicating that such a block doesn't exist
      */
-    public Document getChildrenBlock( BlockKey blockKey );
+    public Document getChildrenPage( PageKey pageKey );
 }

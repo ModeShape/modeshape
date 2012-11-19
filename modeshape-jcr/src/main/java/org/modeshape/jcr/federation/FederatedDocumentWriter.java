@@ -34,20 +34,18 @@ import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
-import org.modeshape.jcr.federation.spi.Connector;
-import org.modeshape.jcr.federation.spi.Connector.DocumentWriter;
+import org.modeshape.jcr.federation.spi.DocumentWriter;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.basic.BasicMultiValueProperty;
 import org.modeshape.jcr.value.basic.BasicSingleValueProperty;
 
 /**
- * Helper class which should be used by {@link Connector} implementations to create {@link EditableDocument}(s) with the correct
- * structure.
+ * Default implementation of the {@link DocumentWriter} interface.
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class FederatedDocumentWriter implements Connector.DocumentWriter {
+public class FederatedDocumentWriter implements DocumentWriter {
 
     private final EditableDocument federatedDocument;
     private final DocumentTranslator translator;
@@ -108,7 +106,7 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
     }
 
     @Override
-    public FederatedDocumentWriter addProperty( String name,
+    public DocumentWriter addProperty( String name,
                                                 Object value ) {
         Name nameObj = nameFrom(name);
         return addProperty(nameObj, value);
@@ -131,7 +129,7 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
     }
 
     @Override
-    public FederatedDocumentWriter addProperty( Name name,
+    public DocumentWriter addProperty( Name name,
                                                 Object value ) {
         if (value == null) {
             return this;
@@ -172,14 +170,14 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
     }
 
     @Override
-    public FederatedDocumentWriter addChild( String id,
+    public DocumentWriter addChild( String id,
                                              Name name ) {
         String nameStr = translator.getStringFactory().create(name);
         return addChild(id, nameStr);
     }
 
     @Override
-    public FederatedDocumentWriter addChild( String id,
+    public DocumentWriter addChild( String id,
                                              String name ) {
         EditableArray children = federatedDocument.getArray(DocumentTranslator.CHILDREN);
         if (children == null) {
@@ -191,20 +189,15 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
     }
 
     @Override
-    public FederatedDocumentWriter addChild( EditableDocument child ) {
-        EditableArray children = federatedDocument.getArray(DocumentTranslator.CHILDREN);
-        if (children == null) {
-            children = DocumentFactory.newArray();
-            federatedDocument.setArray(DocumentTranslator.CHILDREN, children);
-        }
-        children.add(child);
-        return this;
+    public DocumentWriter setProperties( Map<Name, Property> properties ) {
+        //clear the existing values
+        federatedDocument.setDocument(DocumentTranslator.PROPERTIES);
+        return addProperties(properties);
     }
 
     @Override
-    public FederatedDocumentWriter setChildren( List<? extends Document> children ) {
-        EditableArray childrenArray = federatedDocument.getArray(DocumentTranslator.CHILDREN);
-        childrenArray = DocumentFactory.newArray();
+    public DocumentWriter setChildren( List<? extends Document> children ) {
+        EditableArray childrenArray = DocumentFactory.newArray();
         federatedDocument.setArray(DocumentTranslator.CHILDREN, childrenArray);
 
         for (Document child : children) {
@@ -214,7 +207,7 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
     }
 
     @Override
-    public FederatedDocumentWriter setParents( String... parentIds ) {
+    public DocumentWriter setParents( String... parentIds ) {
         if (parentIds.length == 1) {
             federatedDocument.setString(DocumentTranslator.PARENT, parentIds[0]);
         }
@@ -234,25 +227,61 @@ public class FederatedDocumentWriter implements Connector.DocumentWriter {
     }
 
     @Override
-    public FederatedDocumentWriter setCacheTtlSeconds( int seconds ) {
+    public DocumentWriter setCacheTtlSeconds( int seconds ) {
         federatedDocument.setNumber(DocumentTranslator.CACHE_TTL_SECONDS, seconds);
         return this;
     }
 
     @Override
-    public Connector.DocumentWriter setParents( List<String> parentIds ) {
+    public DocumentWriter setParents( List<String> parentIds ) {
         return setParents(parentIds.toArray(new String[parentIds.size()]));
-    }
-
-    @Override
-    public FederatedDocumentWriter merge( Document document ) {
-        federatedDocument.putAll(document);
-        return this;
     }
 
     @Override
     public EditableDocument document() {
         return federatedDocument;
+    }
+
+    @Override
+    public DocumentWriter addPage( List<? extends Document> childrenFromCurrentPage,
+                                 String parentId,
+                                 int nextPageOffset,
+                                 long blockSize,
+                                 long totalChildCount ) {
+        return addPage(childrenFromCurrentPage, parentId, String.valueOf(nextPageOffset), blockSize, totalChildCount);
+    }
+
+    @Override
+    public DocumentWriter addPage( List<? extends Document> childrenFromCurrentPage,
+                                 String parentId,
+                                 String nextPageOffset,
+                                 long blockSize,
+                                 long totalChildCount ) {
+        //sets only the children from the current page
+        setChildren(childrenFromCurrentPage);
+        //adds a new block at the end
+        addChildrenPage(parentId, nextPageOffset, blockSize, totalChildCount);
+        return this;    }
+
+    @Override
+    public DocumentWriter lastPage( List<? extends Document> children ) {
+        setChildren(children);
+        return this;
+    }
+
+    private void addChildrenPage( String parentId,
+                                  String offset,
+                                  long blockSize,
+                                  long totalChildCount ) {
+        EditableDocument childrenInfo = document().getDocument(DocumentTranslator.CHILDREN_INFO);
+        if (childrenInfo == null) {
+            childrenInfo = DocumentFactory.newDocument();
+            document().setDocument(DocumentTranslator.CHILDREN_INFO, childrenInfo);
+        }
+        PageKey blockKey = new PageKey(parentId, offset, blockSize);
+        childrenInfo.setNumber(DocumentTranslator.COUNT, totalChildCount);
+        childrenInfo.setNumber(DocumentTranslator.BLOCK_SIZE, blockSize);
+        childrenInfo.setString(DocumentTranslator.NEXT_BLOCK, blockKey.toString());
     }
 
     protected DocumentTranslator translator() {
