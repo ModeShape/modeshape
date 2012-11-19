@@ -24,9 +24,6 @@
 
 package org.modeshape.jcr.federation.spi;
 
-import java.util.List;
-import org.infinispan.schematic.document.Document;
-
 /**
  * A type of document writer that can add paging information to documents. Typically, the operations exposed by this will be used
  * by {@link Pageable} connectors.
