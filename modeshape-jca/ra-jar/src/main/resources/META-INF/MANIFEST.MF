@@ -1,5 +1,0 @@
-Manifest-Version: 1.0
-Specification-Title: ModeShape JCA Adaptorr
-Specification-Vendor: JBoss, a division of Red Hat
-Specification-Version: 3.0-SNAPSHOT
-Tool: Bnd-1.50.0
