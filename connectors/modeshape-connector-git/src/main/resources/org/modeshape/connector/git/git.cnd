@@ -1,0 +1,113 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors. 
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+ 
+ //------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<git='http://www.modeshape.org/git/1.0'>
+
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+[git:referenceable] > mix:referenceable mixin
+- git:objectId (string) mandatory protected
+
+[git:navigable] mixin
+- git:tree (reference) mandatory protected
+
+[git:historical] mixin
+- git:history (reference) mandatory protected
+
+// Represents a branch or tag or commit ...
+[git:reference] > git:referenceable, git:navigable, git:historical abstract
+
+[git:committed] > git:referenceable mixin
+- git:author (string) mandatory protected
+- git:committer (string) mandatory protected
+- git:committed (date) mandatory protected
+- git:title (string) mandatory protected
+
+[git:root]
++ branches (git:branches) abort protected
++ tags (git:tags) abort protected
++ commits (git:commits) abort protected
++ trees (git:trees) abort protected
++ commit (git:details) abort protected
+
+//------------------------------------------------------------------------------
+// The content with the branch and tag information
+//------------------------------------------------------------------------------
+
+[git:branches]
++ * (git:branch) abort protected
+
+[git:branch] > git:reference
+
+[git:tags]
++ * (git:tag) abort protected
+
+[git:tag] > git:reference
+
+//------------------------------------------------------------------------------
+// The content with the history information about a particular branch/tag/commit
+//------------------------------------------------------------------------------
+
+[git:commits]
++ * (git:object) = git:object abort protected
+
+[git:object]
++ * (git:commit) = git:commit abort protected
+
+[git:commit] > git:committed
+- git:message (string) mandatory protected
+- git:parents (reference) multiple mandatory protected
+
+//------------------------------------------------------------------------------
+// The content showing the details of each commit
+//------------------------------------------------------------------------------
+
+[git:details]
++ * (git:detailedCommit) abort protected
+
+[git:detailedCommit] > git:commit
+
+//------------------------------------------------------------------------------
+// The content with the folder and file structure of a particular object
+//------------------------------------------------------------------------------
+
+[git:trees]
++ * (git:folder) abort protected
+
+[git:folder] > nt:folder, git:committed, git:historical
++ * (nt:hierarchyNode,git:committed)
+
+[git:file] > nt:file, git:committed
+
+
+

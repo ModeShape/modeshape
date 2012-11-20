@@ -108,6 +108,13 @@ public class DocumentTranslator {
     public static final String WEAK = "weak";
     public static final String STRONG = "strong";
     public static final String REFERENCE_COUNT = "refCount";
+
+    /**
+     * A constant that is used as the name for a nested document in which additional, embedded documents can be placed. Each of
+     * these documents represents a separate node and will be automatically extracted from the containing document prior to usage.
+     */
+    public static final String EMBEDDED_DOCUMENTS = "embeddedDocuments";
+
     /**
      * A constant that can be used by a connector implementation as a supplementary document field, that indicates the maximum
      * number of seconds that particular document should be stored in the workspace cache.
@@ -702,12 +709,13 @@ public class DocumentTranslator {
         document.setString(KEY, key.toString());
     }
 
-    public void setKey (EditableDocument document, String key) {
+    public void setKey( EditableDocument document,
+                        String key ) {
         assert key != null;
         document.setString(KEY, key);
     }
 
-    public String getKey (Document document) {
+    public String getKey( Document document ) {
         return document.getString(KEY);
     }
 
@@ -876,13 +884,13 @@ public class DocumentTranslator {
         return ImmutableChildReferences.create(internalChildRefsList);
     }
 
-
     /**
      * Reads the children of the given block and returns a {@link ChildReferences} instance.
+     * 
      * @param block a {@code non-null} {@link Document} representing a block of children
      * @return a {@code non-null} child references instance
      */
-    public ChildReferences getChildReferencesFromBlock(Document block) {
+    public ChildReferences getChildReferencesFromBlock( Document block ) {
         List<?> children = block.getArray(CHILDREN);
 
         if (children == null) {

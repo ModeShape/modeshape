@@ -324,12 +324,37 @@ public abstract class Connector {
         return translator;
     }
 
+    /**
+     * Obtain a new {@link DocumentReader} that can be used to read an existing document, typically used within the
+     * {@link #storeDocument(Document)} and {@link #updateDocument(String, Document)} methods.
+     * 
+     * @param document the document that should be read; may not be null
+     * @return the document reader; never null
+     */
+    protected DocumentReader readDocument( Document document ) {
+        return new FederatedDocumentReader(translator, document);
+    }
+
+    /**
+     * Obtain a new {@link DocumentWriter} that can be used to construct a document, typically within the
+     * {@link #getDocumentById(String)} method.
+     * 
+     * @param id the identifier of the document; may not be null
+     * @return the document writer; never null
+     */
     protected DocumentWriter newDocument( String id ) {
         return new FederatedDocumentWriter(translator).setId(id);
     }
 
-    protected DocumentReader readDocument( Document document ) {
-        return new FederatedDocumentReader(translator, document);
+    /**
+     * Obtain a new {@link PageWriter} that can be used to construct a page of children, typically within the
+     * {@link Pageable#getChildren(PageKey)} method.
+     * 
+     * @param pageKey the key for the page; may not be null
+     * @return the page writer; never null
+     */
+    protected PageWriter newPageDocument( PageKey pageKey ) {
+        return new FederatedDocumentWriter(translator).setId(pageKey.toString());
     }
 
     /**

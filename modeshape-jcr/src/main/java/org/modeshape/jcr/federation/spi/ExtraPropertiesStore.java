@@ -36,7 +36,7 @@ import org.modeshape.jcr.value.Property;
  */
 public interface ExtraPropertiesStore {
 
-    public static final Map<Name, Property> NO_PROPERTIES = Collections.emptyMap();
+    static final Map<Name, Property> NO_PROPERTIES = Collections.emptyMap();
 
     /**
      * Store the supplied extra properties for the node with the supplied ID. This will overwrite any properties that were
