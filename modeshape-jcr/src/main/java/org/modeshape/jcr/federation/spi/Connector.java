@@ -26,13 +26,10 @@ package org.modeshape.jcr.federation.spi;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.util.CheckArg;
@@ -45,7 +42,6 @@ import org.modeshape.jcr.cache.DocumentNotFoundException;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.federation.FederatedDocumentReader;
 import org.modeshape.jcr.federation.FederatedDocumentWriter;
-import org.modeshape.jcr.federation.paging.PagingWriter;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
@@ -332,18 +328,6 @@ public abstract class Connector {
         return new FederatedDocumentWriter(translator).setId(id);
     }
 
-    protected DocumentWriter newDocument( Document document ) {
-        return new FederatedDocumentWriter(translator, document);
-    }
-
-    protected PagingWriter newPagedDocument( Document document ) {
-        return new PagingWriter(translator, document);
-    }
-
-    protected PagingWriter newPagedDocument() {
-        return new PagingWriter(translator);
-    }
-
     protected DocumentReader readDocument( Document document ) {
         return new FederatedDocumentReader(translator, document);
     }
@@ -417,95 +401,6 @@ public abstract class Connector {
                                    String localName,
                                    TextDecoder decoder ) {
         return factories().getNameFactory().create(namespaceUri, localName, decoder);
-    }
-
-    public static interface DocumentWriter {
-
-        public DocumentWriter setId( String id );
-
-        public DocumentWriter setPrimaryType( String name );
-
-        public DocumentWriter setPrimaryType( Name name );
-
-        public DocumentWriter addMixinType( String name );
-
-        public DocumentWriter addMixinType( Name name );
-
-        public DocumentWriter addProperty( String name,
-                                           Object value );
-
-        public DocumentWriter addProperty( Name name,
-                                           Object value );
-
-        public DocumentWriter addProperty( String name,
-                                           Object[] values );
-
-        public DocumentWriter addProperty( Name name,
-                                           Object[] values );
-
-        public DocumentWriter addProperty( String name,
-                                           Object firstValue,
-                                           Object... additionalValues );
-
-        public DocumentWriter addProperty( Name name,
-                                           Object firstValue,
-                                           Object... additionalValues );
-
-        public DocumentWriter addProperties( Map<Name, Property> properties );
-
-        public DocumentWriter addPropertyValue( String name,
-                                                Object value );
-
-        public DocumentWriter addPropertyValue( Name name,
-                                                Object value );
-
-        public DocumentWriter addChild( String id,
-                                        String name );
-
-        public DocumentWriter addChild( String id,
-                                        Name name );
-
-        public DocumentWriter addChild( EditableDocument child );
-
-        public DocumentWriter setParents( String... parentIds );
-
-        public DocumentWriter setParent( String parentId );
-
-        public DocumentWriter setParents( List<String> parentIds );
-
-        public DocumentWriter merge( Document document );
-
-        public EditableDocument document();
-
-        FederatedDocumentWriter setChildren( List<? extends Document> children );
-
-        FederatedDocumentWriter setCacheTtlSeconds( int seconds );
-    }
-
-    public static interface DocumentReader {
-        public String getDocumentId();
-
-        public List<String> getParentIds();
-
-        List<EditableDocument> getChildren();
-
-        Document document();
-
-        Integer getCacheTtlSeconds();
-
-        Name getPrimaryType();
-
-        String getPrimaryTypeName();
-
-        Set<Name> getMixinTypes();
-
-        Set<String> getMixinTypeNames();
-
-        Property getProperty( Name name );
-
-        Property getProperty( String name );
-
-        Map<Name, Property> getProperties();
     }
 
     public final class ExtraProperties {

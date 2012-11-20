@@ -34,17 +34,17 @@ import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
-import org.modeshape.jcr.federation.spi.Connector;
+import org.modeshape.jcr.federation.spi.DocumentReader;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 
 /**
- * Implementation of a {@link org.modeshape.jcr.federation.spi.Connector.DocumentReader} that be used to obtain "semantic" information
+ * Implementation of a {@link org.modeshape.jcr.federation.spi.DocumentReader} that be used to obtain "semantic" information
  * from a federated document
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class FederatedDocumentReader implements Connector.DocumentReader {
+public class FederatedDocumentReader implements DocumentReader {
 
     private final Document federatedDocument;
     private final DocumentTranslator translator;
@@ -78,15 +78,15 @@ public class FederatedDocumentReader implements Connector.DocumentReader {
     }
 
     @Override
-    public List<EditableDocument> getChildren() {
-        List<EditableDocument> children = new ArrayList<EditableDocument>();
+    public List<Document> getChildren() {
+        List<Document> children = new ArrayList<Document>();
         if (!federatedDocument.containsField(DocumentTranslator.CHILDREN)) {
             return children;
         }
         List<?> childrenArray = federatedDocument.getArray(DocumentTranslator.CHILDREN);
         for (Object child : childrenArray) {
             assert child instanceof Document;
-            children.add(DocumentFactory.newDocument((Document)child));
+            children.add((Document)child);
         }
 
         return children;

@@ -40,16 +40,19 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
-import org.modeshape.jcr.federation.paging.BlockKey;
-import org.modeshape.jcr.federation.paging.Pageable;
+import org.modeshape.jcr.federation.spi.DocumentReader;
+import org.modeshape.jcr.federation.spi.DocumentWriter;
+import org.modeshape.jcr.federation.spi.PageKey;
+import org.modeshape.jcr.federation.spi.Pageable;
 import org.modeshape.jcr.federation.spi.Connector;
 
 /**
  * An implementation of {@link DocumentStore} which is used when federation is enabled
  * 
- * @author Horia Chiorean (hchiorea@redhat.com) //TODO author=Horia Chiorean date=11/7/12 description=The
- *         externalProjectionKeyToFederatedNodeKey should be marshalled to/from the system area somehow, at repository
- *         shutdown/startup
+ * @author Horia Chiorean (hchiorea@redhat.com)
+ *
+ * TODO author=Horia Chiorean date=11/7/12 description=The externalProjectionKeyToFederatedNodeKey
+ * should be marshalled to/from the system area somehow, at repository shutdown/startup
  */
 public class FederatedDocumentStore implements DocumentStore {
 
@@ -130,10 +133,10 @@ public class FederatedDocumentStore implements DocumentStore {
 
     private EditableDocument updateCachingTtl( Connector connector,
                                                EditableDocument editableDocument ) {
-        Connector.DocumentReader reader = new FederatedDocumentReader(translator(), editableDocument);
+        DocumentReader reader = new FederatedDocumentReader(translator(), editableDocument);
         // there isn't a specific value set on the document, but the connector has a default value
         if (reader.getCacheTtlSeconds() == null && connector.getCacheTtlSeconds() != null) {
-            Connector.DocumentWriter writer = new FederatedDocumentWriter(null, editableDocument);
+            DocumentWriter writer = new FederatedDocumentWriter(null, editableDocument);
             writer.setCacheTtlSeconds(connector.getCacheTtlSeconds());
             return writer.document();
         }
@@ -203,8 +206,8 @@ public class FederatedDocumentStore implements DocumentStore {
         Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
         if (connector != null && connector instanceof Pageable) {
             key = documentIdFromNodeKey(key);
-            BlockKey blockKey = new BlockKey(key);
-            Document childrenBlock = ((Pageable)connector).getChildrenBlock(blockKey);
+            PageKey blockKey = new PageKey(key);
+            Document childrenBlock = ((Pageable)connector).getChildren(blockKey);
             if (childrenBlock != null) {
                 return replaceConnectorIdsWithNodeKeys(childrenBlock, connector.getSourceName());
             }
@@ -235,8 +238,8 @@ public class FederatedDocumentStore implements DocumentStore {
 
     private EditableDocument replaceConnectorIdsWithNodeKeys( Document externalDocument,
                                                               String sourceName ) {
-        Connector.DocumentReader reader = new FederatedDocumentReader(translator(), externalDocument);
-        Connector.DocumentWriter writer = new FederatedDocumentWriter(translator(), externalDocument);
+        DocumentReader reader = new FederatedDocumentReader(translator(), externalDocument);
+        DocumentWriter writer = new FederatedDocumentWriter(translator(), externalDocument);
 
         // replace document id with node key
         String externalDocumentId = reader.getDocumentId();
@@ -276,7 +279,7 @@ public class FederatedDocumentStore implements DocumentStore {
 
         // process each child in the same way
         List<Document> updatedChildren = new ArrayList<Document>();
-        for (EditableDocument child : reader.getChildren()) {
+        for (Document child : reader.getChildren()) {
             EditableDocument childWithReplacedIds = replaceConnectorIdsWithNodeKeys(child, sourceName);
             updatedChildren.add(childWithReplacedIds);
         }
@@ -286,8 +289,8 @@ public class FederatedDocumentStore implements DocumentStore {
     }
 
     private EditableDocument replaceNodeKeysWithDocumentIds( Document document ) {
-        Connector.DocumentReader reader = new FederatedDocumentReader(translator(), document);
-        Connector.DocumentWriter writer = new FederatedDocumentWriter(translator(), document);
+        DocumentReader reader = new FederatedDocumentReader(translator(), document);
+        DocumentWriter writer = new FederatedDocumentWriter(translator(), document);
 
         // replace node key with document id
         String documentNodeKey = reader.getDocumentId();
@@ -311,7 +314,7 @@ public class FederatedDocumentStore implements DocumentStore {
 
         // process each child in the same way
         List<Document> updatedChildren = new ArrayList<Document>();
-        for (EditableDocument child : reader.getChildren()) {
+        for (Document child : reader.getChildren()) {
             EditableDocument childWithReplacedIds = replaceNodeKeysWithDocumentIds(child);
             updatedChildren.add(childWithReplacedIds);
         }

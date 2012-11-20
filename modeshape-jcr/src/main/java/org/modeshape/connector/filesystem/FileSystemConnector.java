@@ -36,6 +36,7 @@ import java.io.ObjectOutput;
 import java.io.OutputStream;
 import java.net.URL;
 import java.util.Map;
+import java.util.regex.Pattern;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import org.infinispan.schematic.document.Document;
@@ -52,6 +53,8 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.cache.DocumentStoreException;
 import org.modeshape.jcr.federation.NoExtraPropertiesStorage;
 import org.modeshape.jcr.federation.spi.Connector;
+import org.modeshape.jcr.federation.spi.DocumentReader;
+import org.modeshape.jcr.federation.spi.DocumentWriter;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
@@ -109,6 +112,7 @@ import org.modeshape.jcr.value.binary.AbstractBinary;
  */
 public class FileSystemConnector extends Connector {
 
+    private static final String FILE_SEPARATOR = System.getProperty("file.separator");
     private static final String DELIMITER = "/";
     private static final String NT_FOLDER = "nt:folder";
     private static final String NT_FILE = "nt:file";
@@ -211,8 +215,8 @@ public class FileSystemConnector extends Connector {
             throw new RepositoryException(msg);
         }
         directoryAbsolutePath = directory.getAbsolutePath();
-        if (!directoryAbsolutePath.endsWith(DELIMITER)) directoryAbsolutePath = directoryAbsolutePath + DELIMITER;
-        directoryAbsolutePathLength = directoryAbsolutePath.length() - 1; // does NOT include the delimiter
+        if (!directoryAbsolutePath.endsWith(FILE_SEPARATOR)) directoryAbsolutePath = directoryAbsolutePath + FILE_SEPARATOR;
+        directoryAbsolutePathLength = directoryAbsolutePath.length() - FILE_SEPARATOR.length(); // does NOT include the separtor
 
         // Initialize the filename filter ...
         filenameFilter = new InclusionExclusionFilenameFilter();
@@ -319,6 +323,7 @@ public class FileSystemConnector extends Connector {
             throw new DocumentStoreException(path, msg);
         }
         String id = path.substring(directoryAbsolutePathLength);
+        id = id.replaceAll(Pattern.quote(FILE_SEPARATOR), DELIMITER);
         assert id.startsWith(DELIMITER);
         return id;
     }
