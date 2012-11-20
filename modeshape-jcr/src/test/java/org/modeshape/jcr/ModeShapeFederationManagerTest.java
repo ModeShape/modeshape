@@ -49,6 +49,8 @@ import org.modeshape.jcr.api.federation.FederationManager;
  * Unit test for {@link ModeShapeFederationManager}
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
+ * //TODO author=Horia Chiorean date=11/20/12 description=I think at some point we should split this up into different tests
+ * for real connectors
  */
 public class ModeShapeFederationManagerTest extends SingleUseAbstractTest {
 

@@ -33,7 +33,7 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
-import org.modeshape.jcr.federation.PageKey;
+import org.modeshape.jcr.federation.spi.PageKey;
 import org.modeshape.jcr.federation.spi.Connector;
 import org.modeshape.jcr.federation.spi.DocumentReader;
 import org.modeshape.jcr.federation.spi.DocumentWriter;

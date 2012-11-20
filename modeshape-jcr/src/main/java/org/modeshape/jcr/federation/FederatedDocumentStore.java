@@ -42,6 +42,7 @@ import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
 import org.modeshape.jcr.federation.spi.DocumentReader;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
+import org.modeshape.jcr.federation.spi.PageKey;
 import org.modeshape.jcr.federation.spi.Pageable;
 import org.modeshape.jcr.federation.spi.Connector;
 

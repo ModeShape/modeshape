@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.jcr.federation;
+package org.modeshape.jcr.federation.spi;
 
 /**
  * The key used to uniquely identify a page of children. A page key
@@ -58,19 +58,11 @@ public final class PageKey {
         }
     }
 
-    protected PageKey( String parentId,
-                       String offset,
-                       long blockSize ) {
+    public PageKey( String parentId,
+                    String offset,
+                    long blockSize ) {
         this.blockSize = blockSize;
         this.offset = offset;
-        this.parentId = parentId;
-    }
-
-    protected PageKey( String parentId,
-                       int offset,
-                       long blockSize ) {
-        this.blockSize = blockSize;
-        this.offset = String.valueOf(offset);
         this.parentId = parentId;
     }
 

@@ -35,6 +35,7 @@ import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
+import org.modeshape.jcr.federation.spi.PageKey;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.basic.BasicMultiValueProperty;
