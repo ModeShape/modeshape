@@ -9,7 +9,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.modeshape</groupId>
     <artifactId>modeshape-parent</artifactId>
-    <version>3.0.1-SNAPSHOT</version>
+    <version>3.0.1.Final</version>
     <name>ModeShape Parent</name>
 
     <url>http://www.modeshape.org</url>
