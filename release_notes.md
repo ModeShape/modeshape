@@ -1,16 +1,13 @@
 # Release Notes for ModeShape &version;
 
-The ModeShape &version; release is the first stable release of our new architecture.
-It's been a long journey with fourteen different alphas, betas, and candidate releases.
-But this is a huge improvement over the 2.x series. We hope you enjoy it!
-
-## What's new
+The ModeShape &version; release is the first patch release of 3.0 and our new architecture.
+This release fixes a few minor issues and one larger clustering-related issue. We hope you enjoy it!
 
 &version; provides a fast, distributed, hierarchical database that clients
 work with via the standard JCR 2.0 (JSR-283) API. ModeShape 3.0 is a major upgrade over 2.x
 and offers significant improvements in performance and scalability, while retaining all of
-ModeShape 2's JCR-related features. ModeShape 3.0 has complete integration with JBoss AS 7.1
-and 7.2, allowing deployed components to simply lookup and use repositories managed by 
+ModeShape 2's JCR-related features. ModeShape 3.0 has complete integration with JBoss AS 7.1, 
+allowing deployed components to simply lookup and use repositories managed by 
 ModeShape's service.
 
 Overall, ModeShape 3.0 has changed a lot since ModeShape 2.8.x:
@@ -169,5 +166,5 @@ earlier with full support for JCR 2.0.
 
 ## Bug Fixes, Features, and other Issues
 
-The following are the bugs, features and other issues that have been fixed in the 3.0.0.Final release:
+The following are the bugs, features and other issues that have been fixed in the &version; release:
 
