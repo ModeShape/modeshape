@@ -88,6 +88,12 @@ public class RepositoryConfigurationTest {
     }
 
     @Test
+    public void shouldNotReplaceBlankValuesWithNull() throws Exception {
+        RepositoryConfiguration config = RepositoryConfiguration.read("{ 'name' : 'Repo', 'jndiName' : '' }");
+        assertThat(config.getJndiName(), is(""));
+    }
+
+    @Test
     public void shouldReplaceVariables() {
         RepositoryConfiguration config = assertValid("{ 'name' = '${os.name} Repository' }");
         assertThat(config.getName(), is(System.getProperty("os.name") + " Repository"));
