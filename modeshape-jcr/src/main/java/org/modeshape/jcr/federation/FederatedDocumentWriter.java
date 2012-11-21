@@ -34,6 +34,7 @@ import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
+import org.modeshape.jcr.federation.spi.Connector;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
 import org.modeshape.jcr.federation.spi.PageKey;
 import org.modeshape.jcr.value.Name;
@@ -108,7 +109,7 @@ public class FederatedDocumentWriter implements DocumentWriter {
 
     @Override
     public DocumentWriter addProperty( String name,
-                                                Object value ) {
+                                       Object value ) {
         Name nameObj = nameFrom(name);
         return addProperty(nameObj, value);
     }
@@ -131,7 +132,7 @@ public class FederatedDocumentWriter implements DocumentWriter {
 
     @Override
     public DocumentWriter addProperty( Name name,
-                                                Object value ) {
+                                       Object value ) {
         if (value == null) {
             return this;
         }
@@ -172,14 +173,14 @@ public class FederatedDocumentWriter implements DocumentWriter {
 
     @Override
     public DocumentWriter addChild( String id,
-                                             Name name ) {
+                                    Name name ) {
         String nameStr = translator.getStringFactory().create(name);
         return addChild(id, nameStr);
     }
 
     @Override
     public DocumentWriter addChild( String id,
-                                             String name ) {
+                                    String name ) {
         EditableArray children = federatedDocument.getArray(DocumentTranslator.CHILDREN);
         if (children == null) {
             children = DocumentFactory.newArray();
@@ -191,7 +192,7 @@ public class FederatedDocumentWriter implements DocumentWriter {
 
     @Override
     public DocumentWriter setProperties( Map<Name, Property> properties ) {
-        //clear the existing values
+        // clear the existing values
         federatedDocument.setDocument(DocumentTranslator.PROPERTIES);
         return addProperties(properties);
     }
@@ -256,11 +257,7 @@ public class FederatedDocumentWriter implements DocumentWriter {
                                    String nextPageOffset,
                                    long blockSize,
                                    long totalChildCount ) {
-        EditableDocument childrenInfo = document().getDocument(DocumentTranslator.CHILDREN_INFO);
-        if (childrenInfo == null) {
-            childrenInfo = DocumentFactory.newDocument();
-            document().setDocument(DocumentTranslator.CHILDREN_INFO, childrenInfo);
-        }
+        EditableDocument childrenInfo = document().getOrCreateDocument(DocumentTranslator.CHILDREN_INFO);
         childrenInfo.setNumber(DocumentTranslator.COUNT, totalChildCount);
         childrenInfo.setNumber(DocumentTranslator.BLOCK_SIZE, blockSize);
         PageKey pageKey = new PageKey(parentId, nextPageOffset, blockSize);
@@ -271,4 +268,21 @@ public class FederatedDocumentWriter implements DocumentWriter {
     protected DocumentTranslator translator() {
         return translator;
     }
+
+    /**
+     * Some connectors may want to pre-generate additional documents when {@link Connector#getDocumentById(String)} is called. In
+     * such a case, the connector can use this method to obtain a writer for an additional document and use it in much the same
+     * was as {@link Connector#newDocument}.
+     * 
+     * @param id the identifier of the additional document; may not be null
+     * @return the writer for the additional document; never null
+     */
+    @Override
+    public DocumentWriter writeAdditionalDocument( String id ) {
+        EditableDocument embeddedDocs = document().getOrCreateDocument(DocumentTranslator.EMBEDDED_DOCUMENTS);
+        // Create a new nested document with the supplied ID as the field name ...
+        EditableDocument embedded = embeddedDocs.getOrCreateDocument(id);
+        return new FederatedDocumentWriter(translator, embedded);
+    }
+
 }

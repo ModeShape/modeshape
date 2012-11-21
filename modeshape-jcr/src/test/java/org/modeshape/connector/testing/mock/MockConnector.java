@@ -33,10 +33,10 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
-import org.modeshape.jcr.federation.spi.PageKey;
 import org.modeshape.jcr.federation.spi.Connector;
 import org.modeshape.jcr.federation.spi.DocumentReader;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
+import org.modeshape.jcr.federation.spi.PageKey;
 import org.modeshape.jcr.federation.spi.Pageable;
 
 public class MockConnector extends Connector implements Pageable {
@@ -68,7 +68,8 @@ public class MockConnector extends Connector implements Pageable {
         String id3 = newId();
         EditableDocument doc3 = newDocument(id3).setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
                                                 .addProperty("federated3_prop1", "yet another string")
-                                                .setParent(id2).document();
+                                                .setParent(id2)
+                                                .document();
         documentsById.put(id3, doc3);
         documentsByLocation.put("/doc2/doc3", doc3);
 
@@ -81,19 +82,28 @@ public class MockConnector extends Connector implements Pageable {
         documentsById.put(id2, doc2);
 
         String id4 = newId();
-        EditableDocument doc4 = newDocument(id4).setPrimaryType(JcrNtLexicon.UNSTRUCTURED).setParent(PAGED_DOCUMENT_ID).document();
+        EditableDocument doc4 = newDocument(id4).setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
+                                                .setParent(PAGED_DOCUMENT_ID)
+                                                .document();
         documentsById.put(id4, doc4);
 
         String id5 = newId();
-        EditableDocument doc5 = newDocument(id5).setPrimaryType(JcrNtLexicon.UNSTRUCTURED).setParent(PAGED_DOCUMENT_ID).document();
+        EditableDocument doc5 = newDocument(id5).setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
+                                                .setParent(PAGED_DOCUMENT_ID)
+                                                .document();
         documentsById.put(id5, doc5);
 
         String id6 = newId();
-        EditableDocument doc6 = newDocument(id6).setPrimaryType(JcrNtLexicon.UNSTRUCTURED).setParent(PAGED_DOCUMENT_ID).document();
+        EditableDocument doc6 = newDocument(id6).setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
+                                                .setParent(PAGED_DOCUMENT_ID)
+                                                .document();
         documentsById.put(id6, doc6);
 
         EditableDocument pagedDoc = newDocument(PAGED_DOCUMENT_ID).setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
-                .addChild(id4, "federated4").addChild(id5, "federated5").addChild(id6, "federated6").document();
+                                                                  .addChild(id4, "federated4")
+                                                                  .addChild(id5, "federated5")
+                                                                  .addChild(id6, "federated6")
+                                                                  .document();
         documentsById.put(PAGED_DOCUMENT_ID, pagedDoc);
         documentsByLocation.put(PAGED_DOC_LOCATION, pagedDoc);
     }
@@ -101,14 +111,13 @@ public class MockConnector extends Connector implements Pageable {
     @Override
     public Document getDocumentById( String id ) {
         Document doc = documentsById.get(id);
-        //this is hard-coded in order to be able to validate the paging mechanism
+        // this is hard-coded in order to be able to validate the paging mechanism
         if (PAGED_DOCUMENT_ID.equals(id)) {
             DocumentReader reader = readDocument(doc);
             List<? extends Document> children = reader.getChildren();
-            DocumentWriter writer = newDocument(id)
-                    .setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
-                    .setChildren(children.subList(0,1))
-                    .addPage(reader.getDocumentId(), 1, 1, children.size());
+            DocumentWriter writer = newDocument(id).setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
+                                                   .setChildren(children.subList(0, 1))
+                                                   .addPage(reader.getDocumentId(), 1, 1, children.size());
             return writer.document();
         }
         return doc;
@@ -129,8 +138,7 @@ public class MockConnector extends Connector implements Pageable {
     public boolean removeDocument( String id ) {
         Document doc = documentsById.remove(id);
         if (doc != null) {
-            for (Iterator<Map.Entry<String, EditableDocument>> iterator = documentsByLocation.entrySet().iterator(); iterator
-                    .hasNext(); ) {
+            for (Iterator<Map.Entry<String, EditableDocument>> iterator = documentsByLocation.entrySet().iterator(); iterator.hasNext();) {
                 Map.Entry<String, EditableDocument> entry = iterator.next();
                 if (entry.getValue().equals(doc)) {
                     iterator.remove();
@@ -162,7 +170,8 @@ public class MockConnector extends Connector implements Pageable {
         }
 
         DocumentReader changes = readDocument(document);
-        DocumentWriter updatedDocument = newDocument(id).setChildren(changes.getChildren()).setProperties(changes.getProperties());
+        DocumentWriter updatedDocument = newDocument(id).setChildren(changes.getChildren())
+                                                        .setProperties(changes.getProperties());
         documentsById.put(id, updatedDocument.document());
     }
 
@@ -185,8 +194,7 @@ public class MockConnector extends Connector implements Pageable {
         DocumentWriter writer = newDocument(parentId).setChildren(children.subList(offset, offset + blockSize));
         if (offset + blockSize == children.size()) {
             return writer.document();
-        } else  {
-            return writer.addPage(parentId, offset + 1, blockSize, children.size()).document();
         }
+        return writer.addPage(parentId, offset + 1, blockSize, children.size()).document();
     }
 }

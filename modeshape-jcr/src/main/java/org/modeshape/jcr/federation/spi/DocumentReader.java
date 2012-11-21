@@ -33,94 +33,94 @@ import org.modeshape.jcr.value.Property;
 
 /**
  * A reader which can be used read the structure of {@link Document} instances and expose the underlying information.
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public interface DocumentReader {
     /**
      * Returns the id of the underlying document.
-     *
+     * 
      * @return a {@code non-null} {@link String}
      */
-    public String getDocumentId();
+    String getDocumentId();
 
     /**
      * Returns the list of identifiers of the parents of the underlying document.
-     *
+     * 
      * @return a {@code non-null} {@link List}
      */
-    public List<String> getParentIds();
+    List<String> getParentIds();
 
     /**
      * Returns the list of children the underlying document has.
-     *
+     * 
      * @return a {@code non-null} {@link List}
      */
-    public List<? extends Document> getChildren();
+    List<? extends Document> getChildren();
 
     /**
      * Returns the underlying document instance.
-     *
+     * 
      * @return a {@code non-null} {@link Document} instance.
      */
-    public Document document();
+    Document document();
 
     /**
      * Returns the number of seconds that the underlying document should be cached by the repository, if any.
-     *
+     * 
      * @return either an optional {@link Integer}. If {@code null}, it means that there isn't a special requirement for the
-     * underlying document.
+     *         underlying document.
      */
-    public Integer getCacheTtlSeconds();
+    Integer getCacheTtlSeconds();
 
     /**
      * Returns name of the primary type of the underlying document.
-     *
+     * 
      * @return a {@code non-null} {@link Name}
      */
-    public Name getPrimaryType();
+    Name getPrimaryType();
 
     /**
      * Returns the name of primary type of the underlying document.
-     *
+     * 
      * @return a {@code non-null} {@link String}
      */
-    public String getPrimaryTypeName();
+    String getPrimaryTypeName();
 
     /**
      * Returns a set with the names of the primary types of the underlying document.
-     *
+     * 
      * @return a {@code non-null} {@link Set}
      */
-    public Set<Name> getMixinTypes();
+    Set<Name> getMixinTypes();
 
     /**
      * Returns a set with the names of the primary types of the underlying document.
-     *
+     * 
      * @return a {@code non-null} {@link Set}
      */
-    public Set<String> getMixinTypeNames();
+    Set<String> getMixinTypeNames();
 
     /**
      * Returns the property which has the given name, or null if there is no such property.
-     *
+     * 
      * @param name a {@code non-null} {@link Name}
      * @return either a {@link Property} instance or {@code null}
      */
-    public Property getProperty( Name name );
+    Property getProperty( Name name );
 
     /**
      * Returns the property which has the given name, or null if there is no such property.
-     *
+     * 
      * @param name a {@code non-null} {@link Name}
      * @return either a {@link Property} instance or {@code null}
      */
-    public Property getProperty( String name );
+    Property getProperty( String name );
 
     /**
      * Returns all the properties of the underlying document.
-     *
+     * 
      * @return a {@code non-null} {@link Map} of (property name, property value) pairs.
      */
-    public Map<Name, Property> getProperties();
+    Map<Name, Property> getProperties();
 }

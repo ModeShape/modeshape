@@ -40,19 +40,18 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
+import org.modeshape.jcr.federation.spi.Connector;
 import org.modeshape.jcr.federation.spi.DocumentReader;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
 import org.modeshape.jcr.federation.spi.PageKey;
 import org.modeshape.jcr.federation.spi.Pageable;
-import org.modeshape.jcr.federation.spi.Connector;
 
 /**
  * An implementation of {@link DocumentStore} which is used when federation is enabled
  * 
- * @author Horia Chiorean (hchiorea@redhat.com)
- *
- * TODO author=Horia Chiorean date=11/7/12 description=The externalProjectionKeyToFederatedNodeKey
- * should be marshalled to/from the system area somehow, at repository shutdown/startup
+ * @author Horia Chiorean (hchiorea@redhat.com) TODO author=Horia Chiorean date=11/7/12 description=The
+ *         externalProjectionKeyToFederatedNodeKey should be marshalled to/from the system area somehow, at repository
+ *         shutdown/startup
  */
 public class FederatedDocumentStore implements DocumentStore {
 
@@ -125,6 +124,17 @@ public class FederatedDocumentStore implements DocumentStore {
                 // clone the document, so we don't alter the original
                 EditableDocument editableDocument = replaceConnectorIdsWithNodeKeys(document, connector.getSourceName());
                 editableDocument = updateCachingTtl(connector, editableDocument);
+                // Extract any embedded documents ...
+                Object removedContainer = editableDocument.remove(DocumentTranslator.EMBEDDED_DOCUMENTS);
+                if (removedContainer instanceof EditableDocument) {
+                    EditableDocument embeddedDocs = (EditableDocument)removedContainer;
+                    for (Document.Field field : embeddedDocs.fields()) {
+                        String id = field.getName();
+                        Document doc = field.getValueAsDocument();
+                        // Place the embedded document in the local value store ...
+                        if (doc != null) localStore().put(id, doc);
+                    }
+                }
                 return new FederatedSchematicEntry(editableDocument);
             }
         }

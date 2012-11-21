@@ -23,16 +23,11 @@
  */
 package org.modeshape.connector.filesystem;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.Externalizable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.io.OutputStream;
 import java.net.URL;
 import java.util.Map;
@@ -40,7 +35,6 @@ import java.util.regex.Pattern;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import org.infinispan.schematic.document.Document;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.SecureHash;
@@ -55,12 +49,11 @@ import org.modeshape.jcr.federation.NoExtraPropertiesStorage;
 import org.modeshape.jcr.federation.spi.Connector;
 import org.modeshape.jcr.federation.spi.DocumentReader;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
-import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
-import org.modeshape.jcr.value.binary.AbstractBinary;
+import org.modeshape.jcr.value.binary.UrlBinaryValue;
 
 /**
  * {@link Connector} implementation that exposes a single directory on the local file system. This connector has several
@@ -349,7 +342,7 @@ public class FileSystemConnector extends Connector {
 
     /**
      * Utility method to create a {@link BinaryValue} object for the given file. Subclasses should rarely override this method,
-     * since the {@link FileSystemBinaryValue} will be applicable in most situations.
+     * since the {@link UrlBinaryValue} will be applicable in most situations.
      * 
      * @param key the binary key; never null
      * @param file the file for which the {@link BinaryValue} is to be created; never null
@@ -359,7 +352,7 @@ public class FileSystemConnector extends Connector {
     protected BinaryValue createBinaryValue( BinaryKey key,
                                              File file ) throws IOException {
         URL content = createUrlForFile(file);
-        return new FileSystemBinaryValue(key, content, file.getTotalSpace(), getMimeTypeDetector());
+        return new UrlBinaryValue(key, content, file.getTotalSpace(), file.getName(), getMimeTypeDetector());
     }
 
     /**
@@ -597,92 +590,6 @@ public class FileSystemConnector extends Connector {
             throw new DocumentStoreException(id, e);
         } catch (IOException e) {
             throw new DocumentStoreException(id, e);
-        }
-    }
-
-    /**
-     * A {@link BinaryValue} implementation used to read the content of files exposed through this connector. This class computes
-     * the {@link AbstractBinary#getMimeType() MIME type} lazily or upon serialization.
-     */
-    protected static class FileSystemBinaryValue extends AbstractBinary implements Externalizable {
-        private static final long serialVersionUID = 1L;
-
-        private transient MimeTypeDetector mimeTypeDetector;
-        private transient String nameHint; // only needed for MIME type detection; not needed once MIME type is known
-        private String mimeType;
-        private URL url;
-        private long size;
-        private boolean detectedMimeType = false;
-
-        protected FileSystemBinaryValue( BinaryKey binaryKey,
-                                         URL content,
-                                         long size,
-                                         MimeTypeDetector mimeTypeDetector ) {
-            super(binaryKey);
-            this.url = content;
-            this.size = size;
-        }
-
-        protected URL toUrl() {
-            return url;
-        }
-
-        protected void setMimeType( String mimeType ) {
-            this.mimeType = mimeType;
-        }
-
-        protected boolean hasMimeType() {
-            return mimeType != null;
-        }
-
-        @Override
-        public String getMimeType() {
-            if (!detectedMimeType && mimeTypeDetector != null) {
-                try {
-                    mimeType = mimeTypeDetector.mimeTypeOf(nameHint, this);
-                } catch (Throwable t) {
-                    Logger.getLogger(getClass()).debug("Unable to compute MIME Type for file at {0}", toUrl());
-                    throw new RuntimeException(t);
-                } finally {
-                    detectedMimeType = true;
-                }
-            }
-            return mimeType;
-        }
-
-        @Override
-        public String getMimeType( String name ) {
-            return getMimeType();
-        }
-
-        @Override
-        public long getSize() {
-            return size;
-        }
-
-        @Override
-        public InputStream getStream() throws RepositoryException {
-            try {
-                return new BufferedInputStream(url.openStream());
-            } catch (IOException e) {
-                throw new RepositoryException(e);
-            }
-        }
-
-        @Override
-        public void readExternal( ObjectInput in ) throws IOException, ClassNotFoundException {
-            this.mimeType = in.readUTF();
-            this.detectedMimeType = in.readBoolean();
-            this.url = (URL)in.readObject();
-            this.size = in.readLong();
-        }
-
-        @Override
-        public void writeExternal( ObjectOutput out ) throws IOException {
-            out.writeUTF(getMimeType());
-            out.writeBoolean(detectedMimeType);
-            out.writeObject(this.url);
-            out.writeLong(this.size);
         }
     }
 }
