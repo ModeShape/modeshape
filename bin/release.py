@@ -119,6 +119,7 @@ def get_parent_version_tag(tree):
 def patch_poms(working_dir, version):
   patched_poms = list()
   walker = GlobDirectoryWalker(working_dir, "pom.xml")
+  print "Walking POM files..."
   for pom_file in walker:
     tree = ElementTree()
     tree.parse(pom_file)
