@@ -60,12 +60,15 @@ public interface DocumentStore {
     /**
      * Updates the content of the document at the given key with the given document.
      * 
+     *
      * @param key the key or identifier for the document
      * @param document the content with which the existing document should be updated
+     * @param sessionNode the {@link SessionNode} instance which contains the changes that caused the update
      * @throws DocumentStoreException if there is a problem updating the document
      */
     public void updateDocument( String key,
-                                Document document );
+                                Document document,
+                                SessionNode sessionNode );
 
     /**
      * Remove the existing document at the given key.

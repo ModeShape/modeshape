@@ -34,6 +34,7 @@ import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.federation.spi.Connector;
+import org.modeshape.jcr.federation.spi.DocumentChanges;
 import org.modeshape.jcr.federation.spi.DocumentReader;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
 import org.modeshape.jcr.federation.spi.PageKey;
@@ -163,8 +164,9 @@ public class MockConnector extends Connector implements Pageable {
     }
 
     @Override
-    public void updateDocument( String id,
-                                Document document ) {
+    public void updateDocument( DocumentChanges documentChanges ) {
+        String id = documentChanges.getDocumentId();
+        Document document = documentChanges.getDocument();
         if (!documentsById.containsKey(id)) {
             return;
         }

@@ -30,7 +30,7 @@ import org.modeshape.jcr.cache.DocumentStoreException;
 /**
  * A specialized abstract {@link Connector} class that is readable and can <i>never</i> update content. The connector always
  * throws {@link DocumentStoreException}s whenever it is asked to {@link #storeDocument(Document) store},
- * {@link #updateDocument(String, Document) update}, or {@link #removeDocument(String) remove} documents. Thus, do not subclass if
+ * {@link Connector#updateDocument(DocumentChanges) update}, or {@link #removeDocument(String) remove} documents. Thus, do not subclass if
  * your custom connector can <i>sometimes</i> modify content.
  */
 public abstract class ReadOnlyConnector extends Connector {
@@ -50,9 +50,9 @@ public abstract class ReadOnlyConnector extends Connector {
     }
 
     @Override
-    public final void updateDocument( String id,
-                                      Document document ) {
-        String msg = JcrI18n.connectorIsReadOnly.text(getSourceName(), id);
-        throw new DocumentStoreException(id, msg);
+    public final void updateDocument( DocumentChanges documentChanges ) {
+        String documentId = documentChanges.getDocumentId();
+        String msg = JcrI18n.connectorIsReadOnly.text(getSourceName(), documentId);
+        throw new DocumentStoreException(documentId, msg);
     }
 }
