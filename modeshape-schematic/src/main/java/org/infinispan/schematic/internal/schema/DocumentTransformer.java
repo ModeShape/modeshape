@@ -94,7 +94,7 @@ public class DocumentTransformer {
     public static String getSubstitutedProperty( String value,
                                                  PropertyAccessor propertyAccessor ) {
 
-        if (value == null || value.trim().length() == 0) return null;
+        if (value == null || value.trim().length() == 0) return value;
 
         StringBuffer sb = null;
 
