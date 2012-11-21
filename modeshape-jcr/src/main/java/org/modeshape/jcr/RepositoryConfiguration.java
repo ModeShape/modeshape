@@ -694,7 +694,7 @@ public class RepositoryConfiguration {
         // Otherwise, we changed some values. Note that the system properties can only be used in
         // string values, whereas the schema may expect non-string values. Therefore, we need to validate
         // the document against the schema and possibly perform some conversions of values ...
-        return SCHEMA_LIBRARY.convertValues(doc, JSON_SCHEMA_URI);
+        return SCHEMA_LIBRARY.convertValues(modified, JSON_SCHEMA_URI);
     }
 
     /**
@@ -1014,6 +1014,7 @@ public class RepositoryConfiguration {
 
             for (String workspaceName : initialContent.keySet()) {
                 Object value = initialContent.get(workspaceName);
+                if (value == null) value = "";
                 if (!(value instanceof String)) {
                     LOGGER.warn(JcrI18n.invalidInitialContentValue, value.toString(), workspaceName);
                 } else {

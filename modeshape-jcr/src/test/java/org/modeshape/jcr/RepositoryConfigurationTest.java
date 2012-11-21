@@ -88,6 +88,13 @@ public class RepositoryConfigurationTest {
     }
 
     @Test
+    public void shouldReplaceVariables() {
+        RepositoryConfiguration config = assertValid("{ 'name' = '${os.name} Repository' }");
+        assertThat(config.getName(), is(System.getProperty("os.name") + " Repository"));
+        System.out.println(config.getDocument());
+    }
+
+    @Test
     public void shouldSuccessfullyValidateSampleRepositoryConfiguration() {
         RepositoryConfiguration config = assertValid("sample-repo-config.json");
         assertThat(config.getTransactionMode(), is(TransactionMode.AUTO));
