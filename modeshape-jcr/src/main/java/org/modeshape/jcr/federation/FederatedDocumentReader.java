@@ -26,6 +26,7 @@ package org.modeshape.jcr.federation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -87,6 +88,23 @@ public class FederatedDocumentReader implements DocumentReader {
             children.add((Document)child);
         }
 
+        return children;
+    }
+
+    @Override
+    public LinkedHashMap<String, Name> getChildrenMap() {
+        LinkedHashMap<String, Name> children = new LinkedHashMap<String, Name>();
+        if (!federatedDocument.containsField(DocumentTranslator.CHILDREN)) {
+            return children;
+        }
+        List<?> childrenArray = federatedDocument.getArray(DocumentTranslator.CHILDREN);
+        for (Object child : childrenArray) {
+            assert child instanceof Document;
+            Document childDocument = (Document)child;
+            String childId = translator.getKey(childDocument);
+            Name childName = translator.getNameFactory().create(childDocument.get(DocumentTranslator.NAME));
+            children.put(childId, childName);
+        }
         return children;
     }
 

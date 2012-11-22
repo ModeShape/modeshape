@@ -6,12 +6,8 @@
         "allowCreation" : true
     },
     "externalSources" : {
-        "file-resources" : {
-            "classname" : "filesystem",
-            "directoryPath" : "target/federation/files",
-        },
         "mock-source" : {
-            "classname" : "org.modeshape.connector.testing.mock.MockConnector",
+            "classname" : "org.modeshape.connector.mock.MockConnector",
             "cacheTtlSeconds" : 1
         }
     }

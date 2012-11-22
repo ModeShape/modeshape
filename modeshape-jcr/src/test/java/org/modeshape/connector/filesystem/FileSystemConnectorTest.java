@@ -24,9 +24,6 @@
 
 package org.modeshape.connector.filesystem;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -38,13 +35,14 @@ import org.junit.Test;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.connector.filesystem.JsonSidecarExtraPropertyStore;
-import org.modeshape.connector.filesystem.LegacySidecarExtraPropertyStore;
 import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.Session;
 import org.modeshape.jcr.api.federation.FederationManager;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
-public class FileSystemConnectorIntegrationTest extends SingleUseAbstractTest {
+public class FileSystemConnectorTest extends SingleUseAbstractTest {
 
     protected static final String PATH_TO_FILESYSTEM_SOURCE = "target/federation/files";
     protected static final String FILESYSTEM_SOURCE_NAME = "file-resources";

@@ -1280,8 +1280,8 @@ public class SessionNode implements MutableCachedNode {
          *
          * @return a {@code non-null} Map
          */
-        public Map<NodeKey, Name> appendedChildren() {
-            Map<NodeKey, Name> result = new HashMap<NodeKey, Name>();
+        public LinkedHashMap<NodeKey, Name> appendedChildren() {
+            LinkedHashMap<NodeKey, Name> result = new LinkedHashMap<NodeKey, Name>();
             MutableChildReferences appendedChildReferences = appended(false);
             if (appendedChildReferences != null) {
                 for (ChildReference appendedChildReference : appendedChildReferences) {
@@ -1319,14 +1319,14 @@ public class SessionNode implements MutableCachedNode {
          *
          * @return a {@code non-null} Map
          */
-        public Map<NodeKey, Map<NodeKey, Name>> childrenInsertedBefore() {
-            Map<NodeKey, Map<NodeKey, Name>> result = new HashMap<NodeKey, Map<NodeKey, Name>>();
+        public Map<NodeKey, LinkedHashMap<NodeKey, Name>> childrenInsertedBefore() {
+            Map<NodeKey, LinkedHashMap<NodeKey, Name>> result = new HashMap<NodeKey, LinkedHashMap<NodeKey, Name>>();
 
             Map<NodeKey, Insertions> insertionsByBeforeKey = changedChildren().getInsertionsByBeforeKey();
             for (NodeKey beforeNodeKey : insertionsByBeforeKey.keySet()) {
                 Insertions insertionsBefore = insertionsByBeforeKey.get(beforeNodeKey);
                 if (insertionsBefore != null) {
-                    Map<NodeKey, Name> insertionsBeforeMap = new LinkedHashMap<NodeKey, Name>();
+                    LinkedHashMap<NodeKey, Name> insertionsBeforeMap = new LinkedHashMap<NodeKey, Name>();
                     for (ChildReference childReference : insertionsBefore.inserted()) {
                         insertionsBeforeMap.put(childReference.getKey(), childReference.getName());
                     }

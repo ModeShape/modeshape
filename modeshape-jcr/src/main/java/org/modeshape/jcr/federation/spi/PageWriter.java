@@ -24,7 +24,9 @@
 
 package org.modeshape.jcr.federation.spi;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.value.Name;
@@ -64,6 +66,15 @@ public interface PageWriter {
      * @return this writer; never null
      */
     PageWriter setChildren( List<? extends Document> children );
+
+
+    /**
+     * Set an rmap of (childId, childName) for the underlying document. If children previously existed, they will be replaced.
+     *
+     * @param children a map of (childId, childName) pairs; may not be null
+     * @return this writer; never null
+     */
+    PageWriter setChildren(LinkedHashMap<String, Name> children);
 
     /**
      * Create a reference to a separate page of children in its underlying document. The underlying document can be either the

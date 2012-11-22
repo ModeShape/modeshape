@@ -24,6 +24,7 @@
 
 package org.modeshape.jcr.federation.spi;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,6 +58,14 @@ public interface DocumentReader {
      * @return a {@code non-null} {@link List}
      */
     List<? extends Document> getChildren();
+
+    /**
+     * Returns a linked map of (childId, childName) the underlying document has. This preserves the order of the children as
+     * defined on the document.
+     *
+     * @return a {@code non-null} {@link LinkedHashMap}
+     */
+    LinkedHashMap<String, Name> getChildrenMap();
 
     /**
      * Returns the underlying document instance.

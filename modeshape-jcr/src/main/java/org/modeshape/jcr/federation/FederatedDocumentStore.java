@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,6 +47,7 @@ import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
 import org.modeshape.jcr.cache.document.SessionNode;
 import org.modeshape.jcr.federation.spi.Connector;
+import org.modeshape.jcr.federation.spi.ConnectorException;
 import org.modeshape.jcr.federation.spi.DocumentChanges;
 import org.modeshape.jcr.federation.spi.DocumentReader;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
@@ -132,14 +134,14 @@ public class FederatedDocumentStore implements DocumentStore {
                        .withMixinChanges(nodeChanges.addedMixins(), nodeChanges.removedMixins());
 
         //children
-        Map<NodeKey, Name> appendedChildren = nodeChanges.appendedChildren();
+        LinkedHashMap<NodeKey, Name> appendedChildren = nodeChanges.appendedChildren();
         validateSameSourceForAllNodes(sourceName, appendedChildren.keySet());
 
-        Map<NodeKey, Map<NodeKey, Name>> childrenInsertedBefore = nodeChanges.childrenInsertedBefore();
+        Map<NodeKey, LinkedHashMap<NodeKey, Name>> childrenInsertedBefore = nodeChanges.childrenInsertedBefore();
         validateSameSourceForAllNodes(sourceName, childrenInsertedBefore.keySet());
-        Map<String,  Map<String, Name>> processedChildrenInsertions = new HashMap<String, Map<String, Name>>(childrenInsertedBefore.size());
+        Map<String,  LinkedHashMap<String, Name>> processedChildrenInsertions = new HashMap<String, LinkedHashMap<String, Name>>(childrenInsertedBefore.size());
         for (NodeKey childKey : childrenInsertedBefore.keySet()) {
-            Map<NodeKey, Name> insertions = childrenInsertedBefore.get(childKey);
+            LinkedHashMap<NodeKey, Name> insertions = childrenInsertedBefore.get(childKey);
             validateSameSourceForAllNodes(sourceName, insertions.keySet());
             processedChildrenInsertions.put(documentIdFromNodeKey(childKey), nodeKeyMapToIdentifierMap(insertions));
         }
@@ -184,12 +186,20 @@ public class FederatedDocumentStore implements DocumentStore {
     private void validateNodeKeyHasSource(String sourceName, NodeKey nodeKey) {
         String sourceKey = NodeKey.keyForSourceName(sourceName);
         if (nodeKey != null && !sourceKey.equals(nodeKey.getSourceKey())) {
-            throw new IllegalStateException(JcrI18n.federationNodeKeyDoesNotBelongToSource.text(nodeKey, sourceName));
+            throw new ConnectorException(JcrI18n.federationNodeKeyDoesNotBelongToSource, nodeKey, sourceName);
         }
     }
 
     private <T> Map<String, T> nodeKeyMapToIdentifierMap( Map<NodeKey, T> nodeKeysMap ) {
         Map<String, T> result = new HashMap<String, T>(nodeKeysMap.size());
+        for (NodeKey key :  nodeKeysMap.keySet()) {
+            result.put(documentIdFromNodeKey(key), nodeKeysMap.get(key));
+        }
+        return result;
+    }
+
+    private <T> LinkedHashMap<String, T> nodeKeyMapToIdentifierMap( LinkedHashMap<NodeKey, T> nodeKeysMap ) {
+        LinkedHashMap<String, T> result = new LinkedHashMap<String, T>(nodeKeysMap.size());
         for (NodeKey key :  nodeKeysMap.keySet()) {
             result.put(documentIdFromNodeKey(key), nodeKeysMap.get(key));
         }

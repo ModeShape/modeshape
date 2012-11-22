@@ -25,6 +25,7 @@
 package org.modeshape.jcr.federation.spi;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import org.infinispan.schematic.document.Document;
@@ -163,10 +164,10 @@ public class DocumentChanges {
      * @param childrenInsertedBeforeAnotherChild an optional map of (insertedBeforeChildId, (childId, childName)) pairs
      * @return this instance
      */
-    public DocumentChanges withChildrenChanges( Map<String, Name> appendedChildren,
+    public DocumentChanges withChildrenChanges( LinkedHashMap<String, Name> appendedChildren,
                                                 Map<String, Name> renamedChildren,
                                                 Set<String> removedChildren,
-                                                Map<String, Map<String, Name>> childrenInsertedBeforeAnotherChild ) {
+                                                Map<String, LinkedHashMap<String, Name>> childrenInsertedBeforeAnotherChild ) {
         childrenChanges.appended(appendedChildren).renamed(renamedChildren).removed(removedChildren).insertedBeforeAnotherChild(
                 childrenInsertedBeforeAnotherChild);
         return this;
@@ -313,9 +314,9 @@ public class DocumentChanges {
      * Class which encapsulates children changes
      */
     public class ChildrenChanges {
-        private Map<String, Name> appended = Collections.emptyMap();
+        private LinkedHashMap<String, Name> appended = new LinkedHashMap<String, Name>();
         private Map<String, Name> renamed = Collections.emptyMap();
-        private Map<String, Map<String, Name>> insertedBeforeAnotherChild = Collections.emptyMap();
+        private Map<String, LinkedHashMap<String, Name>> insertedBeforeAnotherChild = Collections.emptyMap();
         private Set<String> removed = Collections.emptySet();
 
         private ChildrenChanges() {
@@ -335,7 +336,7 @@ public class DocumentChanges {
          *
          * @return a {@code non-null} {@link Map}
          */
-        public Map<String, Name> getAppended() {
+        public LinkedHashMap<String, Name> getAppended() {
             return appended;
         }
 
@@ -354,7 +355,7 @@ public class DocumentChanges {
          *
          * @return a {@code non-null} {@link Map}
          */
-        public Map<String, Map<String, Name>> getInsertedBeforeAnotherChild() {
+        public Map<String, LinkedHashMap<String, Name>> getInsertedBeforeAnotherChild() {
             return insertedBeforeAnotherChild;
         }
 
@@ -367,7 +368,7 @@ public class DocumentChanges {
             return removed;
         }
 
-        private ChildrenChanges appended( final Map<String, Name> appended ) {
+        private ChildrenChanges appended( final LinkedHashMap<String, Name> appended ) {
             if (appended != null) {
                 this.appended = appended;
             }
@@ -381,7 +382,7 @@ public class DocumentChanges {
             return this;
         }
 
-        private ChildrenChanges insertedBeforeAnotherChild( final Map<String, Map<String, Name>> insertedBeforeAnotherChild ) {
+        private ChildrenChanges insertedBeforeAnotherChild( final Map<String, LinkedHashMap<String, Name>> insertedBeforeAnotherChild ) {
             if (insertedBeforeAnotherChild != null) {
                 this.insertedBeforeAnotherChild = insertedBeforeAnotherChild;
             }
