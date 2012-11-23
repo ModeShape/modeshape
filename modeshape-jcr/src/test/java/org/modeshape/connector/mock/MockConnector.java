@@ -232,8 +232,10 @@ public class MockConnector extends Connector implements Pageable {
         childrenMap.putAll(childrenChanges.getRenamed());
         childrenMap.putAll(childrenChanges.getAppended());
 
-        //process reorderings
-        Set<String> removed = childrenChanges.getRemoved();
+        //process removals
+        for (String removedChildId : childrenChanges.getRemoved()) {
+            childrenMap.remove(removedChildId);
+        }
 
         List<String> childrenIdsList = new ArrayList<String>(childrenMap.keySet());
 
@@ -247,8 +249,6 @@ public class MockConnector extends Connector implements Pageable {
                     Collections.swap(childrenIdsList, childrenIdsList.indexOf(insertedBefore),
                                      childrenIdsList.indexOf(insertedChild));
                 }
-                //the id of the insertedBeforeChild appears in the removal list as well, so we need to avoid removing it
-                removed.removeAll(insertedChildren);
             }
 
             LinkedHashMap<String, Name> reorderedChildMap = new LinkedHashMap<String, Name>();
@@ -258,10 +258,6 @@ public class MockConnector extends Connector implements Pageable {
             childrenMap = reorderedChildMap;
         }
 
-        //process removals
-        for (String removedChildId : removed) {
-            childrenMap.remove(removedChildId);
-        }
 
         updatedDocumentWriter.setChildren(childrenMap);
     }
@@ -273,14 +269,19 @@ public class MockConnector extends Connector implements Pageable {
         Map<Name, Property> properties = existingDocumentReader.getProperties();
         DocumentReader updatedDocumentReader = readDocument(documentChanges.getDocument());
 
-        //first removals
-        for (Name removedPropertyName : propertyChanges.getRemoved()) {
-            properties.remove(removedPropertyName);
+        // additions
+        for (Name changedPropertyName : propertyChanges.getAdded()) {
+            properties.put(changedPropertyName, updatedDocumentReader.getProperty(changedPropertyName));
         }
 
-        //then changes
+        // changes
         for (Name changedPropertyName : propertyChanges.getChanged()) {
             properties.put(changedPropertyName, updatedDocumentReader.getProperty(changedPropertyName));
+        }
+
+        //removals
+        for (Name removedPropertyName : propertyChanges.getRemoved()) {
+            properties.remove(removedPropertyName);
         }
 
         updatedDocumentWriter.setProperties(properties);

@@ -25,6 +25,8 @@
 package org.modeshape.jcr.federation.spi;
 
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -132,13 +134,30 @@ public class DocumentChanges {
     /**
      * Registers a set of property changes.
      *
-     * @param changedProperties an optional {@link Set} of property names
-     * @param removedProperties an optional {@link Set} of property names
+     * @param sessionChangedProperties an optional {@link Set} of property names
+     * @param sessionRemovedProperties an optional {@link Set} of property names
      * @return this instance
      */
-    public DocumentChanges withPropertyChanges( Set<Name> changedProperties,
-                                                Set<Name> removedProperties ) {
-        propertyChanges.changed(changedProperties).removed(removedProperties);
+    public DocumentChanges withPropertyChanges( Set<Name> sessionChangedProperties,
+                                                Set<Name> sessionRemovedProperties ) {
+        Set<Name> addedProperties = new HashSet<Name>();
+        Set<Name> removedProperties = new HashSet<Name>(sessionRemovedProperties);
+        Set<Name> changedProperties = new HashSet<Name>(sessionChangedProperties);
+
+        //process the session properties to make the distinction between changed / added / removed
+        for (Iterator<Name> changedPropertiesIterator = changedProperties.iterator(); changedPropertiesIterator.hasNext(); ) {
+            Name changedPropertyName = changedPropertiesIterator.next();
+            //check if it's an add or a change
+            if (!sessionRemovedProperties.contains(changedPropertyName)) {
+                addedProperties.add(changedPropertyName);
+                changedPropertiesIterator.remove();
+            } else  {
+                //it's a changed property, so clean up the removals
+                removedProperties.remove(changedPropertyName);
+            }
+        }
+
+        propertyChanges.changed(changedProperties).removed(removedProperties).added(addedProperties);
         return this;
     }
 
@@ -158,18 +177,29 @@ public class DocumentChanges {
     /**
      * Registers a set of children changes.
      *
-     * @param appendedChildren an optional map of (childId, childName) pairs
-     * @param renamedChildren an optional map of (childId, newChildName) pairs
-     * @param removedChildren an optional set of the ids of removed children
-     * @param childrenInsertedBeforeAnotherChild an optional map of (insertedBeforeChildId, (childId, childName)) pairs
+     * @param sessionAppendedChildren an optional map of (childId, childName) pairs
+     * @param sessionRenamedChildren an optional map of (childId, newChildName) pairs
+     * @param sessionRemovedChildren an optional set of the ids of removed children
+     * @param sessionChildrenInsertedBeforeAnotherChild an optional map of (insertedBeforeChildId, (childId, childName)) pairs
      * @return this instance
      */
-    public DocumentChanges withChildrenChanges( LinkedHashMap<String, Name> appendedChildren,
-                                                Map<String, Name> renamedChildren,
-                                                Set<String> removedChildren,
-                                                Map<String, LinkedHashMap<String, Name>> childrenInsertedBeforeAnotherChild ) {
-        childrenChanges.appended(appendedChildren).renamed(renamedChildren).removed(removedChildren).insertedBeforeAnotherChild(
-                childrenInsertedBeforeAnotherChild);
+    public DocumentChanges withChildrenChanges( LinkedHashMap<String, Name> sessionAppendedChildren,
+                                                Map<String, Name> sessionRenamedChildren,
+                                                Set<String> sessionRemovedChildren,
+                                                Map<String, LinkedHashMap<String, Name>> sessionChildrenInsertedBeforeAnotherChild ) {
+        //the reordered children appear in the remove list as well, so we need to clean this up
+        Set<String> removedChildren = new HashSet<String>(sessionRemovedChildren);
+        for (String orderedBefore : sessionChildrenInsertedBeforeAnotherChild.keySet()) {
+            LinkedHashMap<String, Name> childrenMap = sessionChildrenInsertedBeforeAnotherChild.get(orderedBefore);
+            for (String childId : childrenMap.keySet()) {
+                removedChildren.remove(childId);
+            }
+        }
+
+        childrenChanges.appended(sessionAppendedChildren)
+                       .renamed(sessionRenamedChildren)
+                       .removed(removedChildren)
+                       .insertedBeforeAnotherChild(sessionChildrenInsertedBeforeAnotherChild);
         return this;
     }
 
@@ -210,6 +240,7 @@ public class DocumentChanges {
      * Class which encapsulates property changes
      */
     public class PropertyChanges {
+        private Set<Name> added = Collections.emptySet();
         private Set<Name> changed = Collections.emptySet();
         private Set<Name> removed = Collections.emptySet();
 
@@ -243,6 +274,16 @@ public class DocumentChanges {
             return removed;
         }
 
+
+        /**
+         * Returns the set of names of the added properties
+         *
+         * @return a {@code non-null} {@link Set}
+         */
+        public Set<Name> getAdded() {
+            return added;
+        }
+
         private PropertyChanges changed( final Set<Name> changed ) {
             if (changed != null) {
                 this.changed = changed;
@@ -254,6 +295,12 @@ public class DocumentChanges {
             if (removed != null) {
                 this.removed = removed;
             }
+            return this;
+        }
+
+
+        private PropertyChanges added( final Set<Name> added ) {
+            this.added = added;
             return this;
         }
     }
