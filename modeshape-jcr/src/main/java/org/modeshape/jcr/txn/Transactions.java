@@ -28,6 +28,7 @@ import java.util.LinkedList;
 import java.util.List;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
+import javax.transaction.InvalidTransactionException;
 import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
 import javax.transaction.Status;
@@ -48,7 +49,7 @@ import org.modeshape.jcr.cache.document.WorkspaceCache;
  * <p>
  * The basic workflow is as follows. When transient changes are to be persisted, a new ModeShape transaction is {@link #begin()
  * begun}. The resulting ModeShape {@link Transaction} represents the local transaction, and should be used to obtain the
- * {@link Monitor} that is interested in all changes, to regiser {@link TransactionFunction functions} that are to be called upon
+ * {@link Monitor} that is interested in all changes, to register {@link TransactionFunction functions} that are to be called upon
  * successful transaction commit, and then either {@link Transaction#commit() committed} or {@link Transaction#rollback() rolled
  * back}. If committed, then any changes made should be forwarded to {@link #updateCache(WorkspaceCache, ChangeSet, Transaction)}.
  * </p>
@@ -80,6 +81,8 @@ public abstract class Transactions {
 
     protected final TransactionManager txnMgr;
     protected final MonitorFactory monitorFactory;
+
+    protected javax.transaction.Transaction suspendedTransaction;
 
     protected Transactions( MonitorFactory monitorFactory,
                             TransactionManager txnMgr ) {
@@ -114,6 +117,34 @@ public abstract class Transactions {
         if (changes != null && !changes.isEmpty()) {
             // Notify the workspace (outside of the lock, but still before the save returns) ...
             workspace.changed(changes);
+        }
+    }
+
+    /**
+     * Provides a way to suspend the existing transaction, if there is one.
+     *
+     * @throws SystemException if the operation fails.
+     * @see javax.transaction.TransactionManager#suspend()
+     */
+    public void suspend() throws SystemException {
+        this.suspendedTransaction = txnMgr.suspend();
+    }
+
+    /**
+     * Provides a way to resume a transaction that was previously suspended via the {@link org.modeshape.jcr.txn.Transactions#suspend()}
+     * call. If there is no such transaction or there is another active transaction, nothing happens.
+     *
+     * @throws SystemException if the operation fails.
+     * @see javax.transaction.TransactionManager#resume(javax.transaction.Transaction)
+     */
+    public void resume() throws SystemException {
+        if (suspendedTransaction != null && txnMgr.getTransaction() == null) {
+            try {
+                txnMgr.resume(suspendedTransaction);
+                suspendedTransaction = null;
+            } catch (InvalidTransactionException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

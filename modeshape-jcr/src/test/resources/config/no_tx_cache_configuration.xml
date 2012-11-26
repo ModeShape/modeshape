@@ -10,7 +10,7 @@
                     purgeSynchronously="true"  ignoreModifications="false"
                     purgeOnStartup="false">
                 <properties>
-                    <property name="location" value="NoTxRepository/storage" />
+                    <property name="location" value="target/NoTxRepository/storage" />
                 </properties>
             </loader>
         </loaders>
