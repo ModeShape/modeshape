@@ -1,0 +1,44 @@
+<assembly>
+    <id>manager</id>
+    <formats>
+        <format>jar</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory>target/lib</directory>
+            <outputDirectory>lib</outputDirectory>
+            <includes>
+                <include>*.jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+	    <directory>target/classes/org/modeshape/cmis/manager</directory>
+	    <outputDirectory>org/modeshape/cmis/manager</outputDirectory>
+	    <includes>
+		<include>*.class</include>
+	    </includes>
+        </fileSet>
+        <fileSet>
+	    <directory>src/main/resources</directory>
+	    <outputDirectory>/</outputDirectory>
+        </fileSet>
+        <fileSet>
+	    <directory>src/main/resources/css</directory>
+	    <outputDirectory>/css</outputDirectory>
+        </fileSet>
+        <fileSet>
+	    <directory>src/main/resources/images</directory>
+	    <outputDirectory>/images</outputDirectory>
+        </fileSet>
+        <fileSet>
+	    <directory>src/main/resources/wsdl</directory>
+	    <outputDirectory>/wsdl</outputDirectory>
+        </fileSet>
+        <fileSet>
+	    <directory>src/main/resources/web</directory>
+	    <outputDirectory>/web</outputDirectory>
+        </fileSet>
+    </fileSets>
+</assembly>
