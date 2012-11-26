@@ -69,6 +69,9 @@ public class JcrResourceAdapter implements ResourceAdapter, Serializable {
 
     @Override
     public void stop() {
+        if (engine == null) {
+            return;
+        }
         //shutdown repositories
         for (String name : repositories.keySet()) {
             try {
