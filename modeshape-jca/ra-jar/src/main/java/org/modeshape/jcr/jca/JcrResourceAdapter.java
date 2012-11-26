@@ -61,7 +61,6 @@ public class JcrResourceAdapter implements ResourceAdapter, Serializable {
 
     @Override
     public void start(BootstrapContext bc) throws ResourceAdapterInternalException {
-        System.out.println("----- START");
 //        start engine
         engine = new ModeShapeEngine();
         engine.start();
@@ -84,7 +83,6 @@ public class JcrResourceAdapter implements ResourceAdapter, Serializable {
     }
 
     public void setRepositoryURI(String repositoryURI) {
-        System.out.println("----- SET REPO URI");
         this.repositoryURI = repositoryURI;
     }
 
