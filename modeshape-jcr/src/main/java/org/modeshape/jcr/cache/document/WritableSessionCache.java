@@ -970,7 +970,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         }
                     }
                 } else {
-                    documentStore.updateDocument(keyStr, doc);
+                    documentStore.updateDocument(keyStr, doc, node);
                     boolean isSameWorkspace = workspaceCache().getWorkspaceKey()
                                                               .equalsIgnoreCase(node.getKey().getWorkspaceKey());
                     // only update the indexes if the node we're working with is in the same workspace as the current workspace.

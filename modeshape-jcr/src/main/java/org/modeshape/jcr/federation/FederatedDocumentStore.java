@@ -25,9 +25,13 @@
 package org.modeshape.jcr.federation;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 import org.infinispan.schematic.SchematicDb;
@@ -36,15 +40,20 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.Connectors;
+import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
+import org.modeshape.jcr.cache.document.SessionNode;
 import org.modeshape.jcr.federation.spi.Connector;
+import org.modeshape.jcr.federation.spi.ConnectorException;
+import org.modeshape.jcr.federation.spi.DocumentChanges;
 import org.modeshape.jcr.federation.spi.DocumentReader;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
 import org.modeshape.jcr.federation.spi.PageKey;
 import org.modeshape.jcr.federation.spi.Pageable;
+import org.modeshape.jcr.value.Name;
 
 /**
  * An implementation of {@link DocumentStore} which is used when federation is enabled
@@ -98,18 +107,113 @@ public class FederatedDocumentStore implements DocumentStore {
 
     @Override
     public void updateDocument( String key,
-                                Document document ) {
+                                Document document,
+                                SessionNode sessionNode ) {
         if (isLocalSource(key)) {
-            localStore().updateDocument(key, document);
+            localStore().updateDocument(key, document, null);
         } else {
             Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
             if (connector != null) {
                 EditableDocument editableDocument = replaceNodeKeysWithDocumentIds(document);
                 String documentId = documentIdFromNodeKey(key);
-                connector.updateDocument(documentId, editableDocument);
+                SessionNode.NodeChanges nodeChanges = sessionNode.getNodeChanges();
+                DocumentChanges documentChanges = createDocumentChanges(nodeChanges, connector.getSourceName(), editableDocument, documentId);
+                connector.updateDocument(documentChanges);
             }
         }
     }
+
+    private DocumentChanges createDocumentChanges( SessionNode.NodeChanges nodeChanges,
+                                                   String sourceName,
+                                                   EditableDocument editableDocument,
+                                                   String documentId ) {
+        FederatedDocumentChanges documentChanges = new FederatedDocumentChanges(documentId, editableDocument);
+
+        //property and mixin changes
+        documentChanges.setPropertyChanges(nodeChanges.changedPropertyNames(), nodeChanges.removedPropertyNames());
+        documentChanges.setMixinChanges(nodeChanges.addedMixins(), nodeChanges.removedMixins());
+
+        //children
+        LinkedHashMap<NodeKey, Name> appendedChildren = nodeChanges.appendedChildren();
+        validateSameSourceForAllNodes(sourceName, appendedChildren.keySet());
+
+        Map<NodeKey, LinkedHashMap<NodeKey, Name>> childrenInsertedBefore = nodeChanges.childrenInsertedBefore();
+        validateSameSourceForAllNodes(sourceName, childrenInsertedBefore.keySet());
+        Map<String,  LinkedHashMap<String, Name>> processedChildrenInsertions = new HashMap<String, LinkedHashMap<String, Name>>(childrenInsertedBefore.size());
+        for (NodeKey childKey : childrenInsertedBefore.keySet()) {
+            LinkedHashMap<NodeKey, Name> insertions = childrenInsertedBefore.get(childKey);
+            validateSameSourceForAllNodes(sourceName, insertions.keySet());
+            processedChildrenInsertions.put(documentIdFromNodeKey(childKey), nodeKeyMapToIdentifierMap(insertions));
+        }
+
+        documentChanges.setChildrenChanges(nodeKeyMapToIdentifierMap(appendedChildren),
+                                           nodeKeyMapToIdentifierMap(nodeChanges.renamedChildren()),
+                                           nodeKeySetToIdentifiersSet(nodeChanges.removedChildren()),
+                                           processedChildrenInsertions);
+
+        //parents
+        Set<NodeKey> addedParents = nodeChanges.addedParents();
+
+        validateSameSourceForAllNodes(sourceName, addedParents);
+        validateNodeKeyHasSource(sourceName, nodeChanges.newPrimaryParent());
+
+        documentChanges.setParentChanges(nodeKeySetToIdentifiersSet(addedParents),
+                                         nodeKeySetToIdentifiersSet(nodeChanges.removedParents()),
+                                         documentIdFromNodeKey(nodeChanges.newPrimaryParent()));
+
+        //referrers
+        Set<NodeKey> addedWeakReferrers = nodeChanges.addedWeakReferrers();
+        validateSameSourceForAllNodes(sourceName, addedWeakReferrers);
+
+        Set<NodeKey> addedStrongReferrers = nodeChanges.addedStrongReferrers();
+        validateSameSourceForAllNodes(sourceName, addedStrongReferrers);
+
+        documentChanges.setReferrerChanges(nodeKeySetToIdentifiersSet(addedWeakReferrers),
+                                           nodeKeySetToIdentifiersSet(nodeChanges.removedWeakReferrers()),
+                                           nodeKeySetToIdentifiersSet(addedStrongReferrers),
+                                           nodeKeySetToIdentifiersSet(nodeChanges.removedStrongReferrers()));
+
+        return documentChanges;
+    }
+
+    private void validateSameSourceForAllNodes( String sourceName,
+                                                Collection<NodeKey> nodeKeys ) {
+        for (NodeKey nodeKey : nodeKeys) {
+            validateNodeKeyHasSource(sourceName, nodeKey);
+        }
+    }
+
+    private void validateNodeKeyHasSource(String sourceName, NodeKey nodeKey) {
+        String sourceKey = NodeKey.keyForSourceName(sourceName);
+        if (nodeKey != null && !sourceKey.equals(nodeKey.getSourceKey())) {
+            throw new ConnectorException(JcrI18n.federationNodeKeyDoesNotBelongToSource, nodeKey, sourceName);
+        }
+    }
+
+    private <T> Map<String, T> nodeKeyMapToIdentifierMap( Map<NodeKey, T> nodeKeysMap ) {
+        Map<String, T> result = new HashMap<String, T>(nodeKeysMap.size());
+        for (NodeKey key :  nodeKeysMap.keySet()) {
+            result.put(documentIdFromNodeKey(key), nodeKeysMap.get(key));
+        }
+        return result;
+    }
+
+    private <T> LinkedHashMap<String, T> nodeKeyMapToIdentifierMap( LinkedHashMap<NodeKey, T> nodeKeysMap ) {
+        LinkedHashMap<String, T> result = new LinkedHashMap<String, T>(nodeKeysMap.size());
+        for (NodeKey key :  nodeKeysMap.keySet()) {
+            result.put(documentIdFromNodeKey(key), nodeKeysMap.get(key));
+        }
+        return result;
+    }
+
+    private Set<String> nodeKeySetToIdentifiersSet( Set<NodeKey> nodeKeysSet ) {
+        Set<String> result = new HashSet<String>(nodeKeysSet.size());
+        for (NodeKey key : nodeKeysSet) {
+            result.add(documentIdFromNodeKey(key));
+        }
+        return result;
+    }
+
 
     @Override
     public SchematicEntry get( String key ) {
@@ -244,6 +348,10 @@ public class FederatedDocumentStore implements DocumentStore {
 
     private String documentIdFromNodeKey( String nodeKey ) {
         return new NodeKey(nodeKey).getIdentifier();
+    }
+
+    private String documentIdFromNodeKey( NodeKey nodeKey ) {
+        return nodeKey != null ? nodeKey.getIdentifier() : null;
     }
 
     private EditableDocument replaceConnectorIdsWithNodeKeys( Document externalDocument,

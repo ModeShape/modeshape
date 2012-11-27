@@ -166,7 +166,7 @@ public class RepositoryConfigurationTest {
 
     @Test
     public void shouldSuccessfullyValidateFederationConfiguration() {
-        assertValid("config/repo-config-federation.json");
+        assertValid("config/repo-config-mock-federation.json");
     }
 
     @Test

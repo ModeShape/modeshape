@@ -26,6 +26,7 @@ package org.modeshape.jcr.federation;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.infinispan.schematic.DocumentFactory;
@@ -205,6 +206,18 @@ public class FederatedDocumentWriter implements DocumentWriter {
         for (Document child : children) {
             childrenArray.add(child);
         }
+        return this;
+    }
+
+    @Override
+    public DocumentWriter setChildren( LinkedHashMap<String, Name> children ) {
+        EditableArray childrenArray = DocumentFactory.newArray();
+        federatedDocument.setArray(DocumentTranslator.CHILDREN, childrenArray);
+
+        for (String childId : children.keySet()) {
+            addChild(childId, children.get(childId));
+        }
+
         return this;
     }
 

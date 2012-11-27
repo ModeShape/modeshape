@@ -47,6 +47,7 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.cache.DocumentStoreException;
 import org.modeshape.jcr.federation.NoExtraPropertiesStorage;
 import org.modeshape.jcr.federation.spi.Connector;
+import org.modeshape.jcr.federation.spi.DocumentChanges;
 import org.modeshape.jcr.federation.spi.DocumentReader;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
 import org.modeshape.jcr.value.BinaryKey;
@@ -528,8 +529,10 @@ public class FileSystemConnector extends Connector {
     }
 
     @Override
-    public void updateDocument( String id,
-                                Document document ) {
+    public void updateDocument( DocumentChanges documentChanges ) {
+        String id = documentChanges.getDocumentId();
+        Document document = documentChanges.getDocument();
+
         // Create a new directory or file described by the document ...
         DocumentReader reader = readDocument(document);
         String parentId = reader.getParentIds().get(0);

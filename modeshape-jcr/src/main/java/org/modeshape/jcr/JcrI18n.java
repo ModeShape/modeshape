@@ -456,6 +456,8 @@ public final class JcrI18n {
     public static I18n timeoutWhileShuttingRepositoryDown;
     public static I18n repositoryNotFound;
 
+    public static I18n federationNodeKeyDoesNotBelongToSource;
+
     static {
         try {
             I18n.initialize(JcrI18n.class);

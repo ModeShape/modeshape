@@ -24,6 +24,7 @@
 
 package org.modeshape.jcr.federation.spi;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.infinispan.schematic.document.Document;
@@ -208,7 +209,7 @@ public interface DocumentWriter extends PageWriter {
     /**
      * Sets the value, in seconds, of the amount of the time the underlying document should be cached.
      * 
-     * @param seconds the number of seconds the document should be cached by the repostiry.
+     * @param seconds the number of seconds the document should be cached by the repository.
      * @return this writer; never null
      */
     DocumentWriter setCacheTtlSeconds( int seconds );
@@ -223,6 +224,9 @@ public interface DocumentWriter extends PageWriter {
 
     @Override
     DocumentWriter setChildren( List<? extends Document> children );
+
+    @Override
+    DocumentWriter setChildren( LinkedHashMap<String, Name> children );
 
     @Override
     DocumentWriter addPage( String parentId,

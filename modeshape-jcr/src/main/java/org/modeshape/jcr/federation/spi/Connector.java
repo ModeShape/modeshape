@@ -298,13 +298,12 @@ public abstract class Connector {
     public abstract void storeDocument( Document document );
 
     /**
-     * Updates the document with the given id.
-     * 
-     * @param id a {@code non-null} string representing the id of a document
-     * @param document a {@code non-null} {@link org.infinispan.schematic.document.Document} instance.
+     * Updates a document using the provided changes.
+     *
+     * @param documentChanges a {@code non-null} {@link org.modeshape.jcr.federation.spi.DocumentChanges} object which contains granular information about all
+     * the changes.
      */
-    public abstract void updateDocument( String id,
-                                         Document document );
+    public abstract void updateDocument( DocumentChanges documentChanges );
 
     /**
      * Utility method that checks whether the field with the supplied name is set.
@@ -326,7 +325,7 @@ public abstract class Connector {
 
     /**
      * Obtain a new {@link DocumentReader} that can be used to read an existing document, typically used within the
-     * {@link #storeDocument(Document)} and {@link #updateDocument(String, Document)} methods.
+     * {@link #storeDocument(Document)} and {@link #updateDocument(DocumentChanges)} methods.
      * 
      * @param document the document that should be read; may not be null
      * @return the document reader; never null

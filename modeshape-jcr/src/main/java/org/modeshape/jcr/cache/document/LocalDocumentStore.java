@@ -68,7 +68,8 @@ public class LocalDocumentStore implements DocumentStore {
 
     @Override
     public void updateDocument( String key,
-                                Document document ) {
+                                Document document,
+                                SessionNode sessionNode ) {
         // do nothing, the way the local store updates is via deltas
     }
 
