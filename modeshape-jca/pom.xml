@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-parent</artifactId>
+        <version>3.0-SNAPSHOT</version>
+        <relativePath>../modeshape-parent/pom.xml</relativePath>
+    </parent>
+
+    <!-- The groupId and version values are inherited from parent -->
+    <artifactId>modeshape-jca</artifactId>
+    <packaging>pom</packaging>
+    <name>ModeShape JCA Adaptor</name>
+    <description>JCA Resource adaptor</description>
+    <url>http://www.modeshape.org</url>
+    
+    <modules>
+        <module>ra-jar</module>
+        <module>ra</module>
+    </modules>
+    
+    <dependencies>
+        <dependency>
+            <groupId>javax.jcr</groupId>
+            <artifactId>jcr</artifactId>
+            <!-- scope>provided</scope -->
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec</groupId>
+            <artifactId>jboss-javaee-6.0</artifactId>
+            <version>2.0.0.Final</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr</artifactId>
+            <version>${project.version}</version>
+            <!-- scope>provided</scope -->
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <scope>compile</scope>
+            <version>3.1.0.Beta1</version>
+        </dependency>
+    </dependencies>
+</project>
