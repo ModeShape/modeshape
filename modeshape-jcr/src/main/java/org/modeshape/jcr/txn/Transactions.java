@@ -82,8 +82,6 @@ public abstract class Transactions {
     protected final TransactionManager txnMgr;
     protected final MonitorFactory monitorFactory;
 
-    protected javax.transaction.Transaction suspendedTransaction;
-
     protected Transactions( MonitorFactory monitorFactory,
                             TransactionManager txnMgr ) {
         this.monitorFactory = monitorFactory;
@@ -121,27 +119,28 @@ public abstract class Transactions {
     }
 
     /**
-     * Provides a way to suspend the existing transaction, if there is one.
+     * Suspends the existing transaction, if there is one.
      *
+     * @return either the {@link javax.transaction.Transaction} which was suspended or {@code null} if there isn't such a transaction.
      * @throws SystemException if the operation fails.
      * @see javax.transaction.TransactionManager#suspend()
      */
-    public void suspend() throws SystemException {
-        this.suspendedTransaction = txnMgr.suspend();
+    public javax.transaction.Transaction suspend() throws SystemException {
+        return txnMgr.suspend();
     }
 
     /**
-     * Provides a way to resume a transaction that was previously suspended via the {@link org.modeshape.jcr.txn.Transactions#suspend()}
+     * Resumes a transaction that was previously suspended via the {@link org.modeshape.jcr.txn.Transactions#suspend()}
      * call. If there is no such transaction or there is another active transaction, nothing happens.
      *
-     * @throws SystemException if the operation fails.
+     * @param transaction a {@link javax.transaction.Transaction} instance which was suspended previously or {@code null}
+     * @throws javax.transaction.SystemException if the operation fails.
      * @see javax.transaction.TransactionManager#resume(javax.transaction.Transaction)
      */
-    public void resume() throws SystemException {
-        if (suspendedTransaction != null && txnMgr.getTransaction() == null) {
+    public void resume(javax.transaction.Transaction transaction) throws SystemException {
+        if (transaction != null && txnMgr.getTransaction() == null) {
             try {
-                txnMgr.resume(suspendedTransaction);
-                suspendedTransaction = null;
+                txnMgr.resume(transaction);
             } catch (InvalidTransactionException e) {
                 throw new RuntimeException(e);
             }
