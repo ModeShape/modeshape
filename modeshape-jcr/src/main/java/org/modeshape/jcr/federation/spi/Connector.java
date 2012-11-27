@@ -300,7 +300,7 @@ public abstract class Connector {
     /**
      * Updates a document using the provided changes.
      *
-     * @param documentChanges a {@code non-null} {@link DocumentChanges} object which contains granular information about all
+     * @param documentChanges a {@code non-null} {@link org.modeshape.jcr.federation.spi.DocumentChanges} object which contains granular information about all
      * the changes.
      */
     public abstract void updateDocument( DocumentChanges documentChanges );
@@ -325,7 +325,7 @@ public abstract class Connector {
 
     /**
      * Obtain a new {@link DocumentReader} that can be used to read an existing document, typically used within the
-     * {@link #storeDocument(Document)} and {@link #updateDocument(String, Document)} methods.
+     * {@link #storeDocument(Document)} and {@link #updateDocument(DocumentChanges)} methods.
      * 
      * @param document the document that should be read; may not be null
      * @return the document reader; never null

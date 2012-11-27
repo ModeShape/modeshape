@@ -127,11 +127,11 @@ public class FederatedDocumentStore implements DocumentStore {
                                                    String sourceName,
                                                    EditableDocument editableDocument,
                                                    String documentId ) {
-        DocumentChanges documentChanges = new DocumentChanges(documentId, editableDocument);
+        FederatedDocumentChanges documentChanges = new FederatedDocumentChanges(documentId, editableDocument);
 
         //property and mixin changes
-        documentChanges.withPropertyChanges(nodeChanges.changedPropertyNames(), nodeChanges.removedPropertyNames())
-                       .withMixinChanges(nodeChanges.addedMixins(), nodeChanges.removedMixins());
+        documentChanges.setPropertyChanges(nodeChanges.changedPropertyNames(), nodeChanges.removedPropertyNames());
+        documentChanges.setMixinChanges(nodeChanges.addedMixins(), nodeChanges.removedMixins());
 
         //children
         LinkedHashMap<NodeKey, Name> appendedChildren = nodeChanges.appendedChildren();
@@ -146,20 +146,20 @@ public class FederatedDocumentStore implements DocumentStore {
             processedChildrenInsertions.put(documentIdFromNodeKey(childKey), nodeKeyMapToIdentifierMap(insertions));
         }
 
-        documentChanges.withChildrenChanges(nodeKeyMapToIdentifierMap(appendedChildren),
-                                            nodeKeyMapToIdentifierMap(nodeChanges.renamedChildren()),
-                                            nodeKeySetToIdentifiersSet(nodeChanges.removedChildren()),
-                                            processedChildrenInsertions);
+        documentChanges.setChildrenChanges(nodeKeyMapToIdentifierMap(appendedChildren),
+                                           nodeKeyMapToIdentifierMap(nodeChanges.renamedChildren()),
+                                           nodeKeySetToIdentifiersSet(nodeChanges.removedChildren()),
+                                           processedChildrenInsertions);
 
         //parents
         Set<NodeKey> addedParents = nodeChanges.addedParents();
-        validateSameSourceForAllNodes(sourceName, addedParents);
 
+        validateSameSourceForAllNodes(sourceName, addedParents);
         validateNodeKeyHasSource(sourceName, nodeChanges.newPrimaryParent());
 
-        documentChanges.withParentChanges(nodeKeySetToIdentifiersSet(addedParents),
-                                          nodeKeySetToIdentifiersSet(nodeChanges.removedParents()),
-                                          documentIdFromNodeKey(nodeChanges.newPrimaryParent()));
+        documentChanges.setParentChanges(nodeKeySetToIdentifiersSet(addedParents),
+                                         nodeKeySetToIdentifiersSet(nodeChanges.removedParents()),
+                                         documentIdFromNodeKey(nodeChanges.newPrimaryParent()));
 
         //referrers
         Set<NodeKey> addedWeakReferrers = nodeChanges.addedWeakReferrers();
@@ -168,10 +168,10 @@ public class FederatedDocumentStore implements DocumentStore {
         Set<NodeKey> addedStrongReferrers = nodeChanges.addedStrongReferrers();
         validateSameSourceForAllNodes(sourceName, addedStrongReferrers);
 
-        documentChanges.withReferrerChanges(nodeKeySetToIdentifiersSet(addedWeakReferrers),
-                                            nodeKeySetToIdentifiersSet(nodeChanges.removedWeakReferrers()),
-                                            nodeKeySetToIdentifiersSet(addedStrongReferrers),
-                                            nodeKeySetToIdentifiersSet(nodeChanges.removedStrongReferrers()));
+        documentChanges.setReferrerChanges(nodeKeySetToIdentifiersSet(addedWeakReferrers),
+                                           nodeKeySetToIdentifiersSet(nodeChanges.removedWeakReferrers()),
+                                           nodeKeySetToIdentifiersSet(addedStrongReferrers),
+                                           nodeKeySetToIdentifiersSet(nodeChanges.removedStrongReferrers()));
 
         return documentChanges;
     }

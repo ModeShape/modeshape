@@ -26,7 +26,6 @@ package org.modeshape.jcr.federation.spi;
 
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.value.Name;
@@ -69,7 +68,12 @@ public interface PageWriter {
 
 
     /**
-     * Set an rmap of (childId, childName) for the underlying document. If children previously existed, they will be replaced.
+     * Set an ordered of (childId, childName) for the underlying document. If children previously existed, they will be replaced.
+     *
+     * <p>
+     * The passed map does not contain any explicit information about same name siblings, so a connector would need to handle that
+     * logic.
+     * </p>
      *
      * @param children a map of (childId, childName) pairs; may not be null
      * @return this writer; never null

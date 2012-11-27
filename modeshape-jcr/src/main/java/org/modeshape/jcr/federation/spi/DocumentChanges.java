@@ -24,579 +24,246 @@
 
 package org.modeshape.jcr.federation.spi;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import org.infinispan.schematic.document.Document;
-import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.value.Name;
 
 /**
- * Value object which encapsulates a set of changes that occurred on a document.
+ * Interface which encapsulates the changes that occurred on a document during an update process.
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class DocumentChanges {
-
-    private final String documentId;
-    private final Document document;
-
-    private final PropertyChanges propertyChanges;
-    private final MixinChanges mixinChanges;
-    private final ChildrenChanges childrenChanges;
-    private final ParentChanges parentChanges;
-    private final ReferrerChanges referrerChanges;
-
-    /**
-     * Creates a new changes instance for the given document with the given id.
-     *
-     * @param documentId a {@code non-null} {@link String}
-     * @param document {@code non-null} {@link Document}
-     */
-    public DocumentChanges( String documentId,
-                            Document document ) {
-        this.document = document;
-        this.documentId = documentId;
-
-        this.propertyChanges = new PropertyChanges();
-        this.mixinChanges = new MixinChanges();
-        this.childrenChanges = new ChildrenChanges();
-        this.parentChanges = new ParentChanges();
-        this.referrerChanges = new ReferrerChanges();
-    }
+public interface DocumentChanges {
 
     /**
      * Returns the changes to the children.
      *
-     * @return a {@code non-null} {@link ChildrenChanges} instance
+     * @return a {@code non-null} {@link org.modeshape.jcr.federation.spi.DocumentChanges.ChildrenChanges} instance
      */
-    public ChildrenChanges getChildrenChanges() {
-        return childrenChanges;
-    }
+    ChildrenChanges getChildrenChanges();
 
     /**
      * Returns the document which contains all the changes.
      *
-     * @return a {@code non-null} {@link Document}
+     * @return a {@code non-null} {@link org.infinispan.schematic.document.Document}
      */
-    public Document getDocument() {
-        return document;
-    }
+    Document getDocument();
 
     /**
      * Returns the id of the document to which the changes apply.
      *
      * @return a {@code non-null} {@link String}
      */
-    public String getDocumentId() {
-        return documentId;
-    }
+    String getDocumentId();
 
     /**
      * Returns the changes to the mixins.
      *
-     * @return a {@code non-null} {@link MixinChanges} instance
+     * @return a {@code non-null} {@link org.modeshape.jcr.federation.FederatedDocumentChanges.FederatedMixinChanges} instance
      */
-    public MixinChanges getMixinChanges() {
-        return mixinChanges;
-    }
+    MixinChanges getMixinChanges();
 
     /**
      * Returns the changes to the parents.
      *
-     * @return a {@code non-null} {@link ParentChanges} instance
+     * @return a {@code non-null} {@link org.modeshape.jcr.federation.FederatedDocumentChanges.FederatedParentChanges} instance
      */
-    public ParentChanges getParentChanges() {
-        return parentChanges;
-    }
+    ParentChanges getParentChanges();
 
     /**
      * Returns the changes to the properties.
      *
-     * @return a {@code non-null} {@link PropertyChanges} instance
+     * @return a {@code non-null} {@link org.modeshape.jcr.federation.FederatedDocumentChanges.FederatedPropertyChanges} instance
      */
-    public PropertyChanges getPropertyChanges() {
-        return propertyChanges;
-    }
+    PropertyChanges getPropertyChanges();
 
     /**
      * Returns the changes to the referrers.
      *
-     * @return a {@code non-null} {@link ReferrerChanges} instance
+     * @return a {@code non-null} {@link org.modeshape.jcr.federation.FederatedDocumentChanges.FederatedReferrerChanges} instance
      */
-    public ReferrerChanges getReferrerChanges() {
-        return referrerChanges;
-    }
+    ReferrerChanges getReferrerChanges();
 
     /**
-     * Registers a set of property changes.
-     *
-     * @param sessionChangedProperties an optional {@link Set} of property names
-     * @param sessionRemovedProperties an optional {@link Set} of property names
-     * @return this instance
+     * Interface which encapsulates the changes to a document's properties during an update operation.
      */
-    public DocumentChanges withPropertyChanges( Set<Name> sessionChangedProperties,
-                                                Set<Name> sessionRemovedProperties ) {
-        Set<Name> addedProperties = new HashSet<Name>();
-        Set<Name> removedProperties = new HashSet<Name>(sessionRemovedProperties);
-        Set<Name> changedProperties = new HashSet<Name>(sessionChangedProperties);
-
-        //process the session properties to make the distinction between changed / added / removed
-        for (Iterator<Name> changedPropertiesIterator = changedProperties.iterator(); changedPropertiesIterator.hasNext(); ) {
-            Name changedPropertyName = changedPropertiesIterator.next();
-            //check if it's an add or a change
-            if (!sessionRemovedProperties.contains(changedPropertyName)) {
-                addedProperties.add(changedPropertyName);
-                changedPropertiesIterator.remove();
-            } else  {
-                //it's a changed property, so clean up the removals
-                removedProperties.remove(changedPropertyName);
-            }
-        }
-
-        propertyChanges.changed(changedProperties).removed(removedProperties).added(addedProperties);
-        return this;
-    }
-
-    /**
-     * Registers a set of mixin changes.
-     *
-     * @param addedMixins an optional {@link Set} of mixin names
-     * @param removedMixins an optional {@link Set} of mixin names
-     * @return this instance
-     */
-    public DocumentChanges withMixinChanges( Set<Name> addedMixins,
-                                             Set<Name> removedMixins ) {
-        mixinChanges.added(addedMixins).removed(removedMixins);
-        return this;
-    }
-
-    /**
-     * Registers a set of children changes.
-     *
-     * @param sessionAppendedChildren an optional map of (childId, childName) pairs
-     * @param sessionRenamedChildren an optional map of (childId, newChildName) pairs
-     * @param sessionRemovedChildren an optional set of the ids of removed children
-     * @param sessionChildrenInsertedBeforeAnotherChild an optional map of (insertedBeforeChildId, (childId, childName)) pairs
-     * @return this instance
-     */
-    public DocumentChanges withChildrenChanges( LinkedHashMap<String, Name> sessionAppendedChildren,
-                                                Map<String, Name> sessionRenamedChildren,
-                                                Set<String> sessionRemovedChildren,
-                                                Map<String, LinkedHashMap<String, Name>> sessionChildrenInsertedBeforeAnotherChild ) {
-        //the reordered children appear in the remove list as well, so we need to clean this up
-        Set<String> removedChildren = new HashSet<String>(sessionRemovedChildren);
-        for (String orderedBefore : sessionChildrenInsertedBeforeAnotherChild.keySet()) {
-            LinkedHashMap<String, Name> childrenMap = sessionChildrenInsertedBeforeAnotherChild.get(orderedBefore);
-            for (String childId : childrenMap.keySet()) {
-                removedChildren.remove(childId);
-            }
-        }
-
-        childrenChanges.appended(sessionAppendedChildren)
-                       .renamed(sessionRenamedChildren)
-                       .removed(removedChildren)
-                       .insertedBeforeAnotherChild(sessionChildrenInsertedBeforeAnotherChild);
-        return this;
-    }
-
-    /**
-     * Registers a set of parent changes.
-     *
-     * @param addedParents an optional set of the ids of the added parents
-     * @param removedParents an optional set of the ids of the removed parents
-     * @param newPrimaryParent the optional id of the new primary parent
-     * @return this instance
-     */
-    public DocumentChanges withParentChanges( Set<String> addedParents,
-                                              Set<String> removedParents,
-                                              String newPrimaryParent ) {
-        parentChanges.added(addedParents).removed(removedParents).newPrimaryParent(newPrimaryParent);
-        return this;
-    }
-
-    /**
-     * Registers a set of referrer changes.
-     *
-     * @param addedWeakReferrers an optional set of the ids of the added weak referrers
-     * @param removedWeakReferrers an optional set of the ids of the removed weak referrers
-     * @param addedStrongReferrers an optional set of the ids of the added strong referrers
-     * @param removedStrongReferrers an optional set of the ids of the removed strong referrers
-     * @return this instance
-     */
-    public DocumentChanges withReferrerChanges( Set<String> addedWeakReferrers,
-                                                Set<String> removedWeakReferrers,
-                                                Set<String> addedStrongReferrers,
-                                                Set<String> removedStrongReferrers ) {
-        referrerChanges.addedWeak(addedWeakReferrers).addedStrong(addedStrongReferrers).removedStrong(removedStrongReferrers)
-                       .removedWeak(removedWeakReferrers);
-        return this;
-    }
-
-    /**
-     * Class which encapsulates property changes
-     */
-    public class PropertyChanges {
-        private Set<Name> added = Collections.emptySet();
-        private Set<Name> changed = Collections.emptySet();
-        private Set<Name> removed = Collections.emptySet();
-
-        private PropertyChanges() {
-        }
-
+    public interface PropertyChanges {
         /**
          * Checks if there are any changes to the properties (removed/added/changed)
          *
          * @return {@code true} if there aren't any changes, {@code false} otherwise
          */
-        public boolean isEmpty() {
-            return changed.isEmpty() && removed.isEmpty();
-        }
+        boolean isEmpty();
 
         /**
          * Returns the set of name of the changed properties (added + modified)
          *
-         * @return a {@code non-null} {@link Set}
+         * @return a {@code non-null} {@link java.util.Set}
          */
-        public Set<Name> getChanged() {
-            return changed;
-        }
+        Set<Name> getChanged();
 
         /**
          * Returns the set of names of the removed properties
          *
-         * @return a {@code non-null} {@link Set}
+         * @return a {@code non-null} {@link java.util.Set}
          */
-        public Set<Name> getRemoved() {
-            return removed;
-        }
-
+        Set<Name> getRemoved();
 
         /**
          * Returns the set of names of the added properties
          *
-         * @return a {@code non-null} {@link Set}
+         * @return a {@code non-null} {@link java.util.Set}
          */
-        public Set<Name> getAdded() {
-            return added;
-        }
-
-        private PropertyChanges changed( final Set<Name> changed ) {
-            if (changed != null) {
-                this.changed = changed;
-            }
-            return this;
-        }
-
-        private PropertyChanges removed( final Set<Name> removed ) {
-            if (removed != null) {
-                this.removed = removed;
-            }
-            return this;
-        }
-
-
-        private PropertyChanges added( final Set<Name> added ) {
-            this.added = added;
-            return this;
-        }
+        Set<Name> getAdded();
     }
 
     /**
-     * Class which encapsulates mixin changes
+     * Interface which encapsulates the changes to a document's mixins during an update operation.
      */
-    public class MixinChanges {
-        private Set<Name> added = Collections.emptySet();
-        private Set<Name> removed = Collections.emptySet();
-
-        private MixinChanges() {
-        }
-
+    public interface MixinChanges {
         /**
          * Checks if there are any changes to the mixins (removed/added)
          *
          * @return {@code true} if there aren't  any changes, {@code false} otherwise
          */
-        public boolean isEmpty() {
-            return added.isEmpty() && removed.isEmpty();
-        }
+        boolean isEmpty();
 
         /**
          * Returns the set of names of the mixins that have been added.
          *
-         * @return {@code a non-null} {@link Set}
+         * @return {@code a non-null} {@link java.util.Set}
          */
-        public Set<Name> getAdded() {
-            return added;
-        }
+        Set<Name> getAdded();
 
         /**
          * Returns the set of names of the mixins that have been removed.
          *
-         * @return {@code a non-null} {@link Set}
+         * @return {@code a non-null} {@link java.util.Set}
          */
-        public Set<Name> getRemoved() {
-            return removed;
-        }
-
-        private MixinChanges added( final Set<Name> added ) {
-            if (added != null) {
-                this.added = added;
-            }
-            return this;
-        }
-
-        private MixinChanges removed( final Set<Name> removed ) {
-            if (removed != null) {
-                this.removed = removed;
-            }
-            return this;
-        }
+        Set<Name> getRemoved();
     }
 
     /**
-     * Class which encapsulates children changes
+     * Interface which encapsulates the changes to a document's children during an update operation. None of the changes in
+     * children expose SNS changes directly, so a connector would have to be aware of that during processing.
      */
-    public class ChildrenChanges {
-        private LinkedHashMap<String, Name> appended = new LinkedHashMap<String, Name>();
-        private Map<String, Name> renamed = Collections.emptyMap();
-        private Map<String, LinkedHashMap<String, Name>> insertedBeforeAnotherChild = Collections.emptyMap();
-        private Set<String> removed = Collections.emptySet();
-
-        private ChildrenChanges() {
-        }
-
+    public interface ChildrenChanges {
         /**
          * Checks if there are any changes to the children (appended/renamed/removed/insertedBefore)
          *
          * @return {@code true} if there aren't  any changes, {@code false} otherwise
          */
-        public boolean isEmpty() {
-            return appended.isEmpty() && renamed.isEmpty() && insertedBeforeAnotherChild.isEmpty() && removed.isEmpty();
-        }
+        boolean isEmpty();
 
         /**
          * Returns the (childId, childName) map of children that have been appended to underlying document.
          *
-         * @return a {@code non-null} {@link Map}
+         * @return a {@code non-null} {@link java.util.Map}
          */
-        public LinkedHashMap<String, Name> getAppended() {
-            return appended;
-        }
+        LinkedHashMap<String, Name> getAppended();
 
         /**
          * Returns the (childId, newChildName) map of children that have been renamed.
          *
-         * @return a {@code non-null} {@link Map}
+         * @return a {@code non-null} {@link java.util.Map}
          */
-        public Map<String, Name> getRenamed() {
-            return renamed;
-        }
+        Map<String, Name> getRenamed();
 
         /**
          * Returns the (insertedBeforeChildId, (childId, childName)) map of the children that have been inserted before an existing
          * child due to a reordering operation.
          *
-         * @return a {@code non-null} {@link Map}
+         * @return a {@code non-null} {@link java.util.Map}
          */
-        public Map<String, LinkedHashMap<String, Name>> getInsertedBeforeAnotherChild() {
-            return insertedBeforeAnotherChild;
-        }
+        Map<String, LinkedHashMap<String, Name>> getInsertedBeforeAnotherChild();
 
         /**
          * Returns the ids of the children that have been removed.
          *
-         * @return {@code non-null} {@link Set}
+         * @return {@code non-null} {@link java.util.Set}
          */
-        public Set<String> getRemoved() {
-            return removed;
-        }
-
-        private ChildrenChanges appended( final LinkedHashMap<String, Name> appended ) {
-            if (appended != null) {
-                this.appended = appended;
-            }
-            return this;
-        }
-
-        private ChildrenChanges renamed( final Map<String, Name> renamed ) {
-            if (renamed != null) {
-                this.renamed = renamed;
-            }
-            return this;
-        }
-
-        private ChildrenChanges insertedBeforeAnotherChild( final Map<String, LinkedHashMap<String, Name>> insertedBeforeAnotherChild ) {
-            if (insertedBeforeAnotherChild != null) {
-                this.insertedBeforeAnotherChild = insertedBeforeAnotherChild;
-            }
-            return this;
-        }
-
-        private ChildrenChanges removed( final Set<String> removed ) {
-            if (removed != null) {
-                this.removed = removed;
-            }
-            return this;
-        }
+        Set<String> getRemoved();
     }
 
     /**
-     * Class which encapsulates changes to parents.
+     * Interface which encapsulates the changes to a document's parents during an update operation.
      */
-    public class ParentChanges {
-        private Set<String> added = Collections.emptySet();
-        private Set<String> removed = Collections.emptySet();
-        private String newPrimaryParent = null;
-
+    public interface ParentChanges {
         /**
          * Checks if there are any changes to the parent (appended/removed/primary parent changed)
          *
          * @return {@code true} if there aren't any changes, {@code false} otherwise
          */
-        public boolean isEmpty() {
-            return added.isEmpty() && removed.isEmpty() && StringUtil.isBlank(newPrimaryParent);
-        }
+        boolean isEmpty();
 
         /**
          * Checks if there is a new primary parent.
          *
          * @return {@code true if there is a new primary parent, false otherwise}
          */
-        public boolean hasNewPrimaryParent() {
-            return !StringUtil.isBlank(newPrimaryParent);
-        }
+        boolean hasNewPrimaryParent();
 
         /**
          * Returns a set of the ids of the parents that have been added.
          *
-         * @return {@code a non-null} {@link Set}
+         * @return {@code a non-null} {@link java.util.Set}
          */
-        public Set<String> getAdded() {
-            return added;
-        }
+        Set<String> getAdded();
 
         /**
          * Returns a set of the ids of the parents that have been removed.
          *
-         * @return {@code a non-null} {@link Set}
+         * @return {@code a non-null} {@link java.util.Set}
          */
-        public Set<String> getRemoved() {
-            return removed;
-        }
+        Set<String> getRemoved();
 
         /**
          * Returns the id of the new primary parent if there is a new primary parent.
          *
          * @return either the id of the new primary parent, or {@code null}.
          */
-        public String getNewPrimaryParent() {
-            return newPrimaryParent;
-        }
-
-        private ParentChanges added( final Set<String> added ) {
-            if (added != null) {
-                this.added = added;
-            }
-            return this;
-        }
-
-        private ParentChanges removed( final Set<String> removed ) {
-            if (removed != null) {
-                this.removed = removed;
-            }
-            return this;
-        }
-
-        private ParentChanges newPrimaryParent( final String newPrimaryParent ) {
-            this.newPrimaryParent = newPrimaryParent;
-            return this;
-        }
+        String getNewPrimaryParent();
     }
 
     /**
-     * Class which encapsulates changes to referrers.
+     * Interface which encapsulates the changes to a document's referrers during an update operation.
      */
-    public class ReferrerChanges {
-        private Set<String> addedWeak = Collections.emptySet();
-        private Set<String> removedWeak = Collections.emptySet();
-        private Set<String> addedStrong = Collections.emptySet();
-        private Set<String> removedStrong = Collections.emptySet();
-
+    public interface ReferrerChanges {
         /**
          * Checks if there are any changes to the referrers (added/removed weak/strong)
          *
          * @return {@code true} if there aren't  any changes, {@code false} otherwise
          */
-        public boolean isEmpty() {
-            return addedWeak.isEmpty() && removedWeak.isEmpty() && addedStrong.isEmpty() && removedStrong.isEmpty();
-        }
+        boolean isEmpty();
 
         /**
          * Returns the set with the document identifiers of the documents which have been added as strong referrers.
          *
-         * @return a {@code non-null} {@link Set}
+         * @return a {@code non-null} {@link java.util.Set}
          */
-        public Set<String> getAddedStrong() {
-            return addedStrong;
-        }
+        Set<String> getAddedStrong();
 
         /**
          * Returns the set with the document identifiers of the documents which have been added as weak referrers.
          *
-         * @return a {@code non-null} {@link Set}
+         * @return a {@code non-null} {@link java.util.Set}
          */
-        public Set<String> getAddedWeak() {
-            return addedWeak;
-        }
+        Set<String> getAddedWeak();
 
         /**
          * Returns the set with the document identifiers of the document which have been removed as strong referrers.
          *
-         * @return a {@code non-null} {@link Set}
+         * @return a {@code non-null} {@link java.util.Set}
          */
-        public Set<String> getRemovedStrong() {
-            return removedStrong;
-        }
+        Set<String> getRemovedStrong();
 
         /**
          * Returns the set with the document identifiers of the document which have been removed as weak referrers.
          *
-         * @return a {@code non-null} {@link Set}
+         * @return a {@code non-null} {@link java.util.Set}
          */
-        public Set<String> getRemovedWeak() {
-            return removedWeak;
-        }
-
-        private ReferrerChanges addedStrong( final Set<String> addedStrong ) {
-            if (addedStrong != null) {
-                this.addedStrong = addedStrong;
-            }
-            return this;
-        }
-
-        private ReferrerChanges addedWeak( final Set<String> addedWeak ) {
-            if (addedWeak != null) {
-                this.addedWeak = addedWeak;
-            }
-            return this;
-        }
-
-        private ReferrerChanges removedWeak( final Set<String> removedWeak ) {
-            if (removedWeak != null) {
-                this.removedWeak = removedWeak;
-            }
-            return this;
-        }
-
-        private ReferrerChanges removedStrong( final Set<String> removedStrong ) {
-            if (removedStrong != null) {
-                this.removedStrong = removedStrong;
-            }
-            return this;
-        }
+        Set<String> getRemovedWeak();
     }
 }

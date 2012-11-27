@@ -60,8 +60,13 @@ public interface DocumentReader {
     List<? extends Document> getChildren();
 
     /**
-     * Returns a linked map of (childId, childName) the underlying document has. This preserves the order of the children as
+     * Returns an ordered map of (childId, childName) the underlying document has. This preserves the order of the children as
      * defined on the document.
+     *
+     * <p>
+     * The returned map does not contain any explicit same name sibling information, so a connector interested in that would
+     * have to do its own, custom processing.
+     * </p>
      *
      * @return a {@code non-null} {@link LinkedHashMap}
      */
