@@ -956,6 +956,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final SystemContentInitializer systemContentInitializer;
         private final NodeTypesImporter nodeTypesImporter;
 
+        private Transaction runningTransaction;
+
         protected RunningState() throws Exception {
             this(null, null);
         }
@@ -1014,6 +1016,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 validateTransactionsEnabled();
                 MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
                 this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
+                //suspend any potential existing transaction, so that the initialization is "atomic"
+                runningTransaction = this.transactions.suspend();
                 if (change.largeValueChanged) {
                     // We can update the value used in the repository cache dynamically ...
                     BinaryStorage binaryStorage = config.getBinaryStorage();
@@ -1046,6 +1050,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 validateTransactionsEnabled();
                 MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
                 this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
+                //suspend any potential existing transaction, so that the initialization is "atomic"
+                runningTransaction = this.transactions.suspend();
 
                 // Set up the binary store ...
                 BinaryStorage binaryStorageConfig = config.getBinaryStorage();
@@ -1251,6 +1257,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     return null;
                 }
             });
+
+            //any potential transaction was suspended during the creation of the running state to make sure intialization is atomic
+            this.transactions.resume(runningTransaction);
+            this.runningTransaction = null;
         }
 
         protected final Sequencers sequencers() {
