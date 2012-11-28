@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<connection-factories> 
+  <tx-connection-factory>
+    <jndi-name>JCR</jndi-name> 
+    <xa-transaction/>
+    <rar-name>modeshape-jca-rar-3.0-SNAPSHOT.rar</rar-name>
+    <connection-definition>javax.jcr.Repository</connection-definition>
+    <config-property name="repositoryURI" type="java.lang.String">file:///home/kulikov/work/my-repository-config.json</config-property>
+    <config-property name="bindSessionToTransaction" type="java.lang.Boolean">true</config-property>
+  </tx-connection-factory>
+</connection-factories>
