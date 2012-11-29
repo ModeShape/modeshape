@@ -58,7 +58,10 @@ import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeDefinitionTemplate;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.modeshape.common.FixFor;
@@ -642,6 +645,64 @@ public class JcrSessionTest extends SingleUseAbstractTest {
             fail("Node still exists at /a/b/c after move");
         } catch (PathNotFoundException e) {
             // Expected
+        }
+    }
+
+    @SuppressWarnings( "unchecked" )
+    @FixFor( "MODE-1721" )
+    @Test
+    public void shouldMoveToNewNameWhenSnsAreNotAllowed() throws Exception {
+        initializeData();
+        // Define the node type that disallows SNS ...
+        NodeTypeManager ntMgr = session.getWorkspace().getNodeTypeManager();
+        NodeDefinitionTemplate childDefn = ntMgr.createNodeDefinitionTemplate();
+        childDefn.setSameNameSiblings(false);
+        childDefn.setRequiredPrimaryTypeNames(new String[] {"nt:unstructured"});
+        childDefn.setDefaultPrimaryTypeName("nt:unstructured");
+        NodeTypeTemplate nodeType = ntMgr.createNodeTypeTemplate();
+        nodeType.setName("noSnsChildren");
+        nodeType.getNodeDefinitionTemplates().add(childDefn);
+        NodeType newNodeType = ntMgr.registerNodeType(nodeType, false);
+        assertThat(newNodeType, is(notNullValue()));
+
+        Node parent = null;
+        try {
+
+            Node c = session.getNode("/a/b/c");
+            String parentName = "parent";
+            parent = c.addNode(parentName, nodeType.getName());
+            Node childA = parent.addNode("childA");
+            Node childB = parent.addNode("childB");
+            Node childC = parent.addNode("childC");
+            session.save();
+            assertThat(childA, is(notNullValue()));
+            assertThat(childB, is(notNullValue()));
+            assertThat(childC, is(notNullValue()));
+
+            String oldChildName = childC.getName(); // no SNS, so this is fine!
+            String newChildName = "childX";
+            session.move(childC.getPath(), parent.getPath() + "/" + newChildName);
+
+            // A node should exist at the new location ...
+            parent = session.getRootNode().getNode("a").getNode("b").getNode("c").getNode(parentName);
+            parent.getNode(newChildName);
+            try {
+                // But should not exist at the old location ...
+                parent.getNode(oldChildName);
+
+                fail("Node still exists at /a/b/c/parent/childC after move");
+            } catch (PathNotFoundException e) {
+                // Expected
+            }
+
+        } finally {
+            // Remove the parent (that uses the node type that we're about to remove) ...
+            if (parent != null) {
+                parent.remove();
+                session.save();
+            }
+            // Be sure to always unregister the node type ...
+            ntMgr.unregisterNodeType(nodeType.getName());
         }
     }
 
