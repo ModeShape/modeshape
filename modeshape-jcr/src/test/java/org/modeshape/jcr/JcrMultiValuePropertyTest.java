@@ -38,6 +38,7 @@ import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.nodetype.PropertyDefinitionTemplate;
+import org.hamcrest.collection.IsIn;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -61,6 +62,7 @@ public class JcrMultiValuePropertyTest extends MultiUseAbstractTest {
     private DateTimeFactory dateFactory;
     protected AbstractJcrNode cars;
     protected AbstractJcrNode altima;
+    protected AbstractJcrNode aston;
 
     /**
      * Initialize the expensive activities, and in particular the RepositoryNodeTypeManager instance.
@@ -172,13 +174,16 @@ public class JcrMultiValuePropertyTest extends MultiUseAbstractTest {
         altima = session.getNode("/Cars/Hybrid/Nissan Altima");
         altima.addMixin("mix:referenceable");
 
+        aston = session.getNode("/Cars/Sports/Aston Martin DB9");
+        aston.addMixin("mix:referenceable");
+
         // Set each property ...
         cars.setProperty("booleanProperty", values(booleanValue));
         cars.setProperty("dateProperty", values(dateValue));
         cars.setProperty("doubleProperty", values(doubleValue));
         cars.setProperty("binaryProperty", values(binaryValue));
         cars.setProperty("longProperty", values(longValue));
-        cars.setProperty("referenceProperty", values(new Node[] {altima}));
+        cars.setProperty("referenceProperty", values(new Node[] {altima, aston}));
         cars.setProperty("stringProperty", values(PropertyType.STRING, stringValue));
         cars.setProperty("pathProperty", values(PropertyType.PATH, pathValue));
         cars.setProperty("nameProperty", values(PropertyType.NAME, nameValue));
@@ -307,6 +312,17 @@ public class JcrMultiValuePropertyTest extends MultiUseAbstractTest {
     public void shouldNotProvideLength() throws Exception {
         prop = cars.getProperty("stringProperty");
         prop.getLength();
+    }
+
+    @Test
+    public void shouldPropertyDereferenceReferenceProperties() throws Exception {
+        prop = cars.getProperty("referenceProperty");
+        Value[] vals = prop.getValues();
+        for (Value value : vals) {
+            String str = value.getString();
+            Node node = cars.getSession().getNodeByIdentifier(str);
+            assertThat(node, IsIn.isOneOf((Node)altima, (Node)aston));
+        }
     }
 
     // @Test
