@@ -1,0 +1,6 @@
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<ex='http://www.example.com/test'>
+
+[ex:myNodeType] > nt:hierarchyNode
+ - ex:path (uri) mandatory

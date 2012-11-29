@@ -115,7 +115,7 @@ public class PropertyTypeUtil {
             case UUID:
                 return PropertyType.STRING; // JCR treats UUID properties as strings
             case URI:
-                return PropertyType.STRING;
+                return PropertyType.URI;
             case PATH:
                 return PropertyType.PATH;
             case BOOLEAN:
