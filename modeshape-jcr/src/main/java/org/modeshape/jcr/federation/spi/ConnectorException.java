@@ -27,11 +27,14 @@ package org.modeshape.jcr.federation.spi;
 import org.modeshape.common.i18n.I18n;
 
 /**
- * Exception class that can be thrown either by {@link Connector} implementations or in other exceptional cases involving federation operations.
- *
+ * Exception class that can be thrown either by {@link Connector} implementations or in other exceptional cases involving
+ * federation operations.
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class ConnectorException extends RuntimeException {
+
+    private static final long serialVersionUID = 1L;
 
     public ConnectorException( I18n i18nText,
                                Object... arguments ) {
