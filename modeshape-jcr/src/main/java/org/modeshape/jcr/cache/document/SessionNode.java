@@ -260,7 +260,7 @@ public class SessionNode implements MutableCachedNode {
 
     /**
      * Get the CachedNode within the workspace cache.
-     *
+     * 
      * @param session the session; may not be null
      * @return the workspace cache's node, or null if this node is new
      */
@@ -376,7 +376,7 @@ public class SessionNode implements MutableCachedNode {
 
     /**
      * Get the segment for this node.
-     *
+     * 
      * @param cache the cache
      * @param parent the parent node
      * @return the segment
@@ -1113,9 +1113,10 @@ public class SessionNode implements MutableCachedNode {
 
     /**
      * Returns an object encapsulating all the different changes that this session node contains.
-     *
+     * 
      * @return a {@code non-null} {@link NodeChanges} object.
      */
+    @SuppressWarnings( "synthetic-access" )
     public NodeChanges getNodeChanges() {
         return new NodeChanges();
     }
@@ -1220,12 +1221,12 @@ public class SessionNode implements MutableCachedNode {
      */
     public class NodeChanges {
         private NodeChanges() {
-            //this is not mean to be created from the outside
+            // this is not mean to be created from the outside
         }
 
         /**
          * Returns a set with the names of the properties that have changed. This includes new/modified properties.
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<Name> changedPropertyNames() {
@@ -1236,7 +1237,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Returns a set with the names of the properties that have been removed.
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<Name> removedPropertyNames() {
@@ -1247,7 +1248,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Returns a set with the names of the mixins that have been added.
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<Name> addedMixins() {
@@ -1262,7 +1263,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Returns a set with the names of the mixins that have been removed.
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<Name> removedMixins() {
@@ -1277,7 +1278,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Returns the [childKey, childName] pairs of the children that have been appended (at the end).
-         *
+         * 
          * @return a {@code non-null} Map
          */
         public LinkedHashMap<NodeKey, Name> appendedChildren() {
@@ -1293,7 +1294,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Returns the set of children that have been removed
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<NodeKey> removedChildren() {
@@ -1304,7 +1305,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Returns the [childKey, childName] pairs of the children that have been renamed.
-         *
+         * 
          * @return a {@code non-null} Map
          */
         public Map<NodeKey, Name> renamedChildren() {
@@ -1314,9 +1315,9 @@ public class SessionNode implements MutableCachedNode {
         }
 
         /**
-         * Returns the [insertBeforeChildKey, [childKey, childName]] structure of the children that been inserted before
-         * another existing child. This is normally caused due to reorderings
-         *
+         * Returns the [insertBeforeChildKey, [childKey, childName]] structure of the children that been inserted before another
+         * existing child. This is normally caused due to reorderings
+         * 
          * @return a {@code non-null} Map
          */
         public Map<NodeKey, LinkedHashMap<NodeKey, Name>> childrenInsertedBefore() {
@@ -1338,7 +1339,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Returns the set of parents that have been added
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<NodeKey> addedParents() {
@@ -1351,7 +1352,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Returns the set of parents that have been removed
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<NodeKey> removedParents() {
@@ -1364,6 +1365,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Returns the node key of the new primary parent, in case it has changed.
+         * 
          * @return either the {@link NodeKey} of the new primary parent or {@code null}
          */
         public NodeKey newPrimaryParent() {
@@ -1372,7 +1374,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Returns a set of node keys with the weak referrers that have been added.
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<NodeKey> addedWeakReferrers() {
@@ -1386,7 +1388,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Returns a set of node keys with the weak referrers that have been removed.
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<NodeKey> removedWeakReferrers() {
@@ -1400,7 +1402,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Returns a set of node keys with the strong referrers that have been added.
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<NodeKey> addedStrongReferrers() {
@@ -1414,7 +1416,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Returns a set of node keys with the strong referrers that have been removed.
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<NodeKey> removedStrongReferrers() {
@@ -1519,7 +1521,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Insert the supplied child reference before another child reference.
-         *
+         * 
          * @param before the existing child reference before which the child reference is to be placed; may not be null
          * @param inserted the reference to the child that is to be inserted; may not be null
          */
@@ -1559,7 +1561,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Remove the supplied node from this node's list of child references.
-         *
+         * 
          * @param key the key for the node that is to be removed; may not be null
          * @return true if the node was removed, or false if the node was not referenced as a child
          */
@@ -1594,7 +1596,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Rename the child reference with the given key.
-         *
+         * 
          * @param key the key for the child reference; may not be null
          * @param newName the new name for the node; may not be null
          */
@@ -1630,7 +1632,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Get the names for the new nodes, keyed by their key.
-         *
+         * 
          * @return the map of node names for the new nodes; never null but possibly empty
          */
         public Map<NodeKey, Name> getNewNames() {
@@ -1640,7 +1642,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Get the set of keys for the nodes that were removed from the list of child references.
-         *
+         * 
          * @return the keys for the removed nodes; never null but possibly empty
          */
         public Set<NodeKey> getRemovals() {
@@ -1650,7 +1652,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Get the map of insertions keyed by the 'before' node
-         *
+         * 
          * @return the map of insertions; never null but possibly empty
          */
         public Map<NodeKey, Insertions> getInsertionsByBeforeKey() {
@@ -1674,7 +1676,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Get the number of inserted child references.
-         *
+         * 
          * @return the number of inserted references; never negative
          */
         public int size() {
@@ -1688,7 +1690,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * Get the child reference for the inserted node with the supplied key.
-         *
+         * 
          * @param key the key for the inserted child reference
          * @return the child reference; may be null if the node was not inserted
          */
@@ -1898,7 +1900,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see java.lang.Object#toString()
          */
         @Override
@@ -1908,7 +1910,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see java.lang.Object#hashCode()
          */
         @Override
@@ -1918,7 +1920,7 @@ public class SessionNode implements MutableCachedNode {
 
         /**
          * {@inheritDoc}
-         *
+         * 
          * @see java.lang.Object#equals(java.lang.Object)
          */
         @Override
@@ -2091,7 +2093,7 @@ public class SessionNode implements MutableCachedNode {
          * </ol>
          * The result of phase 1 will have either created the links correctly or will have add placeholders in the target tree
          * representing where the linked children should exist. Such placeholders will be handled in phase 2.
-         *
+         * 
          * @param targetNode the (empty) target node that should be made to look like the supplied source node; may not be null
          * @param sourceNode the original node that should be copied; may not be null
          */

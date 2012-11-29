@@ -66,7 +66,7 @@ public class GitFunctionalTest {
         git = new Git(repository);
 
         context = new ExecutionContext();
-        values = new Values(context.getValueFactories());
+        values = new Values(context.getValueFactories(), context.getBinaryStore());
     }
 
     @Before

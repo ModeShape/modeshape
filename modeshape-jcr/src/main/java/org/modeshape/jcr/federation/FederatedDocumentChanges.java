@@ -37,9 +37,10 @@ import org.modeshape.jcr.value.Name;
 
 /**
  * Default implementation of the {@link DocumentChanges} interface
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
+@SuppressWarnings( "synthetic-access" )
 public class FederatedDocumentChanges implements DocumentChanges {
 
     private final String documentId;
@@ -102,35 +103,32 @@ public class FederatedDocumentChanges implements DocumentChanges {
                                        Set<Name> sessionRemovedProperties ) {
         Set<Name> addedProperties = new HashSet<Name>();
 
-        //process the session properties to make the distinction between changed / added / removed
-        for (Iterator<Name> changedPropertiesIterator = sessionChangedProperties.iterator(); changedPropertiesIterator.hasNext(); ) {
+        // process the session properties to make the distinction between changed / added / removed
+        for (Iterator<Name> changedPropertiesIterator = sessionChangedProperties.iterator(); changedPropertiesIterator.hasNext();) {
             Name changedPropertyName = changedPropertiesIterator.next();
-            //check if it's an add or a change
+            // check if it's an add or a change
             if (!sessionRemovedProperties.contains(changedPropertyName)) {
                 addedProperties.add(changedPropertyName);
                 changedPropertiesIterator.remove();
             } else {
-                //it's a changed property, so clean up the removals
+                // it's a changed property, so clean up the removals
                 sessionRemovedProperties.remove(changedPropertyName);
             }
         }
 
-        propertyChanges.changed(sessionChangedProperties)
-                       .removed(sessionRemovedProperties)
-                       .added(addedProperties);
+        propertyChanges.changed(sessionChangedProperties).removed(sessionRemovedProperties).added(addedProperties);
     }
 
     protected void setMixinChanges( Set<Name> addedMixins,
                                     Set<Name> removedMixins ) {
-        mixinChanges.added(addedMixins)
-                    .removed(removedMixins);
+        mixinChanges.added(addedMixins).removed(removedMixins);
     }
 
     protected void setChildrenChanges( LinkedHashMap<String, Name> sessionAppendedChildren,
                                        Map<String, Name> sessionRenamedChildren,
                                        Set<String> sessionRemovedChildren,
                                        Map<String, LinkedHashMap<String, Name>> sessionChildrenInsertedBeforeAnotherChild ) {
-        //the reordered children appear in the remove list as well, so we need to clean this up
+        // the reordered children appear in the remove list as well, so we need to clean this up
         for (String orderedBefore : sessionChildrenInsertedBeforeAnotherChild.keySet()) {
             LinkedHashMap<String, Name> childrenMap = sessionChildrenInsertedBeforeAnotherChild.get(orderedBefore);
             for (String childId : childrenMap.keySet()) {
@@ -147,9 +145,7 @@ public class FederatedDocumentChanges implements DocumentChanges {
     protected void setParentChanges( Set<String> addedParents,
                                      Set<String> removedParents,
                                      String newPrimaryParent ) {
-        parentChanges.added(addedParents)
-                     .removed(removedParents)
-                     .newPrimaryParent(newPrimaryParent);
+        parentChanges.added(addedParents).removed(removedParents).newPrimaryParent(newPrimaryParent);
     }
 
     protected void setReferrerChanges( Set<String> addedWeakReferrers,
@@ -185,7 +181,6 @@ public class FederatedDocumentChanges implements DocumentChanges {
             return removed;
         }
 
-
         @Override
         public Set<Name> getAdded() {
             return added;
@@ -204,7 +199,6 @@ public class FederatedDocumentChanges implements DocumentChanges {
             }
             return this;
         }
-
 
         private PropertyChanges added( final Set<Name> added ) {
             this.added = added;
