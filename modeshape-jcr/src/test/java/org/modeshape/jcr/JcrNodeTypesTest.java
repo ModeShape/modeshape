@@ -24,15 +24,21 @@
 
 package org.modeshape.jcr;
 
-import javax.jcr.NamespaceRegistry;
-import javax.jcr.RepositoryException;
 import static junit.framework.Assert.assertEquals;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+import javax.jcr.NamespaceRegistry;
+import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.nodetype.PropertyDefinition;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 
 /**
  * Unit test for the node-types feature, which allows initial cnd files to be pre-configured in a repository
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class JcrNodeTypesTest extends SingleUseAbstractTest {
@@ -46,8 +52,8 @@ public class JcrNodeTypesTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldRegisterValidNodeTypesOnly() throws Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream(
-                "config/repo-config-invalid-node-types.json"));
+        startRepositoryWithConfiguration(getClass().getClassLoader()
+                                                   .getResourceAsStream("config/repo-config-invalid-node-types.json"));
 
         validateNodesWithCustomTypes();
     }
@@ -61,6 +67,18 @@ public class JcrNodeTypesTest extends SingleUseAbstractTest {
         assertEquals("http://www.modeshape.org/examples/aircraft/1.0", namespaceRegistry.getURI("air"));
         assertEquals("http://www.test1.com", namespaceRegistry.getURI("test1"));
         assertEquals("http://www.test2.com", namespaceRegistry.getURI("test2"));
+    }
+
+    @Test
+    @FixFor( "MODE-1722" )
+    public void shouldRegisterNodeTypeWithUriPropertyType() throws Exception {
+        startRepository();
+        registerNodeTypes("cnd/nodetype-with-uri-property.cnd");
+        NodeTypeManager ntmgr = session.getWorkspace().getNodeTypeManager();
+        NodeType nt = ntmgr.getNodeType("ex:myNodeType");
+        PropertyDefinition uriPropDefn = nt.getDeclaredPropertyDefinitions()[0];
+        assertThat(uriPropDefn.getName(), is("ex:path"));
+        assertThat(uriPropDefn.getRequiredType(), is(PropertyType.URI));
     }
 
     private void validateNodesWithCustomTypes() throws RepositoryException {
