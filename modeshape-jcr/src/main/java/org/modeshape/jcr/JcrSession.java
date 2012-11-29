@@ -864,7 +864,8 @@ public class JcrSession implements Session {
         }
 
         // check whether the parent definition allows children which match the source
-        destParentNode.validateChildNodeDefinition(srcNode.name(), srcNode.getPrimaryTypeName(), true);
+        final Name newChildName = destPath.getLastSegment().getName();
+        destParentNode.validateChildNodeDefinition(newChildName, srcNode.getPrimaryTypeName(), true);
 
         // We already checked whether the supplied destination path is below the supplied source path, but this isn't
         // sufficient if any of the ancestors are shared nodes. Therefore, check whether the destination node
@@ -893,7 +894,7 @@ public class JcrSession implements Session {
                 mutableSrcParent.renameChild(sessionCache, srcNode.key(), destPath.getLastSegment().getName());
             } else {
                 // It is a move from one parent to another ...
-                mutableSrcParent.moveChild(sessionCache, srcNode.key(), mutableDestParent, destPath.getLastSegment().getName());
+                mutableSrcParent.moveChild(sessionCache, srcNode.key(), mutableDestParent, newChildName);
             }
         } catch (NodeNotFoundException e) {
             // Not expected ...
