@@ -23,14 +23,12 @@
  */
 package org.modeshape.jcr.value.basic;
 
-import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.UUID;
-import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.util.CheckArg;
@@ -51,7 +49,7 @@ import org.modeshape.jcr.value.ValueFormatException;
  * @param <T> the property type
  */
 @Immutable
-public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
+public abstract class AbstractValueFactory<T> extends AbstractObjectValueFactory<T> {
 
     private final TextDecoder decoder;
     private final PropertyType propertyType;
@@ -95,40 +93,6 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
     @Override
     public PropertyType getPropertyType() {
         return propertyType;
-    }
-
-    @Override
-    public T create( Object value ) {
-        if (value == null) return null;
-        if (value instanceof String) return create((String)value);
-        if (value instanceof Integer) return create(((Integer)value).intValue());
-        if (value instanceof Long) return create(((Long)value).longValue());
-        if (value instanceof Double) return create(((Double)value).doubleValue());
-        if (value instanceof Float) return create(((Float)value).floatValue());
-        if (value instanceof Boolean) return create(((Boolean)value).booleanValue());
-        if (value instanceof BigDecimal) return create((BigDecimal)value);
-        if (value instanceof DateTime) return create((DateTime)value);
-        if (value instanceof Calendar) return create((Calendar)value);
-        if (value instanceof Date) return create((Date)value);
-        if (value instanceof Name) return create((Name)value);
-        if (value instanceof Path) return create((Path)value);
-        if (value instanceof Path.Segment) return create((Path.Segment)value);
-        if (value instanceof Reference) return create((Reference)value);
-        if (value instanceof NodeKey) return create((NodeKey)value);
-        if (value instanceof UUID) return create((UUID)value);
-        if (value instanceof URI) return create((URI)value);
-        if (value instanceof BinaryValue) return create((BinaryValue)value);
-        if (value instanceof javax.jcr.Binary) {
-            javax.jcr.Binary jcrBinary = (javax.jcr.Binary)value;
-            try {
-                return create(jcrBinary.getStream());
-            } catch (RepositoryException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        if (value instanceof byte[]) return create((byte[])value);
-        if (value instanceof InputStream) return create((InputStream)value);
-        return create(value.toString());
     }
 
     protected abstract T[] createEmptyArray( int length );

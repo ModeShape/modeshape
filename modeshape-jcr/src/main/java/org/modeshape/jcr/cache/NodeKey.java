@@ -133,6 +133,15 @@ public final class NodeKey implements Serializable, Comparable<NodeKey> {
     }
 
     /**
+     * Get the multi-character string that precedes the identifier part of this key.
+     * 
+     * @return the identifier prefix; never null and always contains at least one character
+     */
+    public String getIdentifierPrefix() {
+        return key.substring(0, IDENTIFIER_START_INDEX);
+    }
+
+    /**
      * Get the multi-character key representing the JCR identifier of a node, which is usually a UUID.
      * 
      * @return the JCR identifier for the node; never null and always contains at least one character

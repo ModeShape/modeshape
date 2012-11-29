@@ -142,6 +142,27 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
     }
 
     /**
+     * Create a copy of the supplied execution context, but use the supplied {@link ValueFactories} instead.
+     * 
+     * @param original the original
+     * @param valueFactories the values factory
+     * @throws IllegalArgumentException if the original or access control context are is null
+     */
+    protected ExecutionContext( ExecutionContext original,
+                                ValueFactories valueFactories ) {
+        CheckArg.isNotNull(original, "original");
+        CheckArg.isNotNull(valueFactories, "valueFactories");
+        this.securityContext = original.getSecurityContext();
+        this.namespaceRegistry = original.getNamespaceRegistry();
+        this.valueFactories = valueFactories;
+        this.propertyFactory = new BasicPropertyFactory(this.valueFactories);
+        this.threadPools = original.getThreadPoolFactory();
+        this.data = original.getData();
+        this.processId = original.getProcessId();
+        this.binaryStore = original.getBinaryStore();
+    }
+
+    /**
      * Create an instance of the execution context by supplying all parameters.
      * 
      * @param securityContext the security context, or null if there is no associated authenticated user
@@ -373,6 +394,18 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      */
     public ExecutionContext with( SecurityContext securityContext ) {
         return new ExecutionContext(this, securityContext);
+    }
+
+    /**
+     * Create an {@link ExecutionContext} that is the same as this context, but which uses the supplied value factories.
+     * 
+     * @param valueFactories the new value factories to use; may be null
+     * @return the execution context that is identical with this execution context, but with a different reference factory; never
+     *         null
+     * @throws IllegalArgumentException if the <code>referenceFactory</code> is null
+     */
+    protected ExecutionContext with( ValueFactories valueFactories ) {
+        return new ExecutionContext(this, valueFactories);
     }
 
     /**
