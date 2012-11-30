@@ -50,7 +50,7 @@
                 "mode:versionStorage",
                 "mode:repository",
                 "mode:federation",
-                "mode:projectionNodeMapping",
+                "mode:projection",
                 "mode:system",
                 "mode:root",
                 "mode:resource",

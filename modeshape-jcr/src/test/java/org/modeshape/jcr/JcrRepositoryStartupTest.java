@@ -173,7 +173,8 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
 
                 FederationManager federationManager = ((Workspace) session.getWorkspace()).getFederationManager();
 
-                federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, "/doc1", "federated1");
+                federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC1_LOCATION, "federated1");
+                federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC2_LOCATION, null);
                 Node doc1Federated = session.getNode("/testRoot/federated1");
                 assertNotNull(doc1Federated);
                 assertEquals(testRoot.getIdentifier(), doc1Federated.getParent().getIdentifier());
@@ -193,6 +194,9 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 assertNotNull(doc1Federated);
                 assertEquals(testRoot.getIdentifier(), doc1Federated.getParent().getIdentifier());
 
+                Node doc2Federated = session.getNode("/testRoot" + MockConnector.DOC2_LOCATION);
+                assertNotNull(doc2Federated);
+                assertEquals(testRoot.getIdentifier(), doc2Federated.getParent().getIdentifier());
                 return null;
             }
         }, repositoryConfigFile);

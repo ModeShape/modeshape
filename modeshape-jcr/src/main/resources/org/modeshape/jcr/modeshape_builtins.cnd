@@ -67,11 +67,11 @@
 - mode:initializationState (string) mandatory protected ignore < 'STARTED','FINISHED'
 
 [mode:federation]
-+ mode:projectionNodeMapping (mode:projectionNodeMapping) = mode:projectionNodeMapping sns protected ignore
++ mode:projection (mode:projection) = mode:projection sns protected ignore
 
-[mode:projectionNodeMapping]
-- mode:projectionKey (String) mandatory protected ignore
+[mode:projection]
 - mode:externalNodeKey (String) mandatory protected ignore
+- mode:projectedNodeKey (String) mandatory protected ignore
 
 [mode:system] > nt:base
 + mode:namespaces (mode:namespaces) = mode:namespaces autocreated mandatory protected abort

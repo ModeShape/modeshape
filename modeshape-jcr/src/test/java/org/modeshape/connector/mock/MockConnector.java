@@ -52,7 +52,12 @@ import org.modeshape.jcr.value.Property;
  */
 public class MockConnector extends Connector implements Pageable {
     public static final String SOURCE_NAME = "mock-source";
+    public static final String DOC1_LOCATION = "/doc1";
+    public static final String DOC2_LOCATION = "/doc2";
+
     static final String PAGED_DOC_LOCATION = "/pagedDoc";
+
+    private static final String DOC3_LOCATION = DOC2_LOCATION + "/doc3";
 
     private final String PAGED_DOCUMENT_ID = newId();
 
@@ -83,7 +88,7 @@ public class MockConnector extends Connector implements Pageable {
                     .addProperty(nameFrom("federated1_prop1"), "a string")
                     .addProperty("federated1_prop2", 12)
                     .document();
-            documentsByLocation.put("/doc1", doc1);
+            documentsByLocation.put(DOC1_LOCATION, doc1);
             documentsById.put(id1, doc1);
 
             String id2 = newId();
@@ -93,14 +98,14 @@ public class MockConnector extends Connector implements Pageable {
                     .setParent(id2)
                     .document();
             documentsById.put(id3, doc3);
-            documentsByLocation.put("/doc2/doc3", doc3);
+            documentsByLocation.put(DOC3_LOCATION, doc3);
 
             EditableDocument doc2 = newDocument(id2).setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
                     .addProperty("federated2_prop1", "another string")
                     .addProperty("federated2_prop2", Boolean.FALSE)
                     .addChild(id3, "federated3")
                     .document();
-            documentsByLocation.put("/doc2", doc2);
+            documentsByLocation.put(DOC2_LOCATION, doc2);
             documentsById.put(id2, doc2);
 
             String id4 = newId();

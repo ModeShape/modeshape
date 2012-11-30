@@ -267,7 +267,7 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
                 "cars    NULL    mode:namespace    VIEW    Is Mixin: false    NULL    NULL    NULL    mode:uri    DERIVED",
                 "cars    NULL    mode:namespaces    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
                 "cars    NULL    mode:nodeTypes    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
-                "cars    NULL    mode:projectionNodeMapping    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+                "cars    NULL    mode:projection    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
                 "cars    NULL    mode:publishArea    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
                 "cars    NULL    mode:repository    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
                 "cars    NULL    mode:resource    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:data    DERIVED",

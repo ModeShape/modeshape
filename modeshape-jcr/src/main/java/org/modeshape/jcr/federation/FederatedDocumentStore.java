@@ -292,17 +292,17 @@ public class FederatedDocumentStore implements DocumentStore {
     }
 
     @Override
-    public String createExternalProjection( String federatedNodeKey,
+    public String createExternalProjection( String projectedNodeKey,
                                             String sourceName,
                                             String externalPath ) {
         String sourceKey = NodeKey.keyForSourceName(sourceName);
         Connector connector = connectors.getConnectorForSourceKey(sourceKey);
         if (connector != null) {
-            String projectionId = connector.getDocumentId(externalPath);
-            if (projectionId != null) {
-                String projectionKey = documentIdToNodeKey(sourceName, projectionId);
-                connectors.mapProjection(projectionKey, federatedNodeKey);
-                return projectionKey;
+            String externalNodeId = connector.getDocumentId(externalPath);
+            if (externalNodeId != null) {
+                String externalNodeKey = documentIdToNodeKey(sourceName, externalNodeId);
+                connectors.mapProjection(externalNodeKey, projectedNodeKey);
+                return externalNodeKey;
             }
         }
         return null;
@@ -384,9 +384,9 @@ public class FederatedDocumentStore implements DocumentStore {
         }
         // create the federated node key - external project back reference
         if (externalDocumentKey != null) {
-            String federatedParentKey = connectors.getFederatedNodeKey(externalDocumentKey);
-            if (!StringUtil.isBlank(federatedParentKey)) {
-                parentKeys.add(federatedParentKey);
+            String projectedNodeKey = connectors.getProjectedNodeKey(externalDocumentKey);
+            if (!StringUtil.isBlank(projectedNodeKey)) {
+                parentKeys.add(projectedNodeKey);
             }
         }
         writer.setParents(parentKeys);
@@ -414,9 +414,9 @@ public class FederatedDocumentStore implements DocumentStore {
 
         // replace the node key with the id of each parent and remove the optional federated parent
         List<String> parentKeys = reader.getParentIds();
-        String federatedParentKey = connectors.getFederatedNodeKey(documentNodeKey);
-        if (!StringUtil.isBlank(federatedParentKey)) {
-            parentKeys.remove(federatedParentKey);
+        String projectedNodeKey = connectors.getProjectedNodeKey(documentNodeKey);
+        if (!StringUtil.isBlank(projectedNodeKey)) {
+            parentKeys.remove(projectedNodeKey);
         }
 
         List<String> parentIds = new ArrayList<String>();

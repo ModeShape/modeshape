@@ -69,7 +69,7 @@ public class MockConnectorTest extends SingleUseAbstractTest {
     @Test
     public void shouldCreateProjectionWithAlias() throws Exception {
         // link the first external document
-        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, "/doc1", "federated1");
+        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC1_LOCATION, "federated1");
         assertEquals(2, testRoot.getNodes().getSize());
 
         Node doc1Federated = session.getNode("/testRoot/federated1");
@@ -79,7 +79,7 @@ public class MockConnectorTest extends SingleUseAbstractTest {
         assertEquals(12, doc1Federated.getProperty("federated1_prop2").getLong());
 
         // link a second external document with a sub-child
-        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, "/doc2", "federated2");
+        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC2_LOCATION, "federated2");
         assertEquals(3, testRoot.getNodes().getSize());
 
         Node doc2Federated = session.getNode("/testRoot/federated2");
@@ -96,10 +96,10 @@ public class MockConnectorTest extends SingleUseAbstractTest {
     @Test
     public void shouldCreateProjectionWithoutAlias() throws Exception {
         // link the first external document
-        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, "/doc1", null);
+        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC1_LOCATION, null);
         assertEquals(2, testRoot.getNodes().getSize());
 
-        Node doc1Federated = session.getNode("/testRoot/doc1");
+        Node doc1Federated = session.getNode("/testRoot" + MockConnector.DOC1_LOCATION);
         assertNotNull(doc1Federated);
         assertEquals(testRoot.getIdentifier(), doc1Federated.getParent().getIdentifier());
         assertEquals("a string", doc1Federated.getProperty("federated1_prop1").getString());
@@ -108,7 +108,7 @@ public class MockConnectorTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldCreateExternalNode() throws Exception {
-        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, "/doc1", "federated1");
+        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC1_LOCATION, "federated1");
         Node doc1Federated = session.getNode("/testRoot/federated1");
         Node externalNode1 = doc1Federated.addNode("federated1_1", null);
         externalNode1.setProperty("prop1", "a value");
@@ -130,7 +130,7 @@ public class MockConnectorTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldUpdateExternalNodeProperties() throws Exception {
-        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, "/doc1", "federated1");
+        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC1_LOCATION, "federated1");
         Node doc1Federated = session.getNode("/testRoot/federated1");
         Node externalNode1 = doc1Federated.addNode("federated1_1", null);
         externalNode1.setProperty("prop1", "a value");
@@ -156,7 +156,7 @@ public class MockConnectorTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldUpdateExternalNodeMixins() throws Exception {
-        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, "/doc1", "federated1");
+        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC1_LOCATION, "federated1");
         Node doc1Federated = session.getNode("/testRoot/federated1");
         Node externalNode1 = doc1Federated.addNode("federated1_1", null);
 
@@ -179,7 +179,7 @@ public class MockConnectorTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldUpdateExternalNodeChildren() throws Exception {
-        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, "/doc1", "federated1");
+        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC1_LOCATION, "federated1");
         Node doc1Federated = session.getNode("/testRoot/federated1");
         doc1Federated.addNode("federated1_1", null);
         session.save();
@@ -205,7 +205,7 @@ public class MockConnectorTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldMoveExternalNode() throws Exception {
-        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, "/doc1", "federated1");
+        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC1_LOCATION, "federated1");
         Node doc1Federated = session.getNode("/testRoot/federated1");
         Node parent1 = doc1Federated.addNode("parent1", null);
         parent1.addNode("child1");
@@ -228,7 +228,7 @@ public class MockConnectorTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldReorderExternalNodes() throws Exception{
-        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, "/doc1", "federated1");
+        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC1_LOCATION, "federated1");
         Node doc1Federated = session.getNode("/testRoot/federated1");
         Node parent1 = doc1Federated.addNode("parent1", null);
         parent1.addNode("child1");
@@ -244,7 +244,7 @@ public class MockConnectorTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldNotAllowInternalNodesAsReferrers() throws Exception {
-        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, "/doc1", "federated1");
+        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC1_LOCATION, "federated1");
         Node doc1Federated = session.getNode("/testRoot/federated1");
         Node externalNode = doc1Federated.addNode("federated1_1", null);
         externalNode.addMixin("mix:referenceable");
@@ -271,7 +271,7 @@ public class MockConnectorTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldRemoveExternalNode() throws Exception {
-        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, "/doc1", "federated1");
+        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC1_LOCATION, "federated1");
         Node doc1Federated = session.getNode("/testRoot/federated1");
         doc1Federated.addNode("federated1_1", null);
         session.save();
