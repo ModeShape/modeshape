@@ -253,7 +253,9 @@ public abstract class Connector {
      * Shutdown the connector by releasing all resources. This is called automatically by ModeShape when this Connector instance
      * is no longer needed, and should never be called by the connector.
      */
-    public abstract void shutdown();
+    public void shutdown() {
+        //do nothing by default
+    }
 
     /**
      * Returns a {@link Document} instance representing the document with a given id. The document should have a "proper"

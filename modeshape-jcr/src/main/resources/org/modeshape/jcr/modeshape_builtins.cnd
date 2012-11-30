@@ -66,10 +66,18 @@
 [mode:repository] > nt:base, mix:created
 - mode:initializationState (string) mandatory protected ignore < 'STARTED','FINISHED'
 
+[mode:federation]
++ mode:projectionNodeMapping (mode:projectionNodeMapping) = mode:projectionNodeMapping sns protected ignore
+
+[mode:projectionNodeMapping]
+- mode:projectionKey (String) mandatory protected ignore
+- mode:externalNodeKey (String) mandatory protected ignore
+
 [mode:system] > nt:base
 + mode:namespaces (mode:namespaces) = mode:namespaces autocreated mandatory protected abort
 + mode:locks (mode:locks) = mode:locks autocreated mandatory protected abort
 + mode:repository (mode:repository) = mode:repository autocreated protected abort
++ mode:federation (mode:federation) = mode:federation autocreated protected abort
 + jcr:nodeTypes (mode:nodeTypes) = mode:nodeTypes autocreated mandatory protected abort
 + jcr:versionStorage (mode:versionStorage) = mode:versionStorage autocreated mandatory protected abort
 

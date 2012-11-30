@@ -663,7 +663,7 @@ public class JcrResourcesTest {
             assert (actual instanceof JSONArray);
             JSONArray expectedArray = (JSONArray)expected;
             JSONArray actualArray = (JSONArray)actual;
-            Assert.assertEquals("Arrays don't have the same length ", expectedArray.length(), actualArray.length());
+            Assert.assertEquals("Arrays don't match. \nExpected:" + expectedArray.toString() + "\nActual  :" + actualArray, expectedArray.length(), actualArray.length());
             for (int i = 0; i < expectedArray.length(); i++) {
                 assertJSON(expectedArray.get(i), actualArray.get(i));
             }

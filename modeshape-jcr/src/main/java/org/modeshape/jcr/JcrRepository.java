@@ -1447,6 +1447,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         protected void shutdown() {
+            //shutdown the connectors
+            this.connectors.shutdown();
+
             // Unregister from JNDI ...
             unbindFromJndi();
 
