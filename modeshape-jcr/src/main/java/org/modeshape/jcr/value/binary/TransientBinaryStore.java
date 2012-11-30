@@ -46,6 +46,8 @@ public final class TransientBinaryStore extends FileSystemBinaryStore {
 
     protected static final File TRANSIENT_STORE_DIRECTORY = INSTANCE.getDirectory();
 
+    private static boolean printedLocation = false;
+
     /**
      * Obtain a shared {@link TransientBinaryStore} instance.
      * 
@@ -67,11 +69,6 @@ public final class TransientBinaryStore extends FileSystemBinaryStore {
             throw new SystemFailureException(JcrI18n.tempDirectorySystemPropertyMustBeSet.text(JAVA_IO_TMPDIR));
         }
         File tempDir = new File(tempDirName);
-        if (System.getProperty(JBOSS_SERVER_DATA_DIR) == null) {
-            // We're not running in JBoss AS (where we always specify the directory where the binaries are stored),
-            // so log where the temporary directory is ...
-            Logger.getLogger(TransientBinaryStore.class).info(JcrI18n.tempDirectoryLocation, tempDir.getAbsolutePath());
-        }
 
         // Create a temporary directory in the "java.io.tmpdir" directory ...
         return new File(tempDir, "modeshape-binary-store");
@@ -84,6 +81,17 @@ public final class TransientBinaryStore extends FileSystemBinaryStore {
         super(newTempDirectory());
     }
 
+    @Override
+    public void start() {
+        if (!printedLocation && System.getProperty(JBOSS_SERVER_DATA_DIR) == null) {
+            // We're not running in JBoss AS (where we always specify the directory where the binaries are stored),
+            // so log where the temporary directory is ...
+            Logger.getLogger(getClass()).info(JcrI18n.tempDirectoryLocation, getDirectory().getAbsolutePath());
+            printedLocation = true;
+        }
+        super.start();
+    }
+
     /**
      * Ensures that the directory used by this binary store exists and can be both read and written to.
      * 
@@ -91,7 +99,7 @@ public final class TransientBinaryStore extends FileSystemBinaryStore {
      */
     @Override
     protected void initializeStorage( File directory ) throws BinaryStoreException {
-        //make sure the directory doesn't exist
+        // make sure the directory doesn't exist
         FileUtil.delete(directory);
         if (!directory.exists()) {
             Logger.getLogger(getClass()).debug("Creating temporary directory for transient binary store: {0}",

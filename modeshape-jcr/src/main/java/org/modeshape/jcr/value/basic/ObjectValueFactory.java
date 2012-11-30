@@ -31,7 +31,6 @@ import java.util.Date;
 import java.util.UUID;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.TextDecoder;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.BinaryValue;
@@ -40,6 +39,7 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.ValueFormatException;
 
@@ -49,21 +49,28 @@ import org.modeshape.jcr.value.ValueFormatException;
 @Immutable
 public class ObjectValueFactory extends AbstractValueFactory<Object> {
 
-    private final ValueFactory<BinaryValue> binaryValueFactory;
-
+    /**
+     * Create a new instance.
+     * 
+     * @param decoder the text decoder; may be null if the default decoder should be used
+     * @param factories the set of value factories, used to obtain the {@link ValueFactories#getStringFactory() string value
+     *        factory}; may not be null
+     */
     public ObjectValueFactory( TextDecoder decoder,
-                               ValueFactory<String> stringValueFactory,
-                               ValueFactory<BinaryValue> binaryValueFactory ) {
-        super(PropertyType.OBJECT, decoder, stringValueFactory);
-        CheckArg.isNotNull(binaryValueFactory, "binaryValueFactory");
-        this.binaryValueFactory = binaryValueFactory;
+                               ValueFactories factories ) {
+        super(PropertyType.OBJECT, decoder, factories);
+    }
+
+    @Override
+    public ValueFactory<Object> with( ValueFactories valueFactories ) {
+        return super.valueFactories == valueFactories ? this : new ObjectValueFactory(super.getDecoder(), valueFactories);
     }
 
     /**
      * @return binaryValueFactory
      */
-    protected ValueFactory<BinaryValue> getBinaryValueFactory() {
-        return this.binaryValueFactory;
+    protected final ValueFactory<BinaryValue> getBinaryValueFactory() {
+        return valueFactories.getBinaryFactory();
     }
 
     @Override

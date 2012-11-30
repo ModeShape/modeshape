@@ -102,6 +102,9 @@ import org.modeshape.jcr.api.value.DateTime;
  */
 public interface DateTimeFactory extends ValueFactory<DateTime> {
 
+    @Override
+    DateTimeFactory with( ValueFactories valueFactories );
+
     /**
      * Create a date-time instance for the current time in the local time zone.
      * 

@@ -45,7 +45,7 @@ import org.modeshape.jcr.value.ValueFormatException;
  * @author Randall Hauch
  * @author John Verhaeg
  */
-public class JodaDateTimeValueFactoryTest {
+public class JodaDateTimeValueFactoryTest extends BaseValueFactoryTest {
 
     public static final DateTime TODAY;
     public static final DateTime LAST_YEAR;
@@ -57,15 +57,12 @@ public class JodaDateTimeValueFactoryTest {
     }
 
     private JodaDateTimeValueFactory factory;
-    private StringValueFactory stringFactory;
 
-    /**
-     * @throws java.lang.Exception
-     */
     @Before
-    public void setUp() throws Exception {
-        stringFactory = new StringValueFactory(new SimpleNamespaceRegistry(), Path.URL_DECODER, Path.URL_ENCODER);
-        factory = new JodaDateTimeValueFactory(Path.URL_DECODER, stringFactory);
+    @Override
+    public void beforeEach() {
+        super.beforeEach();
+        factory = new JodaDateTimeValueFactory(Path.URL_DECODER, valueFactories);
     }
 
     @Test( expected = ValueFormatException.class )

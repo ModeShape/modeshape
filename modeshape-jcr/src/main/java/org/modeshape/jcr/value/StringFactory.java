@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -23,24 +23,21 @@
  */
 package org.modeshape.jcr.value;
 
-import java.util.UUID;
-import org.modeshape.common.annotation.ThreadSafe;
-
 /**
- * A factory for creating {@link UUID UUID instances}. This interface extends the {@link ValueFactory} generic interface and adds
- * specific methods for creating UUIDs.
+ * 
  */
-@ThreadSafe
-public interface UuidFactory extends ValueFactory<UUID> {
+public interface StringFactory extends ValueFactory<String> {
 
     @Override
-    UuidFactory with( ValueFactories valueFactories );
+    StringFactory with( ValueFactories valueFactories );
 
     /**
-     * Create a new random UUID.
+     * Return a potentially new copy of this factory that uses the supplied {@link NamespaceRegistry.Holder} object.
      * 
-     * @return the new randomly generated UUID
+     * @param namespaceRegistryHolder the holder of the namespace registry; may not be null
+     * @return the factory, which may be a new instance or may be this object if the supplied namespace registry holder is the
+     *         same as used by this factory; never null
      */
-    UUID create();
+    StringFactory with( NamespaceRegistry.Holder namespaceRegistryHolder );
 
 }

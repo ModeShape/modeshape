@@ -32,6 +32,22 @@ import org.modeshape.common.text.TextDecoder;
 @ThreadSafe
 public interface NameFactory extends ValueFactory<Name> {
 
+    public static interface Holder {
+        NameFactory getNameFactory();
+    }
+
+    @Override
+    NameFactory with( ValueFactories valueFactories );
+
+    /**
+     * Return a potentially new copy of this factory that uses the supplied {@link NamespaceRegistry.Holder} object.
+     * 
+     * @param namespaceRegistryHolder the holder of the namespace registry; may not be null
+     * @return the factory, which may be a new instance or may be this object if the supplied namespace registry holder is the
+     *         same as used by this factory; never null
+     */
+    NameFactory with( NamespaceRegistry.Holder namespaceRegistryHolder );
+
     /**
      * Create a name from the given namespace URI and local name.
      * <p>

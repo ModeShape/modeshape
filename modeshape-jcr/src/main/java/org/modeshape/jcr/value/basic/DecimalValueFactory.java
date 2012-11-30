@@ -40,6 +40,7 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.ValueFormatException;
 
@@ -49,9 +50,21 @@ import org.modeshape.jcr.value.ValueFormatException;
 @Immutable
 public class DecimalValueFactory extends AbstractValueFactory<BigDecimal> {
 
+    /**
+     * Create a new instance.
+     * 
+     * @param decoder the text decoder; may be null if the default decoder should be used
+     * @param factories the set of value factories, used to obtain the {@link ValueFactories#getStringFactory() string value
+     *        factory}; may not be null
+     */
     public DecimalValueFactory( TextDecoder decoder,
-                                ValueFactory<String> stringValueFactory ) {
-        super(PropertyType.DECIMAL, decoder, stringValueFactory);
+                                ValueFactories factories ) {
+        super(PropertyType.DECIMAL, decoder, factories);
+    }
+
+    @Override
+    public ValueFactory<BigDecimal> with( ValueFactories valueFactories ) {
+        return super.valueFactories == valueFactories ? this : new DecimalValueFactory(super.getDecoder(), valueFactories);
     }
 
     @Override

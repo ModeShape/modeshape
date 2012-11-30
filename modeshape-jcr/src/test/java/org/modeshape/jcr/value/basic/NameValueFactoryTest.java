@@ -28,51 +28,40 @@ import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import org.modeshape.common.text.TextDecoder;
-import org.modeshape.common.text.TextEncoder;
-import org.modeshape.jcr.value.Name;
-import org.modeshape.jcr.value.NamespaceRegistry;
-import org.modeshape.jcr.value.Path;
-import org.modeshape.jcr.value.ValueFactory;
-import org.modeshape.jcr.value.ValueFormatException;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.text.TextEncoder;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.ValueFormatException;
 
 /**
  * @author Randall Hauch
  * @author John Verhaeg
  */
-public class NameValueFactoryTest {
+public class NameValueFactoryTest extends BaseValueFactoryTest {
 
     public static final TextEncoder NO_OP_ENCODER = Path.NO_OP_ENCODER;
 
-    private NamespaceRegistry registry;
-    private ValueFactory<String> stringValueFactory;
-    private NameValueFactory factory;
-    private TextEncoder encoder;
-    private TextDecoder decoder;
     private Name name;
 
     @Before
+    @Override
     public void beforeEach() {
-        this.registry = new SimpleNamespaceRegistry();
+        super.beforeEach();
         this.registry.register("dna", "http://www.modeshape.org/namespace");
-        this.encoder = Path.DEFAULT_ENCODER;
-        this.decoder = Path.DEFAULT_DECODER;
-        this.stringValueFactory = new StringValueFactory(registry, decoder, encoder);
-        this.factory = new NameValueFactory(registry, decoder, stringValueFactory);
     }
 
     @Test
     public void shouldCreateNameFromSingleStringInPrefixedNamespaceFormatWithoutPrefix() {
-        name = factory.create("a");
+        name = nameFactory.create("a");
         assertThat(name.getLocalName(), is("a"));
         assertThat(name.getNamespaceUri(), is(this.registry.getNamespaceForPrefix("")));
     }
 
     @Test
     public void shouldCreateNameFromSingleStringInPrefixedNamespaceFormat() {
-        name = factory.create("dna:something");
+        name = nameFactory.create("dna:something");
         assertThat(name.getLocalName(), is("something"));
         assertThat(name.getNamespaceUri(), is("http://www.modeshape.org/namespace"));
         assertThat(name.getString(NO_OP_ENCODER), is("{http://www.modeshape.org/namespace}something"));
@@ -80,7 +69,7 @@ public class NameValueFactoryTest {
 
     @Test
     public void shouldCreateNameFromSingleEncodedStringInPrefixedNamespaceFormat() {
-        name = factory.create(encoder.encode("dna") + ":" + encoder.encode("some/thing"));
+        name = nameFactory.create(encoder.encode("dna") + ":" + encoder.encode("some/thing"));
         assertThat(name.getLocalName(), is("some/thing"));
         assertThat(name.getNamespaceUri(), is("http://www.modeshape.org/namespace"));
         assertThat(name.getString(NO_OP_ENCODER), is("{http://www.modeshape.org/namespace}some/thing"));
@@ -88,7 +77,7 @@ public class NameValueFactoryTest {
 
     @Test
     public void shouldCreateNameFromSingleStringInStandardFullNamespaceFormat() {
-        name = factory.create("{http://www.modeshape.org/namespace}something");
+        name = nameFactory.create("{http://www.modeshape.org/namespace}something");
         assertThat(name.getLocalName(), is("something"));
         assertThat(name.getNamespaceUri(), is("http://www.modeshape.org/namespace"));
         assertThat(name.getString(NO_OP_ENCODER), is("{http://www.modeshape.org/namespace}something"));
@@ -96,7 +85,7 @@ public class NameValueFactoryTest {
 
     @Test
     public void shouldCreateNameFromSingleEncodedStringInStandardFullNamespaceFormat() {
-        name = factory.create("{" + encoder.encode("http://www.modeshape.org/namespace") + "}" + encoder.encode("some/thing"));
+        name = nameFactory.create("{" + encoder.encode("http://www.modeshape.org/namespace") + "}" + encoder.encode("some/thing"));
         assertThat(name.getLocalName(), is("some/thing"));
         assertThat(name.getNamespaceUri(), is("http://www.modeshape.org/namespace"));
         assertThat(name.getString(NO_OP_ENCODER), is("{http://www.modeshape.org/namespace}some/thing"));
@@ -104,33 +93,33 @@ public class NameValueFactoryTest {
 
     @Test
     public void shouldProvideAccessToNamespaceRegistryPassedInConstructor() {
-        assertThat(factory.getNamespaceRegistry(), is(registry));
+        assertThat(nameFactory.getNamespaceRegistry(), is(registry));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullLocalName() {
-        factory.create("a", (String)null);
+        nameFactory.create("a", (String)null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullLocalNameWithEncoder() {
-        factory.create("a", null, decoder);
+        nameFactory.create("a", null, decoder);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowEmptyLocalName() {
-        factory.create("a", "");
+        nameFactory.create("a", "");
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowEmptyLocalNameWithEncoder() {
-        factory.create("a", "", decoder);
+        nameFactory.create("a", "", decoder);
     }
 
     @Test( expected = ValueFormatException.class )
     public void shouldNotCreateNameFromStringWithMultipleNonEscapedColons() {
         // This is a requirement of JCR, per the JCR TCK
-        factory.create("a:b:c");
+        nameFactory.create("a:b:c");
     }
 
     @Test
@@ -139,10 +128,10 @@ public class NameValueFactoryTest {
         for (int i = 0; i != 10; ++i) {
             values.add("dna:something" + i);
         }
-        Iterator<Name> iter = factory.create(values.iterator());
+        Iterator<Name> iter = nameFactory.create(values.iterator());
         Iterator<String> valueIter = values.iterator();
         while (iter.hasNext()) {
-            assertThat(iter.next(), is(factory.create(valueIter.next())));
+            assertThat(iter.next(), is(nameFactory.create(valueIter.next())));
         }
     }
 }

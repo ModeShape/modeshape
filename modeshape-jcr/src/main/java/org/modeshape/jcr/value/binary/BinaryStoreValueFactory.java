@@ -33,17 +33,19 @@ import java.util.Date;
 import java.util.UUID;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.TextDecoder;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.BinaryFactory;
 import org.modeshape.jcr.value.BinaryKey;
+import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.IoException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.ValueFormatException;
 import org.modeshape.jcr.value.basic.AbstractValueFactory;
@@ -59,6 +61,7 @@ public class BinaryStoreValueFactory extends AbstractValueFactory<BinaryValue> i
     private static final BinaryValue[] EMPTY_BINARY_ARRAY = new BinaryValue[] {};
 
     private final BinaryStore store;
+    private final ValueFactory<String> stringFactory;
 
     /**
      * Create a factory instance that finds persisted binary values in the supplied store, and that uses the supplied decoder and
@@ -66,23 +69,36 @@ public class BinaryStoreValueFactory extends AbstractValueFactory<BinaryValue> i
      * 
      * @param store the binary store; may not be null
      * @param decoder the text decoder; may be null if the default decoder should be used
-     * @param stringValueFactory the string value factory; may not be null
+     * @param factories the set of value factories, used to obtain the {@link ValueFactories#getStringFactory() string value
+     *        factory}; may not be null
+     * @param stringFactory the optional string factory that should be used in place of the one in the supplied ValueFactories
+     *        parameter; may be null
      */
     public BinaryStoreValueFactory( BinaryStore store,
                                     TextDecoder decoder,
-                                    ValueFactory<String> stringValueFactory ) {
-        super(PropertyType.BINARY, decoder, stringValueFactory);
+                                    ValueFactories factories,
+                                    ValueFactory<String> stringFactory ) {
+        super(PropertyType.BINARY, decoder, factories);
+        CheckArg.isNotNull(store, "store");
         this.store = store;
+        this.stringFactory = stringFactory;
     }
 
-    /**
-     * Return a new binary value factory that is identical to this store but which uses the supplied store.
-     * 
-     * @param store the binary store; may not be null
-     * @return the new binary value factory; never null
-     */
+    @Override
+    public BinaryFactory with( ValueFactories valueFactories ) {
+        return super.valueFactories == valueFactories ? this : new BinaryStoreValueFactory(store, super.getDecoder(),
+                                                                                           valueFactories, stringFactory);
+    }
+
+    @Override
     public BinaryStoreValueFactory with( BinaryStore store ) {
-        return new BinaryStoreValueFactory(store, super.getDecoder(), super.getStringValueFactory());
+        if (this.store == store) return this;
+        return new BinaryStoreValueFactory(store, super.getDecoder(), super.valueFactories, stringFactory);
+    }
+
+    @Override
+    protected ValueFactory<String> getStringValueFactory() {
+        return stringFactory != null ? stringFactory : super.getStringValueFactory();
     }
 
     @Override
@@ -105,7 +121,7 @@ public class BinaryStoreValueFactory extends AbstractValueFactory<BinaryValue> i
 
     @Override
     public BinaryValue create( String value,
-                          TextDecoder decoder ) {
+                               TextDecoder decoder ) {
         if (value == null) return null;
         return create(getDecoder(decoder).decode(value));
     }
@@ -221,8 +237,10 @@ public class BinaryStoreValueFactory extends AbstractValueFactory<BinaryValue> i
             // Store the value in the store ...
             return store.storeValue(new ByteArrayInputStream(value));
         } catch (BinaryStoreException e) {
-            throw new ValueFormatException(PropertyType.BINARY, GraphI18n.errorConvertingType.text(
-                    byte[].class.getSimpleName(), BinaryValue.class.getSimpleName(), value), e);
+            throw new ValueFormatException(PropertyType.BINARY,
+                                           GraphI18n.errorConvertingType.text(byte[].class.getSimpleName(),
+                                                                              BinaryValue.class.getSimpleName(),
+                                                                              value), e);
         }
     }
 
@@ -233,15 +251,16 @@ public class BinaryStoreValueFactory extends AbstractValueFactory<BinaryValue> i
             // Store the value in the store ...
             return store.storeValue(stream);
         } catch (BinaryStoreException e) {
-            throw new ValueFormatException(PropertyType.BINARY, GraphI18n.errorConvertingIo.text(
-                    InputStream.class.getSimpleName(), BinaryValue.class.getSimpleName()), e);
+            throw new ValueFormatException(PropertyType.BINARY,
+                                           GraphI18n.errorConvertingIo.text(InputStream.class.getSimpleName(),
+                                                                            BinaryValue.class.getSimpleName()), e);
         }
     }
 
     @SuppressWarnings( "unused" )
     @Override
     public BinaryValue find( BinaryKey secureHash,
-                        long size ) throws BinaryStoreException {
+                             long size ) throws BinaryStoreException {
         // In-memory binaries never need to be found, so it must be stored ...
         return new StoredBinaryValue(store, secureHash, size);
     }

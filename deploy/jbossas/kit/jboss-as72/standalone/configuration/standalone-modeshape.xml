@@ -223,7 +223,11 @@
             <cache-container name="binary-cache-container" default-cache="binary-fs">
                 <local-cache name="binary-fs">
                     <transaction mode="NON_XA"/>
-                    <file-store passivation="false" path="modeshape/binary-store/ispn" relative-to="jboss.server.data.dir" purge="false"/>
+                    <file-store passivation="false" path="modeshape/binary-store/ispn-data" relative-to="jboss.server.data.dir" purge="false"/>
+                </local-cache>
+                <local-cache name="binary-fs-meta">
+                    <transaction mode="NON_XA"/>
+                    <file-store passivation="false" path="modeshape/binary-store/ispn-meta" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
             </cache-container>
             <cache-container name="index-cache-container" default-cache="index-data">
@@ -323,7 +327,7 @@
                 <text-extractors>
                     <text-extractor name="tika-extractor" classname="tika" module="org.modeshape.extractor.tika"/>
                 </text-extractors>
-                <cache-binary-storage data-cache-name="binary-fs" cache-container="binary-cache-container"/>
+                <cache-binary-storage data-cache-name="binary-fs" metadata-cache-name="binary-fs-meta" cache-container="binary-cache-container"/>
                 <!--<db-binary-storage data-source-jndi-name="java:jboss/datasources/ModeshapeBinaryDS"/>-->
             </repository>
             <repository name="preconfiguredRepository" cache-container="ws-cache-container">

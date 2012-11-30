@@ -33,11 +33,11 @@ import java.util.Date;
 import java.util.UUID;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
@@ -45,10 +45,13 @@ import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.IoException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
+import org.modeshape.jcr.value.NamespaceRegistry.Holder;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.StringFactory;
+import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.ValueFormatException;
 
@@ -56,27 +59,39 @@ import org.modeshape.jcr.value.ValueFormatException;
  * The standard {@link ValueFactory} for {@link PropertyType#STRING} values.
  */
 @Immutable
-public class StringValueFactory extends AbstractValueFactory<String> {
+public final class StringValueFactory extends AbstractValueFactory<String> implements StringFactory {
 
     private final TextEncoder encoder;
-    private final NamespaceRegistry namespaceRegistry;
+    private final NamespaceRegistry.Holder namespaceRegistryHolder;
 
     public StringValueFactory( TextDecoder decoder,
                                TextEncoder encoder ) {
         super(PropertyType.STRING, decoder, null);
         CheckArg.isNotNull(encoder, "encoder");
         this.encoder = encoder;
-        this.namespaceRegistry = null;
+        this.namespaceRegistryHolder = null;
     }
 
-    public StringValueFactory( NamespaceRegistry namespaceRegistry,
+    public StringValueFactory( NamespaceRegistry.Holder namespaceRegistryHolder,
                                TextDecoder decoder,
                                TextEncoder encoder ) {
         super(PropertyType.STRING, decoder, null);
         CheckArg.isNotNull(encoder, "encoder");
-        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
+        CheckArg.isNotNull(namespaceRegistryHolder, "namespaceRegistryHolder");
         this.encoder = encoder;
-        this.namespaceRegistry = namespaceRegistry;
+        this.namespaceRegistryHolder = namespaceRegistryHolder;
+    }
+
+    @Override
+    public StringFactory with( ValueFactories valueFactories ) {
+        return this; // we never use the value factories
+    }
+
+    @Override
+    public StringFactory with( Holder namespaceRegistryHolder ) {
+        return this.namespaceRegistryHolder == namespaceRegistryHolder ? this : new StringValueFactory(namespaceRegistryHolder,
+                                                                                                       super.getDecoder(),
+                                                                                                       encoder);
     }
 
     /**
@@ -87,7 +102,7 @@ public class StringValueFactory extends AbstractValueFactory<String> {
     }
 
     @Override
-    protected ValueFactory<String> getStringValueFactory() {
+    protected StringFactory getStringValueFactory() {
         return this;
     }
 
@@ -156,8 +171,8 @@ public class StringValueFactory extends AbstractValueFactory<String> {
     @Override
     public String create( Name value ) {
         if (value == null) return null;
-        if (this.namespaceRegistry != null) {
-            return value.getString(this.namespaceRegistry, getEncoder());
+        if (namespaceRegistryHolder != null) {
+            return value.getString(namespaceRegistryHolder.getNamespaceRegistry(), getEncoder());
         }
         return value.getString(getEncoder());
     }
@@ -180,8 +195,8 @@ public class StringValueFactory extends AbstractValueFactory<String> {
             }
         }
 
-        if (this.namespaceRegistry != null) {
-            return value.getString(this.namespaceRegistry, getEncoder());
+        if (namespaceRegistryHolder != null) {
+            return value.getString(namespaceRegistryHolder.getNamespaceRegistry(), getEncoder());
         }
         return value.getString(getEncoder());
     }
@@ -200,8 +215,8 @@ public class StringValueFactory extends AbstractValueFactory<String> {
                                                                                   value));
             }
         }
-        if (this.namespaceRegistry != null) {
-            return value.getString(this.namespaceRegistry, getEncoder());
+        if (namespaceRegistryHolder != null) {
+            return value.getString(namespaceRegistryHolder.getNamespaceRegistry(), getEncoder());
         }
         return value.getString(getEncoder());
     }
