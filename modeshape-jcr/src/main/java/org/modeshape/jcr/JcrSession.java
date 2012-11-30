@@ -62,6 +62,7 @@ import javax.jcr.version.VersionException;
 import org.infinispan.schematic.SchematicEntry;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.AbstractJcrNode.Type;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
@@ -79,10 +80,12 @@ import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundException;
+import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionCache.SaveContext;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.WrappedException;
+import org.modeshape.jcr.cache.document.WorkspaceCache;
 import org.modeshape.jcr.security.AuthorizationProvider;
 import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.value.DateTimeFactory;
@@ -96,7 +99,9 @@ import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ReferenceFactory;
 import org.modeshape.jcr.value.UuidFactory;
+import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.basic.LocalNamespaceRegistry;
+import org.modeshape.jcr.value.basic.NodeIdentifierReferenceFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -134,6 +139,18 @@ public class JcrSession implements Session {
                           boolean readOnly ) {
         this.repository = repository;
 
+        // Get the node key of the workspace we're going to use ...
+        final RepositoryCache repositoryCache = repository.repositoryCache();
+        WorkspaceCache workspace = repositoryCache.getWorkspaceCache(workspaceName);
+        NodeKey rootKey = workspace.getRootKey();
+
+        // Now create a specific reference factories that know about the root node key ...
+        TextDecoder decoder = context.getDecoder();
+        ValueFactories factories = context.getValueFactories();
+        ReferenceFactory rootKeyAwareStrongRefFactory = new NodeIdentifierReferenceFactory(rootKey, decoder, factories, false);
+        ReferenceFactory rootKeyAwareWeakRefFactory = new NodeIdentifierReferenceFactory(rootKey, decoder, factories, true);
+        context = context.with(rootKeyAwareStrongRefFactory).with(rootKeyAwareWeakRefFactory);
+
         // Create an execution context for this session that uses a local namespace registry ...
         final NamespaceRegistry globalNamespaceRegistry = context.getNamespaceRegistry(); // thread-safe!
         final LocalNamespaceRegistry localRegistry = new LocalNamespaceRegistry(globalNamespaceRegistry); // not-thread-safe!
@@ -142,7 +159,7 @@ public class JcrSession implements Session {
         this.workspace = new JcrWorkspace(this, workspaceName);
 
         // Create the session cache ...
-        this.cache = repository.repositoryCache().createSession(context, workspaceName, readOnly);
+        this.cache = repositoryCache.createSession(context, workspaceName, readOnly);
         this.rootNode = new JcrRootNode(this, this.cache.getRootKey());
         this.jcrNodes.put(this.rootNode.key(), this.rootNode);
         this.sessionAttributes = sessionAttributes != null ? sessionAttributes : Collections.<String, Object>emptyMap();
@@ -1449,6 +1466,24 @@ public class JcrSession implements Session {
         } catch (WorkspaceNotFoundException e) {
             throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(repository().repositoryName(), workspaceName));
         }
+    }
+
+    /**
+     * Determine if the supplied string represents just the {@link Node#getIdentifier() node's identifier} or whether it is a
+     * string representation of a NodeKey. If it is just the node's identifier, then the NodeKey is created by using the same
+     * {@link NodeKey#getSourceKey() source key} and {@link NodeKey#getWorkspaceKey() workspace key} from the supplied root node.
+     * 
+     * @param identifier the identifier string; may not be null
+     * @param rootKey the node of the root in the workspace; may not be null
+     * @return the node key re-created from the supplied identifier; never null
+     */
+    public static NodeKey createNodeKeyFromIdentifier( String identifier,
+                                                       NodeKey rootKey ) {
+        // If this node is a random identifier, then we need to use it as a node key identifier ...
+        if (NodeKey.isValidRandomIdentifier(identifier)) {
+            return rootKey.withId(identifier);
+        }
+        return new NodeKey(identifier);
     }
 
     /**

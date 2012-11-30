@@ -51,7 +51,7 @@ import org.modeshape.jcr.value.ValueFormatException;
 @Immutable
 public class ReferenceValueFactory extends AbstractValueFactory<Reference> implements ReferenceFactory {
 
-    private final boolean weak;
+    protected final boolean weak;
 
     /**
      * Create a new instance.
