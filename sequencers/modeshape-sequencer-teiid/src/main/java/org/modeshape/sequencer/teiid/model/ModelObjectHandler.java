@@ -51,9 +51,40 @@ public abstract class ModelObjectHandler {
     private VdbModel vdbModel; // set by handler framework but can be null if model did not come from a VDB
 
     /**
+     * If the element or name attribute URI is empty, the primary node type is used as the name.
+     * 
      * @param parentNode the parent node where the child node is being added (cannot be <code>null</code>)
-     * @param element the XMI element to use to create the child node (cannot be <code>null</code>)
-     * @param nameAttributeUri the URI of the name property (cannot be <code>null</code> or empty)
+     * @param nodeName the name to use to create the child node (can be <code>null</code>)
+     * @param xmiUuid the value of the XMI UUID property (can be <code>null</code> or empty)
+     * @param primaryNodeType the primary node type to use when creating the new node (cannot be <code>null</code> or empty)
+     * @return the new node (never <code>null</code>)
+     * @throws Exception if there is a problem creating the node
+     */
+    protected Node addNode( final Node parentNode,
+                            final String nodeName,
+                            final String xmiUuid,
+                            final String primaryNodeType ) throws Exception {
+        CheckArg.isNotNull(parentNode, "parentNode");
+        CheckArg.isNotEmpty(nodeName, "nodeName");
+        CheckArg.isNotEmpty(primaryNodeType, "primaryNodeType");
+
+        final Node newNode = parentNode.addNode(nodeName, primaryNodeType);
+
+        if (!StringUtil.isBlank(xmiUuid)) {
+            setProperty(newNode, XmiLexicon.JcrId.UUID, xmiUuid);
+            this.resolver.record(xmiUuid, newNode);
+        }
+
+        LOGGER.debug("adding node {0} to parent {1}", newNode.getName(), parentNode.getName());
+        return newNode;
+    }
+
+    /**
+     * If the element or name attribute URI is empty, the primary node type is used as the name.
+     * 
+     * @param parentNode the parent node where the child node is being added (cannot be <code>null</code>)
+     * @param element the XMI element to use to create the child node (can be <code>null</code>)
+     * @param nameAttributeUri the URI of the name property (can be <code>null</code> or empty)
      * @param primaryNodeType the primary node type to use when creating the new node (cannot be <code>null</code> or empty)
      * @return the new node (never <code>null</code>)
      * @throws Exception if there is a problem creating the node
@@ -63,25 +94,24 @@ public abstract class ModelObjectHandler {
                             final String nameAttributeUri,
                             final String primaryNodeType ) throws Exception {
         CheckArg.isNotNull(parentNode, "parentNode");
-        CheckArg.isNotNull(element, "element");
-        CheckArg.isNotEmpty(nameAttributeUri, "nameAttributeUri");
         CheckArg.isNotEmpty(primaryNodeType, "primaryNodeType");
 
         String name = null;
-        final XmiAttribute nameAttribute = element.getNameAttribute(nameAttributeUri);
 
-        if (nameAttribute == null) {
+        if (StringUtil.isBlank(nameAttributeUri) || (element == null)) {
             name = primaryNodeType;
         } else {
-            name = nameAttribute.getValue();
+            final XmiAttribute nameAttribute = element.getNameAttribute(nameAttributeUri);
+
+            if (nameAttribute == null) {
+                name = primaryNodeType;
+            } else {
+                name = nameAttribute.getValue();
+            }
         }
 
-        final Node newNode = parentNode.addNode(name, primaryNodeType);
-        setProperty(newNode, XmiLexicon.JcrId.UUID, element.getUuid());
-        this.resolver.record(element.getUuid(), newNode);
-
-        LOGGER.debug("adding node {0} to parent {1}", newNode.getName(), parentNode.getName());
-        return newNode;
+        final String uuid = ((element == null) ? null : element.getUuid());
+        return addNode(parentNode, name, uuid, primaryNodeType);
     }
 
     /**

@@ -58,7 +58,7 @@ public class VdbSequencerTest extends AbstractSequencerTest {
         registerNodeTypes("org/modeshape/sequencer/teiid/transformation.cnd");
         registerNodeTypes("org/modeshape/sequencer/teiid/vdb.cnd");
     }
-    
+
     @Test
     public void shouldSequenceBooksVDB() throws Exception {
         createNodeWithContentFromFile("BooksVDB.vdb", "model/books/BooksVDB.vdb");
@@ -483,6 +483,12 @@ public class VdbSequencerTest extends AbstractSequencerTest {
         assertNotNull(outputNode);
         assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
         assertThat(outputNode.getNodes().getSize(), is(1L));
+        
+        // verify model and table nodes
+        Node modelNode = outputNode.getNode("HSQLDB.xmi");
+        assertNotNull(modelNode);
+        Node tableNode = modelNode.getNode("GATEWAY_TABLE");
+        assertNotNull(tableNode);
     }
 
     @Test
@@ -512,7 +518,7 @@ public class VdbSequencerTest extends AbstractSequencerTest {
     @Test
     public void shouldSequenceVdbTwitterVdb() throws Exception {
         createNodeWithContentFromFile("vdb/twitter.vdb", "vdb/twitter.vdb");
-        Node outputNode = getOutputNode(this.rootNode, "vdbs/twitter.vdb", 60);
+        Node outputNode = getOutputNode(this.rootNode, "vdbs/twitter.vdb");
         assertNotNull(outputNode);
         assertThat(outputNode.getPrimaryNodeType().getName(), is(VdbLexicon.Vdb.VIRTUAL_DATABASE));
         assertThat(outputNode.getNodes().getSize(), is(3L)); // 2 models and 1 translator

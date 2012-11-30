@@ -28,6 +28,7 @@
 
 <nt  = "http://www.jcp.org/jcr/nt/1.0">
 <xmi = "http://www.omg.org/XMI">
+<modelExtensionDefinition = "http://www.jboss.org/teiiddesigner/ext/2012">
 <mmcore = "http://www.metamatrix.com/metamodels/Core">
 <mode = "http://www.modeshape.org/1.0">
 
@@ -50,6 +51,10 @@
   - mmcore:producerName (string)
   - mmcore:producerVersion (string)
   - mmcore:originalFile (string)
+  + mmcore:modelExtensionDefinitions (mmcore:modelExtensionDefinitions) copy
+
+[mmcore:modelExtensionDefinitions] > nt:unstructured
+  + * (modelExtensionDefinition:modelExtensionDefinition)
 
 [mmcore:import] > nt:unstructured, xmi:referenceable orderable
   - mmcore:modelType (string) = 'UNKNOWN' autocreated < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'

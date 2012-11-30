@@ -83,12 +83,13 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
         ensureNamespacePrefixIsValid(newAttribute);
         super.addAttribute(element, newAttribute); // set the parent
 
+        // record the UUID
         if (XmiLexicon.ModelId.UUID.equals(newAttribute.getName())) {
             final String value = newAttribute.getValue();
             
             // strip off prefix
             if (!StringUtil.isBlank(value) && value.startsWith(CoreLexicon.ModelId.MM_UUID_PREFIX)) {
-                String uuid = value.substring(CoreLexicon.ModelId.MM_UUID_PREFIX.length());
+                final String uuid = value.substring(CoreLexicon.ModelId.MM_UUID_PREFIX.length());
                 newAttribute.setValue(uuid);
 
                 if (!XmiLexicon.Namespace.URI.equals(newAttribute.getNamespaceUri())) {
@@ -96,25 +97,13 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
                         try {
                             this.resolver.addUnresolvedReference(uuid);
                         } catch (Exception e) {
-                            // should not happen as making sure node does not exist
+                            // should not happen since already made sure node does not exist
                         }
                     }
                 }
+
+                this.resolver.record(newAttribute.getValue(), element);
             }
-        }
-    }
-
-    /**
-     * @see org.modeshape.sequencer.teiid.xmi.XmiReader#addChild(org.modeshape.sequencer.teiid.xmi.XmiElement,
-     *      org.modeshape.sequencer.teiid.xmi.XmiElement)
-     */
-    @Override
-    protected void addChild( final XmiElement parent,
-                             final XmiElement newChild ) {
-        super.addChild(parent, newChild);
-
-        if (!StringUtil.isBlank(newChild.getUuid())) {
-            this.resolver.record(newChild.getUuid(), newChild);
         }
     }
 
@@ -126,10 +115,6 @@ class ModelReader extends XmiReader implements Comparable<ModelReader> {
         // make sure prefix is valid before adding to parent
         ensureNamespacePrefixIsValid(newElement);
         super.addElement(newElement);
-
-        if (!StringUtil.isBlank(newElement.getUuid())) {
-            this.resolver.record(newElement.getUuid(), newElement);
-        }
     }
 
     /**

@@ -106,5 +106,6 @@ public interface CoreLexicon {
         String SUPPORTS_OUTER_JOIN = PREFIX + ":supportsOuterJoin";
         String SUPPORTS_WHERE_ALL = PREFIX + ":supportsWhereAll";
         String VISIBLE = PREFIX + ":visible";
+        String MODEL_EXTENSION_DEFINITIONS_GROUP_NODE = PREFIX + ":modelExtensionDefinitions";
     }
 }

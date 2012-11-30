@@ -23,19 +23,23 @@
  */
 package org.modeshape.sequencer.teiid.model;
 
+import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
+import javax.jcr.Value;
 import org.junit.Test;
 import org.modeshape.jcr.JcrMixLexicon;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
 import org.modeshape.sequencer.teiid.lexicon.JdbcLexicon;
+import org.modeshape.sequencer.teiid.lexicon.ModelExtensionDefinitionLexicon;
 import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon;
 import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon.JcrId;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
@@ -84,6 +88,13 @@ public class ModelSequencerTest extends AbstractSequencerTest {
         createNodeWithContentFromFile("BooksProcedures.xmi", "model/books/BooksProcedures.xmi");
         Node outputNode = getOutputNode(this.rootNode, "models/BooksProcedures.xmi");
         assertNotNull(outputNode);
+
+        // make sure procedure has the extension properties
+        Node procedureNode = outputNode.getNode("getBooks");
+        assertNotNull(procedureNode);
+        assertThat(procedureNode.getPrimaryNodeType().getName(), is(RelationalLexicon.JcrId.PROCEDURE));
+        assertThat(procedureNode.getProperty("rest:restMethod").getString(), is("GET"));
+        assertThat(procedureNode.getProperty("rest:uri").getString(), is("books"));
     }
 
     @Test
@@ -772,6 +783,346 @@ public class ModelSequencerTest extends AbstractSequencerTest {
             assertNotNull(property);
             assertThat(property.getValues().length, is(1));
             assertThat(property.getValues()[0].getString(), is("TABLE"));
+        }
+    }
+
+    @Test
+    public void shouldSequenceModelWithOneMed() throws Exception {
+        createNodeWithContentFromFile("ModelWithOneMed.xmi", "model/modelExtensionDefinition/ModelWithOneMed.xmi");
+        final Node outputNode = getOutputNode(this.rootNode, "models/ModelWithOneMed.xmi");
+        assertNotNull(outputNode);
+
+        // MED group node
+        final Node medGroupNode = outputNode.getNode(CoreLexicon.JcrId.MODEL_EXTENSION_DEFINITIONS_GROUP_NODE);
+        assertNotNull(medGroupNode);
+
+        // MED node exists
+        final Node medNode = medGroupNode.getNode("relational");
+        assertNotNull(medNode);
+
+        // MED properties
+        assertThat(medNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.EXTENDED_METAMODEL).getString(),
+                   is("http://www.metamatrix.com/metamodels/Relational"));
+        assertThat(medNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.NAMESPACE_PREFIX).getString(), is("relational"));
+        assertThat(medNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.NAMESPACE_URI).getString(),
+                   is("http://www.teiid.org/ext/relational/2012"));
+        assertThat(medNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.VERSION).getLong(), is(2L));
+        assertThat(medNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.DESCRIPTION).getString(),
+                   is("Relational metamodel extension properties"));
+
+        // MED model types is multi-valued
+        Value[] modelTypes = medNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.MODEL_TYPES).getValues();
+        assertThat(modelTypes.length, is(2));
+        String[] values = new String[] {modelTypes[0].getString(), modelTypes[1].getString()};
+        assertThat(values, hasItemInArray("PHYSICAL"));
+        assertThat(values, hasItemInArray("VIRTUAL"));
+
+        // Extended metaclasses
+        final NodeIterator nodeItr = medNode.getNodes();
+        assertThat(nodeItr.getSize(), is(2L));
+        boolean foundProcedure = false;
+        boolean foundTable = false;
+
+        while (nodeItr.hasNext()) {
+            Node metaclassNode = nodeItr.nextNode();
+            assertThat(metaclassNode.getPrimaryNodeType().getName(), is(ModelExtensionDefinitionLexicon.JcrId.EXTENDED_METACLASS));
+
+            if (!foundProcedure && "org.teiid.designer.metamodels.relational.impl.ProcedureImpl".equals(metaclassNode.getName())) {
+                foundProcedure = true;
+
+                // property definitions
+                NodeIterator propDefItr = metaclassNode.getNodes();
+                assertThat(propDefItr.getSize(), is(8L));
+
+                { // deterministic
+                    final Node propNode = metaclassNode.getNode("deterministic");
+                    assertNotNull(propNode);
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(), is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
+                               is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
+                               is("boolean"));
+
+                    NodeIterator itr = propNode.getNodes();
+                    assertThat(itr.getSize(), is(2L));
+
+                    { // display names
+                        Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
+                        assertNotNull(displayNameNode);
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
+                                   is("en"));
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
+                                   is("Deterministic"));
+                    }
+
+                    { // descriptions
+                        Node descriptionNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.DESCRIPTION);
+                        assertNotNull(descriptionNode);
+                        assertThat(descriptionNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
+                                   is("en"));
+                        assertThat(descriptionNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
+                                   is("Specifies that the source function will always returns the same result for a specific input value"));
+                    }
+                }
+
+                { // non-prepared
+                    final Node propNode = metaclassNode.getNode("non-prepared");
+                    assertNotNull(propNode);
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(), is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
+                               is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
+                               is("boolean"));
+
+                    NodeIterator itr = propNode.getNodes();
+                    assertThat(itr.getSize(), is(1L));
+
+                    { // display names
+                        Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
+                        assertNotNull(displayNameNode);
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
+                                   is("en"));
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
+                                   is("Non-Prepared"));
+                    }
+                }
+
+                { // aggregate
+                    final Node propNode = metaclassNode.getNode("aggregate");
+                    assertNotNull(propNode);
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(), is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
+                               is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
+                               is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
+                               is("boolean"));
+
+                    NodeIterator itr = propNode.getNodes();
+                    assertThat(itr.getSize(), is(1L));
+
+                    { // display names
+                        Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
+                        assertNotNull(displayNameNode);
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
+                                   is("en"));
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
+                                   is("Aggregate"));
+                    }
+                }
+
+                { // analytic
+                    final Node propNode = metaclassNode.getNode("analytic");
+                    assertNotNull(propNode);
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(), is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
+                               is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
+                               is("boolean"));
+
+                    NodeIterator itr = propNode.getNodes();
+                    assertThat(itr.getSize(), is(1L));
+
+                    { // display names
+                        Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
+                        assertNotNull(displayNameNode);
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
+                                   is("en"));
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
+                                   is("Analytic"));
+                    }
+                }
+
+                { // allows-orderby
+                    final Node propNode = metaclassNode.getNode("allows-orderby");
+                    assertNotNull(propNode);
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(), is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
+                               is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
+                               is("boolean"));
+
+                    NodeIterator itr = propNode.getNodes();
+                    assertThat(itr.getSize(), is(1L));
+
+                    { // display names
+                        Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
+                        assertNotNull(displayNameNode);
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
+                                   is("en"));
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
+                                   is("Allows Order-by"));
+                    }
+                }
+
+                { // uses-distinct-rows
+                    final Node propNode = metaclassNode.getNode("uses-distinct-rows");
+                    assertNotNull(propNode);
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(), is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
+                               is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
+                               is("boolean"));
+
+                    NodeIterator itr = propNode.getNodes();
+                    assertThat(itr.getSize(), is(1L));
+
+                    { // display names
+                        Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
+                        assertNotNull(displayNameNode);
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
+                                   is("en"));
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
+                                   is("Uses Distinct Rows"));
+                    }
+                }
+
+                { // allows-distinct
+                    final Node propNode = metaclassNode.getNode("allows-distinct");
+                    assertNotNull(propNode);
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(), is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
+                               is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
+                               is("boolean"));
+
+                    NodeIterator itr = propNode.getNodes();
+                    assertThat(itr.getSize(), is(1L));
+
+                    { // display names
+                        Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
+                        assertNotNull(displayNameNode);
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
+                                   is("en"));
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
+                                   is("Allows Distinct"));
+                    }
+                }
+
+                { // decomposable
+                    final Node propNode = metaclassNode.getNode("decomposable");
+                    assertNotNull(propNode);
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(), is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
+                               is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
+                               is("boolean"));
+
+                    NodeIterator itr = propNode.getNodes();
+                    assertThat(itr.getSize(), is(1L));
+
+                    { // display names
+                        Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
+                        assertNotNull(displayNameNode);
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
+                                   is("en"));
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
+                                   is("Decomposable"));
+                    }
+                }
+            } else if (!foundTable
+                       && "org.teiid.designer.metamodels.relational.impl.BaseTableImpl".equals(metaclassNode.getName())) {
+                foundTable = true;
+
+                { // property definitions
+                    final NodeIterator propDefItr = metaclassNode.getNodes();
+                    assertThat(propDefItr.getSize(), is(1L));
+
+                    { // native-query
+                        final Node propNode = metaclassNode.getNode("native-query");
+                        assertNotNull(propNode);
+                        assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
+                                   is(false));
+                        assertThat(propNode.hasProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE), is(false));
+                        assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(),
+                                   is(true));
+                        assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
+                                   is(false));
+                        assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
+                                   is(true));
+                        assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
+                                   is(false));
+                        assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
+                                   is("string"));
+
+                        NodeIterator itr = propNode.getNodes();
+                        assertThat(itr.getSize(), is(1L));
+
+                        { // display names
+                            Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
+                            assertNotNull(displayNameNode);
+                            assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
+                                       is("en"));
+                            assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
+                                       is("Native Query"));
+                        }
+                    }
+                }
+            } else {
+                fail();
+            }
         }
     }
 }
