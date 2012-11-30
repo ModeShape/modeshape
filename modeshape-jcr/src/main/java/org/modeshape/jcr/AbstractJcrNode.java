@@ -1074,7 +1074,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             newChild = mutable().createChild(cache, desiredKey, childName, ptProp);
         }
 
-        //Check if the child node is referenceable
+        // Check if the child node is referenceable
         if (capabilities.getNodeType(childPrimaryNodeTypeName).isNodeType(JcrMixLexicon.REFERENCEABLE)) {
             newChild.setProperty(cache, propFactory.create(JcrLexicon.UUID, session.nodeIdentifier(newChild.getKey())));
         }
@@ -1587,9 +1587,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 String text = JcrI18n.cannotSetProtectedPropertyValue.text(value, name, location(), workspaceName());
                 throw new ConstraintViolationException(text);
             }
-            // Delegate to the existing JCR property ...
-            existing.setValue(value);
-            return existing;
+            if (existing.getDefinition().getRequiredType() == value.getType()) {
+                // The new value's type and the existing type are the same, so just delegate to the existing JCR property ...
+                existing.setValue(value);
+                return existing;
+            }
         }
 
         // Otherwise, we have to create the property, so first find a valid property definition ...
@@ -1747,9 +1749,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 I18n msg = JcrI18n.unableToSetSingleValuedPropertyUsingMultipleValues;
                 throw new javax.jcr.ValueFormatException(msg.text(readable(name), location(), workspaceName()));
             }
-            // Delegate to the existing JCR property ...
-            existing.setValue(values);
-            return existing;
+            if (existing.getDefinition().getRequiredType() == jcrPropertyType) {
+                // The new value's type and the existing type are the same, so just delegate to the existing JCR property ...
+                existing.setValue(values);
+                return existing;
+            }
         }
 
         // Otherwise, we have to create the property, so first find a valid property definition ...

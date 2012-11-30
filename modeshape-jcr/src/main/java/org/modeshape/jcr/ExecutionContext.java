@@ -457,6 +457,15 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
     }
 
     /**
+     * Get the text decoder for this context.
+     * 
+     * @return the decoder; never null
+     */
+    public TextDecoder getDecoder() {
+        return decoder;
+    }
+
+    /**
      * Create a new execution context that mirrors this context but that uses the supplied binary store.
      * 
      * @param binaryStore the binary store that should be used, or null if the default implementation should be used
@@ -552,6 +561,20 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
                                     weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
+    }
+
+    public ExecutionContext with( ReferenceFactory referenceFactory ) {
+        ReferenceFactory strongFactory = this.referenceFactory;
+        ReferenceFactory weakFactory = this.weakReferenceFactory;
+        if (referenceFactory.getPropertyType() == PropertyType.REFERENCE) {
+            strongFactory = referenceFactory;
+        } else {
+            weakFactory = referenceFactory;
+        }
+        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
+                                    processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
+                                    decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, strongFactory,
+                                    weakFactory, uriFactory, uuidFactory, objectFactory);
     }
 
     /**

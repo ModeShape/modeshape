@@ -48,6 +48,7 @@ import org.modeshape.jcr.JcrRepository;
 @Immutable
 public final class NodeKey implements Serializable, Comparable<NodeKey> {
 
+    private static final int UUID_LENGTH = UUID.randomUUID().toString().length();
     private static final long serialVersionUID = 1L;
 
     protected static final int SOURCE_LENGTH = 7;
@@ -69,6 +70,26 @@ public final class NodeKey implements Serializable, Comparable<NodeKey> {
     public static boolean isValidFormat( String key ) {
         if (key.length() <= IDENTIFIER_START_INDEX) return false;
         return true;
+    }
+
+    /**
+     * Determine if the supplied string is known to be a valid {@link #withRandomId() random} node key identifier.
+     * 
+     * @param identifier the identifier
+     * @return true if the string is of the correct format for a node key, or false if it not the correct format
+     */
+    public static boolean isValidRandomIdentifier( String identifier ) {
+        if (identifier.length() == UUID_LENGTH) {
+            // It's the right length, but see if it's a UUID ...
+            try {
+                UUID.fromString(identifier);
+                return true;
+            } catch (IllegalArgumentException e) {
+                // Nope
+                return false;
+            }
+        }
+        return false;
     }
 
     private final String key;

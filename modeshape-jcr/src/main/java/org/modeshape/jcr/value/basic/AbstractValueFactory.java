@@ -54,8 +54,8 @@ import org.modeshape.jcr.value.ValueFormatException;
 @Immutable
 public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
 
-    private final TextDecoder decoder;
-    private final PropertyType propertyType;
+    protected final TextDecoder decoder;
+    protected final PropertyType propertyType;
     protected final ValueFactories valueFactories;
 
     protected AbstractValueFactory( PropertyType type,

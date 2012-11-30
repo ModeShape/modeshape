@@ -42,6 +42,7 @@ import org.hamcrest.collection.IsIn;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.value.DateTimeFactory;
 
@@ -131,6 +132,12 @@ public class JcrMultiValuePropertyTest extends MultiUseAbstractTest {
         refDefn.setMultiple(true);
         propDefns.add(refDefn);
 
+        PropertyDefinitionTemplate ref2Defn = mgr.createPropertyDefinitionTemplate();
+        ref2Defn.setName("referenceProperty2");
+        ref2Defn.setRequiredType(PropertyType.REFERENCE);
+        ref2Defn.setMultiple(true);
+        propDefns.add(ref2Defn);
+
         PropertyDefinitionTemplate stringDefn = mgr.createPropertyDefinitionTemplate();
         stringDefn.setName("stringProperty");
         stringDefn.setRequiredType(PropertyType.STRING);
@@ -184,6 +191,8 @@ public class JcrMultiValuePropertyTest extends MultiUseAbstractTest {
         cars.setProperty("binaryProperty", values(binaryValue));
         cars.setProperty("longProperty", values(longValue));
         cars.setProperty("referenceProperty", values(new Node[] {altima, aston}));
+        cars.setProperty("referenceProperty2",
+                         values(PropertyType.STRING, new String[] {altima.getIdentifier(), aston.getIdentifier()}));
         cars.setProperty("stringProperty", values(PropertyType.STRING, stringValue));
         cars.setProperty("pathProperty", values(PropertyType.PATH, pathValue));
         cars.setProperty("nameProperty", values(PropertyType.NAME, nameValue));
@@ -314,9 +323,22 @@ public class JcrMultiValuePropertyTest extends MultiUseAbstractTest {
         prop.getLength();
     }
 
+    @FixFor( "MODE-1720" )
     @Test
     public void shouldPropertyDereferenceReferenceProperties() throws Exception {
         prop = cars.getProperty("referenceProperty");
+        Value[] vals = prop.getValues();
+        for (Value value : vals) {
+            String str = value.getString();
+            Node node = cars.getSession().getNodeByIdentifier(str);
+            assertThat(node, IsIn.isOneOf((Node)altima, (Node)aston));
+        }
+    }
+
+    @FixFor( "MODE-1720" )
+    @Test
+    public void shouldPropertyDereferenceReferencePropertiesCreatedFromStringValues() throws Exception {
+        prop = cars.getProperty("referenceProperty2");
         Value[] vals = prop.getValues();
         for (Value value : vals) {
             String str = value.getString();
