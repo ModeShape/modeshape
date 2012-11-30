@@ -58,30 +58,26 @@ import org.modeshape.jcr.value.Name;
 /**
  * An implementation of {@link DocumentStore} which is used when federation is enabled
  * 
- * @author Horia Chiorean (hchiorea@redhat.com) TODO author=Horia Chiorean date=11/7/12 description=The
- *         externalProjectionKeyToFederatedNodeKey should be marshalled to/from the system area somehow, at repository
- *         shutdown/startup
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class FederatedDocumentStore implements DocumentStore {
 
     private static final String FEDERATED_WORKSPACE_KEY = NodeKey.keyForWorkspaceName("federated_ws");
 
     private final LocalDocumentStore localDocumentStore;
-    private final Connectors connectorsManager;
-    private final Map<String, String> externalProjectionKeyToFederatedNodeKey;
+    private final Connectors connectors;
     private DocumentTranslator translator;
     private String localSourceKey;
 
-    public FederatedDocumentStore( Connectors connectorsManager,
+    public FederatedDocumentStore( Connectors connectors,
                                    SchematicDb localDb ) {
-        this.connectorsManager = connectorsManager;
+        this.connectors = connectors;
         this.localDocumentStore = new LocalDocumentStore(localDb);
-        this.externalProjectionKeyToFederatedNodeKey = new HashMap<String, String>();
     }
 
     protected final DocumentTranslator translator() {
         if (translator == null) {
-            translator = connectorsManager.getDocumentTranslator();
+            translator = connectors.getDocumentTranslator();
         }
         return translator;
     }
@@ -97,7 +93,7 @@ public class FederatedDocumentStore implements DocumentStore {
         if (isLocalSource(key)) {
             return localStore().putIfAbsent(key, document);
         }
-        Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
+        Connector connector = connectors.getConnectorForSourceKey(sourceKey(key));
         if (connector != null) {
             EditableDocument editableDocument = replaceNodeKeysWithDocumentIds(document);
             connector.storeDocument(editableDocument);
@@ -112,7 +108,7 @@ public class FederatedDocumentStore implements DocumentStore {
         if (isLocalSource(key)) {
             localStore().updateDocument(key, document, null);
         } else {
-            Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
+            Connector connector = connectors.getConnectorForSourceKey(sourceKey(key));
             if (connector != null) {
                 EditableDocument editableDocument = replaceNodeKeysWithDocumentIds(document);
                 String documentId = documentIdFromNodeKey(key);
@@ -220,7 +216,7 @@ public class FederatedDocumentStore implements DocumentStore {
         if (isLocalSource(key)) {
             return localStore().get(key);
         }
-        Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
+        Connector connector = connectors.getConnectorForSourceKey(sourceKey(key));
         if (connector != null) {
             String docId = documentIdFromNodeKey(key);
             Document document = connector.getDocumentById(docId);
@@ -262,7 +258,7 @@ public class FederatedDocumentStore implements DocumentStore {
         if (isLocalSource(key)) {
             return localStore().containsKey(key);
         }
-        Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
+        Connector connector = connectors.getConnectorForSourceKey(sourceKey(key));
         return connector != null && connector.hasDocument(documentIdFromNodeKey(key));
     }
 
@@ -271,7 +267,7 @@ public class FederatedDocumentStore implements DocumentStore {
         if (isLocalSource(key)) {
             return localStore().remove(key);
         }
-        Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
+        Connector connector = connectors.getConnectorForSourceKey(sourceKey(key));
         if (connector != null) {
             return connector.removeDocument(documentIdFromNodeKey(key));
         }
@@ -300,13 +296,13 @@ public class FederatedDocumentStore implements DocumentStore {
                                             String sourceName,
                                             String externalPath ) {
         String sourceKey = NodeKey.keyForSourceName(sourceName);
-        Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey);
+        Connector connector = connectors.getConnectorForSourceKey(sourceKey);
         if (connector != null) {
-            String documentId = connector.getDocumentId(externalPath);
-            if (documentId != null) {
-                String nodeKey = documentIdToNodeKey(sourceName, documentId);
-                externalProjectionKeyToFederatedNodeKey.put(nodeKey, federatedNodeKey);
-                return nodeKey;
+            String projectionId = connector.getDocumentId(externalPath);
+            if (projectionId != null) {
+                String projectionKey = documentIdToNodeKey(sourceName, projectionId);
+                connectors.mapProjection(projectionKey, federatedNodeKey);
+                return projectionKey;
             }
         }
         return null;
@@ -317,7 +313,7 @@ public class FederatedDocumentStore implements DocumentStore {
         if (isLocalSource(key)) {
             return localStore().getChildrenBlock(key);
         }
-        Connector connector = connectorsManager.getConnectorForSourceKey(sourceKey(key));
+        Connector connector = connectors.getConnectorForSourceKey(sourceKey(key));
         if (connector != null && connector instanceof Pageable) {
             key = documentIdFromNodeKey(key);
             PageKey blockKey = new PageKey(key);
@@ -388,7 +384,7 @@ public class FederatedDocumentStore implements DocumentStore {
         }
         // create the federated node key - external project back reference
         if (externalDocumentKey != null) {
-            String federatedParentKey = externalProjectionKeyToFederatedNodeKey.get(externalDocumentKey);
+            String federatedParentKey = connectors.getFederatedNodeKey(externalDocumentKey);
             if (!StringUtil.isBlank(federatedParentKey)) {
                 parentKeys.add(federatedParentKey);
             }
@@ -418,7 +414,7 @@ public class FederatedDocumentStore implements DocumentStore {
 
         // replace the node key with the id of each parent and remove the optional federated parent
         List<String> parentKeys = reader.getParentIds();
-        String federatedParentKey = externalProjectionKeyToFederatedNodeKey.get(documentNodeKey);
+        String federatedParentKey = connectors.getFederatedNodeKey(documentNodeKey);
         if (!StringUtil.isBlank(federatedParentKey)) {
             parentKeys.remove(federatedParentKey);
         }

@@ -110,6 +110,14 @@ public class ModeShapeLexicon {
     public static final Name REPOSITORY= new BasicName(Namespace.URI, "repository");
     public static final Name INITIALIZATION_STATE = new BasicName(Namespace.URI, "initializationState");
 
+    /**
+     * Federation related items
+     */
+    public static final Name FEDERATION = new BasicName(Namespace.URI, "federation");
+    public static final Name PROJECTION_NODE_MAPPING = new BasicName(Namespace.URI, "projectionNodeMapping");
+    public static final Name PROJECTION_KEY = new BasicName(Namespace.URI, "projectionKey");
+    public static final Name EXTERNAL_NODE_KEY = new BasicName(Namespace.URI, "externalNodeKey");
+
     public enum InitializationState {
         STARTED, FINISHED
     }

@@ -23,28 +23,33 @@
  */
 package org.modeshape.jcr;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import java.io.File;
 import java.util.UUID;
 import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Session;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
+import org.modeshape.connector.mock.MockConnector;
+import org.modeshape.jcr.api.Workspace;
+import org.modeshape.jcr.api.federation.FederationManager;
 
 /**
  * Tests that related to repeatedly starting/stopping repositories (without another repository configured in the @Before and @After
  * methods).
- * 
+ *
  * @author rhauch
  * @author hchiorean
  */
 public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
 
     @Test
-    @FixFor( {"MODE-1526", "MODE-1512", "MODE-1617"} )
+    @FixFor( { "MODE-1526", "MODE-1512", "MODE-1617" } )
     public void shouldKeepPersistentDataAcrossRestart() throws Exception {
         File contentFolder = new File("target/persistent_repository/store/persistentRepository");
 
@@ -148,6 +153,46 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                     // expected
                 }
                 ws1Session.getNode("/testNode");
+                return null;
+            }
+        }, repositoryConfigFile);
+    }
+
+    @Test
+    @FixFor( "MODE-1716" )
+    public void shouldPersistExternalProjectionToFederatedNodeMappings() throws Exception {
+        FileUtil.delete("target/federation_persistent_repository");
+
+        String repositoryConfigFile = "config/repo-config-mock-federation-persistent.json";
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+                Node testRoot = session.getRootNode().addNode("testRoot");
+                session.save();
+
+                FederationManager federationManager = ((Workspace) session.getWorkspace()).getFederationManager();
+
+                federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, "/doc1", "federated1");
+                Node doc1Federated = session.getNode("/testRoot/federated1");
+                assertNotNull(doc1Federated);
+                assertEquals(testRoot.getIdentifier(), doc1Federated.getParent().getIdentifier());
+
+                return null;
+            }
+        }, repositoryConfigFile);
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+                Node testRoot = session.getNode("/testRoot");
+                assertNotNull(testRoot);
+
+                Node doc1Federated = session.getNode("/testRoot/federated1");
+                assertNotNull(doc1Federated);
+                assertEquals(testRoot.getIdentifier(), doc1Federated.getParent().getIdentifier());
+
                 return null;
             }
         }, repositoryConfigFile);

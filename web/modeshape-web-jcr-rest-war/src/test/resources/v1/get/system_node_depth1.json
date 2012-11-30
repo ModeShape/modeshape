@@ -49,6 +49,8 @@
                 "mode:versionHistoryFolder",
                 "mode:versionStorage",
                 "mode:repository",
+                "mode:federation",
+                "mode:projectionNodeMapping",
                 "mode:system",
                 "mode:root",
                 "mode:resource",

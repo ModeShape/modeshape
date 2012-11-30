@@ -32,11 +32,13 @@
                 }
             ],
             "subTypes":[
+                "http://localhost:8090/resources/repo/default/nodetypes/mode:federation",
                 "http://localhost:8090/resources/repo/default/nodetypes/mode:lock",
                 "http://localhost:8090/resources/repo/default/nodetypes/mode:locks",
                 "http://localhost:8090/resources/repo/default/nodetypes/mode:namespace",
                 "http://localhost:8090/resources/repo/default/nodetypes/mode:namespaces",
                 "http://localhost:8090/resources/repo/default/nodetypes/mode:nodeTypes",
+                "http://localhost:8090/resources/repo/default/nodetypes/mode:projectionNodeMapping",
                 "http://localhost:8090/resources/repo/default/nodetypes/mode:repository",
                 "http://localhost:8090/resources/repo/default/nodetypes/mode:resource",
                 "http://localhost:8090/resources/repo/default/nodetypes/mode:root",

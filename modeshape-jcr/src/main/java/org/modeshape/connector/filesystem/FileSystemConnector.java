@@ -232,11 +232,6 @@ public class FileSystemConnector extends Connector {
         // otherwise use the default extra properties storage
     }
 
-    @Override
-    public void shutdown() {
-        // do nothing
-    }
-
     /**
      * Get the namespace registry.
      * 
