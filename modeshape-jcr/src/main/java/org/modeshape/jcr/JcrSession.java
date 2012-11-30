@@ -26,12 +26,16 @@ package org.modeshape.jcr;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigDecimal;
+import java.net.URI;
 import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -83,8 +87,10 @@ import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionCache.SaveContext;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.WrappedException;
+import org.modeshape.jcr.query.model.TypeSystem;
 import org.modeshape.jcr.security.AuthorizationProvider;
 import org.modeshape.jcr.security.SecurityContext;
+import org.modeshape.jcr.value.BinaryFactory;
 import org.modeshape.jcr.value.DateTimeFactory;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
@@ -93,9 +99,14 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.PropertyFactory;
+import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ReferenceFactory;
 import org.modeshape.jcr.value.UuidFactory;
+import org.modeshape.jcr.value.ValueFactories;
+import org.modeshape.jcr.value.ValueFactory;
+import org.modeshape.jcr.value.ValueTypeSystem;
+import org.modeshape.jcr.value.basic.DelegateReferenceFactory;
 import org.modeshape.jcr.value.basic.LocalNamespaceRegistry;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -109,6 +120,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
  */
 public class JcrSession implements Session {
 
+    private static final int UUID_LENGTH = UUID.randomUUID().toString().length();
     private static final String[] NO_ATTRIBUTES_NAMES = new String[] {};
 
     protected final JcrRepository repository;
@@ -135,14 +147,17 @@ public class JcrSession implements Session {
         this.repository = repository;
 
         // Create an execution context for this session that uses a local namespace registry ...
+        // (The order of these operations is critical!)
+        context = context.with(new SessionValueFactories(context.getValueFactories()));
         final NamespaceRegistry globalNamespaceRegistry = context.getNamespaceRegistry(); // thread-safe!
         final LocalNamespaceRegistry localRegistry = new LocalNamespaceRegistry(globalNamespaceRegistry); // not-thread-safe!
-        this.context = context.with(localRegistry);
+        context = context.with(localRegistry);
+        this.context = context.with(new SessionValueFactories(context.getValueFactories()));
         this.sessionRegistry = new JcrNamespaceRegistry(Behavior.SESSION, localRegistry, globalNamespaceRegistry, this);
         this.workspace = new JcrWorkspace(this, workspaceName);
 
         // Create the session cache ...
-        this.cache = repository.repositoryCache().createSession(context, workspaceName, readOnly);
+        this.cache = repository.repositoryCache().createSession(this.context, workspaceName, readOnly);
         this.rootNode = new JcrRootNode(this, this.cache.getRootKey());
         this.jcrNodes.put(this.rootNode.key(), this.rootNode);
         this.sessionAttributes = sessionAttributes != null ? sessionAttributes : Collections.<String, Object>emptyMap();
@@ -1746,5 +1761,173 @@ public class JcrSession implements Session {
                 node.setProperty(cache, propertyFactory.create(JcrLexicon.ETAG, etagValue));
             }
         }
+    }
+
+    protected String convertNodeIdentifierToNodeKeyString( String identifier ) {
+        // Most nodes will likely be UUIDs, which we need to prepend the root node's system and workspace keys ...
+        if (identifier.length() == UUID_LENGTH) {
+            try {
+                UUID.fromString(identifier);
+                return rootNode.key().withId(identifier).toString();
+            } catch (IllegalArgumentException e) {
+                // It's not a valid UUID, so continue ...
+            }
+        }
+        return identifier;
+    }
+
+    /**
+     * This is a special {@link ValueFactories} implementation that has specialized {@link ReferenceFactory} implementations that
+     * are aware of and can convert {@link Node#getIdentifier()} values to proper REFERENCE values.
+     * 
+     * @see JcrSession#JcrSession(JcrRepository, String, ExecutionContext, Map, boolean)
+     */
+    protected class SessionValueFactories implements ValueFactories {
+        private final ValueFactories delegate;
+        private final ReferenceFactory referenceFactory;
+        private final ReferenceFactory weakReferenceFactory;
+        private final TypeSystem typeSystem;
+
+        protected SessionValueFactories( ValueFactories factories ) {
+            this.delegate = factories;
+            this.referenceFactory = new DelegateReferenceFactory(this.delegate.getReferenceFactory()) {
+                @Override
+                public Reference create( String value ) throws org.modeshape.jcr.value.ValueFormatException {
+                    String newValue = convertNodeIdentifierToNodeKeyString(value);
+                    return delegate.create(newValue);
+                }
+            };
+            this.weakReferenceFactory = new DelegateReferenceFactory(this.delegate.getWeakReferenceFactory()) {
+                @Override
+                public Reference create( String value ) throws org.modeshape.jcr.value.ValueFormatException {
+                    String newValue = convertNodeIdentifierToNodeKeyString(value);
+                    return delegate.create(newValue);
+                }
+            };
+            this.typeSystem = new ValueTypeSystem(this);
+        }
+
+        @Override
+        public ReferenceFactory getReferenceFactory() {
+            return referenceFactory;
+        }
+
+        @Override
+        public ReferenceFactory getWeakReferenceFactory() {
+            return weakReferenceFactory;
+        }
+
+        @Override
+        public Iterator<ValueFactory<?>> iterator() {
+            final Iterator<ValueFactory<?>> original = this.delegate.iterator();
+            final ReferenceFactory originalRefFactory = this.delegate.getReferenceFactory();
+            final ReferenceFactory originalWeakRefFactory = this.delegate.getWeakReferenceFactory();
+            return new Iterator<ValueFactory<?>>() {
+                @Override
+                public boolean hasNext() {
+                    return original.hasNext();
+                }
+
+                @Override
+                public ValueFactory<?> next() {
+                    ValueFactory<?> result = original.next();
+                    if (result == originalRefFactory) return getReferenceFactory();
+                    if (result == originalWeakRefFactory) return getWeakReferenceFactory();
+                    return result;
+                }
+
+                @Override
+                public void remove() {
+                    throw new UnsupportedOperationException();
+                }
+            };
+        }
+
+        @Override
+        public TypeSystem getTypeSystem() {
+            return this.typeSystem;
+        }
+
+        @Override
+        public ValueFactory<?> getValueFactory( PropertyType type ) {
+            switch (type) {
+                case REFERENCE:
+                    return referenceFactory;
+                case WEAKREFERENCE:
+                    return weakReferenceFactory;
+                default:
+                    return delegate.getValueFactory(type);
+            }
+        }
+
+        @Override
+        public ValueFactory<?> getValueFactory( Object prototype ) {
+            if (prototype instanceof Reference) {
+                Reference ref = (Reference)prototype;
+                return ref.isWeak() ? weakReferenceFactory : referenceFactory;
+            }
+            return delegate.getValueFactory(prototype);
+        }
+
+        @Override
+        public ValueFactory<String> getStringFactory() {
+            return delegate.getStringFactory();
+        }
+
+        @Override
+        public BinaryFactory getBinaryFactory() {
+            return delegate.getBinaryFactory();
+        }
+
+        @Override
+        public ValueFactory<Long> getLongFactory() {
+            return delegate.getLongFactory();
+        }
+
+        @Override
+        public ValueFactory<Double> getDoubleFactory() {
+            return delegate.getDoubleFactory();
+        }
+
+        @Override
+        public ValueFactory<BigDecimal> getDecimalFactory() {
+            return delegate.getDecimalFactory();
+        }
+
+        @Override
+        public DateTimeFactory getDateFactory() {
+            return delegate.getDateFactory();
+        }
+
+        @Override
+        public ValueFactory<Boolean> getBooleanFactory() {
+            return delegate.getBooleanFactory();
+        }
+
+        @Override
+        public NameFactory getNameFactory() {
+            return delegate.getNameFactory();
+        }
+
+        @Override
+        public PathFactory getPathFactory() {
+            return delegate.getPathFactory();
+        }
+
+        @Override
+        public ValueFactory<URI> getUriFactory() {
+            return delegate.getUriFactory();
+        }
+
+        @Override
+        public UuidFactory getUuidFactory() {
+            return delegate.getUuidFactory();
+        }
+
+        @Override
+        public ValueFactory<Object> getObjectFactory() {
+            return delegate.getObjectFactory();
+        }
+
     }
 }

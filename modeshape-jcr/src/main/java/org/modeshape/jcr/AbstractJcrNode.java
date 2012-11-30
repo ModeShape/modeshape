@@ -1074,7 +1074,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             newChild = mutable().createChild(cache, desiredKey, childName, ptProp);
         }
 
-        //Check if the child node is referenceable
+        // Check if the child node is referenceable
         if (capabilities.getNodeType(childPrimaryNodeTypeName).isNodeType(JcrMixLexicon.REFERENCEABLE)) {
             newChild.setProperty(cache, propFactory.create(JcrLexicon.UUID, session.nodeIdentifier(newChild.getKey())));
         }
