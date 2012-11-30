@@ -38,7 +38,6 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.value.Name;
-import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ValueFormatException;
@@ -47,20 +46,15 @@ import org.modeshape.jcr.value.ValueFormatException;
  * @author Randall Hauch
  * @author John Verhaeg
  */
-public class DecimalValueFactoryTest {
+public class DecimalValueFactoryTest extends BaseValueFactoryTest {
 
-    private NamespaceRegistry registry;
     private DecimalValueFactory factory;
-    private StringValueFactory stringFactory;
 
-    /**
-     * @throws java.lang.Exception
-     */
     @Before
-    public void setUp() throws Exception {
-        registry = new SimpleNamespaceRegistry();
-        stringFactory = new StringValueFactory(registry, Path.URL_DECODER, Path.DEFAULT_ENCODER);
-        factory = new DecimalValueFactory(Path.URL_DECODER, stringFactory);
+    @Override
+    public void beforeEach() {
+        super.beforeEach();
+        factory = new DecimalValueFactory(Path.URL_DECODER, valueFactories);
     }
 
     @Test( expected = ValueFormatException.class )

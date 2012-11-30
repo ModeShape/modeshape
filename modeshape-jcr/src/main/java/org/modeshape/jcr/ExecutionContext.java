@@ -23,11 +23,12 @@
  */
 package org.modeshape.jcr;
 
-import java.security.AccessControlContext;
+import java.math.BigDecimal;
 import java.security.AccessController;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -35,21 +36,46 @@ import java.util.concurrent.TimeUnit;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.text.TextDecoder;
+import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.ThreadPoolFactory;
 import org.modeshape.common.util.ThreadPools;
+import org.modeshape.jcr.query.model.TypeSystem;
 import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.value.BinaryFactory;
+import org.modeshape.jcr.value.DateTimeFactory;
+import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;
+import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
+import org.modeshape.jcr.value.PropertyType;
+import org.modeshape.jcr.value.ReferenceFactory;
+import org.modeshape.jcr.value.StringFactory;
+import org.modeshape.jcr.value.UriFactory;
+import org.modeshape.jcr.value.UuidFactory;
 import org.modeshape.jcr.value.ValueFactories;
+import org.modeshape.jcr.value.ValueFactory;
+import org.modeshape.jcr.value.ValueTypeSystem;
 import org.modeshape.jcr.value.basic.BasicPropertyFactory;
+import org.modeshape.jcr.value.basic.BooleanValueFactory;
+import org.modeshape.jcr.value.basic.DecimalValueFactory;
+import org.modeshape.jcr.value.basic.DoubleValueFactory;
+import org.modeshape.jcr.value.basic.JodaDateTimeValueFactory;
+import org.modeshape.jcr.value.basic.LongValueFactory;
+import org.modeshape.jcr.value.basic.NameValueFactory;
+import org.modeshape.jcr.value.basic.ObjectValueFactory;
+import org.modeshape.jcr.value.basic.PathValueFactory;
+import org.modeshape.jcr.value.basic.ReferenceValueFactory;
 import org.modeshape.jcr.value.basic.SimpleNamespaceRegistry;
-import org.modeshape.jcr.value.basic.StandardValueFactories;
+import org.modeshape.jcr.value.basic.StringValueFactory;
 import org.modeshape.jcr.value.basic.ThreadSafeNamespaceRegistry;
+import org.modeshape.jcr.value.basic.UriValueFactory;
+import org.modeshape.jcr.value.basic.UuidValueFactory;
 import org.modeshape.jcr.value.binary.BinaryStore;
+import org.modeshape.jcr.value.binary.BinaryStoreValueFactory;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
 
 /**
@@ -65,7 +91,7 @@ import org.modeshape.jcr.value.binary.TransientBinaryStore;
  * </p>
  */
 @Immutable
-public class ExecutionContext implements ThreadPoolFactory, Cloneable {
+public final class ExecutionContext implements ThreadPoolFactory, Cloneable, NamespaceRegistry.Holder {
 
     public static final ExecutionContext DEFAULT_CONTEXT = new ExecutionContext();
 
@@ -89,6 +115,25 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
     private final String processId;
     private final Map<String, String> data;
 
+    // This class is implemented with separate members for each factory so that the typical usage is optimized.
+    private final TextDecoder decoder;
+    private final TextEncoder encoder;
+    private final StringFactory stringFactory;
+    private final BinaryFactory binaryFactory;
+    private final ValueFactory<Boolean> booleanFactory;
+    private final DateTimeFactory dateFactory;
+    private final ValueFactory<BigDecimal> decimalFactory;
+    private final ValueFactory<Double> doubleFactory;
+    private final ValueFactory<Long> longFactory;
+    private final NameFactory nameFactory;
+    private final PathFactory pathFactory;
+    private final ReferenceFactory referenceFactory;
+    private final ReferenceFactory weakReferenceFactory;
+    private final UriFactory uriFactory;
+    private final UuidFactory uuidFactory;
+    private final ValueFactory<Object> objectFactory;
+    private final TypeSystem typeSystem;
+
     /**
      * Create an instance of an execution context that uses the {@link AccessController#getContext() current JAAS calling context}
      * , with default implementations for all other components (including default namespaces in the
@@ -96,49 +141,18 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      */
     @SuppressWarnings( "synthetic-access" )
     public ExecutionContext() {
-        this(new NullSecurityContext(), null, null, null, null, null, null, null);
+        this(new NullSecurityContext(), null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+             null, null, null, null, null, null, null);
         initializeDefaultNamespaces(this.getNamespaceRegistry());
         assert securityContext != null;
-
     }
 
-    /**
-     * Create a copy of the supplied execution context.
-     * 
-     * @param original the original
-     * @throws IllegalArgumentException if the original is null
-     */
-    public ExecutionContext( ExecutionContext original ) {
-        CheckArg.isNotNull(original, "original");
-        this.securityContext = original.getSecurityContext();
-        this.namespaceRegistry = original.getNamespaceRegistry();
-        this.valueFactories = original.getValueFactories();
-        this.propertyFactory = original.getPropertyFactory();
-        this.threadPools = original.getThreadPoolFactory();
-        this.data = original.getData();
-        this.processId = original.getProcessId();
-        this.binaryStore = TransientBinaryStore.get();
-    }
-
-    /**
-     * Create a copy of the supplied execution context, but use the supplied {@link AccessControlContext} instead.
-     * 
-     * @param original the original
-     * @param securityContext the security context
-     * @throws IllegalArgumentException if the original or access control context are is null
-     */
-    protected ExecutionContext( ExecutionContext original,
-                                SecurityContext securityContext ) {
-        CheckArg.isNotNull(original, "original");
-        CheckArg.isNotNull(securityContext, "securityContext");
-        this.securityContext = securityContext;
-        this.namespaceRegistry = original.getNamespaceRegistry();
-        this.valueFactories = original.getValueFactories();
-        this.propertyFactory = original.getPropertyFactory();
-        this.threadPools = original.getThreadPoolFactory();
-        this.data = original.getData();
-        this.processId = original.getProcessId();
-        this.binaryStore = original.getBinaryStore();
+    protected ExecutionContext( ExecutionContext context ) {
+        this(context.securityContext, context.namespaceRegistry, context.propertyFactory, context.threadPools,
+             context.binaryStore, context.data, context.processId, context.decoder, context.encoder, context.stringFactory,
+             context.binaryFactory, context.booleanFactory, context.dateFactory, context.decimalFactory, context.doubleFactory,
+             context.longFactory, context.nameFactory, context.pathFactory, context.referenceFactory,
+             context.weakReferenceFactory, context.uriFactory, context.uuidFactory, context.objectFactory);
     }
 
     /**
@@ -147,8 +161,6 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      * @param securityContext the security context, or null if there is no associated authenticated user
      * @param namespaceRegistry the namespace registry implementation, or null if a thread-safe version of
      *        {@link SimpleNamespaceRegistry} instance should be used
-     * @param valueFactories the {@link ValueFactories} implementation, or null if a {@link StandardValueFactories} instance
-     *        should be used
      * @param propertyFactory the {@link PropertyFactory} implementation, or null if a {@link BasicPropertyFactory} instance
      *        should be used
      * @param threadPoolFactory the {@link ThreadPoolFactory} implementation, or null if a {@link ThreadPools} instance should be
@@ -156,26 +168,161 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      * @param binaryStore the {@link BinaryStore} implementation, or null if a default {@link TransientBinaryStore} should be used
      * @param data the custom data for this context, or null if there is no such data
      * @param processId the unique identifier of the process in which this context exists, or null if it should be generated
+     * @param decoder the decoder that should be used; if null, the {@link ValueFactory#DEFAULT_DECODER default decoder} is used.
+     * @param encoder the encoder that should be used; if null, the {@link ValueFactory#DEFAULT_ENCODER default encoder} is used.
+     * @param stringFactory the string factory that should be used; if null, a default implementation will be used
+     * @param binaryFactory the binary factory that should be used; if null, a default implementation will be used
+     * @param booleanFactory the boolean factory that should be used; if null, a default implementation will be used
+     * @param dateFactory the date factory that should be used; if null, a default implementation will be used
+     * @param decimalFactory the decimal factory that should be used; if null, a default implementation will be used
+     * @param doubleFactory the double factory that should be used; if null, a default implementation will be used
+     * @param longFactory the long factory that should be used; if null, a default implementation will be used
+     * @param nameFactory the name factory that should be used; if null, a default implementation will be used
+     * @param pathFactory the path factory that should be used; if null, a default implementation will be used
+     * @param referenceFactory the strong reference factory that should be used; if null, a default implementation will be used
+     * @param weakReferenceFactory the weak reference factory that should be used; if null, a default implementation will be used
+     * @param uriFactory the URI factory that should be used; if null, a default implementation will be used
+     * @param uuidFactory the UUID factory that should be used; if null, a default implementation will be used
+     * @param objectFactory the object factory that should be used; if null, a default implementation will be used
      */
     protected ExecutionContext( SecurityContext securityContext,
                                 NamespaceRegistry namespaceRegistry,
-                                ValueFactories valueFactories,
                                 PropertyFactory propertyFactory,
                                 ThreadPoolFactory threadPoolFactory,
                                 BinaryStore binaryStore,
                                 Map<String, String> data,
-                                String processId ) {
+                                String processId,
+                                TextDecoder decoder,
+                                TextEncoder encoder,
+                                StringFactory stringFactory,
+                                BinaryFactory binaryFactory,
+                                ValueFactory<Boolean> booleanFactory,
+                                DateTimeFactory dateFactory,
+                                ValueFactory<BigDecimal> decimalFactory,
+                                ValueFactory<Double> doubleFactory,
+                                ValueFactory<Long> longFactory,
+                                NameFactory nameFactory,
+                                PathFactory pathFactory,
+                                ReferenceFactory referenceFactory,
+                                ReferenceFactory weakReferenceFactory,
+                                UriFactory uriFactory,
+                                UuidFactory uuidFactory,
+                                ValueFactory<Object> objectFactory ) {
         assert securityContext != null;
         this.securityContext = securityContext;
+
         if (binaryStore == null) binaryStore = TransientBinaryStore.get();
+        if (namespaceRegistry == null) namespaceRegistry = new ThreadSafeNamespaceRegistry(new SimpleNamespaceRegistry());
+        if (threadPoolFactory == null) threadPoolFactory = new ThreadPools();
+        if (data == null) data = Collections.<String, String>emptyMap();
+        if (processId == null) processId = UUID.randomUUID().toString();
+        if (decoder == null) decoder = ValueFactory.DEFAULT_DECODER;
+        if (encoder == null) encoder = ValueFactory.DEFAULT_ENCODER;
+
+        // First assign the non-factory members ...
         this.binaryStore = binaryStore;
-        this.namespaceRegistry = namespaceRegistry != null ? namespaceRegistry : new ThreadSafeNamespaceRegistry(
-                                                                                                                 new SimpleNamespaceRegistry());
-        this.valueFactories = valueFactories == null ? new StandardValueFactories(this.namespaceRegistry, binaryStore) : valueFactories;
-        this.propertyFactory = propertyFactory == null ? new BasicPropertyFactory(this.valueFactories) : propertyFactory;
-        this.threadPools = threadPoolFactory == null ? new ThreadPools() : threadPoolFactory;
-        this.data = data != null ? data : Collections.<String, String>emptyMap();
-        this.processId = processId != null ? processId : UUID.randomUUID().toString();
+        this.namespaceRegistry = namespaceRegistry;
+        this.threadPools = threadPoolFactory;
+        this.data = data;
+        this.processId = processId;
+        this.decoder = decoder;
+        this.encoder = encoder;
+        this.valueFactories = new ContextFactories();
+
+        // Create default factories if needed, or obtain new instances that use our ValueFactories (and
+        // NamespaceRegistry.Holder) instances ...
+        if (stringFactory == null) {
+            stringFactory = new StringValueFactory(this, decoder, encoder);
+        } else {
+            stringFactory = stringFactory.with(valueFactories).with(this);
+        }
+        if (binaryFactory == null) {
+            // The binary factory should NOT use the string factory that converts namespaces to prefixes ...
+            StringValueFactory stringFactoryWithoutNamespaces = new StringValueFactory(decoder, encoder);
+            binaryFactory = new BinaryStoreValueFactory(this.binaryStore, decoder, valueFactories, stringFactoryWithoutNamespaces);
+        } else {
+            binaryFactory = binaryFactory.with(binaryStore).with(valueFactories);
+        }
+        if (booleanFactory == null) {
+            booleanFactory = new BooleanValueFactory(decoder, valueFactories);
+        } else {
+            booleanFactory = booleanFactory.with(valueFactories);
+        }
+        if (dateFactory == null) {
+            dateFactory = new JodaDateTimeValueFactory(decoder, valueFactories);
+        } else {
+            dateFactory = dateFactory.with(valueFactories);
+        }
+        if (decimalFactory == null) {
+            decimalFactory = new DecimalValueFactory(decoder, valueFactories);
+        } else {
+            decimalFactory = decimalFactory.with(valueFactories);
+        }
+        if (doubleFactory == null) {
+            doubleFactory = new DoubleValueFactory(decoder, valueFactories);
+        } else {
+            doubleFactory = doubleFactory.with(valueFactories);
+        }
+        if (longFactory == null) {
+            longFactory = new LongValueFactory(decoder, valueFactories);
+        } else {
+            longFactory = longFactory.with(valueFactories);
+        }
+        if (nameFactory == null) {
+            nameFactory = new NameValueFactory(this, decoder, valueFactories);
+        } else {
+            nameFactory = nameFactory.with(valueFactories).with(this);
+        }
+        if (pathFactory == null) {
+            pathFactory = new PathValueFactory(decoder, valueFactories);
+        } else {
+            pathFactory = pathFactory.with(valueFactories);
+        }
+        if (referenceFactory == null) {
+            referenceFactory = new ReferenceValueFactory(decoder, valueFactories, false);
+        } else {
+            referenceFactory = referenceFactory.with(valueFactories);
+        }
+        if (weakReferenceFactory == null) {
+            weakReferenceFactory = new ReferenceValueFactory(decoder, valueFactories, true);
+        } else {
+            weakReferenceFactory = weakReferenceFactory.with(valueFactories);
+        }
+        if (uuidFactory == null) {
+            uuidFactory = new UuidValueFactory(decoder, valueFactories);
+        } else {
+            uuidFactory = uuidFactory.with(valueFactories);
+        }
+        if (uriFactory == null) {
+            uriFactory = new UriValueFactory(this, decoder, valueFactories);
+        } else {
+            uriFactory = uriFactory.with(valueFactories).with(this);
+        }
+        if (objectFactory == null) {
+            objectFactory = new ObjectValueFactory(decoder, valueFactories);
+        } else {
+            objectFactory = objectFactory.with(valueFactories);
+        }
+
+        // Now assign the factory members ...
+        this.stringFactory = stringFactory;
+        this.binaryFactory = binaryFactory;
+        this.booleanFactory = booleanFactory;
+        this.dateFactory = dateFactory;
+        this.decimalFactory = decimalFactory;
+        this.doubleFactory = doubleFactory;
+        this.longFactory = longFactory;
+        this.nameFactory = nameFactory;
+        this.pathFactory = pathFactory;
+        this.referenceFactory = referenceFactory;
+        this.weakReferenceFactory = weakReferenceFactory;
+        this.uuidFactory = uuidFactory;
+        this.uriFactory = uriFactory;
+        this.objectFactory = objectFactory;
+
+        // Assign the things that depend on a ValueFactories implementation ...
+        this.typeSystem = new ValueTypeSystem(valueFactories);
+        this.propertyFactory = propertyFactory == null ? new BasicPropertyFactory(valueFactories) : propertyFactory;
     }
 
     protected ThreadPoolFactory getThreadPoolFactory() {
@@ -214,7 +361,7 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      * @return the security context; never <code>null</code>
      */
     public SecurityContext getSecurityContext() {
-        return this.securityContext;
+        return securityContext;
     }
 
     /**
@@ -222,8 +369,9 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      * 
      * @return the namespace registry; never <code>null</code>
      */
+    @Override
     public NamespaceRegistry getNamespaceRegistry() {
-        return this.namespaceRegistry;
+        return namespaceRegistry;
     }
 
     /**
@@ -232,7 +380,7 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      * @return the property factory; never <code>null</code>
      */
     public final PropertyFactory getPropertyFactory() {
-        return this.propertyFactory;
+        return propertyFactory;
     }
 
     /**
@@ -241,7 +389,7 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      * @return the property value factory; never null
      */
     public ValueFactories getValueFactories() {
-        return this.valueFactories;
+        return valueFactories;
     }
 
     /**
@@ -316,9 +464,10 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      *         never null
      */
     public ExecutionContext with( BinaryStore binaryStore ) {
-        if (binaryStore == null) binaryStore = TransientBinaryStore.get();
-        return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), valueFactories, getPropertyFactory(),
-                                    getThreadPoolFactory(), binaryStore, getData(), getProcessId());
+        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
+                                    processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
+                                    decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
+                                    weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
     }
 
     /**
@@ -331,10 +480,10 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      *         null
      */
     public ExecutionContext with( NamespaceRegistry namespaceRegistry ) {
-        // Don't supply the value factories or property factories, since they'll have to be recreated
-        // to reference the supplied namespace registry ...
-        return new ExecutionContext(getSecurityContext(), namespaceRegistry, null, getPropertyFactory(), getThreadPoolFactory(),
-                                    getBinaryStore(), getData(), getProcessId());
+        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
+                                    processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
+                                    decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
+                                    weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
     }
 
     /**
@@ -346,8 +495,10 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      *         factory implementation; never null
      */
     public ExecutionContext with( ThreadPoolFactory threadPoolFactory ) {
-        return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    threadPoolFactory, getBinaryStore(), getData(), getProcessId());
+        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPoolFactory, binaryStore, data,
+                                    processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
+                                    decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
+                                    weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
     }
 
     /**
@@ -358,8 +509,10 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      *         implementation; never null
      */
     public ExecutionContext with( PropertyFactory propertyFactory ) {
-        return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), propertyFactory,
-                                    getThreadPoolFactory(), getBinaryStore(), getData(), getProcessId());
+        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
+                                    processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
+                                    decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
+                                    weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
     }
 
     /**
@@ -372,7 +525,10 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      * @throws IllegalArgumentException if the <code>name</code> is null
      */
     public ExecutionContext with( SecurityContext securityContext ) {
-        return new ExecutionContext(this, securityContext);
+        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
+                                    processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
+                                    decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
+                                    weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
     }
 
     /**
@@ -386,14 +542,16 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      */
     public ExecutionContext with( Map<String, String> data ) {
         Map<String, String> newData = data;
-        if (data == null) {
+        if (newData == null) {
             if (this.data.isEmpty()) return this;
         } else {
             // Copy the data in the map ...
             newData = Collections.unmodifiableMap(new HashMap<String, String>(data));
         }
-        return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getThreadPoolFactory(), getBinaryStore(), newData, getProcessId());
+        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, newData,
+                                    processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
+                                    decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
+                                    weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
     }
 
     /**
@@ -424,8 +582,10 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
             newData.put(key, value);
             newData = Collections.unmodifiableMap(newData);
         }
-        return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getThreadPoolFactory(), getBinaryStore(), newData, getProcessId());
+        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, newData,
+                                    processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
+                                    decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
+                                    weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
     }
 
     /**
@@ -437,25 +597,17 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
      * @since 2.1
      */
     public ExecutionContext with( String processId ) {
-        return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getThreadPoolFactory(), getBinaryStore(), getData(), processId);
+        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
+                                    processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
+                                    decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
+                                    weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#clone()
-     */
     @Override
     public ExecutionContext clone() {
         return new ExecutionContext(this);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("Execution context for ");
@@ -500,6 +652,173 @@ public class ExecutionContext implements ThreadPoolFactory, Cloneable {
 
         @Override
         public void logout() {
+        }
+
+    }
+
+    @SuppressWarnings( "synthetic-access" )
+    protected final class ContextFactories implements ValueFactories {
+
+        @Override
+        public TypeSystem getTypeSystem() {
+            return typeSystem;
+        }
+
+        /**
+         * @return namespaceRegistry
+         */
+        public NamespaceRegistry getNamespaceRegistry() {
+            return namespaceRegistry;
+        }
+
+        @Override
+        public BinaryFactory getBinaryFactory() {
+            return binaryFactory;
+        }
+
+        @Override
+        public ValueFactory<Boolean> getBooleanFactory() {
+            return booleanFactory;
+        }
+
+        @Override
+        public DateTimeFactory getDateFactory() {
+            return dateFactory;
+        }
+
+        @Override
+        public ValueFactory<BigDecimal> getDecimalFactory() {
+            return decimalFactory;
+        }
+
+        @Override
+        public ValueFactory<Double> getDoubleFactory() {
+            return doubleFactory;
+        }
+
+        @Override
+        public ValueFactory<Long> getLongFactory() {
+            return longFactory;
+        }
+
+        @Override
+        public NameFactory getNameFactory() {
+            return nameFactory;
+        }
+
+        @Override
+        public PathFactory getPathFactory() {
+            return pathFactory;
+        }
+
+        @Override
+        public ReferenceFactory getReferenceFactory() {
+            return referenceFactory;
+        }
+
+        @Override
+        public ReferenceFactory getWeakReferenceFactory() {
+            return weakReferenceFactory;
+        }
+
+        @Override
+        public StringFactory getStringFactory() {
+            return stringFactory;
+        }
+
+        @Override
+        public UriFactory getUriFactory() {
+            return uriFactory;
+        }
+
+        @Override
+        public UuidFactory getUuidFactory() {
+            return uuidFactory;
+        }
+
+        @Override
+        public ValueFactory<Object> getObjectFactory() {
+            return objectFactory;
+        }
+
+        /**
+         * <p>
+         * {@inheritDoc}
+         * </p>
+         * <p>
+         * This implementation always iterates over the instances return by the <code>get*Factory()</code> methods.
+         * </p>
+         */
+        @Override
+        public Iterator<ValueFactory<?>> iterator() {
+            return new ValueFactoryIterator();
+        }
+
+        @Override
+        public ValueFactory<?> getValueFactory( PropertyType type ) {
+            CheckArg.isNotNull(type, "type");
+            switch (type) {
+                case BINARY:
+                    return getBinaryFactory();
+                case BOOLEAN:
+                    return getBooleanFactory();
+                case DATE:
+                    return getDateFactory();
+                case DECIMAL:
+                    return getDecimalFactory();
+                case DOUBLE:
+                    return getDoubleFactory();
+                case LONG:
+                    return getLongFactory();
+                case NAME:
+                    return getNameFactory();
+                case PATH:
+                    return getPathFactory();
+                case REFERENCE:
+                    return getReferenceFactory();
+                case WEAKREFERENCE:
+                    return getWeakReferenceFactory();
+                case STRING:
+                    return getStringFactory();
+                case URI:
+                    return getUriFactory();
+                case UUID:
+                    return getUuidFactory();
+                case OBJECT:
+                    return getObjectFactory();
+            }
+            return getObjectFactory();
+        }
+
+        @Override
+        public ValueFactory<?> getValueFactory( Object prototype ) {
+            CheckArg.isNotNull(prototype, "prototype");
+            PropertyType inferredType = PropertyType.discoverType(prototype);
+            assert inferredType != null;
+            return getValueFactory(inferredType);
+        }
+
+        protected class ValueFactoryIterator implements Iterator<ValueFactory<?>> {
+            private final Iterator<PropertyType> propertyTypeIter = PropertyType.iterator();
+
+            protected ValueFactoryIterator() {
+            }
+
+            @Override
+            public boolean hasNext() {
+                return propertyTypeIter.hasNext();
+            }
+
+            @Override
+            public ValueFactory<?> next() {
+                PropertyType nextType = propertyTypeIter.next();
+                return getValueFactory(nextType);
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
         }
 
     }

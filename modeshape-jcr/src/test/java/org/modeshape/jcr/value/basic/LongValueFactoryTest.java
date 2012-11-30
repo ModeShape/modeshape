@@ -45,18 +45,15 @@ import org.modeshape.jcr.value.ValueFormatException;
  * @author Randall Hauch
  * @author John Verhaeg
  */
-public class LongValueFactoryTest {
+public class LongValueFactoryTest extends BaseValueFactoryTest {
 
     private LongValueFactory factory;
-    private StringValueFactory stringFactory;
 
-    /**
-     * @throws java.lang.Exception
-     */
     @Before
-    public void setUp() throws Exception {
-        stringFactory = new StringValueFactory(new SimpleNamespaceRegistry(), Path.URL_DECODER, Path.URL_ENCODER);
-        factory = new LongValueFactory(Path.URL_DECODER, stringFactory);
+    @Override
+    public void beforeEach() {
+        super.beforeEach();
+        factory = new LongValueFactory(Path.URL_DECODER, valueFactories);
     }
 
     @Test( expected = ValueFormatException.class )

@@ -33,6 +33,9 @@ import org.modeshape.common.text.TextDecoder;
 @ThreadSafe
 public interface PathFactory extends ValueFactory<Path> {
 
+    @Override
+    PathFactory with( ValueFactories valueFactories );
+
     /**
      * Create an absolute root path. Subsequent calls will always return the same instance.
      * 

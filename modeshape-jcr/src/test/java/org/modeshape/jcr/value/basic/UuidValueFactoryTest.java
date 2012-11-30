@@ -45,19 +45,16 @@ import org.modeshape.jcr.value.ValueFormatException;
  * @author Randall Hauch
  * @author John Verhaeg
  */
-public class UuidValueFactoryTest {
+public class UuidValueFactoryTest extends BaseValueFactoryTest {
 
     private UuidValueFactory factory;
-    private StringValueFactory stringFactory;
     private UUID uuid;
 
-    /**
-     * @throws java.lang.Exception
-     */
     @Before
-    public void setUp() throws Exception {
-        stringFactory = new StringValueFactory(new SimpleNamespaceRegistry(), Path.URL_DECODER, Path.URL_ENCODER);
-        factory = new UuidValueFactory(Path.URL_DECODER, stringFactory);
+    @Override
+    public void beforeEach() {
+        super.beforeEach();
+        factory = new UuidValueFactory(Path.URL_DECODER, valueFactories);
         uuid = UUID.randomUUID();
     }
 

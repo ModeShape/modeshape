@@ -33,6 +33,10 @@ import org.modeshape.common.annotation.ThreadSafe;
 @ThreadSafe
 public interface NamespaceRegistry {
 
+    public static interface Holder {
+        NamespaceRegistry getNamespaceRegistry();
+    }
+
     /**
      * Return the namespace URI that is currently mapped to the empty prefix, or null if there is no current default namespace.
      * 

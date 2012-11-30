@@ -40,6 +40,7 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.ValueFormatException;
 
@@ -49,9 +50,21 @@ import org.modeshape.jcr.value.ValueFormatException;
 @Immutable
 public class LongValueFactory extends AbstractValueFactory<Long> {
 
+    /**
+     * Create a new instance.
+     * 
+     * @param decoder the text decoder; may be null if the default decoder should be used
+     * @param factories the set of value factories, used to obtain the {@link ValueFactories#getStringFactory() string value
+     *        factory}; may not be null
+     */
     public LongValueFactory( TextDecoder decoder,
-                             ValueFactory<String> stringValueFactory ) {
-        super(PropertyType.LONG, decoder, stringValueFactory);
+                             ValueFactories factories ) {
+        super(PropertyType.LONG, decoder, factories);
+    }
+
+    @Override
+    public ValueFactory<Long> with( ValueFactories valueFactories ) {
+        return super.valueFactories == valueFactories ? this : new LongValueFactory(super.getDecoder(), valueFactories);
     }
 
     @Override

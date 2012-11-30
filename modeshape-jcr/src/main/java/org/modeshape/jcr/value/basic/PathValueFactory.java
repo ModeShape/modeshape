@@ -48,6 +48,7 @@ import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.ValueFormatException;
 
@@ -79,21 +80,28 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
      */
     protected static final Pattern SEGMENT_PATTERN = Pattern.compile("([^:/]+)(:([^/\\[\\]]+))?(\\[(\\d+)])?");
 
-    private final ValueFactory<Name> nameValueFactory;
-
+    /**
+     * Create a new instance.
+     * 
+     * @param decoder the text decoder; may be null if the default decoder should be used
+     * @param factories the set of value factories, used to obtain the {@link ValueFactories#getStringFactory() string value
+     *        factory}; may not be null
+     */
     public PathValueFactory( TextDecoder decoder,
-                             ValueFactory<String> stringValueFactory,
-                             ValueFactory<Name> nameValueFactory ) {
-        super(PropertyType.PATH, decoder, stringValueFactory);
-        CheckArg.isNotNull(nameValueFactory, "nameValueFactory");
-        this.nameValueFactory = nameValueFactory;
+                             ValueFactories factories ) {
+        super(PropertyType.PATH, decoder, factories);
+    }
+
+    @Override
+    public PathFactory with( ValueFactories valueFactories ) {
+        return super.valueFactories == valueFactories ? this : new PathValueFactory(super.getDecoder(), valueFactories);
     }
 
     /**
      * @return nameValueFactory
      */
-    protected ValueFactory<Name> getNameValueFactory() {
-        return this.nameValueFactory;
+    protected final ValueFactory<Name> getNameValueFactory() {
+        return valueFactories.getNameFactory();
     }
 
     @Override
@@ -129,7 +137,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
             // This is an identifier path, so read the identifier ...
             String id = trimmedValue.substring(1, length - 1);
             // And create a name and segment ...
-            Name idName = this.nameValueFactory.create(id);
+            Name idName = getNameValueFactory().create(id);
             return new IdentifierPath(new IdentifierPathSegment(idName));
         }
 
@@ -291,7 +299,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         } catch (IllegalArgumentException e) {
             throw new ValueFormatException(value, getPropertyType(),
                                            GraphI18n.errorConvertingType.text(Name.class.getSimpleName(),
-                                                                              Path.class.getSimpleName(), value), e);
+                                                                              Path.class.getSimpleName(),
+                                                                              value), e);
         }
     }
 
@@ -445,7 +454,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     public Path create( Path parentPath,
                         String segmentName,
                         int index ) {
-        return create(parentPath, nameValueFactory.create(segmentName), index);
+        return create(parentPath, getNameValueFactory().create(segmentName), index);
     }
 
     @Override
@@ -595,7 +604,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         if (Path.PARENT.equals(segmentName)) return Path.PARENT_SEGMENT;
         int startBracketNdx = segmentName.lastIndexOf('[');
         if (startBracketNdx < 0) {
-            return new BasicPathSegment(this.nameValueFactory.create(segmentName, decoder));
+            return new BasicPathSegment(getNameValueFactory().create(segmentName, decoder));
         }
         int endBracketNdx = segmentName.lastIndexOf(']', segmentName.length() - 1);
         if (endBracketNdx < 0) {
@@ -603,12 +612,12 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         }
         if (startBracketNdx == 0 && endBracketNdx == (segmentName.length() - 1)) {
             // This is an identifier segment ...
-            Name id = this.nameValueFactory.create(segmentName.substring(1, endBracketNdx));
+            Name id = getNameValueFactory().create(segmentName.substring(1, endBracketNdx));
             return new IdentifierPathSegment(id);
         }
         String ndx = segmentName.substring(startBracketNdx + 1, endBracketNdx);
         try {
-            return new BasicPathSegment(this.nameValueFactory.create(segmentName.substring(0, startBracketNdx), decoder),
+            return new BasicPathSegment(getNameValueFactory().create(segmentName.substring(0, startBracketNdx), decoder),
                                         Integer.parseInt(ndx));
         } catch (NumberFormatException err) {
             throw new ValueFormatException(segmentName, getPropertyType(), GraphI18n.invalidIndexInSegmentName.text(ndx,
@@ -622,7 +631,7 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         CheckArg.isNotNull(segmentName, "segment name");
         if (Path.SELF.equals(segmentName)) return Path.SELF_SEGMENT;
         if (Path.PARENT.equals(segmentName)) return Path.PARENT_SEGMENT;
-        return new BasicPathSegment(this.nameValueFactory.create(segmentName), index);
+        return new BasicPathSegment(getNameValueFactory().create(segmentName), index);
     }
 
     @Override

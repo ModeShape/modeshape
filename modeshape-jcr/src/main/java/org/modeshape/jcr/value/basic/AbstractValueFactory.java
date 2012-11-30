@@ -42,6 +42,7 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.ValueFormatException;
 
@@ -55,22 +56,22 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
 
     private final TextDecoder decoder;
     private final PropertyType propertyType;
-    private final ValueFactory<String> stringValueFactory;
+    protected final ValueFactories valueFactories;
 
     protected AbstractValueFactory( PropertyType type,
                                     TextDecoder decoder,
-                                    ValueFactory<String> stringValueFactory ) {
+                                    ValueFactories valueFactories ) {
         CheckArg.isNotNull(type, "type");
         this.propertyType = type;
         this.decoder = decoder != null ? decoder : DEFAULT_DECODER;
-        this.stringValueFactory = stringValueFactory;
+        this.valueFactories = valueFactories;
     }
 
     /**
      * @return stringValueFactory
      */
     protected ValueFactory<String> getStringValueFactory() {
-        return this.stringValueFactory;
+        return valueFactories.getStringFactory();
     }
 
     /**

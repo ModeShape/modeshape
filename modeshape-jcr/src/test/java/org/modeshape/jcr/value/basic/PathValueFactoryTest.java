@@ -34,30 +34,25 @@ import org.junit.Test;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
-import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.ValueFormatException;
 
 /**
  * @author Randall Hauch
  */
-public class PathValueFactoryTest {
+public class PathValueFactoryTest extends BaseValueFactoryTest {
 
     public static final TextEncoder NO_OP_ENCODER = Path.NO_OP_ENCODER;
 
-    private SimpleNamespaceRegistry registry;
-    private ValueFactory<String> stringValueFactory;
-    private NameValueFactory nameFactory;
     private PathValueFactory factory;
     private Path path;
     private Path path2;
 
     @Before
+    @Override
     public void beforeEach() {
-        this.registry = new SimpleNamespaceRegistry();
+        super.beforeEach();
         this.registry.register("dna", "http://www.modeshape.org/namespace");
-        this.stringValueFactory = new StringValueFactory(registry, Path.DEFAULT_DECODER, Path.DEFAULT_ENCODER);
-        this.nameFactory = new NameValueFactory(registry, Path.DEFAULT_DECODER, stringValueFactory);
-        this.factory = new PathValueFactory(Path.DEFAULT_DECODER, stringValueFactory, nameFactory);
+        this.factory = new PathValueFactory(Path.DEFAULT_DECODER, valueFactories);
     }
 
     protected List<Path.Segment> getSegments( String... segments ) {

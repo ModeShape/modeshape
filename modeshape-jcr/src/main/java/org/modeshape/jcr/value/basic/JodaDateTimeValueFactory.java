@@ -42,6 +42,7 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.ValueFormatException;
 
@@ -51,9 +52,21 @@ import org.modeshape.jcr.value.ValueFormatException;
 @Immutable
 public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> implements DateTimeFactory {
 
+    /**
+     * Create a new instance.
+     * 
+     * @param decoder the text decoder; may be null if the default decoder should be used
+     * @param factories the set of value factories, used to obtain the {@link ValueFactories#getStringFactory() string value
+     *        factory}; may not be null
+     */
     public JodaDateTimeValueFactory( TextDecoder decoder,
-                                     ValueFactory<String> stringValueFactory ) {
-        super(PropertyType.DATE, decoder, stringValueFactory);
+                                     ValueFactories factories ) {
+        super(PropertyType.DATE, decoder, factories);
+    }
+
+    @Override
+    public DateTimeFactory with( ValueFactories valueFactories ) {
+        return super.valueFactories == valueFactories ? this : new JodaDateTimeValueFactory(super.getDecoder(), valueFactories);
     }
 
     @Override

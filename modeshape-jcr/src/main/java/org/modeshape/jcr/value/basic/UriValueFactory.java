@@ -40,9 +40,12 @@ import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.IoException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
+import org.modeshape.jcr.value.NamespaceRegistry.Holder;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.UriFactory;
+import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.ValueFormatException;
 
@@ -50,16 +53,37 @@ import org.modeshape.jcr.value.ValueFormatException;
  * The standard {@link ValueFactory} for {@link PropertyType#URI} values.
  */
 @Immutable
-public class UriValueFactory extends AbstractValueFactory<URI> {
+public class UriValueFactory extends AbstractValueFactory<URI> implements UriFactory {
 
-    private final NamespaceRegistry namespaceRegistry;
+    private final NamespaceRegistry.Holder namespaceRegistryHolder;
 
-    public UriValueFactory( NamespaceRegistry namespaceRegistry,
+    /**
+     * Create a new instance.
+     * 
+     * @param namespaceRegistryHolder the holder of the namespace registry; may not be null
+     * @param decoder the text decoder; may be null if the default decoder should be used
+     * @param factories the set of value factories, used to obtain the {@link ValueFactories#getStringFactory() string value
+     *        factory}; may not be null
+     */
+    public UriValueFactory( NamespaceRegistry.Holder namespaceRegistryHolder,
                             TextDecoder decoder,
-                            ValueFactory<String> stringValueFactory ) {
-        super(PropertyType.URI, decoder, stringValueFactory);
-        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
-        this.namespaceRegistry = namespaceRegistry;
+                            ValueFactories factories ) {
+        super(PropertyType.URI, decoder, factories);
+        CheckArg.isNotNull(namespaceRegistryHolder, "namespaceRegistryHolder");
+        this.namespaceRegistryHolder = namespaceRegistryHolder;
+    }
+
+    @Override
+    public UriFactory with( ValueFactories valueFactories ) {
+        return super.valueFactories == valueFactories ? this : new UriValueFactory(namespaceRegistryHolder, super.getDecoder(),
+                                                                                   valueFactories);
+    }
+
+    @Override
+    public UriFactory with( Holder namespaceRegistryHolder ) {
+        return this.namespaceRegistryHolder == namespaceRegistryHolder ? this : new UriValueFactory(namespaceRegistryHolder,
+                                                                                                    super.getDecoder(),
+                                                                                                    valueFactories);
     }
 
     @Override
@@ -153,22 +177,22 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
     @Override
     public URI create( Name value ) {
         if (value == null) return null;
-        return create("./" + value.getString(this.namespaceRegistry));
+        return create("./" + value.getString(namespaceRegistryHolder.getNamespaceRegistry()));
     }
 
     @Override
     public URI create( Path value ) {
         if (value == null) return null;
         if (value.isAbsolute()) {
-            return create("/" + value.getString(this.namespaceRegistry));
+            return create("/" + value.getString(namespaceRegistryHolder.getNamespaceRegistry()));
         }
-        return create("./" + value.getString(this.namespaceRegistry));
+        return create("./" + value.getString(namespaceRegistryHolder.getNamespaceRegistry()));
     }
 
     @Override
     public URI create( Path.Segment value ) {
         if (value == null) return null;
-        return create("./" + value.getString(this.namespaceRegistry));
+        return create("./" + value.getString(namespaceRegistryHolder.getNamespaceRegistry()));
     }
 
     @Override

@@ -33,7 +33,12 @@ import org.modeshape.jcr.cache.NodeKey;
 @ThreadSafe
 public interface ReferenceFactory extends ValueFactory<Reference> {
 
-    Reference create( NodeKey value, boolean foreign ) throws ValueFormatException;
+    @Override
+    ReferenceFactory with( ValueFactories valueFactories );
 
-    Reference[] create( NodeKey[] value, boolean foreign ) throws ValueFormatException;
+    Reference create( NodeKey value,
+                      boolean foreign ) throws ValueFormatException;
+
+    Reference[] create( NodeKey[] value,
+                        boolean foreign ) throws ValueFormatException;
 }

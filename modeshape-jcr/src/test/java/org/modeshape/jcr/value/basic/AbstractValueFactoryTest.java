@@ -46,12 +46,10 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.ValueFormatException;
 
-/**
- * @author Randall Hauch
- */
 public class AbstractValueFactoryTest {
 
     public static final TextDecoder CUSTOM_DECODER = new NoOpEncoder();
@@ -59,8 +57,13 @@ public class AbstractValueFactoryTest {
     private static class MockFactory extends AbstractValueFactory<String> {
 
         protected MockFactory( TextDecoder decoder,
-                               StringValueFactory stringValueFactory ) {
-            super(PropertyType.STRING, decoder, stringValueFactory);
+                               ValueFactories valueFactories ) {
+            super(PropertyType.STRING, decoder, valueFactories);
+        }
+
+        @Override
+        public ValueFactory<String> with( ValueFactories valueFactories ) {
+            return new MockFactory(getDecoder(), valueFactories);
         }
 
         @Override
@@ -214,7 +217,9 @@ public class AbstractValueFactoryTest {
 
     @Test
     public void shouldHaveNullStringValueFactoryIfNullPassedIntoConstructor() {
-        assertThat(factory.getStringValueFactory(), is(nullValue()));
+        if (factory.getPropertyType() != PropertyType.STRING) {
+            assertThat(factory.getStringValueFactory(), is(nullValue()));
+        }
     }
 
     @Test

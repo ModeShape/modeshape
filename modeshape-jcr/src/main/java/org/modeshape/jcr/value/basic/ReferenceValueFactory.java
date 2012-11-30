@@ -41,6 +41,7 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ReferenceFactory;
+import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.ValueFormatException;
 
@@ -52,11 +53,24 @@ public class ReferenceValueFactory extends AbstractValueFactory<Reference> imple
 
     private final boolean weak;
 
+    /**
+     * Create a new instance.
+     * 
+     * @param decoder the text decoder; may be null if the default decoder should be used
+     * @param factories the set of value factories, used to obtain the {@link ValueFactories#getStringFactory() string value
+     *        factory}; may not be null
+     * @param weak true if this factory should create weak references, or false if it should create strong references
+     */
     public ReferenceValueFactory( TextDecoder decoder,
-                                  ValueFactory<String> stringValueFactory,
+                                  ValueFactories factories,
                                   boolean weak ) {
-        super(weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE, decoder, stringValueFactory);
+        super(weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE, decoder, factories);
         this.weak = weak;
+    }
+
+    @Override
+    public ReferenceFactory with( ValueFactories valueFactories ) {
+        return super.valueFactories == valueFactories ? this : new ReferenceValueFactory(super.getDecoder(), valueFactories, weak);
     }
 
     @Override

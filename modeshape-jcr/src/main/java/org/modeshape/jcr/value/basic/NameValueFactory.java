@@ -46,6 +46,7 @@ import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
+import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.ValueFormatException;
 
@@ -66,14 +67,35 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     private static Name BLANK_NAME;
     private static Name ANY_NAME;
 
-    private final NamespaceRegistry namespaceRegistry;
+    private final NamespaceRegistry.Holder namespaceRegistryHolder;
 
-    public NameValueFactory( NamespaceRegistry namespaceRegistry,
+    /**
+     * Create a new instance.
+     * 
+     * @param namespaceRegistryHolder the holder of the namespace registry; may not be null
+     * @param decoder the text decoder; may be null if the default decoder should be used
+     * @param factories the set of value factories, used to obtain the {@link ValueFactories#getStringFactory() string value
+     *        factory}; may not be null
+     */
+    public NameValueFactory( NamespaceRegistry.Holder namespaceRegistryHolder,
                              TextDecoder decoder,
-                             ValueFactory<String> stringValueFactory ) {
-        super(PropertyType.NAME, decoder, stringValueFactory);
-        CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
-        this.namespaceRegistry = namespaceRegistry;
+                             ValueFactories factories ) {
+        super(PropertyType.NAME, decoder, factories);
+        CheckArg.isNotNull(namespaceRegistryHolder, "namespaceRegistryHolder");
+        this.namespaceRegistryHolder = namespaceRegistryHolder;
+    }
+
+    @Override
+    public NameFactory with( ValueFactories valueFactories ) {
+        return super.valueFactories == valueFactories ? this : new NameValueFactory(namespaceRegistryHolder, super.getDecoder(),
+                                                                                    valueFactories);
+    }
+
+    @Override
+    public NameFactory with( org.modeshape.jcr.value.NamespaceRegistry.Holder namespaceRegistryHolder ) {
+        return this.namespaceRegistryHolder == namespaceRegistryHolder ? this : new NameValueFactory(namespaceRegistryHolder,
+                                                                                                     super.getDecoder(),
+                                                                                                     valueFactories);
     }
 
     @Override
@@ -106,7 +128,7 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
                     prefix = prefix == null ? "" : decoder.decode(prefix);
                     localName = decoder.decode(localName);
                     // Look for a namespace match ...
-                    String namespaceUri = this.namespaceRegistry.getNamespaceForPrefix(prefix);
+                    String namespaceUri = this.namespaceRegistryHolder.getNamespaceRegistry().getNamespaceForPrefix(prefix);
                     // Fail if no namespace is found ...
                     if (namespaceUri == null) {
                         throw new NamespaceException(GraphI18n.noNamespaceRegisteredForPrefix.text(prefix));
@@ -307,7 +329,7 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
 
     @Override
     public NamespaceRegistry getNamespaceRegistry() {
-        return namespaceRegistry;
+        return namespaceRegistryHolder.getNamespaceRegistry();
     }
 
     @Override

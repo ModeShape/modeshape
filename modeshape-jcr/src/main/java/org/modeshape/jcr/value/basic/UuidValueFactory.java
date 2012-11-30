@@ -41,6 +41,7 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.UuidFactory;
+import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.ValueFormatException;
 
@@ -50,9 +51,21 @@ import org.modeshape.jcr.value.ValueFormatException;
 @Immutable
 public class UuidValueFactory extends AbstractValueFactory<UUID> implements UuidFactory {
 
+    /**
+     * Create a new instance.
+     * 
+     * @param decoder the text decoder; may be null if the default decoder should be used
+     * @param factories the set of value factories, used to obtain the {@link ValueFactories#getStringFactory() string value
+     *        factory}; may not be null
+     */
     public UuidValueFactory( TextDecoder decoder,
-                             ValueFactory<String> stringValueFactory ) {
-        super(PropertyType.UUID, decoder, stringValueFactory);
+                             ValueFactories factories ) {
+        super(PropertyType.UUID, decoder, factories);
+    }
+
+    @Override
+    public UuidFactory with( ValueFactories valueFactories ) {
+        return super.valueFactories == valueFactories ? this : new UuidValueFactory(super.getDecoder(), valueFactories);
     }
 
     @Override

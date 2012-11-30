@@ -32,33 +32,27 @@ import org.modeshape.common.text.Jsr283Encoder;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.value.Name;
-import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
-import org.modeshape.jcr.value.ValueFactory;
 
 /**
  * @author Randall Hauch
  */
-public class BasicPathSegmentTest {
+public class BasicPathSegmentTest extends BaseValueFactoryTest {
 
     public static final TextEncoder NO_OP_ENCODER = Path.NO_OP_ENCODER;
 
-    private NamespaceRegistry registry;
-    private ValueFactory<String> stringValueFactory;
-    private NameValueFactory nameFactory;
     private PathValueFactory factory;
     private Name validName;
     private Path.Segment segment;
     private Path.Segment segment2;
 
+    @Override
     @Before
     public void beforeEach() {
-        this.registry = new SimpleNamespaceRegistry();
+        super.beforeEach();
         this.registry.register(ModeShapeLexicon.Namespace.PREFIX, ModeShapeLexicon.Namespace.URI);
-        this.stringValueFactory = new StringValueFactory(registry, Path.DEFAULT_DECODER, Path.DEFAULT_ENCODER);
-        this.nameFactory = new NameValueFactory(registry, Path.DEFAULT_DECODER, stringValueFactory);
         this.validName = nameFactory.create("mode:something");
-        this.factory = new PathValueFactory(Path.DEFAULT_DECODER, stringValueFactory, nameFactory);
+        this.factory = new PathValueFactory(Path.DEFAULT_DECODER, valueFactories);
     }
 
     @Test

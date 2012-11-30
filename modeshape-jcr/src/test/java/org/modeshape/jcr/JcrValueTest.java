@@ -23,30 +23,28 @@
  */
 package org.modeshape.jcr;
 
-import javax.jcr.Binary;
-import javax.jcr.PropertyType;
-import javax.jcr.ValueFormatException;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import java.io.InputStream;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.UUID;
+import javax.jcr.Binary;
+import javax.jcr.PropertyType;
+import javax.jcr.ValueFormatException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.value.ValueFactories;
-import org.modeshape.jcr.value.basic.SimpleNamespaceRegistry;
-import org.modeshape.jcr.value.basic.StandardValueFactories;
-import org.modeshape.jcr.value.binary.TransientBinaryStore;
-import java.io.InputStream;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.UUID;
 
 public class JcrValueTest {
 
+    private ExecutionContext context;
     private ValueFactories factories;
     private JcrValue value;
 
@@ -54,7 +52,8 @@ public class JcrValueTest {
     public void before() {
         MockitoAnnotations.initMocks(this);
 
-        factories = new StandardValueFactories(new SimpleNamespaceRegistry(), TransientBinaryStore.get());
+        context = new ExecutionContext();
+        factories = context.getValueFactories();
         value = new JcrValue(factories, PropertyType.BOOLEAN, Boolean.TRUE);
     }
 

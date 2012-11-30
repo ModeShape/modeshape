@@ -55,6 +55,15 @@ public interface ValueFactory<T> {
     static final TextEncoder DEFAULT_ENCODER = Path.NO_OP_ENCODER;
 
     /**
+     * Return a potentially new copy of this factory that uses the supplied ValueFactories object.
+     * 
+     * @param valueFactories the value factories object; may not be null
+     * @return the factory, which may be a new instance or may be this object if the supplied value factories is the same as used
+     *         by this factory; never null
+     */
+    ValueFactory<T> with( ValueFactories valueFactories );
+
+    /**
      * Get the {@link PropertyType type} of values created by this factory.
      * 
      * @return the value type; never null

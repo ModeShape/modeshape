@@ -39,7 +39,6 @@ import org.modeshape.common.text.TextEncoder;
 import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.value.InvalidPathException;
 import org.modeshape.jcr.value.Name;
-import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.ValueFormatException;
 
@@ -52,7 +51,6 @@ public class BasicPathTest extends AbstractPathTest {
     public static final TextEncoder NO_OP_ENCODER = Path.NO_OP_ENCODER;
     public static final Path ROOT = RootPath.INSTANCE;
 
-    private NamespaceRegistry namespaceRegistry;
     private String validNamespaceUri;
     private Path path2;
     private Path.Segment[] validSegments;
@@ -64,6 +62,7 @@ public class BasicPathTest extends AbstractPathTest {
     @Before
     @Override
     public void beforeEach() {
+        super.beforeEach();
         validNamespacePrefix = ModeShapeLexicon.Namespace.PREFIX;
         validNamespaceUri = ModeShapeLexicon.Namespace.URI;
         validSegmentNames = new Name[] {new BasicName(validNamespaceUri, "a"), new BasicName(validNamespaceUri, "b"),
@@ -75,12 +74,8 @@ public class BasicPathTest extends AbstractPathTest {
             validSegmentsList.add(segment);
         }
         super.path = new BasicPath(validSegmentsList, true);
-        namespaceRegistry = new SimpleNamespaceRegistry();
-        namespaceRegistry.register(validNamespacePrefix, validNamespaceUri);
-        StringValueFactory stringValueFactory = new StringValueFactory(namespaceRegistry, Path.DEFAULT_DECODER,
-                                                                       Path.DEFAULT_ENCODER);
-        NameValueFactory nameValueFactory = new NameValueFactory(namespaceRegistry, Path.DEFAULT_DECODER, stringValueFactory);
-        pathFactory = new PathValueFactory(Path.DEFAULT_DECODER, stringValueFactory, nameValueFactory);
+        registry.register(validNamespacePrefix, validNamespaceUri);
+        pathFactory = new PathValueFactory(Path.DEFAULT_DECODER, valueFactories);
     }
 
     @Test
@@ -229,7 +224,7 @@ public class BasicPathTest extends AbstractPathTest {
         assertThat(pathFactory.create("a/b/c").isAbsolute(), is(false));
         assertThat(pathFactory.create("a/b/c").isNormalized(), is(true));
         assertThat(pathFactory.create("a/b/c").size(), is(3));
-        assertThat(pathFactory.create("a/b/c").getString(namespaceRegistry), is("a/b/c"));
+        assertThat(pathFactory.create("a/b/c").getString(registry), is("a/b/c"));
     }
 
     @Test
@@ -706,9 +701,9 @@ public class BasicPathTest extends AbstractPathTest {
     @Test
     public void shouldGetStringWithNamespacePrefixesForAllNamesIfNamespaceRegistryIsProvided() {
         path = pathFactory.create("/mode:a/b/mode:c/../d/./mode:e/../..");
-        assertThat(path.getString(namespaceRegistry, NO_OP_ENCODER), is("/mode:a/b/mode:c/../d/./mode:e/../.."));
-        namespaceRegistry.register("dna2", validNamespaceUri);
-        assertThat(path.getString(namespaceRegistry, NO_OP_ENCODER), is("/dna2:a/b/dna2:c/../d/./dna2:e/../.."));
+        assertThat(path.getString(registry, NO_OP_ENCODER), is("/mode:a/b/mode:c/../d/./mode:e/../.."));
+        registry.register("dna2", validNamespaceUri);
+        assertThat(path.getString(registry, NO_OP_ENCODER), is("/dna2:a/b/dna2:c/../d/./dna2:e/../.."));
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -951,20 +946,20 @@ public class BasicPathTest extends AbstractPathTest {
             }
         };
         Path path = pathFactory.create("a/b/c");
-        assertThat(path.getString(namespaceRegistry), is("a/b/c"));
-        assertThat(path.getString(namespaceRegistry, encoder), is("a/b/c"));
-        assertThat(path.getString(namespaceRegistry, encoder, delimEncoder), is("a\\/b\\/c"));
+        assertThat(path.getString(registry), is("a/b/c"));
+        assertThat(path.getString(registry, encoder), is("a/b/c"));
+        assertThat(path.getString(registry, encoder, delimEncoder), is("a\\/b\\/c"));
 
         path = pathFactory.create("/a/b/c");
-        assertThat(path.getString(namespaceRegistry), is("/a/b/c"));
-        assertThat(path.getString(namespaceRegistry, encoder), is("/a/b/c"));
-        assertThat(path.getString(namespaceRegistry, encoder, delimEncoder), is("\\/a\\/b\\/c"));
+        assertThat(path.getString(registry), is("/a/b/c"));
+        assertThat(path.getString(registry, encoder), is("/a/b/c"));
+        assertThat(path.getString(registry, encoder, delimEncoder), is("\\/a\\/b\\/c"));
 
         path = pathFactory.create("/mode:a/b/c");
         assertThat(path.getString(encoder), is("/{" + encoder.encode(ModeShapeLexicon.Namespace.URI) + "}a/{}b/{}c"));
         assertThat(path.getString(null, encoder, delimEncoder), is("\\/mode:a\\/\\{\\}b\\/\\{\\}c"));
-        assertThat(path.getString(namespaceRegistry), is("/mode:a/b/c"));
-        assertThat(path.getString(namespaceRegistry, encoder), is("/mode:a/b/c"));
-        assertThat(path.getString(namespaceRegistry, encoder, delimEncoder), is("\\/mode\\:a\\/b\\/c"));
+        assertThat(path.getString(registry), is("/mode:a/b/c"));
+        assertThat(path.getString(registry, encoder), is("/mode:a/b/c"));
+        assertThat(path.getString(registry, encoder, delimEncoder), is("\\/mode\\:a\\/b\\/c"));
     }
 }

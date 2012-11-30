@@ -45,12 +45,14 @@ import org.modeshape.jcr.value.Path.Segment;
  * @author Randall Hauch
  * @author John Verhaeg
  */
-public abstract class AbstractPathTest {
+public abstract class AbstractPathTest extends BaseValueFactoryTest {
 
     protected Path path;
 
     @Before
+    @Override
     public void beforeEach() {
+        super.beforeEach();
     }
 
     @Test

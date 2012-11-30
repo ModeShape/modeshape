@@ -24,7 +24,6 @@
 package org.modeshape.jcr.value;
 
 import java.math.BigDecimal;
-import java.net.URI;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.query.model.TypeSystem;
 
@@ -32,7 +31,7 @@ import org.modeshape.jcr.query.model.TypeSystem;
  * The set of standard {@link ValueFactory} instances.
  */
 @ThreadSafe
-public interface ValueFactories extends Iterable<ValueFactory<?>> {
+public interface ValueFactories extends Iterable<ValueFactory<?>>, NameFactory.Holder {
 
     /**
      * Get the type system associated with these factories.
@@ -64,7 +63,7 @@ public interface ValueFactories extends Iterable<ValueFactory<?>> {
      * 
      * @return the factory; never null
      */
-    ValueFactory<String> getStringFactory();
+    StringFactory getStringFactory();
 
     /**
      * Get the value factory for {@link PropertyType#BINARY binary} properties.
@@ -113,6 +112,7 @@ public interface ValueFactories extends Iterable<ValueFactory<?>> {
      * 
      * @return the factory; never null
      */
+    @Override
     NameFactory getNameFactory();
 
     /**
@@ -141,7 +141,7 @@ public interface ValueFactories extends Iterable<ValueFactory<?>> {
      * 
      * @return the factory; never null
      */
-    ValueFactory<URI> getUriFactory();
+    UriFactory getUriFactory();
 
     /**
      * Get the value factory for {@link PropertyType#UUID UUID} properties.
