@@ -1061,12 +1061,15 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
     protected static class EnumValidator implements Validator {
         private static final long serialVersionUID = 1L;
         private final String propertyName;
-        private final Set<?> values;
+        private final Set<String> values;
 
         public EnumValidator( String propertyName,
                               Collection<?> values ) {
             this.propertyName = propertyName;
-            this.values = new HashSet<Object>(values);
+            this.values = new HashSet<String>(values.size());
+            for (Object value : values) {
+                this.values.add(value.toString().toLowerCase());
+            }
         }
 
         @Override
@@ -1080,7 +1083,7 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
             // This only applies if the value is a JSON array ...
             if (fieldValue instanceof List) {
                 for (Object value : (List<?>)fieldValue) {
-                    if (values.contains(value)) {
+                    if (values.contains(value.toString().toLowerCase())) {
                         problems.recordSuccess();
                     } else {
                         problems.recordError(pathToParent.with(fieldName),
@@ -1089,7 +1092,7 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                     }
                 }
             } else if (fieldValue != null) {
-                if (values.contains(fieldValue)) {
+                if (values.contains(fieldValue.toString().toLowerCase())) {
                     problems.recordSuccess();
                 } else {
                     problems.recordError(pathToParent.with(fieldName), "The '" + fieldName + "' field on '" + pathToParent

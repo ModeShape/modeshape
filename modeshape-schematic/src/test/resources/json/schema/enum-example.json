@@ -1,0 +1,23 @@
+{
+ "name":"Colors",
+ "properties":{
+   "color1":{
+     "type":"string",
+     "enum" : ["red", "green", "blue"],
+     "description":"Colors enum",
+     "required":true
+   },
+   "color2":{
+     "type":"string",
+     "enum" : ["red", "green", "blue"],
+     "description":"Colors enum",
+     "required":true
+   },
+   "color3":{
+     "type":"string",
+     "enum" : ["red", "green", "blue"],
+     "description":"Colors enum",
+     "required":true
+   }
+ }
+}
