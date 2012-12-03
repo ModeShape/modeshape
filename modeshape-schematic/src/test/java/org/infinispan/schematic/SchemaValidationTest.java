@@ -27,6 +27,8 @@ public class SchemaValidationTest {
         docs.put("json/sample-repo-config.json", Json.read(resource("json/sample-repo-config.json")));
         docs.put("json/empty.json", Json.read(resource("json/empty.json")));
         docs.put("json/schema/repository-config-schema.json", Json.read(resource("json/schema/repository-config-schema.json")));
+        docs.put("json/schema/enum-example.json", Json.read(resource("json/schema/enum-example.json")));
+        docs.put("json/enum-example-doc.json", Json.read(resource("json/enum-example-doc.json")));
     }
 
     protected static InputStream resource( String resourcePath ) {
@@ -67,6 +69,12 @@ public class SchemaValidationTest {
     @Test
     public void shouldBeAbleToValidateSampleDocumentUsingSchemaDocument() throws Exception {
         results = validate("json/sample-repo-config.json", "json/schema/repository-config-schema.json");
+        assertNoProblems(results);
+    }
+
+    @Test
+    public void shouldBeAbleToValidateDocumentUsingCaseInsensitiveEnums() throws Exception {
+        results = validate("json/enum-example-doc.json", "json/schema/enum-example.json");
         assertNoProblems(results);
     }
 
