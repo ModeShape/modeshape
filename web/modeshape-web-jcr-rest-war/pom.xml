@@ -20,9 +20,17 @@
             <artifactId>modeshape-web-jcr-rest</artifactId>
         </dependency>
 
+        <!--Provided dependencies are not transitive: http://jira.codehaus.org/browse/MNG-2205-->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>com.sun.xml.bind</groupId>
             <artifactId>jaxb-impl</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <!--  TESTING DEPENDENCIES -->

@@ -241,118 +241,9 @@
           Global dependency version information
           -->
         <modeshape.java.version>1.6</modeshape.java.version>
-
-        <joda.time.version>1.6.2</joda.time.version>
-        <junit.version>4.10</junit.version>
-        <hamcrest.version>1.1</hamcrest.version>
-        <mockito.all.version>1.8.4</mockito.all.version>
-        <slf4j.api.version>1.6.1</slf4j.api.version>
-        <slf4j.log4j.version>1.6.1</slf4j.log4j.version>
-        <log4j.version>1.2.16</log4j.version>
-        <jcr.version>2.0</jcr.version>
-        <jackrabbit.jcr.tck.version>2.5.1</jackrabbit.jcr.tck.version>
-        <jackrabbit.lucene.version>3.6.0</jackrabbit.lucene.version>
-        <jbossjta.version>4.16.2.Final</jbossjta.version>
-        <picketbox.version>4.0.7.Final</picketbox.version>
-        <byteman.version>1.5.1</byteman.version>
-        <lucene.version>3.5.0</lucene.version>
-        <lucene.module.slot>3.5</lucene.module.slot>
-        <lucene.regex.version>3.0.3</lucene.regex.version>
-        <lucene.regex.jakarta.version>1.4</lucene.regex.jakarta.version>
-        <!-- These versions of Hibernate Search transitive dependencies are used in creating the Hibernate Search AS7 module.
-             When changing the version of Hiberate Search version, update these and the 
-             'deploy/jbossas/kit/jboss-as7/modules/org/hibernate/search/engine/main/module.xml' file. Note that Hibernate Search
-             forcibly overrides the Jackson libraries -->
-        <hibernate.search.version>4.1.1.Final</hibernate.search.version>
-        <hibernate.search.avro.version>1.5.1</hibernate.search.avro.version>
-        <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
-        <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
-        <hibernate.search.paranamer.version>2.3</hibernate.search.paranamer.version>
-        <hibernate.search.snappy.version>1.0.1-rc3</hibernate.search.snappy.version>
-        <hibernate.search.module.slot>4.1</hibernate.search.module.slot>
-        <infinispan.version>5.1.2.FINAL</infinispan.version>
-        <!--Make sure the jgroups version is the same as the one used by ISPN -->
-        <jgroups.version>3.0.6.Final</jgroups.version>
-        <c3p0.version>0.9.1.2</c3p0.version>
-        <jboss.logging.version>3.1.0.CR2</jboss.logging.version>
-
-        <sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
-        <jdbc.mysql.version>5.0.7</jdbc.mysql.version>
-        <jdbc.derby.version>10.8.1.2</jdbc.derby.version>
-        <jdbc.hsqldb.version>1.8.0.2</jdbc.hsqldb.version>
-        <jdbc.h2.version>1.2.124</jdbc.h2.version>
-        <jdbc.postgresql.version>8.4-701.jdbc3</jdbc.postgresql.version>
-        <jdbc.mysql5.version>5.1.7</jdbc.mysql5.version>
-        <jdbc.db2v9.version>3.58.82</jdbc.db2v9.version>
-        <jdbc.db2v9.license.version>3.57.86</jdbc.db2v9.license.version>
-        <jdbc.oracle10g.version>10.0.2.0</jdbc.oracle10g.version>
-        <jdbc.oracle11g.version>11.1.0.7.0</jdbc.oracle11g.version>
-        <jdbc.sybase15.version>6.0.5</jdbc.sybase15.version>
-        <jdbc.mssql2008.version>2.0.1008.2</jdbc.mssql2008.version>
-        <javax.servlet.version>2.5</javax.servlet.version>
-        <javax.jacc.version>1.0.0.Final</javax.jacc.version>
-        <jboss.seam.version>2.2.2.Final</jboss.seam.version>
-        <resteasy.version>2.3.2.Final</resteasy.version>
-        <jettison.version>1.1</jettison.version>
-        <httpclient.version>4.1.2</httpclient.version>
-        <sardine.version>146</sardine.version>
-        <javaassist.version>3.11.0.GA</javaassist.version>
-        <jaudiotagger.version>2.0.3</jaudiotagger.version>
-        <poi.version>3.8</poi.version>
-        <jcommander.version>1.5</jcommander.version>
-        <wsdl4j.version>1.6.2</wsdl4j.version>
-        <bson4jackson.version>1.1.2</bson4jackson.version>
-        <mongo.driver.version>2.7.3</mongo.driver.version>
-        <embedmongo.version>1.25</embedmongo.version>
-        <json.simple.version>1.1</json.simple.version>
-        <logback.version>0.9.29</logback.version>
-        <eclipse.equinox.common.version>3.3.0-v20070426</eclipse.equinox.common.version>
-        <eclipse.jdt.core.version>3.3.0-v_771</eclipse.jdt.core.version>
-        <eclipse.core.resources.version>3.3.0-v20070604</eclipse.core.resources.version>
-        <eclipse.core.expressions.version>3.3.0-v20070606-0010</eclipse.core.expressions.version>
-        <eclipse.core.runtime.version>3.3.100-v20070530</eclipse.core.runtime.version>
-        <eclipse.osgi.version>3.3.0-v20070530</eclipse.osgi.version>
-        <eclipse.core.jobs.version>3.3.0-v20070423</eclipse.core.jobs.version>
-        <eclipse.equinox.registry.version>3.3.0-v20070522</eclipse.equinox.registry.version>
-        <eclipse.equinox.preferences.version>3.2.100-v20070522</eclipse.equinox.preferences.version>
-        <eclipse.core.contenttype.version>3.2.100-v20070319</eclipse.core.contenttype.version>
-        <eclipse.xsd.version>2.2.3</eclipse.xsd.version>
-        <eclipse.emf.common.version>2.4.0</eclipse.emf.common.version>
-        <eclipse.emf.ecore.version>2.4.2</eclipse.emf.ecore.version>
-        <eclipse.emf.ecorechange.version>2.2.3</eclipse.emf.ecorechange.version>
-        <eclipse.emf.ecorexmi.version>2.4.1</eclipse.emf.ecorexmi.version>
-        <tika.version>1.2</tika.version>
-
-        <!--WebDAV servlet-->
-        <jmock.version>2.4.0</jmock.version>
-        <spring.webmvc>2.5.2</spring.webmvc>
-        <spring.mock>2.0.7</spring.mock>
-
         <!--
-            JBOSS AS 7.1.1.Final
+        Maven plugin versions
         -->
-        <jbossas-version>7.1.1.Final</jbossas-version>
-        <javax.connector-api.version>1.5</javax.connector-api.version>
-        <javax.jta.version>1.1</javax.jta.version>
-        <jbossas7.assembly.descriptor.version>71</jbossas7.assembly.descriptor.version>
-
-        <!--
-            JBOSS AS 7.2
-        -->
-        <!--jbossas-version>7.2.0.Alpha1-SNAPSHOT</jbossas-version-->
-
-        <!--
-            RHQ
-        -->
-        <!--
-        <org.jboss.rhq.as5.version>1.2.0.GA</org.jboss.rhq.as5.version>
-        <org.rhq.version>1.3.0.GA</org.rhq.version>
-        <rhq.jboss.as5.plugin.version>1.4.0.B01</rhq.jboss.as5.plugin.version>
-        -->
-
-        <!--
-          Maven plugin versions
-          -->
         <cargo.container>jetty7x</cargo.container>
         <maven.codehaus.cargo.plugin.version>1.2.2</maven.codehaus.cargo.plugin.version>
         <version.jar.plugin>2.4</version.jar.plugin>
@@ -361,9 +252,306 @@
 
         <!--The name of the modeshape-client artifact used by tools-->
         <client.artifactId>modeshape-client</client.artifactId>
+
+        <!-- Dependency versions which are either not shared with the ones from product or which should always overwrite those from product
+            Note that ALL test dependencies are overwritten, because they should really affect anything from product. However,
+            since they are overridden, they have the same artifact version as the one from the bom so that we make sure we're
+            really testing the same version.
+        -->
+        <version.hamcrest>1.1</version.hamcrest>
+        <version.junit>4.10</version.junit>
+        <version.org.mockito>1.8.5</version.org.mockito>
+        <version.org.picketbox.bare>4.0.9.Final</version.org.picketbox.bare>
+        <version.jackrabbit.jcr.tck>2.5.1</version.jackrabbit.jcr.tck>
+
+        <version.jcr>2.0</version.jcr>
+        <version.jackrabbit.lucene>3.6.0</version.jackrabbit.lucene>
+        <version.jbossjta>4.16.4.Final</version.jbossjta>
+        <version.lucene>3.5.0</version.lucene>
+        <lucene.module.slot>3.5</lucene.module.slot>
+        <version.lucene.regex>3.0.3</version.lucene.regex>
+        <version.lucene.regex.jakarta>1.4</version.lucene.regex.jakarta>
+
+        <!-- These versions of Hibernate Search transitive dependencies are used in creating the Hibernate Search AS7 module.
+         When changing the version of Hiberate Search version, update these and the
+        'deploy/jbossas/kit/jboss-as7/modules/org/hibernate/search/engine/main/module.xml' file. Note that Hibernate Search
+        forcibly overrides the Jackson libraries -->
+        <version.hibernate.search>4.1.1.Final</version.hibernate.search>
+        <version.hibernate.search.avro>1.5.1</version.hibernate.search.avro>
+        <version.hibernate.search.paranamer>2.3</version.hibernate.search.paranamer>
+        <version.hibernate.search.snappy>1.0.1-rc3</version.hibernate.search.snappy>
+        <hibernate.search.module.slot>4.1</hibernate.search.module.slot>
+
+        <version.c3p0>0.9.1.2</version.c3p0>
+        <version.jdbc.mysql>5.0.7</version.jdbc.mysql>
+        <version.jdbc.hsqldb>1.8.0.2</version.jdbc.hsqldb>
+        <version.javax.servlet>2.5</version.javax.servlet>
+        <version.sardine>146</version.sardine>
+        <version.jaudiotagger>2.0.3</version.jaudiotagger>
+        <version.poi>3.8</version.poi>
+        <version.jcommander>1.5</version.jcommander>
+        <version.bson4jackson>1.1.2</version.bson4jackson>
+        <version.mongo.driver>2.7.3</version.mongo.driver>
+        <version.embedmongo>1.25</version.embedmongo>
+        <version.json.simple>1.1</version.json.simple>
+        <version.logback>0.9.29</version.logback>
+        <version.eclipse.equinox.common>3.3.0-v20070426</version.eclipse.equinox.common>
+        <version.eclipse.jdt.core>3.3.0-v_771</version.eclipse.jdt.core>
+        <version.eclipse.core.resources>3.3.0-v20070604</version.eclipse.core.resources>
+        <version.eclipse.core.expressions>3.3.0-v20070606-0010</version.eclipse.core.expressions>
+        <version.eclipse.core.runtime>3.3.100-v20070530</version.eclipse.core.runtime>
+        <version.eclipse.osgi>3.3.0-v20070530</version.eclipse.osgi>
+        <version.eclipse.core.jobs>3.3.0-v20070423</version.eclipse.core.jobs>
+        <version.eclipse.equinox.registry>3.3.0-v20070522</version.eclipse.equinox.registry>
+        <version.eclipse.equinox.preferences>3.2.100-v20070522</version.eclipse.equinox.preferences>
+        <version.eclipse.core.contenttype>3.2.100-v20070319</version.eclipse.core.contenttype>
+        <version.eclipse.xsd>2.2.3</version.eclipse.xsd>
+        <version.eclipse.emf.common>2.4.0</version.eclipse.emf.common>
+        <version.eclipse.emf.ecore>2.4.2</version.eclipse.emf.ecore>
+        <version.eclipse.emf.ecorechange>2.2.3</version.eclipse.emf.ecorechange>
+        <version.eclipse.emf.ecorexmi>2.4.1</version.eclipse.emf.ecorexmi>
+        <version.tika>1.2</version.tika>
+        <version.jmock>2.4.0</version.jmock>
+        <version.spring.webmvc>2.5.2</version.spring.webmvc>
+        <version.spring.mock>2.0.7</version.spring.mock>
+        <version.javax.connector-api>1.5</version.javax.connector-api>
+        <version.javax.jta>1.1</version.javax.jta>
+        <version.org.slf4j>1.6.1</version.org.slf4j>
+        <version.log4j>1.2.16</version.log4j>
     </properties>
 
     <profiles>
+
+        <profile>
+            <!--This is the default profile which imports the AS 7.1.2 BOM and uses the dependency versions as defined there-->
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>eap</name>
+                </property>
+            </activation>
+            <properties>
+                <jbossas7.assembly.descriptor.version>eap</jbossas7.assembly.descriptor.version>
+                <!--
+                   //TODO author=Horia Chiorean date=11/14/12 description=This is a hack, caused by the fact that the BOM is broken
+                   //and excluded TOO MANY of the MANDATORY transitive dependencies of those artifacts. See the global
+                   <dependencyManagement> section for specific information.
+                -->
+                <version.org.infinispan>5.1.4.FINAL</version.org.infinispan>
+                <version.org.jboss.resteasy>2.3.3.Final</version.org.jboss.resteasy>
+                <version.org.apache.httpcomponents.httpclient>4.1.2</version.org.apache.httpcomponents.httpclient>
+            </properties>
+            <dependencyManagement>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jboss.as</groupId>
+                        <artifactId>jboss-as-parent</artifactId>
+                        <version>7.1.2.Final</version>
+                        <type>pom</type>
+                        <scope>import</scope>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+        </profile>
+
+        <profile>
+            <!--This is the profile which MUST contain all shared dependency artifacts with the above BOM and which must be
+            mutually exclusive. -->
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!eap</name>
+                </property>
+            </activation>
+            <properties>
+                <version.joda-time>1.6.2</version.joda-time>
+                <version.org.codehaus.jackson>1.9.2</version.org.codehaus.jackson>
+                <version.org.infinispan>5.1.4.FINAL</version.org.infinispan>
+                <!--Make sure the jgroups version is the same as the one used by ISPN -->
+                <version.org.jgroups>3.0.9.Final</version.org.jgroups>
+                <version.org.jboss.logging.jboss-logging>3.1.1.GA</version.org.jboss.logging.jboss-logging>
+
+                <version.org.javassist>3.15.0-GA</version.org.javassist>
+                <version.sun.jaxb>2.2.5</version.sun.jaxb>
+                <version.com.h2database>1.3.161</version.com.h2database>
+                <version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.4_spec>1.0.2.Final</version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.4_spec>
+                <version.org.jboss.resteasy>2.3.3.Final</version.org.jboss.resteasy>
+                <version.org.codehaus.jettison>1.3.1</version.org.codehaus.jettison>
+                <version.org.apache.httpcomponents.httpclient>4.1.2</version.org.apache.httpcomponents.httpclient>
+                <version.wsdl4j>1.6.2</version.wsdl4j>
+                <version.jbossas>7.1.1.Final</version.jbossas>
+            </properties>
+            <dependencyManagement>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jboss.spec.javax.security.jacc</groupId>
+                        <artifactId>jboss-jacc-api_1.4_spec</artifactId>
+                        <version>${version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.4_spec}</version>
+                        <scope>provided</scope>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>org.jgroups</groupId>
+                        <artifactId>jgroups</artifactId>
+                        <version>${version.org.jgroups}</version>
+                    </dependency>
+
+                    <dependency>
+                        <!--
+                        To force testing of Apache Avro integration with the version of Jackson used in AS 7.1
+                        -->
+                        <groupId>org.codehaus.jackson</groupId>
+                        <artifactId>jackson-core-asl</artifactId>
+                        <version>${version.org.codehaus.jackson}</version>
+                    </dependency>
+                    <dependency>
+                        <!--
+                        To force testing of Apache Avro integration with the version of Jackson used in AS 7.1
+                        -->
+                        <groupId>org.codehaus.jackson</groupId>
+                        <artifactId>jackson-mapper-asl</artifactId>
+                        <version>${version.org.codehaus.jackson}</version>
+                    </dependency>
+                    <!--
+                    Time and Date
+                    -->
+                    <dependency>
+                        <groupId>joda-time</groupId>
+                        <artifactId>joda-time</artifactId>
+                        <version>${version.joda-time}</version>
+                    </dependency>
+
+                    <!--
+                    JAX-B implementation used by some modules particularly the JBoss Console component
+                    -->
+                    <dependency>
+                        <groupId>com.sun.xml.bind</groupId>
+                        <artifactId>jaxb-impl</artifactId>
+                        <version>${version.sun.jaxb}</version>
+                        <scope>runtime</scope>
+                    </dependency>
+                    <!--
+                       Web Modules dependencies
+                    -->
+                    <dependency>
+                        <groupId>org.jboss.resteasy</groupId>
+                        <artifactId>resteasy-jaxb-provider</artifactId>
+                        <version>${version.org.jboss.resteasy}</version>
+                        <scope>runtime</scope>
+                        <exclusions>
+                            <exclusion>
+                                <groupId>com.sun.xml.bind</groupId>
+                                <artifactId>jaxb-impl</artifactId>
+                            </exclusion>
+                            <exclusion>
+                                <groupId>com.sun.xml.stream</groupId>
+                                <artifactId>stream.buffer</artifactId>
+                            </exclusion>
+                        </exclusions>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>org.jboss.resteasy</groupId>
+                        <artifactId>resteasy-jettison-provider</artifactId>
+                        <version>${version.org.jboss.resteasy}</version>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>org.jboss.resteasy</groupId>
+                        <artifactId>resteasy-multipart-provider</artifactId>
+                        <version>${version.org.jboss.resteasy}</version>
+                        <exclusions>
+                            <exclusion>
+                                <groupId>com.sun.xml.bind</groupId>
+                                <artifactId>jaxb-impl</artifactId>
+                            </exclusion>
+                            <exclusion>
+                                <groupId>com.sun.xml.stream</groupId>
+                                <artifactId>stream.buffer</artifactId>
+                            </exclusion>
+                        </exclusions>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>org.codehaus.jettison</groupId>
+                        <artifactId>jettison</artifactId>
+                        <version>${version.org.codehaus.jettison}</version>
+                        <exclusions>
+                            <!-- This results in duplicate stax-api jars. This is the older one.
+                                 A newer is brought in by com.sun.xml.bind:jaxb-impl
+                            -->
+                            <exclusion>
+                                <groupId>stax</groupId>
+                                <artifactId>stax-api</artifactId>
+                            </exclusion>
+                        </exclusions>
+                    </dependency>
+
+                    <!--
+                        Sequencers
+                    -->
+                    <dependency>
+                        <groupId>org.javassist</groupId>
+                        <artifactId>javassist</artifactId>
+                        <version>${version.org.javassist}</version>
+                    </dependency>
+
+                    <!--WSDL sequencer-->
+                    <dependency>
+                        <groupId>wsdl4j</groupId>
+                        <artifactId>wsdl4j</artifactId>
+                        <version>${version.wsdl4j}</version>
+                    </dependency>
+
+                    <!--
+                        Schematic dependencies
+                    -->
+                    <dependency>
+                        <groupId>org.jboss.logging</groupId>
+                        <artifactId>jboss-logging</artifactId>
+                        <version>${version.org.jboss.logging.jboss-logging}</version>
+                    </dependency>
+
+                    <!--
+                        JBOSS AS subsystem
+                    -->
+                    <dependency>
+                        <groupId>org.jboss.as</groupId>
+                        <artifactId>jboss-as-controller</artifactId>
+                        <version>${version.jbossas}</version>
+                        <scope>provided</scope>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>org.jboss.as</groupId>
+                        <artifactId>jboss-as-naming</artifactId>
+                        <version>${version.jbossas}</version>
+                        <scope>provided</scope>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>org.jboss.as</groupId>
+                        <artifactId>jboss-as-clustering-jgroups</artifactId>
+                        <version>${version.jbossas}</version>
+                        <scope>provided</scope>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>org.jboss.as</groupId>
+                        <artifactId>jboss-as-subsystem-test</artifactId>
+                        <version>${version.jbossas}</version>
+                        <scope>test</scope>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>com.h2database</groupId>
+                        <artifactId>h2</artifactId>
+                        <version>${version.com.h2database}</version>
+                        <scope>test</scope>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+        </profile>
 
         <!--
               ###################################################################
@@ -436,7 +624,6 @@
                 <dependency>
                     <groupId>com.h2database</groupId>
                     <artifactId>h2</artifactId>
-                    <version>${jdbc.h2.version}</version>
                     <scope>test</scope>
                 </dependency>
             </dependencies>
@@ -453,19 +640,19 @@
             <id>ispn515</id>
             <properties>
                 <!--The following versions are also used by AS7.2-->
-                <infinispan.version>5.1.5.FINAL</infinispan.version>
-                <jgroups.version>3.1.0.Final</jgroups.version>
-                <jboss.logging.version>3.1.0.GA</jboss.logging.version>
+                <version.org.infinispan>5.1.5.FINAL</version.org.infinispan>
+                <version.org.jgroups>3.1.0.Final</version.org.jgroups>
+                <version.org.jboss.logging.jboss-logging>3.1.0.GA</version.org.jboss.logging.jboss-logging>
             </properties>
         </profile>
         
         <profile>
             <id>as72</id>
             <properties>
-                <jbossas-version>7.2.0.Alpha1-SNAPSHOT</jbossas-version>
-                <infinispan.version>5.1.5.FINAL</infinispan.version>
-                <jgroups.version>3.1.0.Final</jgroups.version>
-                <jboss.logging.version>3.1.2.GA</jboss.logging.version>
+                <version.jbossas>7.2.0.Alpha1-SNAPSHOT</version.jbossas>
+                <version.org.infinispan>5.1.5.FINAL</version.org.infinispan>
+                <version.org.jgroups>3.1.0.Final</version.org.jgroups>
+                <version.org.jboss.logging.jboss-logging>3.1.2.GA</version.org.jboss.logging.jboss-logging>
                 <jbossas7.assembly.descriptor.version>72</jbossas7.assembly.descriptor.version>
             </properties>
         </profile>
@@ -695,6 +882,9 @@
          This section defines the default dependency settings inherited by
          child projects. Note that this section does not add dependencies, but
          rather provide default settings.
+
+         NOTE: This sections should contain only the ModeShape-specific dependencies which are not shared with the AS7 bom.
+         These dependencies should be added to the "community" profile.
      -->
     <dependencyManagement>
         <dependencies>
@@ -703,6 +893,13 @@
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-common</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-common</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
@@ -851,32 +1048,17 @@
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
-            <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>servlet-api</artifactId>
-                <version>${javax.servlet.version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.security.jacc</groupId>
-                <artifactId>jboss-jacc-api_1.4_spec</artifactId>
-                <version>${javax.jacc.version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.seam</groupId>
-                <artifactId>jboss-seam</artifactId>
-                <version>${jboss.seam.version}</version>
-                <scope>provided</scope>
-            </dependency>
 
             <!--
                 Infinispan
+                //TODO author=Horia Chiorean date=11/14/12 description=This should not be defined here,
+                //but it is because the AS7 bom excluding too transitive dependencies: jboss-marshaling, jboss-marshaling-river
+                //to name a few
             -->
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-core</artifactId>
-                <version>${infinispan.version}</version>
+                <version>${version.org.infinispan}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.codehaus.woodstox</groupId>
@@ -888,269 +1070,29 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-lucene-directory</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
+
             <!--
-                JGroups is used for the changes bus, but it's optional. Most of the times though, this will be in the classpath
-                because of ISPN.
-             -->
-            <dependency>
-                <groupId>org.jgroups</groupId>
-                <artifactId>jgroups</artifactId>
-                <version>${jgroups.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-bdbje</artifactId>
-                <version>${infinispan.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-jdbm</artifactId>
-                <version>${infinispan.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-jdbc</artifactId>
-                <version>${infinispan.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <!--Required by infinispan-cachestore-jdbc -->
-            <dependency>
-                <groupId>c3p0</groupId>
-                <artifactId>c3p0</artifactId>
-                <version>${c3p0.version}</version>
-                <scope>test</scope>
-            </dependency>
-            
-            <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-search-engine</artifactId>
-                <version>${hibernate.search.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.hibernate</groupId>
-                        <artifactId>hibernate-search-analyzers</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-search-infinispan</artifactId>
-                <version>${hibernate.search.version}</version>
-            </dependency>
-            <dependency>
-              <!--
-              To force testing of Apache Avro integration with the version of Jackson used in AS 7.1
-              -->
-              <groupId>org.codehaus.jackson</groupId>
-              <artifactId>jackson-core-asl</artifactId>
-              <version>${hibernate.search.jackson-core-asl.version}</version>
-            </dependency>
-            <dependency>
-              <!--
-              To force testing of Apache Avro integration with the version of Jackson used in AS 7.1
-              -->
-              <groupId>org.codehaus.jackson</groupId>
-              <artifactId>jackson-mapper-asl</artifactId>
-              <version>${hibernate.search.jackson-mapper-asl.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-core</artifactId>
-                <version>${lucene.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-regex</artifactId>
-                <version>${lucene.regex.version}</version>
-            </dependency>
-            <!--
-               Time and Date
-               -->
-            <dependency>
-                <groupId>joda-time</groupId>
-                <artifactId>joda-time</artifactId>
-                <version>${joda.time.version}</version>
-                <scope>compile</scope>
-            </dependency>
-            <!-- Testing (note the scope) -->
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit-dep</artifactId>
-                <version>${junit.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.hamcrest</groupId>
-                <artifactId>hamcrest-library</artifactId>
-                <version>${hamcrest.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-all</artifactId>
-                <version>${mockito.all.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <!--
-            Byteman Dependencies, used for the bytecode injection during performance tests
+                Infinispan test-jar
+                //TODO author=Horia Chiorean date=11/14/12 description=This should not be defined here,
+                //but it is because the AS7 bom does not include it
             -->
             <dependency>
-                <groupId>org.jboss.byteman</groupId>
-                <artifactId>byteman-bmunit</artifactId>
-                <version>${byteman.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.byteman</groupId>
-                <artifactId>byteman-install</artifactId>
-                <version>${byteman.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.byteman</groupId>
-                <artifactId>byteman</artifactId>
-                <version>${byteman.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <!-- Logging (all of the libraries should be optional, as the logging implementation falls back to JUL if nothig is found -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${slf4j.api.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-                <version>${slf4j.log4j.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>${log4j.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <!--WebDAV servlet-->
-            <dependency>
-                <groupId>org.jmock</groupId>
-                <artifactId>jmock</artifactId>
-                <version>${jmock.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-webmvc</artifactId>
-                <version>${spring.webmvc}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-mock</artifactId>
-                <version>${spring.mock}</version>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-core</artifactId>
+                <version>${version.org.infinispan}</version>
+                <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
 
             <!--
-                Demo module
-            -->
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>${logback.version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <!-- Java Content Repository API -->
-            <dependency>
-                <groupId>javax.jcr</groupId>
-                <artifactId>jcr</artifactId>
-                <version>${jcr.version}</version>
-                <scope>compile</scope>
-            </dependency>
-            <!--
-                   Apache JCR API unit tests (for any JCR implementation), which is a
-                   subset of the official TCK
-               -->
-            <dependency>
-                <groupId>org.apache.jackrabbit</groupId>
-                <artifactId>jackrabbit-jcr-tests</artifactId>
-                <version>${jackrabbit.jcr.tck.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <!-- Databases and JDBC Drivers -->
-            <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${jdbc.mysql.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>hsqldb</groupId>
-                <artifactId>hsqldb</artifactId>
-                <version>${jdbc.hsqldb.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <!--
-               PicketBox (JAAS implementation used in test cases)
-               -->
-            <dependency>
-                <groupId>org.picketbox</groupId>
-                <artifactId>picketbox-bare</artifactId>
-                <version>${picketbox.version}</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>apache-xalan</groupId>
-                        <artifactId>xalan</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>apache-xalan</groupId>
-                        <artifactId>serializer</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>apache-xerces</groupId>
-                        <artifactId>xml-apis</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>apache-xerces</groupId>
-                        <artifactId>xercesImpl</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.hibernate</groupId>
-                        <artifactId>hibernate</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <!--
-               JAX-B implementation used by some modules particularly the JBoss Console component
-               -->
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-impl</artifactId>
-                <version>${sun.xml.bind.jaxbimpl.version}</version>
-                <scope>runtime</scope>
-            </dependency>
-            <!--
-               Web Modules dependencies
+                RestEASY-Jaxrs
+                //TODO author=Horia Chiorean date=11/14/12 description=This should not be defined here,
+                //but it is because the AS7 bom excludes some of RestEASY's MANDATORY dependencies: org.scannotation
             -->
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-jaxrs</artifactId>
-                <version>${resteasy.version}</version>
+                <version>${version.org.jboss.resteasy}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
@@ -1162,304 +1104,29 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-jaxb-provider</artifactId>
-                <version>${resteasy.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.sun.xml.bind</groupId>
-                        <artifactId>jaxb-impl</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.sun.xml.stream</groupId>
-                        <artifactId>stream.buffer</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-jettison-provider</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-multipart-provider</artifactId>
-                <version>${resteasy.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.sun.xml.bind</groupId>
-                        <artifactId>jaxb-impl</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.sun.xml.stream</groupId>
-                        <artifactId>stream.buffer</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.jettison</groupId>
-                <artifactId>jettison</artifactId>
-                <version>${jettison.version}</version>
-                <exclusions>
-                    <!-- This results in duplicate stax-api jars. This is the older one.
-                         A newer is brought in by com.sun.xml.bind:jaxb-impl
-                    -->
-                    <exclusion>
-                        <groupId>stax</groupId>
-                        <artifactId>stax-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
+
+            <!--
+                HttpClient
+                //TODO author=Horia Chiorean date=11/14/12 description=This should not be defined here,
+                //but it is because the AS7 bom excludes some of RestEASY's MANDATORY dependencies: commons-logging
+            -->
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
-                <version>${httpclient.version}</version>
-            </dependency>
-            <!--WebDav client used for testing-->
-            <dependency>
-                <groupId>com.googlecode.sardine</groupId>
-                <artifactId>sardine</artifactId>
-                <version>${sardine.version}</version>
-                <scope>test</scope>
+                <version>${version.org.apache.httpcomponents.httpclient}</version>
             </dependency>
 
-            <!--
-                Sequencers
-            -->
-
-            <!-- Eclipse JDT artifacts declare their dependencies using ranges. (yikes!)
-                 So we need to specify exact versions, and we can do that in a dependencyManagement section.
-                 Here are the dependencies showing the last combination that we could get working:
-                 +- org.eclipse.equinox:common:jar:3.3.0-v20070426:compile
-                     +- org.eclipse.jdt:core:jar:3.3.0-v_771:compile
-                     |  +- org.eclipse.core:resources:jar:3.3.0-v20070604:compile
-                     |  |  \- org.eclipse.core:expressions:jar:3.3.0-v20070606-0010:compile
-                     |  \- org.eclipse.core:runtime:jar:3.3.100-v20070530:compile
-                     |     +- org.eclipse:osgi:jar:3.3.0-v20070530:compile
-                     |     +- org.eclipse.core:jobs:jar:3.3.0-v20070423:compile
-                     |     +- org.eclipse.equinox:registry:jar:3.3.0-v20070522:compile
-                     |     +- org.eclipse.equinox:preferences:jar:3.2.100-v20070522:compile
-                     |     \- org.eclipse.core:contenttype:jar:3.2.100-v20070319:compile
-            -->
-            <!--Java sequencer-->
+            <!-- Java Content Repository API -->
             <dependency>
-                <groupId>org.eclipse.equinox</groupId>
-                <artifactId>common</artifactId>
-                <version>${eclipse.equinox.common.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jdt</groupId>
-                <artifactId>core</artifactId>
-                <version>${eclipse.jdt.core.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.core</groupId>
-                <artifactId>resources</artifactId>
-                <version>${eclipse.core.resources.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.core</groupId>
-                <artifactId>expressions</artifactId>
-                <version>${eclipse.core.expressions.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.core</groupId>
-                <artifactId>runtime</artifactId>
-                <version>${eclipse.core.runtime.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse</groupId>
-                <artifactId>osgi</artifactId>
-                <version>${eclipse.osgi.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.core</groupId>
-                <artifactId>jobs</artifactId>
-                <version>${eclipse.core.jobs.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.equinox</groupId>
-                <artifactId>registry</artifactId>
-                <version>${eclipse.equinox.registry.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.equinox</groupId>
-                <artifactId>preferences</artifactId>
-                <version>${eclipse.equinox.preferences.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.core</groupId>
-                <artifactId>contenttype</artifactId>
-                <version>${eclipse.core.contenttype.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javassist</groupId>
-                <artifactId>javassist</artifactId>
-                <version>${javaassist.version}</version>
-            </dependency>
-            <!--Mp3 sequencer-->
-            <dependency>
-                <groupId>org</groupId>
-                <artifactId>jaudiotagger</artifactId>
-                <version>${jaudiotagger.version}</version>
-            </dependency>
-            <!--MsOffice sequencer-->
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi</artifactId>
-                <version>${poi.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi-scratchpad</artifactId>
-                <version>${poi.version}</version>
-            </dependency>
-            <!--Teiid sequencer-->
-            <dependency>
-                <groupId>com.beust</groupId>
-                <artifactId>jcommander</artifactId>
-                <version>${jcommander.version}</version>
-            </dependency>
-            <!--WSDL sequencer-->
-            <dependency>
-                <groupId>wsdl4j</groupId>
-                <artifactId>wsdl4j</artifactId>
-                <version>${wsdl4j.version}</version>
-            </dependency>
-            <!--XSD sequencer-->
-            <dependency>
-                <groupId>org.eclipse.xsd</groupId>
-                <artifactId>xsd</artifactId>
-                <version>${eclipse.xsd.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.emf</groupId>
-                <artifactId>common</artifactId>
-                <version>${eclipse.emf.common.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.emf</groupId>
-                <artifactId>ecore</artifactId>
-                <version>${eclipse.emf.ecore.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.emf</groupId>
-                <artifactId>ecore-change</artifactId>
-                <version>${eclipse.emf.ecorechange.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.emf</groupId>
-                <artifactId>ecore-xmi</artifactId>
-                <version>${eclipse.emf.ecorexmi.version}</version>
+                <groupId>javax.jcr</groupId>
+                <artifactId>jcr</artifactId>
+                <version>${version.jcr}</version>
             </dependency>
 
-            <!--TIKA text extractor
-                This Tika dependency brings in a lot of 3rd party libraries. We'll exclude
-                most of them and only keep a few that are for Microsoft Office documents,
-                HTML, XML and PDF. When others are needed, they can simply be added to
-                an application's dependencies.
-                
-                Note that 'modeshape-jcr' excludes even more transitive dependencies, since it
-                only uses the MIME type detector functionality, whereas the 'modeshape-extractor-tika'
-                uses everything defined here.
-                -->
-            <dependency>
-                <groupId>org.apache.tika</groupId>
-                <artifactId>tika-parsers</artifactId>
-                <version>${tika.version}</version>
-                <exclusions>
-                    <!--
-                    The NetCDF and HDF files are often used in the scientific community, so we exclude this
-                    library (and the Commons HTTP Client library) by default.
-                    -->
-                    <exclusion>
-                        <groupId>edu.ucar</groupId>
-                        <artifactId>netcdf</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>commons-httpclient</groupId>
-                        <artifactId>commons-httpclient</artifactId>
-                    </exclusion>
-
-                    <!--
-                    Image metadata isn't often for text extraction,
-                    so exclude this library by default.
-                    -->
-                    <exclusion>
-                        <groupId>com.drewnoakes</groupId>
-                        <artifactId>metadata-extractor</artifactId>
-                    </exclusion>
-                    <!--
-                    RSS and Atom feeds aren't often used for text extraction,
-                    so exclude this library by default.
-                    -->
-                    <exclusion>
-                        <groupId>rome</groupId>
-                        <artifactId>rome</artifactId>
-                    </exclusion>
-                    <!--
-                    Boilerpipe HTML templates are likely not used,
-                    so exclude this library by default.
-                    -->
-                    <exclusion>
-                        <groupId>de.l3s.boilerpipe</groupId>
-                        <artifactId>boilerpipe</artifactId>
-                    </exclusion>
-                    <!-- 
-                    PDFBox declares the Bouncy Castle dependencies
-                    as optional, and Tika always depends on them to avoid
-                    problems with encrypted PDFs (see TIKA-370). 
-                    We exclude them by default. 
-                    -->
-                    <exclusion>
-                      <groupId>org.bouncycastle</groupId>
-                      <artifactId>bcmail-jdk15</artifactId>
-                    </exclusion>
-                    <exclusion>
-                      <groupId>org.bouncycastle</groupId>
-                      <artifactId>bcprov-jdk15</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <!--
-                Schematic dependencies
-            -->
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging</artifactId>
-                <version>${jboss.logging.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>de.undercouch</groupId>
-                <artifactId>bson4jackson</artifactId>
-                <version>${bson4jackson.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.mongodb</groupId>
-                <artifactId>mongo-java-driver</artifactId>
-                <version>${mongo.driver.version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <!-- MongoDB binary store test -->
-            <dependency>
-                <groupId>de.flapdoodle.embed</groupId>
-                <artifactId>de.flapdoodle.embed.mongo</artifactId>
-                <version>${embedmongo.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.googlecode.json-simple</groupId>
-                <artifactId>json-simple</artifactId>
-                <version>${json.simple.version}</version>
-                <scope>test</scope>
-            </dependency>
             <dependency>
                 <groupId>org.jboss.jbossts</groupId>
                 <artifactId>jbossjta</artifactId>
-                <version>${jbossjta.version}</version>
+                <version>${version.jbossjta}</version>
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
@@ -1605,70 +1272,467 @@
                 </exclusions>
             </dependency>
 
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-core</artifactId>
+                <version>${version.lucene}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-regex</artifactId>
+                <version>${version.lucene.regex}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-lucene-directory</artifactId>
+                <version>${version.org.infinispan}</version>
+            </dependency>
+
+            <!-- Hibernate Search engine (does not use Hibernate Core or JPA!) -->
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-search-engine</artifactId>
+                <version>${version.hibernate.search}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.hibernate</groupId>
+                        <artifactId>hibernate-search-analyzers</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-search-infinispan</artifactId>
+                <version>${version.hibernate.search}</version>
+            </dependency>
+
+            <!--Mp3 sequencer-->
+            <dependency>
+                <groupId>org</groupId>
+                <artifactId>jaudiotagger</artifactId>
+                <version>${version.jaudiotagger}</version>
+            </dependency>
+
+            <!--MsOffice sequencer-->
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi</artifactId>
+                <version>${version.poi}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-scratchpad</artifactId>
+                <version>${version.poi}</version>
+            </dependency>
+
+            <!--Teiid sequencer-->
+            <dependency>
+                <groupId>com.beust</groupId>
+                <artifactId>jcommander</artifactId>
+                <version>${version.jcommander}</version>
+            </dependency>
+
+
+            <!-- Eclipse JDT artifacts declare their dependencies using ranges. (yikes!)
+                 So we need to specify exact versions, and we can do that in a dependencyManagement section.
+                 Here are the dependencies showing the last combination that we could get working:
+                 +- org.eclipse.equinox:common:jar:3.3.0-v20070426:compile
+                     +- org.eclipse.jdt:core:jar:3.3.0-v_771:compile
+                     |  +- org.eclipse.core:resources:jar:3.3.0-v20070604:compile
+                     |  |  \- org.eclipse.core:expressions:jar:3.3.0-v20070606-0010:compile
+                     |  \- org.eclipse.core:runtime:jar:3.3.100-v20070530:compile
+                     |     +- org.eclipse:osgi:jar:3.3.0-v20070530:compile
+                     |     +- org.eclipse.core:jobs:jar:3.3.0-v20070423:compile
+                     |     +- org.eclipse.equinox:registry:jar:3.3.0-v20070522:compile
+                     |     +- org.eclipse.equinox:preferences:jar:3.2.100-v20070522:compile
+                     |     \- org.eclipse.core:contenttype:jar:3.2.100-v20070319:compile
+            -->
+            <!--Java sequencer-->
+            <dependency>
+                <groupId>org.eclipse.equinox</groupId>
+                <artifactId>common</artifactId>
+                <version>${version.eclipse.equinox.common}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jdt</groupId>
+                <artifactId>core</artifactId>
+                <version>${version.eclipse.jdt.core}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.eclipse.core.runtime.compatibility</groupId>
+                        <artifactId>auth</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse.equinox</groupId>
+                        <artifactId>app</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse</groupId>
+                        <artifactId>text</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse.core</groupId>
+                        <artifactId>filesystem</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>resources</artifactId>
+                <version>${version.eclipse.core.resources}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>expressions</artifactId>
+                <version>${version.eclipse.core.expressions}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>runtime</artifactId>
+                <version>${version.eclipse.core.runtime}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse</groupId>
+                <artifactId>osgi</artifactId>
+                <version>${version.eclipse.osgi}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>jobs</artifactId>
+                <version>${version.eclipse.core.jobs}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.equinox</groupId>
+                <artifactId>registry</artifactId>
+                <version>${version.eclipse.equinox.registry}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.equinox</groupId>
+                <artifactId>preferences</artifactId>
+                <version>${version.eclipse.equinox.preferences}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.core</groupId>
+                <artifactId>contenttype</artifactId>
+                <version>${version.eclipse.core.contenttype}</version>
+            </dependency>
+            <!--XSD sequencer-->
+            <dependency>
+                <groupId>org.eclipse.xsd</groupId>
+                <artifactId>xsd</artifactId>
+                <version>${version.eclipse.xsd}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.emf</groupId>
+                <artifactId>common</artifactId>
+                <version>${version.eclipse.emf.common}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.emf</groupId>
+                <artifactId>ecore</artifactId>
+                <version>${version.eclipse.emf.ecore}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.emf</groupId>
+                <artifactId>ecore-change</artifactId>
+                <version>${version.eclipse.emf.ecorechange}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.emf</groupId>
+                <artifactId>ecore-xmi</artifactId>
+                <version>${version.eclipse.emf.ecorexmi}</version>
+            </dependency>
+
+            <!--TIKA text extractor
+
+            This Tika dependency brings in a lot of 3rd party libraries. We'll exclude
+            most of them and only keep a few that are for Microsoft Office documents,
+            HTML, XML and PDF. When others are needed, they can simply be added to
+            an application's dependencies.
+
+            Note that 'modeshape-jcr' excludes even more transitive dependencies, since it
+            only uses the MIME type detector functionality, whereas the 'modeshape-extractor-tika'
+            uses everything defined here.
+            -->
+            <dependency>
+                <groupId>org.apache.tika</groupId>
+                <artifactId>tika-parsers</artifactId>
+                <version>${version.tika}</version>
+                <exclusions>
+                    <!--
+                    The NetCDF and HDF files are often used in the scientific community, so we exclude this
+                    library (and the Commons HTTP Client library) by default.
+                    -->
+                    <exclusion>
+                        <groupId>edu.ucar</groupId>
+                        <artifactId>netcdf</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-httpclient</groupId>
+                        <artifactId>commons-httpclient</artifactId>
+                    </exclusion>
+
+                    <!--
+                    Image metadata isn't often for text extraction,
+                    so exclude this library by default.
+                    -->
+                    <exclusion>
+                        <groupId>com.drewnoakes</groupId>
+                        <artifactId>metadata-extractor</artifactId>
+                    </exclusion>
+                    <!--
+                    RSS and Atom feeds aren't often used for text extraction,
+                    so exclude this library by default.
+                    -->
+                    <exclusion>
+                        <groupId>rome</groupId>
+                        <artifactId>rome</artifactId>
+                    </exclusion>
+                    <!--
+                    Boilerpipe HTML templates are likely not used,
+                    so exclude this library by default.
+                    -->
+                    <exclusion>
+                        <groupId>de.l3s.boilerpipe</groupId>
+                        <artifactId>boilerpipe</artifactId>
+                    </exclusion>
+                    <!--
+                    PDFBox declares the Bouncy Castle dependencies
+                    as optional, and Tika always depends on them to avoid
+                    problems with encrypted PDFs (see TIKA-370).
+                    We exclude them by default.
+                    -->
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcmail-jdk15</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcprov-jdk15</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
             <!--
                 JBOSS AS subsystem
             -->
             <dependency>
                 <groupId>javax.resource</groupId>
                 <artifactId>connector-api</artifactId>
-                <version>${javax.connector-api.version}</version>
+                <version>${version.javax.connector-api}</version>
                 <scope>provided</scope>
             </dependency>
 
             <dependency>
                 <groupId>javax.transaction</groupId>
                 <artifactId>jta</artifactId>
-                <version>${javax.jta.version}</version>
+                <version>${version.javax.jta}</version>
                 <scope>provided</scope>
             </dependency>
 
-            <!--dependency>
-                <groupId>org.jboss</groupId>
-                <artifactId>jboss-common-core</artifactId>
-                <version>${jboss.common.core.version}</version>
+            <!--
+                Demo module
+            -->
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${version.logback}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>servlet-api</artifactId>
+                <version>${version.javax.servlet}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>mongo-java-driver</artifactId>
+                <version>${version.mongo.driver}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <!-- Testing (note the scope) -->
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${version.junit}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit-dep</artifactId>
+                <version>${version.junit}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-all</artifactId>
+                <version>${version.org.mockito}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-library</artifactId>
+                <version>${version.hamcrest}</version>
+                <scope>test</scope>
+            </dependency>
+            <!--
+                Apache JCR API unit tests (for any JCR implementation), which is a
+                subset of the official TCK
+            -->
+            <dependency>
+                <groupId>org.apache.jackrabbit</groupId>
+                <artifactId>jackrabbit-jcr-tests</artifactId>
+                <version>${version.jackrabbit.jcr.tck}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!--
+            Optional/recommended JAAS implementation (PicketBox)
+            -->
+            <dependency>
+                <groupId>org.picketbox</groupId>
+                <artifactId>picketbox-bare</artifactId>
+                <version>${version.org.picketbox.bare}</version>
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
-                        <groupId>org.jboss.logging</groupId>
-                        <artifactId>jboss-logging-spi</artifactId>
+                        <groupId>apache-xalan</groupId>
+                        <artifactId>xalan</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>apache-xalan</groupId>
+                        <artifactId>serializer</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>apache-xerces</groupId>
+                        <artifactId>xml-apis</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>apache-xerces</groupId>
+                        <artifactId>xercesImpl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.hibernate</groupId>
+                        <artifactId>hibernate</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency-->
-            <dependency>
-                <groupId>org.jboss.as</groupId>
-                <artifactId>jboss-as-controller</artifactId>
-                <version>${jbossas-version}</version>
-                <scope>provided</scope>
             </dependency>
+
+            <!-- Logging (all of the libraries should be optional, as the logging implementation falls back to JUL if nothig is found -->
             <dependency>
-                <groupId>org.jboss.as</groupId>
-                <artifactId>jboss-as-naming</artifactId>
-                <version>${jbossas-version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.as</groupId>
-                <artifactId>jboss-as-clustering-jgroups</artifactId>
-                <version>${jbossas-version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.as</groupId>
-                <artifactId>jboss-as-subsystem-test</artifactId>
-                <version>${jbossas-version}</version>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${version.org.slf4j}</version>
                 <scope>test</scope>
             </dependency>
-            <!--dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-xjc</artifactId>
-                <version>${xjc.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.xml.bind</groupId>
-                        <artifactId>jaxb-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency-->
+
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+                <version>${version.org.slf4j}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>${version.log4j}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-cachestore-bdbje</artifactId>
+                <version>${version.org.infinispan}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-cachestore-jdbm</artifactId>
+                <version>${version.org.infinispan}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-cachestore-jdbc</artifactId>
+                <version>${version.org.infinispan}</version>
+                <scope>test</scope>
+            </dependency>
+            <!--Required by infinispan-cachestore-jdbc -->
+            <dependency>
+                <groupId>c3p0</groupId>
+                <artifactId>c3p0</artifactId>
+                <version>${version.c3p0}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- Databases and JDBC Drivers -->
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${version.jdbc.mysql}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>hsqldb</groupId>
+                <artifactId>hsqldb</artifactId>
+                <version>${version.jdbc.hsqldb}</version>
+                <scope>test</scope>
+            </dependency>
+            <!--WebDav client used for testing-->
+            <dependency>
+                <groupId>com.googlecode.sardine</groupId>
+                <artifactId>sardine</artifactId>
+                <version>${version.sardine}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>de.undercouch</groupId>
+                <artifactId>bson4jackson</artifactId>
+                <version>${version.bson4jackson}</version>
+                <scope>test</scope>
+            </dependency>
+            <!-- MongoDB binary store test -->
+            <dependency>
+                <groupId>de.flapdoodle.embed</groupId>
+                <artifactId>de.flapdoodle.embed.mongo</artifactId>
+                <version>${version.embedmongo}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>com.googlecode.json-simple</groupId>
+                <artifactId>json-simple</artifactId>
+                <version>${version.json.simple}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!--WebDAV servlet-->
+            <dependency>
+                <groupId>org.jmock</groupId>
+                <artifactId>jmock</artifactId>
+                <version>${version.jmock}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-webmvc</artifactId>
+                <version>${version.spring.webmvc}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-mock</artifactId>
+                <version>${version.spring.mock}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

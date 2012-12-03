@@ -25,6 +25,7 @@
 package org.modeshape.web.jcr.rest.form;
 
 import javax.ws.rs.FormParam;
+import javax.ws.rs.ext.Provider;
 import java.io.InputStream;
 
 /**
@@ -33,6 +34,7 @@ import java.io.InputStream;
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
+@Provider
 public final class FileUploadForm {
 
     private InputStream fileData;

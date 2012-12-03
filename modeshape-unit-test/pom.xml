@@ -42,8 +42,8 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
-            <version>${project.version}</version>
             <type>test-jar</type>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
@@ -54,7 +54,6 @@
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-core</artifactId>
-            <version>${infinispan.version}</version>
             <type>test-jar</type>
         </dependency>
         <dependency>

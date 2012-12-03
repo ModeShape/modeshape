@@ -33,7 +33,7 @@
             <dependency>
                 <groupId>javax.jcr</groupId>
                 <artifactId>jcr</artifactId>
-                <version>${jcr.version}</version>
+                <version>${version.jcr}</version>
             </dependency>
 
             <!-- ModeShape public API -->
@@ -47,14 +47,14 @@
             <dependency>
                 <groupId>javax.transaction</groupId>
                 <artifactId>jta</artifactId>
-                <version>${javax.jta.version}</version>
+                <version>${version.javax.jta}</version>
             </dependency>
 
             <!-- Servlet public API (for authentication)-->
             <dependency>
                 <groupId>javax.servlet</groupId>
                 <artifactId>servlet-api</artifactId>
-                <version>${javax.servlet.version}</version>
+                <version>${version.javax.servlet}</version>
             </dependency>
 
         </dependencies>

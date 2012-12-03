@@ -24,11 +24,9 @@
 
 package org.modeshape.test.integration;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
 import java.io.File;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +50,9 @@ import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.observation.Event;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
 
 /**
  * Arquillian integration tests that uses the predefined repository which contains sequencers, to test that sequencing is
@@ -73,9 +74,10 @@ public class SequencersIntegrationTest {
 
     @Deployment
     public static WebArchive createDeployment() {
+        URL sequencerTestFilesFolderUrl = SequencersIntegrationTest.class.getClassLoader().getResource("sequencer");
         return ShrinkWrap.create(WebArchive.class, "sequencers-test.war")
                          .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"))
-                         .addAsResource(new File("src/test/resources/sequencer"))
+                         .addAsResource(sequencerTestFilesFolderUrl, "sequencer")
                          .setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
     }
 

@@ -23,8 +23,8 @@
   -->
 <module xmlns="urn:jboss:module:1.1" name="org.apache.lucene" slot="3.5">
     <resources>
-        <resource-root path="lucene-core-${lucene.version}.jar" />
-        <resource-root path="lucene-regex-${lucene.regex.version}.jar" />
-        <resource-root path="jakarta-regexp-${lucene.regex.jakarta.version}.jar" />
+        <resource-root path="lucene-core-${version.lucene}.jar" />
+        <resource-root path="lucene-regex-${version.lucene.regex}.jar" />
+        <resource-root path="jakarta-regexp-${version.lucene.regex.jakarta}.jar" />
     </resources>
 </module>

@@ -59,9 +59,7 @@
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-core</artifactId>
-            <version>${infinispan.version}</version>
             <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
@@ -84,8 +82,7 @@
             <artifactId>joda-time</artifactId>
         </dependency>
         <!--
-        These following are defined as 'provided' in the parent POM, since ModeShape
-        has code that is optional if these APIs are available.
+          These following are defined as 'provided'.
         -->
         <dependency>
             <groupId>javax.servlet</groupId>
@@ -95,6 +92,7 @@
         <dependency>
             <groupId>org.jboss.spec.javax.security.jacc</groupId>
             <artifactId>jboss-jacc-api_1.4_spec</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!--

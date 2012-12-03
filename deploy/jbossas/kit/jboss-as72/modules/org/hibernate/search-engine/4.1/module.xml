@@ -23,14 +23,14 @@
   -->
 <module xmlns="urn:jboss:module:1.1" name="org.hibernate.search-engine" slot="4.1">
     <resources>
-        <resource-root path="hibernate-search-engine-${hibernate.search.version}.jar" />
-        <resource-root path="hibernate-search-infinispan-${hibernate.search.version}.jar" />
-        <resource-root path="infinispan-lucene-directory-${infinispan.version}.jar" />
-        <resource-root path="avro-${hibernate.search.avro.version}.jar" />
-        <resource-root path="jackson-mapper-asl-${hibernate.search.jackson-mapper-asl.version}.jar" />
-        <resource-root path="jackson-core-asl-${hibernate.search.jackson-core-asl.version}.jar" />
-        <resource-root path="paranamer-${hibernate.search.paranamer.version}.jar" />
-        <resource-root path="snappy-java-${hibernate.search.snappy.version}.jar" />
+        <resource-root path="hibernate-search-engine-${version.hibernate.search}.jar" />
+        <resource-root path="hibernate-search-infinispan-${version.hibernate.search}.jar" />
+        <resource-root path="infinispan-lucene-directory-${version.org.infinispan}.jar" />
+        <resource-root path="avro-${version.hibernate.search.avro}.jar" />
+        <resource-root path="jackson-mapper-asl-${version.org.codehaus.jackson}.jar" />
+        <resource-root path="jackson-core-asl-${version.org.codehaus.jackson}.jar" />
+        <resource-root path="paranamer-${version.hibernate.search.paranamer}.jar" />
+        <resource-root path="snappy-java-${version.hibernate.search.snappy}.jar" />
     </resources>
     <dependencies>
         <module name="javax.transaction.api"/>

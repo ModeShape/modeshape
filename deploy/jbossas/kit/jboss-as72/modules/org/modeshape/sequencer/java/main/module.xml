@@ -23,17 +23,17 @@
 <module xmlns="urn:jboss:module:1.1" name="org.modeshape.sequencer.java">
     <resources>
         <resource-root path="modeshape-sequencer-java-${project.version}.jar" />
-        <resource-root path="javassist-${javaassist.version}.jar" />
-        <resource-root path="common-${eclipse.equinox.common.version}.jar" />
-        <resource-root path="core-${eclipse.jdt.core.version}.jar" />
-        <resource-root path="resources-${eclipse.core.resources.version}.jar" />
-        <resource-root path="expressions-${eclipse.core.expressions.version}.jar" />
-        <resource-root path="runtime-${eclipse.core.runtime.version}.jar" />
-        <resource-root path="osgi-${eclipse.osgi.version}.jar" />
-        <resource-root path="jobs-${eclipse.core.jobs.version}.jar" />
-        <resource-root path="registry-${eclipse.equinox.registry.version}.jar" />
-        <resource-root path="preferences-${eclipse.equinox.preferences.version}.jar" />
-        <resource-root path="contenttype-${eclipse.core.contenttype.version}.jar" />
+        <resource-root path="javassist-${version.org.javassist}.jar" />
+        <resource-root path="common-${version.eclipse.equinox.common}.jar" />
+        <resource-root path="core-${version.eclipse.jdt.core}.jar" />
+        <resource-root path="resources-${version.eclipse.core.resources}.jar" />
+        <resource-root path="expressions-${version.eclipse.core.expressions}.jar" />
+        <resource-root path="runtime-${version.eclipse.core.runtime}.jar" />
+        <resource-root path="osgi-${version.eclipse.osgi}.jar" />
+        <resource-root path="jobs-${version.eclipse.core.jobs}.jar" />
+        <resource-root path="registry-${version.eclipse.equinox.registry}.jar" />
+        <resource-root path="preferences-${version.eclipse.equinox.preferences}.jar" />
+        <resource-root path="contenttype-${version.eclipse.core.contenttype}.jar" />
     </resources>
 
     <dependencies>

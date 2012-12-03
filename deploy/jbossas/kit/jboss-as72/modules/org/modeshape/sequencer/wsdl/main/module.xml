@@ -23,7 +23,7 @@
 <module xmlns="urn:jboss:module:1.1" name="org.modeshape.sequencer.wsdl">
     <resources>
         <resource-root path="modeshape-sequencer-wsdl-${project.version}.jar" />
-        <resource-root path="wsdl4j-${wsdl4j.version}.jar" />
+        <resource-root path="wsdl4j-${version.wsdl4j}.jar" />
     </resources>
 
     <dependencies>

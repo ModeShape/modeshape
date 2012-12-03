@@ -339,7 +339,6 @@
                 <dependency>
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-jbossas-subsystem</artifactId>
-                    <version>${project.version}</version>
                 </dependency>
 
                 <dependency>
@@ -365,13 +364,11 @@
                 <dependency>
                   <groupId>org.mongodb</groupId>
                   <artifactId>mongo-java-driver</artifactId>
-                  <version>${mongo.driver.version}</version>
                   <scope>compile</scope>
                 </dependency>
                 <dependency>
                     <groupId>org.jboss.as</groupId>
                     <artifactId>jboss-as-controller</artifactId>
-                    <version>${jbossas-version}</version>
                     <scope>compile</scope>
                 </dependency>
             </dependencies>
@@ -408,7 +405,7 @@
                               <link>http://docs.oracle.com/javaee/6/api/</link>
                               <link>http://www.slf4j.org/apidocs/</link>
                               <link>http://www.day.com/maven/javax.jcr/javadocs/jcr-2.0/</link>
-                              <link>http://api.mongodb.org/java/${mongo.driver.version}/</link>
+                              <link>http://api.mongodb.org/java/${version.mongo.driver}/</link>
                               <link>http://aperture.sourceforge.net/doc/javadoc/1.5.0/index.html</link>
                             </links>
                             <groups>
@@ -505,7 +502,7 @@
                                         -link http://docs.oracle.com/javaee/6/api/
                                         -link http://www.slf4j.org/apidocs/
                                         -link http://www.day.com/maven/javax.jcr/javadocs/jcr-2.0/
-                                        -link http://api.mongodb.org/java/${mongo.driver.version}/
+                                        -link http://api.mongodb.org/java/${version.mongo.driver}/
                                         -link http://aperture.sourceforge.net/doc/javadoc/1.5.0/index.html
 
                                         -group "ModeShape API (extends JCR API)" ${project.groupId}.jcr.api*
@@ -540,6 +537,7 @@
                                 <!-- Build both AS7 distributions -->
                                 <descriptorRef>jbossas-71-distribution</descriptorRef>
                                 <!--descriptorRef>jbossas-72-distribution</descriptorRef-->
+                                <descriptorRef>jbossas-eap-distribution</descriptorRef>
                             </descriptorRefs>
                         </configuration>
                     </plugin>
@@ -549,7 +547,7 @@
         </profile>
         <profile>
             <!--
-              This profile is enabled by default and only builds the distributions required 
+              This profile is enabled by default and only builds the distributions required
               by the integration tests.
             -->
             <id>integration</id>
@@ -563,9 +561,10 @@
                         <configuration>
                             <finalName>modeshape-${project.version}</finalName>
                             <descriptorRefs>
-                                <!-- Build both AS7 distributions -->
+                                <!-- Build  distributions -->
                                 <descriptorRef>jbossas-71-distribution</descriptorRef>
                                 <!--descriptorRef>jbossas-72-distribution</descriptorRef-->
+                                <descriptorRef>jbossas-eap-distribution</descriptorRef>
                             </descriptorRefs>
                         </configuration>
                     </plugin>

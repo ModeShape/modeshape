@@ -32,18 +32,22 @@
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-controller</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-naming</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-clustering-jgroups</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-subsystem-test</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
@@ -51,8 +55,8 @@
         </dependency>
 
         <!--
-More compile dependencies (defined _after_ the JBoss AS7 artifacts and Infinispan)
--->
+        More compile dependencies (defined _after_ the JBoss AS7 artifacts and Infinispan)
+        -->
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-search-infinispan</artifactId>
@@ -63,8 +67,8 @@ More compile dependencies (defined _after_ the JBoss AS7 artifacts and Infinispa
         </dependency>
 
         <!--
-Testing (note the scope)
--->
+        Testing (note the scope)
+        -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

@@ -27,6 +27,7 @@ package org.modeshape.test.integration;
 import static junit.framework.Assert.assertEquals;
 import java.io.File;
 import java.io.InputStream;
+import java.net.URL;
 import javax.annotation.Resource;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
@@ -58,9 +59,10 @@ public class TikaTextExtractorIntegrationTest {
 
     @Deployment
     public static WebArchive createDeployment() {
+        URL resourcesFolderUrl = SequencersIntegrationTest.class.getClassLoader().getResource("text-extractor");
         return ShrinkWrap.create(WebArchive.class, "tika-extractor-test.war")
                          .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"))
-                         .addAsResource(new File("src/test/resources/text-extractor"))
+                         .addAsResource(resourcesFolderUrl, "text-extractor")
                          .setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
     }
 

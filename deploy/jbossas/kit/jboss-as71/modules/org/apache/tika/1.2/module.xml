@@ -35,7 +35,6 @@
         <resource-root path="fontbox-1.7.0.jar" />
         <resource-root path="geronimo-stax-api_1.0_spec-1.0.1.jar" />
         <resource-root path="isoparser-1.0-RC-1.jar" />
-        <resource-root path="javassist-3.11.0.GA.jar" />
         <resource-root path="jempbox-1.7.0.jar" />
         <resource-root path="juniversalchardet-1.0.3.jar" />
         <resource-root path="pdfbox-1.7.0.jar" />

@@ -15,12 +15,11 @@
     <url>http://www.modeshape.org</url>
 
     <!--
-    Define the dependencies.  Note that all version and scopes default to those
-    defined in the dependencyManagement section of the parent pom.
+    Define the dependencies.  Note that all version and scopes default to those defined in the dependencyManagement section of the parent pom.
     -->
     <dependencies>
         <dependency>
-            <groupId>javassist</groupId>
+            <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>
         </dependency>
         <!--
@@ -34,24 +33,6 @@
         <dependency>
             <groupId>org.eclipse.jdt</groupId>
             <artifactId>core</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.eclipse.core.runtime.compatibility</groupId>
-                    <artifactId>auth</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.eclipse.equinox</groupId>
-                    <artifactId>app</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.eclipse</groupId>
-                    <artifactId>text</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.eclipse.core</groupId>
-                    <artifactId>filesystem</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
     </dependencies>
 
