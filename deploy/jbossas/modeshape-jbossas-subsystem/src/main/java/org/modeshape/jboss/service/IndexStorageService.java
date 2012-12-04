@@ -39,16 +39,8 @@ public class IndexStorageService implements Service<IndexStorage> {
     private final InjectedValue<CacheContainer> cacheContainerInjectedValue = new InjectedValue<CacheContainer>();
 
     private final IndexStorage indexStorage;
-    private final String repositoryName;
 
-    public IndexStorageService( String repositoryName ) {
-        this.indexStorage = null;
-        this.repositoryName = repositoryName;
-    }
-
-    public IndexStorageService( String repositoryName,
-                                EditableDocument queryConfig ) {
-        this.repositoryName = repositoryName;
+    public IndexStorageService( EditableDocument queryConfig ) {
         this.indexStorage = new IndexStorage(queryConfig);
     }
 
@@ -97,10 +89,12 @@ public class IndexStorageService implements Service<IndexStorage> {
 
     @Override
     public IndexStorage getValue() throws IllegalStateException, IllegalArgumentException {
-        IndexStorage result = indexStorage == null ? IndexStorage.defaultStorage(this.repositoryName, dataDirectoryPathInjector
-                .getValue()) : indexStorage;
-        result.setCacheContainer(cacheContainerInjectedValue.getOptionalValue());
-        return result;
+        if (indexStorage.useDefaultValues()) {
+            //use optional value because this service is dynamically queried from AbstractAddIndexStorage
+            indexStorage.setDefaultValues(dataDirectoryPathInjector.getOptionalValue());
+        }
+        indexStorage.setCacheContainer(cacheContainerInjectedValue.getOptionalValue());
+        return indexStorage;
     }
 
     @Override

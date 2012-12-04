@@ -23,9 +23,7 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import java.util.List;
-import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.EditableDocument;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -42,6 +40,7 @@ import org.modeshape.jboss.service.IndexStorage;
 import org.modeshape.jboss.service.IndexStorageService;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
 
@@ -73,37 +72,37 @@ public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
         final ModelNode address = operation.require(OP_ADDR);
         final PathAddress pathAddress = PathAddress.pathAddress(address);
         final String repositoryName = pathAddress.getElement(1).getValue();
-        // final String storageName = pathAddress.getLastElement().getValue();
+        ServiceName indexStorageServiceName = ModeShapeServiceNames.indexStorageServiceName(repositoryName);
 
-        // Get the type of the storage (this is required) ...
-        // final String storageType = storage.get(ModelKeys.INDEX_STORAGE_TYPE).asString();
-
-        // Build the 'query' document (except for the extractors) ...
-        EditableDocument query = Schematic.newDocument();
-        String rebuild = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP.resolveModelAttribute(context, storage).asString().toLowerCase();
-        query.set(FieldName.REBUILD_UPON_STARTUP, rebuild);
+        //get the default service registered by "AddRepository
+        IndexStorageService existingService = (IndexStorageService)context.getServiceRegistry(false).getService(indexStorageServiceName).getService();
+        //get the query instance from the existing service, so that any indexing attributes set via "AddRepository" are not lost
+        EditableDocument query = existingService.getValue().getQueryConfiguration();
+        if (!query.containsField(FieldName.REBUILD_UPON_STARTUP)) {
+            String rebuild = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP.resolveModelAttribute(context, storage).asString().toLowerCase();
+            query.set(FieldName.REBUILD_UPON_STARTUP, rebuild);
+        }
 
         // Build the 'query/indexing' nested document ...
         EditableDocument indexing = query.getOrCreateDocument(FieldName.INDEXING);
         writeIndexingConfiguration(context, storage, indexing);
 
-        // Build the 'query/indexingStorage' nested document ...
-        EditableDocument indexStorage = query.getOrCreateDocument(FieldName.INDEX_STORAGE);
+        // Build the 'query/indexingStorage' nested document from scratch
+        EditableDocument indexStorage = query.setDocument(FieldName.INDEX_STORAGE);
         writeIndexStorageConfiguration(context, storage, indexStorage);
 
         // Build the 'query/indexing/backend' nested document ...
         EditableDocument backend = indexing.getOrCreateDocument(FieldName.INDEXING_BACKEND);
         writeIndexingBackendConfiguration(context, storage, backend);
 
-        IndexStorageService service = new IndexStorageService(repositoryName, query);
-        ServiceName serviceName = ModeShapeServiceNames.indexStorageServiceName(repositoryName);
-        ServiceBuilder<IndexStorage> indexBuilder = target.addService(serviceName, service);
+        IndexStorageService service = new IndexStorageService(query);
+        ServiceBuilder<IndexStorage> indexBuilder = target.addService(indexStorageServiceName, service);
         indexBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
         addControllersAndDependencies(repositoryName, service, newControllers, indexBuilder, target);
 
-        //A default index service should've already been added by AddRepository, so we remove it here
-        context.removeService(serviceName);
+        //remove the default service added by "AddRepository"
+        context.removeService(indexStorageServiceName);
         newControllers.add(indexBuilder.install());
     }
 

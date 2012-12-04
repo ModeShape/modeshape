@@ -196,7 +196,7 @@ public class ModelAttributes {
                                                                                                               ModelType.INT).setXmlName(Attribute.ASYNC_MAX_QUEUE_SIZE.getLocalName())
                                                                                                                             .setAllowExpression(true)
                                                                                                                             .setAllowNull(true)
-                                                                                                                            .setDefaultValue(new ModelNode().set(0))
+                                                                                                                            .setDefaultValue(new ModelNode().set(1))
                                                                                                                             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                             .build();
 
@@ -643,7 +643,7 @@ public class ModelAttributes {
                                                                                                      ModelType.STRING).setXmlName(Attribute.THREAD_POOL.getLocalName())
                                                                                                                       .setAllowExpression(true)
                                                                                                                       .setAllowNull(true)
-                                                                                                                      .setDefaultValue(new ModelNode().set("modeshape-workers"))
+                                                                                                                      .setDefaultValue(new ModelNode().set("modeshape-indexing-workers"))
                                                                                                                       .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                       .build();
 
