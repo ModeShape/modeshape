@@ -62,7 +62,6 @@ import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
-import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
 
 public class AddRepository extends AbstractAddStepHandler {
 
@@ -121,113 +120,30 @@ public class AddRepository extends AbstractAddStepHandler {
         configDoc.set(FieldName.JNDI_NAME, "");// always set to empty string, since we'll register in JNDI here ...
         final String jndiName = ModeShapeJndiNames.JNDI_BASE_NAME + repositoryName;
         String jndiAlias = ModeShapeJndiNames.jndiNameFrom(model, repositoryName);
-        if (jndiName.equals(jndiAlias)) jndiAlias = null;
+        if (jndiName.equals(jndiAlias)) {
+            jndiAlias = null;
+        }
 
         // Always enable monitoring ...
-        EditableDocument monitoring = configDoc.getOrCreateDocument(FieldName.MONITORING);
-        monitoring.set(FieldName.MONITORING_ENABLED, enableMonitoring);
+        enableMonitoring(enableMonitoring, configDoc);
 
         // Initial node-types if configured
-        if (model.hasDefined(ModelKeys.NODE_TYPES)) {
-            EditableArray nodeTypesArray = configDoc.getOrCreateArray(FieldName.NODE_TYPES);
-            for (ModelNode nodeType : model.get(ModelKeys.NODE_TYPES).asList()) {
-                nodeTypesArray.add(nodeType.asString());
-            }
-        }
+        parseCustomNodeTypes(model, configDoc);
 
         // Workspace information is on the repository model node (unlike the XML) ...
-        EditableDocument workspacesDoc = configDoc.getOrCreateDocument(FieldName.WORKSPACES);
-        boolean allowWorkspaceCreation = attribute(context, model, ModelAttributes.ALLOW_WORKSPACE_CREATION).asBoolean();
-        String defaultWorkspaceName = attribute(context, model, ModelAttributes.DEFAULT_WORKSPACE).asString();
-        workspacesDoc.set(FieldName.ALLOW_CREATION, allowWorkspaceCreation);
-        workspacesDoc.set(FieldName.DEFAULT, defaultWorkspaceName);
-        if (model.hasDefined(ModelKeys.PREDEFINED_WORKSPACE_NAMES)) {
-            for (ModelNode name : model.get(ModelKeys.PREDEFINED_WORKSPACE_NAMES).asList()) {
-                workspacesDoc.getOrCreateArray(FieldName.PREDEFINED).add(name.asString());
-            }
-
-            if (model.hasDefined(ModelKeys.WORKSPACES_INITIAL_CONTENT)) {
-                EditableDocument initialContentDocument = workspacesDoc.getOrCreateDocument(FieldName.INITIAL_CONTENT);
-                List<ModelNode> workspacesInitialContent = model.get(ModelKeys.WORKSPACES_INITIAL_CONTENT).asList();
-                for (ModelNode initialContent : workspacesInitialContent) {
-                    Property initialContentProperty = initialContent.asProperty();
-                    initialContentDocument.set(initialContentProperty.getName(), initialContentProperty.getValue().asString());
-                }
-            }
-        }
-        if (model.hasDefined(ModelKeys.DEFAULT_INITIAL_CONTENT)) {
-            EditableDocument initialContentDocument = workspacesDoc.getOrCreateDocument(FieldName.INITIAL_CONTENT);
-            initialContentDocument.set(FieldName.DEFAULT_INITIAL_CONTENT, model.get(ModelKeys.DEFAULT_INITIAL_CONTENT).asString());
-        }
+        EditableDocument workspacesDoc = parseWorkspaces(context, model, configDoc);
 
         // Set the storage information (that was set on the repository ModelNode) ...
-        EditableDocument storage = configDoc.getOrCreateDocument(FieldName.STORAGE);
-        storage.set(FieldName.CACHE_NAME, cacheName);
-        storage.set(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP, JBossTransactionManagerLookup.class.getName());
-        // The proper container will be injected into the RepositoryService, so use the fixed container name ...
-        storage.set(FieldName.CACHE_CONFIGURATION, RepositoryService.CONTENT_CONTAINER_NAME);
-
-        EditableDocument security = configDoc.getOrCreateDocument(FieldName.SECURITY);
+        parseStorage(cacheName, configDoc);
 
         // Indexing ...
-        EditableDocument query = configDoc.getOrCreateDocument(FieldName.QUERY);
-        EditableDocument indexing = query.getOrCreateDocument(FieldName.INDEXING);
-        String analyzerClassname = ModelAttributes.ANALYZER_CLASSNAME.resolveModelAttribute(context, model).asString();
-        String analyzerClasspath = ModelAttributes.ANALYZER_MODULE.resolveModelAttribute(context, model).asString();
-        String indexThreadPool = ModelAttributes.THREAD_POOL.resolveModelAttribute(context, model).asString();
-        int indexBatchSize = ModelAttributes.BATCH_SIZE.resolveModelAttribute(context, model).asInt();
-        String indexReaderStrategy = ModelAttributes.READER_STRATEGY.resolveModelAttribute(context, model).asString();
-        String indexMode = ModelAttributes.MODE.resolveModelAttribute(context, model).asString();
-        String systemContentIndexingMode = ModelAttributes.SYSTEM_CONTENT_MODE.resolveModelAttribute(context, model).asString();
-        int indexAsyncThreadPoolSize = ModelAttributes.ASYNC_THREAD_POOL_SIZE.resolveModelAttribute(context, model).asInt();
-        int indexAsyncMaxQueueSize = ModelAttributes.ASYNC_MAX_QUEUE_SIZE.resolveModelAttribute(context, model).asInt();
+        EditableDocument query = parseIndexing(context, model, configDoc);
 
-        indexing.set(FieldName.INDEXING_ANALYZER, analyzerClassname);
-        if (analyzerClasspath != null) {
-            indexing.set(FieldName.INDEXING_ANALYZER_CLASSPATH, analyzerClasspath);
-        }
-        indexing.set(FieldName.THREAD_POOL, indexThreadPool);
-        indexing.set(FieldName.INDEXING_BATCH_SIZE, indexBatchSize);
-        indexing.set(FieldName.INDEXING_READER_STRATEGY, indexReaderStrategy);
-        indexing.set(FieldName.INDEXING_MODE, indexMode);
-        indexing.set(FieldName.INDEXING_MODE_SYSTEM_CONTENT, systemContentIndexingMode);
-        indexing.set(FieldName.INDEXING_ASYNC_THREAD_POOL_SIZE, indexAsyncThreadPoolSize);
-        indexing.set(FieldName.INDEXING_ASYNC_MAX_QUEUE_SIZE, indexAsyncMaxQueueSize);
-        for (String key : model.keys()) {
-            if (key.startsWith("hibernate")) {
-                indexing.set(key, model.get(key).asString());
-            }
-        }
-
-        // JAAS ...
-        EditableDocument jaas = security.getOrCreateDocument(FieldName.JAAS);
-        String securityDomain = attribute(context, model, ModelAttributes.SECURITY_DOMAIN).asString();
-        jaas.set(FieldName.JAAS_POLICY_NAME, securityDomain);
-
-        // Anonymous ...
-        EditableDocument anon = security.getOrCreateDocument(FieldName.ANONYMOUS);
-        String anonUsername = attribute(context, model, ModelAttributes.ANONYMOUS_USERNAME).asString();
-        boolean useAnonIfFailed = attribute(context, model, ModelAttributes.USE_ANONYMOUS_IF_AUTH_FAILED).asBoolean();
-        anon.set(FieldName.ANONYMOUS_USERNAME, anonUsername);
-        anon.set(FieldName.USE_ANONYMOUS_ON_FAILED_LOGINS, useAnonIfFailed);
-        if (model.hasDefined(ModelKeys.ANONYMOUS_ROLES)) {
-            for (ModelNode roleNode : model.get(ModelKeys.ANONYMOUS_ROLES).asList()) {
-                anon.getOrCreateArray(FieldName.ANONYMOUS_ROLES).addString(roleNode.asString());
-            }
-        }
-
-        // Servlet authenticator ...
-        EditableArray providers = security.getOrCreateArray(FieldName.PROVIDERS);
-        EditableDocument servlet = Schematic.newDocument();
-        servlet.set(FieldName.CLASSNAME, "servlet");
-        servlet.set(FieldName.NAME, "Authenticator that uses the Servlet context");
-        providers.add(servlet);
+        //security
+        parseSecurity(context, model, configDoc);
 
         // Clustering and the JGroups channel ...
-        if (clusterChannelName != null) {
-            EditableDocument clustering = configDoc.getOrCreateDocument(FieldName.CLUSTERING);
-            clustering.setString(FieldName.CLUSTER_NAME, clusterChannelName);
-        }
+        parseClustering(clusterChannelName, configDoc);
 
         // Now create the repository service that manages the lifecycle of the JcrRepository instance ...
         RepositoryConfiguration repositoryConfig = new RepositoryConfiguration(configDoc, repositoryName);
@@ -313,14 +229,15 @@ public class AddRepository extends AbstractAddStepHandler {
 
         // Add dependency to the data directory ...
         ServiceName dataDirServiceName = ModeShapeServiceNames.dataDirectoryServiceName(repositoryName);
-        newControllers.add(RelativePathService.addService(dataDirServiceName,
-                                                          "modeshape/" + repositoryName,
-                                                          ModeShapeExtension.DATA_DIR_VARIABLE,
-                                                          target));
+        ServiceController<String> dataDirServiceController = RelativePathService.addService(dataDirServiceName,
+                                                                     "modeshape/" + repositoryName,
+                                                                     ModeShapeExtension.DATA_DIR_VARIABLE,
+                                                                     target);
+        newControllers.add(dataDirServiceController);
         builder.addDependency(dataDirServiceName, String.class, repositoryService.getDataDirectoryPathInjector());
 
         // Add the default index storage service which will provide the indexing configuration
-        IndexStorageService defaultIndexService = new IndexStorageService(repositoryName);
+        IndexStorageService defaultIndexService = new IndexStorageService(query);
         ServiceBuilder<IndexStorage> indexBuilder = target.addService(ModeShapeServiceNames.indexStorageServiceName(repositoryName),
                                                                       defaultIndexService);
         indexBuilder.addDependency(dataDirServiceName, String.class, defaultIndexService.getDataDirectoryPathInjector());
@@ -342,16 +259,138 @@ public class AddRepository extends AbstractAddStepHandler {
         newControllers.add(binaryStorageBuilder.install());
     }
 
-    protected void writeIndexingBackendConfiguration( final OperationContext context,
-                                                      final ModelNode storage,
-                                                      EditableDocument backend,
-                                                      String type ) throws OperationFailedException {
-        // Set the type of indexing backend ...
-        backend.set(FieldName.TYPE, type);
-        backend.set(FieldName.TYPE, FieldValue.INDEXING_BACKEND_TYPE_JMS_MASTER);
-        String connJndi = attribute(context, storage, ModelAttributes.CONNECTION_FACTORY_JNDI_NAME).asString();
-        String queueJndi = attribute(context, storage, ModelAttributes.QUEUE_JNDI_NAME).asString();
-        backend.set(FieldName.INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME, connJndi);
-        backend.set(FieldName.INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME, queueJndi);
+    private void parseClustering( String clusterChannelName,
+                                  EditableDocument configDoc ) {
+        if (clusterChannelName != null) {
+            EditableDocument clustering = configDoc.getOrCreateDocument(FieldName.CLUSTERING);
+            clustering.setString(FieldName.CLUSTER_NAME, clusterChannelName);
+        }
+    }
+
+    private void parseSecurity( OperationContext context,
+                                ModelNode model,
+                                EditableDocument configDoc ) throws OperationFailedException {
+        // JAAS ...
+        EditableDocument security = configDoc.getOrCreateDocument(FieldName.SECURITY);
+
+        EditableDocument jaas = security.getOrCreateDocument(FieldName.JAAS);
+        String securityDomain = attribute(context, model, ModelAttributes.SECURITY_DOMAIN).asString();
+        jaas.set(FieldName.JAAS_POLICY_NAME, securityDomain);
+
+        // Anonymous ...
+        EditableDocument anon = security.getOrCreateDocument(FieldName.ANONYMOUS);
+        String anonUsername = attribute(context, model, ModelAttributes.ANONYMOUS_USERNAME).asString();
+        boolean useAnonIfFailed = attribute(context, model, ModelAttributes.USE_ANONYMOUS_IF_AUTH_FAILED).asBoolean();
+        anon.set(FieldName.ANONYMOUS_USERNAME, anonUsername);
+        anon.set(FieldName.USE_ANONYMOUS_ON_FAILED_LOGINS, useAnonIfFailed);
+        if (model.hasDefined(ModelKeys.ANONYMOUS_ROLES)) {
+            for (ModelNode roleNode : model.get(ModelKeys.ANONYMOUS_ROLES).asList()) {
+                anon.getOrCreateArray(FieldName.ANONYMOUS_ROLES).addString(roleNode.asString());
+            }
+        }
+
+        // Servlet authenticator ...
+        EditableArray providers = security.getOrCreateArray(FieldName.PROVIDERS);
+        EditableDocument servlet = Schematic.newDocument();
+        servlet.set(FieldName.CLASSNAME, "servlet");
+        servlet.set(FieldName.NAME, "Authenticator that uses the Servlet context");
+        providers.add(servlet);
+    }
+
+    private EditableDocument parseIndexing( OperationContext context,
+                                            ModelNode model,
+                                            EditableDocument configDoc ) throws OperationFailedException {
+        EditableDocument query = configDoc.getOrCreateDocument(FieldName.QUERY);
+        EditableDocument indexing = query.getOrCreateDocument(FieldName.INDEXING);
+
+        String analyzerClassname = ModelAttributes.ANALYZER_CLASSNAME.resolveModelAttribute(context, model).asString();
+        indexing.set(FieldName.INDEXING_ANALYZER, analyzerClassname);
+
+        if (model.hasDefined(ModelKeys.ANALYZER_MODULE)) {
+            String analyzerClasspath = ModelAttributes.ANALYZER_MODULE.resolveModelAttribute(context, model).asString();
+            indexing.set(FieldName.INDEXING_ANALYZER_CLASSPATH, analyzerClasspath);
+        }
+
+        String indexThreadPool = ModelAttributes.THREAD_POOL.resolveModelAttribute(context, model).asString();
+        indexing.set(FieldName.THREAD_POOL, indexThreadPool);
+
+        int indexBatchSize = ModelAttributes.BATCH_SIZE.resolveModelAttribute(context, model).asInt();
+        indexing.set(FieldName.INDEXING_BATCH_SIZE, indexBatchSize);
+
+        String indexReaderStrategy = ModelAttributes.READER_STRATEGY.resolveModelAttribute(context, model).asString();
+        indexing.set(FieldName.INDEXING_READER_STRATEGY, indexReaderStrategy);
+
+        String indexMode = ModelAttributes.MODE.resolveModelAttribute(context, model).asString();
+        indexing.set(FieldName.INDEXING_MODE, indexMode);
+
+        String systemContentIndexingMode = ModelAttributes.SYSTEM_CONTENT_MODE.resolveModelAttribute(context, model).asString();
+        indexing.set(FieldName.INDEXING_MODE_SYSTEM_CONTENT, systemContentIndexingMode);
+
+        int indexAsyncThreadPoolSize = ModelAttributes.ASYNC_THREAD_POOL_SIZE.resolveModelAttribute(context, model).asInt();
+        indexing.set(FieldName.INDEXING_ASYNC_THREAD_POOL_SIZE, indexAsyncThreadPoolSize);
+
+        int indexAsyncMaxQueueSize = ModelAttributes.ASYNC_MAX_QUEUE_SIZE.resolveModelAttribute(context, model).asInt();
+        indexing.set(FieldName.INDEXING_ASYNC_MAX_QUEUE_SIZE, indexAsyncMaxQueueSize);
+
+        for (String key : model.keys()) {
+            if (key.startsWith("hibernate")) {
+                indexing.set(key, model.get(key).asString());
+            }
+        }
+        return query;
+    }
+
+    private void parseStorage( String cacheName,
+                               EditableDocument configDoc ) {
+        EditableDocument storage = configDoc.getOrCreateDocument(FieldName.STORAGE);
+        storage.set(FieldName.CACHE_NAME, cacheName);
+        storage.set(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP, JBossTransactionManagerLookup.class.getName());
+        // The proper container will be injected into the RepositoryService, so use the fixed container name ...
+        storage.set(FieldName.CACHE_CONFIGURATION, RepositoryService.CONTENT_CONTAINER_NAME);
+    }
+
+    private EditableDocument parseWorkspaces( OperationContext context,
+                                              ModelNode model,
+                                              EditableDocument configDoc ) throws OperationFailedException {
+        EditableDocument workspacesDoc = configDoc.getOrCreateDocument(FieldName.WORKSPACES);
+        boolean allowWorkspaceCreation = attribute(context, model, ModelAttributes.ALLOW_WORKSPACE_CREATION).asBoolean();
+        String defaultWorkspaceName = attribute(context, model, ModelAttributes.DEFAULT_WORKSPACE).asString();
+        workspacesDoc.set(FieldName.ALLOW_CREATION, allowWorkspaceCreation);
+        workspacesDoc.set(FieldName.DEFAULT, defaultWorkspaceName);
+        if (model.hasDefined(ModelKeys.PREDEFINED_WORKSPACE_NAMES)) {
+            for (ModelNode name : model.get(ModelKeys.PREDEFINED_WORKSPACE_NAMES).asList()) {
+                workspacesDoc.getOrCreateArray(FieldName.PREDEFINED).add(name.asString());
+            }
+
+            if (model.hasDefined(ModelKeys.WORKSPACES_INITIAL_CONTENT)) {
+                EditableDocument initialContentDocument = workspacesDoc.getOrCreateDocument(FieldName.INITIAL_CONTENT);
+                List<ModelNode> workspacesInitialContent = model.get(ModelKeys.WORKSPACES_INITIAL_CONTENT).asList();
+                for (ModelNode initialContent : workspacesInitialContent) {
+                    Property initialContentProperty = initialContent.asProperty();
+                    initialContentDocument.set(initialContentProperty.getName(), initialContentProperty.getValue().asString());
+                }
+            }
+        }
+        if (model.hasDefined(ModelKeys.DEFAULT_INITIAL_CONTENT)) {
+            EditableDocument initialContentDocument = workspacesDoc.getOrCreateDocument(FieldName.INITIAL_CONTENT);
+            initialContentDocument.set(FieldName.DEFAULT_INITIAL_CONTENT, model.get(ModelKeys.DEFAULT_INITIAL_CONTENT).asString());
+        }
+        return workspacesDoc;
+    }
+
+    private void parseCustomNodeTypes( ModelNode model,
+                                       EditableDocument configDoc ) {
+        if (model.hasDefined(ModelKeys.NODE_TYPES)) {
+            EditableArray nodeTypesArray = configDoc.getOrCreateArray(FieldName.NODE_TYPES);
+            for (ModelNode nodeType : model.get(ModelKeys.NODE_TYPES).asList()) {
+                nodeTypesArray.add(nodeType.asString());
+            }
+        }
+    }
+
+    private void enableMonitoring( boolean enableMonitoring,
+                                   EditableDocument configDoc ) {
+        EditableDocument monitoring = configDoc.getOrCreateDocument(FieldName.MONITORING);
+        monitoring.set(FieldName.MONITORING_ENABLED, enableMonitoring);
     }
 }

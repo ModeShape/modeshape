@@ -334,6 +334,7 @@
                     <node-type>custom.cnd</node-type>
                 </node-types>
                 <cache-index-storage cache-container="index-cache-container" data-cache-name="index-data"/>
+                <indexing analyzer-classname="org.apache.lucene.analysis.standard.ClassicAnalyzer"/>
             </repository>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>
