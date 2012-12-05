@@ -70,6 +70,7 @@ import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
+import org.modeshape.jcr.value.basic.StringReference;
 
 /**
  * A node used within a {@link SessionCache session} when that node has (or may have) transient (unsaved) changes. This node is an
@@ -743,19 +744,32 @@ public class SessionNode implements MutableCachedNode {
         boolean isFrozenNode = JcrNtLexicon.FROZEN_NODE.equals(this.getPrimaryType(cache));
 
         for (Object value : property.getValuesAsArray()) {
-            NodeKeyReference ref = (NodeKeyReference)value;
+            NodeKey referredKey = null;
+            boolean isWeak = false;
+            if (value instanceof NodeKeyReference) {
+                NodeKeyReference nkref = (NodeKeyReference)value;
+                isWeak = nkref.isWeak();
+                referredKey = ((NodeKeyReference)value).getNodeKey();
+            } else if (value instanceof StringReference) {
+                String refStr = ((StringReference)value).getString();
+                if (!NodeKey.isValidFormat(refStr)) {
+                    // not a valid reference, so just return ...
+                    return;
+                }
+                referredKey = new NodeKey(refStr);
+                isWeak = false;
+            }
 
-            if (isFrozenNode && !ref.isWeak()) {
+            if (isFrozenNode && !isWeak) {
                 // JCR 3.13.4.6 ignore all strong outgoing references from a frozen node
                 return;
             }
 
-            NodeKey referredKey = ref.getNodeKey();
             if (cache.getNode(referredKey) == null) {
                 continue;
             }
             SessionNode referredNode = writableSession(cache).mutable(referredKey);
-            ReferenceType referenceType = ref.isWeak() ? ReferenceType.WEAK : ReferenceType.STRONG;
+            ReferenceType referenceType = isWeak ? ReferenceType.WEAK : ReferenceType.STRONG;
             if (add) {
                 referredNode.addReferrer(cache, key, referenceType);
             } else {

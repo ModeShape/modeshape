@@ -857,6 +857,22 @@ public class BasicArray implements MutableArray {
     }
 
     @Override
+    public Document with( String fieldName,
+                          Object newValue ) {
+        BasicArray clone = new BasicArray();
+        for (Field field : this.fields()) {
+            String name = field.getName();
+            if (name.equals(fieldName)) {
+                clone.put(name, newValue);
+            } else {
+                Object oldValue = field.getValue();
+                clone.put(name, oldValue);
+            }
+        }
+        return clone;
+    }
+
+    @Override
     public Array with( ValueTransformer transformer ) {
         boolean transformed = false;
         BasicArray clone = new BasicArray();

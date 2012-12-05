@@ -32,6 +32,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.EmptyIterator;
+import org.modeshape.jcr.cache.document.WorkspaceCache;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path.Segment;
@@ -129,6 +130,17 @@ public interface ChildReferences extends Iterable<ChildReference> {
      */
     ChildReference getChild( NodeKey key,
                              Context context );
+
+    /**
+     * Return whether it is possible/feasible to {@link #getChild(NodeKey, Context) find} a ChildReference for a child node given
+     * only its NodeKey. Implementations that have very large numbers of children may provide an alternative way to
+     * {@link WorkspaceCache#getChildReference(NodeKey,NodeKey) lookup} a child reference directly. In such cases, this method may
+     * return false.
+     * 
+     * @return true if {@link #getChild(NodeKey)} and {@link #getChild(NodeKey, Context)} should be used to find the
+     *         ChildReference, or false if doing so is not recommended.
+     */
+    boolean supportsGetChildReferenceByKey();
 
     /**
      * Get an iterator over all of the children that have same name matching the supplied value. This essentially returns an

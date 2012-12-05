@@ -40,6 +40,8 @@ import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
+import org.modeshape.jcr.federation.spi.PageKey;
+import org.modeshape.jcr.federation.spi.PageWriter;
 
 /**
  * A {@link GitFunction} that returns the information about a particular commit. The structure of this area of the repository is
@@ -49,7 +51,7 @@ import org.modeshape.jcr.federation.spi.DocumentWriter;
  *   /commit/{branchOrTagNameOrObjectId}
  * </pre>
  */
-public class GitCommitDetails extends GitFunction {
+public class GitCommitDetails extends GitFunction implements PageableGitFunction {
 
     /**
      * The name of the character set that is used when building the patch difference for a commit.
@@ -59,13 +61,23 @@ public class GitCommitDetails extends GitFunction {
     protected static final String NAME = "commit";
     protected static final String ID = "/commit";
 
-    public GitCommitDetails( GitConnector connector ) {
-        super(NAME, connector);
+    protected static Object referenceToCommit( ObjectId id,
+                                               Values values ) {
+        return values.referenceTo(ID + DELIMITER + id.getName());
     }
 
-    @Override
-    public boolean isPaged() {
-        return true;
+    protected static Object[] referencesToCommits( ObjectId[] ids,
+                                                   Values values ) {
+        int size = ids.length;
+        Object[] results = new Object[size];
+        for (int i = 0; i != size; ++i) {
+            results[i] = referenceToCommit(ids[i], values);
+        }
+        return results;
+    }
+
+    public GitCommitDetails( GitConnector connector ) {
+        super(NAME, connector);
     }
 
     @Override
@@ -78,9 +90,10 @@ public class GitCommitDetails extends GitFunction {
             // This is the top-level "/commit" node
             writer.setPrimaryType(GitLexicon.DETAILS);
 
-            // Generate the child references to the branches and tags ...
+            // Generate the child references to the branches, tags, and commits in the history ...
             addBranchesAsChildren(git, spec, writer);
             addTagsAsChildren(git, spec, writer);
+            addCommitsAsChildren(git, spec, writer, pageSize);
 
         } else if (spec.parameterCount() == 1) {
             // This is the top-level "/commit/{branchOrTagNameOrObjectId}" node
@@ -90,7 +103,8 @@ public class GitCommitDetails extends GitFunction {
             RevWalk walker = new RevWalk(repository);
             walker.setRetainBody(true);
             try {
-                ObjectId objId = repository.resolve(spec.parameter(2));
+                String branchOrTagOrCommitId = spec.parameter(0);
+                ObjectId objId = resolveBranchOrTagOrCommitId(repository, branchOrTagOrCommitId);
                 RevCommit commit = walker.parseCommit(objId);
                 writer.addProperty(GitLexicon.OBJECT_ID, objId.name());
                 writer.addProperty(GitLexicon.AUTHOR, commit.getAuthorIdent().getName());
@@ -99,7 +113,7 @@ public class GitCommitDetails extends GitFunction {
                 writer.addProperty(GitLexicon.TITLE, commit.getShortMessage());
                 writer.addProperty(GitLexicon.MESSAGE, commit.getFullMessage().trim());// removes trailing whitespace
                 writer.addProperty(GitLexicon.PARENTS, GitCommitDetails.referencesToCommits(commit.getParents(), values));
-                writer.addProperty(GitLexicon.TREE, GitTree.referenceToTree(objId, values));
+                writer.addProperty(GitLexicon.TREE, GitTree.referenceToTree(objId, branchOrTagOrCommitId, values));
 
                 // Compute the difference between the commit and it's parent(s), and generate the diff/patch file ...
                 List<DiffEntry> differences = computeDifferences(commit, walker, repository);
@@ -116,9 +130,26 @@ public class GitCommitDetails extends GitFunction {
         return writer.document();
     }
 
-    protected static List<DiffEntry> computeDifferences( RevCommit commit,
-                                                         RevWalk walker,
-                                                         Repository repository )
+    @Override
+    public boolean isPaged() {
+        return true;
+    }
+
+    @Override
+    public Document execute( Repository repository,
+                             Git git,
+                             CallSpecification spec,
+                             PageWriter writer,
+                             Values values,
+                             PageKey pageKey ) throws GitAPIException, IOException {
+        if (spec.parameterCount() != 0) return null;
+        addCommitsAsPageOfChildren(git, repository, spec, writer, pageKey);
+        return writer.document();
+    }
+
+    protected List<DiffEntry> computeDifferences( RevCommit commit,
+                                                  RevWalk walker,
+                                                  Repository repository )
         throws MissingObjectException, IncorrectObjectTypeException, CorruptObjectException, IOException {
         // Set up the tree walk to obtain the difference between the commit and it's parent(s) ...
         TreeWalk tw = new TreeWalk(repository);
@@ -133,8 +164,8 @@ public class GitCommitDetails extends GitFunction {
         return DiffEntry.scan(tw);
     }
 
-    protected static String computePatch( Iterable<DiffEntry> entries,
-                                          Repository repository ) throws IOException {
+    protected String computePatch( Iterable<DiffEntry> entries,
+                                   Repository repository ) throws IOException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         DiffFormatter formatter = new DiffFormatter(output);
         formatter.setRepository(repository);
@@ -144,18 +175,4 @@ public class GitCommitDetails extends GitFunction {
         return output.toString(DIFF_CHARSET_NAME);
     }
 
-    protected static Object referenceToCommit( ObjectId id,
-                                               Values values ) {
-        return values.referenceTo(ID + DELIMITER + id.getName());
-    }
-
-    protected static Object[] referencesToCommits( ObjectId[] ids,
-                                                   Values values ) {
-        int size = ids.length;
-        Object[] results = new Object[size];
-        for (int i = 0; i != size; ++i) {
-            results[i] = referenceToCommit(ids[i], values);
-        }
-        return results;
-    }
 }

@@ -145,7 +145,13 @@ public class FederatedDocumentWriter implements DocumentWriter {
     public DocumentWriter addProperty( Name name,
                                        Object[] values ) {
         if (values == null) return this;
-        translator.setProperty(federatedDocument, new BasicMultiValueProperty(name, values), null);
+        int len = values.length;
+        if (len == 0) return this;
+        if (len == 1) {
+            translator.setProperty(federatedDocument, new BasicSingleValueProperty(name, values[0]), null);
+        } else {
+            translator.setProperty(federatedDocument, new BasicMultiValueProperty(name, values), null);
+        }
         return this;
     }
 
@@ -153,12 +159,16 @@ public class FederatedDocumentWriter implements DocumentWriter {
     public DocumentWriter addProperty( Name name,
                                        Object firstValue,
                                        Object... additionalValues ) {
-        List<Object> values = new ArrayList<Object>(1 + additionalValues.length);
-        values.add(firstValue);
-        for (Object value : additionalValues) {
-            values.add(value);
+        if (additionalValues.length == 0) {
+            translator.setProperty(federatedDocument, new BasicSingleValueProperty(name, firstValue), null);
+        } else {
+            List<Object> values = new ArrayList<Object>(1 + additionalValues.length);
+            values.add(firstValue);
+            for (Object value : additionalValues) {
+                values.add(value);
+            }
+            translator.setProperty(federatedDocument, new BasicMultiValueProperty(name, values), null);
         }
-        translator.setProperty(federatedDocument, new BasicMultiValueProperty(name, values), null);
         return this;
     }
 

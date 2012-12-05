@@ -44,4 +44,5 @@ public interface Pageable {
      * @return either a {@code non-null} page document or {@code null} indicating that such a page doesn't exist
      */
     Document getChildren( PageKey pageKey );
+
 }

@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Reference;
 
 /**
  * An immutable version of a property that has exactly 1 value. This is done for efficiency of the in-memory representation, since
@@ -67,7 +68,7 @@ public class BasicSingleValueProperty extends BasicProperty {
 
     @Override
     public boolean isReference() {
-        return getFirstValue() instanceof NodeKeyReference;
+        return getFirstValue() instanceof Reference;
     }
 
     @Override

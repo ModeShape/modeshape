@@ -60,7 +60,6 @@ public interface DocumentStore {
     /**
      * Updates the content of the document at the given key with the given document.
      * 
-     *
      * @param key the key or identifier for the document
      * @param document the content with which the existing document should be updated
      * @param sessionNode the {@link SessionNode} instance which contains the changes that caused the update
@@ -136,4 +135,16 @@ public interface DocumentStore {
      *         block with such a key.
      */
     public Document getChildrenBlock( String key );
+
+    /**
+     * Returns a document representing a single child reference from the supplied parent to the supplied child. This method is
+     * called when it is too expensive to find the child reference within the child references.
+     * 
+     * @param parentKey the key for the parent
+     * @param childKey the key for the child
+     * @return the document representation of a child reference, or null if the implementation doesn't support this method or the
+     *         parent does not contain a child with the given key
+     */
+    public Document getChildReference( String parentKey,
+                                       String childKey );
 }

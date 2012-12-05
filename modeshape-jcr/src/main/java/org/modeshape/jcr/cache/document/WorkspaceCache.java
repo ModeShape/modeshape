@@ -200,6 +200,14 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         return getNode(reference.getKey());
     }
 
+    public ChildReference getChildReference( NodeKey parentKey,
+                                             NodeKey childKey ) {
+        // Look up the information in the document store ...
+        Document doc = documentStore.getChildReference(parentKey.toString(), childKey.toString());
+        if (doc == null) return null;
+        return translator.childReferenceFrom(doc);
+    }
+
     @Override
     public Iterator<NodeKey> getAllNodeKeys() {
         return getAllNodeKeysAtAndBelow(getRootKey());

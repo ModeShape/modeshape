@@ -46,6 +46,12 @@ import org.modeshape.jcr.federation.spi.PageWriter;
  */
 public class GitHistory extends GitFunction implements PageableGitFunction {
 
+    protected static Object referenceToHistory( ObjectId id,
+                                                String branchOrTagName,
+                                                Values values ) {
+        return values.referenceTo(ID + DELIMITER + branchOrTagName + DELIMITER + id.getName());
+    }
+
     protected static final String NAME = "commits";
     protected static final String ID = "/commits";
 
@@ -72,16 +78,17 @@ public class GitHistory extends GitFunction implements PageableGitFunction {
             // This is the top-level "/commits" node
             writer.setPrimaryType(GitLexicon.COMMITS);
 
-            // Generate the child references to the branches and tags ...
+            // Generate the child references to the branches, tags, and commits in the history ...
             addBranchesAsChildren(git, spec, writer);
             addTagsAsChildren(git, spec, writer);
+            addCommitsAsChildren(git, spec, writer, pageSize);
 
         } else if (spec.parameterCount() == 1) {
             // This is the top-level "/commits/{branchOrTagNameOrObjectId}" node
             writer.setPrimaryType(GitLexicon.OBJECT);
 
             // Generate the child references to the (latest) commits on this branch/tag ...
-            String branchOrTagNameOrObjectId = spec.parameter(1);
+            String branchOrTagNameOrObjectId = spec.parameter(0);
             ObjectId objId = repository.resolve(branchOrTagNameOrObjectId);
             RevWalk walker = new RevWalk(repository);
             try {
@@ -105,7 +112,8 @@ public class GitHistory extends GitFunction implements PageableGitFunction {
             // so we need to show the commit information ...
             RevWalk walker = new RevWalk(repository);
             try {
-                ObjectId objId = repository.resolve(spec.parameter(2));
+                String branchOrTagOrObjectId = spec.parameter(1);
+                ObjectId objId = repository.resolve(branchOrTagOrObjectId);
                 RevCommit commit = walker.parseCommit(objId);
                 writer.addProperty(GitLexicon.OBJECT_ID, objId.name());
                 writer.addProperty(GitLexicon.AUTHOR, commit.getAuthorIdent().getName());
@@ -114,7 +122,7 @@ public class GitHistory extends GitFunction implements PageableGitFunction {
                 writer.addProperty(GitLexicon.TITLE, commit.getShortMessage());
                 writer.addProperty(GitLexicon.MESSAGE, commit.getFullMessage().trim());
                 writer.addProperty(GitLexicon.PARENTS, GitCommitDetails.referencesToCommits(commit.getParents(), values));
-                writer.addProperty(GitLexicon.TREE, GitTree.referenceToTree(objId, values));
+                writer.addProperty(GitLexicon.TREE, GitTree.referenceToTree(objId, branchOrTagOrObjectId, values));
                 // And there are no children
             } finally {
                 walker.dispose();
@@ -133,34 +141,34 @@ public class GitHistory extends GitFunction implements PageableGitFunction {
                              PageWriter writer,
                              Values values,
                              PageKey pageKey ) throws GitAPIException, IOException {
-        String branchOrTagNameOrObjectId = spec.parameter(1);
-        ObjectId objId = repository.resolve(branchOrTagNameOrObjectId);
-        RevWalk walker = new RevWalk(repository);
-        try {
-            int offset = pageKey.getOffsetInt();
-            RevCommit commit = walker.parseCommit(objId);
-            LogCommand command = git.log();
-            command.add(commit.getId());
-            command.setSkip(offset);
-            command.setMaxCount(pageSize);
-            for (RevCommit rev : command.call()) {
-                String commitId = rev.getId().toString();
-                writer.addChild(spec.childId(commitId), commitId);
+        if (spec.parameterCount() == 0) {
+            // List the next page of commits ...
+            addCommitsAsPageOfChildren(git, repository, spec, writer, pageKey);
+        } else {
+            // We know the branch, tag, or commit for the history ...
+            String branchOrTagNameOrObjectId = spec.parameter(0);
+            ObjectId objId = repository.resolve(branchOrTagNameOrObjectId);
+            RevWalk walker = new RevWalk(repository);
+            try {
+                int offset = pageKey.getOffsetInt();
+                RevCommit commit = walker.parseCommit(objId);
+                LogCommand command = git.log();
+                command.add(commit.getId());
+                command.setSkip(offset);
+                command.setMaxCount(pageSize);
+                for (RevCommit rev : command.call()) {
+                    String commitId = rev.getId().toString();
+                    writer.addChild(spec.childId(commitId), commitId);
+                }
+
+                // Handle paging ...
+                int totalNumberOfChildren = Integer.MAX_VALUE; // don't know how many (or at least it's very expensive)
+                int nextOffset = offset + pageSize;
+                writer.addPage(pageKey.getParentId(), nextOffset, pageSize, totalNumberOfChildren);
+            } finally {
+                walker.dispose();
             }
-
-            // Handle paging ...
-            int totalNumberOfChildren = Integer.MAX_VALUE; // don't know how many (or at least it's very expensive)
-            int nextOffset = offset + pageSize;
-            writer.addPage(pageKey.getParentId(), nextOffset, pageSize, totalNumberOfChildren);
-            return writer.document();
-        } finally {
-            walker.dispose();
         }
-    }
-
-    protected static String referenceToHistory( ObjectId id,
-                                                String branchOrTagName,
-                                                Values values ) {
-        return ID + DELIMITER + branchOrTagName + DELIMITER + id.getName();
+        return writer.document();
     }
 }

@@ -39,6 +39,11 @@ import org.modeshape.jcr.value.Path.Segment;
 public abstract class AbstractChildReferences implements ChildReferences {
 
     @Override
+    public boolean supportsGetChildReferenceByKey() {
+        return true;
+    }
+
+    @Override
     public boolean isEmpty() {
         return size() == 0;
     }
@@ -121,7 +126,7 @@ public abstract class AbstractChildReferences implements ChildReferences {
 
                     // See if there are any nodes inserted before this node ...
                     ChildInsertions insertions = changes.insertionsBefore(next);
-                    if (insertions != null && nextAfterIter != next) {   //prevent circular references
+                    if (insertions != null && nextAfterIter != next) { // prevent circular references
                         nextAfterIter = next;
                         iter = insertions.inserted().iterator();
                         continue;

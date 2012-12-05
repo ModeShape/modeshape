@@ -24,15 +24,15 @@
 
 package org.modeshape.jcr;
 
+import static junit.framework.Assert.assertEquals;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
-import static junit.framework.Assert.assertEquals;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 
 /**
  * Unit test for the node-types feature, which allows initial cnd files to be pre-configured in a repository
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class JcrNodeTypesTest extends SingleUseAbstractTest {
@@ -46,8 +46,8 @@ public class JcrNodeTypesTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldRegisterValidNodeTypesOnly() throws Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream(
-                "config/repo-config-invalid-node-types.json"));
+        startRepositoryWithConfiguration(getClass().getClassLoader()
+                                                   .getResourceAsStream("config/repo-config-invalid-node-types.json"));
 
         validateNodesWithCustomTypes();
     }

@@ -23,6 +23,15 @@
  */
 package org.modeshape.jcr.cache.document;
 
+import java.io.Serializable;
+import java.lang.ref.WeakReference;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.JcrLexicon;
@@ -40,15 +49,6 @@ import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.Property;
-import java.io.Serializable;
-import java.lang.ref.WeakReference;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This is an immutable {@link CachedNode} implementation that lazily loads its content. Technically each instance modifies its
@@ -174,16 +174,17 @@ public class LazyCachedNode implements CachedNode, Serializable {
      */
     protected ChildReference parentReferenceToSelf( WorkspaceCache cache ) {
         if (parentReferenceToSelfParentRef == null || parentReferenceToSelfParentRef.get() == null) {
-            //either we don't have a parent reference at all yet, or it has been reclaimed by the GC so we need to reset parentRefToSelf
+            // either we don't have a parent reference at all yet, or it has been reclaimed by the GC so we need to reset
+            // parentRefToSelf
             parentReferenceToSelf = null;
-        }
-        else if (parentReferenceToSelf != null ) {
-            //we have a cached child reference and a parent reference, but we need to check that the reference isn't stale (it could happen for SNS)
+        } else if (parentReferenceToSelf != null) {
+            // we have a cached child reference and a parent reference, but we need to check that the reference isn't stale (it
+            // could happen for SNS)
             CachedNode parentFromCache = parent(cache);
             CachedNode parentReferenceToSelfParent = parentReferenceToSelfParentRef.get();
             if (parentReferenceToSelfParent != parentFromCache) {
-                //the parent coming from the ws cache (possibly the "db") is different that what we have cached, so we need to
-                //retrieve it again
+                // the parent coming from the ws cache (possibly the "db") is different that what we have cached, so we need to
+                // retrieve it again
                 parentReferenceToSelf = null;
             }
         }
@@ -194,7 +195,14 @@ public class LazyCachedNode implements CachedNode, Serializable {
                 // This should be the root node ...
                 parentReferenceToSelf = cache.childReferenceForRoot();
             } else {
-                parentReferenceToSelf = parent.getChildReferences(cache).getChild(key);
+                ChildReferences references = parent.getChildReferences(cache);
+                if (references.supportsGetChildReferenceByKey()) {
+                    parentReferenceToSelf = references.getChild(key);
+                } else {
+                    // Directly look up the ChildReference by going to the cache (and possibly connector) ...
+                    NodeKey parentKey = getParentKey(cache);
+                    parentReferenceToSelf = cache.getChildReference(parentKey, key);
+                }
                 parentReferenceToSelfParentRef = new WeakReference<CachedNode>(parent);
             }
         }
@@ -280,6 +288,7 @@ public class LazyCachedNode implements CachedNode, Serializable {
     @Override
     public Name getPrimaryType( NodeCache cache ) {
         Property prop = getProperty(JcrLexicon.PRIMARY_TYPE, cache);
+        assert prop != null;
         WorkspaceCache wsCache = workspaceCache(cache);
         return wsCache.nameFactory().create(prop.getFirstValue());
     }

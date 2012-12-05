@@ -56,7 +56,7 @@ public class BasicDocument extends LinkedHashMap<String, Object> implements Muta
         super();
     }
 
-    public BasicDocument(Document document) {
+    public BasicDocument( Document document ) {
         putAll(document);
     }
 
@@ -449,6 +449,22 @@ public class BasicDocument extends LinkedHashMap<String, Object> implements Muta
             String name = field.getName();
             Object newValue = changedFields.get(name);
             if (newValue != null) {
+                clone.put(name, newValue);
+            } else {
+                Object oldValue = field.getValue();
+                clone.put(name, oldValue);
+            }
+        }
+        return clone;
+    }
+
+    @Override
+    public Document with( String fieldName,
+                          Object newValue ) {
+        BasicDocument clone = new BasicDocument();
+        for (Field field : this.fields()) {
+            String name = field.getName();
+            if (name.equals(fieldName)) {
                 clone.put(name, newValue);
             } else {
                 Object oldValue = field.getValue();

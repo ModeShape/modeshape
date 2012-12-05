@@ -163,6 +163,12 @@ public class LocalDocumentStore implements DocumentStore {
         return entry.getContentAsDocument();
     }
 
+    @Override
+    public Document getChildReference( String parentKey,
+                                       String childKey ) {
+        return null; // don't support this
+    }
+
     /**
      * Returns the local Infinispan cache.
      * 

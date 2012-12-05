@@ -109,7 +109,8 @@ final class JcrChildNodeIterator implements NodeIterator {
         }
         Node child = null;
         do {
-            child = resolver.nodeFrom(iterator.next());
+            ChildReference childRef = iterator.next();
+            child = resolver.nodeFrom(childRef);
         } while (child == null);
         ndx++;
         return child;

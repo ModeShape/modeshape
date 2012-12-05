@@ -23,16 +23,19 @@
  */
 package org.modeshape.connector.git;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.ListBranchCommand.ListMode;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.infinispan.schematic.document.Document;
+import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.cache.DocumentStoreException;
 import org.modeshape.jcr.federation.spi.Connector;
@@ -43,11 +46,67 @@ import org.modeshape.jcr.federation.spi.Pageable;
 import org.modeshape.jcr.federation.spi.ReadOnlyConnector;
 
 /**
- * A read-only {@link Connector} that accesses the content in a Git repository.
+ * A read-only {@link Connector} that accesses the content in a local Git repository that is a clone of a remote repository.
+ * <p>
+ * This connector has several properties that must be configured via the {@link RepositoryConfiguration}:
+ * <ul>
+ * <li><strong><code>directoryPath</code></strong> - The path to the folder that is or contains the <code>.git</code> data
+ * structure is to be accessed by this connector.</li>
+ * <li><strong><code>remoteName</code></strong> - The alias used by the local Git repository for the remote repository. The
+ * default is the "<code>origin</code>". If the value contains commas, the value contains an ordered list of remote aliases that
+ * should be searched; the first one to match an existing remote will be used.</li>
+ * </ul>
+ * </p>
+ * <p>
+ * The connector results in the following structure:
+ * </p>
+ * <table cellspacing="0" cellpadding="1" border="1">
+ * <tr>
+ * <th>Path</th>
+ * <th>Description</th>
+ * </tr>
+ * <tr>
+ * <td><code>/branches/{branchName}</code></td>
+ * <td>The list of branches.</td>
+ * </tr>
+ * <tr>
+ * <td><code>/tags/{tagName}</code></td>
+ * <td>The list of tags.</td>
+ * </tr>
+ * <tr>
+ * <td><code>/commits/{branchOrTagNameOrCommit}/{objectId}</code></td>
+ * <td>The history of commits on the branch, tag or object ID name "<code>{branchOrTagNameOrCommit}</code>", where "
+ * <code>{objectId}</code>" is the object ID of the commit.</td>
+ * </tr>
+ * <tr>
+ * <td><code>/commit/{branchOrTagNameOrCommit}</code></td>
+ * <td>The information about a particular branch, tag or commit "<code>{branchOrTagNameOrCommit}</code>".</td>
+ * </tr>
+ * <tr>
+ * <td><code>/tree/{branchOrTagOrObjectId}/{filesAndFolders}/...</code></td>
+ * <td>The structure of the directories and files in the specified branch, tag or commit "<code>{branchOrTagNameOrCommit}</code>".
+ * </td>
+ * </tr>
+ * </table>
  */
 public class GitConnector extends ReadOnlyConnector implements Pageable {
 
+    public static final String DEFAULT_REMOTE_NAME = "origin";
+    private static final String GIT_DIRECTORY_NAME = ".git";
+
     private static final String GIT_CND_PATH = "org/modeshape/connector/git/git.cnd";
+
+    /**
+     * The string path for a {@link File} object that represents the top-level directory of the local Git repository. This is set
+     * via reflection and is required for this connector.
+     */
+    private String directoryPath;
+
+    /**
+     * The string value representing the name of the remote that serves as the primary remote repository. By default this is
+     * "origin". This is set via reflection and is required for this connector.
+     */
+    private String remoteName = DEFAULT_REMOTE_NAME;
 
     private Repository repository;
     private Git git;
@@ -60,15 +119,56 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         super.initialize(registry, nodeTypeManager);
 
+        // Verify the local git repository exists ...
+        File dir = new File(directoryPath);
+        if (!dir.exists() || !dir.isDirectory()) {
+            throw new RepositoryException(GitI18n.directoryDoesNotExist.text(dir.getAbsolutePath()));
+        }
+        if (!dir.canRead()) {
+            throw new RepositoryException(GitI18n.directoryCannotBeRead.text(dir.getAbsolutePath()));
+        }
+        File gitDir = dir;
+        if (!GIT_DIRECTORY_NAME.equals(gitDir.getName())) {
+            gitDir = new File(dir, ".git");
+            if (!gitDir.exists() || !gitDir.isDirectory()) {
+                throw new RepositoryException(GitI18n.directoryDoesNotExist.text(gitDir.getAbsolutePath()));
+            }
+            if (!gitDir.canRead()) {
+                throw new RepositoryException(GitI18n.directoryCannotBeRead.text(gitDir.getAbsolutePath()));
+            }
+        }
+
         values = new Values(factories(), getContext().getBinaryStore());
 
-        // Set up the repository instance ...
-        // repository = new Repository();
+        // Set up the repository instance. We expect it to exist, and will use it as a "bare" repository (meaning
+        // that no working directory will be used nor needs to exist) ...
+        repository = new FileRepositoryBuilder().setGitDir(gitDir).setMustExist(true).setBare().build();
         git = new Git(repository);
+
+        // Make sure the remote exists ...
+        Set<String> remoteNames = repository.getConfig().getSubsections("remote");
+        String remoteName = null;
+        for (String desiredName : this.remoteName.split(",")) {
+            if (remoteNames.contains(desiredName)) {
+                remoteName = desiredName;
+                break;
+            }
+        }
+        if (remoteName == null) {
+            throw new RepositoryException(GitI18n.remoteDoesNotExist.text(this.remoteName, gitDir.getAbsolutePath()));
+        }
+        this.remoteName = remoteName;
+        assert this.remoteName != null;
 
         // Register the different functions ...
         functions = new HashMap<String, GitFunction>();
-        register(new GitRoot(this), new GitBranches(this), new GitTags(this), new GitHistory(this));
+        pageableFunctions = new HashMap<String, PageableGitFunction>();
+        register(new GitRoot(this),
+                 new GitBranches(this),
+                 new GitTags(this),
+                 new GitHistory(this),
+                 new GitCommitDetails(this),
+                 new GitTree(this));
 
         // Register the Git-specific node types ...
         InputStream cndStream = getClass().getClassLoader().getResourceAsStream(GIT_CND_PATH);
@@ -108,7 +208,10 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
             assert parentId != null;
             writer.setParent(parentId);
             // Now call the function ...
-            return function.execute(repository, git, callSpec, writer, values);
+            Document doc = function.execute(repository, git, callSpec, writer, values);
+            // Log the result ...
+            getLogger().trace("ID={0},result={1}", id, doc);
+            return doc;
         } catch (Throwable e) {
             throw new DocumentStoreException(id, e);
         }
@@ -131,6 +234,15 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
     }
 
     @Override
+    public Document getChildReference( String parentKey,
+                                       String childKey ) {
+        // The child key always contains the path to the child, so therefore we can always use it to create the
+        // child reference document ...
+        CallSpecification callSpec = new CallSpecification(childKey);
+        return newChildReference(childKey, callSpec.lastParameter());
+    }
+
+    @Override
     public String getDocumentId( String path ) {
         // Our paths are basically used as IDs ...
         return path;
@@ -142,8 +254,8 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
         return doc != null;
     }
 
-    protected final ListMode branchListMode() {
-        return null;
+    protected final String remoteName() {
+        return remoteName;
     }
 
 }

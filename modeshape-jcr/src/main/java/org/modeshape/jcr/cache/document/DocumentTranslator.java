@@ -172,6 +172,14 @@ public class DocumentTranslator {
         return names;
     }
 
+    public final ReferenceFactory getReferenceFactory() {
+        return this.refs;
+    }
+
+    public final ReferenceFactory getWeakReferenceFactory() {
+        return this.weakrefs;
+    }
+
     public final PropertyFactory getPropertyFactory() {
         return propertyFactory;
     }
@@ -1247,7 +1255,7 @@ public class DocumentTranslator {
         return false;
     }
 
-    protected Object valueFromDocument( Object value ) {
+    public Object valueFromDocument( Object value ) {
         if (value == null) {
             return null;
         }

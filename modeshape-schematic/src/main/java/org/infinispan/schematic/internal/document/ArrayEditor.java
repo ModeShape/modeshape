@@ -70,6 +70,12 @@ public class ArrayEditor implements EditableArray {
     }
 
     @Override
+    public Document with( String fieldName,
+                          Object value ) {
+        return new ArrayEditor((MutableArray)this.array.with(fieldName, value), factory);
+    }
+
+    @Override
     public ArrayEditor with( ValueTransformer transformer ) {
         return new ArrayEditor((MutableArray)this.array.with(transformer), factory);
     }

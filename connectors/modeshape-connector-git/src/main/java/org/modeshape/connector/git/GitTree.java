@@ -38,6 +38,8 @@ import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
+import org.modeshape.jcr.federation.spi.PageKey;
+import org.modeshape.jcr.federation.spi.PageWriter;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 
@@ -49,13 +51,19 @@ import org.modeshape.jcr.value.BinaryValue;
  *   /tree/{branchOrTagOrObjectId}/{filesAndFolders}/...
  * </pre>
  */
-public class GitTree extends GitFunction {
+public class GitTree extends GitFunction implements PageableGitFunction {
 
     protected static final String JCR_CONTENT = "jcr:content";
     protected static final String JCR_CONTENT_SUFFIX = "/" + JCR_CONTENT;
 
     protected static final String NAME = "tree";
     protected static final String ID = "/tree";
+
+    protected static Object referenceToTree( ObjectId commitId,
+                                             String branchOrTagOrCommitId,
+                                             Values values ) {
+        return values.referenceTo(ID + DELIMITER + branchOrTagOrCommitId);
+    }
 
     public GitTree( GitConnector connector ) {
         super(NAME, connector);
@@ -71,13 +79,15 @@ public class GitTree extends GitFunction {
             // This is the top-level "/branches" node
             writer.setPrimaryType(GitLexicon.TREES);
 
-            // Generate the child references to the branches ...
+            // Generate the child references to the branches and tags. Branches are likely used more often, so list them first...
+            addBranchesAsChildren(git, spec, writer);
             addTagsAsChildren(git, spec, writer);
+            addCommitsAsChildren(git, spec, writer, pageSize);
 
         } else if (spec.parameterCount() == 1) {
             // This is a particular branch/tag/commit node ...
-            String branchOrTagOrObjectId = spec.parameter(1);
-            ObjectId objId = repository.resolve(branchOrTagOrObjectId);
+            String branchOrTagOrObjectId = spec.parameter(0);
+            ObjectId objId = resolveBranchOrTagOrCommitId(repository, branchOrTagOrObjectId);
             RevWalk walker = new RevWalk(repository);
             walker.setRetainBody(true); // we need to parse the commit for the top-level
             try {
@@ -106,9 +116,9 @@ public class GitTree extends GitFunction {
 
         } else {
             // This is a folder or file within the directory structure ...
-            String branchOrTagOrObjectId = spec.parameter(1);
-            String path = spec.parametersAsPath(2);
-            ObjectId objId = repository.resolve(branchOrTagOrObjectId);
+            String branchOrTagOrObjectId = spec.parameter(0);
+            String path = spec.parametersAsPath(1);
+            ObjectId objId = resolveBranchOrTagOrCommitId(repository, branchOrTagOrObjectId);
             RevWalk walker = new RevWalk(repository);
             walker.setRetainBody(false); // we don't need top-level commit information
             try {
@@ -148,13 +158,18 @@ public class GitTree extends GitFunction {
         // Create the TreeWalk that we'll use to navigate the files/directories ...
         final TreeWalk tw = new TreeWalk(repository);
         tw.addTree(commit.getTree());
-        PathFilter filter = PathFilter.create(path);
-        tw.setFilter(filter);
         if ("".equals(path)) {
             // This is the top-level directory, so we don't need to pre-walk to find anything ...
             tw.setRecursive(false);
+            while (tw.next()) {
+                String childName = tw.getNameString();
+                String childId = spec.childId(childName);
+                writer.addChild(childId, childName);
+            }
         } else {
             // We need to first find our path *before* we can walk the children ...
+            PathFilter filter = PathFilter.create(path);
+            tw.setFilter(filter);
             while (tw.next()) {
                 if (filter.isDone(tw)) {
                     break;
@@ -190,11 +205,8 @@ public class GitTree extends GitFunction {
                     String childId = spec.childId(childName);
                     writer.addChild(childId, childName);
                 }
-            } else if (!isContentNode) {
-                // The path specifies the "jcr:content" child of a file ...
-
             } else {
-                // The path specifies a file ...
+                // The path specifies a file (or a content node) ...
 
                 // Find the commit in which this folder was last modified ...
                 // This may not be terribly efficient, but it seems to work faster on subsequent runs ...
@@ -247,9 +259,21 @@ public class GitTree extends GitFunction {
         }
     }
 
-    protected static Object referenceToTree( ObjectId id,
-                                             Values values ) {
-        return values.referenceTo(ID + DELIMITER + id.getName());
+    @Override
+    public boolean isPaged() {
+        return true;
+    }
+
+    @Override
+    public Document execute( Repository repository,
+                             Git git,
+                             CallSpecification spec,
+                             PageWriter writer,
+                             Values values,
+                             PageKey pageKey ) throws GitAPIException, IOException {
+        if (spec.parameterCount() != 0) return null;
+        addCommitsAsPageOfChildren(git, repository, spec, writer, pageKey);
+        return writer.document();
     }
 
 }

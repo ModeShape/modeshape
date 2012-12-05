@@ -67,7 +67,7 @@ public class GitTags extends GitFunction {
         } else if (spec.parameterCount() == 1) {
             // This is a particular branch node ...
             writer.setPrimaryType(GitLexicon.TAG);
-            String tagName = spec.parameter(1);
+            String tagName = spec.parameter(0);
             // Get the Ref, which doesn't directly know about the commit SHA1, so we have to parse the commit ...
             Ref ref = repository.getRef(tagName);
             if (ref == null) return null; // invalid tag name
@@ -77,7 +77,7 @@ public class GitTags extends GitFunction {
                 // Construct the references to other nodes in this source ...
                 ObjectId objId = commit.getId();
                 writer.addProperty(GitLexicon.OBJECT_ID, objId.name());
-                writer.addProperty(GitLexicon.TREE, GitTree.referenceToTree(objId, values));
+                writer.addProperty(GitLexicon.TREE, GitTree.referenceToTree(objId, tagName, values));
                 writer.addProperty(GitLexicon.HISTORY, GitHistory.referenceToHistory(objId, tagName, values));
             } finally {
                 walker.dispose();
