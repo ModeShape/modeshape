@@ -460,13 +460,15 @@ public class FederatedDocumentStore implements DocumentStore {
             NodeKeyReference ref = (NodeKeyReference)value;
             NodeKey key = ref.getNodeKey();
             NodeKey converted = documentIdToNodeKey(sourceName, key.toString());
+            boolean foreign = !converted.getSourceKey().equals(localSourceKey);
             ReferenceFactory factory = ref.isWeak() ? translator.getReferenceFactory() : translator.getReferenceFactory();
-            return factory.create(converted);
+            return factory.create(converted, foreign);
         } else if (value instanceof StringReference) {
             StringReference ref = (StringReference)value;
             NodeKey converted = documentIdToNodeKey(sourceName, ref.toString());
+            boolean foreign = !converted.getSourceKey().equals(localSourceKey);
             ReferenceFactory factory = ref.isWeak() ? translator.getReferenceFactory() : translator.getReferenceFactory();
-            return factory.create(converted);
+            return factory.create(converted, foreign);
         }
         return value;
     }

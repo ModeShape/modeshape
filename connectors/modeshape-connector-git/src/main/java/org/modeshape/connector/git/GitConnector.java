@@ -91,6 +91,7 @@ import org.modeshape.jcr.federation.spi.ReadOnlyConnector;
  */
 public class GitConnector extends ReadOnlyConnector implements Pageable {
 
+    public static final boolean DEFAULT_INCLUDE_MIME_TYPE = false;
     public static final String DEFAULT_REMOTE_NAME = "origin";
     private static final String GIT_DIRECTORY_NAME = ".git";
 
@@ -103,10 +104,17 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
     private String directoryPath;
 
     /**
-     * The string value representing the name of the remote that serves as the primary remote repository. By default this is
-     * "origin". This is set via reflection and is required for this connector.
+     * The optional string value representing the name of the remote that serves as the primary remote repository. By default this
+     * is "origin". This is set via reflection.
      */
     private String remoteName = DEFAULT_REMOTE_NAME;
+
+    /**
+     * The optional boolean value specifying whether the connector should set the "jcr:mimeType" property on the "jcr:content"
+     * child node under each "git:file" node. By default this is '{@value GitConnector#DEFAULT_INCLUDE_MIME_TYPE}'. This is set
+     * via reflection.
+     */
+    private boolean includeMimeType = DEFAULT_INCLUDE_MIME_TYPE;
 
     private Repository repository;
     private Git git;
@@ -187,6 +195,10 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
 
     protected DocumentWriter newDocumentWriter( String id ) {
         return super.newDocument(id);
+    }
+
+    protected boolean includeMimeType() {
+        return includeMimeType;
     }
 
     @Override

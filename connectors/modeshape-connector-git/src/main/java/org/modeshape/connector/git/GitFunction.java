@@ -208,8 +208,7 @@ public abstract class GitFunction {
         }
         if (actual == pageSize) {
             // We wrote the maximum number of commits, so there's (probably) another page ...
-            int totalNumberOfChildren = Integer.MAX_VALUE; // don't know how many (or at least it's very expensive)
-            writer.addPage(spec.getId(), commitId, pageSize, totalNumberOfChildren);
+            writer.addPage(spec.getId(), commitId, pageSize, PageWriter.UNKNOWN_TOTAL_SIZE);
         }
     }
 
@@ -252,8 +251,7 @@ public abstract class GitFunction {
             if (actual == pageSize) {
                 assert commitId != null;
                 // We wrote the maximum number of commits, so there's (probably) another page ...
-                int totalNumberOfChildren = Integer.MAX_VALUE; // don't know how many (or at least it's very expensive)
-                writer.addPage(pageKey.getParentId(), commitId, pageSize, totalNumberOfChildren);
+                writer.addPage(pageKey.getParentId(), commitId, pageSize, PageWriter.UNKNOWN_TOTAL_SIZE);
             }
         } finally {
             walker.dispose();

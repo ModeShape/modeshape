@@ -49,6 +49,7 @@ public class GitLexicon {
     public static final Name TREES = new BasicName(Namespace.URI, "trees");
     public static final Name FOLDER = new BasicName(Namespace.URI, "folder");
     public static final Name FILE = new BasicName(Namespace.URI, "file");
+    public static final Name RESOURCE = new BasicName(Namespace.URI, "resource");
     public static final Name DETAILS = new BasicName(Namespace.URI, "details");
     public static final Name DETAILED_COMMIT = new BasicName(Namespace.URI, "detailedCommit");
 
@@ -64,4 +65,5 @@ public class GitLexicon {
     public static final Name HISTORY = new BasicName(Namespace.URI, "history");
     public static final Name DIFF = new BasicName(Namespace.URI, "diff");
     public static final Name TREE = new BasicName(Namespace.URI, "tree");
+    public static final Name DETAIL = new BasicName(Namespace.URI, "detail");
 }

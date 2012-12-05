@@ -24,6 +24,7 @@
 package org.modeshape.connector.git;
 
 import java.io.IOException;
+import javax.jcr.RepositoryException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
@@ -35,7 +36,6 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.jcr.JcrLexicon;
-import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
 import org.modeshape.jcr.federation.spi.PageKey;
@@ -106,6 +106,7 @@ public class GitTree extends GitFunction implements PageableGitFunction {
                 writer.addProperty(GitLexicon.COMMITTED, committed);
                 writer.addProperty(GitLexicon.TITLE, commit.getShortMessage());
                 writer.addProperty(GitLexicon.HISTORY, GitHistory.referenceToHistory(objId, branchOrTagOrObjectId, values));
+                writer.addProperty(GitLexicon.DETAIL, GitCommitDetails.referenceToCommit(objId, values));
 
                 // Add the top-level children of the directory ...
                 addInformationForPath(repository, git, writer, commit, "", spec, values);
@@ -190,7 +191,7 @@ public class GitTree extends GitFunction implements PageableGitFunction {
                 String committer = folderCommit.getCommitterIdent().getName();
                 String author = folderCommit.getAuthorIdent().getName();
                 DateTime committed = values.dateFrom(folderCommit.getCommitTime());
-                writer.setPrimaryType(JcrNtLexicon.FOLDER);
+                writer.setPrimaryType(GitLexicon.FOLDER);
                 writer.addProperty(JcrLexicon.CREATED, committed);
                 writer.addProperty(JcrLexicon.CREATED_BY, committer);
                 writer.addProperty(GitLexicon.OBJECT_ID, folderCommit.getId().name());
@@ -217,7 +218,7 @@ public class GitTree extends GitFunction implements PageableGitFunction {
                 String author = fileCommit.getAuthorIdent().getName();
                 DateTime committed = values.dateFrom(fileCommit.getCommitTime());
                 if (isContentNode) {
-                    writer.setPrimaryType(JcrNtLexicon.RESOURCE);
+                    writer.setPrimaryType(GitLexicon.RESOURCE);
                     writer.addProperty(JcrLexicon.LAST_MODIFIED, committed);
                     writer.addProperty(JcrLexicon.LAST_MODIFIED_BY, committer);
                     writer.addProperty(GitLexicon.OBJECT_ID, fileCommit.getId().name());
@@ -241,8 +242,19 @@ public class GitTree extends GitFunction implements PageableGitFunction {
                         }
                     }
                     writer.addProperty(JcrLexicon.DATA, value);
+                    if (connector.includeMimeType()) {
+                        try {
+                            String filename = spec.parameter(spec.parameterCount() - 1); // the last is 'jcr:content'
+                            String mimeType = value.getMimeType(filename);
+                            if (mimeType != null) writer.addProperty(JcrLexicon.MIMETYPE, mimeType);
+                        } catch (RepositoryException e) {
+                            // do nothing
+                        } catch (IOException e) {
+                            // do nothing
+                        }
+                    }
                 } else {
-                    writer.setPrimaryType(JcrNtLexicon.FILE);
+                    writer.setPrimaryType(GitLexicon.FILE);
                     writer.addProperty(JcrLexicon.CREATED, committed);
                     writer.addProperty(JcrLexicon.CREATED_BY, committer);
                     writer.addProperty(GitLexicon.OBJECT_ID, fileCommit.getId().name());

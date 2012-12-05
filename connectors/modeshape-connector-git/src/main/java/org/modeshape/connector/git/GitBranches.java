@@ -78,8 +78,9 @@ public class GitBranches extends GitFunction {
                 // Construct the references to other nodes in this source ...
                 ObjectId objId = commit.getId();
                 writer.addProperty(GitLexicon.OBJECT_ID, objId.name());
-                writer.addProperty(GitLexicon.TREE, GitTree.referenceToTree(objId, branchName, values));
+                writer.addProperty(GitLexicon.TREE, GitTree.referenceToTree(objId, objId.name(), values));
                 writer.addProperty(GitLexicon.HISTORY, GitHistory.referenceToHistory(objId, branchName, values));
+                writer.addProperty(GitLexicon.DETAIL, GitCommitDetails.referenceToCommit(objId, values));
             } finally {
                 walker.dispose();
             }

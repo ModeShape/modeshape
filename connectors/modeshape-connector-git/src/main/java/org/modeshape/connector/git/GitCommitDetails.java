@@ -113,7 +113,7 @@ public class GitCommitDetails extends GitFunction implements PageableGitFunction
                 writer.addProperty(GitLexicon.TITLE, commit.getShortMessage());
                 writer.addProperty(GitLexicon.MESSAGE, commit.getFullMessage().trim());// removes trailing whitespace
                 writer.addProperty(GitLexicon.PARENTS, GitCommitDetails.referencesToCommits(commit.getParents(), values));
-                writer.addProperty(GitLexicon.TREE, GitTree.referenceToTree(objId, branchOrTagOrCommitId, values));
+                writer.addProperty(GitLexicon.TREE, GitTree.referenceToTree(objId, objId.name(), values));
 
                 // Compute the difference between the commit and it's parent(s), and generate the diff/patch file ...
                 List<DiffEntry> differences = computeDifferences(commit, walker, repository);

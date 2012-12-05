@@ -24,14 +24,18 @@
 package org.modeshape.connector.git;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
+import javax.jcr.Item;
 import javax.jcr.Node;
+import javax.jcr.Value;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.MultiUseAbstractTest;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.Session;
@@ -97,18 +101,19 @@ public class GitConnectorTest extends MultiUseAbstractTest {
     public void shouldReadTreeSubgraph() throws Exception {
         Node git = gitNode();
         Node tree = git.getNode("tree");
-        print = true;
-        print(tree, false, 100, 2);
+        // print = true;
+        navigate(tree, false, 100, 2);
     }
 
     @Test
     public void shouldReadCommitSubgraph() throws Exception {
         Node git = gitNode();
         Node commit = git.getNode("commit");
-        print = true;
-        print(commit, false, 100, 2);
+        // print = true;
+        navigate(commit, false, 100, 2);
     }
 
+    @FixFor( "MODE-1732" )
     @Test
     public void shouldFollowReferenceFromRecentTagToCommit() throws Exception {
         Node git = gitNode();
@@ -117,8 +122,38 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         assertThat(tag.getProperty("git:tree").getString(), is(notNullValue()));
         assertThat(tag.getProperty("git:history").getString(), is(notNullValue()));
         Node tagTree = tag.getProperty("git:tree").getNode();
-        assertThat(tagTree.getPath().startsWith(git.getPath() + "/tree/modeshape-3.0.0.Final"), is(true));
+        assertThat(tagTree.getPath(), is(treePathFor(tag)));
         assertChildrenInclude(tagTree, expectedTopLevelFileAndFolderNames());
+
+        // Load some of the child nodes ...
+        Node pomFile = tagTree.getNode("pom.xml");
+        assertThat(pomFile.getPrimaryNodeType().getName(), is("git:file"));
+        assertNodeHasObjectIdProperty(pomFile);
+        assertNodeHasCommittedProperties(pomFile);
+        Node pomContent = pomFile.getNode("jcr:content");
+        assertNodeHasCommittedProperties(pomContent);
+        // TODO: MODE-1732 Uncomment this next line ...
+        // assertThat(pomContent.getProperty("jcr:data").getString(), is(notNullValue()));
+
+        Node readmeFile = tagTree.getNode("README.md");
+        assertThat(readmeFile.getPrimaryNodeType().getName(), is("git:file"));
+        assertNodeHasObjectIdProperty(readmeFile);
+        assertNodeHasCommittedProperties(readmeFile);
+        Node readmeContent = readmeFile.getNode("jcr:content");
+        assertNodeHasCommittedProperties(readmeContent);
+        // TODO: MODE-1732 Uncomment this next line ...
+        // assertThat(readmeContent.getProperty("jcr:data").getString(), is(notNullValue()));
+
+        Node parentModule = tagTree.getNode("modeshape-parent");
+        assertThat(parentModule.getPrimaryNodeType().getName(), is("git:folder"));
+        assertNodeHasObjectIdProperty(parentModule);
+        assertNodeHasCommittedProperties(parentModule);
+    }
+
+    protected String treePathFor( Node node ) throws Exception {
+        Node git = gitNode();
+        String commitId = node.getProperty("git:objectId").getString();
+        return git.getPath() + "/tree/" + commitId;
     }
 
     @Test
@@ -129,7 +164,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         assertThat(tag.getProperty("git:tree").getString(), is(notNullValue()));
         assertThat(tag.getProperty("git:history").getString(), is(notNullValue()));
         Node tagTree = tag.getProperty("git:tree").getNode();
-        assertThat(tagTree.getPath().startsWith(git.getPath() + "/tree/dna-0.2"), is(true));
+        assertThat(tagTree.getPath(), is(treePathFor(tag)));
         assertChildrenInclude(tagTree, "pom.xml", "dna-jcr", "dna-common", ".project");
     }
 
@@ -140,6 +175,96 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         assertThat(tree.getPrimaryNodeType().getName(), is("git:trees"));
         assertChildrenInclude(tree, expectedBranchNames());
         assertChildrenInclude(tree, expectedTagNames());
+    }
+
+    @Test
+    public void shouldFindMasterBranchAsPrimaryItemUnderBranchNode() throws Exception {
+        Node git = gitNode();
+        Node branches = git.getNode("branches");
+        Item primaryItem = branches.getPrimaryItem();
+        assertThat(primaryItem, is(notNullValue()));
+        assertThat(primaryItem, is(instanceOf(Node.class)));
+        Node primaryNode = (Node)primaryItem;
+        assertThat(primaryNode.getName(), is("master"));
+        assertThat(primaryNode.getParent(), is(sameInstance(branches)));
+        assertThat(primaryNode, is(sameInstance(branches.getNode("master"))));
+    }
+
+    @Test
+    public void shouldFindMasterBranchAsPrimaryItemUnderTreeNode() throws Exception {
+        Node git = gitNode();
+        Node tree = git.getNode("tree");
+        Item primaryItem = tree.getPrimaryItem();
+        assertThat(primaryItem, is(notNullValue()));
+        assertThat(primaryItem, is(instanceOf(Node.class)));
+        Node primaryNode = (Node)primaryItem;
+        assertThat(primaryNode.getName(), is("master"));
+        assertThat(primaryNode.getParent(), is(sameInstance(tree)));
+        assertThat(primaryNode, is(sameInstance(tree.getNode("master"))));
+    }
+
+    @Test
+    public void shouldFindTreeBranchAsPrimaryItemUnderGitRoot() throws Exception {
+        Node git = gitNode();
+        Node tree = git.getNode("tree");
+        assertThat(tree, is(notNullValue()));
+        Item primaryItem = git.getPrimaryItem();
+        assertThat(primaryItem, is(notNullValue()));
+        assertThat(primaryItem, is(instanceOf(Node.class)));
+        Node primaryNode = (Node)primaryItem;
+        assertThat(primaryNode.getName(), is(tree.getName()));
+        assertThat(primaryNode.getParent(), is(sameInstance(git)));
+        assertThat(primaryNode, is(sameInstance(tree)));
+    }
+
+    @Test
+    public void shouldFindLatestCommitInMasterBranch() throws Exception {
+        Node git = gitNode();
+        Node commits = git.getNode("commits");
+        Node master = commits.getNode("master");
+        Node commit = master.getNodes().nextNode(); // the first commit in the history of the 'master' branch ...
+        // print = true;
+        printDetails(commit);
+        assertNodeHasObjectIdProperty(commit, commit.getName());
+        assertNodeHasCommittedProperties(commit);
+        assertThat(commit.getProperty("git:title").getString(), is(notNullValue()));
+        assertThat(commit.getProperty("git:tree").getNode().getPath(), is(git.getPath() + "/tree/" + commit.getName()));
+        assertThat(commit.getProperty("git:detail").getNode().getPath(), is(git.getPath() + "/commit/" + commit.getName()));
+    }
+
+    @Test
+    public void shouldFindLatestCommitDetailsInMasterBranch() throws Exception {
+        Node git = gitNode();
+        Node commits = git.getNode("commit");
+        Node commit = commits.getNodes().nextNode(); // the first commit ...
+        // print = true;
+        printDetails(commit);
+        assertNodeHasObjectIdProperty(commit);
+        assertNodeHasCommittedProperties(commit);
+        assertThat(commit.getProperty("git:parents").isMultiple(), is(true));
+        for (Value parentValue : commit.getProperty("git:parents").getValues()) {
+            String identifier = parentValue.getString();
+            Node parent = getSession().getNodeByIdentifier(identifier);
+            assertThat(parent, is(notNullValue()));
+        }
+        assertThat(commit.getProperty("git:diff").getString(), is(notNullValue()));
+        assertThat(commit.getProperty("git:tree").getNode().getPath(), is(treePathFor(commit)));
+    }
+
+    protected void assertNodeHasObjectIdProperty( Node node ) throws Exception {
+        assertThat(node.getProperty("git:objectId").getString(), is(notNullValue()));
+    }
+
+    protected void assertNodeHasObjectIdProperty( Node node,
+                                                  String commitId ) throws Exception {
+        assertThat(node.getProperty("git:objectId").getString(), is(commitId));
+    }
+
+    protected void assertNodeHasCommittedProperties( Node node ) throws Exception {
+        assertThat(node.getProperty("git:author").getString(), is(notNullValue()));
+        assertThat(node.getProperty("git:committer").getString(), is(notNullValue()));
+        assertThat(node.getProperty("git:committed").getDate(), is(notNullValue()));
+        assertThat(node.getProperty("git:title").getString(), is(notNullValue()));
     }
 
     /**
