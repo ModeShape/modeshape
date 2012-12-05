@@ -44,9 +44,14 @@ import org.modeshape.jcr.value.Path.Segment;
 public interface ChildReferences extends Iterable<ChildReference> {
 
     /**
+     * A constant that might be returned by {@link #size()} if the number of child references is unknown.
+     */
+    static final long UNKNOWN_SIZE = -1L;
+
+    /**
      * Get the total number of child references for the node, including all subsequent blocks of ChildReferences.
      * 
-     * @return the total number of children; never negative
+     * @return the total number of children, or {@link #UNKNOWN_SIZE}
      */
     long size();
 

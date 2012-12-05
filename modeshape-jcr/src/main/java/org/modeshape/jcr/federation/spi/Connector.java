@@ -278,6 +278,11 @@ public abstract class Connector {
     /**
      * Returns a document representing a single child reference from the supplied parent to the supplied child. This method is
      * called when there are an unknown number of children on a node.
+     * <p>
+     * This method should be implemented and will be called if and only if a {@link Pageable connector uses paging} and specifies
+     * an {@link PageWriter#UNKNOWN_TOTAL_SIZE unknown number of children} in the
+     * {@link PageWriter#addPage(String, int, long, long)} or {@link PageWriter#addPage(String, String, long, long)} methods.
+     * </p>
      * 
      * @param parentKey the key for the parent
      * @param childKey the key for the child

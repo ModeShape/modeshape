@@ -756,8 +756,10 @@ public class SessionNode implements MutableCachedNode {
                     // not a valid reference, so just return ...
                     return;
                 }
+                // This is a rare case when a StringReference was created because we couldn't create a NodeKeyReference.
+                // In that case, we should assume 'weak' ...
                 referredKey = new NodeKey(refStr);
-                isWeak = false;
+                isWeak = true; // assumed
             }
 
             if (isFrozenNode && !isWeak) {

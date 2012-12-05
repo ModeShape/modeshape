@@ -396,7 +396,7 @@ public class ImmutableChildReferences {
 
         @Override
         public boolean supportsGetChildReferenceByKey() {
-            return size() != Integer.MAX_VALUE;
+            return size() != ChildReferences.UNKNOWN_SIZE;
         }
 
         @Override
