@@ -1,0 +1,34 @@
+{
+    "name" : "Federated repository",
+    "workspaces" : {
+        "predefined" : ["ws1", "ws2"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "externalSources" : {
+        "readonly-files" : {
+            "classname" : "org.modeshape.connector.filesystem.FileSystemConnector",
+            "directoryPath" : "target/federation/files-read",
+            "readonly" : true,
+        },
+        "mutable-files-store" : {
+            "classname" : "filesystem",
+            "directoryPath" : "target/federation/files-store",
+        },
+        "mutable-files-json" : {
+            "classname" : "filesystem",
+            "directoryPath" : "target/federation/files-json",
+            "extraPropertiesStorage" : "json",
+        },
+        "mutable-files-legacy" : {
+            "classname" : "filesystem",
+            "directoryPath" : "target/federation/files-legacy",
+            "extraPropertiesStorage" : "legacy",
+        },
+        "mutable-files-none" : {
+            "classname" : "filesystem",
+            "directoryPath" : "target/federation/files-none",
+            "extraPropertiesStorage" : "none",
+        },
+    }
+}

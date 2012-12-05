@@ -26,18 +26,15 @@ package org.modeshape.jcr.cache;
 /**
  * An exception signalling that a node does not exist.
  */
-public class DocumentNotFoundException extends RuntimeException {
+public class DocumentNotFoundException extends DocumentStoreException {
 
     private static final long serialVersionUID = 1L;
-
-    private final String key;
 
     /**
      * @param key the key for the node that does not exist
      */
     public DocumentNotFoundException( String key ) {
         super(key);
-        this.key = key;
     }
 
     /**
@@ -47,7 +44,6 @@ public class DocumentNotFoundException extends RuntimeException {
     public DocumentNotFoundException( String key,
                                       String message ) {
         super(message);
-        this.key = key;
     }
 
     /**
@@ -57,7 +53,6 @@ public class DocumentNotFoundException extends RuntimeException {
     public DocumentNotFoundException( String key,
                                       Throwable cause ) {
         super(key.toString(), cause);
-        this.key = key;
     }
 
     /**
@@ -69,20 +64,6 @@ public class DocumentNotFoundException extends RuntimeException {
                                       String message,
                                       Throwable cause ) {
         super(message, cause);
-        this.key = key;
     }
 
-    @Override
-    public String toString() {
-        return super.toString();
-    }
-
-    /**
-     * Get the document key that was not found
-     * 
-     * @return the key for the document that was not found
-     */
-    public String getKey() {
-        return key;
-    }
 }

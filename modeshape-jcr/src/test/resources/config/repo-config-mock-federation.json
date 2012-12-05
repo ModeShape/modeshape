@@ -1,0 +1,14 @@
+{
+    "name" : "Federated repository",
+    "workspaces" : {
+        "predefined" : ["ws1", "ws2"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "externalSources" : {
+        "mock-source" : {
+            "classname" : "org.modeshape.connector.mock.MockConnector",
+            "cacheTtlSeconds" : 1
+        }
+    }
+}

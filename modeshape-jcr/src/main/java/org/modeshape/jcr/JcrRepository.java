@@ -71,7 +71,6 @@ import org.infinispan.Cache;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
-import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.Editor;
@@ -115,6 +114,9 @@ import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.cache.change.WorkspaceAdded;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
+import org.modeshape.jcr.cache.document.DocumentStore;
+import org.modeshape.jcr.cache.document.LocalDocumentStore;
+import org.modeshape.jcr.federation.FederatedDocumentStore;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetectors;
 import org.modeshape.jcr.query.QueryIndexing;
@@ -403,8 +405,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return true;
     }
 
-    protected final SchematicDb database() {
-        return runningState().database();
+    protected final DocumentStore documentStore() {
+        return runningState().documentStore();
     }
 
     protected final String repositoryName() {
@@ -884,7 +886,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         if (running == null) return Collections.emptyList();
 
         List<Cache<?, ?>> caches = new ArrayList<Cache<?, ?>>();
-        caches.add(running.database().getCache());
+        LocalDocumentStore localDocumentStore = running.documentStore().localStore();
+        caches.add(localDocumentStore.localCache());
         // Add the binary store's cache, if there is one ...
         BinaryStore store = running.binaryStore();
         if (store instanceof InfinispanBinaryStore) {
@@ -920,7 +923,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     protected class RunningState {
 
         private final RepositoryConfiguration config;
-        private final SchematicDb database;
+        private final DocumentStore documentStore;
         private final RepositoryCache cache;
         private final AuthenticationProviders authenticators;
         private final Credentials anonymousCredentialsIfSuppliedCredentialsFail;
@@ -955,6 +958,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final InitialContentImporter initialContentImporter;
         private final SystemContentInitializer systemContentInitializer;
         private final NodeTypesImporter nodeTypesImporter;
+        private final Connectors connectors;
 
         private Transaction runningTransaction;
 
@@ -1011,12 +1015,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // reuse the existing storage-related components ...
                 this.cache = other.cache;
                 this.context = other.context;
-                this.database = other.database;
-                this.txnMgr = database.getCache().getAdvancedCache().getTransactionManager();
+                this.connectors = other.connectors;
+                this.documentStore = other.documentStore;
+                this.txnMgr = documentStore.transactionManager();
                 validateTransactionsEnabled();
                 MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
                 this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
-                //suspend any potential existing transaction, so that the initialization is "atomic"
+                // suspend any potential existing transaction, so that the initialization is "atomic"
                 runningTransaction = this.transactions.suspend();
                 if (change.largeValueChanged) {
                     // We can update the value used in the repository cache dynamically ...
@@ -1044,13 +1049,17 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // find the Schematic database and Infinispan Cache ...
                 CacheContainer container = config.getContentCacheContainer();
                 String cacheName = config.getCacheName();
-                this.database = Schematic.get(container, cacheName);
-                assert this.database != null;
-                this.txnMgr = this.database.getCache().getAdvancedCache().getTransactionManager();
+                List<Component> connectorComponents = config.getFederation().getConnectors();
+                this.connectors = new Connectors(this, connectorComponents);
+                SchematicDb database = Schematic.get(container, cacheName);
+                this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, database) : new LocalDocumentStore(
+                                                                                                                                            database);
+                // this.documentStore = new LocalDocumentStore(database);
+                this.txnMgr = this.documentStore.transactionManager();
                 validateTransactionsEnabled();
                 MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
                 this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
-                //suspend any potential existing transaction, so that the initialization is "atomic"
+                // suspend any potential existing transaction, so that the initialization is "atomic"
                 runningTransaction = this.transactions.suspend();
 
                 // Set up the binary store ...
@@ -1074,7 +1083,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // Set up the repository cache ...
                 final SessionEnvironment sessionEnv = new RepositorySessionEnvironment(this.transactions);
                 CacheContainer workspaceCacheContainer = this.config.getWorkspaceContentCacheContainer();
-                this.cache = new RepositoryCache(context, database, config, systemContentInitializer, sessionEnv, changeBus,
+                this.cache = new RepositoryCache(context, documentStore, config, systemContentInitializer, sessionEnv, changeBus,
                                                  workspaceCacheContainer);
 
                 // Set up the node type manager ...
@@ -1242,6 +1251,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
          * @throws Exception if there is a problem during this phase.
          */
         protected final void postInitialize() throws Exception {
+            this.connectors.initialize();
             this.sequencers.initialize();
 
             // import the preconfigured node types before the initial content, in case the latter use custom types
@@ -1258,7 +1268,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 }
             });
 
-            //any potential transaction was suspended during the creation of the running state to make sure intialization is atomic
+            // any potential transaction was suspended during the creation of the running state to make sure intialization is
+            // atomic
             this.transactions.resume(runningTransaction);
             this.runningTransaction = null;
         }
@@ -1299,12 +1310,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return repositoryQueryManager;
         }
 
-        private Cache<String, SchematicEntry> infinispanCache() {
-            return database().getCache();
-        }
-
-        protected final SchematicDb database() {
-            return database;
+        protected final DocumentStore documentStore() {
+            return documentStore;
         }
 
         protected final BinaryStore binaryStore() {
@@ -1324,7 +1331,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         protected final TransactionManager txnManager() {
-            TransactionManager mgr = infinispanCache().getAdvancedCache().getTransactionManager();
+            TransactionManager mgr = documentStore().transactionManager();
             assert mgr != null;
             return mgr;
         }
@@ -1459,6 +1466,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         protected void shutdown() {
+            // shutdown the connectors
+            this.connectors.shutdown();
+
             // Unregister from JNDI ...
             unbindFromJndi();
 

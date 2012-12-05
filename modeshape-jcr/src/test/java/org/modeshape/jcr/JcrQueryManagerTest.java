@@ -104,7 +104,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     private static final boolean WRITE_INDEXES_TO_FILE = false;
 
     /** The total number of nodes at or below '/jcr:system' */
-    protected static final int TOTAL_SYSTEM_NODE_COUNT = 245;
+    protected static final int TOTAL_SYSTEM_NODE_COUNT = 251;
 
     /** The total number of nodes excluding '/jcr:system' */
     protected static final int TOTAL_NON_SYSTEM_NODE_COUNT = 25;
@@ -1550,7 +1550,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1271L);
+        assertResults(query, result, 1301L);
         assertResultsHaveColumns(result, new String[] {"myfirstnodetypes.jcr:path", "mythirdnodetypes.mode:depth",
             "mysecondnodetypes.mode:depth", "mythirdnodetypes.jcr:path", "mysecondnodetypes.jcr:path",
             "mythirdnodetypes.jcr:mixinTypes", "mythirdnodetypes.jcr:score", "myfirstnodetypes.jcr:score",

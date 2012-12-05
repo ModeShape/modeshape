@@ -274,6 +274,35 @@
                 }
             }
         },
+        "externalSources" : {
+            "type" : "object",
+            "description" : "The named set of external sources that can access content in external systems.",
+            "required" : false,
+            "additionalProperties" : {
+                "type" : "object",
+                "additionalProperties" : true,
+                "description" : "Specification of a single external source configuration.",
+                "properties" : {
+                    "classname" : {
+                        "type" : "string",
+                        "required" : true,
+                        "description" : "The fully-qualified name of the 'org.modeshape.jcr.federation.Connector' subclass. A shortcut for built-in connectors is to just use the name of the class (without the package specification)."
+                    },
+                    "classloader" : {
+                        "type" : "string",
+                        "description" : "The optional name of the classloader that should be used to load the connector class. If empty or not provided, the classpath accessible to ModeShape will be used."
+                    },
+                    "cacheTtlSeconds" : {
+                        "type" : "integer",
+                        "description" : "The optional number of seconds which an external node should be held in the workspace cache. If not specified, the effective TTL is deferred to the workspace cache configuration. If negative, an entry will be cached forever."
+                    },
+                    "description" : {
+                        "type" : "string",
+                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                    },
+                }
+            }
+        },
         "security" : {
             "type" : "object",
             "additionalProperties" : false,

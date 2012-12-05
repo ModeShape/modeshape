@@ -25,10 +25,12 @@ package org.modeshape.jcr.cache.document;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.EmptyIterator;
@@ -65,12 +67,25 @@ public class ImmutableChildReferences {
         return new Segmented(cache, first, segmentingInfo);
     }
 
+    public static ChildReferences create( ChildReferences first,
+                                          ChildReferencesInfo segmentingInfo,
+                                          ChildReferences externalReferences,
+                                          WorkspaceCache cache ) {
+        Segmented segmentedReferences = new Segmented(cache, first, segmentingInfo);
+        return !externalReferences.isEmpty() ? new FederatedReferences(segmentedReferences, externalReferences) : segmentedReferences;
+    }
+
     @Immutable
     protected final static class EmptyChildReferences implements ChildReferences {
 
         public static final ChildReferences INSTANCE = new EmptyChildReferences();
 
         private EmptyChildReferences() {
+        }
+
+        @Override
+        public boolean supportsGetChildReferenceByKey() {
+            return true;
         }
 
         @Override
@@ -380,6 +395,11 @@ public class ImmutableChildReferences {
         }
 
         @Override
+        public boolean supportsGetChildReferenceByKey() {
+            return size() != ChildReferences.UNKNOWN_SIZE;
+        }
+
+        @Override
         public int getChildCount( Name name ) {
             int result = 0;
             Segment segment = this.firstSegment;
@@ -398,7 +418,9 @@ public class ImmutableChildReferences {
             Segment segment = this.firstSegment;
             while (segment != null) {
                 result = segment.getReferences().getChild(name, snsIndex, context);
-                if (result != null) break;
+                if (result != null) {
+                    return result;
+                }
                 segment = segment.next(cache);
             }
             return result;
@@ -408,7 +430,9 @@ public class ImmutableChildReferences {
         public boolean hasChild( NodeKey key ) {
             Segment segment = this.firstSegment;
             while (segment != null) {
-                if (segment.getReferences().hasChild(key)) return true;
+                if (segment.getReferences().hasChild(key)) {
+                    return true;
+                }
                 segment = segment.next(cache);
             }
             return false;
@@ -426,7 +450,9 @@ public class ImmutableChildReferences {
             Segment segment = this.firstSegment;
             while (segment != null) {
                 result = segment.getReferences().getChild(key, context);
-                if (result != null) break;
+                if (result != null) {
+                    return result;
+                }
                 segment = segment.next(cache);
             }
             return result;
@@ -600,6 +626,80 @@ public class ImmutableChildReferences {
         }
     }
 
+    public static class FederatedReferences extends AbstractChildReferences {
+
+        private final ChildReferences internalReferences;
+        private final ChildReferences externalReferences;
+
+        FederatedReferences( ChildReferences externalReferences,
+                             ChildReferences internalReferences ) {
+            this.externalReferences = externalReferences;
+            this.internalReferences = internalReferences;
+        }
+
+        @Override
+        public long size() {
+            return externalReferences.size() + internalReferences.size();
+        }
+
+        @Override
+        public int getChildCount( Name name ) {
+            return externalReferences.getChildCount(name) + internalReferences.getChildCount(name);
+        }
+
+        @Override
+        public ChildReference getChild( Name name,
+                                        int snsIndex,
+                                        Context context ) {
+            ChildReference nonFederatedRef = internalReferences.getChild(name, snsIndex, context);
+            if (nonFederatedRef != null) {
+                return nonFederatedRef;
+            }
+            return externalReferences.getChild(name, snsIndex, context);
+        }
+
+        @Override
+        public boolean hasChild( NodeKey key ) {
+            return externalReferences.hasChild(key) || internalReferences.hasChild(key);
+        }
+
+        @Override
+        public ChildReference getChild( NodeKey key ) {
+            return getChild(key, new BasicContext());
+        }
+
+        @Override
+        public ChildReference getChild( NodeKey key,
+                                        Context context ) {
+            ChildReference nonFederatedRef = internalReferences.getChild(key, context);
+            if (nonFederatedRef != null) {
+                return nonFederatedRef;
+            }
+            return externalReferences.getChild(key, context);
+        }
+
+        @Override
+        public Iterator<ChildReference> iterator() {
+            return new UnionIterator<ChildReference>(internalReferences.iterator(), externalReferences);
+        }
+
+        @Override
+        public Iterator<NodeKey> getAllKeys() {
+            Set<NodeKey> externalKeys = new HashSet<NodeKey>();
+            for (Iterator<NodeKey> externalKeysIterator = externalReferences.getAllKeys(); externalKeysIterator.hasNext();) {
+                externalKeys.add(externalKeysIterator.next());
+            }
+            return new UnionIterator<NodeKey>(internalReferences.getAllKeys(), externalKeys);
+        }
+
+        @Override
+        public StringBuilder toString( StringBuilder sb ) {
+            sb.append("<external references=").append(externalReferences.toString());
+            sb.append(">, <internal references=").append(internalReferences.toString()).append(">");
+            return sb;
+        }
+    }
+
     protected static class Segment {
 
         private final ChildReferences references;
@@ -616,18 +716,15 @@ public class ImmutableChildReferences {
             return this.references;
         }
 
-        public String nextSegmentKey() {
-            return nextKey;
-        }
-
         public Segment next( WorkspaceCache cache ) {
             if (next == null && nextKey != null) {
-                Document doc = cache.documentFor(nextKey);
-                if (doc == null) {
+                Document blockDoc = cache.blockFor(nextKey);
+                if (blockDoc == null) {
                     throw new DocumentNotFoundException(nextKey);
                 }
-                ChildReferences refs = cache.translator().getChildReferences(cache, doc);
-                ChildReferencesInfo nextNextKey = cache.translator().getChildReferencesInfo(doc);
+                // we only need the direct children of the block to avoid nesting
+                ChildReferences refs = cache.translator().getChildReferencesFromBlock(blockDoc);
+                ChildReferencesInfo nextNextKey = cache.translator().getChildReferencesInfo(blockDoc);
                 next = new Segment(refs, nextNextKey != null ? nextNextKey.nextKey : null);
             }
             return next;
