@@ -41,20 +41,36 @@ public final class CallSpecification {
 
     public CallSpecification( String id ) {
         this.id = id;
-        this.parts = id.split("[/]");
-        assert this.parts.length > 0;
+        String relative = id.replaceFirst("^[/]", "");
+        this.parts = relative.split("/");
         this.numParts = this.parts.length;
         this.parameterCount = numParts - 1;
+        assert this.numParts > 0;
     }
 
     public String getFunctionName() {
         return this.parts[0];
     }
 
+    /**
+     * The identifier of this call.
+     * 
+     * @return the identifier; never null
+     */
+    public String getId() {
+        return id;
+    }
+
     public int parameterCount() {
         return parameterCount;
     }
 
+    /**
+     * Get the specified parameter.
+     * 
+     * @param index the 0-based index of the parameter, excluding the first segment that is the name
+     * @return the parameter
+     */
     public String parameter( int index ) {
         return parts[index + 1];
     }
@@ -65,6 +81,7 @@ public final class CallSpecification {
 
     public String parametersAsPath( int fromIndex,
                                     int toIndex ) {
+        ++fromIndex; // ignore the name
         assert fromIndex < numParts;
         assert toIndex <= numParts;
         StringBuilder sb = new StringBuilder();
@@ -101,5 +118,10 @@ public final class CallSpecification {
             sb.append(part);
         }
         return sb.toString();
+    }
+
+    @Override
+    public String toString() {
+        return id;
     }
 }

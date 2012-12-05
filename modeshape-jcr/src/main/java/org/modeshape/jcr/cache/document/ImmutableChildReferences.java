@@ -84,6 +84,11 @@ public class ImmutableChildReferences {
         }
 
         @Override
+        public boolean supportsGetChildReferenceByKey() {
+            return true;
+        }
+
+        @Override
         public long size() {
             return 0;
         }
@@ -387,6 +392,11 @@ public class ImmutableChildReferences {
         @Override
         public long size() {
             return totalSize;
+        }
+
+        @Override
+        public boolean supportsGetChildReferenceByKey() {
+            return size() != ChildReferences.UNKNOWN_SIZE;
         }
 
         @Override
@@ -712,7 +722,7 @@ public class ImmutableChildReferences {
                 if (blockDoc == null) {
                     throw new DocumentNotFoundException(nextKey);
                 }
-                //we only need the direct children of the block to avoid nesting
+                // we only need the direct children of the block to avoid nesting
                 ChildReferences refs = cache.translator().getChildReferencesFromBlock(blockDoc);
                 ChildReferencesInfo nextNextKey = cache.translator().getChildReferencesInfo(blockDoc);
                 next = new Segment(refs, nextNextKey != null ? nextNextKey.nextKey : null);

@@ -39,13 +39,16 @@
 - git:objectId (string) mandatory protected
 
 [git:navigable] mixin
-- git:tree (reference) mandatory protected
+- git:tree (reference) mandatory protected < 'git:folder' 
 
 [git:historical] mixin
-- git:history (reference) mandatory protected
+- git:history (reference) mandatory protected < 'git:commit' 
+
+[git:detailed] mixin
+- git:detail (reference) mandatory protected < 'git:detailedCommit' 
 
 // Represents a branch or tag or commit ...
-[git:reference] > git:referenceable, git:navigable, git:historical abstract
+[git:reference] > git:referenceable, git:navigable, git:historical, git:detailed abstract
 
 [git:committed] > git:referenceable mixin
 - git:author (string) mandatory protected
@@ -54,10 +57,10 @@
 - git:title (string) mandatory protected
 
 [git:root]
++ tree (git:trees) abort protected primary // the 'tree' subgraph is considered primary
 + branches (git:branches) abort protected
 + tags (git:tags) abort protected
 + commits (git:commits) abort protected
-+ trees (git:trees) abort protected
 + commit (git:details) abort protected
 
 //------------------------------------------------------------------------------
@@ -65,6 +68,7 @@
 //------------------------------------------------------------------------------
 
 [git:branches]
++ master (git:branch) abort protected primary // the 'master' branch is considered primary if it exists
 + * (git:branch) abort protected
 
 [git:branch] > git:reference
@@ -84,9 +88,7 @@
 [git:object]
 + * (git:commit) = git:commit abort protected
 
-[git:commit] > git:committed
-- git:message (string) mandatory protected
-- git:parents (reference) multiple mandatory protected
+[git:commit] > git:committed, git:navigable, git:detailed
 
 //------------------------------------------------------------------------------
 // The content showing the details of each commit
@@ -96,18 +98,24 @@
 + * (git:detailedCommit) abort protected
 
 [git:detailedCommit] > git:commit
+- git:message (string) mandatory protected
+- git:parents (reference) multiple mandatory protected < 'git:detailedCommit' 
+- git:diff (string) mandatory protected
 
 //------------------------------------------------------------------------------
 // The content with the folder and file structure of a particular object
 //------------------------------------------------------------------------------
 
 [git:trees]
++ master (git:folder) abort protected primary // the 'master' tree is considered primary if it exists
 + * (git:folder) abort protected
 
 [git:folder] > nt:folder, git:committed, git:historical
 + * (nt:hierarchyNode,git:committed)
 
 [git:file] > nt:file, git:committed
+
+[git:resource] > nt:resource, git:committed
 
 
 

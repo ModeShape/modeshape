@@ -34,7 +34,7 @@ import org.modeshape.jcr.federation.spi.DocumentWriter;
 public class GitRoot extends GitFunction {
 
     protected static final String ID = CallSpecification.DELIMITER_STR;
-    private static final String NAME = "";
+    protected static final String NAME = "";
 
     private final Document root;
 
@@ -45,7 +45,8 @@ public class GitRoot extends GitFunction {
         writer.addChild(GitBranches.ID, GitBranches.NAME);
         writer.addChild(GitTags.ID, GitTags.NAME);
         writer.addChild(GitHistory.ID, GitHistory.NAME);
-        writer.addChild(GitBranches.ID, GitBranches.NAME);
+        writer.addChild(GitCommitDetails.ID, GitCommitDetails.NAME);
+        writer.addChild(GitTree.ID, GitTree.NAME);
         root = writer.document();
     }
 

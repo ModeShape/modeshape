@@ -114,6 +114,10 @@ public abstract class MultiUseAbstractTest extends AbstractJcrRepositoryTest {
         return session;
     }
 
+    public static org.modeshape.jcr.api.Session getSession() {
+        return session;
+    }
+
     protected static InputStream resourceStream( String name ) {
         return MultiUseAbstractTest.class.getClassLoader().getResourceAsStream(name);
     }

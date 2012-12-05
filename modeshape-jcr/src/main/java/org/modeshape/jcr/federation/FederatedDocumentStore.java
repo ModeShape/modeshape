@@ -54,6 +54,10 @@ import org.modeshape.jcr.federation.spi.DocumentWriter;
 import org.modeshape.jcr.federation.spi.PageKey;
 import org.modeshape.jcr.federation.spi.Pageable;
 import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.ReferenceFactory;
+import org.modeshape.jcr.value.basic.NodeKeyReference;
+import org.modeshape.jcr.value.basic.StringReference;
 
 /**
  * An implementation of {@link DocumentStore} which is used when federation is enabled
@@ -113,7 +117,10 @@ public class FederatedDocumentStore implements DocumentStore {
                 EditableDocument editableDocument = replaceNodeKeysWithDocumentIds(document);
                 String documentId = documentIdFromNodeKey(key);
                 SessionNode.NodeChanges nodeChanges = sessionNode.getNodeChanges();
-                DocumentChanges documentChanges = createDocumentChanges(nodeChanges, connector.getSourceName(), editableDocument, documentId);
+                DocumentChanges documentChanges = createDocumentChanges(nodeChanges,
+                                                                        connector.getSourceName(),
+                                                                        editableDocument,
+                                                                        documentId);
                 connector.updateDocument(documentChanges);
             }
         }
@@ -125,17 +132,18 @@ public class FederatedDocumentStore implements DocumentStore {
                                                    String documentId ) {
         FederatedDocumentChanges documentChanges = new FederatedDocumentChanges(documentId, editableDocument);
 
-        //property and mixin changes
+        // property and mixin changes
         documentChanges.setPropertyChanges(nodeChanges.changedPropertyNames(), nodeChanges.removedPropertyNames());
         documentChanges.setMixinChanges(nodeChanges.addedMixins(), nodeChanges.removedMixins());
 
-        //children
+        // children
         LinkedHashMap<NodeKey, Name> appendedChildren = nodeChanges.appendedChildren();
         validateSameSourceForAllNodes(sourceName, appendedChildren.keySet());
 
         Map<NodeKey, LinkedHashMap<NodeKey, Name>> childrenInsertedBefore = nodeChanges.childrenInsertedBefore();
         validateSameSourceForAllNodes(sourceName, childrenInsertedBefore.keySet());
-        Map<String,  LinkedHashMap<String, Name>> processedChildrenInsertions = new HashMap<String, LinkedHashMap<String, Name>>(childrenInsertedBefore.size());
+        Map<String, LinkedHashMap<String, Name>> processedChildrenInsertions = new HashMap<String, LinkedHashMap<String, Name>>(
+                                                                                                                                childrenInsertedBefore.size());
         for (NodeKey childKey : childrenInsertedBefore.keySet()) {
             LinkedHashMap<NodeKey, Name> insertions = childrenInsertedBefore.get(childKey);
             validateSameSourceForAllNodes(sourceName, insertions.keySet());
@@ -147,7 +155,7 @@ public class FederatedDocumentStore implements DocumentStore {
                                            nodeKeySetToIdentifiersSet(nodeChanges.removedChildren()),
                                            processedChildrenInsertions);
 
-        //parents
+        // parents
         Set<NodeKey> addedParents = nodeChanges.addedParents();
 
         validateSameSourceForAllNodes(sourceName, addedParents);
@@ -157,7 +165,7 @@ public class FederatedDocumentStore implements DocumentStore {
                                          nodeKeySetToIdentifiersSet(nodeChanges.removedParents()),
                                          documentIdFromNodeKey(nodeChanges.newPrimaryParent()));
 
-        //referrers
+        // referrers
         Set<NodeKey> addedWeakReferrers = nodeChanges.addedWeakReferrers();
         validateSameSourceForAllNodes(sourceName, addedWeakReferrers);
 
@@ -179,7 +187,8 @@ public class FederatedDocumentStore implements DocumentStore {
         }
     }
 
-    private void validateNodeKeyHasSource(String sourceName, NodeKey nodeKey) {
+    private void validateNodeKeyHasSource( String sourceName,
+                                           NodeKey nodeKey ) {
         String sourceKey = NodeKey.keyForSourceName(sourceName);
         if (nodeKey != null && !sourceKey.equals(nodeKey.getSourceKey())) {
             throw new ConnectorException(JcrI18n.federationNodeKeyDoesNotBelongToSource, nodeKey, sourceName);
@@ -188,7 +197,7 @@ public class FederatedDocumentStore implements DocumentStore {
 
     private <T> Map<String, T> nodeKeyMapToIdentifierMap( Map<NodeKey, T> nodeKeysMap ) {
         Map<String, T> result = new HashMap<String, T>(nodeKeysMap.size());
-        for (NodeKey key :  nodeKeysMap.keySet()) {
+        for (NodeKey key : nodeKeysMap.keySet()) {
             result.put(documentIdFromNodeKey(key), nodeKeysMap.get(key));
         }
         return result;
@@ -196,7 +205,7 @@ public class FederatedDocumentStore implements DocumentStore {
 
     private <T> LinkedHashMap<String, T> nodeKeyMapToIdentifierMap( LinkedHashMap<NodeKey, T> nodeKeysMap ) {
         LinkedHashMap<String, T> result = new LinkedHashMap<String, T>(nodeKeysMap.size());
-        for (NodeKey key :  nodeKeysMap.keySet()) {
+        for (NodeKey key : nodeKeysMap.keySet()) {
             result.put(documentIdFromNodeKey(key), nodeKeysMap.get(key));
         }
         return result;
@@ -209,7 +218,6 @@ public class FederatedDocumentStore implements DocumentStore {
         }
         return result;
     }
-
 
     @Override
     public SchematicEntry get( String key ) {
@@ -300,7 +308,7 @@ public class FederatedDocumentStore implements DocumentStore {
         if (connector != null) {
             String externalNodeId = connector.getDocumentId(externalPath);
             if (externalNodeId != null) {
-                String externalNodeKey = documentIdToNodeKey(sourceName, externalNodeId);
+                String externalNodeKey = documentIdToNodeKeyString(sourceName, externalNodeId);
                 connectors.mapProjection(externalNodeKey, projectedNodeKey);
                 return externalNodeKey;
             }
@@ -325,6 +333,27 @@ public class FederatedDocumentStore implements DocumentStore {
         return null;
     }
 
+    @Override
+    public Document getChildReference( String parentKey,
+                                       String childKey ) {
+        if (isLocalSource(parentKey)) {
+            return localStore().getChildReference(parentKey, childKey);
+        }
+        Connector connector = connectors.getConnectorForSourceKey(sourceKey(parentKey));
+        if (connector != null) {
+            parentKey = documentIdFromNodeKey(parentKey);
+            childKey = documentIdFromNodeKey(childKey);
+            Document doc = connector.getChildReference(parentKey, childKey);
+            if (doc != null) {
+                String key = doc.getString(DocumentTranslator.KEY);
+                key = documentIdToNodeKeyString(connector.getSourceName(), key);
+                doc = doc.with(DocumentTranslator.KEY, key);
+            }
+            return doc;
+        }
+        return null;
+    }
+
     private boolean isLocalSource( String key ) {
         return !NodeKey.isValidFormat(key) // the key isn't a std key format (probably some internal format)
                || StringUtil.isBlank(localSourceKey) // there isn't a local source configured yet (e.g. system startup)
@@ -336,10 +365,15 @@ public class FederatedDocumentStore implements DocumentStore {
         return NodeKey.sourceKey(nodeKey);
     }
 
-    private String documentIdToNodeKey( String sourceName,
-                                        String documentId ) {
+    private String documentIdToNodeKeyString( String sourceName,
+                                              String documentId ) {
+        return documentIdToNodeKey(sourceName, documentId).toString();
+    }
+
+    private NodeKey documentIdToNodeKey( String sourceName,
+                                         String documentId ) {
         String sourceKey = NodeKey.keyForSourceName(sourceName);
-        return new NodeKey(sourceKey, FEDERATED_WORKSPACE_KEY, documentId).toString();
+        return new NodeKey(sourceKey, FEDERATED_WORKSPACE_KEY, documentId);
     }
 
     private String documentIdFromNodeKey( String nodeKey ) {
@@ -359,14 +393,14 @@ public class FederatedDocumentStore implements DocumentStore {
         String externalDocumentId = reader.getDocumentId();
         String externalDocumentKey = null;
         if (!StringUtil.isBlank(externalDocumentId)) {
-            externalDocumentKey = documentIdToNodeKey(sourceName, externalDocumentId);
+            externalDocumentKey = documentIdToNodeKeyString(sourceName, externalDocumentId);
             writer.setId(externalDocumentKey);
         }
 
         // replace the id of each parent and add the optional federated parent
         List<String> parentKeys = new ArrayList<String>();
         for (String parentId : reader.getParentIds()) {
-            String parentKey = documentIdToNodeKey(sourceName, parentId);
+            String parentKey = documentIdToNodeKeyString(sourceName, parentId);
             parentKeys.add(parentKey);
         }
 
@@ -375,11 +409,11 @@ public class FederatedDocumentStore implements DocumentStore {
         if (childrenInfo != null) {
             String nextBlockKey = childrenInfo.getString(DocumentTranslator.NEXT_BLOCK);
             if (!StringUtil.isBlank(nextBlockKey)) {
-                childrenInfo.setString(DocumentTranslator.NEXT_BLOCK, documentIdToNodeKey(sourceName, nextBlockKey));
+                childrenInfo.setString(DocumentTranslator.NEXT_BLOCK, documentIdToNodeKeyString(sourceName, nextBlockKey));
             }
             String lastBlockKey = childrenInfo.getString(DocumentTranslator.LAST_BLOCK);
             if (!StringUtil.isBlank(lastBlockKey)) {
-                childrenInfo.setString(DocumentTranslator.LAST_BLOCK, documentIdToNodeKey(sourceName, lastBlockKey));
+                childrenInfo.setString(DocumentTranslator.LAST_BLOCK, documentIdToNodeKeyString(sourceName, lastBlockKey));
             }
         }
         // create the federated node key - external project back reference
@@ -399,7 +433,44 @@ public class FederatedDocumentStore implements DocumentStore {
         }
         writer.setChildren(updatedChildren);
 
+        // process the properties to look for **INTERNAL** references ...
+        for (Property property : reader.getProperties().values()) {
+            if (property.isEmpty()) continue;
+            if (property.isReference()) {
+                if (property.isSingle()) {
+                    Object value = convertReferenceValue(property.getFirstValue(), sourceName);
+                    writer.addProperty(property.getName(), value);
+                } else {
+                    assert property.isMultiple();
+                    Object[] values = property.getValuesAsArray();
+                    for (int i = 0; i != values.length; ++i) {
+                        values[i] = convertReferenceValue(values[i], sourceName);
+                    }
+                    writer.addProperty(property.getName(), values);
+                }
+            }
+        }
+
         return writer.document();
+    }
+
+    private Object convertReferenceValue( Object value,
+                                          String sourceName ) {
+        if (value instanceof NodeKeyReference) {
+            NodeKeyReference ref = (NodeKeyReference)value;
+            NodeKey key = ref.getNodeKey();
+            NodeKey converted = documentIdToNodeKey(sourceName, key.toString());
+            boolean foreign = !converted.getSourceKey().equals(localSourceKey);
+            ReferenceFactory factory = ref.isWeak() ? translator.getReferenceFactory() : translator.getReferenceFactory();
+            return factory.create(converted, foreign);
+        } else if (value instanceof StringReference) {
+            StringReference ref = (StringReference)value;
+            NodeKey converted = documentIdToNodeKey(sourceName, ref.toString());
+            boolean foreign = !converted.getSourceKey().equals(localSourceKey);
+            ReferenceFactory factory = ref.isWeak() ? translator.getReferenceFactory() : translator.getReferenceFactory();
+            return factory.create(converted, foreign);
+        }
+        return value;
     }
 
     private EditableDocument replaceNodeKeysWithDocumentIds( Document document ) {

@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
+import org.infinispan.schematic.DocumentFactory;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.TextDecoder;
@@ -254,7 +255,7 @@ public abstract class Connector {
      * is no longer needed, and should never be called by the connector.
      */
     public void shutdown() {
-        //do nothing by default
+        // do nothing by default
     }
 
     /**
@@ -273,6 +274,24 @@ public abstract class Connector {
      * @return either the id of the document or {@code null}
      */
     public abstract String getDocumentId( String path );
+
+    /**
+     * Returns a document representing a single child reference from the supplied parent to the supplied child. This method is
+     * called when there are an unknown number of children on a node.
+     * <p>
+     * This method should be implemented and will be called if and only if a {@link Pageable connector uses paging} and specifies
+     * an {@link PageWriter#UNKNOWN_TOTAL_SIZE unknown number of children} in the
+     * {@link PageWriter#addPage(String, int, long, long)} or {@link PageWriter#addPage(String, String, long, long)} methods.
+     * </p>
+     * 
+     * @param parentKey the key for the parent
+     * @param childKey the key for the child
+     * @return the document representation of a child reference, of null if the parent does not contain a child with the given key
+     */
+    public Document getChildReference( String parentKey,
+                                       String childKey ) {
+        return null;
+    }
 
     /**
      * Removes the document with the given id.
@@ -301,9 +320,9 @@ public abstract class Connector {
 
     /**
      * Updates a document using the provided changes.
-     *
-     * @param documentChanges a {@code non-null} {@link org.modeshape.jcr.federation.spi.DocumentChanges} object which contains granular information about all
-     * the changes.
+     * 
+     * @param documentChanges a {@code non-null} {@link org.modeshape.jcr.federation.spi.DocumentChanges} object which contains
+     *        granular information about all the changes.
      */
     public abstract void updateDocument( DocumentChanges documentChanges );
 
@@ -356,6 +375,18 @@ public abstract class Connector {
      */
     protected PageWriter newPageDocument( PageKey pageKey ) {
         return new FederatedDocumentWriter(translator).setId(pageKey.toString());
+    }
+
+    /**
+     * Obtain a new child reference document that is useful in the {@link #getChildReference(String, String)} method.
+     * 
+     * @param childId the ID of the child node; may not be null
+     * @param childName the name of the child node; may not be null
+     * @return the child reference document; never null
+     */
+    protected Document newChildReference( String childId,
+                                          String childName ) {
+        return DocumentFactory.newDocument(DocumentTranslator.KEY, childId, DocumentTranslator.NAME, childName);
     }
 
     /**

@@ -67,9 +67,10 @@ public class GitBranches extends GitFunction {
         } else if (spec.parameterCount() == 1) {
             // This is a particular branch node ...
             writer.setPrimaryType(GitLexicon.BRANCH);
-            String branchName = spec.parameter(1);
+            String branchName = spec.parameter(0);
+            String branchRefName = branchRefForName(branchName);
             // Get the Ref, which doesn't directly know about the commit SHA1, so we have to parse the commit ...
-            Ref ref = repository.getRef(branchName);
+            Ref ref = repository.getRef(branchRefName);
             if (ref == null) return null; // invalid branch
             RevWalk walker = new RevWalk(repository);
             try {
@@ -77,8 +78,9 @@ public class GitBranches extends GitFunction {
                 // Construct the references to other nodes in this source ...
                 ObjectId objId = commit.getId();
                 writer.addProperty(GitLexicon.OBJECT_ID, objId.name());
-                writer.addProperty(GitLexicon.TREE, GitTree.referenceToTree(objId, values));
+                writer.addProperty(GitLexicon.TREE, GitTree.referenceToTree(objId, objId.name(), values));
                 writer.addProperty(GitLexicon.HISTORY, GitHistory.referenceToHistory(objId, branchName, values));
+                writer.addProperty(GitLexicon.DETAIL, GitCommitDetails.referenceToCommit(objId, values));
             } finally {
                 walker.dispose();
             }

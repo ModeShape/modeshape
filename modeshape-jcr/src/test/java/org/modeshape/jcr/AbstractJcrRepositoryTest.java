@@ -44,6 +44,7 @@ import javax.jcr.nodetype.NodeType;
 import org.junit.Before;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 
@@ -192,6 +193,12 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
         return false;
     }
 
+    protected void printDetails( Node node ) throws RepositoryException {
+        if (print) {
+            new JcrTools().printNode(node);
+        }
+    }
+
     protected void print() throws RepositoryException {
         print(session().getRootNode(), true);
     }
@@ -201,18 +208,89 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
         print(node, true);
     }
 
+    protected void print( Node node ) throws RepositoryException {
+        print(node, true);
+    }
+
     protected void print( Node node,
                           boolean includeSystem ) throws RepositoryException {
-        if (print) {
+        print(node, includeSystem, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    }
+
+    protected void print( Node node,
+                          boolean includeSystem,
+                          int maxNumberOfChildren ) throws RepositoryException {
+        print(node, includeSystem, maxNumberOfChildren, Integer.MAX_VALUE);
+    }
+
+    protected void print( Node node,
+                          boolean includeSystem,
+                          int maxNumberOfChildren,
+                          int depth ) throws RepositoryException {
+        if (print && depth > 0) {
             if (!includeSystem && node.getPath().equals("/jcr:system")) return;
             if (node.getDepth() != 0) {
                 int snsIndex = node.getIndex();
                 String segment = node.getName() + (snsIndex > 1 ? ("[" + snsIndex + "]") : "");
                 System.out.println(StringUtil.createString(' ', 2 * node.getDepth()) + '/' + segment);
             }
+            int nextDepth = depth - 1;
+            if (nextDepth <= 0) return;
             NodeIterator children = node.getNodes();
+            int count = 0;
             while (children.hasNext()) {
-                print(children.nextNode(), includeSystem);
+                if (count >= maxNumberOfChildren) {
+                    System.out.println(StringUtil.createString(' ', 2 * (node.getDepth() + 1)) + "...");
+                    break;
+                }
+                print(children.nextNode(), includeSystem, maxNumberOfChildren, nextDepth);
+                ++count;
+            }
+        }
+    }
+
+    protected void navigate( String path ) throws RepositoryException {
+        Node node = session().getRootNode().getNode(relativePath(path));
+        navigate(node, true);
+    }
+
+    protected void navigate( Node node ) throws RepositoryException {
+        navigate(node, true);
+    }
+
+    protected void navigate( Node node,
+                             boolean includeSystem ) throws RepositoryException {
+        navigate(node, includeSystem, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    }
+
+    protected void navigate( Node node,
+                             boolean includeSystem,
+                             int maxNumberOfChildren ) throws RepositoryException {
+        navigate(node, includeSystem, maxNumberOfChildren, Integer.MAX_VALUE);
+    }
+
+    protected void navigate( Node node,
+                             boolean includeSystem,
+                             int maxNumberOfChildren,
+                             int depth ) throws RepositoryException {
+        if (depth > 0) {
+            if (!includeSystem && node.getPath().equals("/jcr:system")) return;
+            if (node.getDepth() != 0) {
+                int snsIndex = node.getIndex();
+                String segment = node.getName() + (snsIndex > 1 ? ("[" + snsIndex + "]") : "");
+                if (print) System.out.println(StringUtil.createString(' ', 2 * node.getDepth()) + '/' + segment);
+            }
+            int nextDepth = depth - 1;
+            if (nextDepth <= 0) return;
+            NodeIterator children = node.getNodes();
+            int count = 0;
+            while (children.hasNext()) {
+                if (count >= maxNumberOfChildren) {
+                    if (print) System.out.println(StringUtil.createString(' ', 2 * (node.getDepth() + 1)) + "...");
+                    break;
+                }
+                navigate(children.nextNode(), includeSystem, maxNumberOfChildren, nextDepth);
+                ++count;
             }
         }
     }
@@ -369,4 +447,24 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
         }
         return countRoot ? totalNumber : totalNumber - 1;
     }
+
+    protected void assertChildrenInclude( Node parentNode,
+                                          String... minimalChildNamesWithSns ) throws RepositoryException {
+        Set<String> childNames = new HashSet<String>();
+        for (String childName : minimalChildNamesWithSns) {
+            childNames.add(childName);
+        }
+        NodeIterator iter = parentNode.getNodes();
+        while (iter.hasNext()) {
+            Node child = iter.nextNode();
+            String name = child.getName();
+            if (child.getIndex() > 1) name = name + "[" + child.getIndex() + "]";
+            childNames.remove(name);
+            // If we've found all of the expected child names, then return immediately
+            // (in case there are a very large number of children) ...
+            if (childNames.isEmpty()) return;
+        }
+        assertThat("Names of children not found under node: " + childNames, childNames.isEmpty(), is(true));
+    }
+
 }

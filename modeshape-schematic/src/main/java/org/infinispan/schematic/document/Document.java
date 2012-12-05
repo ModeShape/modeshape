@@ -367,6 +367,16 @@ public interface Document extends Serializable {
     Document with( Map<String, Object> changedFields );
 
     /**
+     * Obtain a clone of this document, but with the supplied fields replaced.
+     * 
+     * @param fieldName the name of the file that should be changed; may be null
+     * @param value the new value for the field
+     * @return the clone of this document with the change fields, or this document if there are no changes
+     */
+    Document with( String fieldName,
+                   Object value );
+
+    /**
      * Obtain a clone of this document, but with the field values transformed using the supplied {@link ValueTransformer}.
      * 
      * @param transformer the transformer that should be used to transform each field value; may not be null
