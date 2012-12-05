@@ -87,6 +87,15 @@ public class MergeDocument implements Document {
     }
 
     @Override
+    public Document with( String fieldName,
+                          Object value ) {
+        Document clone1 = doc1.with(fieldName, value);
+        Document clone2 = doc2.with(fieldName, value);
+        if (clone1 == doc1 && clone2 == doc2) return this;
+        return new MergeDocument(clone1, clone2);
+    }
+
+    @Override
     public Document with( ValueTransformer transformer ) {
         Document clone1 = doc1.with(transformer);
         Document clone2 = doc2.with(transformer);

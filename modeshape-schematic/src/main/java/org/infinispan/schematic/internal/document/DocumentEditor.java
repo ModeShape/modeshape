@@ -85,6 +85,12 @@ public class DocumentEditor implements EditableDocument {
     }
 
     @Override
+    public Document with( String fieldName,
+                          Object value ) {
+        return new DocumentEditor((MutableDocument)this.document.with(fieldName, value), factory);
+    }
+
+    @Override
     public DocumentEditor with( ValueTransformer transformer ) {
         return new DocumentEditor((MutableDocument)this.document.with(transformer), factory);
     }

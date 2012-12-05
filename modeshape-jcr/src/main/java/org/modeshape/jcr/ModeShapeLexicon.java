@@ -61,7 +61,6 @@ public class ModeShapeLexicon {
     public static final Name SOURCE_NAME = new BasicName(Namespace.URI, "source");
     public static final Name WORKSPACE_NAME = new BasicName(Namespace.URI, "workspaceName");
     public static final Name DEFAULT_WORKSPACE_NAME = new BasicName(Namespace.URI, "defaultWorkspaceName");
-    public static final Name PROJECTION = new BasicName(Namespace.URI, "projection");
     public static final Name PROJECTIONS = new BasicName(Namespace.URI, "projections");
 
     public static final Name HASHED = new BasicName(Namespace.URI, "hashed");
@@ -109,6 +108,15 @@ public class ModeShapeLexicon {
      */
     public static final Name REPOSITORY= new BasicName(Namespace.URI, "repository");
     public static final Name INITIALIZATION_STATE = new BasicName(Namespace.URI, "initializationState");
+
+    /**
+     * Federation related items
+     */
+    public static final Name FEDERATION = new BasicName(Namespace.URI, "federation");
+    public static final Name PROJECTION = new BasicName(Namespace.URI, "projection");
+
+    public static final Name EXTERNAL_NODE_KEY = new BasicName(Namespace.URI, "externalNodeKey");
+    public static final Name PROJECTED_NODE_KEY = new BasicName(Namespace.URI, "projectedNodeKey");
 
     public enum InitializationState {
         STARTED, FINISHED

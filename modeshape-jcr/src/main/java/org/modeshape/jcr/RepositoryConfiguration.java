@@ -73,6 +73,7 @@ import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.connector.filesystem.FileSystemConnector;
 import org.modeshape.jcr.clustering.DefaultChannelProvider;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
@@ -82,6 +83,7 @@ import org.modeshape.jcr.value.binary.DatabaseBinaryStore;
 import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
 import org.modeshape.jcr.value.binary.infinispan.InfinispanBinaryStore;
+import org.modeshape.sequencer.cnd.CndSequencer;
 
 /**
  * A representation of the configuration for a {@link JcrRepository JCR Repository}.
@@ -178,6 +180,7 @@ public class RepositoryConfiguration {
     protected static final Map<String, String> PROVIDER_ALIASES;
     protected static final Map<String, String> SEQUENCER_ALIASES;
     protected static final Map<String, String> EXTRACTOR_ALIASES;
+    protected static final Map<String, String> CONNECTOR_ALIASES;
     protected static SchemaLibrary SCHEMA_LIBRARY;
 
     public static final String JSON_SCHEMA_URI = "http://modeshape.org/3.0/repository-config#";
@@ -375,6 +378,7 @@ public class RepositoryConfiguration {
         public static final String EXTRACTORS = "extractors";
         public static final String SEQUENCING = "sequencing";
         public static final String SEQUENCERS = "sequencers";
+        public static final String EXTERNAL_SOURCES = "externalSources";
         public static final String PATH_EXPRESSION = "pathExpression";
         public static final String PATH_EXPRESSIONS = "pathExpressions";
         public static final String JDBC_DRIVER_CLASS = "driverClass";
@@ -599,7 +603,7 @@ public class RepositoryConfiguration {
         aliases.put("servletprovider", servletProvider);
         PROVIDER_ALIASES = Collections.unmodifiableMap(aliases);
 
-        String cndSequencer = "org.modeshape.sequencer.cnd.CndSequencer";
+        String cndSequencer = CndSequencer.class.getName();
         String classfileSequencer = "org.modeshape.sequencer.classfile.ClassFileSequencer";
         String ddlSequencer = "org.modeshape.sequencer.ddl.DdlSequencer";
         String imageSequencer = "org.modeshape.sequencer.image.ImageMetadataSequencer";
@@ -652,6 +656,15 @@ public class RepositoryConfiguration {
         aliases.put("delimitedtextsequencer", delimitedTextSequencer);
 
         SEQUENCER_ALIASES = Collections.unmodifiableMap(aliases);
+
+        String fileSystemConnector = FileSystemConnector.class.getName();
+
+        aliases = new HashMap<String, String>();
+        aliases.put("files", fileSystemConnector);
+        aliases.put("filesystem", fileSystemConnector);
+        aliases.put("filesystemconnector", fileSystemConnector);
+
+        CONNECTOR_ALIASES = Collections.unmodifiableMap(aliases);
 
         String tikaExtractor = "org.modeshape.extractor.tika.TikaTextExtractor";
         String vdbExtractor = "org.modeshape.extractor.teiid.TeiidVdbTextExtractor";
@@ -1817,6 +1830,15 @@ public class RepositoryConfiguration {
     }
 
     /**
+     * Get the configuration for the sequencing-related aspects of this repository.
+     * 
+     * @return the sequencing configuration; never null
+     */
+    public Federation getFederation() {
+        return new Federation(doc);
+    }
+
+    /**
      * The security-related configuration information.
      */
     @Immutable
@@ -1870,6 +1892,43 @@ public class RepositoryConfiguration {
          */
         protected void validateSequencers( Problems problems ) {
             readComponents(sequencing, FieldName.SEQUENCERS, FieldName.CLASSNAME, SEQUENCER_ALIASES, problems);
+        }
+    }
+
+    /**
+     * The security-related configuration information.
+     */
+    @Immutable
+    public class Federation {
+        private final Document federation;
+
+        protected Federation( Document federation ) {
+            this.federation = federation != null ? federation : EMPTY;
+        }
+
+        /**
+         * Get the list of connector configurations.
+         * 
+         * @return the immutable list of connectors; never null but possibly empty
+         */
+        public List<Component> getConnectors() {
+            Problems problems = new SimpleProblems();
+            List<Component> components = readComponents(federation,
+                                                        FieldName.EXTERNAL_SOURCES,
+                                                        FieldName.CLASSNAME,
+                                                        CONNECTOR_ALIASES,
+                                                        problems);
+            assert !problems.hasErrors();
+            return components;
+        }
+
+        /**
+         * Validate the list of connector configurations.
+         * 
+         * @param problems the container for problems reading the configuration information; may not be null
+         */
+        protected void validateConnectors( Problems problems ) {
+            readComponents(federation, FieldName.EXTERNAL_SOURCES, FieldName.CLASSNAME, CONNECTOR_ALIASES, problems);
         }
     }
 

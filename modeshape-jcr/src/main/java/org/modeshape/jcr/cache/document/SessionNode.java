@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -69,6 +70,7 @@ import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
+import org.modeshape.jcr.value.basic.StringReference;
 
 /**
  * A node used within a {@link SessionCache session} when that node has (or may have) transient (unsaved) changes. This node is an
@@ -742,19 +744,34 @@ public class SessionNode implements MutableCachedNode {
         boolean isFrozenNode = JcrNtLexicon.FROZEN_NODE.equals(this.getPrimaryType(cache));
 
         for (Object value : property.getValuesAsArray()) {
-            NodeKeyReference ref = (NodeKeyReference)value;
+            NodeKey referredKey = null;
+            boolean isWeak = false;
+            if (value instanceof NodeKeyReference) {
+                NodeKeyReference nkref = (NodeKeyReference)value;
+                isWeak = nkref.isWeak();
+                referredKey = ((NodeKeyReference)value).getNodeKey();
+            } else if (value instanceof StringReference) {
+                String refStr = ((StringReference)value).getString();
+                if (!NodeKey.isValidFormat(refStr)) {
+                    // not a valid reference, so just return ...
+                    return;
+                }
+                // This is a rare case when a StringReference was created because we couldn't create a NodeKeyReference.
+                // In that case, we should assume 'weak' ...
+                referredKey = new NodeKey(refStr);
+                isWeak = true; // assumed
+            }
 
-            if (isFrozenNode && !ref.isWeak()) {
+            if (isFrozenNode && !isWeak) {
                 // JCR 3.13.4.6 ignore all strong outgoing references from a frozen node
                 return;
             }
 
-            NodeKey referredKey = ref.getNodeKey();
             if (cache.getNode(referredKey) == null) {
                 continue;
             }
             SessionNode referredNode = writableSession(cache).mutable(referredKey);
-            ReferenceType referenceType = ref.isWeak() ? ReferenceType.WEAK : ReferenceType.STRONG;
+            ReferenceType referenceType = isWeak ? ReferenceType.WEAK : ReferenceType.STRONG;
             if (add) {
                 referredNode.addReferrer(cache, key, referenceType);
             } else {
@@ -1110,6 +1127,16 @@ public class SessionNode implements MutableCachedNode {
         return result;
     }
 
+    /**
+     * Returns an object encapsulating all the different changes that this session node contains.
+     * 
+     * @return a {@code non-null} {@link NodeChanges} object.
+     */
+    @SuppressWarnings( "synthetic-access" )
+    public NodeChanges getNodeChanges() {
+        return new NodeChanges();
+    }
+
     @Override
     public int hashCode() {
         return key.hashCode();
@@ -1155,8 +1182,11 @@ public class SessionNode implements MutableCachedNode {
             sb.append(" props: {");
             boolean first = true;
             for (Map.Entry<Name, Property> entry : changedProperties.entrySet()) {
-                if (first) first = false;
-                else sb.append(',');
+                if (first) {
+                    first = false;
+                } else {
+                    sb.append(',');
+                }
                 Property property = entry.getValue();
                 sb.append(" +").append(property.getString(registry));
             }
@@ -1166,8 +1196,11 @@ public class SessionNode implements MutableCachedNode {
             sb.append(" props: {");
             boolean first = true;
             for (Name name : removedProperties.keySet()) {
-                if (first) first = false;
-                else sb.append(',');
+                if (first) {
+                    first = false;
+                } else {
+                    sb.append(',');
+                }
                 sb.append(" -").append(name.getString(registry));
             }
             sb.append('}');
@@ -1196,6 +1229,220 @@ public class SessionNode implements MutableCachedNode {
             sb.append(" ").append(referrerChg.toString());
         }
         return sb.toString();
+    }
+
+    /**
+     * Value object which contains an "abbreviated" view of the changes that this session node has registered in its internal
+     * state.
+     */
+    public class NodeChanges {
+        private NodeChanges() {
+            // this is not mean to be created from the outside
+        }
+
+        /**
+         * Returns a set with the names of the properties that have changed. This includes new/modified properties.
+         * 
+         * @return a {@code non-null} Set
+         */
+        public Set<Name> changedPropertyNames() {
+            Set<Name> result = new HashSet<Name>();
+            result.addAll(changedProperties().keySet());
+            return result;
+        }
+
+        /**
+         * Returns a set with the names of the properties that have been removed.
+         * 
+         * @return a {@code non-null} Set
+         */
+        public Set<Name> removedPropertyNames() {
+            Set<Name> result = new HashSet<Name>();
+            result.addAll(changedProperties().keySet());
+            return result;
+        }
+
+        /**
+         * Returns a set with the names of the mixins that have been added.
+         * 
+         * @return a {@code non-null} Set
+         */
+        public Set<Name> addedMixins() {
+            Set<Name> result = new HashSet<Name>();
+            MixinChanges mixinChanges = mixinChanges(false);
+            if (mixinChanges != null) {
+                result.addAll(mixinChanges.getAdded());
+            }
+            return result;
+
+        }
+
+        /**
+         * Returns a set with the names of the mixins that have been removed.
+         * 
+         * @return a {@code non-null} Set
+         */
+        public Set<Name> removedMixins() {
+            Set<Name> result = new HashSet<Name>();
+            MixinChanges mixinChanges = mixinChanges(false);
+            if (mixinChanges != null) {
+                result.addAll(mixinChanges.getRemoved());
+            }
+            return result;
+
+        }
+
+        /**
+         * Returns the [childKey, childName] pairs of the children that have been appended (at the end).
+         * 
+         * @return a {@code non-null} Map
+         */
+        public LinkedHashMap<NodeKey, Name> appendedChildren() {
+            LinkedHashMap<NodeKey, Name> result = new LinkedHashMap<NodeKey, Name>();
+            MutableChildReferences appendedChildReferences = appended(false);
+            if (appendedChildReferences != null) {
+                for (ChildReference appendedChildReference : appendedChildReferences) {
+                    result.put(appendedChildReference.getKey(), appendedChildReference.getName());
+                }
+            }
+            return result;
+        }
+
+        /**
+         * Returns the set of children that have been removed
+         * 
+         * @return a {@code non-null} Set
+         */
+        public Set<NodeKey> removedChildren() {
+            Set<NodeKey> result = new HashSet<NodeKey>();
+            result.addAll(changedChildren().getRemovals());
+            return result;
+        }
+
+        /**
+         * Returns the [childKey, childName] pairs of the children that have been renamed.
+         * 
+         * @return a {@code non-null} Map
+         */
+        public Map<NodeKey, Name> renamedChildren() {
+            Map<NodeKey, Name> result = new HashMap<NodeKey, Name>();
+            result.putAll(changedChildren().getNewNames());
+            return result;
+        }
+
+        /**
+         * Returns the [insertBeforeChildKey, [childKey, childName]] structure of the children that been inserted before another
+         * existing child. This is normally caused due to reorderings
+         * 
+         * @return a {@code non-null} Map
+         */
+        public Map<NodeKey, LinkedHashMap<NodeKey, Name>> childrenInsertedBefore() {
+            Map<NodeKey, LinkedHashMap<NodeKey, Name>> result = new HashMap<NodeKey, LinkedHashMap<NodeKey, Name>>();
+
+            Map<NodeKey, Insertions> insertionsByBeforeKey = changedChildren().getInsertionsByBeforeKey();
+            for (NodeKey beforeNodeKey : insertionsByBeforeKey.keySet()) {
+                Insertions insertionsBefore = insertionsByBeforeKey.get(beforeNodeKey);
+                if (insertionsBefore != null) {
+                    LinkedHashMap<NodeKey, Name> insertionsBeforeMap = new LinkedHashMap<NodeKey, Name>();
+                    for (ChildReference childReference : insertionsBefore.inserted()) {
+                        insertionsBeforeMap.put(childReference.getKey(), childReference.getName());
+                    }
+                    result.put(beforeNodeKey, insertionsBeforeMap);
+                }
+            }
+            return result;
+        }
+
+        /**
+         * Returns the set of parents that have been added
+         * 
+         * @return a {@code non-null} Set
+         */
+        public Set<NodeKey> addedParents() {
+            Set<NodeKey> result = new HashSet<NodeKey>();
+            if (additionalParents() != null) {
+                result.addAll(additionalParents().getAdditions());
+            }
+            return result;
+        }
+
+        /**
+         * Returns the set of parents that have been removed
+         * 
+         * @return a {@code non-null} Set
+         */
+        public Set<NodeKey> removedParents() {
+            Set<NodeKey> result = new HashSet<NodeKey>();
+            if (additionalParents() != null) {
+                result.addAll(additionalParents().getRemovals());
+            }
+            return result;
+        }
+
+        /**
+         * Returns the node key of the new primary parent, in case it has changed.
+         * 
+         * @return either the {@link NodeKey} of the new primary parent or {@code null}
+         */
+        public NodeKey newPrimaryParent() {
+            return newParent();
+        }
+
+        /**
+         * Returns a set of node keys with the weak referrers that have been added.
+         * 
+         * @return a {@code non-null} Set
+         */
+        public Set<NodeKey> addedWeakReferrers() {
+            Set<NodeKey> result = new HashSet<NodeKey>();
+            ReferrerChanges referrerChanges = referrerChanges(false);
+            if (referrerChanges != null) {
+                result.addAll(referrerChanges.getAddedReferrers(ReferenceType.WEAK));
+            }
+            return result;
+        }
+
+        /**
+         * Returns a set of node keys with the weak referrers that have been removed.
+         * 
+         * @return a {@code non-null} Set
+         */
+        public Set<NodeKey> removedWeakReferrers() {
+            Set<NodeKey> result = new HashSet<NodeKey>();
+            ReferrerChanges referrerChanges = referrerChanges(false);
+            if (referrerChanges != null) {
+                result.addAll(referrerChanges.getRemovedReferrers(ReferenceType.WEAK));
+            }
+            return result;
+        }
+
+        /**
+         * Returns a set of node keys with the strong referrers that have been added.
+         * 
+         * @return a {@code non-null} Set
+         */
+        public Set<NodeKey> addedStrongReferrers() {
+            Set<NodeKey> result = new HashSet<NodeKey>();
+            ReferrerChanges referrerChanges = referrerChanges(false);
+            if (referrerChanges != null) {
+                result.addAll(referrerChanges.getAddedReferrers(ReferenceType.STRONG));
+            }
+            return result;
+        }
+
+        /**
+         * Returns a set of node keys with the strong referrers that have been removed.
+         * 
+         * @return a {@code non-null} Set
+         */
+        public Set<NodeKey> removedStrongReferrers() {
+            Set<NodeKey> result = new HashSet<NodeKey>();
+            ReferrerChanges referrerChanges = referrerChanges(false);
+            if (referrerChanges != null) {
+                result.addAll(referrerChanges.getRemovedReferrers(ReferenceType.STRONG));
+            }
+            return result;
+        }
     }
 
     @ThreadSafe

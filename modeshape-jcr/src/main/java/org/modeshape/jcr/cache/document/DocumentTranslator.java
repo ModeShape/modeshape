@@ -37,8 +37,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
+import org.infinispan.schematic.DocumentFactory;
 import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
@@ -50,6 +50,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.NoOpEncoder;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.TextEncoder;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.value.DateTime;
@@ -88,11 +89,15 @@ import org.modeshape.jcr.value.binary.InMemoryBinaryValue;
 public class DocumentTranslator {
 
     public static final String SHA1 = "sha1";
+    public static final String SHA1_FIELD = "$sha1";
+    public static final String LENGTH = "len";
+    public static final String LENGTH_FIELD = "$len";
     public static final String PARENT = "parent";
     public static final String LARGE_VALUE = "value";
     public static final String PROPERTIES = "properties";
     public static final String CHILDREN = "children";
     public static final String CHILDREN_INFO = "childrenInfo";
+    public static final String FEDERATED_SEGMENTS = "federatedSegments";
     public static final String COUNT = "count";
     public static final String BLOCK_SIZE = "blockSize";
     public static final String NEXT_BLOCK = "nextBlock";
@@ -104,7 +109,19 @@ public class DocumentTranslator {
     public static final String STRONG = "strong";
     public static final String REFERENCE_COUNT = "refCount";
 
-    private final SchematicDb database;
+    /**
+     * A constant that is used as the name for a nested document in which additional, embedded documents can be placed. Each of
+     * these documents represents a separate node and will be automatically extracted from the containing document prior to usage.
+     */
+    public static final String EMBEDDED_DOCUMENTS = "embeddedDocuments";
+
+    /**
+     * A constant that can be used by a connector implementation as a supplementary document field, that indicates the maximum
+     * number of seconds that particular document should be stored in the workspace cache.
+     */
+    public static final String CACHE_TTL_SECONDS = "cacheTtlSeconds";
+
+    private final DocumentStore documentStore;
     private final AtomicLong largeStringSize = new AtomicLong();
     private final ExecutionContext context;
     private final PropertyFactory propertyFactory;
@@ -125,9 +142,9 @@ public class DocumentTranslator {
     private final TextDecoder decoder = NoOpEncoder.getInstance();
 
     public DocumentTranslator( ExecutionContext context,
-                               SchematicDb database,
+                               DocumentStore documentStore,
                                long largeStringSize ) {
-        this.database = database;
+        this.documentStore = documentStore;
         this.largeStringSize.set(largeStringSize);
         this.context = context;
         this.propertyFactory = this.context.getPropertyFactory();
@@ -147,6 +164,26 @@ public class DocumentTranslator {
         assert this.largeStringSize.get() >= 0;
     }
 
+    public final ValueFactory<String> getStringFactory() {
+        return strings;
+    }
+
+    public final NameFactory getNameFactory() {
+        return names;
+    }
+
+    public final ReferenceFactory getReferenceFactory() {
+        return this.refs;
+    }
+
+    public final ReferenceFactory getWeakReferenceFactory() {
+        return this.weakrefs;
+    }
+
+    public final PropertyFactory getPropertyFactory() {
+        return propertyFactory;
+    }
+
     void setLargeValueSize( long largeValueSize ) {
         assert largeValueSize > -1;
         this.largeStringSize.set(largeValueSize);
@@ -158,7 +195,7 @@ public class DocumentTranslator {
      * {@code primaryWorkspaceKey} and, if there is no such parent, the parent that is in the {@code secondaryWorkspaceKey}.
      * 
      * @param document the document for the node; may not be null
-     * @param primaryWorkspaceKey the key for the workspace in which the parent should preferrably exist; may be null
+     * @param primaryWorkspaceKey the key for the workspace in which the parent should preferably exist; may be null
      * @param secondaryWorkspaceKey the key for the workspace in which the parent should exist if not in the primary workspace;
      *        may be null
      * @return the key representing the preferred parent, or null if the document contains no parent reference or if the parent
@@ -191,7 +228,9 @@ public class DocumentTranslator {
             iter.next();
             while (iter.hasNext()) {
                 Object v = iter.next();
-                if (v == null) continue;
+                if (v == null) {
+                    continue;
+                }
                 String key = (String)v;
                 NodeKey nodeKey = new NodeKey(key);
                 String workspaceKey = nodeKey.getWorkspaceKey();
@@ -217,7 +256,9 @@ public class DocumentTranslator {
             }
             NodeKey keyWithSecondaryWorkspaceKey = null;
             for (Object v : values) {
-                if (v == null) continue;
+                if (v == null) {
+                    continue;
+                }
                 NodeKey key = new NodeKey((String)v);
                 if (key.getWorkspaceKey().equals(primaryWorkspaceKey)) {
                     return key;
@@ -260,14 +301,18 @@ public class DocumentTranslator {
     public int countProperties( Document document ) {
         // Get the properties container ...
         Document properties = document.getDocument(PROPERTIES);
-        if (properties == null) return 0;
+        if (properties == null) {
+            return 0;
+        }
 
         int count = 0;
         for (Field nsField : properties.fields()) {
             Document urlProps = nsField.getValueAsDocument();
             if (urlProps != null) {
                 for (Field propField : urlProps.fields()) {
-                    if (!Null.matches(propField.getValue())) ++count;
+                    if (!Null.matches(propField.getValue())) {
+                        ++count;
+                    }
                 }
             }
         }
@@ -277,13 +322,17 @@ public class DocumentTranslator {
     public boolean hasProperties( Document document ) {
         // Get the properties container ...
         Document properties = document.getDocument(PROPERTIES);
-        if (properties == null) return false;
+        if (properties == null) {
+            return false;
+        }
 
         for (Field nsField : properties.fields()) {
             Document urlProps = nsField.getValueAsDocument();
             if (urlProps != null) {
                 for (Field propField : urlProps.fields()) {
-                    if (!Null.matches(propField.getValue())) return true;
+                    if (!Null.matches(propField.getValue())) {
+                        return true;
+                    }
                 }
             }
         }
@@ -294,11 +343,15 @@ public class DocumentTranslator {
                                 Name propertyName ) {
         // Get the properties container ...
         Document properties = document.getDocument(PROPERTIES);
-        if (properties == null) return false;
+        if (properties == null) {
+            return false;
+        }
 
         // Get the namespace container for the property name's namespace ...
         Document urlProps = properties.getDocument(propertyName.getNamespaceUri());
-        if (urlProps == null) return false;
+        if (urlProps == null) {
+            return false;
+        }
 
         // Get the property ...
         Object fieldValue = urlProps.get(propertyName.getLocalName());
@@ -306,18 +359,67 @@ public class DocumentTranslator {
     }
 
     public Property getProperty( Document document,
+                                 String propertyName ) {
+        return getProperty(document, names.create(propertyName));
+    }
+
+    public Property getProperty( Document document,
                                  Name propertyName ) {
         // Get the properties container ...
         Document properties = document.getDocument(PROPERTIES);
-        if (properties == null) return null;
+        if (properties == null) {
+            return null;
+        }
 
         // Get the namespace container for the property name's namespace ...
         Document urlProps = properties.getDocument(propertyName.getNamespaceUri());
-        if (urlProps == null) return null;
+        if (urlProps == null) {
+            return null;
+        }
 
         // Get the property ...
         Object fieldValue = urlProps.get(propertyName.getLocalName());
         return fieldValue == null ? null : propertyFor(propertyName, fieldValue);
+    }
+
+    public Name getPrimaryType( Document document ) {
+        return names.create(getProperty(document, JcrLexicon.PRIMARY_TYPE).getFirstValue());
+    }
+
+    public String getPrimaryTypeName( Document document ) {
+        return strings.create(getProperty(document, JcrLexicon.PRIMARY_TYPE).getFirstValue());
+    }
+
+    public Set<Name> getMixinTypes( Document document ) {
+        Property prop = getProperty(document, JcrLexicon.MIXIN_TYPES);
+        if (prop == null || prop.size() == 0) return Collections.emptySet();
+
+        if (prop.size() == 1) {
+            Name name = names.create(prop.getFirstValue());
+            return Collections.singleton(name);
+        }
+        Set<Name> result = new HashSet<Name>();
+        for (Object value : prop) {
+            Name name = names.create(value);
+            result.add(name);
+        }
+        return result;
+    }
+
+    public Set<String> getMixinTypeNames( Document document ) {
+        Property prop = getProperty(document, JcrLexicon.MIXIN_TYPES);
+        if (prop == null || prop.size() == 0) return Collections.emptySet();
+
+        if (prop.size() == 1) {
+            String name = strings.create(prop.getFirstValue());
+            return Collections.singleton(name);
+        }
+        Set<String> result = new HashSet<String>();
+        for (Object value : prop) {
+            String name = strings.create(value);
+            result.add(name);
+        }
+        return result;
     }
 
     protected Property propertyFor( Name propertyName,
@@ -364,8 +466,11 @@ public class DocumentTranslator {
         } else {
             assert property.isSingle();
             Object value = valueToDocument(property.getFirstValue(), unusedBinaryKeys);
-            if (value == null) urlProps.remove(localName);
-            else urlProps.set(localName, value);
+            if (value == null) {
+                urlProps.remove(localName);
+            } else {
+                urlProps.set(localName, value);
+            }
         }
     }
 
@@ -408,7 +513,9 @@ public class DocumentTranslator {
                                    Set<BinaryKey> unusedBinaryKeys ) {
         assert values != null;
         int numValues = values.size();
-        if (numValues == 0) return;
+        if (numValues == 0) {
+            return;
+        }
 
         // Get or create the properties container ...
         EditableDocument properties = document.getDocument(PROPERTIES);
@@ -479,7 +586,9 @@ public class DocumentTranslator {
                                       Set<BinaryKey> unusedBinaryKeys ) {
         assert values != null;
         int numValues = values.size();
-        if (numValues == 0) return;
+        if (numValues == 0) {
+            return;
+        }
 
         // Get the properties container if it exists ...
         EditableDocument properties = document.getDocument(PROPERTIES);
@@ -555,7 +664,9 @@ public class DocumentTranslator {
             EditableArray parents = document.getArray(PARENT);
             if (parent != null && !parent.equals(oldParent)) {
                 parents.addStringIfAbsent(parent.toString());
-                if (oldParent != null) parents.remove(oldParent.toString());
+                if (oldParent != null) {
+                    parents.remove(oldParent.toString());
+                }
             }
             if (additionalParents != null) {
                 for (NodeKey removed : additionalParents.getRemovals()) {
@@ -606,8 +717,17 @@ public class DocumentTranslator {
         document.setString(KEY, key.toString());
     }
 
-    public void changeChildren( NodeKey key,
-                                EditableDocument document,
+    public void setKey( EditableDocument document,
+                        String key ) {
+        assert key != null;
+        document.setString(KEY, key);
+    }
+
+    public String getKey( Document document ) {
+        return document.getString(KEY);
+    }
+
+    public void changeChildren( EditableDocument document,
                                 ChangedChildren changedChildren,
                                 ChildReferences appended ) {
         assert !(changedChildren == null && appended == null);
@@ -635,7 +755,7 @@ public class DocumentTranslator {
                 ChildReferencesInfo docInfo = doc == document ? info : getChildReferencesInfo(doc);
                 if (docInfo != null && docInfo.nextKey != null) {
                     // The children are segmented, so get the next block of children ...
-                    nextEntry = database.get(docInfo.nextKey);
+                    nextEntry = documentStore.get(docInfo.nextKey);
                 }
 
                 if (nextEntry != null) {
@@ -647,7 +767,7 @@ public class DocumentTranslator {
                     assert docInfo != null;
                     lastDocKey = docInfo.nextKey;
                 } else {
-                    if (doc == document) {
+                    if (doc == document && doc.containsField(CHILDREN_INFO)) {
                         // This is still the first document, so there shouldn't be a block size ...
                         EditableDocument childInfo = doc.getDocument(CHILDREN_INFO);
                         childInfo.remove(BLOCK_SIZE);
@@ -665,7 +785,7 @@ public class DocumentTranslator {
             String lastKey = info != null ? info.lastKey : null;
             if (lastKey != null && !lastKey.equals(lastDocKey)) {
                 // Find the last document ...
-                SchematicEntry lastBlockEntry = database.get(lastKey);
+                SchematicEntry lastBlockEntry = documentStore.get(lastKey);
                 lastDoc = lastBlockEntry.editDocumentContent();
             } else {
                 lastKey = null;
@@ -673,7 +793,9 @@ public class DocumentTranslator {
             // Just append the new children to the end of the last document; we can use an asynchronous process
             // to adjust/optimize the number of children in each block ...
             EditableArray lastChildren = lastDoc.getArray(CHILDREN);
-            if (lastChildren == null) lastChildren = lastDoc.setArray(CHILDREN);
+            if (lastChildren == null) {
+                lastChildren = lastDoc.setArray(CHILDREN);
+            }
             for (ChildReference ref : appended) {
                 lastChildren.add(fromChildReference(ref));
             }
@@ -681,13 +803,17 @@ public class DocumentTranslator {
             if (lastDoc != document) {
                 // We've written to at least one other document, so update the block size ...
                 EditableDocument lastDocInfo = lastDoc.getDocument(CHILDREN_INFO);
-                if (lastDocInfo == null) lastDocInfo = lastDoc.setDocument(CHILDREN_INFO);
+                if (lastDocInfo == null) {
+                    lastDocInfo = lastDoc.setDocument(CHILDREN_INFO);
+                }
                 lastDocInfo.setNumber(BLOCK_SIZE, lastChildren.size());
             }
 
             // And update the total size and last block on the starting document ...
             EditableDocument childInfo = document.getDocument(CHILDREN_INFO);
-            if (childInfo == null) childInfo = document.setDocument(CHILDREN_INFO);
+            if (childInfo == null) {
+                childInfo = document.setDocument(CHILDREN_INFO);
+            }
             newTotalSize += appended.size();
             childInfo.setNumber(COUNT, newTotalSize);
 
@@ -707,7 +833,9 @@ public class DocumentTranslator {
         EditableArray newChildren = Schematic.newArray(children.size());
         for (Object value : children) {
             ChildReference ref = childReferenceFrom(value);
-            if (ref == null) continue;
+            if (ref == null) {
+                continue;
+            }
             NodeKey childKey = ref.getKey();
             // Are nodes inserted before this node?
             Insertions insertions = insertionsByBeforeKey.remove(childKey);
@@ -736,23 +864,62 @@ public class DocumentTranslator {
     public ChildReferences getChildReferences( WorkspaceCache cache,
                                                Document document ) {
         List<?> children = document.getArray(CHILDREN);
-        if (children == null) return ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
+        List<?> externalSegments = document.getArray(FEDERATED_SEGMENTS);
+
+        if (children == null && externalSegments == null) {
+            return ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
+        }
 
         // Materialize the ChildReference objects in the 'children' document ...
-        List<ChildReference> refs = new ArrayList<ChildReference>(children.size());
-        for (Object value : children) {
-            ChildReference ref = childReferenceFrom(value);
-            if (ref != null) refs.add(ref);
-        }
-        ChildReferences result = ImmutableChildReferences.create(refs);
+        List<ChildReference> internalChildRefsList = childReferencesListFromArray(children);
+
+        // Materialize the ChildReference objects in the 'federated segments' document ...
+        List<ChildReference> externalChildRefsList = childReferencesListFromArray(externalSegments);
 
         // Now look at the 'childrenInfo' document for info about the next block of children ...
         ChildReferencesInfo info = getChildReferencesInfo(document);
         if (info != null) {
             // The children are segmented ...
-            result = ImmutableChildReferences.create(result, info, cache);
+            ChildReferences internalChildRefs = ImmutableChildReferences.create(internalChildRefsList);
+            ChildReferences externalChildRefs = ImmutableChildReferences.create(externalChildRefsList);
+
+            return ImmutableChildReferences.create(internalChildRefs, info, externalChildRefs, cache);
         }
-        return result;
+        if (externalSegments != null) {
+            // There is no segmenting, so just add the federated references at the end
+            internalChildRefsList.addAll(externalChildRefsList);
+        }
+        return ImmutableChildReferences.create(internalChildRefsList);
+    }
+
+    /**
+     * Reads the children of the given block and returns a {@link ChildReferences} instance.
+     * 
+     * @param block a {@code non-null} {@link Document} representing a block of children
+     * @return a {@code non-null} child references instance
+     */
+    public ChildReferences getChildReferencesFromBlock( Document block ) {
+        List<?> children = block.getArray(CHILDREN);
+
+        if (children == null) {
+            return ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
+        }
+
+        return ImmutableChildReferences.create(childReferencesListFromArray(children));
+    }
+
+    private List<ChildReference> childReferencesListFromArray( List<?> children ) {
+        if (children == null) {
+            return new ArrayList<ChildReference>();
+        }
+        List<ChildReference> childRefsList = new ArrayList<ChildReference>(children.size());
+        for (Object value : children) {
+            ChildReference ref = childReferenceFrom(value);
+            if (ref != null) {
+                childRefsList.add(ref);
+            }
+        }
+        return childRefsList;
     }
 
     public ChildReferencesInfo getChildReferencesInfo( Document document ) {
@@ -785,11 +952,6 @@ public class DocumentTranslator {
             this.lastKey = lastKey;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#toString()
-         */
         @Override
         public String toString() {
             return "totalSize: " + totalSize + "; blockSize: " + blockSize + "; nextKey: " + nextKey + "; lastKey: " + lastKey;
@@ -818,7 +980,9 @@ public class DocumentTranslator {
                                       ReferenceType type ) {
         // Get the properties container ...
         Document referrers = document.getDocument(REFERRERS);
-        if (referrers == null) return new HashSet<NodeKey>();
+        if (referrers == null) {
+            return new HashSet<NodeKey>();
+        }
 
         // Get the NodeKeys in the respective arrays ...
         Set<NodeKey> result = new HashSet<NodeKey>();
@@ -940,7 +1104,9 @@ public class DocumentTranslator {
 
     protected Object valueToDocument( Object value,
                                       Set<BinaryKey> unusedBinaryKeys ) {
-        if (value == null) return null;
+        if (value == null) {
+            return null;
+        }
         if (value instanceof String) {
             String valueStr = (String)value;
             if (valueStr.length() < this.largeStringSize.get()) {
@@ -1007,7 +1173,7 @@ public class DocumentTranslator {
             // This is a large value ...
             String sha1 = binary.getHexHash();
             long size = binary.getSize();
-            Document ref = Schematic.newDocument("$sha1", sha1, "$len", size);
+            Document ref = Schematic.newDocument(SHA1_FIELD, sha1, "$len", size);
 
             // Find the document metadata and increment the usage count ...
             incrementBinaryReferenceCount(binary.getKey(), unusedBinaryKeys);
@@ -1034,16 +1200,15 @@ public class DocumentTranslator {
         // Find the document metadata and increment the usage count ...
         String sha1 = binaryKey.toString();
         String key = keyForBinaryReferenceDocument(sha1);
-        SchematicEntry entry = database.get(key);
+        SchematicEntry entry = documentStore.get(key);
         if (entry == null) {
             // The document doesn't yet exist, so create it ...
-            Document metadata = Schematic.newDocument(SHA1, sha1, REFERENCE_COUNT, 1L);
-            Document content = Schematic.newDocument();
-            database.put(key, metadata, content);
+            Document content = Schematic.newDocument(SHA1, sha1, REFERENCE_COUNT, 1L);
+            documentStore.localStore().put(key, content);
         } else {
             EditableDocument sha1Usage = entry.editDocumentContent();
             Long countValue = sha1Usage.getLong(REFERENCE_COUNT);
-            sha1Usage.setNumber(REFERENCE_COUNT, countValue != null ? countValue.longValue() + 1 : 1L);
+            sha1Usage.setNumber(REFERENCE_COUNT, countValue != null ? countValue + 1 : 1L);
         }
         // We're using the sha1, so remove it if its in the set of unused binary keys ...
         if (unusedBinaryKeys != null) {
@@ -1066,14 +1231,16 @@ public class DocumentTranslator {
             }
         } else if (fieldValue instanceof Document) {
             Document docValue = (Document)fieldValue;
-            String sha1 = docValue.getString("sha1");
+            String sha1 = docValue.getString(SHA1);
             if (sha1 != null) {
                 // Find the document metadata and increment the usage count ...
-                SchematicEntry entry = database.get(sha1 + "-usage");
+                SchematicEntry entry = documentStore.get(sha1 + "-usage");
                 EditableDocument sha1Usage = entry.editDocumentContent();
                 Long countValue = sha1Usage.getLong(REFERENCE_COUNT);
-                if (countValue == null) return true;
-                long count = countValue.longValue() - 1;
+                if (countValue == null) {
+                    return true;
+                }
+                long count = countValue - 1;
                 if (count < 0) {
                     count = 0;
                     // We're not using the binary value anymore ...
@@ -1088,8 +1255,10 @@ public class DocumentTranslator {
         return false;
     }
 
-    protected Object valueFromDocument( Object value ) {
-        if (value == null) return null;
+    public Object valueFromDocument( Object value ) {
+        if (value == null) {
+            return null;
+        }
         if (value instanceof String) {
             return value;
         }
@@ -1113,7 +1282,9 @@ public class DocumentTranslator {
         if (value instanceof List<?>) {
             List<?> values = (List<?>)value;
             int size = values.size();
-            if (size == 0) return Collections.emptyList();
+            if (size == 0) {
+                return Collections.emptyList();
+            }
             List<Object> result = new ArrayList<Object>(values.size());
             for (Object val : values) {
                 result.add(valueFromDocument(val));
@@ -1150,9 +1321,9 @@ public class DocumentTranslator {
             if (!Null.matches(valueStr = doc.getString("$uri"))) {
                 return uris.create(valueStr);
             }
-            if (!Null.matches(valueStr = doc.getString("$sha1"))) {
+            if (!Null.matches(valueStr = doc.getString(SHA1_FIELD))) {
                 String sha1 = valueStr;
-                long size = doc.getLong("$len");
+                long size = doc.getLong(LENGTH_FIELD);
                 try {
                     return binaries.find(new BinaryKey(sha1), size);
                 } catch (BinaryStoreException e) {
@@ -1202,7 +1373,7 @@ public class DocumentTranslator {
         // return BINARY for the large String value).
 
         // Look up the large value in the database ...
-        SchematicEntry entry = database.get(sha1);
+        SchematicEntry entry = documentStore.get(sha1);
         if (entry == null) {
             // The large value is no longer there, so return null ...
             return null;
@@ -1222,21 +1393,25 @@ public class DocumentTranslator {
      * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
      * a session sees as "persisted" state and the reality.
      * </p>
-     *
+     * 
      * @param key
      * @param document
      * @param targetCountPerBlock
      * @param tolerance
      */
     protected void optimizeChildrenBlocks( NodeKey key,
-                                        EditableDocument document,
-                                        int targetCountPerBlock,
-                                        int tolerance ) {
+                                           EditableDocument document,
+                                           int targetCountPerBlock,
+                                           int tolerance ) {
         if (document == null) {
-            SchematicEntry entry = database.get(key.toString());
-            if (entry == null) return;
+            SchematicEntry entry = documentStore.get(key.toString());
+            if (entry == null) {
+                return;
+            }
             document = entry.editDocumentContent();
-            if (document == null) return;
+            if (document == null) {
+                return;
+            }
         }
         EditableArray children = document.getArray(CHILDREN);
         if (children == null) {
@@ -1292,7 +1467,7 @@ public class DocumentTranslator {
 
                 // Find the next block ...
                 if (nextKey != null) {
-                    SchematicEntry nextEntry = database.get(nextKey);
+                    SchematicEntry nextEntry = documentStore.get(nextKey);
                     doc = nextEntry.editDocumentContent();
                     docKey = new NodeKey(nextKey);
                 } else {
@@ -1309,7 +1484,6 @@ public class DocumentTranslator {
      * <p>
      * Note this method returns very quickly if the method determines that there is no work to do.
      * </p>
-     *
      * <p>
      * Note that this method changes the underlying db as well as the given document, so *it must* be called either from a
      * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
@@ -1377,13 +1551,15 @@ public class DocumentTranslator {
             EditableDocument blockDoc = Schematic.newDocument();
             EditableDocument childInfo = blockDoc.setDocument(CHILDREN_INFO);
             childInfo.setNumber(BLOCK_SIZE, blockChildren.size());
-            if (nextBlockKey != null) childInfo.setString(NEXT_BLOCK, nextBlockKey.toString());
+            if (nextBlockKey != null) {
+                childInfo.setString(NEXT_BLOCK, nextBlockKey);
+            }
 
             // Write the children ...
             blockDoc.setArray(CHILDREN, blockChildren);
 
             // Now persist the new document ...
-            database.put(blockKey, blockDoc, null);
+            documentStore.localStore().put(blockKey, blockDoc);
 
             // And get ready for the next block ...
             if (!isLast) {
@@ -1396,7 +1572,9 @@ public class DocumentTranslator {
         EditableArray newChildren = Schematic.newArray(children.subList(0, targetCountPerBlock));
         document.setArray(CHILDREN, newChildren);
         EditableDocument childInfo = document.getDocument(CHILDREN_INFO);
-        if (childInfo == null) childInfo = document.setDocument(CHILDREN_INFO);
+        if (childInfo == null) {
+            childInfo = document.setDocument(CHILDREN_INFO);
+        }
         childInfo.setNumber(BLOCK_SIZE, newChildren.size());
         childInfo.setString(NEXT_BLOCK, firstNewBlockKey);
 
@@ -1414,7 +1592,6 @@ public class DocumentTranslator {
      * empty or contains no children, it will be deleted its next block merged. Note that this merging is performed, even if the
      * resulting number of children is considered 'too-large' (as such 'too-large' blocks will be optimized at a subsequent
      * optimization pass).
-     *
      * <p>
      * Note that this method changes the underlying db as well as the given document, so *it must* be called either from a
      * transactional context or it must be followed by a session.save call, otherwise there might be inconsistencies between what
@@ -1438,14 +1615,16 @@ public class DocumentTranslator {
         // The children in the next block should be added to the children in this block, even if the size would be too large
         // as any too-large blocks will eventually be optimized later ...
         EditableDocument info = document.getDocument(CHILDREN_INFO);
-        if (info == null) info = document.setDocument(CHILDREN_INFO);
+        if (info == null) {
+            info = document.setDocument(CHILDREN_INFO);
+        }
 
         // First, find the next block that we can use ...
         Set<String> toBeDeleted = new HashSet<String>();
         SchematicEntry nextEntry = null;
         String nextBlocksNext = null;
         while (nextBlock != null) {
-            nextEntry = database.get(nextBlock);
+            nextEntry = documentStore.get(nextBlock);
             Document nextDoc = nextEntry.getContentAsDocument();
             List<?> nextChildren = nextDoc.getArray(CHILDREN);
             Document nextInfo = nextDoc.getDocument(CHILDREN_INFO);
@@ -1483,7 +1662,7 @@ public class DocumentTranslator {
 
         // Now that we've updated the input document, delete any entries that are no longer needed ...
         for (String deleteKey : toBeDeleted) {
-            database.remove(deleteKey);
+            documentStore.remove(deleteKey);
         }
 
         return nextBlocksNext;
@@ -1497,5 +1676,54 @@ public class DocumentTranslator {
      */
     public boolean isLocked( EditableDocument doc ) {
         return hasProperty(doc, JcrLexicon.LOCK_OWNER) || hasProperty(doc, JcrLexicon.LOCK_IS_DEEP);
+    }
+
+    /**
+     * Given an existing document adds a new federated segment with the given alias pointing to the external document located at
+     * {@code externalPath}
+     * 
+     * @param document a {@code non-null} {@link EditableDocument} representing the document of a local node to which the
+     *        federated segment should be appended.
+     * @param sourceName a {@code non-null} string, the name of the source where {@code externalPath} will be resolved
+     * @param externalPath a {@code non-null} string the location in the external source which points to an external node
+     * @param alias an optional string representing the name under which the federated segment will be linked. In effect, this
+     *        represents the name of a child reference. If not present, the {@code externalPath} will be used. Note that the name
+     *        of the federated segment (either coming from {@code externalPath} or {@code alias}) should not contain the "/"
+     *        character. If it does, this will be removed.
+     */
+    public void addFederatedSegment( EditableDocument document,
+                                     String sourceName,
+                                     String externalPath,
+                                     String alias ) {
+        EditableArray federatedSegmentsArray = document.getArray(FEDERATED_SEGMENTS);
+        if (federatedSegmentsArray == null) {
+            federatedSegmentsArray = Schematic.newArray();
+            document.set(FEDERATED_SEGMENTS, federatedSegmentsArray);
+        }
+
+        String parentKey = document.getString(KEY);
+        String externalNodeKey = documentStore.createExternalProjection(parentKey, sourceName, externalPath);
+        if (!StringUtil.isBlank(externalNodeKey)) {
+            String segmentName = !StringUtil.isBlank(alias) ? alias : externalPath;
+            if (segmentName.endsWith("/")) {
+                segmentName = segmentName.substring(0, segmentName.length() - 1);
+            }
+            if (segmentName.contains("/")) {
+                segmentName = segmentName.substring(segmentName.lastIndexOf("/") + 1);
+            }
+            EditableDocument federatedSegment = DocumentFactory.newDocument(KEY, externalNodeKey, NAME, segmentName);
+            federatedSegmentsArray.add(federatedSegment);
+        }
+    }
+
+    /**
+     * Returns the value of the {@link org.modeshape.jcr.cache.document.DocumentTranslator#CACHE_TTL_SECONDS} field, if such a
+     * value exists.
+     * 
+     * @param document a {@code non-null} document
+     * @return either the value of the above field, or {@code null} if such a value doesn't exist.
+     */
+    public Integer getCacheTtlSeconds( Document document ) {
+        return document.getInteger(CACHE_TTL_SECONDS);
     }
 }

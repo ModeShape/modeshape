@@ -1,0 +1,14 @@
+{
+    "name" : "Federated repository",
+    "workspaces" : {
+        "predefined" : ["ws1", "ws2"],
+    },
+    "externalSources" : {
+        "local-git-repo" : {
+            "classname" : "org.modeshape.connector.git.GitConnector",
+            "directoryPath" : "../../",
+            "remoteName" : "upstream,origin",
+            "includeMimeType" : true,
+        },
+    }
+}

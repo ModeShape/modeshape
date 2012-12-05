@@ -384,10 +384,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         int jcrPropertyType = defn.getRequiredType();
         jcrPropertyType = determineBestPropertyTypeIfUndefined(jcrPropertyType, property);
         AbstractJcrProperty prop = null;
-        if (property.isSingle()) {
-            prop = new JcrSingleValueProperty(this, property.getName(), jcrPropertyType);
-        } else {
+        if (defn.isMultiple()) {
             prop = new JcrMultiValueProperty(this, property.getName(), jcrPropertyType);
+        } else {
+            prop = new JcrSingleValueProperty(this, property.getName(), jcrPropertyType);
         }
         prop.setPropertyDefinitionId(defn.getId(), nodeTypes.getVersion());
         return prop;

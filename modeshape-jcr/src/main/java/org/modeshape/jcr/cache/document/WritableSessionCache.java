@@ -42,7 +42,6 @@ import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
@@ -63,6 +62,7 @@ import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
 import org.modeshape.jcr.cache.DocumentNotFoundException;
+import org.modeshape.jcr.cache.DocumentStoreException;
 import org.modeshape.jcr.cache.LockFailureException;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeCache;
@@ -338,7 +338,9 @@ public class WritableSessionCache extends AbstractSessionCache {
     }
 
     protected void save( PreSave preSaveOperation ) {
-        if (!this.hasChanges()) return;
+        if (!this.hasChanges()) {
+            return;
+        }
 
         ChangeSet events = null;
         Lock lock = this.lock.writeLock();
@@ -350,7 +352,9 @@ public class WritableSessionCache extends AbstractSessionCache {
             if (preSaveOperation != null) {
                 SaveContext saveContext = new BasicSaveContext(context());
                 for (MutableCachedNode node : this.changedNodes.values()) {
-                    if (node == REMOVED) continue;
+                    if (node == REMOVED) {
+                        continue;
+                    }
                     checkNodeNotRemovedByAnotherTransaction(node);
                     preSaveOperation.process(node, saveContext);
 
@@ -378,7 +382,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                 txn.uponCompletion(new TransactionFunction() {
                     @Override
                     public void transactionComplete() {
-                        if (changes != null && monitor != null) monitor.recordChanged(changes.changedNodes().size());
+                        if (changes != null && monitor != null) {
+                            monitor.recordChanged(changes.changedNodes().size());
+                        }
                         clearState();
                     }
                 });
@@ -501,8 +507,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                     @Override
                     public void transactionComplete() {
                         if (monitor != null) {
-                            if (changes1 != null) monitor.recordChanged(changes1.changedNodes().size());
-                            if (changes2 != null) monitor.recordChanged(changes2.changedNodes().size());
+                            if (changes1 != null) {
+                                monitor.recordChanged(changes1.changedNodes().size());
+                            }
+                            if (changes2 != null) {
+                                monitor.recordChanged(changes2.changedNodes().size());
+                            }
                         }
                         clearState();
                         that.clearState();
@@ -554,7 +564,7 @@ public class WritableSessionCache extends AbstractSessionCache {
     private void checkNodeNotRemovedByAnotherTransaction( MutableCachedNode node ) {
         String keyString = node.getKey().toString();
         // if the node is not new and also missing from the document, another transaction has deleted it
-        if (!node.isNew() && !workspaceCache.database().containsKey(keyString)) {
+        if (!node.isNew() && !workspaceCache.documentStore().containsKey(keyString)) {
             throw new DocumentNotFoundException(keyString);
         }
     }
@@ -571,6 +581,7 @@ public class WritableSessionCache extends AbstractSessionCache {
      * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
      *         document
      * @throws DocumentNotFoundException if one of the modified documents was removed by another session
+     * @throws DocumentStoreException if there is a problem storing or retrieving a document
      */
     @Override
     public void save( Set<NodeKey> toBeSaved,
@@ -631,8 +642,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                     @Override
                     public void transactionComplete() {
                         if (monitor != null) {
-                            if (changes1 != null) monitor.recordChanged(changes1.changedNodes().size());
-                            if (changes2 != null) monitor.recordChanged(changes2.changedNodes().size());
+                            if (changes1 != null) {
+                                monitor.recordChanged(changes1.changedNodes().size());
+                            }
+                            if (changes2 != null) {
+                                monitor.recordChanged(changes2.changedNodes().size());
+                            }
                         }
                         clearState(savedNodesInOrder);
                         that.clearState();
@@ -704,8 +719,8 @@ public class WritableSessionCache extends AbstractSessionCache {
         String processKey = workspaceCache().getProcessKey();
         RecordingChanges changes = new RecordingChanges(processKey, repositoryKey, workspaceName);
 
-        // Get the database ...
-        SchematicDb database = workspaceCache.database();
+        // Get the documentStore ...
+        DocumentStore documentStore = workspaceCache.documentStore();
         DocumentTranslator translator = workspaceCache.translator();
 
         PathCache sessionPaths = new PathCache(this);
@@ -731,10 +746,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // if there were any referrer changes for the removed nodes, we need to process them
                     ReferrerChanges referrerChanges = referrerChangesForRemovedNodes.get(key);
                     if (referrerChanges != null) {
-                        EditableDocument doc = database.get(keyStr).editDocumentContent();
+                        EditableDocument doc = documentStore.get(keyStr).editDocumentContent();
                         translator.changeReferrers(doc, referrerChanges);
                     }
-                    // Note 1: Do not actually remove the document from the database yet; see below (note 2)
+                    // Note 1: Do not actually remove the document from the documentStore yet; see below (note 2)
                 }
                 // Otherwise, the removed node was created in the session (but not ever persisted),
                 // so we don't have to do anything ...
@@ -743,7 +758,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                 Path newPath = sessionPaths.getPath(node);
                 NodeKey newParent = node.newParent();
                 EditableDocument doc = null;
-                EditableDocument metadata = null;
                 ChangedAdditionalParents additionalParents = node.additionalParents();
 
                 if (node.isNew()) {
@@ -763,9 +777,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                     }
 
                 } else {
-                    SchematicEntry nodeEntry = database.get(keyStr);
+                    SchematicEntry nodeEntry = documentStore.get(keyStr);
                     if (nodeEntry == null) {
-                        // Could not find the entry in the database, which means it was deleted by someone else
+                        // Could not find the entry in the documentStore, which means it was deleted by someone else
                         // just moments before we got our transaction to save ...
                         throw new DocumentNotFoundException(keyStr);
                     }
@@ -863,7 +877,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 MutableChildReferences appended = node.appended(false);
                 if ((changedChildren == null || changedChildren.isEmpty()) && (appended != null && !appended.isEmpty())) {
                     // Just appended children ...
-                    translator.changeChildren(key, doc, changedChildren, appended);
+                    translator.changeChildren(doc, changedChildren, appended);
                 } else if (changedChildren != null && !changedChildren.isEmpty()) {
                     if (!changedChildren.getRemovals().isEmpty()) {
                         // This node is not being removed (or added), but it has removals, and we have to calculate the paths
@@ -884,7 +898,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     }
 
                     // Now change the children ...
-                    translator.changeChildren(key, doc, changedChildren, appended);
+                    translator.changeChildren(doc, changedChildren, appended);
 
                     // Generate events for renames, as this is only captured in the parent node ...
                     Map<NodeKey, Name> newNames = changedChildren.getNewNames();
@@ -942,13 +956,13 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                 if (node.isNew()) {
                     // We need to create the schematic entry for the new node ...
-                    if (database.putIfAbsent(keyStr, doc, metadata) != null) {
+                    if (documentStore.storeDocument(keyStr, doc) != null) {
                         if (replacedNodes != null && replacedNodes.contains(key)) {
                             // Then a node is being removed and recreated with the same key ...
-                            database.put(keyStr, doc, metadata);
+                            documentStore.localStore().put(keyStr, doc);
                         } else if (removedNodes != null && removedNodes.contains(key)) {
                             // Then a node is being removed and recreated with the same key ...
-                            database.put(keyStr, doc, metadata);
+                            documentStore.localStore().put(keyStr, doc);
                             removedNodes.remove(key);
                         } else {
                             // We couldn't create the entry because one already existed ...
@@ -956,6 +970,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         }
                     }
                 } else {
+                    documentStore.updateDocument(keyStr, doc, node);
                     boolean isSameWorkspace = workspaceCache().getWorkspaceKey()
                                                               .equalsIgnoreCase(node.getKey().getWorkspaceKey());
                     // only update the indexes if the node we're working with is in the same workspace as the current workspace.
@@ -1014,8 +1029,8 @@ public class WritableSessionCache extends AbstractSessionCache {
             // we need to collect the referrers at the end only, so that other potential changes in references have been computed
             Set<NodeKey> referrers = new HashSet<NodeKey>();
             for (NodeKey removedKey : removedNodes) {
-                // we need the current document from the database, because this differs from what's persisted
-                Document doc = database.get(removedKey.toString()).getContentAsDocument();
+                // we need the current document from the documentStore, because this differs from what's persisted
+                Document doc = documentStore.get(removedKey.toString()).getContentAsDocument();
                 referrers.addAll(translator.getReferrers(doc, ReferenceType.STRONG));
             }
             // check referential integrity ...
@@ -1025,15 +1040,17 @@ public class WritableSessionCache extends AbstractSessionCache {
                 throw new ReferentialIntegrityException(removedNodes, referrers);
             }
 
-            // Now remove all of the nodes from the database.
+            // Now remove all of the nodes from the documentStore.
             // Note 2: we do this last because the children are removed from their parent before the removal is handled above
             // (see Node 1), meaning getting the path and other information for removed nodes never would work properly.
             for (NodeKey removedKey : removedNodes) {
-                database.remove(removedKey.toString());
+                documentStore.remove(removedKey.toString());
             }
 
             // And record the removals via the monitor ...
-            if (monitor != null) monitor.recordRemove(workspaceName, removedNodes);
+            if (monitor != null) {
+                monitor.recordRemove(workspaceName, removedNodes);
+            }
         }
 
         if (!unusedBinaryKeys.isEmpty()) {
@@ -1063,7 +1080,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                 }
                 // Otherwise, a node with the same key was removed by this session before creating a new
                 // node with the same ID ...
-                if (replacedNodes == null) replacedNodes = new HashSet<NodeKey>();
+                if (replacedNodes == null) {
+                    replacedNodes = new HashSet<NodeKey>();
+                }
                 replacedNodes.add(key);
             }
             changedNodesInOrder.add(key);
@@ -1100,7 +1119,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                 boolean cleanupReferences = false;
                 ChildReferences children = null;
                 if (node != null) {
-                    if (node == REMOVED) continue;
+                    if (node == REMOVED) {
+                        continue;
+                    }
                     // There was a node within this cache ...
                     children = node.getChildReferences(this);
                     removed.put(nodeKey, node);
@@ -1112,7 +1133,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // The node did not exist in the session, so get it from the workspace ...
                     addToChangedNodes.add(nodeKey);
                     CachedNode persisted = workspace.getNode(nodeKey);
-                    if (persisted == null) continue;
+                    if (persisted == null) {
+                        continue;
+                    }
                     children = persisted.getChildReferences(workspace);
                     // Look for outgoing references that need to be cleaned up ...
                     for (Iterator<Property> it = persisted.getProperties(workspace); it.hasNext();) {
@@ -1121,7 +1144,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                             // We need to get the node in the session's cache ...
                             this.changedNodes.remove(nodeKey); // we put REMOVED a dozen lines up ...
                             node = this.mutable(nodeKey);
-                            if (node != null) cleanupReferences = true;
+                            if (node != null) {
+                                cleanupReferences = true;
+                            }
                             this.changedNodes.put(nodeKey, REMOVED);
                         }
                     }
@@ -1171,10 +1196,24 @@ public class WritableSessionCache extends AbstractSessionCache {
         sb.append("Session ").append(context().getId()).append(" to workspace '").append(workspaceCache.getWorkspaceName());
         for (NodeKey key : changedNodesInOrder) {
             SessionNode changes = changedNodes.get(key);
-            if (changes == null) continue;
+            if (changes == null) {
+                continue;
+            }
             sb.append("\n ");
             sb.append(changes.getString(reg));
         }
         return sb.toString();
+    }
+
+    public void createExternalProjection( NodeKey key,
+                                          String sourceName,
+                                          String externalPath,
+                                          String alias ) {
+        // register the node in the changes, so it can be saved later
+        mutable(key);
+        DocumentStore documentStore = workspaceCache().documentStore();
+        EditableDocument document = documentStore.get(key.toString()).editDocumentContent();
+        DocumentTranslator translator = workspaceCache().translator();
+        translator.addFederatedSegment(document, sourceName, externalPath, alias);
     }
 }

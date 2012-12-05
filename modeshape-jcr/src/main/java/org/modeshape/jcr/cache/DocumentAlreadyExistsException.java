@@ -23,22 +23,18 @@
  */
 package org.modeshape.jcr.cache;
 
-
 /**
  * An exception signalling that a document could not be created because one already exists in the database.
  */
-public class DocumentAlreadyExistsException extends RuntimeException {
+public class DocumentAlreadyExistsException extends DocumentStoreException {
 
     private static final long serialVersionUID = 1L;
-
-    private final String key;
 
     /**
      * @param key the key for the node that does not exist
      */
     public DocumentAlreadyExistsException( String key ) {
         super(key);
-        this.key = key;
     }
 
     /**
@@ -48,7 +44,6 @@ public class DocumentAlreadyExistsException extends RuntimeException {
     public DocumentAlreadyExistsException( String key,
                                            String message ) {
         super(message);
-        this.key = key;
     }
 
     /**
@@ -58,7 +53,6 @@ public class DocumentAlreadyExistsException extends RuntimeException {
     public DocumentAlreadyExistsException( String key,
                                            Throwable cause ) {
         super(key.toString(), cause);
-        this.key = key;
     }
 
     /**
@@ -70,20 +64,5 @@ public class DocumentAlreadyExistsException extends RuntimeException {
                                            String message,
                                            Throwable cause ) {
         super(message, cause);
-        this.key = key;
-    }
-
-    @Override
-    public String toString() {
-        return super.toString();
-    }
-
-    /**
-     * Get the document key that was not found
-     * 
-     * @return the key for the document that was not found
-     */
-    public String getKey() {
-        return key;
     }
 }

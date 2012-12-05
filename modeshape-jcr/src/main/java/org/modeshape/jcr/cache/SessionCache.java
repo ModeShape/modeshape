@@ -95,6 +95,7 @@ public interface SessionCache extends NodeCache {
      * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
      *         document
      * @throws DocumentNotFoundException if one of the modified documents was removed by another session
+     * @throws DocumentStoreException if there is a problem storing or retrieving a document
      */
     public void save();
 
@@ -109,6 +110,7 @@ public interface SessionCache extends NodeCache {
      * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
      *         document
      * @throws DocumentNotFoundException if one of the modified documents was removed by another session
+     * @throws DocumentStoreException if there is a problem storing or retrieving a document
      */
     public void save( Set<NodeKey> toBeSaved,
                       SessionCache otherSession,
@@ -123,6 +125,7 @@ public interface SessionCache extends NodeCache {
      * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
      *         document
      * @throws DocumentNotFoundException if one of the modified documents was removed by another session
+     * @throws DocumentStoreException if there is a problem storing or retrieving a document
      */
     public void save( SessionCache otherSession,
                       PreSave preSaveOperation );
