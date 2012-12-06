@@ -145,7 +145,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
          * Determine the type given the supplied primary type.
          * 
          * @param primaryType the primary type
-         * @return the type, or null if the node type could not be determined by the suppplied primary type
+         * @return the type, or null if the node type could not be determined by the supplied primary type
          */
         public static Type typeForPrimaryType( Name primaryType ) {
             return DEFAULT_TYPE_BY_NAME.get(primaryType);

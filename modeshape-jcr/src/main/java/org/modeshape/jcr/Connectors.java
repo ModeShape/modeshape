@@ -68,10 +68,11 @@ public class Connectors {
 
     private boolean initialized = false;
     private Map<String, Connector> sourceKeyToConnectorMap = new HashMap<String, Connector>();
+
     /**
-     * [externalNodeKey -> projectedNodeKey] mappings
+     * A map of (externalNodeKey, Projection) instances holds the projections
      */
-    private Map<String, String> projections;
+    private Map<String, Projection> projections;
 
     public Connectors( JcrRepository.RunningState repository,
                        Collection<Component> components ) {
@@ -107,16 +108,16 @@ public class Connectors {
         ChildReference federationNodeRef = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.FEDERATION);
         this.projections = federationNodeRef != null ? getStoredProjections(systemSession,
                                                                             federationNodeRef)
-                                                     : new HashMap<String, String>();
+                                                     : new HashMap<String, Projection>();
     }
 
-    private Map<String, String> getStoredProjections( SessionCache systemSession,
-                                                      ChildReference federationNodeRef ) {
+    private Map<String, Projection> getStoredProjections( SessionCache systemSession,
+                                                          ChildReference federationNodeRef ) {
         CachedNode federationNode = systemSession.getNode(federationNodeRef.getKey());
         ChildReferences federationChildRefs = federationNode.getChildReferences(systemSession);
         //the stored projection mappings use SNS
         int projectionsCount = federationChildRefs.getChildCount(ModeShapeLexicon.PROJECTION);
-        Map<String, String> projections = new HashMap<String, String>(projectionsCount);
+        Map<String, Projection> projections = new HashMap<String, Projection>(projectionsCount);
 
         for (int i = 1; i <= projectionsCount; i++) {
             ChildReference projectionRef = federationChildRefs.getChild(ModeShapeLexicon.PROJECTION, i);
@@ -128,7 +129,10 @@ public class Connectors {
                                                 .toString();
             assert projectedNodeKey != null;
 
-            projections.put(externalNodeKey, projectedNodeKey);
+            String alias = projection.getProperty(ModeShapeLexicon.PROJECTION_ALIAS, systemSession).getFirstValue().toString();
+            assert alias != null;
+
+            projections.put(externalNodeKey, new Projection(externalNodeKey, projectedNodeKey, alias));
         }
         return projections;
     }
@@ -182,10 +186,12 @@ public class Connectors {
      *
      * @param externalNodeKey a {@code non-null} String representing the {@link NodeKey} format of the projection's id.
      * @param projectedNodeKey a {@code non-null} String, representing the value of the external node's key
+     * @param alias a {@code non-null} String, representing the alias of the projection.
      */
-    public void mapProjection( String externalNodeKey,
-                               String projectedNodeKey ) {
-        projections.put(externalNodeKey, projectedNodeKey);
+    public void addProjection( String externalNodeKey,
+                               String projectedNodeKey,
+                               String alias ) {
+        projections.put(externalNodeKey, new Projection(externalNodeKey, projectedNodeKey, alias));
     }
 
     /**
@@ -196,7 +202,24 @@ public class Connectors {
      *         projection.
      */
     public String getProjectedNodeKey( String externalNodeKey ) {
-        return projections.get(externalNodeKey);
+        Projection projection = projections.get(externalNodeKey);
+        return projection != null ? projection.getProjectedNodeKey() : null;
+    }
+
+    /**
+     * Returns the projection which has the given alias and projected node key.
+     *
+     * @param alias a {@link String} representing a projection alias; may not be null
+     * @param projectedNodeKey a {@link String} representing the key of the projected node; may not be null
+     * @return either a {@link Projection} instance of {@code null} if there is no projection
+     */
+    public Projection getProjection(String alias, String projectedNodeKey) {
+        for (Projection projection : projections.values()) {
+            if (projection.hasAlias(alias) && projection.hasProjectedNodeKey(projectedNodeKey)) {
+                return projection;
+            }
+        }
+        return null;
     }
 
     /**
@@ -365,7 +388,7 @@ public class Connectors {
         }
 
         //we need to remove from the current map the ones which are already stored
-        Map<String, String> existingStoredProjections = getStoredProjections(systemSession, federationNodeRef);
+        Map<String, Projection> existingStoredProjections = getStoredProjections(systemSession, federationNodeRef);
         for (String storedExternalNodeKey : existingStoredProjections.keySet()) {
             projections.remove(storedExternalNodeKey);
         }
@@ -377,11 +400,13 @@ public class Connectors {
         for (String externalNodeKey : projections.keySet()) {
             Property primaryType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.PROJECTION);
             Property externalNodeKeyProp = propertyFactory.create(ModeShapeLexicon.EXTERNAL_NODE_KEY, externalNodeKey);
-            Property projectedNodeKeyProp = propertyFactory.create(ModeShapeLexicon.PROJECTED_NODE_KEY,
-                                                                   projections.get(externalNodeKey));
 
+            Projection projection = projections.get(externalNodeKey);
+            Property projectedNodeKeyProp = propertyFactory.create(ModeShapeLexicon.PROJECTED_NODE_KEY,
+                                                                   projection.getProjectedNodeKey());
+            Property alias = propertyFactory.create(ModeShapeLexicon.PROJECTION_ALIAS, projection.getAlias());
             federationNode.createChild(systemSession, federationNodeKey.withRandomId(), ModeShapeLexicon.PROJECTION,
-                                       primaryType, externalNodeKeyProp, projectedNodeKeyProp);
+                                       primaryType, externalNodeKeyProp, projectedNodeKeyProp, alias);
         }
         systemSession.save();
     }
@@ -401,6 +426,36 @@ public class Connectors {
 
     public boolean hasConnectors() {
         return !sourceKeyToConnectorMap.isEmpty();
+    }
+
+    protected static class Projection {
+        private String externalNodeKey;
+        private String projectedNodeKey;
+        private String alias;
+
+        protected Projection( String externalNodeKey,
+                              String projectedNodeKey,
+                              String alias ) {
+            this.alias = alias;
+            this.externalNodeKey = externalNodeKey;
+            this.projectedNodeKey = projectedNodeKey;
+        }
+
+        protected boolean hasAlias(String alias) {
+            return this.alias.equalsIgnoreCase(alias);
+        }
+
+        protected boolean hasProjectedNodeKey(String projectedNodeKey) {
+            return this.projectedNodeKey.equals(projectedNodeKey);
+        }
+
+        public String getProjectedNodeKey() {
+            return projectedNodeKey;
+        }
+
+        public String getAlias() {
+            return alias;
+        }
     }
 
     protected static class LocalDocumentStoreExtraProperties implements ExtraPropertiesStore {

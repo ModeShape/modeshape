@@ -1701,17 +1701,19 @@ public class DocumentTranslator {
             document.set(FEDERATED_SEGMENTS, federatedSegmentsArray);
         }
 
+        String projectionAlias = !StringUtil.isBlank(alias) ? alias : externalPath;
+        if (projectionAlias.endsWith("/")) {
+            projectionAlias = projectionAlias.substring(0, projectionAlias.length() - 1);
+        }
+        if (projectionAlias.contains("/")) {
+            projectionAlias = projectionAlias.substring(projectionAlias.lastIndexOf("/") + 1);
+        }
+
         String parentKey = document.getString(KEY);
-        String externalNodeKey = documentStore.createExternalProjection(parentKey, sourceName, externalPath);
+        String externalNodeKey = documentStore.createExternalProjection(parentKey, sourceName, externalPath, projectionAlias);
         if (!StringUtil.isBlank(externalNodeKey)) {
-            String segmentName = !StringUtil.isBlank(alias) ? alias : externalPath;
-            if (segmentName.endsWith("/")) {
-                segmentName = segmentName.substring(0, segmentName.length() - 1);
-            }
-            if (segmentName.contains("/")) {
-                segmentName = segmentName.substring(segmentName.lastIndexOf("/") + 1);
-            }
-            EditableDocument federatedSegment = DocumentFactory.newDocument(KEY, externalNodeKey, NAME, segmentName);
+
+            EditableDocument federatedSegment = DocumentFactory.newDocument(KEY, externalNodeKey, NAME, projectionAlias);
             federatedSegmentsArray.add(federatedSegment);
         }
     }

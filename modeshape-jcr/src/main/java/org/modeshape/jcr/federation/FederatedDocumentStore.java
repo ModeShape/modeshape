@@ -302,14 +302,15 @@ public class FederatedDocumentStore implements DocumentStore {
     @Override
     public String createExternalProjection( String projectedNodeKey,
                                             String sourceName,
-                                            String externalPath ) {
+                                            String externalPath,
+                                            String alias ) {
         String sourceKey = NodeKey.keyForSourceName(sourceName);
         Connector connector = connectors.getConnectorForSourceKey(sourceKey);
         if (connector != null) {
             String externalNodeId = connector.getDocumentId(externalPath);
             if (externalNodeId != null) {
                 String externalNodeKey = documentIdToNodeKeyString(sourceName, externalNodeId);
-                connectors.mapProjection(externalNodeKey, projectedNodeKey);
+                connectors.addProjection(externalNodeKey, projectedNodeKey, alias);
                 return externalNodeKey;
             }
         }

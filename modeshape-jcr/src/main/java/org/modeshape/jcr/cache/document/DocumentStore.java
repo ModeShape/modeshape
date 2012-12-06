@@ -118,14 +118,17 @@ public interface DocumentStore {
      * Creates an external projection from the federated node with the given key, towards the external node from the given path,
      * from a source.
      * 
+     *
      * @param projectedNodeKey a {@code non-null} string, the key of the federated node which will contain the projection
      * @param sourceName a {@code non-null} string, the name of an external source.
      * @param externalPath a {@code non-null} string, representing a path towards a node from the source
+     * @param alias a {@code non-null} string, representing the alias given to the projection.
      * @return a {@code non-null} string representing the node key of the external node located at {@code externalPath}.
      */
     public String createExternalProjection( String projectedNodeKey,
                                             String sourceName,
-                                            String externalPath );
+                                            String externalPath,
+                                            String alias );
 
     /**
      * Returns a document representing a block of children, that has the given key.
