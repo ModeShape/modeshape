@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
+import javax.transaction.TransactionManager;
 import org.infinispan.schematic.DocumentFactory;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.common.logging.Logger;
@@ -114,6 +115,16 @@ public abstract class Connector {
      * </p>
      */
     private ExtraPropertiesStore extraPropertiesStore;
+
+    /**
+     * The {@link TransactionManager} instance used by the repository, which allows a connector to enroll, via an {@link javax.transaction.xa.XAResource}
+     * implementation into existing transactions. It's up to the connector to implement the logic for determining transaction boundaries
+     * and to process documents accordingly.
+     * <p>
+     * The field is assigned via reflection before ModeShape calls {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
+     * </p>
+     */
+    private TransactionManager transactionManager;
 
     /**
      * Ever connector is expected to have a no-argument constructor, although the class should never initialize any of the data at
@@ -207,6 +218,14 @@ public abstract class Connector {
     protected void setExtraPropertiesStore( ExtraPropertiesStore customExtraPropertiesStore ) {
         CheckArg.isNotNull(customExtraPropertiesStore, "customExtraPropertiesStore");
         this.extraPropertiesStore = customExtraPropertiesStore;
+    }
+
+    /**
+     * Returns the transaction manager instance that was set on the connector during initialization.
+     * @return a {@code non-null} {@link TransactionManager} instance
+     */
+    protected TransactionManager getTransactionManager() {
+        return transactionManager;
     }
 
     /**

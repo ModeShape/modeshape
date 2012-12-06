@@ -291,6 +291,9 @@ public class Connectors {
         // Set the MIME type detector ...
         ReflectionUtil.setValue(connector, "mimeTypeDetector", repository.mimeTypeDetector());
 
+        // Set the transaction manager
+        ReflectionUtil.setValue(connector, "transactionManager", repository.txnManager());
+
         // Set the ExtraPropertiesStore instance, which is unique to this connector ...
         LocalDocumentStore store = repository.documentStore().localStore();
         String name = connector.getSourceName();
