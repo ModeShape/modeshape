@@ -29,6 +29,7 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.InputStream;
 import javax.jcr.Node;
 import org.infinispan.schematic.Schematic;
@@ -37,6 +38,7 @@ import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Json;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.collection.Problems;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 
@@ -64,7 +66,11 @@ public class SequencingTest extends AbstractSequencerTest {
     @Override
     protected void startRepositoryWithConfiguration( InputStream configInputStream ) throws Exception {
         config = RepositoryConfiguration.read(configInputStream, REPO_NAME).with(environment);
-        assertThat(config.validate().hasProblems(), is(false));
+        Problems problems = config.validate();
+        if (problems.hasProblems()) {
+            System.out.println(problems);
+            fail("Problems encountered during repository startup: " + problems);
+        }
         repository = new JcrRepository(config);
         repository.start();
         session = repository.login();

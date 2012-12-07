@@ -296,6 +296,14 @@
                         "type" : "integer",
                         "description" : "The optional number of seconds which an external node should be held in the workspace cache. If not specified, the effective TTL is deferred to the workspace cache configuration. If negative, an entry will be cached forever."
                     },
+                    "projections" : {
+                        "type" : "array",
+                        "items" : {
+                            "type" : "string",
+                            "pattern" : "(\w+):(/([a-zA-Z_0-9]/{0,1})*)\s*=>\s*([/a-zA-Z_0-9]+)"
+                        },
+                        "description" : "The expressions that describes the projection path expressions, in the format wsName:/projectedPath => externalPath"
+                    },
                     "description" : {
                         "type" : "string",
                         "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
@@ -970,11 +978,14 @@
                             },
                             "pathExpressions" : {
                                 "type" : "array",
-                                "required" : true,
                                 "items" : {
                                     "type" : "string"
                                 },
                                 "description" : "The expressions that describes the paths upon which this sequencer operates and the paths where the sequencer output is written."
+                            },
+                            "pathExpression" : {
+                                "type" : "string",
+                                "description" : "The expressions that describes a single path expression"
                             },
                             "acceptedMimeTypes" : {
                                 "type" : "array",
