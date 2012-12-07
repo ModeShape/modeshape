@@ -1,0 +1,15 @@
+{
+    "name" : "test",
+    "workspaces" : {
+        "predefined" : ["otherWorkspace"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    }
+}

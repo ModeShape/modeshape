@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+  ModeShape (http://www.modeshape.org)
+  See the COPYRIGHT.txt file distributed with this work for information
+  regarding copyright ownership.  Some portions may be licensed
+  to Red Hat, Inc. under one or more contributor license agreements.
+  See the AUTHORS.txt file in the distribution for a full listing of
+  individual contributors.
+
+  ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  is licensed to you under the terms of the GNU Lesser General Public License as
+  published by the Free Software Foundation; either version 2.1 of
+  the License, or (at your option) any later version.
+
+  ModeShape is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this software; if not, write to the Free
+  Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ /
+  -->
+<connector xmlns="http://java.sun.com/xml/ns/j2ee"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee
+                               http://java.sun.com/xml/ns/j2ee/connector_1_5.xsd"
+           version="1.5">
+
+  <display-name>ModeShape JCR Adapter</display-name>
+  <vendor-name>Red Hat</vendor-name>
+  <eis-type>JCR Adapter</eis-type>
+  <resourceadapter-version>1.0</resourceadapter-version>
+
+  <resourceadapter>
+    <resourceadapter-class>
+      org.modeshape.jcr.jca.JcrResourceAdapter
+    </resourceadapter-class>
+    <outbound-resourceadapter>
+      <connection-definition>
+        <managedconnectionfactory-class>
+          org.modeshape.jca.JcrManagedConnectionFactory
+        </managedconnectionfactory-class>
+
+        <config-property>
+          <config-property-name>RepositoryURI</config-property-name>
+          <config-property-type>java.lang.String</config-property-type>
+        </config-property>
+
+
+        <connectionfactory-interface>
+          javax.jcr.Repository
+        </connectionfactory-interface>
+        <connectionfactory-impl-class>
+          org.modeshape.jca.JcrRepositoryHandle
+        </connectionfactory-impl-class>
+
+        <connection-interface>
+          javax.jcr.Session
+        </connection-interface>
+        <connection-impl-class>
+          org.modeshape.jca.JcrSessionHandle
+        </connection-impl-class>
+      </connection-definition>
+
+      <transaction-support>XATransaction</transaction-support>
+      <reauthentication-support>false</reauthentication-support>
+    </outbound-resourceadapter>
+  </resourceadapter>
+
+</connector>
