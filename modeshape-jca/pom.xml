@@ -182,7 +182,7 @@
         </repository>
         <repository>
             <id>fungal</id>
-            <url>http://jesperpedersen.github.com/fungal/maven2</url>
+            <url> https://repository.jboss.org/nexus/content/repositories/thirdparty-uploads/</url>
         </repository>
     </repositories>
 </project>
