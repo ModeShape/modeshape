@@ -35,6 +35,10 @@
         <module>web</module>
         <module>modeshape-jdbc-local</module>
         <module>modeshape-jdbc</module>
+        <!-- 
+          JCA Resource adapter
+    	-->
+    	<module>modeshape-jca</module> 
         <!--
           The JBoss AS7 subsystem needs the web components and (local) JDBC drivers.
         -->
