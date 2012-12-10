@@ -29,19 +29,24 @@ import javax.jcr.Session;
 import javax.resource.ResourceException;
 
 import javax.resource.spi.ManagedConnectionMetaData;
+import org.modeshape.common.annotation.Immutable;
 
 /**
- * JcrManagedConnectionMetaData
+ * Implements Managed Connection Metadata.
  *
  * @author kulikov
  */
+@Immutable
 public class JcrManagedConnectionMetaData implements ManagedConnectionMetaData {
 
-    private Repository repository;
-    private Session session;
+    private final Repository repository;
+    private final Session session;
 
     /**
-     * Default constructor
+     * Constructs new object instance.
+     *
+     * @param repository JCR repository instance
+     * @param session JSR session instance.
      */
     public JcrManagedConnectionMetaData(Repository repository, Session session) {
         this.repository = repository;

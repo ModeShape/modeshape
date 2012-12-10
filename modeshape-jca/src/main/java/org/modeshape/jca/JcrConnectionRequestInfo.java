@@ -31,6 +31,8 @@ import javax.resource.spi.ConnectionRequestInfo;
 import org.modeshape.common.annotation.Immutable;
 
 /**
+ * Provides implementation for the connection request to the Modeshape
+ * repository via JCA connector.
  *
  * @author kulikov
  */
@@ -51,13 +53,9 @@ public class JcrConnectionRequestInfo implements ConnectionRequestInfo {
 
     /**
      * Construct the request info.
-     */
-    public JcrConnectionRequestInfo(JcrConnectionRequestInfo cri) {
-        this(cri.creds, cri.workspace);
-    }
-
-    /**
-     * Construct the request info.
+     *
+     * @param  creds user's credentials
+     * @param workspace Repository workspace name.
      */
     public JcrConnectionRequestInfo(Credentials creds, String workspace) {
         this.creds = creds;
@@ -66,30 +64,28 @@ public class JcrConnectionRequestInfo implements ConnectionRequestInfo {
     }
 
     /**
-     * Return the workspace.
+     * Gets the workspace.
+     *
+     * @return workspace name
      */
     public String getWorkspace() {
         return workspace;
     }
 
     /**
-     * Return the credentials.
+     * Gets the credentials.
+     *
+     * @return Credential object
      */
     public Credentials getCredentials() {
         return creds;
     }
 
-    /**
-     * Return the hash code.
-     */
     @Override
     public int hashCode() {
         return hash;
     }
 
-    /**
-     * Return true if equals.
-     */
     @Override
     public boolean equals(Object o) {
         if (o == this) {
@@ -102,7 +98,10 @@ public class JcrConnectionRequestInfo implements ConnectionRequestInfo {
     }
 
     /**
-     * Return true if equals.
+     * Compares specified request with this one.
+     *
+     * @param o the request object to compare.
+     * @return true if specified object equals to this one.
      */
     private boolean equals(JcrConnectionRequestInfo o) {
         return equals(workspace, o.workspace)
@@ -110,7 +109,12 @@ public class JcrConnectionRequestInfo implements ConnectionRequestInfo {
     }
 
     /**
-     * Return true if equals.
+     * Compares two objects.
+     *
+     * @param o1 first object
+     * @param o2 second object.
+     * @return true if both objects are not null and both are equals in
+     * sense of object.equal(..) method.
      */
     private boolean equals(Object o1, Object o2) {
         if (o1 == o2) {
@@ -123,7 +127,11 @@ public class JcrConnectionRequestInfo implements ConnectionRequestInfo {
     }
 
     /**
-     * Return true if equals.
+     * Compares two character sequences.
+     *
+     * @param o1 first character sequence
+     * @param o2 second character sequence.
+     * @return true if both sequences has same length and same respective characters
      */
     private boolean equals(char[] o1, char[] o2) {
         if (o1 == o2) {
@@ -136,7 +144,11 @@ public class JcrConnectionRequestInfo implements ConnectionRequestInfo {
     }
 
     /**
-     * Return true if equals.
+     * Compares to arguments
+     *
+     * @param o1 argument 1
+     * @param o2 argument 2
+     * @return true if both arguments are equal.
      */
     private boolean equals(Credentials o1, Credentials o2) {
         if (o1 == o2) {

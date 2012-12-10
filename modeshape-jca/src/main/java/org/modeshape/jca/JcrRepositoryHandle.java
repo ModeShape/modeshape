@@ -32,6 +32,7 @@ import javax.resource.ResourceException;
 import javax.resource.spi.ConnectionManager;
 
 /**
+ * CCI connection factory interface
  *
  * @author kulikov
  */
@@ -46,6 +47,10 @@ public class JcrRepositoryHandle implements Referenceable, Serializable, Reposit
 
     /**
      * Construct the repository.
+     *
+     * @param ra Resource adapter interface
+     * @param mcf Managed connection factory interface
+     * @param cm Connection manager.
      */
     public JcrRepositoryHandle(JcrResourceAdapter ra, JcrManagedConnectionFactory mcf, ConnectionManager cm) throws ResourceException {
         System.out.println("Resource adaptor: " + ra);
@@ -63,9 +68,6 @@ public class JcrRepositoryHandle implements Referenceable, Serializable, Reposit
         return reference;
     }
 
-    /**
-     * Set the reference.
-     */
     @Override
     public void setReference(Reference reference) {
         this.reference = reference;

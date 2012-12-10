@@ -210,14 +210,12 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
      */
     @Override
     public boolean equals(Object other) {
-        if (other == null) {
-            return false;
+        if (other == this) {
+            return true;
         }
-
-        if (!(other instanceof JcrResourceAdapter)) {
-            return false;
+        if (other instanceof JcrManagedConnectionFactory) {
+            return this == other;
         }
-
-        return other == this;
+        return false;
     }
 }
