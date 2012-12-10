@@ -25,8 +25,6 @@ package org.modeshape.jca;
 
 import java.io.PrintWriter;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
@@ -56,7 +54,7 @@ public class JcrManagedConnection implements ManagedConnection {
     /**
      * The logger
      */
-    private static Logger log = Logger.getLogger("JcrManagedConnection");
+    private static final Logger log = Logger.getLogger("JcrManagedConnection");
     /**
      * The logwriter
      */
@@ -64,42 +62,46 @@ public class JcrManagedConnection implements ManagedConnection {
     /**
      * ManagedConnectionFactory
      */
-    private JcrManagedConnectionFactory mcf;
+    private final JcrManagedConnectionFactory mcf;
     /**
      * Listeners
      */
-    private List<ConnectionEventListener> listeners;
+    private final List<ConnectionEventListener> listeners = new CopyOnWriteArrayList();
 
-    private JcrConnectionRequestInfo cri;
+    private final JcrConnectionRequestInfo cri;
     private Session session;
 
     // Handles.
     private final List<JcrSessionHandle> handles = new CopyOnWriteArrayList();;
 
     /**
-     * Default constructor
+     * Creates new instance of the managed connection.
      *
-     * @param mcf mcf
+     * @param mcf Managed Connection Factory instance
+     * @param cri Connection request info
      */
     public JcrManagedConnection(JcrManagedConnectionFactory mcf, JcrConnectionRequestInfo cri) throws ResourceException {
         this.mcf = mcf;
         this.cri = cri;
         this.logwriter = null;
-        this.listeners = Collections.synchronizedList(new ArrayList<ConnectionEventListener>(1));
-
+        
         //init repository and open session
         this.session = openSession();
     }
 
     /**
-     * Return the managed connection factory.
+     * Gets the managed connection factory.
+     *
+     * @return Managed connection factory object.
      */
     public JcrManagedConnectionFactory getManagedConnectionFactory() {
         return mcf;
     }
 
     /**
-     * Return the connection request info.
+     * Gets the connection request info.
+     *
+     * @return Connection request info object.
      */
     public JcrConnectionRequestInfo getConnectionRequestInfo() {
         return cri;
@@ -107,15 +109,17 @@ public class JcrManagedConnection implements ManagedConnection {
 
     /**
      * Add a session handle.
+     *
+     * @param handle the session handle object to add
      */
     private void addHandle(JcrSessionHandle handle) {
-        synchronized (handles) {
-            handles.add(handle);
-        }
+        handles.add(handle);
     }
 
     /**
      * Remove a session handle.
+     *
+     * @param handle session handle to remove.
      */
     private void removeHandle(JcrSessionHandle handle) {
         handles.remove(handle);
@@ -123,6 +127,8 @@ public class JcrManagedConnection implements ManagedConnection {
 
     /**
      * Create a new session.
+     *
+     * @return new JCR session handle object.
      */
     private Session openSession() throws ResourceException {
         try {
@@ -287,7 +293,9 @@ public class JcrManagedConnection implements ManagedConnection {
     }
 
     /**
-     * Return the session.
+     * Searches session object using handle.
+     *
+     * @return session related to specified handle.
      */
     public Session getSession(JcrSessionHandle handle) {
         if ((handles.size() > 0) && (handles.get(0) == handle)) {

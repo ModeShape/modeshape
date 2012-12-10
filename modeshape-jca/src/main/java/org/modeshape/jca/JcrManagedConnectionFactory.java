@@ -27,7 +27,6 @@ import java.io.PrintWriter;
 import java.util.Set;
 
 import javax.jcr.Repository;
-import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 import javax.resource.ResourceException;
@@ -42,7 +41,7 @@ import javax.resource.spi.ResourceAdapterAssociation;
 import javax.security.auth.Subject;
 
 /**
- * JcrManagedConnectionFactory
+ * Provides implementation for Managed Connection Factory.
  *
  * @author kulikov
  */
@@ -66,13 +65,15 @@ public class JcrManagedConnectionFactory implements ManagedConnectionFactory, Re
     private PrintWriter logwriter;
 
     /**
-     * Default constructor
+     * Creates new factory instance.
      */
     public JcrManagedConnectionFactory() {
     }
 
     /**
-     * Return the repository.
+     * Provides access to the configured repository.
+     *
+     * @return repository specified by resource adapter configuration.
      */
     public synchronized Repository getRepository() throws ResourceException {
         return ra.getRepository();
@@ -202,16 +203,12 @@ public class JcrManagedConnectionFactory implements ManagedConnectionFactory, Re
      */
     @Override
     public boolean equals(Object other) {
-        if (other == null) {
-            return false;
-        }
         if (other == this) {
             return true;
         }
-        if (!(other instanceof JcrManagedConnectionFactory)) {
-            return false;
+        if (other instanceof JcrManagedConnectionFactory) {
+            return this == other;
         }
-
-        return this == (JcrManagedConnectionFactory) other;
+        return false;
     }
 }

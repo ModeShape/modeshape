@@ -30,7 +30,9 @@ import javax.resource.spi.ManagedConnection;
 import javax.resource.spi.ManagedConnectionFactory;
 
 /**
- *
+ * Provides the implementation of the ConnectionManager interface
+ * for the Modeshape JCA Resource Adapter.
+ * 
  * @author kulikov
  */
 public class JcrConnectionManager implements ConnectionManager {

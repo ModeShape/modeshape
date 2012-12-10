@@ -41,6 +41,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
+ * CCI connection.
  *
  * @author kulikov
  */
@@ -52,7 +53,9 @@ public class JcrSessionHandle implements Session, XAResource{
     private JcrManagedConnection mc;
 
     /**
-     * Construct a new session().
+     * Construct a new session.
+     *
+     * @param mc Managed connection instance.
      */
     public JcrSessionHandle(JcrManagedConnection mc) {
         this.mc = mc;
