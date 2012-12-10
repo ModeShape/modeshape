@@ -1187,7 +1187,34 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                     ++i;
                 }
                 if (success) problems.recordSuccess();
+            } else if (parent instanceof List) {
+                //we are dealing with an optional array of items
+                List<?> items = (List<?>)parent;
+                int i = 1;
+                boolean success = true;
+                for (Object item : items) {
+                    itemProblems.clear();
+                    if (item instanceof Document) {
+                        itemValidator.validate(null, null, (Document) item, pathToParent, itemProblems, resolver);
+                        if (itemProblems.hasProblem()) {
+                            success = false;
+                        }
+                    } else {
+                        fieldName = item.toString();
+                        Path path = pathToParent.with(fieldName);
+                        itemValidator.validate(item, fieldName, parent, pathToParent, itemProblems, resolver);
+                        if (itemProblems.hasProblem()) {
+                            problems.recordError(path, "The '" + fieldName + "' field on '" + pathToParent
+                                    + "' is an array, but the " + i + th(i)
+                                    + " item does not satisfy the schema for the " + i + th(i) + " item");
+                            success = false;
+                        }
+                    }
+                    ++i;
+                }
+                if (success) problems.recordSuccess();
             }
+
         }
 
         @Override
@@ -1425,6 +1452,15 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
             if (fieldName != null && !allowedPropertyNames.contains(fieldName)) {
                 // Then the field is not handled by an explicit schema, so we need to check it here
                 validator.validate(fieldValue, fieldName, parent, pathToParent, problems, resolver);
+            } else if (fieldName == null) {
+                // we need to validate each defined additional property which has a schema
+                for (Field field : parent.fields()) {
+                    if (field.getValue() instanceof Document) {
+                        validator.validate(null, null, (Document)field.getValue(), pathToParent.with(field.getName()), problems, resolver);
+                    } else {
+                        validator.validate(field.getValue(), field.getName(), parent, pathToParent, problems, resolver);
+                    }
+                }
             }
         }
 

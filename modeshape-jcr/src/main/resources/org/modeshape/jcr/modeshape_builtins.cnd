@@ -72,6 +72,7 @@
 [mode:projection]
 - mode:externalNodeKey (String) mandatory protected ignore
 - mode:projectedNodeKey (String) mandatory protected ignore
+- mode:alias (String) mandatory protected ignore
 
 [mode:system] > nt:base
 + mode:namespaces (mode:namespaces) = mode:namespaces autocreated mandatory protected abort

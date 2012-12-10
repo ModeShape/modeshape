@@ -148,7 +148,8 @@ public class LocalDocumentStore implements DocumentStore {
     @Override
     public String createExternalProjection( String projectedNodeKey,
                                             String sourceName,
-                                            String externalPath ) {
+                                            String externalPath,
+                                            String alias ) {
         throw new UnsupportedOperationException("External projections are not supported in the local document store");
     }
 

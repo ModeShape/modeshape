@@ -321,6 +321,16 @@ public class RepositoryConfigurationTest {
         assertEquals(cacheContainer, config.getWorkspaceCacheConfiguration());
     }
 
+    @Test
+    public void shouldAllowValidProjectionExpressions() throws Exception {
+        assertValid("config/repo-config-federation-projections.json");
+    }
+
+    @Test
+    public void shouldNotAllowInvalidProjectionExpressions() throws Exception {
+        assertNotValid(9, "config/repo-config-federation-invalid-projections.json");
+    }
+
     protected RepositoryConfiguration assertValid( RepositoryConfiguration config ) {
         Problems results = config.validate();
         assertThat(results.toString(), results.hasProblems(), is(false));

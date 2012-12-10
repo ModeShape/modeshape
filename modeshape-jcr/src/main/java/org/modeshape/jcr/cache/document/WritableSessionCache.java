@@ -1214,6 +1214,6 @@ public class WritableSessionCache extends AbstractSessionCache {
         DocumentStore documentStore = workspaceCache().documentStore();
         EditableDocument document = documentStore.get(key.toString()).editDocumentContent();
         DocumentTranslator translator = workspaceCache().translator();
-        translator.addFederatedSegment(document, sourceName, externalPath, alias);
+        translator.addFederatedSegment(document, key.toString(), sourceName, externalPath, alias);
     }
 }

@@ -117,6 +117,7 @@ public class ModeShapeLexicon {
 
     public static final Name EXTERNAL_NODE_KEY = new BasicName(Namespace.URI, "externalNodeKey");
     public static final Name PROJECTED_NODE_KEY = new BasicName(Namespace.URI, "projectedNodeKey");
+    public static final Name PROJECTION_ALIAS = new BasicName(Namespace.URI, "alias");
 
     public enum InitializationState {
         STARTED, FINISHED

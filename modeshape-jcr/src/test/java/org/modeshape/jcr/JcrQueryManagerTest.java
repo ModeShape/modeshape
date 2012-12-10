@@ -103,14 +103,14 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     private static final boolean WRITE_INDEXES_TO_FILE = false;
 
-    /** The total number of nodes at or below '/jcr:system' */
-    protected static final int TOTAL_SYSTEM_NODE_COUNT = 251;
-
     /** The total number of nodes excluding '/jcr:system' */
     protected static final int TOTAL_NON_SYSTEM_NODE_COUNT = 25;
 
+    /** The total number of nodes at or below '/jcr:system' */
+    protected static int totalSystemNodeCount;
+
     /** The total number of nodes */
-    protected static final int TOTAL_NODE_COUNT = TOTAL_SYSTEM_NODE_COUNT + TOTAL_NON_SYSTEM_NODE_COUNT;
+    protected static int totalNodeCount;
 
     protected static URI resourceUri( String name ) throws URISyntaxException {
         return resourceUrl(name).toURI();
@@ -202,11 +202,15 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         try {
             // Use a session to load the contents ...
             JcrSession session = repository.login();
+
             try {
                 registerNodeTypes(session, "cnd/fincayra.cnd");
                 registerNodeTypes(session, "cnd/magnolia.cnd");
                 registerNodeTypes(session, "cnd/notionalTypes.cnd");
                 registerNodeTypes(session, "cnd/cars.cnd");
+
+                // Initialize the nodes count
+                initNodesCount();
 
                 InputStream stream = resourceStream("io/cars-system-view.xml");
                 try {
@@ -258,7 +262,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
             // Prime creating the schemata ...
             repository.nodeTypeManager().getRepositorySchemata();
-
         } catch (RuntimeException e) {
             e.printStackTrace();
             throw e;
@@ -266,6 +269,27 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             e.printStackTrace();
             throw e;
         }
+    }
+
+    private static void initNodesCount() throws RepositoryException {
+        JcrSession session = repository.login();
+        try {
+            Node jcrSystem = session.getNode("/jcr:system");
+            int nonIndexedSystemNodes = 3; //number of node below jcr:system which are not indexed
+            totalSystemNodeCount = countAllNodesBelow(jcrSystem) - nonIndexedSystemNodes;
+            totalNodeCount = totalSystemNodeCount + TOTAL_NON_SYSTEM_NODE_COUNT;
+        } finally {
+            session.logout();
+        }
+    }
+
+    private static int countAllNodesBelow(Node node) throws RepositoryException {
+        int result = 1;
+        NodeIterator nodeIterator = node.getNodes();
+        while (nodeIterator.hasNext()) {
+            result += countAllNodesBelow(nodeIterator.nextNode());
+        }
+        return result;
     }
 
     @AfterClass
@@ -525,7 +549,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, TOTAL_NODE_COUNT);
+        assertResults(query, result, totalNodeCount);
         assertResultsHaveColumns(result, allColumnNames("nt:base"));
     }
 
@@ -537,7 +561,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, TOTAL_NODE_COUNT);
+        assertResults(query, result, totalNodeCount);
         assertResultsHaveColumns(result, allColumnNames("nt:base"));
     }
 
@@ -654,7 +678,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, TOTAL_NODE_COUNT);
+        assertResults(query, result, totalNodeCount);
         assertResultsHaveColumns(result, "bogus", "laughable", "argle", "car:year");
     }
 
@@ -1194,7 +1218,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, TOTAL_NODE_COUNT);
+        assertResults(query, result, totalNodeCount);
         assertResultsHaveColumns(result, new String[] {"jcr:primaryType"});
         RowIterator iter = result.getRows();
         String primaryType = "";
@@ -1354,7 +1378,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, TOTAL_NODE_COUNT);
+        assertResults(query, result, totalNodeCount);
         assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path"});
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
@@ -1454,7 +1478,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, TOTAL_NODE_COUNT);
+        assertResults(query, result, totalNodeCount);
         assertResultsHaveColumns(result, allColumnNames("nt:base"));
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
@@ -1500,7 +1524,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(query, is(notNullValue()));
         result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, TOTAL_NODE_COUNT);
+        assertResults(query, result, totalNodeCount);
 
         // Find all nodes that are NOT children of '/Cars' (and not under '/jcr:system') ...
         sql = "SELECT [jcr:path] FROM [nt:base] WHERE NOT(ISCHILDNODE([nt:base],'/Cars')) AND NOT(ISDESCENDANTNODE([nt:base],'/jcr:system')) ORDER BY [jcr:path]";
@@ -1550,7 +1574,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1301L);
         assertResultsHaveColumns(result, new String[] {"myfirstnodetypes.jcr:path", "mythirdnodetypes.mode:depth",
             "mysecondnodetypes.mode:depth", "mythirdnodetypes.jcr:path", "mysecondnodetypes.jcr:path",
             "mythirdnodetypes.jcr:mixinTypes", "mythirdnodetypes.jcr:score", "myfirstnodetypes.jcr:score",
@@ -1809,7 +1832,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, TOTAL_NODE_COUNT);
+        assertResults(query, result, totalNodeCount);
         assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path", "jcr:score"});
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
@@ -1913,7 +1936,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         // print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, TOTAL_NODE_COUNT);
+        assertResults(query, result, totalNodeCount);
         assertResultsHaveColumns(result, allColumnNames());
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
@@ -1944,7 +1967,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:base)", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, TOTAL_NODE_COUNT);
+        assertResults(query, result, totalNodeCount);
         assertResultsHaveColumns(result, allColumnNames());
     }
 
@@ -1956,7 +1979,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
                              .createQuery("//element(*,nt:base) order by @jcr:path", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, TOTAL_NODE_COUNT);
+        assertResults(query, result, totalNodeCount);
         assertResultsHaveColumns(result, allColumnNames());
     }
 
@@ -2456,7 +2479,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, TOTAL_NODE_COUNT);
+        assertResults(query, result, totalNodeCount);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
