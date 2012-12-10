@@ -58,7 +58,7 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
     /**
      * repositoryURL
      */
-    @ConfigProperty(defaultValue = "file:///home/kulikov/work/my-repository-config.json")
+    @ConfigProperty
     private String repositoryURL;
 
     /**
@@ -95,7 +95,7 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
         return repositoryURL;
     }
 
-    protected Repository getRepository() throws ResourceException {
+    protected synchronized Repository getRepository() throws ResourceException {
         if (this.repository == null) {
             this.repository = deployRepository(repositoryURL);
         }
@@ -103,7 +103,7 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
     }
 
     private boolean isAbsolutePath(String uri) {
-        return !(uri.startsWith("jndi") | uri.startsWith("file"));
+        return !(uri.startsWith("jndi") || uri.startsWith("file"));
     }
 
     private Repository deployRepository(String uri) throws ResourceException {
@@ -161,7 +161,7 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
      * @param ctx A bootstrap context containing references
      * @throws ResourceAdapterInternalException indicates bootstrap failure.
      */
-    public void start(BootstrapContext ctx)
+    public synchronized void start(BootstrapContext ctx)
             throws ResourceAdapterInternalException {
         if (engine == null) {
             engine = new ModeShapeEngine();
@@ -173,9 +173,10 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
      * This is called when a resource adapter instance is undeployed or during
      * application server shutdown.
      */
-    public void stop() {
+    public synchronized void stop() {
         if (engine != null) {
             engine.shutdown();
+            engine = null;
         }
     }
 
