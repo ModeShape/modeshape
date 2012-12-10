@@ -53,7 +53,6 @@ public class JcrRepositoryHandle implements Referenceable, Serializable, Reposit
      * @param cm Connection manager.
      */
     public JcrRepositoryHandle(JcrResourceAdapter ra, JcrManagedConnectionFactory mcf, ConnectionManager cm) throws ResourceException {
-        System.out.println("Resource adaptor: " + ra);
         this.mcf = mcf;
         this.cm = cm;
         try {

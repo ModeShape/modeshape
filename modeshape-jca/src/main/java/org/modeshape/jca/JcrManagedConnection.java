@@ -27,8 +27,6 @@ import java.io.PrintWriter;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -51,10 +49,6 @@ import javax.transaction.xa.XAResource;
  */
 public class JcrManagedConnection implements ManagedConnection {
 
-    /**
-     * The logger
-     */
-    private static final Logger log = Logger.getLogger("JcrManagedConnection");
     /**
      * The logwriter
      */
@@ -134,7 +128,6 @@ public class JcrManagedConnection implements ManagedConnection {
         try {
             Repository repo = mcf.getRepository();
             Session s = repo.login(cri.getCredentials(), cri.getWorkspace());
-            log.log(Level.FINEST, "Created session ({0})", session);
             return s;
         } catch (RepositoryException e) {
             throw new ResourceException("Failed to create session: " + e.getMessage(), e);

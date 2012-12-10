@@ -75,7 +75,7 @@ public class JcrManagedConnectionFactory implements ManagedConnectionFactory, Re
      *
      * @return repository specified by resource adapter configuration.
      */
-    public synchronized Repository getRepository() throws ResourceException {
+    public Repository getRepository() throws ResourceException {
         return ra.getRepository();
     }
 
