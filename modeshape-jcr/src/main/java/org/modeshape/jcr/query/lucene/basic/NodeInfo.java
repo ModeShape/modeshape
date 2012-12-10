@@ -168,16 +168,4 @@ public class NodeInfo {
     public String toString() {
         return id + " @ " + path + " in '" + workspace + "' with " + firstDynamicField;
     }
-
-
-    public static void main( String[] args ) {
-        Pattern pattern = Pattern.compile("(\\w+):(/([a-zA-Z_0-9]/{0,1})*)\\s*=>\\s*([/a-zA-Z_0-9]+)");
-        Matcher matcher = pattern.matcher("ws1:/a/v    =>   /x/w/fsss");
-        System.out.println(matcher.matches());
-        System.out.println(matcher.group(1));
-        System.out.println(matcher.group(2));
-        System.out.println(matcher.group(3));
-        System.out.println(matcher.group(4));
-    }
-
 }
