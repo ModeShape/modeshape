@@ -1684,6 +1684,8 @@ public class DocumentTranslator {
      * 
      * @param document a {@code non-null} {@link EditableDocument} representing the document of a local node to which the
      *        federated segment should be appended.
+     * @param documentKey a {@code non-null} {@link String} representing the key of the document. This is passed from the outside
+     * as the document may not have a {@link DocumentTranslator#KEY} property (e.g. root node)
      * @param sourceName a {@code non-null} string, the name of the source where {@code externalPath} will be resolved
      * @param externalPath a {@code non-null} string the location in the external source which points to an external node
      * @param alias an optional string representing the name under which the federated segment will be linked. In effect, this
@@ -1691,7 +1693,8 @@ public class DocumentTranslator {
      *        of the federated segment (either coming from {@code externalPath} or {@code alias}) should not contain the "/"
      *        character. If it does, this will be removed.
      */
-    public void addFederatedSegment( EditableDocument document,
+    protected void addFederatedSegment( EditableDocument document,
+                                     String documentKey,
                                      String sourceName,
                                      String externalPath,
                                      String alias ) {
@@ -1709,10 +1712,8 @@ public class DocumentTranslator {
             projectionAlias = projectionAlias.substring(projectionAlias.lastIndexOf("/") + 1);
         }
 
-        String parentKey = document.getString(KEY);
-        String externalNodeKey = documentStore.createExternalProjection(parentKey, sourceName, externalPath, projectionAlias);
+        String externalNodeKey = documentStore.createExternalProjection(documentKey, sourceName, externalPath, projectionAlias);
         if (!StringUtil.isBlank(externalNodeKey)) {
-
             EditableDocument federatedSegment = DocumentFactory.newDocument(KEY, externalNodeKey, NAME, projectionAlias);
             federatedSegmentsArray.add(federatedSegment);
         }
@@ -1725,7 +1726,7 @@ public class DocumentTranslator {
      * @param document a {@code non-null} document
      * @return either the value of the above field, or {@code null} if such a value doesn't exist.
      */
-    public Integer getCacheTtlSeconds( Document document ) {
+    protected Integer getCacheTtlSeconds( Document document ) {
         return document.getInteger(CACHE_TTL_SECONDS);
     }
 }

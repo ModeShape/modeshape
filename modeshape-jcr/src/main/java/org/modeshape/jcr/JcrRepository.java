@@ -1050,7 +1050,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 CacheContainer container = config.getContentCacheContainer();
                 String cacheName = config.getCacheName();
                 List<Component> connectorComponents = config.getFederation().getConnectors();
-                this.connectors = new Connectors(this, connectorComponents);
+                Map<String, List<RepositoryConfiguration.Federation.ProjectionConfiguration>> preconfiguredProjections = config.getFederation().getProjections();
+                this.connectors = new Connectors(this, connectorComponents, preconfiguredProjections);
                 SchematicDb database = Schematic.get(container, cacheName);
                 this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, database) : new LocalDocumentStore(
                                                                                                                                             database);
@@ -1251,7 +1252,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
          * @throws Exception if there is a problem during this phase.
          */
         protected final void postInitialize() throws Exception {
-            this.connectors.initialize();
             this.sequencers.initialize();
 
             // import the preconfigured node types before the initial content, in case the latter use custom types
@@ -1267,6 +1267,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     return null;
                 }
             });
+
+            //connectors must be initialized after initial content because that can have an influence on projections
+            this.connectors.initialize();
 
             // any potential transaction was suspended during the creation of the running state to make sure intialization is
             // atomic

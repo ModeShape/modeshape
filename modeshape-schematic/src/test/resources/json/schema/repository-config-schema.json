@@ -227,7 +227,7 @@
                         "type" : "array",
                         "items" : {
                             "type" : "string",
-                            "pattern" : "(\w+):(/([a-zA-Z_0-9]/{0,1})*)\s*=>\s*([/a-zA-Z_0-9]+)"
+                            "pattern" : "(\w+):(/([a-zA-Z_0-9]/{0,1})+)\s*=>\s*([/a-zA-Z_0-9]+)"
                         },
                         "description" : "The expressions that describes the projection path expressions, in the format wsName:/projectedPath => externalPath"
                     },

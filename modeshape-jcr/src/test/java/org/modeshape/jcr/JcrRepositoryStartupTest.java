@@ -213,4 +213,21 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             }
         }, repositoryConfigFile);
     }
+
+    @Test
+    public void shouldKeepPreconfiguredProjectionsAcrossRestart() throws Exception {
+        FileUtil.delete("target/federation_persistent_repository");
+
+        String repositoryConfigFile = "config/repo-config-federation-persistent-projections.json";
+        RepositoryOperation checkPreconfiguredProjection = new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+                assertNotNull(session.getNode("/preconfiguredProjection"));
+                return null;
+            }
+        };
+        startRunStop(checkPreconfiguredProjection, repositoryConfigFile);
+        startRunStop(checkPreconfiguredProjection, repositoryConfigFile);
+    }
 }

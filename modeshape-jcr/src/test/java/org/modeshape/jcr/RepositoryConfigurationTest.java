@@ -328,7 +328,7 @@ public class RepositoryConfigurationTest {
 
     @Test
     public void shouldNotAllowInvalidProjectionExpressions() throws Exception {
-        assertNotValid(8, "config/repo-config-federation-invalid-projections.json");
+        assertNotValid(9, "config/repo-config-federation-invalid-projections.json");
     }
 
     protected RepositoryConfiguration assertValid( RepositoryConfiguration config ) {

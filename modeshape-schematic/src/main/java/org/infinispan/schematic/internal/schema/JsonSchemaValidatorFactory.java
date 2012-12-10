@@ -1200,8 +1200,9 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                             success = false;
                         }
                     } else {
-                        Path path = pathToParent.with(item.toString());
-                        itemValidator.validate(item, null, parent, pathToParent, itemProblems, resolver);
+                        fieldName = item.toString();
+                        Path path = pathToParent.with(fieldName);
+                        itemValidator.validate(item, fieldName, parent, pathToParent, itemProblems, resolver);
                         if (itemProblems.hasProblem()) {
                             problems.recordError(path, "The '" + fieldName + "' field on '" + pathToParent
                                     + "' is an array, but the " + i + th(i)

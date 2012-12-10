@@ -1,18 +1,32 @@
 {
-    "name" : "Federated repository",
+    "name" : "Federated repository with projections",
     "workspaces" : {
         "predefined" : ["ws1", "ws2"],
         "default" : "default",
-        "allowCreation" : true
+        "allowCreation" : true,
+        "initialContent" : {
+            "default" : "xmlImport/docWithTestRoot.xml",
+            "ws2" : "xmlImport/docWithTestRoot.xml"
+        }
     },
     "externalSources" : {
         "mock-source" : {
             "classname" : "org.modeshape.connector.mock.MockConnector",
             "cacheTtlSeconds" : 1,
             "projections" : [
-                "ws1:/a/b/c => /d",
-                "ws2:/a/b => /",
-                "ws1:/ => /a/d"
+                "default:/projection1 => /doc1",
+                "default:/testRoot/projection2 => /doc2",
+                "ws1:/projection1 => /doc1",
+                "ws2:/testRoot/projection2 => /doc2"
+            ]
+        },
+        "files" : {
+            "classname" : "org.modeshape.connector.filesystem.FileSystemConnector",
+            "directoryPath" : "target/files",
+            "readonly" : true,
+            "projections" : [
+                "default:/files => /",
+                "default:/testFile => /testFile"
             ]
         }
     }

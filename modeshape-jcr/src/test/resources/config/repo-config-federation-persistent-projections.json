@@ -8,18 +8,15 @@
     "externalSources" : {
         "mock-source" : {
             "classname" : "org.modeshape.connector.mock.MockConnector",
+            "persistentDataAcrossRestarts" : true,
             "cacheTtlSeconds" : 1,
             "projections" : [
-                "ws1:a/b/c => /d",
-                ":/a/b => /",
-                "ws1/ => /a/d",
-                "ws2:/a//v => /",
-                "ws => /a",
-                ":x => a",
-                "ws1:/ x",
-                "ws1:/=>x",
-                "ws1:/a/b =>"
+                "default:/preconfiguredProjection => /doc1"
             ]
         }
+    },
+    "storage" : {
+        "cacheName" : "persistentRepository",
+        "cacheConfiguration" : "config/infinispan-federation-persistent.xml"
     }
 }
