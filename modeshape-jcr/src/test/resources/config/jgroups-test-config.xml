@@ -1,0 +1,14 @@
+<config>
+    <UDP mcast_addr='224.0.0.3' mcast_port='4456' bind_addr='127.0.0.1' ip_ttl='64' ip_mcast='true' mcast_send_buf_size='120000'
+         mcast_recv_buf_size='80000' ucast_send_buf_size='120000' ucast_recv_buf_size='80000' loopback='true'/>
+    <PING timeout='1000' num_initial_members='2'/>
+    <MERGE2 min_interval='10000' max_interval='20000'/>
+    <FD/>
+    <VERIFY_SUSPECT timeout='1500'/>
+    <pbcast.NAKACK retransmit_timeout='600,1200,2400,4800' discard_delivered_msgs='true' use_mcast_xmit='false'/>
+    <UNICAST timeout='600,1200,2400'/>
+    <pbcast.STABLE desired_avg_gossip='20000' max_bytes='400000'/>
+    <FRAG frag_size='8192'/>
+    <pbcast.GMS join_timeout='5000' print_local_addr='true'/>
+    <pbcast.STATE_TRANSFER/>
+</config>

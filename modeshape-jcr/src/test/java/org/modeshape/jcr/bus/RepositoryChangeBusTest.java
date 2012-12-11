@@ -73,7 +73,7 @@ public class RepositoryChangeBusTest {
     }
 
     @Test
-    public void shouldNotAllowTheSameListenerTwice() {
+    public void shouldNotAllowTheSameListenerTwice() throws Exception {
         TestListener listener1 = new TestListener();
 
         assertTrue(getChangeBus().register(listener1));
@@ -87,7 +87,7 @@ public class RepositoryChangeBusTest {
     }
 
     @Test
-    public void shouldAllowListenerRemoval() {
+    public void shouldAllowListenerRemoval() throws Exception {
         TestListener listener1 = new TestListener();
 
         assertTrue(getChangeBus().register(listener1));
@@ -179,7 +179,7 @@ public class RepositoryChangeBusTest {
         assertChangesDispatched(listener);
     }
 
-    protected ChangeBus getChangeBus() {
+    protected ChangeBus getChangeBus() throws Exception {
         return changeBus;
     }
 
