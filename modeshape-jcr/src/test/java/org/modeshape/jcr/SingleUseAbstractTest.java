@@ -84,7 +84,11 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
 
     protected void stopRepository() throws Exception {
         try {
-            TestingUtil.killRepositories(repository);
+            try {
+                if (session != null && session.isLive()) session.logout();
+            } finally {
+                TestingUtil.killRepositories(repository);
+            }
         } finally {
             repository = null;
             config = null;
