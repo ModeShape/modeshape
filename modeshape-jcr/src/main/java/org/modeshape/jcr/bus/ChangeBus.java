@@ -34,7 +34,22 @@ import org.modeshape.jcr.cache.change.Observable;
  */
 public interface ChangeBus extends ChangeSetListener, Observable {
 
-    public void start();
+    /**
+     * Starts up the change bus.
+     *
+     * @throws Exception if anything unexpected fails during startup.
+     */
+    public void start() throws Exception;
+
+    /**
+     * Shuts down the change bus, closing and clearing resources created during {@link org.modeshape.jcr.bus.ChangeBus#start()}
+     */
     public void shutdown();
+
+    /**
+     * Checks if there are any observers registered with the bus.
+     *
+     * @return {@code true} if there are any registered observers, {@code false} otherwise
+     */
     public boolean hasObservers();
 }

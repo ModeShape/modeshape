@@ -104,7 +104,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
     }
 
     @Override
-    public synchronized void start() {
+    public synchronized void start() throws Exception {
         String clusterName = clusteringConfiguration.getClusterName();
         if (clusterName == null) {
             throw new IllegalStateException(BusI18n.clusterNameRequired.text());
@@ -114,52 +114,38 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
             channel.removeChannelListener(listener);
             channel.setReceiver(null);
         }
-        try {
-            // Create the new channel by calling the delegate method ...
-            channel = newChannel();
-            // Add a listener through which we'll know what's going on within the cluster ...
-            channel.addChannelListener(listener);
+        // Create the new channel by calling the delegate method ...
+        channel = newChannel();
+        // Add a listener through which we'll know what's going on within the cluster ...
+        channel.addChannelListener(listener);
 
-            // Set the receiver through which we'll receive all of the changes ...
-            channel.setReceiver(receiver);
+        // Set the receiver through which we'll receive all of the changes ...
+        channel.setReceiver(receiver);
 
-            // Now connect to the cluster ...
-            channel.connect(clusterName);
+        // Now connect to the cluster ...
+        channel.connect(clusterName);
 
-            // start the delegate
-            delegate.start();
-        } catch (Exception e) {
-            throw new IllegalStateException(
-                                            BusI18n.errorWhileStartingJGroups.text(clusteringConfiguration.getChannelConfiguration()),
-                                            e);
-        }
+        // start the delegate
+        delegate.start();
     }
 
-    private Channel newChannel() {
-        String lookupClassName = clusteringConfiguration.getChannelProviderClassName();
-
+    private Channel newChannel() throws Exception {
         // Try to get the channel directly from the configuration (and its environment) ...
-        try {
-            Channel channel = clusteringConfiguration.getChannel();
-            if (channel != null) return channel;
-        } catch (Exception e) {
-            if (lookupClassName == null) {
-                throw new RuntimeException(e);
-            }
+        Channel channel = clusteringConfiguration.getChannel();
+        if (channel != null) {
+            return channel;
         }
 
+        String lookupClassName = clusteringConfiguration.getChannelProviderClassName();
         assert lookupClassName != null;
-        try {
-            Class<?> lookupClass = Class.forName(lookupClassName);
-            if (!ChannelProvider.class.isAssignableFrom(lookupClass)) {
-                throw new IllegalArgumentException(
-                                                   "Invalid channel lookup class configured. Expected a subclass of org.modeshape.jcr.clustering.ChannelProvider. Actual class:"
-                                                   + lookupClass);
-            }
-            return ((ChannelProvider)lookupClass.newInstance()).getChannel(clusteringConfiguration);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+
+        Class<?> lookupClass = Class.forName(lookupClassName);
+        if (!ChannelProvider.class.isAssignableFrom(lookupClass)) {
+            throw new IllegalArgumentException(
+                    "Invalid channel lookup class configured. Expected a subclass of org.modeshape.jcr.clustering.ChannelProvider. Actual class:"
+                            + lookupClass);
         }
+        return ((ChannelProvider)lookupClass.newInstance()).getChannel(clusteringConfiguration);
     }
 
     @Override

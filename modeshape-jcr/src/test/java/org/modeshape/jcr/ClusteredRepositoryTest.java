@@ -24,8 +24,6 @@
 
 package org.modeshape.jcr;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -34,25 +32,20 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
-import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.observation.Event;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit test for various clustered repository scenarios.
- * 
+ *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class ClusteredRepositoryTest extends AbstractTransactionalTest {
-
-    private JcrRepository repository1;
-    private JcrSession session1;
-    private JcrRepository repository2;
-    private JcrSession session2;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -64,38 +57,47 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
         ClusteringHelper.removeJGroupsBindings();
     }
 
-    @Before
-    public void setUp() throws Exception {
-        repository1 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config.json");
-        session1 = repository1.login();
+    @Test
+    @FixFor("MODE-1618")
+    public void shouldPropagateNodeChangesInCluster() throws Exception {
+        JcrRepository repository1 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config.json");
+        JcrSession session1 = repository1.login();
 
-        repository2 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config.json");
-        session2 = repository2.login();
-    }
+        JcrRepository repository2 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config.json");
+        JcrSession session2 = repository2.login();
 
-    @After
-    public void tearDown() throws Exception {
-        TestingUtil.killRepositories(repository1, repository2);
+        try {
+            int eventTypes = Event.NODE_ADDED | Event.PROPERTY_ADDED;
+            ClusteringEventListener listener = new ClusteringEventListener(2);
+            session2.getWorkspace().getObservationManager().addEventListener(listener, eventTypes, null, true, null, null, true);
+
+            Node testNode = session1.getRootNode().addNode("testNode");
+            String binary = "test string";
+            testNode.setProperty("binaryProperty", session1.getValueFactory().createBinary(binary.getBytes()));
+            session1.save();
+
+            listener.waitForEvents();
+            List<String> paths = listener.getPaths();
+            assertEquals(3, paths.size());
+            assertTrue(paths.contains("/testNode"));
+            assertTrue(paths.contains("/testNode/binaryProperty"));
+            assertTrue(paths.contains("/testNode/jcr:primaryType"));
+        } finally {
+            TestingUtil.killRepositories(repository1, repository2);
+        }
     }
 
     @Test
-    @FixFor( "MODE-1618" )
-    public void shouldPropagateNodeChangesInCluster() throws Exception {
-        int eventTypes = Event.NODE_ADDED | Event.PROPERTY_ADDED;
-        ClusteringEventListener listener = new ClusteringEventListener(2);
-        session2.getWorkspace().getObservationManager().addEventListener(listener, eventTypes, null, true, null, null, true);
+    @FixFor( "MODE-1701" )
+    public void shouldStartRepositoryWithJGroupsXMLConfigurationFile() throws Exception {
+        JcrRepository repository = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config-jgroups-file.json");
+        assertEquals(ModeShapeEngine.State.RUNNING, repository.getState());
+    }
 
-        Node testNode = session1.getRootNode().addNode("testNode");
-        String binary = "test string";
-        testNode.setProperty("binaryProperty", session1.getValueFactory().createBinary(binary.getBytes()));
-        session1.save();
-
-        listener.waitForEvents();
-        List<String> paths = listener.getPaths();
-        assertEquals(3, paths.size());
-        assertTrue(paths.contains("/testNode"));
-        assertTrue(paths.contains("/testNode/binaryProperty"));
-        assertTrue(paths.contains("/testNode/jcr:primaryType"));
+    @Test(expected = RepositoryException.class)
+    @FixFor( "MODE-1701" )
+    public void shouldNotStartRepositoryWithInvalidJGroupsConfiguration() throws Exception {
+        TestingUtil.startRepositoryWithConfig("config/clustered-repo-config-invalid-jgroups-file.json");
     }
 
     protected class ClusteringEventListener implements EventListener {

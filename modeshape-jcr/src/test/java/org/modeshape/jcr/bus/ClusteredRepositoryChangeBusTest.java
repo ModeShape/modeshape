@@ -67,7 +67,7 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
     }
 
     @Override
-    protected ChangeBus getChangeBus() {
+    protected ChangeBus getChangeBus() throws Exception {
         if (defaultBus == null) {
             defaultBus = startNewBus(CLUSTER_NAME);
         }
@@ -83,27 +83,27 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
     }
 
     @Test( expected = IllegalStateException.class )
-    public void shouldNotAllowSettingClusterNameToNull() {
+    public void shouldNotAllowSettingClusterNameToNull() throws Exception {
         startNewBus(null);
     }
 
     @Test
-    public void shouldAllowSettingClusterNameToBlankString() {
+    public void shouldAllowSettingClusterNameToBlankString() throws Exception {
         startNewBus("");
     }
 
     @Test
-    public void shouldAllowSettingClusterNameToStringWithAlphaNumericCharacters() {
+    public void shouldAllowSettingClusterNameToStringWithAlphaNumericCharacters() throws Exception {
         startNewBus("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ");
     }
 
     @Test
-    public void shouldAllowSettingClusterNameToStringWithAlphaNumericAndPunctuationCharacters() {
+    public void shouldAllowSettingClusterNameToStringWithAlphaNumericAndPunctuationCharacters() throws Exception {
         startNewBus("valid.cluster!name@#$%^&*()<>?,./:\"'[]\\{}|_+-=");
     }
 
     @Test
-    public void shouldAllowSettingClusterNameToStringWithAlphaNumericAndWhitespaceCharacters() {
+    public void shouldAllowSettingClusterNameToStringWithAlphaNumericAndWhitespaceCharacters() throws Exception {
         startNewBus("valid cluster name");
     }
 
@@ -335,7 +335,7 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         assertThat(listener1.getObservedChangeSet().get(0), is(changeSet));
     }
 
-    private ClusteredRepositoryChangeBus startNewBus( String name) {
+    private ClusteredRepositoryChangeBus startNewBus( String name) throws Exception {
         ClusteredRepositoryChangeBus bus = new ClusteredRepositoryChangeBus(createClusteringConfiguration(name), super.createRepositoryChangeBus());
         bus.start();
         buses.add(bus);

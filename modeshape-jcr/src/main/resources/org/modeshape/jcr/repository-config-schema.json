@@ -1021,7 +1021,7 @@
                 },
                 "channelConfiguration" : {
                     "type" : "string",
-                    "description" : "An optional string which represents a JChannel configuration file. Normally, a CDATA wrapped XML section should be used"
+                    "description" : "An optional string which represents a JChannel configuration file."
                 },
                 "description" : {
                     "type" : "string",

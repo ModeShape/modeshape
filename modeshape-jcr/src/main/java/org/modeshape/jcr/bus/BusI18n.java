@@ -17,6 +17,7 @@ public final class BusI18n {
     public static I18n errorDeserializingChanges;
     public static I18n clusteringChannelIsRunningAndCannotBeChangedUnlessShutdown;
     public static I18n memberOfClusterIsSuspect;
+    public static I18n channelConfigurationError;
 
     static {
         try {
