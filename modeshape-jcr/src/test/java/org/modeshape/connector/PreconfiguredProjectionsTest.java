@@ -24,10 +24,8 @@
 
 package org.modeshape.connector;
 
-import java.awt.datatransfer.FlavorEvent;
 import java.io.File;
 import java.io.FileOutputStream;
-import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.junit.Before;

@@ -23,8 +23,6 @@
  */
 package org.modeshape.jcr.query.lucene.basic;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.hibernate.search.annotations.Analyze;
 import org.hibernate.search.annotations.DocumentId;
 import org.hibernate.search.annotations.Field;
