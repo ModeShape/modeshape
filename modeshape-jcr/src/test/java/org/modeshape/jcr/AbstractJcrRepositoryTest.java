@@ -193,6 +193,12 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
         return false;
     }
 
+    protected void printMessage( String message ) {
+        if (print) {
+            System.out.println(message);
+        }
+    }
+
     protected void printDetails( Node node ) throws RepositoryException {
         if (print) {
             new JcrTools().printNode(node);
@@ -203,9 +209,26 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
         print(session().getRootNode(), true);
     }
 
+    private Node nodeFor( String path ) throws RepositoryException {
+        if (path.equals("/")) {
+            return session().getRootNode();
+        }
+        return session().getRootNode().getNode(relativePath(path));
+    }
+
     protected void print( String path ) throws RepositoryException {
-        Node node = session().getRootNode().getNode(relativePath(path));
-        print(node, true);
+        print(nodeFor(path), true);
+    }
+
+    protected void print( String path,
+                          boolean includeSystem ) throws RepositoryException {
+        print(nodeFor(path), includeSystem, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    }
+
+    protected void print( String path,
+                          boolean includeSystem,
+                          int maxNumberOfChildren ) throws RepositoryException {
+        print(nodeFor(path), includeSystem, maxNumberOfChildren, Integer.MAX_VALUE);
     }
 
     protected void print( Node node ) throws RepositoryException {
