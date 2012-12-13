@@ -31,6 +31,7 @@ import java.util.UUID;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -229,5 +230,52 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         };
         startRunStop(checkPreconfiguredProjection, repositoryConfigFile);
         startRunStop(checkPreconfiguredProjection, repositoryConfigFile);
+    }
+
+    @Test
+    public void shouldCleanProjectionsAfterRemoval() throws Exception {
+        FileUtil.delete("target/federation_persistent_repository");
+
+        String repositoryConfigFile = "config/repo-config-mock-federation-persistent.json";
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+                session.getRootNode().addNode("testRoot");
+                session.save();
+
+                FederationManager federationManager = ((Workspace)session.getWorkspace()).getFederationManager();
+                federationManager.createExternalProjection("/testRoot",
+                                                           MockConnector.SOURCE_NAME,
+                                                           MockConnector.DOC1_LOCATION,
+                                                           "federated1");
+                federationManager.createExternalProjection("/testRoot",
+                                                           MockConnector.SOURCE_NAME,
+                                                           MockConnector.DOC2_LOCATION,
+                                                           "federated2");
+                Node projection = session.getNode("/testRoot/federated1");
+                assertNotNull(projection);
+
+                projection.remove();
+                session.save();
+                return null;
+            }
+        }, repositoryConfigFile);
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+                //check the 2nd projection
+                assertNotNull(session.getNode("/testRoot/federated2"));
+                try {
+                    session.getNode("/testRoot/federated1");
+                    fail("Projection has not been cleaned up");
+                } catch (PathNotFoundException e) {
+                    //expected
+                }
+                return null;
+            }
+        }, repositoryConfigFile);
     }
 }

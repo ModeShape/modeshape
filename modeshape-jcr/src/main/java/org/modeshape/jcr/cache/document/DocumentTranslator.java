@@ -746,6 +746,18 @@ public class DocumentTranslator {
             Set<NodeKey> removals = changedChildren.getRemovals();
             Map<NodeKey, Name> newNames = changedChildren.getNewNames();
             while (doc != null) {
+                //we need to clean up projections
+                if (isFederatedDocument(doc) && !removals.isEmpty()) {
+                    Set<String> removalsStrings = new HashSet<String>();
+                    for (NodeKey key : removals) {
+                        //only when we're dealing with a foreign key do we need to do this
+                        if (!key.toString().startsWith(documentStore.getLocalSourceKey())) {
+                            removalsStrings.add(key.toString());
+                        }
+                    }
+                    removeFederatedSegments(doc, removalsStrings);
+                }
+
                 // Change the existing children ...
                 long blockCount = insertChildren(doc, insertionsByBeforeKey, removals, newNames);
                 newTotalSize += blockCount;
@@ -829,7 +841,10 @@ public class DocumentTranslator {
                                    Set<NodeKey> removals,
                                    Map<NodeKey, Name> newNames ) {
         List<?> children = document.getArray(CHILDREN);
-        assert children != null;
+        if (children == null) {
+            //a federated document can have an empty children array
+            return 0;
+        }
         EditableArray newChildren = Schematic.newArray(children.size());
         for (Object value : children) {
             ChildReference ref = childReferenceFrom(value);
@@ -1678,23 +1693,20 @@ public class DocumentTranslator {
         return hasProperty(doc, JcrLexicon.LOCK_OWNER) || hasProperty(doc, JcrLexicon.LOCK_IS_DEEP);
     }
 
-    /**
-     * Removes from a federated node a segment which has the given key pointing to an external node.
-     *
-     * @param federatedNodeKey a {@code non-null} {@link String} the key of the federated node
-     * @param externalNodeKey a {@code non-null} {@link String} the key of an external node
-     */
-    public void removeFederatedSegment(String federatedNodeKey, String externalNodeKey) {
-        EditableDocument federatedDocument = documentStore.get(federatedNodeKey).editDocumentContent();
+    protected boolean isFederatedDocument(Document document) {
+        return document.containsField(FEDERATED_SEGMENTS);
+    }
+
+    protected void removeFederatedSegments( EditableDocument federatedDocument,
+                                            Set<String> externalNodeKeys) {
         EditableArray federatedSegments = federatedDocument.getArray(FEDERATED_SEGMENTS);
         assert federatedSegments != null;
         for (int i = 0; i < federatedSegments.size(); i++) {
             Object federatedSegment = federatedSegments.get(i);
             assert federatedSegment instanceof Document;
             String segmentKey = getKey((Document)federatedSegment);
-            if (externalNodeKey.equalsIgnoreCase(segmentKey)) {
+            if (externalNodeKeys.contains(segmentKey)) {
                 federatedSegments.remove(i);
-                break;
             }
         }
         if (federatedSegments.isEmpty()) {
