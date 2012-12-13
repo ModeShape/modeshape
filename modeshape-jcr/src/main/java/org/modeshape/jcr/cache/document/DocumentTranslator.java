@@ -1679,6 +1679,31 @@ public class DocumentTranslator {
     }
 
     /**
+     * Removes from a federated node a segment which has the given key pointing to an external node.
+     *
+     * @param federatedNodeKey a {@code non-null} {@link String} the key of the federated node
+     * @param externalNodeKey a {@code non-null} {@link String} the key of an external node
+     */
+    public void removeFederatedSegment(String federatedNodeKey, String externalNodeKey) {
+        EditableDocument federatedDocument = documentStore.get(federatedNodeKey).editDocumentContent();
+        EditableArray federatedSegments = federatedDocument.getArray(FEDERATED_SEGMENTS);
+        assert federatedSegments != null;
+        for (int i = 0; i < federatedSegments.size(); i++) {
+            Object federatedSegment = federatedSegments.get(i);
+            assert federatedSegment instanceof Document;
+            String segmentKey = getKey((Document)federatedSegment);
+            if (externalNodeKey.equalsIgnoreCase(segmentKey)) {
+                federatedSegments.remove(i);
+                break;
+            }
+        }
+        if (federatedSegments.isEmpty()) {
+            federatedDocument.remove(FEDERATED_SEGMENTS);
+        }
+    }
+
+
+    /**
      * Given an existing document adds a new federated segment with the given alias pointing to the external document located at
      * {@code externalPath}
      * 
@@ -1694,10 +1719,10 @@ public class DocumentTranslator {
      *        character. If it does, this will be removed.
      */
     protected void addFederatedSegment( EditableDocument document,
-                                     String documentKey,
-                                     String sourceName,
-                                     String externalPath,
-                                     String alias ) {
+                                        String documentKey,
+                                        String sourceName,
+                                        String externalPath,
+                                        String alias ) {
         EditableArray federatedSegmentsArray = document.getArray(FEDERATED_SEGMENTS);
         if (federatedSegmentsArray == null) {
             federatedSegmentsArray = Schematic.newArray();

@@ -289,6 +289,64 @@ public class MockConnectorTest extends SingleUseAbstractTest {
     }
 
     @Test
+    public void shouldRemoveProjectionViaNodeRemove() throws Exception {
+        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC1_LOCATION, "federated1");
+        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC2_LOCATION, "federated2");
+
+        Node projection = session.getNode("/testRoot/federated1");
+        projection.remove();
+        session.save();
+        try {
+            session.getNode("/testRoot/federated1");
+            fail("External node should've been deleted");
+        } catch (PathNotFoundException e) {
+            // expected
+        }
+        assertNotNull(session.getNode("/testRoot/federated2"));
+
+        projection = session.getNode("/testRoot/federated2");
+        projection.remove();
+        session.save();
+
+        try {
+            session.getNode("/testRoot/federated2");
+            fail("Projection should've been deleted");
+        } catch (PathNotFoundException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void removingInternalNodeShouldNotRemoveExternalNodes() throws Exception {
+        federationManager.createExternalProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC2_LOCATION,
+                                                   "federated2");
+
+        Node internalNode1 = testRoot.addNode("internalNode1");
+        session.save();
+        federationManager.createExternalProjection("/testRoot/internalNode1", MockConnector.SOURCE_NAME,
+                                                   MockConnector.DOC2_LOCATION, "federated2");
+
+        //remove the federated node directly
+        assertNotNull(session.getNode("/testRoot/internalNode1/federated2/federated3"));
+        internalNode1.remove();
+        session.save();
+        //check external nodes are still there
+        assertNotNull(session.getNode("/testRoot/federated2/federated3"));
+
+        testRoot.addNode("internalNode2").addNode("internalNode2_1");
+        session.save();
+        federationManager.createExternalProjection("/testRoot/internalNode2/internalNode2_1", MockConnector.SOURCE_NAME, MockConnector.DOC2_LOCATION,
+                                                   "federated2");
+        //remove an ancestor of the federated node
+        assertNotNull(session.getNode("/testRoot/internalNode2/internalNode2_1/federated2/federated3"));
+        ((Node) session.getNode("/testRoot/internalNode2")).remove();
+        session.save();
+
+        //check external nodes are still there
+        assertNotNull(session.getNode("/testRoot/federated2/federated3"));
+    }
+
+    @Test
     public void shouldNavigateChildrenFromPagedConnector() throws Exception {
         federationManager.createExternalProjection("/testRoot",
                                                    MockConnector.SOURCE_NAME,

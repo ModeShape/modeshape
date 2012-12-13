@@ -1161,7 +1161,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                 assert children != null;
                 for (ChildReference child : children) {
                     NodeKey childKey = child.getKey();
-                    keys.add(childKey);
+                    //only recursively delete children from the same source (prevents deletion of external nodes in case of federation)
+                    if (childKey.getSourceKey().equalsIgnoreCase(key.getSourceKey())) {
+                        keys.add(childKey);
+                    }
                 }
             }
 

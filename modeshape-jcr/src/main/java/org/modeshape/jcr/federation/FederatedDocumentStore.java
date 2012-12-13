@@ -73,6 +73,11 @@ public class FederatedDocumentStore implements DocumentStore {
     private DocumentTranslator translator;
     private String localSourceKey;
 
+    /**
+     * Creates a new instance with the given connectors and local db.
+     * @param connectors a {@code non-null} {@link Connectors} instance
+     * @param localDb a {@code non-null} {@link SchematicDb} instance
+     */
     public FederatedDocumentStore( Connectors connectors,
                                    SchematicDb localDb ) {
         this.connectors = connectors;
@@ -273,11 +278,15 @@ public class FederatedDocumentStore implements DocumentStore {
     @Override
     public boolean remove( String key ) {
         if (isLocalSource(key)) {
-            return localStore().remove(key);
+            boolean result = localStore().remove(key);
+            connectors.internalNodeRemoved(key);
+            return result;
         }
         Connector connector = connectors.getConnectorForSourceKey(sourceKey(key));
         if (connector != null) {
-            return connector.removeDocument(documentIdFromNodeKey(key));
+            boolean result = connector.removeDocument(documentIdFromNodeKey(key));
+            connectors.externalNodeRemoved(key);
+            return result;
         }
         return false;
     }
