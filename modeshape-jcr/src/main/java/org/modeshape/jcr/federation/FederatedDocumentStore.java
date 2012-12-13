@@ -309,6 +309,11 @@ public class FederatedDocumentStore implements DocumentStore {
     }
 
     @Override
+    public String getLocalSourceKey() {
+        return this.localSourceKey;
+    }
+
+    @Override
     public String createExternalProjection( String projectedNodeKey,
                                             String sourceName,
                                             String externalPath,

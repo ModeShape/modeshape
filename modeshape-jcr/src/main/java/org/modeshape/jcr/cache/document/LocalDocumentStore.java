@@ -40,6 +40,7 @@ import org.infinispan.schematic.document.Document;
 public class LocalDocumentStore implements DocumentStore {
 
     private final SchematicDb database;
+    private String localSourceKey;
 
     /**
      * Creates a new local store with the given database
@@ -142,7 +143,12 @@ public class LocalDocumentStore implements DocumentStore {
 
     @Override
     public void setLocalSourceKey( String sourceKey ) {
-        // ignore, as this is always local
+        this.localSourceKey = sourceKey;
+    }
+
+    @Override
+    public String getLocalSourceKey() {
+        return this.localSourceKey;
     }
 
     @Override

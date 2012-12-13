@@ -94,6 +94,13 @@ public interface DocumentStore {
     public void setLocalSourceKey( String sourceKey );
 
     /**
+     * Returns the value of the local repository source key.
+     *
+     * @return a {@code non-null} string
+     */
+    public String getLocalSourceKey();
+
+    /**
      * Returns a transaction manager instance which can be used to manage transactions for this document store.
      * 
      * @return a {@link TransactionManager} instance, never null.

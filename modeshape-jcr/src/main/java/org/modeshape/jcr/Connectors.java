@@ -94,7 +94,7 @@ public class Connectors {
      */
     private Set<String> removedProjections = new HashSet<String>();
 
-    public Connectors( JcrRepository.RunningState repository,
+    protected Connectors( JcrRepository.RunningState repository,
                        Collection<Component> components,
                        Map<String, List<RepositoryConfiguration.Federation.ProjectionConfiguration>> preconfiguredProjections) {
         this.repository = repository;
@@ -297,8 +297,6 @@ public class Connectors {
         Projection removedProjection = projections.remove(externalNodeKey);
         if (removedProjection != null) {
             removedProjections.add(externalNodeKey);
-            //remove the federated segment from the parent
-            getDocumentTranslator().removeFederatedSegment(removedProjection.getProjectedNodeKey(), externalNodeKey);
         }
     }
 
@@ -506,19 +504,30 @@ public class Connectors {
         systemSession.save();
     }
 
-    public Connector getConnectorForSourceName( String sourceName ) {
-        assert sourceName != null;
-        return sourceKeyToConnectorMap.get(NodeKey.keyForSourceName(sourceName));
-    }
-
+    /**
+     * Returns the connector which is mapped to the given source key.
+     *
+     * @param sourceKey a {@code non-null} {@link String}
+     * @return either a {@link Connector} instance of {@code null}
+     */
     public Connector getConnectorForSourceKey( String sourceKey ) {
         return sourceKeyToConnectorMap.get(sourceKey);
     }
 
+    /**
+     * Returns the repository's document translator.
+     *
+     * @return a {@link DocumentTranslator} instance.
+     */
     public DocumentTranslator getDocumentTranslator() {
         return repository.repositoryCache().getDocumentTranslator();
     }
 
+    /**
+     * Checks if there are any registered connectors.
+     *
+     * @return {@code true} if any connectors are registered, {@code false} otherwise.
+     */
     public boolean hasConnectors() {
         return !sourceKeyToConnectorMap.isEmpty();
     }
