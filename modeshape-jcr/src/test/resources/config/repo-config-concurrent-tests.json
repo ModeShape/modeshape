@@ -1,17 +1,12 @@
 {
     "name" : "Persistent Repository",
-    "jndiName" : "java:jcr/local/PersistentRepository",
+    "jndiName" : "",
     "monitoring" : {
         "enabled" : true
     },
     "storage" : {
         "cacheName" : "persistentRepository",
-        "cacheConfiguration" : "config/infinispan-persistent.xml",
-        "binaryStorage" : {
-            "type" : "file",
-            "directory": "target/persistent_repository/binaries",
-            "minimumBinarySizeInBytes" : 40
-        }
+        "cacheConfiguration" : "config/infinispan-concurrent-persistent.xml",
     },
     "workspaces" : {
         "default" : "default",
@@ -23,12 +18,4 @@
             "useOnFailedLogin" : false
         }
     },
-    "query" : {
-        "enabled" : true,
-        "indexStorage" : {
-            "type" : "filesystem",
-            "location" : "target/persistent_repository/index"
-        },
-        "rebuildUponStartup" : "if_missing"
-    }
 }

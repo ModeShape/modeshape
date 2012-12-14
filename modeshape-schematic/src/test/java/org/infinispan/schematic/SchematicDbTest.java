@@ -7,12 +7,14 @@ import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import org.infinispan.schematic.SchemaLibrary.Results;
 import org.infinispan.schematic.SchematicEntry.FieldName;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Json;
 import org.infinispan.schematic.internal.document.BasicDocument;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class SchematicDbTest extends AbstractSchematicDbTest {
@@ -143,12 +145,12 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
 
         // Modify using an editor ...
         try {
-            // tm.begin();
+            tm.begin();
             EditableDocument editable = entry.editDocumentContent();
             editable.setBoolean("k3", true);
             editable.setNumber("k4", 3.5d);
         } finally {
-            // tm.commit();
+            tm.commit();
         }
 
         // Now re-read ...
@@ -160,4 +162,111 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
         assertThat(read2.getBoolean("k3"), is(true));
         assertThat(read2.getDouble("k4") > 3.4d, is(true));
     }
+
+    @Test
+    public void shouldStoreDocumentAndFetchAndModifyAndRefetchUsingTransaction() throws Exception {
+        // Store the document ...
+        Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
+        Document metadata = Schematic.newDocument("mimeType", "text/plain");
+        String key = "can be anything";
+        SchematicEntry prior = db.put(key, doc, metadata);
+        assertThat("Should not have found a prior entry", prior, is(nullValue()));
+
+        // Read back from the database ...
+        SchematicEntry entry = db.get(key);
+        assertThat("Should have found the entry", entry, is(notNullValue()));
+
+        // Verify the content ...
+        Document read = entry.getContentAsDocument();
+        assertThat(read, is(notNullValue()));
+        assertThat(read.getString("k1"), is("value1"));
+        assertThat(read.getInteger("k2"), is(2));
+        assertThat("Should not have a Binary value for the entry's content", entry.getContentAsBinary(), is(nullValue()));
+        assertThat(read.containsAll(doc), is(true));
+        assertThat(read.equals(doc), is(true));
+
+        // Modify using an editor ...
+        try {
+            tm.begin();
+            EditableDocument editable = entry.editDocumentContent();
+            editable.setBoolean("k3", true);
+            editable.setNumber("k4", 3.5d);
+        } finally {
+            tm.commit();
+        }
+
+        // Now re-read ...
+        SchematicEntry entry2 = db.get(key);
+        Document read2 = entry2.getContentAsDocument();
+        assertThat(read2, is(notNullValue()));
+        assertThat(read2.getString("k1"), is("value1"));
+        assertThat(read2.getInteger("k2"), is(2));
+        assertThat(read2.getBoolean("k3"), is(true));
+        assertThat(read2.getDouble("k4") > 3.4d, is(true));
+    }
+
+    // @FixFor("MODE-1734")
+    @Ignore
+    @Test
+    public void shouldAllowMultipleConcurrentWritersToUpdateEntry() throws Exception {
+        Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
+        final String key = "can be anything";
+        SchematicEntry prior = db.put(key, doc, null);
+        assertThat("Should not have found a prior entry", prior, is(nullValue()));
+        SchematicEntry entry = db.get(key);
+        assertThat("Should have found the entry", entry, is(notNullValue()));
+
+        // Start two threads that each attempt to edit the document ...
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        Thread t1 = fork(new Runnable() {
+            @SuppressWarnings( "synthetic-access" )
+            @Override
+            public void run() {
+                try {
+                    latch.await(); // synchronize ...
+                    tm().begin();
+                    SchematicEntry entry = db().get(key);
+                    EditableDocument editor = entry.editDocumentContent();
+                    editor.setNumber("k2", 3); // update an existing field
+                    log.info(editor);
+                    tm().commit();
+                } catch (Exception e) {
+                    log.error("Unexpected error performing transaction", e);
+                }
+            }
+        }, false);
+        Thread t2 = fork(new Runnable() {
+            @SuppressWarnings( "synthetic-access" )
+            @Override
+            public void run() {
+                try {
+                    latch.await(); // synchronize ...
+                    tm().begin();
+                    SchematicEntry entry = db().get(key);
+                    EditableDocument editor = entry.editDocumentContent();
+                    editor.setNumber("k3", 3); // add a new field
+                    log.info(editor);
+                    tm().commit();
+                } catch (Exception e) {
+                    log.error("Unexpected error performing transaction", e);
+                }
+            }
+        }, false);
+
+        // Start the threads ...
+        latch.countDown();
+
+        // Wait for the threads to die ...
+        t1.join();
+        t2.join();
+
+        // Now re-read ...
+        Document read = entry.getContentAsDocument();
+        assertThat(read, is(notNullValue()));
+        assertThat(read.getString("k1"), is("value1"));
+        assertThat(read.getInteger("k3"), is(3)); // Thread 2 is last, so this should definitely be there
+        assertThat(read.getInteger("k2"), is(3)); // Thread 1 is first, but still shouldn't have been overwritten
+    }
+
 }

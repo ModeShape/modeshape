@@ -44,18 +44,22 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.api.JcrTools;
 
 public class ConcurrentWriteTest extends SingleUseAbstractTest {
 
     @Override
     @Before
     public void beforeEach() throws Exception {
-        super.beforeEach();
+        // super.beforeEach();
         // FileUtil.delete("target/persistent_repository");
         //
-        // startRepositoryWithConfiguration(getClass().getClassLoader()
-        // .getResourceAsStream("config/repo-config-concurrent-tests.json"));
-        // tools = new JcrTools();
+        startRepositoryWithConfiguration(getClass().getClassLoader()
+                                                   .getResourceAsStream("config/repo-config-concurrent-tests.json"));
+        tools = new JcrTools();
+
+        // Set the transaction timeout so that we can debug code called within the transaction ...
+        repository.runningState().txnManager().setTransactionTimeout(500);
     }
 
     @After
