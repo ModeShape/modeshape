@@ -1208,15 +1208,39 @@ public class WritableSessionCache extends AbstractSessionCache {
         return sb.toString();
     }
 
-    public void createExternalProjection( NodeKey key,
-                                          String sourceName,
-                                          String externalPath,
-                                          String alias ) {
+    /**
+     * Creates a projection for the given source and node, by specifying the external path and an optional alias.
+     *
+     * @param nodeKey a {@code non-null} {@link NodeKey} instance which represents the key of the node on which the projection should
+     * be created.
+     * @param sourceName a {@code non-null}  String the name of external source.
+     * @param externalPath a {@code non-null} String the path from the external source to an external node.
+     * @param alias an optional String representing the name under which the projection will be linked to the node.
+     */
+    public void createProjection( NodeKey nodeKey,
+                                  String sourceName,
+                                  String externalPath,
+                                  String alias ) {
         // register the node in the changes, so it can be saved later
-        mutable(key);
+        mutable(nodeKey);
         DocumentStore documentStore = workspaceCache().documentStore();
-        EditableDocument document = documentStore.get(key.toString()).editDocumentContent();
+        EditableDocument document = documentStore.get(nodeKey.toString()).editDocumentContent();
         DocumentTranslator translator = workspaceCache().translator();
-        translator.addFederatedSegment(document, key.toString(), sourceName, externalPath, alias);
+        translator.addFederatedSegment(document, nodeKey.toString(), sourceName, externalPath, alias);
+    }
+
+    /**
+     * Removes from the given federated node a projection pointing towards an external node.
+     *
+     * @param federatedNodeKey a {@code non-null} {@link NodeKey}, the key of the federated node
+     * @param externalNodeKey a {@code non-null} {@link NodeKey}, the key of the external node
+     */
+    public void removeProjection(NodeKey federatedNodeKey, NodeKey externalNodeKey) {
+        // register the node in the changes, so it can be saved later
+        mutable(federatedNodeKey);
+        DocumentStore documentStore = workspaceCache().documentStore();
+        EditableDocument federatedDocument = documentStore.get(federatedNodeKey.toString()).editDocumentContent();
+        DocumentTranslator translator = workspaceCache().translator();
+        translator.removeFederatedSegments(federatedDocument, externalNodeKey.toString());
     }
 }

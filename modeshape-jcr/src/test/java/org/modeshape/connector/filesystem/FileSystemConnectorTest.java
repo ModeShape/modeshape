@@ -246,7 +246,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
                             String childName ) throws RepositoryException {
             Session session = (Session)parentNode.getSession();
             FederationManager fedMgr = session.getWorkspace().getFederationManager();
-            fedMgr.createExternalProjection(parentNode.getPath(), getName(), "/", childName);
+            fedMgr.createProjection(parentNode.getPath(), getName(), "/", childName);
         }
 
         public void initialize() throws IOException {

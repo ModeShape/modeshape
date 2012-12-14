@@ -458,6 +458,7 @@ public final class JcrI18n {
     public static I18n repositoryNotFound;
 
     public static I18n federationNodeKeyDoesNotBelongToSource;
+    public static I18n invalidProjectionPath;
 
     static {
         try {

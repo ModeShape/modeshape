@@ -155,8 +155,9 @@ public class Connectors {
                     AbstractJcrNode node = session.getNode(repositoryPath);
                     //only create the projection if one doesn't exist with the same alias
                     if (!projectionExists(alias, node.key().toString())) {
-                        federationManager.createExternalProjection(repositoryPath, projection.getSourceName(), projection.getExternalPath(),
-                                                                   alias);
+                        federationManager.createProjection(repositoryPath, projection.getSourceName(),
+                                                           projection.getExternalPath(),
+                                                           alias);
                     }
                 }
             } finally {
@@ -263,7 +264,7 @@ public class Connectors {
 
     /**
      * Stores a mapping from an external node towards an existing, internal node which will become a federated node.
-     * These projections are created via {@link org.modeshape.jcr.api.federation.FederationManager#createExternalProjection(String, String, String, String)}
+     * These projections are created via {@link org.modeshape.jcr.api.federation.FederationManager#createProjection(String, String, String, String)}
      * and need to be stored so that parent back references (from the projection to the external node) are correctly handled.
      *
      * @param externalNodeKey a {@code non-null} String representing the {@link NodeKey} format of the projection's id.

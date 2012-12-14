@@ -31,7 +31,6 @@ import java.util.UUID;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
-import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -180,14 +179,14 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
 
                 FederationManager federationManager = ((Workspace)session.getWorkspace()).getFederationManager();
 
-                federationManager.createExternalProjection("/testRoot",
-                                                           MockConnector.SOURCE_NAME,
-                                                           MockConnector.DOC1_LOCATION,
-                                                           "federated1");
-                federationManager.createExternalProjection("/testRoot",
-                                                           MockConnector.SOURCE_NAME,
-                                                           MockConnector.DOC2_LOCATION,
-                                                           null);
+                federationManager.createProjection("/testRoot",
+                                                   MockConnector.SOURCE_NAME,
+                                                   MockConnector.DOC1_LOCATION,
+                                                   "federated1");
+                federationManager.createProjection("/testRoot",
+                                                   MockConnector.SOURCE_NAME,
+                                                   MockConnector.DOC2_LOCATION,
+                                                   null);
                 Node doc1Federated = session.getNode("/testRoot/federated1");
                 assertNotNull(doc1Federated);
                 assertEquals(testRoot.getIdentifier(), doc1Federated.getParent().getIdentifier());
@@ -245,14 +244,14 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 session.save();
 
                 FederationManager federationManager = ((Workspace)session.getWorkspace()).getFederationManager();
-                federationManager.createExternalProjection("/testRoot",
-                                                           MockConnector.SOURCE_NAME,
-                                                           MockConnector.DOC1_LOCATION,
-                                                           "federated1");
-                federationManager.createExternalProjection("/testRoot",
-                                                           MockConnector.SOURCE_NAME,
-                                                           MockConnector.DOC2_LOCATION,
-                                                           "federated2");
+                federationManager.createProjection("/testRoot",
+                                                   MockConnector.SOURCE_NAME,
+                                                   MockConnector.DOC1_LOCATION,
+                                                   "federated1");
+                federationManager.createProjection("/testRoot",
+                                                   MockConnector.SOURCE_NAME,
+                                                   MockConnector.DOC2_LOCATION,
+                                                   "federated2");
                 Node projection = session.getNode("/testRoot/federated1");
                 assertNotNull(projection);
 
