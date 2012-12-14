@@ -1775,14 +1775,4 @@
         </plugins>
     </reporting>
 
-<repositories>
-        <repository>
-            <id>jboss</id>
-            <url>http://repository.jboss.org/nexus/content/groups/public</url>
-        </repository>
-        <repository>
-            <id>fungal</id>
-            <url> https://repository.jboss.org/nexus/content/repositories/thirdparty-uploads/</url>
-        </repository>
-    </repositories>
 </project>
