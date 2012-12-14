@@ -37,6 +37,14 @@
             <outputDirectory>standalone/deployments/modeshape-webdav.war</outputDirectory>
         </fileSet>
 
+	<!-- Utility for installing CMIS bridge -->
+	<fileSet>
+	    <directory>../modeshape-cmis/target</directory>
+	    <includes>
+		<include>modeshape-cmis-manager.jar</include>
+	    </includes>
+	    <outputDirectory>bin</outputDirectory>
+	</fileSet>	    
     </fileSets>
 	
 	<dependencySets>
