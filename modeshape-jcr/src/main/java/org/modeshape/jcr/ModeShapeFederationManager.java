@@ -25,9 +25,11 @@
 package org.modeshape.jcr;
 
 import javax.jcr.RepositoryException;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.federation.FederationManager;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.document.WritableSessionCache;
+import org.modeshape.jcr.value.Path;
 
 /**
  * Implementation of the {@link FederationManager} interface.
@@ -38,19 +40,36 @@ public class ModeShapeFederationManager implements FederationManager {
 
     private final JcrSession session;
 
-    public ModeShapeFederationManager( JcrSession session ) {
+    protected ModeShapeFederationManager( JcrSession session ) {
         this.session = session;
     }
 
     @Override
-    public void createExternalProjection( String absNodePath,
-                                          String sourceName,
-                                          String externalPath,
-                                          String alias ) throws RepositoryException {
+    public void createProjection( String absNodePath,
+                                  String sourceName,
+                                  String externalPath,
+                                  String alias ) throws RepositoryException {
         NodeKey key = session.getNode(absNodePath).key();
 
-        WritableSessionCache writableSessionCache = (WritableSessionCache)session.spawnSessionCache(false);
-        writableSessionCache.createExternalProjection(key, sourceName, externalPath, alias);
-        writableSessionCache.save();
+        WritableSessionCache internalSession = (WritableSessionCache)session.spawnSessionCache(false);
+        internalSession.createProjection(key, sourceName, externalPath, alias);
+        internalSession.save();
+    }
+
+    @Override
+    public void removeProjection( String projectionPath ) throws RepositoryException {
+        CheckArg.isNotNull(projectionPath, "projectionPath");
+
+        Path path = session.pathFactory().create(projectionPath);
+        if (path.isRoot()) {
+            throw new IllegalArgumentException(JcrI18n.invalidProjectionPath.text(projectionPath));
+        }
+
+        NodeKey federatedNodeKey = session.getNode(path.getParent().getString()).key();
+        NodeKey externalNodeKey = session.getNode(path.getString()).key();
+
+        WritableSessionCache internalSession = (WritableSessionCache)session.spawnSessionCache(false);
+        internalSession.removeProjection(federatedNodeKey, externalNodeKey);
+        internalSession.save();
     }
 }

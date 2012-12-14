@@ -44,12 +44,24 @@ public interface FederationManager {
      * node that will be linked.
      * @param alias an optional string representing the name under which the alias should be created. If not present, the {@code externalPath}
      * will be used as the name of the alias.
-     *
      * @throws RepositoryException if the repository cannot perform the operation.
-     *
      */
-    public void createExternalProjection( String absNodePath,
-                                          String sourceName,
-                                          String externalPath,
-                                          String alias) throws RepositoryException;
+    public void createProjection( String absNodePath,
+                                  String sourceName,
+                                  String externalPath,
+                                  String alias ) throws RepositoryException;
+
+    /**
+     * Removes a projection located at the given path, in the workspace which was used to get the federation manager.
+     * <p>
+     * A projection path has the form: [repositoryPath]/[projection alias] as created via
+     * {@link #createProjection(String, String, String, String)}
+     * </p>
+     *
+     * @param projectionPath a {@code non-null} String representing the path to a projection
+     * @throws IllegalArgumentException if the projection path does not represent a valid path
+     * @throws javax.jcr.PathNotFoundException if either the repository path or the projection alias are not valid
+     * @throws RepositoryException if anything unexpected fails
+     */
+    public void removeProjection( String projectionPath ) throws RepositoryException;
 }

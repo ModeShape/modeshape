@@ -26,6 +26,7 @@ package org.modeshape.jcr.cache.document;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1712,6 +1713,11 @@ public class DocumentTranslator {
         if (federatedSegments.isEmpty()) {
             federatedDocument.remove(FEDERATED_SEGMENTS);
         }
+    }
+
+    protected void removeFederatedSegments( EditableDocument federatedDocument,
+                                            String... externalNodeKeys) {
+        removeFederatedSegments(federatedDocument, new HashSet<String>(Arrays.asList(externalNodeKeys)));
     }
 
 
