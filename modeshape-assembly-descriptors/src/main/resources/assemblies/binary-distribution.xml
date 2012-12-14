@@ -89,5 +89,15 @@
             <directory>target/api</directory>
             <outputDirectory>doc/api</outputDirectory>
         </fileSet>
+        <fileSet>
+            <!--
+               JCA adaptor
+             -->
+            <directory>../modeshape-jca/target</directory>
+            <includes>
+                <include>*.rar</include>
+            </includes>
+            <outputDirectory>jca</outputDirectory>
+        </fileSet>
     </fileSets>
 </assembly>
