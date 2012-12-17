@@ -7,7 +7,6 @@
     <global/>
 
     <namedCache name="persistentRepository">
-        <locking isolationLevel="REPEATABLE_READ"/>
         <transaction
                 transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
                 transactionMode="TRANSACTIONAL"

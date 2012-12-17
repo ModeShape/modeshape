@@ -37,15 +37,16 @@ import org.infinispan.schematic.document.Document.Field;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Path;
 import org.infinispan.schematic.internal.delta.NullDelta;
+import org.infinispan.schematic.internal.delta.Operation;
 import org.infinispan.schematic.internal.delta.PutOperation;
 import org.infinispan.schematic.internal.delta.RemoveOperation;
 import org.infinispan.schematic.internal.document.BasicDocument;
-import org.infinispan.schematic.internal.document.DocumentEditor;
 import org.infinispan.schematic.internal.document.MutableDocument;
-import org.infinispan.schematic.internal.document.ObservableDocumentEditor;
 import org.infinispan.schematic.internal.document.Paths;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
+import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * The primary implementation of {@link SchematicEntry}.
@@ -57,6 +58,9 @@ import org.infinispan.util.Util;
 @SerializeWith( SchematicEntryLiteral.Externalizer.class )
 public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
 
+    private static final Log LOGGER = LogFactory.getLog(SchematicEntryLiteral.class);
+    private static final boolean TRACE = LOGGER.isTraceEnabled();
+
     protected static class FieldPath {
         protected static final Path ROOT = Paths.path();
         protected static final Path METADATA = Paths.path(FieldName.METADATA);
@@ -67,7 +71,7 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
 
     /**
      * Construction only allowed through this factory method. This factory is intended for use internally by the CacheDelegate.
-     * User code should use {@link SchematicEntryLookup#getSchematicValue(Cache, String)}.
+     * User code should use {@link SchematicEntryLookup#getSchematicValue(CacheContext, String)}.
      * 
      * @param cache underlying cache
      * @param key key under which the schematic value exists
@@ -108,17 +112,10 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
     }
 
     public SchematicEntryLiteral copyForWrite() {
-        try {
-            SchematicEntryLiteral clone = (SchematicEntryLiteral)super.clone();
-            //TODO author=Horia Chiorean date=7/27/12 description=This may not be optimal
-            clone.value = (MutableDocument)value.clone();
-            clone.proxy = proxy;
-            clone.copied = true;
-            return clone;
-        } catch (CloneNotSupportedException e) {
-            // should never happen!!
-            throw new RuntimeException(e);
-        }
+        SchematicEntryLiteral clone = new SchematicEntryLiteral((MutableDocument)value.clone());
+        clone.proxy = proxy;
+        clone.copied = true;
+        return clone;
     }
 
     protected final MutableDocument data() {
@@ -140,18 +137,18 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
     /**
      * Builds a thread-safe proxy for this instance so that concurrent reads are isolated from writes.
      * 
-     * @param cache the cache
+     * @param context the cache context
      * @param mapKey the key
      * @param flagContainer the flag container
      * @return an instance of {@link SchematicEntryProxy}
      */
-    public SchematicEntry getProxy( Cache<String, SchematicEntry> cache,
+    public SchematicEntry getProxy( CacheContext context,
                                     String mapKey,
                                     FlagContainer flagContainer ) {
         // construct the proxy lazily
         if (proxy == null) { // DCL is OK here since proxy is volatile (and we live in a post-JDK 5 world)
             synchronized (this) {
-                if (proxy == null) proxy = new SchematicEntryProxy(cache.getAdvancedCache(), mapKey, flagContainer);
+                if (proxy == null) proxy = new SchematicEntryProxy(context, mapKey, flagContainer);
             }
         }
         return proxy;
@@ -175,6 +172,9 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
 
     @Override
     public void commit() {
+        if (TRACE) {
+            LOGGER.trace("Committed " + getKey() + ": " + data());
+        }
         copied = false;
         delta = null;
     }
@@ -188,6 +188,10 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
         return (MutableDocument)getMetadata();
     }
 
+    protected String getKey() {
+        return getMetadata().getString(FieldName.ID);
+    }
+
     @Override
     public String getContentType() {
         return getMetadata().getString(FieldName.CONTENT_TYPE);
@@ -195,7 +199,7 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
 
     @Override
     public Object getContent() {
-        return value.getDocument(FieldName.CONTENT);
+        return value.get(FieldName.CONTENT);
     }
 
     @Override
@@ -275,25 +279,24 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
 
     @Override
     public EditableDocument editDocumentContent() {
-        Document doc = getContentAsDocument();
-        if (doc instanceof MutableDocument) {
-            MutableDocument mutable = (MutableDocument)doc;
-            return new ObservableDocumentEditor(mutable, FieldPath.CONTENT, getDelta(), null);
-        }
-        if (doc instanceof DocumentEditor) {
-            return (DocumentEditor)doc;
-        }
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public EditableDocument editMetadata() {
-        return new ObservableDocumentEditor(mutableMetadata(), FieldPath.METADATA, getDelta(), null);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Document asDocument() {
         return value;
+    }
+
+    boolean apply( Iterable<Operation> changes ) {
+        for (Operation o : changes) {
+            o.replay(value);
+        }
+        return true;
     }
 
     /**

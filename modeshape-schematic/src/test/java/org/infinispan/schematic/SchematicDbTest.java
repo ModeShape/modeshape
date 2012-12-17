@@ -14,7 +14,6 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Json;
 import org.infinispan.schematic.internal.document.BasicDocument;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class SchematicDbTest extends AbstractSchematicDbTest {
@@ -205,8 +204,7 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
         assertThat(read2.getDouble("k4") > 3.4d, is(true));
     }
 
-    // @FixFor("MODE-1734")
-    @Ignore
+    @FixFor( "MODE-1734" )
     @Test
     public void shouldAllowMultipleConcurrentWritersToUpdateEntry() throws Exception {
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
@@ -226,10 +224,12 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
                 try {
                     latch.await(); // synchronize ...
                     tm().begin();
+                    log.info("Began txn1");
                     SchematicEntry entry = db().get(key);
                     EditableDocument editor = entry.editDocumentContent();
                     editor.setNumber("k2", 3); // update an existing field
                     log.info(editor);
+                    log.info("Committing txn1");
                     tm().commit();
                 } catch (Exception e) {
                     log.error("Unexpected error performing transaction", e);
@@ -243,10 +243,12 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
                 try {
                     latch.await(); // synchronize ...
                     tm().begin();
+                    log.info("Began txn2");
                     SchematicEntry entry = db().get(key);
                     EditableDocument editor = entry.editDocumentContent();
                     editor.setNumber("k3", 3); // add a new field
                     log.info(editor);
+                    log.info("Committing txn2");
                     tm().commit();
                 } catch (Exception e) {
                     log.error("Unexpected error performing transaction", e);

@@ -24,9 +24,8 @@ public class SchematicDbWithBerkleyTest extends AbstractSchematicDbTest {
         globalConfigurationBuilder.transport().transport(null).serialization().addAdvancedExternalizer(Schematic.externalizers());
 
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.invocationBatching()
-                            .enable()
-                            .transaction()
+        configurationBuilder.invocationBatching().enable().transaction()
+        // .lockingMode(LockingMode.PESSIMISTIC)
                             .transactionManagerLookup(new DummyTransactionManagerLookup());
         LoaderConfigurationBuilder lb = configurationBuilder.loaders().addCacheLoader().cacheLoader(new BdbjeCacheStore());
         lb.addProperty("location", dbDir.getAbsolutePath());

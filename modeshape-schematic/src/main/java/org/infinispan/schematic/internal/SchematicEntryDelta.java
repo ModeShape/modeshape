@@ -47,19 +47,21 @@ import org.infinispan.util.logging.LogFactory;
  */
 @SerializeWith( SchematicEntryDelta.Externalizer.class )
 public class SchematicEntryDelta implements Delta, DocumentObserver {
-    private static final Log log = LogFactory.getLog(SchematicEntryDelta.class);
-    private static final boolean trace = log.isTraceEnabled();
+    private static final Log LOG = LogFactory.getLog(SchematicEntryDelta.class);
+    private static final boolean TRACE = LOG.isTraceEnabled();
 
-    private List<Operation> changeLog;
+    private List<Operation> changeLog = new LinkedList<Operation>();
 
     @Override
     public DeltaAware merge( DeltaAware d ) {
-        SchematicEntryLiteral other;
-        if (d != null && (d instanceof SchematicEntryLiteral)) other = (SchematicEntryLiteral)d;
-        else other = new SchematicEntryLiteral();
+        SchematicEntryLiteral other = null;
+        if (d != null && (d instanceof SchematicEntryLiteral)) {
+            other = (SchematicEntryLiteral)d;
+        } else {
+            other = new SchematicEntryLiteral();
+        }
         if (changeLog != null) {
-            for (Operation o : changeLog)
-                o.replay(other.mutableMetadata());
+            other.apply(changeLog);
         }
         other.commit();
         return other;
@@ -67,10 +69,6 @@ public class SchematicEntryDelta implements Delta, DocumentObserver {
 
     @Override
     public void addOperation( Operation o ) {
-        if (changeLog == null) {
-            // lazy init
-            changeLog = new LinkedList<Operation>();
-        }
         changeLog.add(o);
     }
 
@@ -104,7 +102,7 @@ public class SchematicEntryDelta implements Delta, DocumentObserver {
         @Override
         public void writeObject( ObjectOutput output,
                                  SchematicEntryDelta delta ) throws IOException {
-            if (trace) log.tracef("Serializing changeLog %s", delta.changeLog);
+            if (TRACE) LOG.tracef("Serializing changeLog %s", delta.changeLog);
             output.writeObject(delta.changeLog);
         }
 
@@ -113,7 +111,7 @@ public class SchematicEntryDelta implements Delta, DocumentObserver {
         public SchematicEntryDelta readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
             SchematicEntryDelta delta = new SchematicEntryDelta();
             delta.changeLog = (List<Operation>)input.readObject();
-            if (trace) log.tracef("Deserialized changeLog %s", delta.changeLog);
+            if (TRACE) LOG.tracef("Deserialized changeLog %s", delta.changeLog);
             return delta;
         }
 

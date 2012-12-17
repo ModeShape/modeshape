@@ -29,6 +29,7 @@ import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.test.AbstractInfinispanTest;
 import org.infinispan.test.TestingUtil;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
+import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.infinispan.util.concurrent.IsolationLevel;
@@ -49,8 +50,9 @@ public abstract class AbstractSchematicDbTest extends AbstractInfinispanTest {
                             .transaction()
                             .transactionManagerLookup(new DummyTransactionManagerLookup())
                             .transactionMode(TransactionMode.TRANSACTIONAL)
+                            .lockingMode(LockingMode.PESSIMISTIC)
                             .locking()
-                            .isolationLevel(IsolationLevel.REPEATABLE_READ);
+                            .isolationLevel(IsolationLevel.READ_COMMITTED);
         cm = TestCacheManagerFactory.createCacheManager(configurationBuilder);
         // Now create the SchematicDb ...
         db = Schematic.get(cm, "documents");
