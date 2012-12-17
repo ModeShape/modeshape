@@ -47,6 +47,7 @@ public class CacheSchematicDb implements SchematicDb {
 
     private final String name;
     private final Cache<String, SchematicEntry> store;
+    private final CacheContext context;
     private final AtomicReference<CacheSchemaLibrary> schemaLibrary = new AtomicReference<CacheSchemaLibrary>();
     private final String schemaCacheName;
     private String defaultContentTypeForDocument;
@@ -79,6 +80,7 @@ public class CacheSchematicDb implements SchematicDb {
         this.defaultSchemaUri = defaultSchemaUri;
         this.description = description;
         this.schemaCacheName = schemaCacheName;
+        this.context = new CacheContext(store.getAdvancedCache());
     }
 
     @Override
@@ -211,7 +213,7 @@ public class CacheSchematicDb implements SchematicDb {
         if (entry == null) return null;
         SchematicEntryLiteral literal = (SchematicEntryLiteral)entry;
         FlagContainer flagContainer = null;
-        return literal.getProxy(store, key, flagContainer);
+        return literal.getProxy(context, key, flagContainer);
     }
 
     protected SchematicEntry removedResult( String key,

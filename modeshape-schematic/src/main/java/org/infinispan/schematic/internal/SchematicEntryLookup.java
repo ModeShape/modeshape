@@ -21,7 +21,6 @@
  */
 package org.infinispan.schematic.internal;
 
-import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 import org.infinispan.context.FlagContainer;
@@ -42,79 +41,79 @@ public class SchematicEntryLookup {
      * Retrieves a schematic value from the given cache, stored under the given key. If a schematic value did not exist, one is
      * created and registered in an atomic fashion.
      * 
-     * @param cache underlying cache
+     * @param cacheContext cache context
      * @param key key under which the schematic value exists
      * @return an AtomicMap
      */
-    public static SchematicEntry getSchematicValue( Cache<String, SchematicEntry> cache,
+    public static SchematicEntry getSchematicValue( CacheContext cacheContext,
                                                     String key ) {
-        return getSchematicValue(cache, key, true, null);
+        return getSchematicValue(cacheContext, key, true, null);
     }
 
     /**
      * Retrieves a schematic value from the given cache, stored under the given key.
      * 
-     * @param cache underlying cache
+     * @param cacheContext cache context
      * @param key key under which the atomic map exists
      * @param createIfAbsent if true, a new atomic map is created if one doesn't exist; otherwise null is returned if the map
      *        didn't exist.
      * @return an AtomicMap, or null if one did not exist.
      */
-    public static SchematicEntry getSchematicValue( Cache<String, SchematicEntry> cache,
+    public static SchematicEntry getSchematicValue( CacheContext cacheContext,
                                                     String key,
                                                     boolean createIfAbsent ) {
-        return getSchematicValue(cache, key, createIfAbsent, null);
+        return getSchematicValue(cacheContext, key, createIfAbsent, null);
     }
 
     /**
      * Retrieves a schematic value from the given cache, stored under the given key.
      * 
-     * @param cache underlying cache
+     * @param cacheContext cache context
      * @param key key under which the atomic map exists
      * @param flagContainer a container to pass in per-invocation flags to the underlying cache. May be null if no flags are used.
      * @return an AtomicMap, or null if one did not exist.
      */
-    public static SchematicEntry getSchematicValue( Cache<String, SchematicEntry> cache,
+    public static SchematicEntry getSchematicValue( CacheContext cacheContext,
                                                     String key,
                                                     FlagContainer flagContainer ) {
-        return getSchematicValue(cache, key, true, flagContainer);
+        return getSchematicValue(cacheContext, key, true, flagContainer);
     }
 
     /**
      * Retrieves a schematic value from the given cache, stored under the given key.
      * 
-     * @param cache underlying cache
+     * @param cacheContext cache context
      * @param key key under which the atomic map exists
      * @param createIfAbsent if true, a new atomic map is created if one doesn't exist; otherwise null is returned if the map
      *        didn't exist.
      * @param flagContainer a container to pass in per-invocation flags to the underlying cache. May be null if no flags are used.
      * @return an AtomicMap, or null if one did not exist.
      */
-    private static final SchematicEntry getSchematicValue( Cache<String, SchematicEntry> cache,
+    private static final SchematicEntry getSchematicValue( CacheContext cacheContext,
                                                            String key,
                                                            boolean createIfAbsent,
                                                            FlagContainer flagContainer ) {
+        Cache<String, SchematicEntry> cache = cacheContext.getCache();
         SchematicEntry value = cache.get(key);
         if (value == null) {
             if (createIfAbsent) value = SchematicEntryLiteral.newInstance(cache, key);
             else return null;
         }
         SchematicEntryLiteral castValue = (SchematicEntryLiteral)value;
-        AdvancedCache<String, SchematicEntry> advCache = cache.getAdvancedCache();
-        return castValue.getProxy(advCache, key, flagContainer);
+        return castValue.getProxy(cacheContext, key, flagContainer);
     }
 
     /**
      * Retrieves an atomic map from a given cache, stored under a given key, for reading only. The atomic map returned will not
      * support updates, and if the map did not in fact exist, an empty map is returned.
      * 
-     * @param cache underlying cache
+     * @param cacheContext cache context
      * @param key key under which the atomic map exists
      * @return an immutable, read-only map
      */
-    public static SchematicEntry getReadOnlySchematicValue( Cache<String, SchematicEntry> cache,
+    public static SchematicEntry getReadOnlySchematicValue( CacheContext cacheContext,
                                                             String key ) {
-        SchematicEntry existingValue = getSchematicValue(cache, key, false, null);
+        SchematicEntry existingValue = getSchematicValue(cacheContext, key, false, null);
         if (existingValue == null) existingValue = new SchematicEntryLiteral(key);
         return new ImmutableSchematicValue(existingValue);
     }
@@ -122,11 +121,11 @@ public class SchematicEntryLookup {
     /**
      * Removes the atomic map associated with the given key from the underlying cache.
      * 
-     * @param cache underlying cache
+     * @param cacheContext cache context
      * @param key key under which the atomic map exists
      */
-    public static void removeSchematicValue( Cache<String, SchematicEntry> cache,
+    public static void removeSchematicValue( CacheContext cacheContext,
                                              String key ) {
-        cache.getAdvancedCache().withFlags(Flag.SKIP_REMOTE_LOOKUP, Flag.SKIP_CACHE_LOAD).remove(key);
+        cacheContext.getCache().withFlags(Flag.SKIP_REMOTE_LOOKUP, Flag.SKIP_CACHE_LOAD).remove(key);
     }
 }

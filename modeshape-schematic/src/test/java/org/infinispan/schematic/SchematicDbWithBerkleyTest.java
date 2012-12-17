@@ -24,9 +24,8 @@ public class SchematicDbWithBerkleyTest extends AbstractSchematicDbTest {
         globalConfigurationBuilder.transport().transport(null).serialization().addAdvancedExternalizer(Schematic.externalizers());
 
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.invocationBatching()
-                            .enable()
-                            .transaction()
+        configurationBuilder.invocationBatching().enable().transaction()
+        // .lockingMode(LockingMode.PESSIMISTIC)
                             .transactionManagerLookup(new DummyTransactionManagerLookup());
         LoaderConfigurationBuilder lb = configurationBuilder.loaders().addCacheLoader().cacheLoader(new BdbjeCacheStore());
         lb.addProperty("location", dbDir.getAbsolutePath());
@@ -122,12 +121,12 @@ public class SchematicDbWithBerkleyTest extends AbstractSchematicDbTest {
 
         // Modify using an editor ...
         try {
-            // tm.begin();
+            tm.begin();
             EditableDocument editable = entry.editDocumentContent();
             editable.setBoolean("k3", true);
             editable.setNumber("k4", 3.5d);
         } finally {
-            // tm.commit();
+            tm.commit();
         }
 
         // Now re-read ...

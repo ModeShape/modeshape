@@ -26,13 +26,17 @@ package org.infinispan.schematic;
 import javax.transaction.TransactionManager;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.test.AbstractInfinispanTest;
 import org.infinispan.test.TestingUtil;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
+import org.infinispan.transaction.LockingMode;
+import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
+import org.infinispan.util.concurrent.IsolationLevel;
 import org.junit.After;
 import org.junit.Before;
 
-public abstract class AbstractSchematicDbTest {
+public abstract class AbstractSchematicDbTest extends AbstractInfinispanTest {
 
     protected SchematicDb db;
     protected EmbeddedCacheManager cm;
@@ -44,7 +48,11 @@ public abstract class AbstractSchematicDbTest {
         configurationBuilder.invocationBatching()
                             .enable()
                             .transaction()
-                            .transactionManagerLookup(new DummyTransactionManagerLookup());
+                            .transactionManagerLookup(new DummyTransactionManagerLookup())
+                            .transactionMode(TransactionMode.TRANSACTIONAL)
+                            .lockingMode(LockingMode.PESSIMISTIC)
+                            .locking()
+                            .isolationLevel(IsolationLevel.READ_COMMITTED);
         cm = TestCacheManagerFactory.createCacheManager(configurationBuilder);
         // Now create the SchematicDb ...
         db = Schematic.get(cm, "documents");
@@ -64,6 +72,14 @@ public abstract class AbstractSchematicDbTest {
                 tm = null;
             }
         }
+    }
+
+    protected SchematicDb db() {
+        return db;
+    }
+
+    protected TransactionManager tm() {
+        return tm;
     }
 
 }
