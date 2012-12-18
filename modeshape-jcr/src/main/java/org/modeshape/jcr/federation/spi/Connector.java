@@ -51,6 +51,7 @@ import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFormatException;
+import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 
 /**
  * SPI of a generic external connector, representing the interface to an external system integrated with ModeShape. Since it is
@@ -309,6 +310,17 @@ public abstract class Connector {
      */
     public Document getChildReference( String parentKey,
                                        String childKey ) {
+        return null;
+    }
+
+    /**
+     * Returns a binary value which is connector specific and which is never stored by ModeShape. Typically connectors who need
+     * this feature will have their own subclasses of {@link ExternalBinaryValue}
+     *
+     * @param id a {@code String} representing the id of the external binary which should have connector-specific meaning.
+     * @return either a binary value implementation or {@code null} if there is no such value with the given id.
+     */
+    public ExternalBinaryValue getBinaryValue(String id) {
         return null;
     }
 

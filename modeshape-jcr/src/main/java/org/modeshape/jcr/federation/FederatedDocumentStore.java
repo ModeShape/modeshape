@@ -38,6 +38,7 @@ import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.Connectors;
 import org.modeshape.jcr.JcrI18n;
@@ -58,6 +59,7 @@ import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.ReferenceFactory;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
 import org.modeshape.jcr.value.basic.StringReference;
+import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 
 /**
  * An implementation of {@link DocumentStore} which is used when federation is enabled
@@ -65,6 +67,8 @@ import org.modeshape.jcr.value.basic.StringReference;
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class FederatedDocumentStore implements DocumentStore {
+
+    private static final Logger LOGGER = Logger.getLogger(FederatedDocumentStore.class);
 
     private static final String FEDERATED_WORKSPACE_KEY = NodeKey.keyForWorkspaceName("federated_ws");
 
@@ -293,13 +297,11 @@ public class FederatedDocumentStore implements DocumentStore {
 
     @Override
     public TransactionManager transactionManager() {
-        // TODO author=Horia Chiorean date=11/1/12 description=do we need some other transaction manager ?
         return localStore().transactionManager();
     }
 
     @Override
     public XAResource xaResource() {
-        // TODO author=Horia Chiorean date=11/1/12 description=do we need some other xaResource ?
         return localStore().xaResource();
     }
 
@@ -367,6 +369,18 @@ public class FederatedDocumentStore implements DocumentStore {
             return doc;
         }
         return null;
+    }
+
+    @Override
+    public ExternalBinaryValue getExternalBinary( String sourceName,
+                                                  String id ) {
+
+        Connector connector = connectors.getConnectorForSourceName(sourceName);
+        if (connector == null) {
+            LOGGER.debug("Connector not found for source name {0} while trying to get a binary value", sourceName);
+            return null;
+        }
+        return connector.getBinaryValue(id);
     }
 
     private boolean isLocalSource( String key ) {

@@ -29,6 +29,9 @@
         <module>modeshape-unit-test</module>
         <module>sequencers</module>
         <module>extractors</module>
+
+        <!--Connectors-->
+        <!--<module>connectors</module>-->
         <!--
           The REST client needs the JDBC driver
         -->

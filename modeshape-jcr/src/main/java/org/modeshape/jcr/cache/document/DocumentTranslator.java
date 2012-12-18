@@ -82,6 +82,8 @@ import org.modeshape.jcr.value.basic.NodeKeyReference;
 import org.modeshape.jcr.value.basic.StringReference;
 import org.modeshape.jcr.value.basic.UuidReference;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
+import org.modeshape.jcr.value.binary.EmptyBinaryValue;
+import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 import org.modeshape.jcr.value.binary.InMemoryBinaryValue;
 
 /**
@@ -90,6 +92,8 @@ import org.modeshape.jcr.value.binary.InMemoryBinaryValue;
 public class DocumentTranslator {
 
     public static final String SHA1 = "sha1";
+    public static final String EXTERNAL_BINARY_ID_FIELD = "$externalBinaryId";
+    public static final String SOURCE_NAME_FIELD = "$sourceName";
     public static final String SHA1_FIELD = "$sha1";
     public static final String LENGTH = "len";
     public static final String LENGTH_FIELD = "$len";
@@ -1146,7 +1150,7 @@ public class DocumentTranslator {
             return value;
         }
         if (value instanceof Integer) {
-            return new Long(((Integer)value).intValue());
+            return (long)((Integer)value).intValue();
         }
         if (value instanceof Double) {
             return value;
@@ -1181,6 +1185,11 @@ public class DocumentTranslator {
         if (value instanceof URI) {
             return Schematic.newDocument("$uri", this.strings.create((URI)value));
         }
+        if (value instanceof ExternalBinaryValue) {
+            ExternalBinaryValue externalBinaryValue = (ExternalBinaryValue)value;
+            return Schematic.newDocument(EXTERNAL_BINARY_ID_FIELD, externalBinaryValue.getId(), SOURCE_NAME_FIELD,
+                                         externalBinaryValue.getSourceName());
+        }
         if (value instanceof org.modeshape.jcr.value.BinaryValue) {
             org.modeshape.jcr.value.BinaryValue binary = (org.modeshape.jcr.value.BinaryValue)value;
             if (binary instanceof InMemoryBinaryValue) {
@@ -1189,7 +1198,7 @@ public class DocumentTranslator {
             // This is a large value ...
             String sha1 = binary.getHexHash();
             long size = binary.getSize();
-            Document ref = Schematic.newDocument(SHA1_FIELD, sha1, "$len", size);
+            Document ref = Schematic.newDocument(SHA1_FIELD, sha1, LENGTH_FIELD, size);
 
             // Find the document metadata and increment the usage count ...
             incrementBinaryReferenceCount(binary.getKey(), unusedBinaryKeys);
@@ -1337,11 +1346,15 @@ public class DocumentTranslator {
             if (!Null.matches(valueStr = doc.getString("$uri"))) {
                 return uris.create(valueStr);
             }
+            if (!Null.matches(valueStr = doc.getString(EXTERNAL_BINARY_ID_FIELD))) {
+                String sourceName = doc.getString(SOURCE_NAME_FIELD);
+                ExternalBinaryValue externalBinaryValue = documentStore.getExternalBinary(sourceName, valueStr);
+                return externalBinaryValue != null ? externalBinaryValue : EmptyBinaryValue.INSTANCE;
+            }
             if (!Null.matches(valueStr = doc.getString(SHA1_FIELD))) {
-                String sha1 = valueStr;
                 long size = doc.getLong(LENGTH_FIELD);
                 try {
-                    return binaries.find(new BinaryKey(sha1), size);
+                    return binaries.find(new BinaryKey(valueStr), size);
                 } catch (BinaryStoreException e) {
                     throw new RuntimeException(e);
                 }

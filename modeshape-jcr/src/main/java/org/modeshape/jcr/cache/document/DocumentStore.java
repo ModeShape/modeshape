@@ -29,6 +29,7 @@ import javax.transaction.xa.XAResource;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.jcr.cache.DocumentStoreException;
+import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 
 /**
  * A store which persists/retrieves documents.
@@ -157,4 +158,14 @@ public interface DocumentStore {
      */
     public Document getChildReference( String parentKey,
                                        String childKey );
+
+
+    /**
+     * Retrieves a binary value which has the given id and which is not stored by ModeShape.
+     *
+     * @param sourceName a {@code non-null} String; the name of an external source
+     * @param id a {@code non-null} String; the id of an external binary value
+     * @return either an {@code ExternalBinaryValue} implementation or {@code null}
+     */
+    public ExternalBinaryValue getExternalBinary(String sourceName, String id);
 }

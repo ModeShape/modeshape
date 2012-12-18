@@ -132,8 +132,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         assertNodeHasCommittedProperties(pomFile);
         Node pomContent = pomFile.getNode("jcr:content");
         assertNodeHasCommittedProperties(pomContent);
-        // TODO: MODE-1732 Uncomment this next line ...
-        // assertThat(pomContent.getProperty("jcr:data").getString(), is(notNullValue()));
+        assertThat(pomContent.getProperty("jcr:data").getString(), is(notNullValue()));
 
         Node readmeFile = tagTree.getNode("README.md");
         assertThat(readmeFile.getPrimaryNodeType().getName(), is("git:file"));
@@ -141,8 +140,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         assertNodeHasCommittedProperties(readmeFile);
         Node readmeContent = readmeFile.getNode("jcr:content");
         assertNodeHasCommittedProperties(readmeContent);
-        // TODO: MODE-1732 Uncomment this next line ...
-        // assertThat(readmeContent.getProperty("jcr:data").getString(), is(notNullValue()));
+        assertThat(readmeContent.getProperty("jcr:data").getString(), is(notNullValue()));
 
         Node parentModule = tagTree.getNode("modeshape-parent");
         assertThat(parentModule.getPrimaryNodeType().getName(), is("git:folder"));

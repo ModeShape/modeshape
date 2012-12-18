@@ -238,7 +238,7 @@ public class GitTree extends GitFunction implements PageableGitFunction {
                             value = values.binaryFrom(fileLoader.openStream());
                         } else {
                             // This is small enough to fit into a byte[], but it still may be pretty big ...
-                            value = new GitBinaryValue(fileObjectId, fileLoader, name, connector.getMimeTypeDetector());
+                            value = new GitBinaryValue(fileObjectId, fileLoader, connector.getSourceName(), name, connector.getMimeTypeDetector());
                         }
                     }
                     writer.addProperty(JcrLexicon.DATA, value);

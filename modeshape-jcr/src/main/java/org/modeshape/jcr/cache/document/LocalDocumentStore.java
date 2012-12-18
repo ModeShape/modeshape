@@ -30,6 +30,7 @@ import org.infinispan.Cache;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
+import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 
 /**
  * An implementation of {@link DocumentStore} which always uses the local cache to store/retrieve data and which provides some
@@ -183,5 +184,11 @@ public class LocalDocumentStore implements DocumentStore {
      */
     public Cache<String, SchematicEntry> localCache() {
         return database.getCache();
+    }
+
+    @Override
+    public ExternalBinaryValue getExternalBinary( String sourceName,
+                                                  String id ) {
+        throw new UnsupportedOperationException("External binaries are only supported by the federated document store");
     }
 }
