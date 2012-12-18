@@ -76,7 +76,6 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
      */
     @Test
     public void shouldAllowMultipleThreadsToConcurrentlyGetRootNode() throws Exception {
-        print = true;
         runConcurrently(500, 16, new Operation() {
             @Override
             public void run( Session session ) throws RepositoryException {
@@ -96,7 +95,6 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
     public void shouldAllowMultipleThreadsToConcurrentlyCreateSmallNumberOfTopLevelNodes() throws Exception {
         final int totalOperations = 2;
         final int threads = 2;
-        print = true;
         runConcurrently(totalOperations, threads, new CreateChildren("/", "nodeX", 1));
         verify(new NumberOfChildren(totalOperations, "/"));
     }
@@ -112,7 +110,6 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
     public void shouldAllowMultipleThreadsToConcurrentlyCreateTopLevelNodes() throws Exception {
         final int totalOperations = 500;
         final int threads = 16;
-        print = true;
         runConcurrently(totalOperations, threads, new CreateChildren("/", "nodeX", 1));
         verify(new NumberOfChildren(totalOperations, "/"));
     }
@@ -124,7 +121,6 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
         final int threads = 16;
         final int width = 10;
         final int depth = 2;
-        print = true;
         runConcurrently(totalOperations, threads, new CreateSubgraph("/", "nodeX", width, depth));
         verify(new NumberOfChildren(totalOperations, "/"));
         verify(new TotalNumberOfNodesExceptSystem(1 + totalOperations * nodesInTree(width, depth), "/"));
@@ -138,7 +134,6 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
         final int width = 10;
         final int depth = 3;
         runConcurrently(totalOperations, threads, new CreateSubgraph("/", "nodeX", width, depth));
-        // print = true;
         print("/", false);
         verify(new NumberOfChildren(totalOperations, "/"));
         verify(new TotalNumberOfNodesExceptSystem(1 + totalOperations * nodesInTree(width, depth), "/"));
