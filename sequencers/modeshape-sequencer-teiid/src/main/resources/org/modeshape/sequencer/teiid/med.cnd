@@ -29,13 +29,13 @@
 <modelExtensionDefinition = "http://www.jboss.org/teiiddesigner/ext/2012">
 
 [modelExtensionDefinition:propertyDefinition] > nt:unstructured orderable
-  - modelExtensionDefinition:advance (boolean)
+  - modelExtensionDefinition:advanced (boolean) = 'false' autocreated
   - modelExtensionDefinition:defaultValue (string)
-  - modelExtensionDefinition:index (boolean)
-  - modelExtensionDefinition:modifiable (boolean)
-  - modelExtensionDefinition:masked (boolean)
-  - modelExtensionDefinition:required (boolean)
-  - modelExtensionDefinition:runtimeType (string)
+  - modelExtensionDefinition:index (boolean) = 'true' autocreated
+  - modelExtensionDefinition:fixedValue (string)
+  - modelExtensionDefinition:masked (boolean) = 'false' autocreated
+  - modelExtensionDefinition:required (boolean) = 'false' autocreated
+  - modelExtensionDefinition:runtimeType (string) = 'string' autocreated
   + modelExtensionDefinition:description (modelExtensionDefinition:localizedDescription) sns copy
   + modelExtensionDefinition:displayName (modelExtensionDefinition:localizedName) sns copy
 

@@ -34,8 +34,13 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.Value;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryManager;
+import javax.jcr.query.QueryResult;
+import javax.jcr.query.RowIterator;
 import org.junit.Test;
 import org.modeshape.jcr.JcrMixLexicon;
+import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
 import org.modeshape.sequencer.teiid.lexicon.JdbcLexicon;
@@ -89,10 +94,11 @@ public class ModelSequencerTest extends AbstractSequencerTest {
         Node outputNode = getOutputNode(this.rootNode, "models/BooksProcedures.xmi");
         assertNotNull(outputNode);
 
-        // make sure procedure has the extension properties
+        // make sure procedure has the extension properties and mixin
         Node procedureNode = outputNode.getNode("getBooks");
         assertNotNull(procedureNode);
         assertThat(procedureNode.getPrimaryNodeType().getName(), is(RelationalLexicon.JcrId.PROCEDURE));
+        assertThat(procedureNode.isNodeType("rest:procedure"), is(true));
         assertThat(procedureNode.getProperty("rest:restMethod").getString(), is("GET"));
         assertThat(procedureNode.getProperty("rest:uri").getString(), is("books"));
     }
@@ -787,6 +793,77 @@ public class ModelSequencerTest extends AbstractSequencerTest {
     }
 
     @Test
+    public void shouldSequenceModelWithMultipleMeds() throws Exception {
+        createNodeWithContentFromFile("ModelWithTwoMeds.xmi", "model/modelExtensionDefinition/ModelWithTwoMeds.xmi");
+        final Node outputNode = getOutputNode(this.rootNode, "models/ModelWithTwoMeds.xmi");
+        assertNotNull(outputNode);
+
+        { // MED group node
+            final Node medGroupNode = outputNode.getNode(CoreLexicon.JcrId.MODEL_EXTENSION_DEFINITIONS_GROUP_NODE);
+            assertNotNull(medGroupNode);
+
+            // relational MED node
+            assertNotNull(medGroupNode.getNode("relational"));
+
+            // salesforce MED node
+            assertNotNull(medGroupNode.getNode("salesforce"));
+        }
+
+        { // model object MED properties
+            Node tableNode = outputNode.getNode("productdata");
+            assertNotNull(tableNode);
+            assertThat(tableNode.getPrimaryNodeType().getName(), is(RelationalLexicon.JcrId.BASE_TABLE));
+
+            // check mixin
+            assertThat(tableNode.isNodeType("salesforce:baseTable"), is(true));
+
+            // need to reference property in this form since "relational" prefix has already been registered by sequencer init
+            // sequencer will create a new prefix for the "relational" MED. Probable new prefix will be "relational2"
+            // the MED URI is suffixed with a slash and the version number
+            assertThat(tableNode.getProperty("{http://www.teiid.org/ext/relational/2012/2}native-query").getString(),
+                       is("SELECT * FROM EastCoastProduct"));
+
+            // check explicitly MED property set in model
+            assertThat(tableNode.getProperty("salesforce:Custom").getBoolean(), is(true));
+            assertThat(tableNode.getProperty("{http://www.teiid.org/translator/salesforce/2012/1}Custom").getBoolean(), is(true));
+
+            // check MED default values
+            assertThat(tableNode.getProperty("salesforce:Supports Create").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Delete").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports ID Lookup").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Merge").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Query").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Replicate").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Retrieve").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Search").getBoolean(), is(false));
+        }
+
+        { // model object MED properties
+            Node tableNode = outputNode.getNode("productsymbols");
+            assertNotNull(tableNode);
+            assertThat(tableNode.getPrimaryNodeType().getName(), is(RelationalLexicon.JcrId.BASE_TABLE));
+
+            // check mixin
+            assertThat(tableNode.isNodeType("salesforce:baseTable"), is(true));
+
+            // explicitly check MED property set in model
+            assertThat(tableNode.getProperty("salesforce:Supports Query").getBoolean(), is(true));
+            assertThat(tableNode.getProperty("{http://www.teiid.org/translator/salesforce/2012/1}Supports Query").getBoolean(),
+                       is(true));
+
+            // check MED default values
+            assertThat(tableNode.getProperty("salesforce:Custom").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Create").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Delete").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports ID Lookup").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Merge").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Replicate").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Retrieve").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Search").getBoolean(), is(false));
+        }
+    }
+
+    @Test
     public void shouldSequenceModelWithOneMed() throws Exception {
         createNodeWithContentFromFile("ModelWithOneMed.xmi", "model/modelExtensionDefinition/ModelWithOneMed.xmi");
         final Node outputNode = getOutputNode(this.rootNode, "models/ModelWithOneMed.xmi");
@@ -830,12 +907,12 @@ public class ModelSequencerTest extends AbstractSequencerTest {
             if (!foundProcedure && "org.teiid.designer.metamodels.relational.impl.ProcedureImpl".equals(metaclassNode.getName())) {
                 foundProcedure = true;
 
-                // property definitions
+                // 8 property definitions
                 NodeIterator propDefItr = metaclassNode.getNodes();
                 assertThat(propDefItr.getSize(), is(8L));
 
-                { // deterministic
-                    final Node propNode = metaclassNode.getNode("deterministic");
+                { // check one property definition : deterministic
+                    final Node propNode = metaclassNode.getNode("{http://www.teiid.org/ext/relational/2012/2}deterministic");
                     assertNotNull(propNode);
                     assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
                                is(false));
@@ -844,8 +921,6 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                     assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(), is(true));
                     assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
                                is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
-                               is(true));
                     assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
                                is(false));
                     assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
@@ -872,216 +947,6 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                                    is("Specifies that the source function will always returns the same result for a specific input value"));
                     }
                 }
-
-                { // non-prepared
-                    final Node propNode = metaclassNode.getNode("non-prepared");
-                    assertNotNull(propNode);
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(), is(true));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
-                               is(true));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
-                               is("boolean"));
-
-                    NodeIterator itr = propNode.getNodes();
-                    assertThat(itr.getSize(), is(1L));
-
-                    { // display names
-                        Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
-                        assertNotNull(displayNameNode);
-                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
-                                   is("en"));
-                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
-                                   is("Non-Prepared"));
-                    }
-                }
-
-                { // aggregate
-                    final Node propNode = metaclassNode.getNode("aggregate");
-                    assertNotNull(propNode);
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(), is(true));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
-                               is(true));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
-                               is(true));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
-                               is("boolean"));
-
-                    NodeIterator itr = propNode.getNodes();
-                    assertThat(itr.getSize(), is(1L));
-
-                    { // display names
-                        Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
-                        assertNotNull(displayNameNode);
-                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
-                                   is("en"));
-                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
-                                   is("Aggregate"));
-                    }
-                }
-
-                { // analytic
-                    final Node propNode = metaclassNode.getNode("analytic");
-                    assertNotNull(propNode);
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(), is(true));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
-                               is(true));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
-                               is("boolean"));
-
-                    NodeIterator itr = propNode.getNodes();
-                    assertThat(itr.getSize(), is(1L));
-
-                    { // display names
-                        Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
-                        assertNotNull(displayNameNode);
-                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
-                                   is("en"));
-                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
-                                   is("Analytic"));
-                    }
-                }
-
-                { // allows-orderby
-                    final Node propNode = metaclassNode.getNode("allows-orderby");
-                    assertNotNull(propNode);
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(), is(true));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
-                               is(true));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
-                               is("boolean"));
-
-                    NodeIterator itr = propNode.getNodes();
-                    assertThat(itr.getSize(), is(1L));
-
-                    { // display names
-                        Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
-                        assertNotNull(displayNameNode);
-                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
-                                   is("en"));
-                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
-                                   is("Allows Order-by"));
-                    }
-                }
-
-                { // uses-distinct-rows
-                    final Node propNode = metaclassNode.getNode("uses-distinct-rows");
-                    assertNotNull(propNode);
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(), is(true));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
-                               is(true));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
-                               is("boolean"));
-
-                    NodeIterator itr = propNode.getNodes();
-                    assertThat(itr.getSize(), is(1L));
-
-                    { // display names
-                        Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
-                        assertNotNull(displayNameNode);
-                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
-                                   is("en"));
-                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
-                                   is("Uses Distinct Rows"));
-                    }
-                }
-
-                { // allows-distinct
-                    final Node propNode = metaclassNode.getNode("allows-distinct");
-                    assertNotNull(propNode);
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(), is(true));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
-                               is(true));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
-                               is("boolean"));
-
-                    NodeIterator itr = propNode.getNodes();
-                    assertThat(itr.getSize(), is(1L));
-
-                    { // display names
-                        Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
-                        assertNotNull(displayNameNode);
-                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
-                                   is("en"));
-                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
-                                   is("Allows Distinct"));
-                    }
-                }
-
-                { // decomposable
-                    final Node propNode = metaclassNode.getNode("decomposable");
-                    assertNotNull(propNode);
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(), is(true));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
-                               is(true));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
-                               is(false));
-                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
-                               is("boolean"));
-
-                    NodeIterator itr = propNode.getNodes();
-                    assertThat(itr.getSize(), is(1L));
-
-                    { // display names
-                        Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
-                        assertNotNull(displayNameNode);
-                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
-                                   is("en"));
-                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
-                                   is("Decomposable"));
-                    }
-                }
             } else if (!foundTable
                        && "org.teiid.designer.metamodels.relational.impl.BaseTableImpl".equals(metaclassNode.getName())) {
                 foundTable = true;
@@ -1091,7 +956,7 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                     assertThat(propDefItr.getSize(), is(1L));
 
                     { // native-query
-                        final Node propNode = metaclassNode.getNode("native-query");
+                        final Node propNode = metaclassNode.getNode("{http://www.teiid.org/ext/relational/2012/2}native-query");
                         assertNotNull(propNode);
                         assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
                                    is(false));
@@ -1100,8 +965,6 @@ public class ModelSequencerTest extends AbstractSequencerTest {
                                    is(true));
                         assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
                                    is(false));
-                        assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MODIFIABLE).getBoolean(),
-                                   is(true));
                         assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
                                    is(false));
                         assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
@@ -1123,6 +986,45 @@ public class ModelSequencerTest extends AbstractSequencerTest {
             } else {
                 fail();
             }
+        }
+    }
+
+    @Test
+    public void shouldQueryMedRelatedNodes() throws Exception {
+        createNodeWithContentFromFile("ModelWithTwoMeds.xmi", "model/modelExtensionDefinition/ModelWithTwoMeds.xmi");
+        final Node outputNode = getOutputNode(this.rootNode, "models/ModelWithTwoMeds.xmi");
+        assertNotNull(outputNode);
+
+        final QueryManager qm = outputNode.getSession().getWorkspace().getQueryManager();
+
+        { // MED salesforce:baseTable mixin
+            final Query query = qm.createQuery("SELECT * from [salesforce:baseTable]", JcrRepository.QueryLanguage.JCR_SQL2);
+            final QueryResult result = query.execute();
+            final RowIterator itr = result.getRows();
+            assertThat(itr.getSize(), is(2L));
+        }
+
+        { // MED salesforce:baseTable mixin only one of the 2 tables have "Supports Query" set to "true"
+            final Query query = qm.createQuery("SELECT * from [salesforce:baseTable] where [salesforce:Supports Query] = 'true'",
+                                               JcrRepository.QueryLanguage.JCR_SQL2);
+            final QueryResult result = query.execute();
+            final RowIterator itr = result.getRows();
+            assertThat(itr.getSize(), is(1L));
+        }
+
+        { // MED salesforce:column mixin
+            final Query query = qm.createQuery("SELECT * from [salesforce:column]", JcrRepository.QueryLanguage.JCR_SQL2);
+            final QueryResult result = query.execute();
+            final RowIterator itr = result.getRows();
+            assertThat(itr.getSize(), is(14L));
+        }
+
+        { // MED relational:baseTable mixin (need to get prefix as it has been mapped)
+            final String nsPrefix = outputNode.getSession().getNamespacePrefix("http://www.teiid.org/ext/relational/2012/2");
+            final Query query = qm.createQuery("SELECT * from [" + nsPrefix + ":baseTable]", JcrRepository.QueryLanguage.JCR_SQL2);
+            final QueryResult result = query.execute();
+            final RowIterator itr = result.getRows();
+            assertThat(itr.getSize(), is(2L));
         }
     }
 }

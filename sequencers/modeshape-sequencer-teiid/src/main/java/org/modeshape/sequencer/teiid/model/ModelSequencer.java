@@ -90,7 +90,17 @@ public class ModelSequencer extends Sequencer {
         final Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
         outputNode.addMixin(CoreLexicon.JcrId.MODEL);
-        return sequenceModel(binaryValue.getStream(), outputNode, outputNode.getPath(), null, context);
+
+        InputStream modelStream = null;
+
+        try {
+            modelStream = binaryValue.getStream();
+            return sequenceModel(modelStream, outputNode, outputNode.getPath(), null, context);
+        } finally {
+            if (modelStream != null) {
+                modelStream.close();
+            }
+        }
     }
 
     /**

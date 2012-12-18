@@ -50,6 +50,8 @@ public abstract class ModelObjectHandler {
     private ReferenceResolver resolver; // set by handler framework and is never null
     private VdbModel vdbModel; // set by handler framework but can be null if model did not come from a VDB
 
+    private ModelExtensionDefinitionHelper medHelper;
+
     /**
      * If the element or name attribute URI is empty, the primary node type is used as the name.
      * 
@@ -151,7 +153,10 @@ public abstract class ModelObjectHandler {
             node.setProperty(propertyName, new Value[] {newValue});
         }
 
-        LOGGER.debug("added a value of '{0}' to multi-valued property '{1}' in node '{2}'", newValue, propertyName, node.getName());
+        LOGGER.debug("added a value of '{0}' to multi-valued property '{1}' in node '{2}'",
+                     newValue,
+                     propertyName,
+                     node.getName());
     }
 
     /**
@@ -159,6 +164,13 @@ public abstract class ModelObjectHandler {
      */
     protected Context getContext() {
         return this.context;
+    }
+
+    /**
+     * @return the MED helper (never <code>null</code>)
+     */
+    protected ModelExtensionDefinitionHelper getMedHelper() {
+        return this.medHelper;
     }
 
     /**
@@ -226,6 +238,10 @@ public abstract class ModelObjectHandler {
     protected void setContext( final Context context ) {
         CheckArg.isNotNull(context, "context");
         this.context = context;
+    }
+
+    void setModelExtensionDefinitionHelper( final ModelExtensionDefinitionHelper medHelper ) {
+        this.medHelper = medHelper;
     }
 
     /**

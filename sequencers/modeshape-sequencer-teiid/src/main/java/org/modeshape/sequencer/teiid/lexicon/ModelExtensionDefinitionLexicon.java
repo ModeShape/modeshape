@@ -57,7 +57,7 @@ public interface ModelExtensionDefinitionLexicon {
             String DISPLAY_NAME = PREFIX + ":displayName";
             String DEFAULT_VALUE = PREFIX + ":defaultValue";
             String INDEX = PREFIX + ":index";
-            String MODIFIABLE = PREFIX + ":modifiable";
+            String FIXED_VALUE = PREFIX + ":fixedValue";
             String MASKED = PREFIX + ":masked";
             String REQUIRED = PREFIX + ":required";
             String RUNTIME_TYPE = PREFIX + ":runtimeType";
@@ -82,12 +82,13 @@ public interface ModelExtensionDefinitionLexicon {
          * Constants related to model extension definition property definitions in XMI models.
          */
         public interface Property {
-            String ADVANCED = "advance";
+            String ADVANCED = "advanced";
+            String ADVANCED2 = "advance"; // some models have a misspelling
             String DISPLAY_NAME = "displayName";
             String DEFAULT_VALUE = "defaultValue";
             String ID = "id";
             String INDEX = "index";
-            String MODIFIABLE = "modifiable";
+            String FIXED_VALUE = "fixedValue";
             String MASKED = "masked";
             String REQUIRED = "required";
             String RUNTIME_TYPE = "runtimeType";
