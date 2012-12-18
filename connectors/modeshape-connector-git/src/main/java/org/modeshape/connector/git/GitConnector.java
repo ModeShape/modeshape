@@ -32,6 +32,8 @@ import java.util.Set;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.infinispan.schematic.document.Document;
@@ -44,6 +46,7 @@ import org.modeshape.jcr.federation.spi.PageKey;
 import org.modeshape.jcr.federation.spi.PageWriter;
 import org.modeshape.jcr.federation.spi.Pageable;
 import org.modeshape.jcr.federation.spi.ReadOnlyConnector;
+import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 
 /**
  * A read-only {@link Connector} that accesses the content in a local Git repository that is a clone of a remote repository.
@@ -264,6 +267,17 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
     public boolean hasDocument( String id ) {
         Document doc = getDocumentById(id);
         return doc != null;
+    }
+
+    @Override
+    public ExternalBinaryValue getBinaryValue( String id ) {
+        try {
+            ObjectId fileObjectId = ObjectId.fromString(id);
+            ObjectLoader fileLoader = repository.open(fileObjectId);
+            return new GitBinaryValue(fileObjectId, fileLoader, getSourceName(), null, getMimeTypeDetector());
+        } catch (IOException e) {
+            throw new DocumentStoreException(id, e);
+        }
     }
 
     protected final String remoteName() {

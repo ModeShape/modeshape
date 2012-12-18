@@ -516,6 +516,17 @@ public class Connectors {
     }
 
     /**
+     * Returns a connector which was registered for the given source name.
+     *
+     * @param sourceName a {@code non-null} String; the name of a source
+     * @return either a {@link Connector} instance or {@code null}
+     */
+    public Connector getConnectorForSourceName( String sourceName ) {
+        assert sourceName != null;
+        return sourceKeyToConnectorMap.get(NodeKey.keyForSourceName(sourceName));
+    }
+
+    /**
      * Returns the repository's document translator.
      *
      * @return a {@link DocumentTranslator} instance.

@@ -49,6 +49,8 @@ public abstract class AbstractBinary implements BinaryValue {
      */
     private static final long serialVersionUID = 1L;
 
+    private final BinaryKey key;
+
     public static BinaryKey keyFor( byte[] sha1 ) {
         try {
             byte[] hash = SecureHash.getHash(Algorithm.SHA_1, sha1);
@@ -57,8 +59,6 @@ public abstract class AbstractBinary implements BinaryValue {
             throw new SystemFailureException(e);
         }
     }
-
-    private final BinaryKey key;
 
     protected AbstractBinary( BinaryKey key ) {
         this.key = key;
@@ -133,9 +133,6 @@ public abstract class AbstractBinary implements BinaryValue {
         return key.hashCode();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
@@ -146,9 +143,6 @@ public abstract class AbstractBinary implements BinaryValue {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

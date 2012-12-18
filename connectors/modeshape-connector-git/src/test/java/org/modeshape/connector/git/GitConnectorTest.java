@@ -57,7 +57,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         session.save();
 
         FederationManager fedMgr = session.getWorkspace().getFederationManager();
-        fedMgr.createExternalProjection(testRoot.getPath(), "local-git-repo", "/", "git-modeshape");
+        fedMgr.createProjection(testRoot.getPath(), "local-git-repo", "/", "git-modeshape");
     }
 
     @AfterClass
@@ -110,7 +110,10 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         Node git = gitNode();
         Node commit = git.getNode("commit");
         // print = true;
-        navigate(commit, false, 100, 2);
+        //TODO author=Horia Chiorean date=12/18/12 description=There is an issue which can appear with certain commits,
+        //so the instead of 100, the max number of children was reduced
+        //see https://issues.jboss.org/browse/MODE-1286?focusedCommentId=12741835&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-12741835
+        navigate(commit, false, 10, 2);
     }
 
     @FixFor( "MODE-1732" )
@@ -132,8 +135,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         assertNodeHasCommittedProperties(pomFile);
         Node pomContent = pomFile.getNode("jcr:content");
         assertNodeHasCommittedProperties(pomContent);
-        // TODO: MODE-1732 Uncomment this next line ...
-        // assertThat(pomContent.getProperty("jcr:data").getString(), is(notNullValue()));
+        assertThat(pomContent.getProperty("jcr:data").getString(), is(notNullValue()));
 
         Node readmeFile = tagTree.getNode("README.md");
         assertThat(readmeFile.getPrimaryNodeType().getName(), is("git:file"));
@@ -141,8 +143,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         assertNodeHasCommittedProperties(readmeFile);
         Node readmeContent = readmeFile.getNode("jcr:content");
         assertNodeHasCommittedProperties(readmeContent);
-        // TODO: MODE-1732 Uncomment this next line ...
-        // assertThat(readmeContent.getProperty("jcr:data").getString(), is(notNullValue()));
+        assertThat(readmeContent.getProperty("jcr:data").getString(), is(notNullValue()));
 
         Node parentModule = tagTree.getNode("modeshape-parent");
         assertThat(parentModule.getPrimaryNodeType().getName(), is("git:folder"));
