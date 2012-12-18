@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:car="http://www.modeshape.org/examples/cars/1.0">
+    <Cars>
+        <Hybrid>
+            <car:Car jcr:name="Toyota Prius" car:maker="Toyota" car:model="Prius"/>
+            <car:Car jcr:name="Toyota Highlander" car:maker="Toyota" car:model="Highlander"/>
+            <car:Car jcr:name="Nissan Altima" car:maker="Nissan" car:model="Altima"/>
+        </Hybrid>
+        <Sports>
+            <car:Car jcr:name="Aston Martin DB9" car:maker="Aston Martin" car:model="DB9"/>
+            <car:Car jcr:name="Infiniti G37" car:maker="Infiniti" car:model="G37"/>
+        </Sports>
+    </Cars>
+</jcr:root>

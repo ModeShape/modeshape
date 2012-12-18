@@ -1,0 +1,43 @@
+{
+    "name" : "Persistent Repository",
+    "jndiName" : "",
+    "node-types" : ["cnd/cars.cnd", "cnd/aircraft.cnd"],
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true,
+        "initialContent" : {
+            "default" : "carsInitialContent.xml"
+        }
+    },
+    "monitoring" : {
+        "enabled" : true
+    },
+    "storage" : {
+        "cacheName" : "persistentRepository",
+        "cacheConfiguration" : "config/infinispan-clustered-persistent-1.xml",
+        "binaryStorage":{
+          "type":"file",
+          "directory":"target/clustered/repository_1/binaries",
+          "minimumBinarySizeInBytes":4096
+        }
+    },
+    "query":{
+        "enabled":true,
+        "rebuildUponStartup":"if_missing",
+        "indexStorage": {
+            "type":"filesystem",
+            "location":"target/clustered/repository_1/index",
+            "lockingStrategy":"simple",
+            "fileSystemAccessType":"auto"
+        }
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    },
+    "clustering" : {
+        "clusterName" : "modeshape-cluster"
+    }
+}
