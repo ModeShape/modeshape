@@ -1150,7 +1150,7 @@ public class DocumentTranslator {
             return value;
         }
         if (value instanceof Integer) {
-            return (long)((Integer)value).intValue();
+            return new Long(((Integer)value).intValue());
         }
         if (value instanceof Double) {
             return value;
