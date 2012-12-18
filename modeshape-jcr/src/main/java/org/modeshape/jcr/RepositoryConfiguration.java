@@ -102,17 +102,17 @@ import org.modeshape.sequencer.cnd.CndSequencer;
  * </p>
  * <p>
  * Variables take the form:
- *
+ * 
  * <pre>
  *    variable := '${' variableNames [ ':' defaultValue ] '}'
- *
+ * 
  *    variableNames := variableName [ ',' variableNames ]
- *
+ * 
  *    variableName := /* any characters except ',' and ':' and '}'
- *
+ * 
  *    defaultValue := /* any characters except
  * </pre>
- *
+ * 
  * Note that <i>variableName</i> is the name used to look up a System property via {@link System#getProperty(String)}.
  * </p>
  * Notice that the syntax supports multiple <i>variables</i>. The logic will process the <i>variables</i> from let to right, until
@@ -139,8 +139,8 @@ public class RepositoryConfiguration {
     public static final String DEFAULT_JNDI_PREFIX_OF_NAME = "java:jcr/local/";
 
     /**
-     * The regexp pattern used to parse & validate projection path expressions. Expects [workspaceName]:/[projectedPath] => [externalPath]
-     * expressions.
+     * The regexp pattern used to parse & validate projection path expressions. Expects [workspaceName]:/[projectedPath] =>
+     * [externalPath] expressions.
      */
     final static Pattern PROJECTION_PATH_EXPRESSION_PATTERN = Pattern.compile("(\\w+):(/([a-zA-Z_0-9]/{0,1})+)\\s*=>\\s*([/a-zA-Z_0-9]+)");
 
@@ -257,13 +257,22 @@ public class RepositoryConfiguration {
         public static final String CACHE_TRANSACTION_MANAGER_LOOKUP = "transactionManagerLookup";
 
         /**
-         * The size threshold that dictates whether String and binary values should be stored in the binary store. String and
-         * binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to
-         * or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of
-         * the value. This is a space and performance optimization that stores each unique large value only once. The default
-         * value is '4096' bytes, or 4 kilobytes.
+         * The size threshold that dictates whether binary values should be stored in the binary store. Binary values smaller than
+         * this value are stored with the node, whereas binary values with a size equal to or greater than this limit will be
+         * stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and
+         * performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4
+         * kilobytes.
          */
         public static final String MINIMUM_BINARY_SIZE_IN_BYTES = "minimumBinarySizeInBytes";
+
+        /**
+         * The size threshold that dictates whether String should be stored in the binary store. String value shorter than this
+         * value are stored with the node, whereas string values with a length equal to or greater than this limit will be stored
+         * separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance
+         * optimization that stores each unique large value only once. By default, the {@link #MINIMUM_BINARY_SIZE_IN_BYTES} value
+         * will be used.
+         */
+        public static final String MINIMUM_STRING_LENGTH = "minimumStringSizeInBytes";
 
         /**
          * The name for the field whose value is a document containing workspace information.
@@ -704,7 +713,7 @@ public class RepositoryConfiguration {
 
     /**
      * Utility method to replace all system property variables found within the specified document.
-     *
+     * 
      * @param doc the document; may not be null
      * @return the modified document if system property variables were found, or the <code>doc</code> instance if no such
      *         variables were found
@@ -722,7 +731,7 @@ public class RepositoryConfiguration {
 
     /**
      * Resolve the supplied URL to a JSON document, read the contents, and parse into a {@link RepositoryConfiguration}.
-     *
+     * 
      * @param url the URL; may not be null
      * @return the parsed repository configuration; never null
      * @throws ParsingException if the content could not be parsed as a valid JSON document
@@ -734,7 +743,7 @@ public class RepositoryConfiguration {
 
     /**
      * Read the supplied JSON file and parse into a {@link RepositoryConfiguration}.
-     *
+     * 
      * @param file the file; may not be null
      * @return the parsed repository configuration; never null
      * @throws ParsingException if the content could not be parsed as a valid JSON document
@@ -747,7 +756,7 @@ public class RepositoryConfiguration {
 
     /**
      * Read the supplied stream containing a JSON file, and parse into a {@link RepositoryConfiguration}.
-     *
+     * 
      * @param stream the file; may not be null
      * @param name the name of the resource; may not be null
      * @return the parsed repository configuration; never null
@@ -763,7 +772,7 @@ public class RepositoryConfiguration {
     /**
      * Read the repository configuration given by the supplied path to a file on the file system, the path a classpath resource
      * file, or a string containg the actual JSON content.
-     *
+     * 
      * @param resourcePathOrJsonContentString the path to a file on the file system, the path to a classpath resource file or the
      *        JSON content string; may not be null
      * @return the parsed repository configuration; never null
@@ -959,7 +968,7 @@ public class RepositoryConfiguration {
 
     /**
      * Returns the initial content configuration for this repository configuration
-     *
+     * 
      * @return a {@code non-null} {@link InitialContent}
      */
     public InitialContent getInitialContent() {
@@ -968,7 +977,7 @@ public class RepositoryConfiguration {
 
     /**
      * Returns a list with the cnd files which should be loaded at startup.
-     *
+     * 
      * @return a {@code non-null} string list
      */
     public List<String> getNodeTypes() {
@@ -987,7 +996,7 @@ public class RepositoryConfiguration {
     /**
      * Returns a fully qualified built-in sequencer class name mapped to the given alias, or {@code null} if there isn't such a
      * mapping
-     *
+     * 
      * @param alias the alias
      * @return the name of the sequencer class, or null if the alias did not correspond to a built-in class
      */
@@ -998,7 +1007,7 @@ public class RepositoryConfiguration {
     /**
      * Returns a fully qualified built-in text extractor class name mapped to the given alias, or {@code null} if there isn't such
      * a mapping
-     *
+     * 
      * @param alias the alias
      * @return the name of the text extractor class, or null if the alias did not correspond to a built-in class
      */
@@ -1009,7 +1018,7 @@ public class RepositoryConfiguration {
     /**
      * Returns a fully qualified built-in authentication provider class name mapped to the given alias, or {@code null} if there
      * isn't such a mapping
-     *
+     * 
      * @param alias the alias
      * @return the name of the authentication provider class, or null if the alias did not correspond to a built-in class
      */
@@ -1053,7 +1062,7 @@ public class RepositoryConfiguration {
 
         /**
          * Checks if there is an initial content file configured for the given workspace.
-         *
+         * 
          * @param workspaceName a non-null {@link String} representing the name of a workspace
          * @return {@code true} if either there's an initial file configured specifically for the workspace or there's a default
          *         file which applies to all the workspaces.
@@ -1067,7 +1076,7 @@ public class RepositoryConfiguration {
 
         /**
          * Returns the initial content file configured for the workspace with the given name.
-         *
+         * 
          * @param workspaceName a non-null {@link String} representing the name of a workspace
          * @return either a {@link String} representing the initial content file for the workspace, or an empty string indicating
          *         that explicitly no file has been configured for this workspace.
@@ -1100,6 +1109,10 @@ public class RepositoryConfiguration {
 
         public long getMinimumBinarySizeInBytes() {
             return binaryStorage.getLong(FieldName.MINIMUM_BINARY_SIZE_IN_BYTES, Default.MINIMUM_BINARY_SIZE_IN_BYTES);
+        }
+
+        public long getMinimumStringSize() {
+            return binaryStorage.getLong(FieldName.MINIMUM_STRING_LENGTH, getMinimumBinarySizeInBytes());
         }
 
         public AbstractBinaryStore getBinaryStore() throws Exception {
@@ -1203,7 +1216,7 @@ public class RepositoryConfiguration {
         /**
          * Attempts "its best" to convert a generic Object value (coming from a Document) to a value which can be set on the field
          * of a component. Note: thanks to type erasure, generics are not supported.
-         *
+         * 
          * @param expectedType the {@link Class} of the field on which the value should be set
          * @param value a generic value coming from a document. Can be a simple value, another {@link Document} or {@link Array}
          * @return the converted value, which should be compatible with the expected type.
@@ -1351,7 +1364,7 @@ public class RepositoryConfiguration {
 
     /**
      * Get the name of the workspace that should be used for sessions where the client does not specify the name of the workspace.
-     *
+     * 
      * @return the default workspace name; never null
      */
     public String getDefaultWorkspaceName() {
@@ -1365,7 +1378,7 @@ public class RepositoryConfiguration {
     /**
      * Obtain the names of the workspaces that were listed as being predefined. This includes the name
      * {@link #getDefaultWorkspaceName() default workspace}.
-     *
+     * 
      * @return the set of predefined (non-system) workspace names; never null
      */
     public Set<String> getPredefinedWorkspaceNames() {
@@ -1387,7 +1400,7 @@ public class RepositoryConfiguration {
      * Obtain all of the workspace names specified by this repository, including the {@link #getPredefinedWorkspaceNames()
      * predefined workspaces} and the {@link #getDefaultWorkspaceName() default workspace}. The result does <i>not</i> contain the
      * names of any dynamically-created workspaces (e.g., those not specified in the configuration).
-     *
+     * 
      * @return the set of all workspace names defined by the configuration; never null
      */
     public Set<String> getAllWorkspaceNames() {
@@ -1398,7 +1411,7 @@ public class RepositoryConfiguration {
 
     /**
      * Get the configuration for the security-related aspects of this repository.
-     *
+     * 
      * @return the security configuration; never null
      */
     public Security getSecurity() {
@@ -1418,7 +1431,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the configuration information for the JAAS provider.
-         *
+         * 
          * @return the JAAS provider configuration information; null if JAAS is not configured
          */
         public JaasSecurity getJaas() {
@@ -1433,7 +1446,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the configuration information for the anonymous authentication provider.
-         *
+         * 
          * @return the anonymous provider configuration information; null if anonymous users are not allowed
          */
         public AnonymousSecurity getAnonymous() {
@@ -1455,7 +1468,7 @@ public class RepositoryConfiguration {
          * {@link #getJaas()} and {@link #getAnonymous()} are not included in this list. However, should the JAAS and/or anonymous
          * providers be specified in this list (to change the ordering), the {@link #getJaas()} and/or {@link #getAnonymous()}
          * configuration components will be null.
-         *
+         * 
          * @return the immutable list of custom providers; never null but possibly empty
          */
         public List<Component> getCustomProviders() {
@@ -1496,7 +1509,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the name of the JAAS policy.
-         *
+         * 
          * @return the policy name; never null and '{@value Default#JAAS_POLICY_NAME}' by default.
          */
         public String getPolicyName() {
@@ -1520,7 +1533,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the name of the ModeShape authorization roles that each anonymous user should be assigned.
-         *
+         * 
          * @return the set of role names; never null or empty, and '{@value Default#ANONYMOUS_ROLES}' by default.
          */
         public Set<String> getAnonymousRoles() {
@@ -1539,7 +1552,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the username that each anonymous user should be assigned.
-         *
+         * 
          * @return the anonymous username; never null and '{@value Default#ANONYMOUS_USERNAME}' by default.
          */
         public String getAnonymousUsername() {
@@ -1548,7 +1561,7 @@ public class RepositoryConfiguration {
 
         /**
          * Determine whether users that fail all other authentication should be automatically logged in as an anonymous user.
-         *
+         * 
          * @return true if non-authenticated users should be given anonymous sessions, or false if authenication should fail; the
          *         default is '{@value Default#USE_ANONYMOUS_ON_FAILED_LOGINS}'.
          */
@@ -1559,7 +1572,7 @@ public class RepositoryConfiguration {
 
     /**
      * Get the configuration for the monitoring-related aspects of this repository.
-     *
+     * 
      * @return the monitoring configuration; never null
      */
     public MonitoringSystem getMonitoring() {
@@ -1580,7 +1593,7 @@ public class RepositoryConfiguration {
         /**
          * Determine whether monitoring is enabled. The default is to enable monitoring, but this can be used to turn off support
          * for monitoring should it not be necessary.
-         *
+         * 
          * @return true if monitoring is enabled, or false if it is disabled
          */
         public boolean enabled() {
@@ -1606,7 +1619,7 @@ public class RepositoryConfiguration {
 
     /**
      * Get the configuration for the query-related aspects of this repository.
-     *
+     * 
      * @return the query configuration; never null
      */
     public QuerySystem getQuery() {
@@ -1627,7 +1640,7 @@ public class RepositoryConfiguration {
         /**
          * Determine whether queries and searches are enabled. The default is to enable queries, but this can be used to turn off
          * support for queries and improve performance.
-         *
+         * 
          * @return true if queries are enabled, or false if they are disabled
          * @see #fullTextSearchEnabled()
          */
@@ -1638,7 +1651,7 @@ public class RepositoryConfiguration {
         /**
          * Get whether full-text searching is enabled for this repository. Note that full-text search requires that
          * {@link #queriesEnabled() queries are enabled}, so this method returns false if queries are disabled.
-         *
+         * 
          * @return true if full-text searching is enabled, or false otherwise
          * @see #queriesEnabled()
          */
@@ -1648,7 +1661,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the specification for when the indexes should be built when the system starts up.
-         *
+         * 
          * @return whether to rebuild the indexes upon repository startup
          */
         public QueryRebuild getRebuildIndexesUponStartup() {
@@ -1659,7 +1672,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the name of the thread pool that should be used for indexing work.
-         *
+         * 
          * @return the thread pool name; never null
          */
         public String getThreadPoolName() {
@@ -1669,7 +1682,7 @@ public class RepositoryConfiguration {
         /**
          * Get the configuration properties for the storage of indexes. The values of the properties will consist of string
          * values.
-         *
+         * 
          * @return the configuration properties; never null
          */
         public Properties getIndexStorageProperties() {
@@ -1727,7 +1740,7 @@ public class RepositoryConfiguration {
         /**
          * Get the configuration properties for the indexing section. The values of the properties will consist of string values,
          * and they may contain properties of the form "hibernate.search.*".
-         *
+         * 
          * @return the configuration properties; never null
          */
         public Properties getIndexingProperties() {
@@ -1758,7 +1771,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the configuration properties for the indexing backend. The values of the properties will consist of string values.
-         *
+         * 
          * @return the configuration properties; never null
          */
         public Properties getIndexingBackendProperties() {
@@ -1802,7 +1815,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the name of the thread pool that should be used for sequencing work.
-         *
+         * 
          * @return the thread pool name; never null
          */
         public String getThreadPoolName() {
@@ -1811,7 +1824,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the ordered list of text extractors. All text extractors are configured with this list.
-         *
+         * 
          * @return the immutable list of text extractors; never null but possibly empty
          */
         public List<Component> getTextExtractors() {
@@ -1832,7 +1845,7 @@ public class RepositoryConfiguration {
 
     /**
      * Get the configuration for the sequencing-related aspects of this repository.
-     *
+     * 
      * @return the sequencing configuration; never null
      */
     public Sequencing getSequencing() {
@@ -1841,7 +1854,7 @@ public class RepositoryConfiguration {
 
     /**
      * Get the configuration for the sequencing-related aspects of this repository.
-     *
+     * 
      * @return the sequencing configuration; never null
      */
     public Federation getFederation() {
@@ -1862,7 +1875,7 @@ public class RepositoryConfiguration {
         /**
          * Determine whether the derived content originally produced by a sequencer upon sequencing some specific input should be
          * removed if that input is updated and the sequencer re-run.
-         *
+         * 
          * @return true if the original derived content should be removed upon subsequent sequencing of the same input.
          */
         public boolean removeDerivedContentWithOriginal() {
@@ -1872,7 +1885,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the name of the thread pool that should be used for sequencing work.
-         *
+         * 
          * @return the thread pool name; never null
          */
         public String getThreadPoolName() {
@@ -1881,7 +1894,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the ordered list of sequencers. All sequencers are configured with this list.
-         *
+         * 
          * @return the immutable list of sequencers; never null but possibly empty
          */
         public List<Component> getSequencers() {
@@ -1897,7 +1910,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the ordered list of sequencers. All sequencers are configured with this list.
-         *
+         * 
          * @param problems the container for problems reading the sequencer information; may not be null
          */
         protected void validateSequencers( Problems problems ) {
@@ -1918,7 +1931,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the list of connector configurations.
-         *
+         * 
          * @return the immutable list of connectors; never null but possibly empty
          */
         public List<Component> getConnectors() {
@@ -1934,7 +1947,7 @@ public class RepositoryConfiguration {
 
         /**
          * Returns the [sourceName, list(projections)] configured for each source.
-         *
+         * 
          * @return a {@link Map} instance, never null.
          */
         public Map<String, List<ProjectionConfiguration>> getProjections() {
@@ -1959,7 +1972,7 @@ public class RepositoryConfiguration {
 
         /**
          * Validate the list of connector configurations.
-         *
+         * 
          * @param problems the container for problems reading the configuration information; may not be null
          */
         protected void validateConnectors( Problems problems ) {
@@ -1977,12 +1990,12 @@ public class RepositoryConfiguration {
 
             /**
              * Creates a new projection using a string expression
-             *
+             * 
              * @param pathExpression a {@code non-null} String
              */
             public ProjectionConfiguration( String pathExpression ) {
                 Matcher expressionMatcher = PROJECTION_PATH_EXPRESSION_PATTERN.matcher(pathExpression);
-                //should be validated by the repository schema
+                // should be validated by the repository schema
                 assert expressionMatcher.matches();
 
                 workspaceName = expressionMatcher.group(1);
@@ -1995,7 +2008,7 @@ public class RepositoryConfiguration {
 
             /**
              * Returns the projection's external path.
-             *
+             * 
              * @return a {@code non-null} String
              */
             public String getExternalPath() {
@@ -2004,7 +2017,7 @@ public class RepositoryConfiguration {
 
             /**
              * Returns the projected path
-             *
+             * 
              * @return a {@code non-null} String
              */
             public String getProjectedPath() {
@@ -2013,7 +2026,7 @@ public class RepositoryConfiguration {
 
             /**
              * Returns the projection's workspace name
-             *
+             * 
              * @return a {@code non-null} String
              */
             public String getWorkspaceName() {
@@ -2022,7 +2035,7 @@ public class RepositoryConfiguration {
 
             /**
              * Returns the alias of a projection.
-             *
+             * 
              * @return a {@code non-null} String
              */
             public String getAlias() {
@@ -2031,7 +2044,7 @@ public class RepositoryConfiguration {
 
             /**
              * Returns the repository path
-             *
+             * 
              * @return a {@code non-null} String
              */
             public String getRepositoryPath() {
@@ -2055,7 +2068,7 @@ public class RepositoryConfiguration {
         /**
          * Checks whether clustering is enabled or not, based on a) JGroups being in the classpath and b) a clustering
          * configuration having been provided.
-         *
+         * 
          * @return true if clustering is enabled, or false otherwise
          */
         public boolean isEnabled() {
@@ -2080,7 +2093,7 @@ public class RepositoryConfiguration {
 
         /**
          * Attempt to get the correct channel from the environment, if the environment has specified one.
-         *
+         * 
          * @return the environment's channel, if defined; may be null if the environment doesn't provide a channel and the
          *         {@link #getChannelProviderClassName() channel provider} should be used
          * @throws Exception if there is a problem getting the channel from the environment
@@ -2155,7 +2168,7 @@ public class RepositoryConfiguration {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see java.lang.Object#toString()
      */
     @Override
@@ -2172,24 +2185,24 @@ public class RepositoryConfiguration {
      * <p>
      * For example, the following code shows how an existing RepositoryConfiguration instance can be used to create a second
      * configuration that is a slightly-modified copy of the original.
-     *
+     * 
      * <pre>
      * </pre>
      * </p>
      * <p>
      * Also, the following code shows how an existing RepositoryConfiguration instance for a deployed repository can be updated:
-     *
+     * 
      * <pre>
      *   ModeShapeEngine engine = ...
      *   Repository deployed = engine.getRepository("repo");
      *   RepositoryConfiguration deployedConfig = deployed.getConfiguration();
-     *
+     * 
      *   // Create an editor ...
      *   Editor editor = deployedConfig.edit();
-     *
+     * 
      *   // Modify the copy of the configuration (we'll do something trivial here) ...
      *   editor.setNumber(FieldName.LARGE_VALUE_SIZE_IN_BYTES,8096);
-     *
+     * 
      *   // Get the changes and validate them ...
      *   Changes changes = editor.getChanges();
      *   Results validationResults = deployedConfig.validate(changes);
@@ -2200,9 +2213,9 @@ public class RepositoryConfiguration {
      *       engine.update("repo",changes);
      *   }
      * </pre>
-     *
+     * 
      * </p>
-     *
+     * 
      * @return an editor for modifying a copy of this repository configuration.
      * @see #validate(Changes)
      */
@@ -2212,7 +2225,7 @@ public class RepositoryConfiguration {
 
     /***
      * Validate this configuration against the JSON Schema.
-     *
+     * 
      * @return the validation results; never null
      * @see #validate(Changes)
      */
@@ -2242,7 +2255,7 @@ public class RepositoryConfiguration {
     /***
      * Validate this configuration if the supplied changes were made to this. Note that this does <i>not</i> actually change this
      * configuration.
-     *
+     * 
      * @param changes the proposed changes to this configuration's underlying document; never null
      * @return the validation results; never null
      * @see #edit()
@@ -2258,7 +2271,7 @@ public class RepositoryConfiguration {
 
     /**
      * Create a copy of this configuration that uses the supplied Infinispan {@link CacheContainer} instance.
-     *
+     * 
      * @param environment the environment that should be used for the repository; may be null
      * @return the new configuration; never null
      */
@@ -2268,7 +2281,7 @@ public class RepositoryConfiguration {
 
     /**
      * Create a copy of this configuration that uses the supplied document name.
-     *
+     * 
      * @param docName the new document name; may be null
      * @return the new configuration; never null
      */
@@ -2296,7 +2309,7 @@ public class RepositoryConfiguration {
 
         /**
          * Get the component's name.
-         *
+         * 
          * @return the name of this component; never null
          */
         public String getName() {
@@ -2350,7 +2363,7 @@ public class RepositoryConfiguration {
 
         /**
          * Create an instance of this class.
-         *
+         * 
          * @param <Type>
          * @param fallbackLoader the fallback class loader that should be used for
          *        {@link Environment#getClassLoader(ClassLoader, String...)}
@@ -2446,7 +2459,7 @@ public class RepositoryConfiguration {
         /**
          * Attempts "its best" to convert a generic Object value (coming from a Document) to a value which can be set on the field
          * of a component. Note: thanks to type erasure, generics are not supported.
-         *
+         * 
          * @param expectedType the {@link Class} of the field on which the value should be set
          * @param value a generic value coming from a document. Can be a simple value, another {@link Document} or {@link Array}
          * @return the converted value, which should be compatible with the expected type.

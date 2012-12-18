@@ -87,7 +87,7 @@ public class RepositoryCache implements Observable {
     private final DocumentStore documentStore;
     private final DocumentTranslator translator;
     private final ConcurrentHashMap<String, WorkspaceCache> workspaceCachesByName;
-    private final AtomicLong minimumBinarySizeInBytes = new AtomicLong();
+    private final AtomicLong minimumStringLengthForBinaryStorage = new AtomicLong();
     private final String name;
     private final String repoKey;
     private final String sourceKey;
@@ -112,8 +112,8 @@ public class RepositoryCache implements Observable {
         this.context = context;
         this.configuration = configuration;
         this.documentStore = documentStore;
-        this.minimumBinarySizeInBytes.set(configuration.getBinaryStorage().getMinimumBinarySizeInBytes());
-        this.translator = new DocumentTranslator(this.context, this.documentStore, this.minimumBinarySizeInBytes.get());
+        this.minimumStringLengthForBinaryStorage.set(configuration.getBinaryStorage().getMinimumStringSize());
+        this.translator = new DocumentTranslator(this.context, this.documentStore, this.minimumStringLengthForBinaryStorage.get());
         this.sessionContext = sessionContext;
         this.workspaceCacheManager = workspaceCacheContainer;
         this.logger = Logger.getLogger(getClass());
@@ -241,17 +241,17 @@ public class RepositoryCache implements Observable {
         return changeBus.unregister(observer);
     }
 
-    public void setLargeValueSizeInBytes( long sizeInBytes ) {
+    public void setLargeStringLength( long sizeInBytes ) {
         assert sizeInBytes > -1;
-        minimumBinarySizeInBytes.set(sizeInBytes);
+        minimumStringLengthForBinaryStorage.set(sizeInBytes);
         for (WorkspaceCache workspaceCache : workspaceCachesByName.values()) {
             assert workspaceCache != null;
-            workspaceCache.setMinimumBinarySizeInBytes(minimumBinarySizeInBytes.get());
+            workspaceCache.setMinimumStringLengthForBinaryStorage(minimumStringLengthForBinaryStorage.get());
         }
     }
 
     public long largeValueSizeInBytes() {
-        return minimumBinarySizeInBytes.get();
+        return minimumStringLengthForBinaryStorage.get();
     }
 
     public boolean isSystemContentInitialized() {
@@ -260,7 +260,7 @@ public class RepositoryCache implements Observable {
 
     protected void refreshWorkspaces( boolean update ) {
         // Read the node document ...
-        DocumentTranslator translator = new DocumentTranslator(context, documentStore, minimumBinarySizeInBytes.get());
+        DocumentTranslator translator = new DocumentTranslator(context, documentStore, minimumStringLengthForBinaryStorage.get());
         Set<String> workspaceNames = new HashSet<String>(this.workspaceNames);
         String systemMetadataKeyStr = this.systemMetadataKey.toString();
         SchematicEntry entry = documentStore.get(systemMetadataKeyStr);

@@ -31,9 +31,10 @@ import org.modeshape.jcr.value.BinaryKey;
 /**
  * {@link org.modeshape.jcr.value.BinaryValue} implementation that represents a binary value that resides outside of ModeShape's
  * binary store. Typically this will be subclasses by {@code Connector} implementations that wish to provide their own binaries
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
+@SuppressWarnings( "serial" )
 public abstract class ExternalBinaryValue extends AbstractBinary {
 
     private transient MimeTypeDetector mimeTypeDetector;
@@ -46,6 +47,7 @@ public abstract class ExternalBinaryValue extends AbstractBinary {
 
     /**
      * Creates a new instance, with the given params
+     * 
      * @param id the binary id, never {@code null}
      * @param sourceName name of the external source which owns the value, {@code never null}
      * @param size the length of the binary
@@ -67,7 +69,7 @@ public abstract class ExternalBinaryValue extends AbstractBinary {
 
     /**
      * Returns this binary's id.
-     *
+     * 
      * @return a non-null string
      */
     public String getId() {
@@ -76,7 +78,7 @@ public abstract class ExternalBinaryValue extends AbstractBinary {
 
     /**
      * Returns the name of the external source, to which this binary belongs.
-     *
+     * 
      * @return a non-null string
      */
     public String getSourceName() {

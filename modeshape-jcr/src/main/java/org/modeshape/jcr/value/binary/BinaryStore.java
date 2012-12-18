@@ -125,22 +125,22 @@ public interface BinaryStore {
      * 
      * @param binary the binary content; may not be null
      * @return the extracted text, or null if none could be extracted
-     * @throws BinaryStoreException if the binary content could not be accessed or if the given binary value cannot be found within
-     * the store.
+     * @throws BinaryStoreException if the binary content could not be accessed or if the given binary value cannot be found
+     *         within the store.
      */
     String getText( BinaryValue binary ) throws BinaryStoreException;
 
     /**
      * Get the MIME type for this binary value, never {@code null}.
      * <p>
-     * If the store has never determined the mime-type of the given binary and the binary can be located in the store,
-     * it will attempt to determine it via the configured {@link MimeTypeDetector detectors} and store it.
+     * If the store has never determined the mime-type of the given binary and the binary can be located in the store, it will
+     * attempt to determine it via the configured {@link MimeTypeDetector detectors} and store it.
      * </p>
+     * 
      * @param binary the binary content; may not be null
      * @param name the name of the content, useful for determining the MIME type; may be null if not known
-     * @return the MIME type of the content, as determined by the installed detectors or {@code null} if none of the detectors
-     * can determine it.
-     *
+     * @return the MIME type of the content, as determined by the installed detectors or {@code null} if none of the detectors can
+     *         determine it.
      * @throws IOException if there is a problem reading the binary content
      * @throws BinaryStoreException if the binary value cannot be found in the store
      * @throws RepositoryException if any other error occurs.
