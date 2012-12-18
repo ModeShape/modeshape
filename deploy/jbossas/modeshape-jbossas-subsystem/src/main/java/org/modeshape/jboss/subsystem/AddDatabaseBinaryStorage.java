@@ -48,12 +48,16 @@ public class AddDatabaseBinaryStorage extends AbstractAddBinaryStorage {
         binaries.set(FieldName.TYPE, FieldValue.BINARY_STORAGE_TYPE_DATABASE);
         int minBinSize = ModelAttributes.MINIMUM_BINARY_SIZE.resolveModelAttribute(context, model).asInt();
         binaries.set(FieldName.MINIMUM_BINARY_SIZE_IN_BYTES, minBinSize);
+        ModelNode stringSize = ModelAttributes.MINIMUM_STRING_SIZE.resolveModelAttribute(context, model);
+        if (stringSize.isDefined()) {
+            binaries.set(FieldName.MINIMUM_STRING_LENGTH, stringSize.asInt());
+        }
         // We don't need to add a dependency since we'll look it up by JNDI and we'll
         // not shutdown if the data source is shutdown
         String dataSource = ModelAttributes.DATA_SOURCE_JNDI_NAME.resolveModelAttribute(context, model).asString();
         binaries.set(FieldName.DATA_SOURCE_JNDI_NAME, dataSource);
     }
-    
+
     @Override
     protected void populateModel( ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {

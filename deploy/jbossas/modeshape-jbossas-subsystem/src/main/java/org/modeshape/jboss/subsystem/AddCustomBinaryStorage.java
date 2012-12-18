@@ -49,6 +49,10 @@ public class AddCustomBinaryStorage extends AbstractAddBinaryStorage {
         binaries.set(FieldName.TYPE, FieldValue.BINARY_STORAGE_TYPE_CUSTOM);
         int minBinSize = ModelAttributes.MINIMUM_BINARY_SIZE.resolveModelAttribute(context, model).asInt();
         binaries.set(FieldName.MINIMUM_BINARY_SIZE_IN_BYTES, minBinSize);
+        ModelNode stringSize = ModelAttributes.MINIMUM_STRING_SIZE.resolveModelAttribute(context, model);
+        if (stringSize.isDefined()) {
+            binaries.set(FieldName.MINIMUM_STRING_LENGTH, stringSize.asInt());
+        }
         for (Property property : model.asPropertyList()) {
             String name = property.getName();
             if (name.equals(ModelKeys.CLASSNAME)) {
@@ -59,7 +63,7 @@ public class AddCustomBinaryStorage extends AbstractAddBinaryStorage {
             binaries.set(name, property.getValue());
         }
     }
-    
+
     @Override
     protected void populateModel( ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {

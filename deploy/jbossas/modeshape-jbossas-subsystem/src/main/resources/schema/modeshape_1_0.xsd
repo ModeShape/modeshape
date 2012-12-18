@@ -510,13 +510,24 @@
   <xs:attributeGroup name="binary-storage-attributes">
     <xs:attribute name="min-value-size" type="xs:int" use="optional" default="4096">
       <xs:annotation>
-        <xs:documentation>The size threshold that dictates whether String and binary values
-          should be stored in the binary store. String and binary values smaller than this
-          value are stored with the node, whereas string and binary values with a size equal
+        <xs:documentation>The size threshold that dictates whether binary values
+          should be stored in the binary store. Binary values smaller than this
+          value are stored with the node, whereas binary values with a size equal
           to or greater than this limit will be stored separately from the node and in the
           binary store, keyed by the SHA-1 hash of the value. This is a space and performance
           optimization that stores each unique large value only once.
           The default value is '4096' bytes, or 4 kilobytes.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="min-string-size" type="xs:int" use="optional">
+      <xs:annotation>
+        <xs:documentation>The size threshold that dictates whether String values
+          should be stored in the binary store. String values smaller than this
+          value are stored with the node, whereas string values with a size equal
+          to or greater than this limit will be stored separately from the node and in the
+          binary store, keyed by the SHA-1 hash of the value. This is a space and performance
+          optimization that stores each unique large value only once.
+          The default value is the value of 'min-value-size'.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
   </xs:attributeGroup>

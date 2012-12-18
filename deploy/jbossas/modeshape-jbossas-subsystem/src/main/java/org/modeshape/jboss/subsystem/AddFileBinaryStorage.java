@@ -24,7 +24,6 @@
 package org.modeshape.jboss.subsystem;
 
 import java.util.List;
-
 import org.infinispan.schematic.document.EditableDocument;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -61,6 +60,10 @@ public class AddFileBinaryStorage extends AbstractAddBinaryStorage {
         binaries.set(FieldName.TYPE, FieldValue.BINARY_STORAGE_TYPE_FILE);
         int minBinSize = ModelAttributes.MINIMUM_BINARY_SIZE.resolveModelAttribute(context, model).asInt();
         binaries.set(FieldName.MINIMUM_BINARY_SIZE_IN_BYTES, minBinSize);
+        ModelNode stringSize = ModelAttributes.MINIMUM_STRING_SIZE.resolveModelAttribute(context, model);
+        if (stringSize.isDefined()) {
+            binaries.set(FieldName.MINIMUM_STRING_LENGTH, stringSize.asInt());
+        }
 
         String defaultPath = "modeshape/" + repositoryName + "/binaries";
         ModelNode pathNode = ModelAttributes.PATH.resolveModelAttribute(context, model);
@@ -89,7 +92,7 @@ public class AddFileBinaryStorage extends AbstractAddBinaryStorage {
             // and add dependency on this path ...
             builder.addDependency(serviceName, String.class, service.getBinaryStorageBasePathInjector());
         }
-    }  
+    }
 
     @Override
     protected void populateModel( ModelNode operation,

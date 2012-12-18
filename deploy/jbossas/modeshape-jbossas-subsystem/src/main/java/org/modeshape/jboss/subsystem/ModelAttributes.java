@@ -417,6 +417,18 @@ public class ModelAttributes {
                                                                                                                                                                   FieldName.MINIMUM_BINARY_SIZE_IN_BYTES)
                                                                                                                            .build();
 
+    public static final SimpleAttributeDefinition MINIMUM_STRING_SIZE = new MappedAttributeDefinitionBuilder(
+                                                                                                             ModelKeys.MINIMUM_STRING_SIZE,
+                                                                                                             ModelType.INT).setXmlName(Attribute.MIN_STRING_SIZE.getLocalName())
+                                                                                                                           .setAllowExpression(false)
+                                                                                                                           .setAllowNull(true)
+                                                                                                                           .setMeasurementUnit(MeasurementUnit.NONE)
+                                                                                                                           .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                           .setFieldPathInRepositoryConfiguration(FieldName.STORAGE,
+                                                                                                                                                                  FieldName.BINARY_STORAGE,
+                                                                                                                                                                  FieldName.MINIMUM_STRING_LENGTH)
+                                                                                                                           .build();
+
     public static final SimpleAttributeDefinition MODE = new MappedAttributeDefinitionBuilder(ModelKeys.MODE, ModelType.STRING).setXmlName(Attribute.MODE.getLocalName())
                                                                                                                                .setAllowExpression(true)
                                                                                                                                .setAllowNull(true)
@@ -664,9 +676,9 @@ public class ModelAttributes {
     public static final AttributeDefinition[] REPOSITORY_ATTRIBUTES = {CACHE_NAME, CACHE_CONTAINER, JNDI_NAME, ENABLE_MONITORING,
         SECURITY_DOMAIN, ANONYMOUS_ROLES, ANONYMOUS_USERNAME, USE_ANONYMOUS_IF_AUTH_FAILED, NODE_TYPES, DEFAULT_WORKSPACE,
         PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, WORKSPACES_CACHE_CONTAINER, DEFAULT_INITIAL_CONTENT,
-        WORKSPACES_INITIAL_CONTENT, MINIMUM_BINARY_SIZE, THREAD_POOL, BATCH_SIZE, READER_STRATEGY, MODE, SYSTEM_CONTENT_MODE,
-        ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME, ANALYZER_MODULE, REBUILD_INDEXES_UPON_STARTUP,
-        CLUSTER_NAME, CLUSTER_STACK};
+        WORKSPACES_INITIAL_CONTENT, MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE, THREAD_POOL, BATCH_SIZE, READER_STRATEGY, MODE,
+        SYSTEM_CONTENT_MODE, ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME, ANALYZER_MODULE,
+        REBUILD_INDEXES_UPON_STARTUP, CLUSTER_NAME, CLUSTER_STACK};
 
     public static final AttributeDefinition[] RAM_INDEX_STORAGE_ATTRIBUTES = {INDEX_STORAGE_TYPE,};
 
@@ -687,17 +699,17 @@ public class ModelAttributes {
     public static final AttributeDefinition[] CUSTOM_INDEX_STORAGE_ATTRIBUTES = {INDEX_STORAGE_TYPE, INDEX_FORMAT, CLASSNAME,
         MODULE,};
 
-    public static final AttributeDefinition[] FILE_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE, PATH,
-        RELATIVE_TO,};
+    public static final AttributeDefinition[] FILE_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
+        MINIMUM_STRING_SIZE, PATH, RELATIVE_TO,};
 
     public static final AttributeDefinition[] CACHE_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
-        DATA_CACHE_NAME, METADATA_CACHE_NAME, CACHE_CONTAINER,};
+        MINIMUM_STRING_SIZE, DATA_CACHE_NAME, METADATA_CACHE_NAME, CACHE_CONTAINER,};
 
     public static final AttributeDefinition[] DATABASE_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
-        DATA_SOURCE_JNDI_NAME,};
+        MINIMUM_STRING_SIZE, DATA_SOURCE_JNDI_NAME,};
 
     public static final AttributeDefinition[] CUSTOM_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
-        CLASSNAME, MODULE,};
+        MINIMUM_STRING_SIZE, CLASSNAME, MODULE,};
 
     public static final AttributeDefinition[] SEQUENCER_ATTRIBUTES = {PATH_EXPRESSIONS, SEQUENCER_CLASSNAME, MODULE, PROPERTIES};
     public static final AttributeDefinition[] TEXT_EXTRACTOR_ATTRIBUTES = {TEXT_EXTRACTOR_CLASSNAME, MODULE, PROPERTIES};
