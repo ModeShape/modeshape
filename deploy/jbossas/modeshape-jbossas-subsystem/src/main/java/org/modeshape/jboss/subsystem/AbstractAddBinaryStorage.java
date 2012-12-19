@@ -40,6 +40,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.modeshape.jboss.service.BinaryStorage;
 import org.modeshape.jboss.service.BinaryStorageService;
+import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
 public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
 
@@ -92,6 +93,18 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
                                                              OperationContext context,
                                                              ModelNode storage,
                                                              EditableDocument binaryStorage ) throws OperationFailedException;
+
+    protected void writeCommonBinaryStorageConfiguration( String repositoryName,
+                                                          OperationContext context,
+                                                          ModelNode model,
+                                                          EditableDocument binaries ) throws OperationFailedException {
+        int minBinSize = ModelAttributes.MINIMUM_BINARY_SIZE.resolveModelAttribute(context, model).asInt();
+        binaries.set(FieldName.MINIMUM_BINARY_SIZE_IN_BYTES, minBinSize);
+        ModelNode stringSize = ModelAttributes.MINIMUM_STRING_SIZE.resolveModelAttribute(context, model);
+        if (stringSize.isDefined()) {
+            binaries.set(FieldName.MINIMUM_STRING_LENGTH, stringSize.asInt());
+        }
+    }
 
     @SuppressWarnings( "unused" )
     protected void addControllersAndDependencies( String repositoryName,

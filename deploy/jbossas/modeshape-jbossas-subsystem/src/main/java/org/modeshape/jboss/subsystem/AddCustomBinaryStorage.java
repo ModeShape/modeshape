@@ -46,13 +46,8 @@ public class AddCustomBinaryStorage extends AbstractAddBinaryStorage {
                                                     OperationContext context,
                                                     ModelNode model,
                                                     EditableDocument binaries ) throws OperationFailedException {
+        super.writeCommonBinaryStorageConfiguration(repositoryName, context, model, binaries);
         binaries.set(FieldName.TYPE, FieldValue.BINARY_STORAGE_TYPE_CUSTOM);
-        int minBinSize = ModelAttributes.MINIMUM_BINARY_SIZE.resolveModelAttribute(context, model).asInt();
-        binaries.set(FieldName.MINIMUM_BINARY_SIZE_IN_BYTES, minBinSize);
-        ModelNode stringSize = ModelAttributes.MINIMUM_STRING_SIZE.resolveModelAttribute(context, model);
-        if (stringSize.isDefined()) {
-            binaries.set(FieldName.MINIMUM_STRING_LENGTH, stringSize.asInt());
-        }
         for (Property property : model.asPropertyList()) {
             String name = property.getName();
             if (name.equals(ModelKeys.CLASSNAME)) {
