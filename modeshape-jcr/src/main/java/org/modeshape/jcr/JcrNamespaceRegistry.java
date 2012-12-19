@@ -52,7 +52,7 @@ import org.modeshape.jcr.value.ValueFormatException;
  * </p>
  */
 @NotThreadSafe
-class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
+class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
 
     public static enum Behavior {
         SESSION,
@@ -190,6 +190,16 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
             uris[i++] = namespace.getNamespaceUri();
         }
         return uris;
+    }
+
+    @Override
+    public boolean isRegisteredPrefix( String prefix ) {
+        return registry.getNamespaceForPrefix(prefix) != null;
+    }
+
+    @Override
+    public boolean isRegisteredUri( String uri ) {
+        return registry.isRegisteredNamespaceUri(uri);
     }
 
     @Override
