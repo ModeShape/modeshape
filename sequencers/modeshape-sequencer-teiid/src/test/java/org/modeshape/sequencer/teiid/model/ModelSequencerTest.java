@@ -23,19 +23,28 @@
  */
 package org.modeshape.sequencer.teiid.model;
 
+import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
+import javax.jcr.Value;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryManager;
+import javax.jcr.query.QueryResult;
+import javax.jcr.query.RowIterator;
 import org.junit.Test;
 import org.modeshape.jcr.JcrMixLexicon;
+import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
 import org.modeshape.sequencer.teiid.lexicon.JdbcLexicon;
+import org.modeshape.sequencer.teiid.lexicon.ModelExtensionDefinitionLexicon;
 import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon;
 import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon.JcrId;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
@@ -84,6 +93,14 @@ public class ModelSequencerTest extends AbstractSequencerTest {
         createNodeWithContentFromFile("BooksProcedures.xmi", "model/books/BooksProcedures.xmi");
         Node outputNode = getOutputNode(this.rootNode, "models/BooksProcedures.xmi");
         assertNotNull(outputNode);
+
+        // make sure procedure has the extension properties and mixin
+        Node procedureNode = outputNode.getNode("getBooks");
+        assertNotNull(procedureNode);
+        assertThat(procedureNode.getPrimaryNodeType().getName(), is(RelationalLexicon.JcrId.PROCEDURE));
+        assertThat(procedureNode.isNodeType("rest:procedure"), is(true));
+        assertThat(procedureNode.getProperty("rest:restMethod").getString(), is("GET"));
+        assertThat(procedureNode.getProperty("rest:uri").getString(), is("books"));
     }
 
     @Test
@@ -772,6 +789,242 @@ public class ModelSequencerTest extends AbstractSequencerTest {
             assertNotNull(property);
             assertThat(property.getValues().length, is(1));
             assertThat(property.getValues()[0].getString(), is("TABLE"));
+        }
+    }
+
+    @Test
+    public void shouldSequenceModelWithMultipleMeds() throws Exception {
+        createNodeWithContentFromFile("ModelWithTwoMeds.xmi", "model/modelExtensionDefinition/ModelWithTwoMeds.xmi");
+        final Node outputNode = getOutputNode(this.rootNode, "models/ModelWithTwoMeds.xmi");
+        assertNotNull(outputNode);
+
+        { // MED group node
+            final Node medGroupNode = outputNode.getNode(CoreLexicon.JcrId.MODEL_EXTENSION_DEFINITIONS_GROUP_NODE);
+            assertNotNull(medGroupNode);
+
+            // relational MED node
+            assertNotNull(medGroupNode.getNode("relational"));
+
+            // salesforce MED node
+            assertNotNull(medGroupNode.getNode("salesforce"));
+        }
+
+        { // model object MED properties
+            Node tableNode = outputNode.getNode("productdata");
+            assertNotNull(tableNode);
+            assertThat(tableNode.getPrimaryNodeType().getName(), is(RelationalLexicon.JcrId.BASE_TABLE));
+
+            // check mixin
+            assertThat(tableNode.isNodeType("salesforce:baseTable"), is(true));
+
+            // need to reference property in this form since "relational" prefix has already been registered by sequencer init
+            // sequencer will create a new prefix for the "relational" MED. Probable new prefix will be "relational2"
+            // the MED URI is suffixed with a slash and the version number
+            assertThat(tableNode.getProperty("{http://www.teiid.org/ext/relational/2012/2}native-query").getString(),
+                       is("SELECT * FROM EastCoastProduct"));
+
+            // check explicitly MED property set in model
+            assertThat(tableNode.getProperty("salesforce:Custom").getBoolean(), is(true));
+            assertThat(tableNode.getProperty("{http://www.teiid.org/translator/salesforce/2012/1}Custom").getBoolean(), is(true));
+
+            // check MED default values
+            assertThat(tableNode.getProperty("salesforce:Supports Create").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Delete").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports ID Lookup").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Merge").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Query").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Replicate").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Retrieve").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Search").getBoolean(), is(false));
+        }
+
+        { // model object MED properties
+            Node tableNode = outputNode.getNode("productsymbols");
+            assertNotNull(tableNode);
+            assertThat(tableNode.getPrimaryNodeType().getName(), is(RelationalLexicon.JcrId.BASE_TABLE));
+
+            // check mixin
+            assertThat(tableNode.isNodeType("salesforce:baseTable"), is(true));
+
+            // explicitly check MED property set in model
+            assertThat(tableNode.getProperty("salesforce:Supports Query").getBoolean(), is(true));
+            assertThat(tableNode.getProperty("{http://www.teiid.org/translator/salesforce/2012/1}Supports Query").getBoolean(),
+                       is(true));
+
+            // check MED default values
+            assertThat(tableNode.getProperty("salesforce:Custom").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Create").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Delete").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports ID Lookup").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Merge").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Replicate").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Retrieve").getBoolean(), is(false));
+            assertThat(tableNode.getProperty("salesforce:Supports Search").getBoolean(), is(false));
+        }
+    }
+
+    @Test
+    public void shouldSequenceModelWithOneMed() throws Exception {
+        createNodeWithContentFromFile("ModelWithOneMed.xmi", "model/modelExtensionDefinition/ModelWithOneMed.xmi");
+        final Node outputNode = getOutputNode(this.rootNode, "models/ModelWithOneMed.xmi");
+        assertNotNull(outputNode);
+
+        // MED group node
+        final Node medGroupNode = outputNode.getNode(CoreLexicon.JcrId.MODEL_EXTENSION_DEFINITIONS_GROUP_NODE);
+        assertNotNull(medGroupNode);
+
+        // MED node exists
+        final Node medNode = medGroupNode.getNode("relational");
+        assertNotNull(medNode);
+
+        // MED properties
+        assertThat(medNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.EXTENDED_METAMODEL).getString(),
+                   is("http://www.metamatrix.com/metamodels/Relational"));
+        assertThat(medNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.NAMESPACE_PREFIX).getString(), is("relational"));
+        assertThat(medNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.NAMESPACE_URI).getString(),
+                   is("http://www.teiid.org/ext/relational/2012"));
+        assertThat(medNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.VERSION).getLong(), is(2L));
+        assertThat(medNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.DESCRIPTION).getString(),
+                   is("Relational metamodel extension properties"));
+
+        // MED model types is multi-valued
+        Value[] modelTypes = medNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.MODEL_TYPES).getValues();
+        assertThat(modelTypes.length, is(2));
+        String[] values = new String[] {modelTypes[0].getString(), modelTypes[1].getString()};
+        assertThat(values, hasItemInArray("PHYSICAL"));
+        assertThat(values, hasItemInArray("VIRTUAL"));
+
+        // Extended metaclasses
+        final NodeIterator nodeItr = medNode.getNodes();
+        assertThat(nodeItr.getSize(), is(2L));
+        boolean foundProcedure = false;
+        boolean foundTable = false;
+
+        while (nodeItr.hasNext()) {
+            Node metaclassNode = nodeItr.nextNode();
+            assertThat(metaclassNode.getPrimaryNodeType().getName(), is(ModelExtensionDefinitionLexicon.JcrId.EXTENDED_METACLASS));
+
+            if (!foundProcedure && "org.teiid.designer.metamodels.relational.impl.ProcedureImpl".equals(metaclassNode.getName())) {
+                foundProcedure = true;
+
+                // 8 property definitions
+                NodeIterator propDefItr = metaclassNode.getNodes();
+                assertThat(propDefItr.getSize(), is(8L));
+
+                { // check one property definition : deterministic
+                    final Node propNode = metaclassNode.getNode("{http://www.teiid.org/ext/relational/2012/2}deterministic");
+                    assertNotNull(propNode);
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(), is(true));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
+                               is(false));
+                    assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
+                               is("boolean"));
+
+                    NodeIterator itr = propNode.getNodes();
+                    assertThat(itr.getSize(), is(2L));
+
+                    { // display names
+                        Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
+                        assertNotNull(displayNameNode);
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
+                                   is("en"));
+                        assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
+                                   is("Deterministic"));
+                    }
+
+                    { // descriptions
+                        Node descriptionNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.DESCRIPTION);
+                        assertNotNull(descriptionNode);
+                        assertThat(descriptionNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
+                                   is("en"));
+                        assertThat(descriptionNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
+                                   is("Specifies that the source function will always returns the same result for a specific input value"));
+                    }
+                }
+            } else if (!foundTable
+                       && "org.teiid.designer.metamodels.relational.impl.BaseTableImpl".equals(metaclassNode.getName())) {
+                foundTable = true;
+
+                { // property definitions
+                    final NodeIterator propDefItr = metaclassNode.getNodes();
+                    assertThat(propDefItr.getSize(), is(1L));
+
+                    { // native-query
+                        final Node propNode = metaclassNode.getNode("{http://www.teiid.org/ext/relational/2012/2}native-query");
+                        assertNotNull(propNode);
+                        assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.ADVANCED).getBoolean(),
+                                   is(false));
+                        assertThat(propNode.hasProperty(ModelExtensionDefinitionLexicon.JcrId.Property.DEFAULT_VALUE), is(false));
+                        assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.INDEX).getBoolean(),
+                                   is(true));
+                        assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.MASKED).getBoolean(),
+                                   is(false));
+                        assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.REQUIRED).getBoolean(),
+                                   is(false));
+                        assertThat(propNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.Property.RUNTIME_TYPE).getString(),
+                                   is("string"));
+
+                        NodeIterator itr = propNode.getNodes();
+                        assertThat(itr.getSize(), is(1L));
+
+                        { // display names
+                            Node displayNameNode = propNode.getNode(ModelExtensionDefinitionLexicon.JcrId.Property.DISPLAY_NAME);
+                            assertNotNull(displayNameNode);
+                            assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.LOCALE).getString(),
+                                       is("en"));
+                            assertThat(displayNameNode.getProperty(ModelExtensionDefinitionLexicon.JcrId.TRANSLATION).getString(),
+                                       is("Native Query"));
+                        }
+                    }
+                }
+            } else {
+                fail();
+            }
+        }
+    }
+
+    @Test
+    public void shouldQueryMedRelatedNodes() throws Exception {
+        createNodeWithContentFromFile("ModelWithTwoMeds.xmi", "model/modelExtensionDefinition/ModelWithTwoMeds.xmi");
+        final Node outputNode = getOutputNode(this.rootNode, "models/ModelWithTwoMeds.xmi");
+        assertNotNull(outputNode);
+
+        final QueryManager qm = outputNode.getSession().getWorkspace().getQueryManager();
+
+        { // MED salesforce:baseTable mixin
+            final Query query = qm.createQuery("SELECT * from [salesforce:baseTable]", JcrRepository.QueryLanguage.JCR_SQL2);
+            final QueryResult result = query.execute();
+            final RowIterator itr = result.getRows();
+            assertThat(itr.getSize(), is(2L));
+        }
+
+        { // MED salesforce:baseTable mixin only one of the 2 tables have "Supports Query" set to "true"
+            final Query query = qm.createQuery("SELECT * from [salesforce:baseTable] where [salesforce:Supports Query] = 'true'",
+                                               JcrRepository.QueryLanguage.JCR_SQL2);
+            final QueryResult result = query.execute();
+            final RowIterator itr = result.getRows();
+            assertThat(itr.getSize(), is(1L));
+        }
+
+        { // MED salesforce:column mixin
+            final Query query = qm.createQuery("SELECT * from [salesforce:column]", JcrRepository.QueryLanguage.JCR_SQL2);
+            final QueryResult result = query.execute();
+            final RowIterator itr = result.getRows();
+            assertThat(itr.getSize(), is(14L));
+        }
+
+        { // MED relational:baseTable mixin (need to get prefix as it has been mapped)
+            final String nsPrefix = outputNode.getSession().getNamespacePrefix("http://www.teiid.org/ext/relational/2012/2");
+            final Query query = qm.createQuery("SELECT * from [" + nsPrefix + ":baseTable]", JcrRepository.QueryLanguage.JCR_SQL2);
+            final QueryResult result = query.execute();
+            final RowIterator itr = result.getRows();
+            assertThat(itr.getSize(), is(2L));
         }
     }
 }

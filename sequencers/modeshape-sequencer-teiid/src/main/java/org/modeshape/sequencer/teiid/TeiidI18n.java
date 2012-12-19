@@ -58,6 +58,8 @@ public final class TeiidI18n {
     public static I18n namespaceUriNotFoundInRegistry;
     public static I18n invalidVdbVersion;
 
+    public static I18n errorReadingMedMetaclassMappings;
+
     static {
         try {
             I18n.initialize(TeiidI18n.class);

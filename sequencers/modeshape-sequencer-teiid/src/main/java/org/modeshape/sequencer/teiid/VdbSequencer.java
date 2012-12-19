@@ -45,7 +45,6 @@ import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.sequencer.teiid.VdbDataRole.Permission;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
 import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
-import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
 import org.modeshape.sequencer.teiid.model.ModelSequencer;
 import org.modeshape.sequencer.teiid.model.ReferenceResolver;
 
@@ -197,16 +196,27 @@ public class VdbSequencer extends Sequencer {
     @Override
     public void initialize( final NamespaceRegistry registry,
                             final NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
-        registry.registerNamespace(VdbLexicon.Namespace.PREFIX, VdbLexicon.Namespace.URI);
-        registry.registerNamespace(XmiLexicon.Namespace.PREFIX, XmiLexicon.Namespace.URI);
-        registry.registerNamespace(CoreLexicon.Namespace.PREFIX, CoreLexicon.Namespace.URI);
+        LOGGER.debug("enter initialize");
+//        registry.registerNamespace(VdbLexicon.Namespace.PREFIX, VdbLexicon.Namespace.URI);
+//        registry.registerNamespace(XmiLexicon.Namespace.PREFIX, XmiLexicon.Namespace.URI);
+//        registry.registerNamespace(CoreLexicon.Namespace.PREFIX, CoreLexicon.Namespace.URI);
         registerNodeTypes("xmi.cnd", nodeTypeManager, true);
+        LOGGER.debug("xmi.cnd loaded");
+
+        registerNodeTypes("med.cnd", nodeTypeManager, true);
+        LOGGER.debug("med.cnd loaded");
+
         registerNodeTypes("mmcore.cnd", nodeTypeManager, true);
+        LOGGER.debug("mmcore.cnd loaded");
+
         registerNodeTypes("vdb.cnd", nodeTypeManager, true);
+        LOGGER.debug("vdb.cnd loaded");
 
         this.resolver = new ReferenceResolver();
         this.modelSequencer = new ModelSequencer(this.resolver);
         this.modelSequencer.initialize(registry, nodeTypeManager);
+
+        LOGGER.debug("exit initialize");
     }
 
     /**

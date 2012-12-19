@@ -63,6 +63,7 @@ public final class ModelNodeWriter {
     private final Map<String, Class<? extends ModelObjectHandler>> registry = new HashMap<String, Class<? extends ModelObjectHandler>>();
     private final ReferenceResolver resolver;
     private final VdbModel vdbModel;
+    private final ModelExtensionDefinitionHelper medHelper;
 
     /**
      * @param modelNode the model node where the output should be written to (cannot be <code>null</code>)
@@ -91,9 +92,22 @@ public final class ModelNodeWriter {
         this.reader = reader;
         this.vdbModel = vdbModel;
         this.context = context;
+        this.medHelper = new ModelExtensionDefinitionHelper(this);
     }
 
-    private ModelObjectHandler getHandler( final String namespaceUri ) throws Exception {
+    Context getContext() {
+        return this.context;
+    }
+
+    Node getModelNode() {
+        return this.outputNode;
+    }
+
+    ReferenceResolver getResolver() {
+        return this.resolver;
+    }
+
+    ModelObjectHandler getHandler( final String namespaceUri ) throws Exception {
         CheckArg.isNotEmpty(namespaceUri, "namespaceUri");
 
         // see if handler has already been constructed
@@ -110,6 +124,7 @@ public final class ModelNodeWriter {
             handler.setReader(this.reader);
             handler.setResolver(this.resolver);
             handler.setVdbModel(this.vdbModel);
+            handler.setModelExtensionDefinitionHelper(this.medHelper);
         }
 
         return handler;
@@ -144,6 +159,9 @@ public final class ModelNodeWriter {
                 result = false;
             } else {
                 result = writeUnresolvedReferences();
+
+                // add MED mixins to node
+                this.medHelper.assignModelNodeChildrenMedMixins(this.outputNode);
             }
         }
 
@@ -210,7 +228,8 @@ public final class ModelNodeWriter {
                         }
                     } else {
                         // single valued
-                        resolved.setProperty(propName, property.getValue());
+                        final String mappedName = this.medHelper.getMappedPropertyName(propName);
+                        resolved.setProperty(mappedName, property.getValue());
                         LOGGER.debug("setting property '{0}' with value '{1}' to resolved node {2}",
                                      propName,
                                      property.getValue(),

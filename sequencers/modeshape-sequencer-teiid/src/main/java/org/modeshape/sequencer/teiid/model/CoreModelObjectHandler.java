@@ -24,8 +24,6 @@
 package org.modeshape.sequencer.teiid.model;
 
 import static org.modeshape.sequencer.teiid.lexicon.CoreLexicon.Namespace.URI;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map.Entry;
 import javax.jcr.Node;
 import org.modeshape.common.util.CheckArg;
@@ -34,7 +32,6 @@ import org.modeshape.sequencer.teiid.VdbModel;
 import org.modeshape.sequencer.teiid.VdbModel.ValidationMarker;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon.JcrId;
-import org.modeshape.sequencer.teiid.lexicon.ModelExtensionDefinitionLexicon;
 import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
 import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
 import org.modeshape.sequencer.teiid.model.ReferenceResolver.UnresolvedReference;
@@ -44,13 +41,11 @@ import org.modeshape.sequencer.teiid.xmi.XmiElement;
  * The model object handler for the {@link org.modeshape.sequencer.teiid.lexicon.CoreLexicon.Namespace#URI core} namespace.
  */
 public final class CoreModelObjectHandler extends ModelObjectHandler {
-
+    
     /**
      * Tags not to sequence and ignore. These prefixes are not registered.
      */
     private static final String[] IGNORED_MODEL_ANNOTATION_TAG_PREFIXES = {"connection", "connectionProfile", "translator"};
-
-    private final List<String> meds = new ArrayList<String>();
 
     /**
      * @param nsPrefix the prefix being checked (cannot be <code>null</code> or empty)
@@ -80,9 +75,9 @@ public final class CoreModelObjectHandler extends ModelObjectHandler {
         CheckArg.isNotNull(modelNode, "node");
         CheckArg.isEquals(element.getNamespaceUri(), "namespace URI", URI, "relational URI");
 
-        LOGGER.debug("==== CoreModelObjectHandler:process:element={0}", element.getName());
-
         final String type = element.getName();
+        LOGGER.debug("==== CoreModelObjectHandler:process:element type={0}", type);
+
         if (CoreLexicon.ModelId.MODEL_ANNOTATION.equals(type)) {
             setProperty(modelNode, XmiLexicon.JcrId.UUID, element.getUuid());
             getResolver().record(element.getUuid(), modelNode);
@@ -151,7 +146,7 @@ public final class CoreModelObjectHandler extends ModelObjectHandler {
                             modelImport.getAttributeValue(CoreLexicon.ModelId.MODEL_LOCATION, URI));
 
                 if (getVdbModel() != null) {
-                    for (String importPath : getVdbModel().getImports()) {
+                    for (final String importPath : getVdbModel().getImports()) {
                         if (importPath.endsWith(modelImport.getAttributeValue(CoreLexicon.ModelId.MODEL_LOCATION, URI))) {
                             setProperty(importNode, JcrId.PATH, importPath);
                             break;
@@ -168,7 +163,7 @@ public final class CoreModelObjectHandler extends ModelObjectHandler {
 
                     if (StringUtil.isBlank(uuid)) {
                         // see if there is an annotated object child
-                        for (XmiElement child : annotation.getChildren()) {
+                        for (final XmiElement child : annotation.getChildren()) {
                             if (CoreLexicon.ModelId.ANNOTATED_OBJECT.equals(child.getName())) {
                                 uuid = child.getAttributeValue(CoreLexicon.ModelId.HREF, URI);
                                 break;
@@ -223,34 +218,35 @@ public final class CoreModelObjectHandler extends ModelObjectHandler {
                         boolean hasTags = false;
 
                         if (CoreLexicon.ModelId.TAGS.equals(child.getName())) {
-                            boolean addProperty = false;
-                            final String key = child.getAttributeValue(CoreLexicon.ModelId.KEY, URI);
+                            String key = child.getAttributeValue(CoreLexicon.ModelId.KEY, URI);
 
                             if (StringUtil.isBlank(key)) {
                                 continue;
                             }
 
-                            final String[] parts = key.split(":", 2);
+                            final String value = child.getAttributeValue(CoreLexicon.ModelId.VALUE, URI);
+                            final String[] parts = key.split(":", 2); // part 0 = namespace prefix, part 2 = property name
 
-                            // just add if no namespace
-                            if (parts.length == 1) {
-                                addProperty = true;
-                            } else {
-                                // tag has a namespace, see if it has been registered
-                                final String nsPrefix = parts[0];
-
-                                // see if ignored prefix
-                                // TODO remove MED stuff here when MED sequencing is implemented
-                                if (!isIgnoredTag(nsPrefix) && !this.meds.contains(nsPrefix)) {
-                                    if (ModelExtensionDefinitionLexicon.Namespace.PREFIX.equals(nsPrefix)) {
-                                        registerMed(parts[1]);
-                                    } else {
-                                        addProperty = true;
-                                    }
+                            // don't process if namespace is being ignored
+                            if (isIgnoredTag(parts[0])) {
+                                if (node != null) {
+                                    LOGGER.debug("tag '{0}' not added as property of node '{1}'", key, node.getName());
+                                } else if (unresolved != null) {
+                                    LOGGER.debug("tag '{0}' not added as property of node '{1}'", key, unresolved.getUuid());
                                 }
+
+                                continue; // key should be ignored
                             }
 
-                            if (addProperty) {
+                            if ((node != null) && LOGGER.isDebugEnabled()) {
+                                LOGGER.debug("annotated object node name '{0}' has type of '{1}' and key of '{2}'",
+                                             node.getName(),
+                                             node.getPrimaryNodeType().getName(),
+                                             key);
+                            }
+
+                            // only process when MED helper doesn't 
+                            if (!getMedHelper().process(modelNode, node, unresolved, child)) {
                                 if (!hasTags) {
                                     hasTags = true;
 
@@ -261,19 +257,10 @@ public final class CoreModelObjectHandler extends ModelObjectHandler {
                                     }
                                 }
 
-                                final String value = child.getAttributeValue(CoreLexicon.ModelId.VALUE, URI);
-
                                 if (node != null) {
-                                    node.setProperty(key, value);
+                                    setProperty(node, key, value);
                                 } else if (unresolved != null) {
                                     unresolved.addProperty(key, value, false);
-                                }
-                            } else {
-                                if (node != null) {
-                                    LOGGER.debug("tag '{0}' not added as property of node '{1}'", key,  node.getName());
-                                } else if (unresolved != null) {
-                                    LOGGER.debug("tag '{0}' not added as property of node '{1}'", key, unresolved.getUuid());
-
                                 }
                             }
                         } else {
@@ -285,11 +272,5 @@ public final class CoreModelObjectHandler extends ModelObjectHandler {
         } else {
             LOGGER.debug("**** core type of '{0}' was not processed", type);
         }
-    }
-
-    private void registerMed( final String medPrefix ) {
-        assert (medPrefix != null);
-        this.meds.add(medPrefix);
-        LOGGER.debug("registered MED '{0}'", medPrefix);
     }
 }

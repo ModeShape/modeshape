@@ -23,6 +23,8 @@
  */
 package org.modeshape.sequencer.teiid.model;
 
+import java.io.IOException;
+import java.io.InputStream;
 import javax.jcr.Binary;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -36,11 +38,8 @@ import org.modeshape.sequencer.teiid.TeiidI18n;
 import org.modeshape.sequencer.teiid.VdbModel;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
 import org.modeshape.sequencer.teiid.lexicon.DiagramLexicon;
-import org.modeshape.sequencer.teiid.lexicon.ModelExtensionDefinitionLexicon;
 import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon;
 import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
-import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * A sequencer of Teiid XMI model files.
@@ -91,7 +90,17 @@ public class ModelSequencer extends Sequencer {
         final Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
         outputNode.addMixin(CoreLexicon.JcrId.MODEL);
-        return sequenceModel(binaryValue.getStream(), outputNode, outputNode.getPath(), null, context);
+
+        InputStream modelStream = null;
+
+        try {
+            modelStream = binaryValue.getStream();
+            return sequenceModel(modelStream, outputNode, outputNode.getPath(), null, context);
+        } finally {
+            if (modelStream != null) {
+                modelStream.close();
+            }
+        }
     }
 
     /**
@@ -121,6 +130,9 @@ public class ModelSequencer extends Sequencer {
         super.registerNodeTypes("../xmi.cnd", nodeTypeManager, true);
         LOGGER.debug("xmi.cnd loaded");
 
+        super.registerNodeTypes("../med.cnd", nodeTypeManager, true);
+        LOGGER.debug("med.cnd loaded");
+
         super.registerNodeTypes("../mmcore.cnd", nodeTypeManager, true);
         LOGGER.debug("mmcore.cnd loaded");
 
@@ -135,9 +147,7 @@ public class ModelSequencer extends Sequencer {
 
         // Register some of the namespaces we'll need ...
         registerNamespace(DiagramLexicon.Namespace.PREFIX, DiagramLexicon.Namespace.URI, registry);
-        registerNamespace(ModelExtensionDefinitionLexicon.Namespace.PREFIX, // TODO may not need this if MED CND is made
-                          ModelExtensionDefinitionLexicon.Namespace.URI,
-                          registry);
+
         LOGGER.debug("exit initialize");
     }
 
