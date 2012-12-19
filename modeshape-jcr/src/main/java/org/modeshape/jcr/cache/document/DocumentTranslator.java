@@ -189,7 +189,7 @@ public class DocumentTranslator {
         return propertyFactory;
     }
 
-    void setLargeValueSize( long largeValueSize ) {
+    void setMinimumStringLengthForBinaryStorage( long largeValueSize ) {
         assert largeValueSize > -1;
         this.largeStringSize.set(largeValueSize);
     }

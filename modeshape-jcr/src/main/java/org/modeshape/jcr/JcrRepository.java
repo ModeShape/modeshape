@@ -1026,7 +1026,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 if (change.largeValueChanged) {
                     // We can update the value used in the repository cache dynamically ...
                     BinaryStorage binaryStorage = config.getBinaryStorage();
-                    this.cache.setLargeValueSizeInBytes(binaryStorage.getMinimumBinarySizeInBytes());
+                    this.cache.setLargeStringLength(binaryStorage.getMinimumBinarySizeInBytes());
                     this.context.getBinaryStore().setMinimumBinarySizeInBytes(binaryStorage.getMinimumBinarySizeInBytes());
                 }
                 if (change.workspacesChanged) {

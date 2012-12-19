@@ -332,12 +332,14 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                 // won't even be a 'binary-storage=BINARIES' model node.
                 writer.writeStartElement(Element.FILE_BINARY_STORAGE.getLocalName());
                 ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
+                ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
                 ModelAttributes.PATH.marshallAsAttribute(storage, false, writer);
                 ModelAttributes.RELATIVE_TO.marshallAsAttribute(storage, false, writer);
                 writer.writeEndElement();
             } else if (ModelKeys.CACHE_BINARY_STORAGE.equals(storageType)) {
                 writer.writeStartElement(Element.CACHE_BINARY_STORAGE.getLocalName());
                 ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
+                ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
                 ModelAttributes.DATA_CACHE_NAME.marshallAsAttribute(storage, false, writer);
                 ModelAttributes.METADATA_CACHE_NAME.marshallAsAttribute(storage, false, writer);
                 ModelAttributes.CACHE_CONTAINER.marshallAsAttribute(storage, false, writer);
@@ -345,12 +347,14 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             } else if (ModelKeys.DB_BINARY_STORAGE.equals(storageType)) {
                 writer.writeStartElement(Element.DB_BINARY_STORAGE.getLocalName());
                 ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
+                ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
                 ModelAttributes.DATA_SOURCE_JNDI_NAME.marshallAsAttribute(storage, false, writer);
                 writer.writeEndElement();
             } else if (ModelKeys.CUSTOM_BINARY_STORAGE.equals(storageType)) {
                 ModelNode custom_storage = binaryStorage.get(ModelKeys.CUSTOM_BINARY_STORAGE);
                 writer.writeStartElement(Element.CUSTOM_BINARY_STORAGE.getLocalName());
                 ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(repository, false, writer);
+                ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
                 for (String key : storage.keys()) {
                     if (key.equals(ModelKeys.CLASSNAME)) {
                         ModelAttributes.CLASSNAME.marshallAsAttribute(storage, false, writer);

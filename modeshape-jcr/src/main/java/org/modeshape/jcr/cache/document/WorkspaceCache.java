@@ -87,9 +87,9 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         this.nodesByKey = cache;
     }
 
-    public void setMinimumBinarySizeInBytes( long largeValueSize ) {
+    public void setMinimumStringLengthForBinaryStorage( long largeValueSize ) {
         assert largeValueSize > -1;
-        this.translator.setLargeValueSize(largeValueSize);
+        this.translator.setMinimumStringLengthForBinaryStorage(largeValueSize);
     }
 
     @Override
