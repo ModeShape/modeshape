@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
@@ -47,6 +46,7 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrConstants;
+import org.modeshape.jcr.api.NamespaceRegistry;
 import org.modeshape.sequencer.teiid.TeiidI18n;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
 import org.modeshape.sequencer.teiid.lexicon.ModelExtensionDefinitionLexicon.JcrId;
@@ -286,21 +286,19 @@ public class ModelExtensionDefinitionHelper {
      * @param nsPrefix the prefix that the suffix is added to (cannot be <code>null</code> or empty)
      * @param suffix the number appended to the prefix
      * @return the new unregistered, unique prefix (never <code>null</code> or empty)
+     * @throws Exception if there is a problem accessing the registry
      */
     private String createMedPrefix( final NamespaceRegistry registry,
                                     final String nsPrefix,
-                                    long suffix ) {
+                                    long suffix ) throws Exception {
         assert (registry != null);
         assert (!StringUtil.isBlank(nsPrefix));
 
         final String newPrefix = nsPrefix + suffix;
 
         // if new prefix is already registered create another prefix
-        try {
-            registry.getURI(nsPrefix + suffix);
+        if (registry.isRegisteredPrefix(newPrefix)) {
             return createMedPrefix(registry, nsPrefix, ++suffix);
-        } catch (final Exception e) {
-            // not registered
         }
 
         LOGGER.debug("created new namespace prefix '{0}'", newPrefix);
@@ -590,7 +588,7 @@ public class ModelExtensionDefinitionHelper {
                     // don't register if MED is already registered
                     if (!this.medPrefixMap.containsKey(nsPrefix)) {
                         registerNamespace(annotatedObjectNode.getSession(),
-                                          annotatedObjectNode.getSession().getWorkspace().getNamespaceRegistry(),
+                                          (NamespaceRegistry)annotatedObjectNode.getSession().getWorkspace().getNamespaceRegistry(),
                                           nsPrefix,
                                           annotatedObjectNode.getProperty(JcrId.NAMESPACE_URI).getString(),
                                           annotatedObjectNode.getProperty(JcrId.VERSION).getLong());
@@ -703,18 +701,14 @@ public class ModelExtensionDefinitionHelper {
         String registeredPrefix = null;
         String registeredUri = null;
 
-        // see if prefix is registered
-        try {
+        // see if there is a registered prefix for the MED URI
+        if (registry.isRegisteredUri(medUri)) {
             registeredPrefix = registry.getPrefix(medUri);
-        } catch (final Exception e) {
-            // nothing to do
         }
 
-        // see if URI is registered
-        try {
+        // see if there is a registered URI for the MED prefix
+        if (registry.isRegisteredPrefix(medPrefix)) {
             registeredUri = registry.getURI(medPrefix);
-        } catch (final Exception e) {
-            // nothing to do
         }
 
         final boolean prefixMatch = !StringUtil.isBlank(registeredUri);
