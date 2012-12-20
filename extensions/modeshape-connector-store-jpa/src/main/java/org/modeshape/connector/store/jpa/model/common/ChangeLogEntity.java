@@ -33,6 +33,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import org.hibernate.annotations.Index;
+import org.modeshape.common.util.HashCode;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.basic.JodaDateTime;
 
@@ -54,7 +55,7 @@ public class ChangeLogEntity {
     @Id
     @GeneratedValue( strategy = GenerationType.AUTO )
     @Column( name = "ID", updatable = false )
-    private Long id;
+    private long id;
 
     @Column( name = "USERNAME", updatable = false, nullable = false, length = 64, unique = false )
     private String username;
@@ -82,7 +83,7 @@ public class ChangeLogEntity {
     /**
      * @return id
      */
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
@@ -121,7 +122,7 @@ public class ChangeLogEntity {
      */
     @Override
     public int hashCode() {
-        return id.hashCode();
+        return  HashCode.compute(id);
     }
 
     /**
@@ -134,7 +135,7 @@ public class ChangeLogEntity {
         if (obj == this) return true;
         if (obj instanceof ChangeLogEntity) {
             ChangeLogEntity that = (ChangeLogEntity)obj;
-            return id.equals(that.id);
+            return id == that.id;
         }
         return false;
     }

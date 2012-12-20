@@ -57,7 +57,7 @@ public class WorkspaceEntity implements Serializable {
 
     @Id
     @GeneratedValue( strategy = GenerationType.AUTO )
-    private Long id;
+    private long id;
 
     @Column( name = "NAME", nullable = false, unique = false, length = 128, updatable = false )
     private String name;
@@ -78,7 +78,7 @@ public class WorkspaceEntity implements Serializable {
     /**
      * @param id Sets id to the specified value.
      */
-    public void setId( Long id ) {
+    public void setId( long id ) {
         this.id = id;
     }
 
@@ -103,7 +103,9 @@ public class WorkspaceEntity implements Serializable {
      */
     @Override
     public int hashCode() {
-        return id.hashCode();
+    	int hash = 0;
+		hash += (this.getId() != null ? this.getId().hashCode() : 0);
+		return hash;
     }
 
     /**
@@ -116,7 +118,7 @@ public class WorkspaceEntity implements Serializable {
         if (obj == this) return true;
         if (obj instanceof WorkspaceEntity) {
             WorkspaceEntity that = (WorkspaceEntity)obj;
-            if (!this.id.equals(that.id)) return false;
+            if (this.id != that.id) return false;
             if (!this.name.equals(that.name)) return false;
             return true;
         }
