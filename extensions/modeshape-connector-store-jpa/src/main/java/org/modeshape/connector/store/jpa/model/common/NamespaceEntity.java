@@ -54,7 +54,7 @@ public class NamespaceEntity implements Serializable {
 
     @Id
     @GeneratedValue( strategy = GenerationType.AUTO )
-    private long id;
+    private Long id;
 
     @Column( name = "URI", nullable = true, unique = false, length = 512, updatable = false )
     private String uri;
@@ -75,14 +75,14 @@ public class NamespaceEntity implements Serializable {
     /**
      * @return id
      */
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
     /**
      * @param id Sets id to the specified value.
      */
-    public void setId( long id ) {
+    public void setId( Long id ) {
         this.id = id;
     }
 
@@ -120,7 +120,8 @@ public class NamespaceEntity implements Serializable {
         if (obj == this) return true;
         if (obj instanceof NamespaceEntity) {
             NamespaceEntity that = (NamespaceEntity)obj;
-            if (this.id!=that.id) return false;
+            if (this.id==null || that.id == null) return false;
+            if (!this.id.equals(that.id)) return false;
             if (!this.uri.equals(that.uri)) return false;
             return true;
         }

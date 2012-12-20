@@ -41,7 +41,7 @@ public class SubgraphQueryEntity implements Serializable {
     @Id
     @GeneratedValue( strategy = GenerationType.AUTO )
     @Column( name = "ID", updatable = false )
-    private long id;
+    private Long id;
 
     @Column( name = "WORKSPACE_ID", nullable = false )
     private Long workspaceId;
@@ -58,7 +58,7 @@ public class SubgraphQueryEntity implements Serializable {
     /**
      * @return id
      */
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
