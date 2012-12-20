@@ -33,11 +33,13 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.query.Query;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.federation.FederationManager;
+import org.modeshape.jcr.api.query.QueryManager;
 import org.modeshape.jcr.federation.spi.ConnectorException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -60,7 +62,6 @@ public class MockConnectorTest extends SingleUseAbstractTest {
         startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream("config/repo-config-mock-federation.json"));
 
         testRoot = ((Node) session.getRootNode()).addNode("testRoot");
-        testRoot.addNode("node1");
         session.save();
 
         federationManager = ((Workspace) session.getWorkspace()).getFederationManager();
@@ -68,6 +69,10 @@ public class MockConnectorTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldCreateProjectionWithAlias() throws Exception {
+        //add an internal node
+        testRoot.addNode("node1");
+        session.save();
+
         // link the first external document
         federationManager.createProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC1_LOCATION, "federated1");
         assertEquals(2, testRoot.getNodes().getSize());
@@ -94,7 +99,7 @@ public class MockConnectorTest extends SingleUseAbstractTest {
     public void shouldCreateProjectionWithoutAlias() throws Exception {
         // link the first external document
         federationManager.createProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC1_LOCATION, null);
-        assertEquals(2, testRoot.getNodes().getSize());
+        assertEquals(1, testRoot.getNodes().getSize());
 
         Node doc1Federated = assertNodeFound("/testRoot" + MockConnector.DOC1_LOCATION);
         assertEquals(testRoot.getIdentifier(), doc1Federated.getParent().getIdentifier());
@@ -398,6 +403,35 @@ public class MockConnectorTest extends SingleUseAbstractTest {
             childrenNames.add(nodesIterator.nextNode().getName());
         }
         assertEquals(Arrays.asList("federated4", "federated5", "federated6"), childrenNames);
+    }
+
+    @Test
+    public void projectionsShouldBeIndexedWhenReindexIsCalled() throws Exception {
+        federationManager.createProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC1_LOCATION, "federated1");
+        federationManager.createProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC2_LOCATION, "federated2");
+
+        Workspace workspace = session.getWorkspace();
+        workspace.reindex();
+
+        QueryManager queryManager = workspace.getQueryManager();
+        Query query = queryManager.createQuery("select * FROM [nt:base] WHERE [jcr:path] LIKE '/testRoot/federated1'",
+                                               Query.JCR_SQL2);
+        assertEquals(1, query.execute().getNodes().getSize());
+
+        query = queryManager.createQuery("select * FROM [nt:base] WHERE [jcr:path] LIKE '/testRoot/federated2'",
+                                         Query.JCR_SQL2);
+        assertEquals(1, query.execute().getNodes().getSize());
+
+        Node externalNode = session.getNode("/testRoot/federated2/federated3");
+        externalNode.setProperty("test", "a value");
+        session.save();
+
+        query = queryManager.createQuery("select * FROM [nt:base] as a WHERE a.test='a value'", Query.JCR_SQL2);
+        assertEquals(1, query.execute().getNodes().getSize());
+
+        query = queryManager.createQuery("select * FROM [nt:base] WHERE [jcr:path] LIKE '/testRoot/federated2/federated3'",
+                                         Query.JCR_SQL2);
+        assertEquals(1, query.execute().getNodes().getSize());
     }
 
     private void assertExternalNodeHasChildren( String externalNodePath,

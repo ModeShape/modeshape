@@ -5,6 +5,12 @@
         "default" : "default",
         "allowCreation" : true
     },
+    "query" : {
+        "enabled" : true,
+        "indexStorage" : {
+            "type" : "ram"
+        }
+    },
     "externalSources" : {
         "mock-source" : {
             "classname" : "org.modeshape.connector.mock.MockConnector",

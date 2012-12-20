@@ -162,6 +162,8 @@ public class SessionNode implements MutableCachedNode {
         if (childRefChanges != null && !childRefChanges.isEmpty()) return true;
         ChangedAdditionalParents additionalParents = additionalParents();
         if (additionalParents != null && !additionalParents.isEmpty()) return true;
+        ReferrerChanges referrerChanges = referrerChanges(false);
+        if (referrerChanges != null && !referrerChanges.isEmpty()) return true;
         return false;
     }
 
@@ -861,7 +863,6 @@ public class SessionNode implements MutableCachedNode {
         WritableSessionCache session = writableSession(cache);
         session.assertInSession(this);
 
-        // TODO: Federation - how to determine the propery child key ...
         if (key == null) key = getKey().withRandomId();
 
         // Create the new node ...
@@ -897,7 +898,6 @@ public class SessionNode implements MutableCachedNode {
         WritableSessionCache session = writableSession(cache);
         session.assertInSession(this);
 
-        // TODO: Federation - how to determine the propery child key ...
         if (key == null) key = getKey().withRandomId();
 
         // Create the new node ...
@@ -1914,31 +1914,16 @@ public class SessionNode implements MutableCachedNode {
             return null;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#toString()
-         */
         @Override
         public String toString() {
             return inserted + " before " + before;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#hashCode()
-         */
         @Override
         public int hashCode() {
             return this.before.hashCode();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#equals(java.lang.Object)
-         */
         @Override
         public boolean equals( Object obj ) {
             if (obj == this) return true;
