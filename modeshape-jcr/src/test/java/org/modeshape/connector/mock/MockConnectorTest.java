@@ -406,7 +406,7 @@ public class MockConnectorTest extends SingleUseAbstractTest {
     }
 
     @Test
-    public void projectionsShouldBeIndexedWhenReindexIsCalled() throws Exception {
+    public void shouldIndexProjectionsAndExternalNodes() throws Exception {
         federationManager.createProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC1_LOCATION, "federated1");
         federationManager.createProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.DOC2_LOCATION, "federated2");
 
@@ -432,6 +432,28 @@ public class MockConnectorTest extends SingleUseAbstractTest {
         query = queryManager.createQuery("select * FROM [nt:base] WHERE [jcr:path] LIKE '/testRoot/federated2/federated3'",
                                          Query.JCR_SQL2);
         assertEquals(1, query.execute().getNodes().getSize());
+    }
+
+    @Test
+    public void shouldNotIndexNotQueryableDocument() throws Exception {
+        federationManager.createProjection("/testRoot", MockConnector.SOURCE_NAME, MockConnector.NONT_QUERYABLE_DOC_LOCATION,
+                                           "nonQueryableDoc");
+
+        Workspace workspace = session.getWorkspace();
+        workspace.reindex();
+
+        Node externalNode = assertNodeFound("/testRoot/nonQueryableDoc");
+
+        QueryManager queryManager = workspace.getQueryManager();
+        Query query = queryManager.createQuery("select * FROM [nt:base] WHERE [jcr:path] LIKE '/testRoot/nonQueryableDoc'",
+                                               Query.JCR_SQL2);
+        assertEquals(0, query.execute().getNodes().getSize());
+
+        //change the document and re-run the query
+        externalNode.setProperty("test", "a value");
+        session.save();
+
+        assertEquals(0, query.execute().getNodes().getSize());
     }
 
     private void assertExternalNodeHasChildren( String externalNodePath,

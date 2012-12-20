@@ -113,6 +113,7 @@ public class DocumentTranslator {
     public static final String WEAK = "weak";
     public static final String STRONG = "strong";
     public static final String REFERENCE_COUNT = "refCount";
+    public static final String QUERYABLE_FIELD = "$queryable";
 
     /**
      * A constant that is used as the name for a nested document in which additional, embedded documents can be placed. Each of
@@ -1733,6 +1734,20 @@ public class DocumentTranslator {
         removeFederatedSegments(federatedDocument, new HashSet<String>(Arrays.asList(externalNodeKeys)));
     }
 
+    protected boolean isQueryable(Document document) {
+        //all documents are considered queryable by default
+        return !document.containsField(QUERYABLE_FIELD) || document.getBoolean(QUERYABLE_FIELD).equals(Boolean.TRUE);
+    }
+
+    /**
+     * Marks the given document as queryable, by setting a flag.
+     *
+     * @param document a {@link EditableDocument} instance; never null
+     * @param queryable a boolean which indicates whether the document should be queryable or not.
+     */
+    public void setQueryable(EditableDocument document, boolean queryable) {
+        document.set(QUERYABLE_FIELD, queryable);
+    }
 
     /**
      * Given an existing document adds a new federated segment with the given alias pointing to the external document located at

@@ -56,10 +56,12 @@ public class MockConnector extends Connector implements Pageable {
     public static final String DOC2_LOCATION = "/doc2";
 
     static final String PAGED_DOC_LOCATION = "/pagedDoc";
+    static final String NONT_QUERYABLE_DOC_LOCATION = "/nonQueryableDoc";
 
     private static final String DOC3_LOCATION = DOC2_LOCATION + "/doc3";
 
     private final String PAGED_DOCUMENT_ID = newId();
+    private final String NON_QUERYABLE_DOCUMENT_ID = newId();
 
     private final static Map<String, Document> persistentDocumentsByLocation = new LinkedHashMap<String, Document>();
     private final static Map<String, Document> persistentDocumentsById = new HashMap<String, Document>();
@@ -133,6 +135,11 @@ public class MockConnector extends Connector implements Pageable {
                     .document();
             documentsById.put(PAGED_DOCUMENT_ID, pagedDoc);
             documentsByLocation.put(PAGED_DOC_LOCATION, pagedDoc);
+
+            EditableDocument nonQueryableDoc = newDocument(NON_QUERYABLE_DOCUMENT_ID).setPrimaryType(JcrNtLexicon.UNSTRUCTURED)
+                    .setNotQueryable().document();
+            documentsById.put(NON_QUERYABLE_DOCUMENT_ID, nonQueryableDoc);
+            documentsByLocation.put(NONT_QUERYABLE_DOC_LOCATION, nonQueryableDoc);
         }
 
         if (!alreadyInitialized) {

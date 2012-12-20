@@ -96,6 +96,7 @@ public class SessionNode implements MutableCachedNode {
     private final AtomicReference<MutableChildReferences> appended = new AtomicReference<MutableChildReferences>();
     private final AtomicReference<MixinChanges> mixinChanges = new AtomicReference<MixinChanges>();
     private final AtomicReference<ReferrerChanges> referrerChanges = new AtomicReference<ReferrerChanges>();
+    private final AtomicReference<Boolean> isQueryable = new AtomicReference<Boolean>();
     private final boolean isNew;
     private volatile LockChange lockChange;
 
@@ -1109,7 +1110,6 @@ public class SessionNode implements MutableCachedNode {
         writableSessionCache.assertInSession(this);
         DeepClone cloner = new DeepClone(this, writableSessionCache, sourceNode, sourceCache);
         cloner.execute();
-        return;
     }
 
     @Override
@@ -1135,6 +1135,22 @@ public class SessionNode implements MutableCachedNode {
     @SuppressWarnings( "synthetic-access" )
     public NodeChanges getNodeChanges() {
         return new NodeChanges();
+    }
+
+    @Override
+    public boolean isQueryable( NodeCache cache ) {
+        Boolean isQueryable = this.isQueryable.get();
+        if (isQueryable != null) {
+            return isQueryable;
+        }
+        CachedNode persistedNode = nodeInWorkspace(session(cache));
+        //if the node does not exist yet, it is queryable by default
+        return persistedNode == null || persistedNode.isQueryable(cache);
+    }
+
+    @Override
+    public void setQueryable( boolean queryable ) {
+        this.isQueryable.set(queryable);
     }
 
     @Override

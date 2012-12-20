@@ -393,6 +393,12 @@ public class LazyCachedNode implements CachedNode, Serializable {
     }
 
     @Override
+    public boolean isQueryable( NodeCache cache ) {
+        WorkspaceCache wsCache = workspaceCache(cache);
+        return wsCache.translator().isQueryable(document(wsCache));
+    }
+
+    @Override
     public int hashCode() {
         return key.hashCode();
     }

@@ -214,6 +214,14 @@ public interface DocumentWriter extends PageWriter {
      */
     DocumentWriter setCacheTtlSeconds( int seconds );
 
+    /**
+     * Sets a flag on the underlying document which indicates that it should not be indexed (and therefore will not appear
+     * in queries) by the repository.
+     *
+     * @return this writer; never null;
+     */
+    DocumentWriter setNotQueryable();
+
     @Override
     DocumentWriter addChild( String id,
                              String name );

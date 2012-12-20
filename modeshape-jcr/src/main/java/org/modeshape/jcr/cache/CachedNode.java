@@ -222,4 +222,13 @@ public interface CachedNode {
      */
     boolean isAtOrBelow( NodeCache cache,
                          Path path );
+
+    /**
+     * Determine if this node should be indexed and therefore available for querying. By default, every node is queryable,
+     * so only in certain cases can a node be made non-queryable.
+
+     * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null     *
+     * @return {@code true} if the node should be indexed, {@code false} otherwise
+     */
+    boolean isQueryable(NodeCache cache);
 }

@@ -258,6 +258,12 @@ public class FederatedDocumentWriter implements DocumentWriter {
     }
 
     @Override
+    public DocumentWriter setNotQueryable() {
+        translator.setQueryable(federatedDocument, false);
+        return this;
+    }
+
+    @Override
     public DocumentWriter setParents( List<String> parentIds ) {
         return setParents(parentIds.toArray(new String[parentIds.size()]));
     }

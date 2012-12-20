@@ -945,6 +945,13 @@ public class WritableSessionCache extends AbstractSessionCache {
                     changes.nodeChanged(key, newPath);
                 }
 
+                //write additional node "metadata", meaning various flags which have internal meaning
+                boolean queryable = node.isQueryable(this);
+                if (!queryable) {
+                    //we are only interested if the node is not queryable, as by default all nodes are queryable.
+                    translator.setQueryable(doc, false);
+                }
+
                 if (node.isNew()) {
                     // We need to create the schematic entry for the new node ...
                     if (documentStore.storeDocument(keyStr, doc) != null) {
@@ -962,7 +969,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     }
 
                     // And record the new node via the monitor ...
-                    if (monitor != null) {
+                    if (monitor != null && queryable) {
                         // Get the primary and mixin type names; even though we're passing in the session, the two properties
                         // should be there and shouldn't require a looking in the cache...
                         Name primaryType = node.getPrimaryType(this);
@@ -984,7 +991,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // when linking/un-linking nodes (e.g. shareable node or jcr:system) this condition will be false.
                     // the downside of this is that there may be cases (e.g. back references when working with versions) in which
                     // we might loose information from the indexes
-                    if (monitor != null && (isSameWorkspace || externalNodeChanged)) {
+                    if (monitor != null && queryable && (isSameWorkspace || externalNodeChanged)) {
                         // Get the primary and mixin type names; even though we're passing in the session, the two properties
                         // should be there and shouldn't require a looking in the cache...
                         Name primaryType = node.getPrimaryType(this);
