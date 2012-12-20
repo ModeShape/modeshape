@@ -55,7 +55,7 @@ public class ChangeLogEntity {
     @Id
     @GeneratedValue( strategy = GenerationType.AUTO )
     @Column( name = "ID", updatable = false )
-    private long id;
+    private Long id;
 
     @Column( name = "USERNAME", updatable = false, nullable = false, length = 64, unique = false )
     private String username;
@@ -83,7 +83,7 @@ public class ChangeLogEntity {
     /**
      * @return id
      */
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -135,7 +135,7 @@ public class ChangeLogEntity {
         if (obj == this) return true;
         if (obj instanceof ChangeLogEntity) {
             ChangeLogEntity that = (ChangeLogEntity)obj;
-            return id == that.id;
+            return id != null && that.id!=null && id.equals(that.id);
         }
         return false;
     }
