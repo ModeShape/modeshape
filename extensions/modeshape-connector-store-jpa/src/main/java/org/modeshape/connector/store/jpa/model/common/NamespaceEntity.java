@@ -119,6 +119,7 @@ public class NamespaceEntity implements Serializable {
         if (obj == this) return true;
         if (obj instanceof NamespaceEntity) {
             NamespaceEntity that = (NamespaceEntity)obj;
+            if (this.id==null || that.id == null) return false;
             if (!this.id.equals(that.id)) return false;
             if (!this.uri.equals(that.uri)) return false;
             return true;

@@ -136,7 +136,7 @@ public class ChangeLogEntity {
         if (obj == this) return true;
         if (obj instanceof ChangeLogEntity) {
             ChangeLogEntity that = (ChangeLogEntity)obj;
-            return id.equals(that.id);
+            return id != null && that.id!=null && id.equals(that.id);
         }
         return false;
     }

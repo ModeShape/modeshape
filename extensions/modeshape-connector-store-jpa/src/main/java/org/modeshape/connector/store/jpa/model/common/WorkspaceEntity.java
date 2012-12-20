@@ -40,6 +40,7 @@ import javax.persistence.Query;
 import javax.persistence.Table;
 import org.hibernate.annotations.Index;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.HashCode;
 
 /**
  * A WorkspaceEntity represents a workspace that has been create in the store. WorkspaceEntity records are immutable and shared by
@@ -103,7 +104,11 @@ public class WorkspaceEntity implements Serializable {
      */
     @Override
     public int hashCode() {
+<<<<<<< HEAD
         return id.hashCode();
+=======
+    	return  HashCode.compute(id);
+>>>>>>> 9b2abcd... MODE-1740 Updated entity hashCode() and equals() methods to handle null IDs
     }
 
     /**
@@ -116,6 +121,7 @@ public class WorkspaceEntity implements Serializable {
         if (obj == this) return true;
         if (obj instanceof WorkspaceEntity) {
             WorkspaceEntity that = (WorkspaceEntity)obj;
+            if (this.id==null || that.id == null) return false;
             if (!this.id.equals(that.id)) return false;
             if (!this.name.equals(that.name)) return false;
             return true;
