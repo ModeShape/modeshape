@@ -86,6 +86,11 @@ public class JcrInitialContentTest extends SingleUseAbstractTest {
         assertCarsWithMixins(ws6);
     }
 
+    @Override
+    protected boolean startRepositoryAutomatically() {
+        return false;
+    }
+
     private void assertCars( String defaultWs ) throws Exception {
         assertContentInWorkspace(defaultWs, "/Cars", JcrConstants.NT_UNSTRUCTURED, null);
         assertContentInWorkspace(defaultWs, "/Cars/Hybrid", JcrConstants.NT_UNSTRUCTURED, null);

@@ -96,6 +96,17 @@ public abstract class Connector {
      */
     private Integer cacheTtlSeconds;
 
+    /**
+     * A flag which indicates whether content exposed by this connector should be indexed or not by the repository. This acts
+     * as a global flag, allowing a connector to mark it's entire content as non-queryable. By default, all content is queryable.
+     *
+     * <p>
+     * The field is assigned via reflection based upon the configuration of the external source represented by this connector
+     * before ModeShape calls {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
+     * </p>
+     */
+    private boolean queryable = true;
+
     private boolean initialized = false;
 
     /**
@@ -191,6 +202,15 @@ public abstract class Connector {
      */
     public Integer getCacheTtlSeconds() {
         return cacheTtlSeconds;
+    }
+
+    /**
+     * Indicates if content exposed by this connector should be indexed by the repository or not.
+     *
+     * @return {@code true} if the content should be indexed, {@code false} otherwise.
+     */
+    public Boolean isQueryable() {
+        return queryable;
     }
 
     protected ExtraProperties extraPropertiesFor( String id,

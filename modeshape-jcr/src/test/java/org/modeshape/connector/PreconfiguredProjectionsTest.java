@@ -66,6 +66,11 @@ public class PreconfiguredProjectionsTest extends SingleUseAbstractTest {
         assertProjection("default", "/testFile");
     }
 
+    @Override
+    protected boolean startRepositoryAutomatically() {
+        return false;
+    }
+
     private void assertProjection(String workspaceName, String projectionPath) throws RepositoryException {
         Session session = repository.login(workspaceName);
         assertNotNull(session.getNode(projectionPath));

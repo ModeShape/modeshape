@@ -15,6 +15,11 @@
         "mock-source" : {
             "classname" : "org.modeshape.connector.mock.MockConnector",
             "cacheTtlSeconds" : 1
+        },
+        "mock-source-non-queryable" : {
+            "classname" : "org.modeshape.connector.mock.MockConnector",
+            "cacheTtlSeconds" : 1,
+            "queryable" : false
         }
     }
 }

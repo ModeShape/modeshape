@@ -241,6 +241,8 @@ public class FederatedDocumentStore implements DocumentStore {
                 // clone the document, so we don't alter the original
                 EditableDocument editableDocument = replaceConnectorIdsWithNodeKeys(document, connector.getSourceName());
                 editableDocument = updateCachingTtl(connector, editableDocument);
+                editableDocument = updateQueryable(connector, editableDocument);
+
                 // Extract any embedded documents ...
                 Object removedContainer = editableDocument.remove(DocumentTranslator.EMBEDDED_DOCUMENTS);
                 if (removedContainer instanceof EditableDocument) {
@@ -268,6 +270,16 @@ public class FederatedDocumentStore implements DocumentStore {
             return writer.document();
         }
         return editableDocument;
+    }
+
+    private EditableDocument updateQueryable( Connector connector,
+                                              EditableDocument editableDocument ) {
+        if (!connector.isQueryable()) {
+            translator.setQueryable(editableDocument, false);
+            return editableDocument;
+        } else {
+            return editableDocument;
+        }
     }
 
     @Override

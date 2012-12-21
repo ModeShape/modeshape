@@ -77,12 +77,6 @@ public class JcrToolsTest extends SingleUseAbstractTest {
         problems = new SimpleProblems();
     }
 
-    @Override
-    @After
-    public void afterEach() throws Exception {
-        super.afterEach();
-    }
-
     @Test
     public void shouldGetNode() throws RepositoryException {
         Node node = tools.getNode(session.getRootNode(), "Person", true);

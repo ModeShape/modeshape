@@ -51,7 +51,6 @@ import org.modeshape.jcr.value.Property;
  * Mock implementation of a {@code Connector} which uses some hard-coded, in-memory external nodes to validate the Connector SPI.
  */
 public class MockConnector extends Connector implements Pageable {
-    public static final String SOURCE_NAME = "mock-source";
     public static final String DOC1_LOCATION = "/doc1";
     public static final String DOC2_LOCATION = "/doc2";
 
@@ -170,11 +169,6 @@ public class MockConnector extends Connector implements Pageable {
             return writer.document();
         }
         return doc;
-    }
-
-    @Override
-    public String getSourceName() {
-        return SOURCE_NAME;
     }
 
     @Override

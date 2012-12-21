@@ -162,6 +162,11 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     }
 
     @Override
+    protected boolean startRepositoryAutomatically() {
+        return false;
+    }
+
+    @Override
     @Before
     public void beforeEach() throws Exception {
         super.beforeEach();
