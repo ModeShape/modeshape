@@ -76,7 +76,7 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
                          FlagContainer flagContainer ) {
         this.key = key;
         this.context = context;
-        this.batchContainer = context.getCache().getBatchContainer();
+        this.batchContainer = context.getCacheForWriting().getBatchContainer();
         this.flagContainer = flagContainer;
     }
 
@@ -169,7 +169,7 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
 
         // Now we've locked this value, can make the copy, and update the cache
         // (where it will be stored in the transaction table) ...
-        AdvancedCache<String, SchematicEntry> cache = context.getCache();
+        AdvancedCache<String, SchematicEntry> cache = context.getCacheForWriting();
         if (context.isExplicitLockingEnabled()) {
             cache.lock(key); // released at TXN commit/rollback
         }
@@ -180,9 +180,11 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
         if (value != null) {
             copy = value.copyForWrite();
         } else {
-            copy = new SchematicEntryLiteral();
+            copy = new SchematicEntryLiteral(key);
             copy.copied = true;
         }
+        // Create a delta implementation based on the configuration ...
+        copy.createDelta(context);
         if (TRACE) {
             LOGGER.trace("Created copy of " + key + ": " + copy.data());
         }
@@ -262,7 +264,7 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
                             String defaultContentType ) {
         try {
             startAtomic();
-            getDeltaValueForWrite().setContent(content, metadata, defaultContentType);
+            getDeltaValueForWrite().internalSetContent(content, metadata, defaultContentType);
         } finally {
             endAtomic();
         }
@@ -274,7 +276,7 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
                             String defaultContentType ) {
         try {
             startAtomic();
-            getDeltaValueForWrite().setContent(content, metadata, defaultContentType);
+            getDeltaValueForWrite().internalSetContent(content, metadata, defaultContentType);
         } finally {
             endAtomic();
         }
@@ -301,7 +303,11 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
         if (doc instanceof DocumentEditor) {
             return (DocumentEditor)doc;
         }
-        // Otherwise, clone the document ...
+        // Otherwise, create the editor ...
+        if (!context.isDeltaContainingChangesEnabled()) {
+            // This is a local cache, so no need to record any operations ...
+            return new DocumentEditor((MutableDocument)doc);
+        }
         return new ObservableDocumentEditor((MutableDocument)doc, pathToDocument, observer, null);
     }
 }

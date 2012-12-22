@@ -27,13 +27,14 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.util.Collection;
 import java.util.HashSet;
+import org.infinispan.schematic.internal.SchematicDelta;
 import org.infinispan.schematic.internal.SchematicEntryDelta;
 import org.junit.Before;
 import org.junit.Test;
 
 public class OperationExternalizerTest extends AbstractExternalizerTest {
 
-    private SchematicEntryDelta delta;
+    private SchematicDelta delta;
     private ObservableDocumentEditor docEditor;
     private MutableDocument doc;
     private DocumentValueFactory valueFactory = new DefaultDocumentValueFactory();
@@ -144,7 +145,7 @@ public class OperationExternalizerTest extends AbstractExternalizerTest {
     protected void assertOperationsAreMarshallable() throws Exception {
         if (print) System.out.println("delta: " + delta);
         byte[] bytes = marshall(delta);
-        SchematicEntryDelta newDelta = (SchematicEntryDelta)unmarshall(bytes);
+        SchematicDelta newDelta = (SchematicDelta)unmarshall(bytes);
         assertThat(newDelta, is(delta));
         if (print) System.out.println("document: " + doc);
         resetEditor();

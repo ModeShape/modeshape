@@ -24,14 +24,14 @@ package org.infinispan.schematic.internal;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 import org.infinispan.atomic.Delta;
 import org.infinispan.atomic.DeltaAware;
 import org.infinispan.marshall.SerializeWith;
 import org.infinispan.schematic.SchematicEntry;
+import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.internal.delta.Operation;
+import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
 import org.infinispan.util.Util;
 import org.infinispan.util.logging.Log;
@@ -44,26 +44,28 @@ import org.infinispan.util.logging.LogFactory;
  * @since 5.1
  * @see org.infinispan.atomic.AtomicHashMapDelta
  */
-@SerializeWith( SchematicEntryDelta.Externalizer.class )
-public class SchematicEntryDelta implements SchematicDelta {
-    private static final Log LOG = LogFactory.getLog(SchematicEntryDelta.class);
+@SerializeWith( SchematicEntryWholeDelta.Externalizer.class )
+public class SchematicEntryWholeDelta implements SchematicDelta {
+    private static final Log LOG = LogFactory.getLog(SchematicEntryWholeDelta.class);
     private static final boolean TRACE = LOG.isTraceEnabled();
 
-    private List<Operation> changeLog = new LinkedList<Operation>();
+    private final Document document;
+
+    protected SchematicEntryWholeDelta( Document document ) {
+        this.document = document;
+    }
 
     @Override
     public DeltaAware merge( DeltaAware d ) {
         SchematicEntryLiteral other = null;
         if (d != null && (d instanceof SchematicEntryLiteral)) {
             other = (SchematicEntryLiteral)d;
+            other.setDocument(document);
             LOG.trace("Merging delta into existing " + other.getClass() + " -> " + other);
         } else {
-            other = new SchematicEntryLiteral();
+            other = new SchematicEntryLiteral((MutableDocument)document);
             LOG.trace("Merging delta into new SchematicEntryLiteral; DeltaAware is " + (d != null ? d.getClass() : "null")
                       + " -> " + d);
-        }
-        if (changeLog != null) {
-            other.apply(changeLog);
         }
         other.commit();
         return other;
@@ -71,62 +73,62 @@ public class SchematicEntryDelta implements SchematicDelta {
 
     @Override
     public boolean isRecordingOperations() {
-        return true;
+        return false;
     }
 
     @Override
     public void addOperation( Operation o ) {
-        changeLog.add(o);
+        // do nothing
     }
 
     @Override
     public String toString() {
-        return "SchematicValueDelta{" + "changeLog=" + changeLog + '}';
+        return "SchematicValueDeltaDocument" + document;
     }
 
     @Override
     public int hashCode() {
-        return changeLog.hashCode();
+        return document.hashCode();
     }
 
     @Override
     public boolean equals( Object obj ) {
-        if (obj instanceof SchematicEntryDelta) {
-            SchematicEntryDelta other = (SchematicEntryDelta)obj;
-            return changeLog.equals(other.changeLog);
+        if (obj instanceof SchematicEntryWholeDelta) {
+            SchematicEntryWholeDelta other = (SchematicEntryWholeDelta)obj;
+            return document.equals(other.document);
         }
         return false;
     }
 
-    public static class Externalizer extends SchematicExternalizer<SchematicEntryDelta> {
+    public static class Externalizer extends SchematicExternalizer<SchematicEntryWholeDelta> {
         private static final long serialVersionUID = 1L;
 
         @SuppressWarnings( "synthetic-access" )
         @Override
         public void writeObject( ObjectOutput output,
-                                 SchematicEntryDelta delta ) throws IOException {
-            if (TRACE) LOG.tracef("Serializing changeLog %s", delta.changeLog);
-            output.writeObject(delta.changeLog);
+                                 SchematicEntryWholeDelta delta ) throws IOException {
+            if (TRACE) LOG.tracef("Serializing delta as document %s", delta.document);
+            output.writeObject(delta.document);
         }
 
-        @SuppressWarnings( {"synthetic-access", "unchecked"} )
+        @SuppressWarnings( "synthetic-access" )
         @Override
-        public SchematicEntryDelta readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
-            SchematicEntryDelta delta = new SchematicEntryDelta();
-            delta.changeLog = (List<Operation>)input.readObject();
-            if (TRACE) LOG.tracef("Deserialized changeLog %s", delta.changeLog);
+        public SchematicEntryWholeDelta readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
+            Document document = (Document)input.readObject();
+            SchematicEntryWholeDelta delta = new SchematicEntryWholeDelta(document);
+            if (TRACE) LOG.tracef("Deserialized delta as document %s", delta.document);
             return delta;
         }
 
         @Override
         public Integer getId() {
-            return Ids.SCHEMATIC_VALUE_DELTA;
+            return Ids.SCHEMATIC_VALUE_DELTA_DOCUMENT;
         }
 
         @Override
         @SuppressWarnings( "unchecked" )
-        public Set<Class<? extends SchematicEntryDelta>> getTypeClasses() {
-            return Util.<Class<? extends SchematicEntryDelta>>asSet(SchematicEntryDelta.class);
+        public Set<Class<? extends SchematicEntryWholeDelta>> getTypeClasses() {
+            return Util.<Class<? extends SchematicEntryWholeDelta>>asSet(SchematicEntryWholeDelta.class);
         }
     }
 }

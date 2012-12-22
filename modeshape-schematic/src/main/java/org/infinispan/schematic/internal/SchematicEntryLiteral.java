@@ -86,7 +86,7 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
     }
 
     private MutableDocument value;
-    private SchematicEntryDelta delta = null;
+    private SchematicDelta delta = null;
     private volatile SchematicEntryProxy proxy;
     volatile boolean copied = false;
     volatile boolean removed = false;
@@ -111,6 +111,22 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
         this.value = document;
     }
 
+    protected SchematicEntryLiteral( String key,
+                                     Document content,
+                                     Document metadata,
+                                     String defaultContentType ) {
+        this(key);
+        internalSetContent(content, metadata, defaultContentType);
+    }
+
+    protected SchematicEntryLiteral( String key,
+                                     Binary content,
+                                     Document metadata,
+                                     String defaultContentType ) {
+        this(key);
+        internalSetContent(content, metadata, defaultContentType);
+    }
+
     public SchematicEntryLiteral copyForWrite() {
         SchematicEntryLiteral clone = new SchematicEntryLiteral((MutableDocument)value.clone());
         clone.proxy = proxy;
@@ -122,16 +138,13 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
         return value;
     }
 
+    protected void setDocument( Document document ) {
+        this.value = (MutableDocument)document;
+    }
+
     @Override
     public String toString() {
         return "SchematicValueImpl" + value;
-    }
-
-    /**
-     * Initializes the delta instance to start recording changes.
-     */
-    public void initForWriting() {
-        delta = new SchematicEntryDelta();
     }
 
     /**
@@ -165,9 +178,18 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
         return toReturn;
     }
 
-    protected SchematicEntryDelta getDelta() {
-        if (delta == null) delta = new SchematicEntryDelta();
+    protected final SchematicDelta getDelta() {
+        assert delta != null;
         return delta;
+    }
+
+    protected void createDelta( CacheContext context ) {
+        assert delta == null;
+        if (context.isDeltaContainingChangesEnabled()) {
+            this.delta = new SchematicEntryDelta();
+        } else {
+            this.delta = new SchematicEntryWholeDelta(this.value);
+        }
     }
 
     @Override
@@ -225,10 +247,12 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
     protected Object setContent( Object content ) {
         assert content != null;
         Object existing = this.value.put(FieldName.CONTENT, content);
-        if (existing != null) {
-            getDelta().addOperation(new PutOperation(FieldPath.ROOT, FieldName.CONTENT, existing, content));
-        } else {
-            getDelta().addOperation(new RemoveOperation(FieldPath.ROOT, FieldName.CONTENT, content));
+        if (delta != null && delta.isRecordingOperations()) {
+            if (existing != null) {
+                delta.addOperation(new PutOperation(FieldPath.ROOT, FieldName.CONTENT, existing, content));
+            } else {
+                delta.addOperation(new RemoveOperation(FieldPath.ROOT, FieldName.CONTENT, content));
+            }
         }
         return existing;
     }
@@ -255,35 +279,53 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
 
             // Now record the change ...
             value.put(FieldName.METADATA, newMetadata);
-            PutOperation op = new PutOperation(FieldPath.ROOT, FieldName.METADATA, existingMetadata, newMetadata);
-            getDelta().addOperation(op);
+            if (delta != null && delta.isRecordingOperations()) {
+                PutOperation op = new PutOperation(FieldPath.ROOT, FieldName.METADATA, existingMetadata, newMetadata);
+                delta.addOperation(op);
+            }
         }
+    }
+
+    protected void internalSetContent( Document content,
+                                       Document metadata,
+                                       String defaultContentType ) {
+        if (content instanceof EditableDocument) content = ((EditableDocument)content).unwrap();
+        setContent(content);
+        setMetadata(metadata, defaultContentType);
+    }
+
+    protected void internalSetContent( Binary content,
+                                       Document metadata,
+                                       String defaultContentType ) {
+        setContent(content);
+        setMetadata(metadata, defaultContentType);
     }
 
     @Override
     public void setContent( Document content,
                             Document metadata,
                             String defaultContentType ) {
-        if (content instanceof EditableDocument) content = ((EditableDocument)content).unwrap();
-        setContent(content);
-        setMetadata(metadata, defaultContentType);
+        // Should always go through the proxy instead
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void setContent( Binary content,
                             Document metadata,
                             String defaultContentType ) {
-        setContent(content);
-        setMetadata(metadata, defaultContentType);
+        // Should always go through the proxy instead
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public EditableDocument editDocumentContent() {
+        // Should always go through the proxy instead
         throw new UnsupportedOperationException();
     }
 
     @Override
     public EditableDocument editMetadata() {
+        // Should always go through the proxy instead
         throw new UnsupportedOperationException();
     }
 
