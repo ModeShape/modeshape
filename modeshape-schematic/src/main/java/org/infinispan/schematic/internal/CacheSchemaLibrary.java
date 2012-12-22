@@ -89,24 +89,21 @@ public class CacheSchemaLibrary implements SchemaLibrary, Lifecycle {
     @Override
     public Document put( String key,
                          Document document ) {
-        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key);
-        newEntry.setContent(document, null, defaultContentType);
+        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document, null, defaultContentType);
         return document(store.put(key, newEntry));
     }
 
     @Override
     public Document putIfAbsent( String key,
                                  Document document ) {
-        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key);
-        newEntry.setContent(document, null, defaultContentType);
+        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document, null, defaultContentType);
         return document(store.putIfAbsent(key, newEntry));
     }
 
     @Override
     public Document replace( String key,
                              Document document ) {
-        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key);
-        newEntry.setContent(document, null, defaultContentType);
+        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document, null, defaultContentType);
         return document(store.replace(key, newEntry));
     }
 
@@ -123,24 +120,21 @@ public class CacheSchemaLibrary implements SchemaLibrary, Lifecycle {
     @Override
     public NotifyingFuture<Document> putAsync( String key,
                                                Document document ) {
-        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key);
-        newEntry.setContent(document, null, defaultContentType);
+        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document, null, defaultContentType);
         return future(store.putAsync(key, newEntry));
     }
 
     @Override
     public NotifyingFuture<Document> putIfAbsentAsync( String key,
                                                        Document document ) {
-        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key);
-        newEntry.setContent(document, null, defaultContentType);
+        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document, null, defaultContentType);
         return future(store.putIfAbsentAsync(key, newEntry));
     }
 
     @Override
     public NotifyingFuture<Document> replaceAsync( String key,
                                                    Document document ) {
-        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key);
-        newEntry.setContent(document, null, defaultContentType);
+        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document, null, defaultContentType);
         return future(store.replaceAsync(key, newEntry));
     }
 

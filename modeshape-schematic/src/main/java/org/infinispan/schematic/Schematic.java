@@ -53,6 +53,7 @@ import org.infinispan.schematic.internal.CacheSchematicDb;
 import org.infinispan.schematic.internal.InMemorySchemaLibrary;
 import org.infinispan.schematic.internal.SchematicEntryDelta;
 import org.infinispan.schematic.internal.SchematicEntryLiteral;
+import org.infinispan.schematic.internal.SchematicEntryWholeDelta;
 import org.infinispan.schematic.internal.SchematicExternalizer;
 import org.infinispan.schematic.internal.delta.AddValueIfAbsentOperation;
 import org.infinispan.schematic.internal.delta.AddValueOperation;
@@ -340,6 +341,7 @@ public class Schematic extends DocumentFactory {
         // SchematicDb values ...
         externalizers.add(new SchematicEntryLiteral.Externalizer());
         externalizers.add(new SchematicEntryDelta.Externalizer());
+        externalizers.add(new SchematicEntryWholeDelta.Externalizer());
 
         // Documents ...
         externalizers.add(new DocumentExternalizer()); // BasicDocument and BasicArray

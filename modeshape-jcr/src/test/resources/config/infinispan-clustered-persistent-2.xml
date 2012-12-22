@@ -11,6 +11,8 @@
   </global>
 
   <namedCache name="persistentRepository">
+    <eviction strategy="LIRS" maxEntries="600"/>
+
     <!-- Configure a synchronous replication cache -->
     <clustering mode="replication">
       <sync />
