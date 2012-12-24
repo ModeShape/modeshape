@@ -87,7 +87,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
     public void shouldReadTags() throws Exception {
         Node git = gitNode();
         Node tags = git.getNode("tags");
-        assertChildrenInclude(tags, expectedTagNames());
+        assertChildrenInclude("Make sure you run <git fetch --tags>", tags, expectedTagNames());
     }
 
     @Test
@@ -175,7 +175,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         Node tree = git.getNode("tree");
         assertThat(tree.getPrimaryNodeType().getName(), is("git:trees"));
         assertChildrenInclude(tree, expectedBranchNames());
-        assertChildrenInclude(tree, expectedTagNames());
+        assertChildrenInclude("Make sure you run <git fetch --tags>", tree, expectedTagNames());
     }
 
     @Test
