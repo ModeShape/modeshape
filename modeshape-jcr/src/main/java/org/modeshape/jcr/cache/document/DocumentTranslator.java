@@ -1736,7 +1736,7 @@ public class DocumentTranslator {
 
     protected boolean isQueryable(Document document) {
         //all documents are considered queryable by default
-        return !document.containsField(QUERYABLE_FIELD) || document.getBoolean(QUERYABLE_FIELD).equals(Boolean.TRUE);
+        return document.getBoolean(QUERYABLE_FIELD, true);
     }
 
     /**
