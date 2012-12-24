@@ -348,4 +348,11 @@ public interface MutableCachedNode extends CachedNode {
      * @return true if this node contains only added or removed additional parents.
      */
     public boolean hasOnlyChangesToAdditionalParents();
+
+    /**
+     * Sets a flag indicating if this node should be queryable or not.
+     *
+     * @param queryable a {@code boolean}.
+     */
+    public void setQueryable(boolean queryable);
 }

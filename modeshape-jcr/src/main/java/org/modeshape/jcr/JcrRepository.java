@@ -1789,7 +1789,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     }
                 }
             };
-            // Create a monitor that forwards everyting to the correct component ...
+            // Create a monitor that forwards everything to the correct component ...
             return new Monitor() {
                 @Override
                 public void recordChanged( long changedNodesCount ) {

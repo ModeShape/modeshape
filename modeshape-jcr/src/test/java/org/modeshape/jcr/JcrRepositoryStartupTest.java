@@ -180,11 +180,11 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 FederationManager federationManager = ((Workspace)session.getWorkspace()).getFederationManager();
 
                 federationManager.createProjection("/testRoot",
-                                                   MockConnector.SOURCE_NAME,
+                                                   "mock-source",
                                                    MockConnector.DOC1_LOCATION,
                                                    "federated1");
                 federationManager.createProjection("/testRoot",
-                                                   MockConnector.SOURCE_NAME,
+                                                   "mock-source",
                                                    MockConnector.DOC2_LOCATION,
                                                    null);
                 Node doc1Federated = session.getNode("/testRoot/federated1");
@@ -232,7 +232,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     }
 
     @Test
-    public void shouldCleanProjectionsAfterRemoval() throws Exception {
+    public void shouldCleanStoredProjectionsIfNodesAreDeleted() throws Exception {
         FileUtil.delete("target/federation_persistent_repository");
 
         String repositoryConfigFile = "config/repo-config-mock-federation-persistent.json";
@@ -245,11 +245,11 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
 
                 FederationManager federationManager = ((Workspace)session.getWorkspace()).getFederationManager();
                 federationManager.createProjection("/testRoot",
-                                                   MockConnector.SOURCE_NAME,
+                                                   "mock-source",
                                                    MockConnector.DOC1_LOCATION,
                                                    "federated1");
                 federationManager.createProjection("/testRoot",
-                                                   MockConnector.SOURCE_NAME,
+                                                   "mock-source",
                                                    MockConnector.DOC2_LOCATION,
                                                    "federated2");
                 Node projection = session.getNode("/testRoot/federated1");

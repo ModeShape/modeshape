@@ -234,6 +234,10 @@ class RepositoryQueryManager {
                                    CachedNode node,
                                    int depth,
                                    boolean lookForSystemNode ) {
+        if (!node.isQueryable(cache)) {
+            return;
+        }
+
         // Get the path for the first node (we already have it, but we need to populate the cache) ...
         final PathCache paths = new PathCache(cache);
         Path nodePath = paths.getPath(node);
@@ -284,6 +288,9 @@ class RepositoryQueryManager {
 
             // Look up the node and find the path ...
             node = cache.getNode(key);
+            if (!node.isQueryable(cache)) {
+                continue;
+            }
             nodePath = paths.getPath(node);
 
             // Index the node ...
@@ -339,11 +346,6 @@ class RepositoryQueryManager {
         reindexSystemContent(systemRoot, 1, schemata);
         for (ChildReference childReference : systemRoot.getChildReferences(systemWorkspaceCache)) {
             CachedNode systemNode = systemWorkspaceCache.getNode(childReference.getKey());
-            String systemNodeName = systemNode.getName(systemWorkspaceCache).toString();
-            // we don't want to reindex versioning content or locks
-            if (systemNodeName.contains("versionStorage") || systemNodeName.contains("locks")) {
-                continue;
-            }
             reindexSystemContent(systemNode, Integer.MAX_VALUE, schemata);
         }
     }

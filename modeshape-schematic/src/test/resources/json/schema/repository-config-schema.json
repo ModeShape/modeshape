@@ -223,6 +223,11 @@
                         "type" : "integer",
                         "description" : "The optional number of seconds which an external node should be held in the workspace cache. If not specified, the effective TTL is deferred to the workspace cache configuration. If negative, an entry will be cached forever."
                     },
+                    "queryable" : {
+                        "type" : "boolean",
+                        "default" : true,
+                        "description" : "Optional flag which indicates whether this source's content should be indexed or not by the repository. By default, all content is queryable "
+                    },
                     "projections" : {
                         "type" : "array",
                         "items" : {

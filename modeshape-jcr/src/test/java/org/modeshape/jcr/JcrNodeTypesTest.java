@@ -81,6 +81,11 @@ public class JcrNodeTypesTest extends SingleUseAbstractTest {
         assertThat(uriPropDefn.getRequiredType(), is(PropertyType.URI));
     }
 
+    @Override
+    protected boolean startRepositoryAutomatically() {
+        return false;
+    }
+
     private void validateNodesWithCustomTypes() throws RepositoryException {
         JcrRootNode rootNode = session.getRootNode();
         rootNode.addNode("car", "car:Car");

@@ -51,6 +51,7 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
@@ -108,7 +109,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Create a new SessionCache that can be used for making changes to the workspace.
-     * 
+     *
      * @param context the execution context; may not be null
      * @param workspaceCache the (shared) workspace cache; may not be null
      * @param sessionContext the context for the session; may not be null
@@ -215,7 +216,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Returns the list of changed nodes at or below the given path, starting with the children.
-     * 
+     *
      * @param nodePath the path of the parent node
      * @return the list of changed nodes
      */
@@ -326,7 +327,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Persist the changes within a transaction.
-     * 
+     *
      * @throws LockFailureException if a requested lock could not be made
      * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
      *         document
@@ -573,7 +574,7 @@ public class WritableSessionCache extends AbstractSessionCache {
      * This method saves the changes made by both sessions within a single transaction. <b>Note that this must be used with
      * caution, as this method attempts to get write locks on both sessions, meaning they <i>cannot<i> be concurrently used
      * elsewhere (otherwise deadlocks might occur).</b>
-     * 
+     *
      * @param toBeSaved the set of keys identifying the nodes whose changes should be saved; may not be null
      * @param other the other session
      * @param preSaveOperation the pre-save operation
@@ -697,7 +698,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Persist the changes within an already-established transaction.
-     * 
+     *
      * @param changedNodesInOrder the nodes that are to be persisted; may not be null
      * @param monitor the monitor for these changes; may be null if not needed
      * @return the ChangeSet encapsulating the changes that were made
@@ -766,16 +767,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                     translator.setParents(doc, newParent, null, additionalParents);
                     // Create an event ...
                     changes.nodeCreated(key, newParent, newPath, node.changedProperties());
-
-                    // And record the new node via the monitor ...
-                    if (monitor != null) {
-                        // Get the primary and mixin type names; even though we're passing in the session, the two properties
-                        // should be there and shouldn't require a looking in the cache...
-                        Name primaryType = node.getPrimaryType(this);
-                        Set<Name> mixinTypes = node.getMixinTypes(this);
-                        monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties().values());
-                    }
-
                 } else {
                     SchematicEntry nodeEntry = documentStore.get(keyStr);
                     if (nodeEntry == null) {
@@ -954,6 +945,13 @@ public class WritableSessionCache extends AbstractSessionCache {
                     changes.nodeChanged(key, newPath);
                 }
 
+                //write additional node "metadata", meaning various flags which have internal meaning
+                boolean queryable = node.isQueryable(this);
+                if (!queryable) {
+                    //we are only interested if the node is not queryable, as by default all nodes are queryable.
+                    translator.setQueryable(doc, false);
+                }
+
                 if (node.isNew()) {
                     // We need to create the schematic entry for the new node ...
                     if (documentStore.storeDocument(keyStr, doc) != null) {
@@ -969,15 +967,31 @@ public class WritableSessionCache extends AbstractSessionCache {
                             throw new DocumentAlreadyExistsException(keyStr);
                         }
                     }
+
+                    // And record the new node via the monitor ...
+                    if (monitor != null && queryable) {
+                        // Get the primary and mixin type names; even though we're passing in the session, the two properties
+                        // should be there and shouldn't require a looking in the cache...
+                        Name primaryType = node.getPrimaryType(this);
+                        Set<Name> mixinTypes = node.getMixinTypes(this);
+                        monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties().values());
+                    }
                 } else {
-                    documentStore.updateDocument(keyStr, doc, node);
+                    boolean isExternal = !workspaceCache().getRootKey().getSourceKey().equalsIgnoreCase(node.getKey().getSourceKey());
+                    boolean externalNodeChanged = isExternal && node.hasChanges();
+                    if (externalNodeChanged) {
+                        //in the case of external nodes, only if there are changes should the update be called
+                        documentStore.updateDocument(keyStr, doc, node);
+                    }
                     boolean isSameWorkspace = workspaceCache().getWorkspaceKey()
                                                               .equalsIgnoreCase(node.getKey().getWorkspaceKey());
-                    // only update the indexes if the node we're working with is in the same workspace as the current workspace.
+
+                    // only update the indexes if the node we're working with is in the same workspace as the current workspace or
+                    // if it's an external node (even without changes, because that's how projections will appear)
                     // when linking/un-linking nodes (e.g. shareable node or jcr:system) this condition will be false.
                     // the downside of this is that there may be cases (e.g. back references when working with versions) in which
                     // we might loose information from the indexes
-                    if (monitor != null && isSameWorkspace) {
+                    if (monitor != null && queryable && (isSameWorkspace || externalNodeChanged)) {
                         // Get the primary and mixin type names; even though we're passing in the session, the two properties
                         // should be there and shouldn't require a looking in the cache...
                         Name primaryType = node.getPrimaryType(this);

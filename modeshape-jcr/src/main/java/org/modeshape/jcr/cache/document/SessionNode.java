@@ -96,6 +96,7 @@ public class SessionNode implements MutableCachedNode {
     private final AtomicReference<MutableChildReferences> appended = new AtomicReference<MutableChildReferences>();
     private final AtomicReference<MixinChanges> mixinChanges = new AtomicReference<MixinChanges>();
     private final AtomicReference<ReferrerChanges> referrerChanges = new AtomicReference<ReferrerChanges>();
+    private final AtomicReference<Boolean> isQueryable = new AtomicReference<Boolean>();
     private final boolean isNew;
     private volatile LockChange lockChange;
 
@@ -162,6 +163,8 @@ public class SessionNode implements MutableCachedNode {
         if (childRefChanges != null && !childRefChanges.isEmpty()) return true;
         ChangedAdditionalParents additionalParents = additionalParents();
         if (additionalParents != null && !additionalParents.isEmpty()) return true;
+        ReferrerChanges referrerChanges = referrerChanges(false);
+        if (referrerChanges != null && !referrerChanges.isEmpty()) return true;
         return false;
     }
 
@@ -861,7 +864,6 @@ public class SessionNode implements MutableCachedNode {
         WritableSessionCache session = writableSession(cache);
         session.assertInSession(this);
 
-        // TODO: Federation - how to determine the propery child key ...
         if (key == null) key = getKey().withRandomId();
 
         // Create the new node ...
@@ -897,7 +899,6 @@ public class SessionNode implements MutableCachedNode {
         WritableSessionCache session = writableSession(cache);
         session.assertInSession(this);
 
-        // TODO: Federation - how to determine the propery child key ...
         if (key == null) key = getKey().withRandomId();
 
         // Create the new node ...
@@ -1109,7 +1110,6 @@ public class SessionNode implements MutableCachedNode {
         writableSessionCache.assertInSession(this);
         DeepClone cloner = new DeepClone(this, writableSessionCache, sourceNode, sourceCache);
         cloner.execute();
-        return;
     }
 
     @Override
@@ -1135,6 +1135,22 @@ public class SessionNode implements MutableCachedNode {
     @SuppressWarnings( "synthetic-access" )
     public NodeChanges getNodeChanges() {
         return new NodeChanges();
+    }
+
+    @Override
+    public boolean isQueryable( NodeCache cache ) {
+        Boolean isQueryable = this.isQueryable.get();
+        if (isQueryable != null) {
+            return isQueryable;
+        }
+        CachedNode persistedNode = nodeInWorkspace(session(cache));
+        //if the node does not exist yet, it is queryable by default
+        return persistedNode == null || persistedNode.isQueryable(cache);
+    }
+
+    @Override
+    public void setQueryable( boolean queryable ) {
+        this.isQueryable.set(queryable);
     }
 
     @Override
@@ -1914,31 +1930,16 @@ public class SessionNode implements MutableCachedNode {
             return null;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#toString()
-         */
         @Override
         public String toString() {
             return inserted + " before " + before;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#hashCode()
-         */
         @Override
         public int hashCode() {
             return this.before.hashCode();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#equals(java.lang.Object)
-         */
         @Override
         public boolean equals( Object obj ) {
             if (obj == this) return true;

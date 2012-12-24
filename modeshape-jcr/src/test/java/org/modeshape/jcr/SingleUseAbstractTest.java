@@ -67,7 +67,7 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
      * the {@link #startRepositoryWithConfiguration(RepositoryConfiguration)} methods before using the repository.</li>
      * </ol>
      */
-    protected static boolean startRepositoryAutomatically = true;
+    private boolean startRepositoryAutomatically = true;
 
     protected Environment environment = new TestingEnvironment();
     protected RepositoryConfiguration config;
@@ -100,7 +100,9 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
     @Before
     public void beforeEach() throws Exception {
         super.beforeEach();
-        if (startRepositoryAutomatically) startRepository();
+        if (startRepositoryAutomatically()) {
+            startRepository();
+        }
         tools = new JcrTools();
     }
 
@@ -297,5 +299,9 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
         InputStream stream = resourceStream(resourceName);
         assertThat(stream, is(notNullValue()));
         session().getWorkspace().importXML(parentPath, stream, uuidBehavior);
+    }
+
+    protected boolean startRepositoryAutomatically() {
+        return startRepositoryAutomatically;
     }
 }
