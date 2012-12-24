@@ -473,21 +473,36 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
 
     protected void assertChildrenInclude( Node parentNode,
                                           String... minimalChildNamesWithSns ) throws RepositoryException {
+        assertChildrenInclude(null, parentNode, minimalChildNamesWithSns);
+    }
+
+    protected void assertChildrenInclude( String errorMessage,
+                                          Node parentNode,
+                                          String... minimalChildNamesWithSns
+                                        ) throws RepositoryException {
         Set<String> childNames = new HashSet<String>();
-        for (String childName : minimalChildNamesWithSns) {
-            childNames.add(childName);
-        }
+        childNames.addAll(Arrays.asList(minimalChildNamesWithSns));
+
         NodeIterator iter = parentNode.getNodes();
         while (iter.hasNext()) {
             Node child = iter.nextNode();
             String name = child.getName();
-            if (child.getIndex() > 1) name = name + "[" + child.getIndex() + "]";
+            if (child.getIndex() > 1) {
+                name = name + "[" + child.getIndex() + "]";
+            }
             childNames.remove(name);
             // If we've found all of the expected child names, then return immediately
             // (in case there are a very large number of children) ...
-            if (childNames.isEmpty()) return;
+            if (childNames.isEmpty()) {
+                return;
+            }
         }
-        assertThat("Names of children not found under node: " + childNames, childNames.isEmpty(), is(true));
+
+        String message = "Names of children not found under node: " + childNames;
+        if (!StringUtil.isBlank(errorMessage)) {
+            message += ". " + errorMessage;
+        }
+        assertThat(message, childNames.isEmpty(), is(true));
     }
 
 }

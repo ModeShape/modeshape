@@ -31,7 +31,7 @@
         <module>extractors</module>
 
         <!--Connectors-->
-        <!--<module>connectors</module>-->
+        <module>connectors</module>
         <!--
           The REST client needs the JDBC driver
         -->
