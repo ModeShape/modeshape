@@ -101,7 +101,6 @@ public class GitConnectorTest extends MultiUseAbstractTest {
     public void shouldReadTreeSubgraph() throws Exception {
         Node git = gitNode();
         Node tree = git.getNode("tree");
-        // print = true;
         navigate(tree, false, 100, 2);
     }
 
@@ -109,11 +108,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
     public void shouldReadCommitSubgraph() throws Exception {
         Node git = gitNode();
         Node commit = git.getNode("commit");
-        // print = true;
-        //TODO author=Horia Chiorean date=12/18/12 description=There is an issue which can appear with certain commits,
-        //so the instead of 100, the max number of children was reduced
-        //see https://issues.jboss.org/browse/MODE-1286?focusedCommentId=12741835&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-12741835
-        navigate(commit, false, 10, 2);
+        navigate(commit, false, 100, 2);
     }
 
     @FixFor( "MODE-1732" )

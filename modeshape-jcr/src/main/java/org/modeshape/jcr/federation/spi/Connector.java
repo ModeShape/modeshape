@@ -158,7 +158,7 @@ public abstract class Connector {
      * 
      * @return the logger; never null
      */
-    protected final Logger getLogger() {
+    public final Logger getLogger() {
         return logger;
     }
 

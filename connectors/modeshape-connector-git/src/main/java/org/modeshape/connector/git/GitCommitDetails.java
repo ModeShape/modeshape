@@ -155,9 +155,17 @@ public class GitCommitDetails extends GitFunction implements PageableGitFunction
         TreeWalk tw = new TreeWalk(repository);
         tw.setRecursive(true);
         tw.addTree(commit.getTree());
-        for (RevCommit parent : commit.getParents()) {
+
+        RevCommit[] parents = commit.getParents();
+
+        for (RevCommit parent : parents) {
             RevCommit parentCommit = walker.parseCommit(parent);
             tw.addTree(parentCommit.getTree());
+            //if there are multiple parents, we can't really have a multiple-way diff so we'll only look at the first parent
+            if (parents.length > 1) {
+                connector.getLogger().warn(GitI18n.commitWithMultipleParents, commit.getName(), parentCommit.getName());
+                break;
+            }
         }
 
         // Now process the diff of each file ...
