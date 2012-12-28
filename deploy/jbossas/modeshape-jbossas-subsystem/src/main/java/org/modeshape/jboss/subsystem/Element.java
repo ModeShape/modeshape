@@ -57,7 +57,10 @@ public enum Element {
     WORKSPACES("workspaces"),
     INITIAL_CONTENT("initial-content"),
     NODE_TYPES("node-types"),
-    NODE_TYPE("node-type");
+    NODE_TYPE("node-type"),
+    EXTERNAL_SOURCES("external-sources"),
+    SOURCE("source"),
+    PROJECTION("projection");
 
     private final String name;
 

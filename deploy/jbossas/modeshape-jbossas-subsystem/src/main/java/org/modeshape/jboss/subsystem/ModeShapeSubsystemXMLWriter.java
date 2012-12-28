@@ -85,6 +85,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         writeIndexStorage(writer, repository);
         writeBinaryStorage(writer, repository);
         writeSequencing(writer, repository);
+        writeExternalSources(writer, repository);
         writeTextExtraction(writer, repository);
         writer.writeEndElement();
     }
@@ -432,6 +433,44 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             writer.writeEndElement();
         }
 
+    }
+
+    private void writeExternalSources( XMLExtendedStreamWriter writer,
+                                       ModelNode repository ) throws XMLStreamException {
+        if (has(repository, ModelKeys.SOURCE)) {
+            writer.writeStartElement(Element.EXTERNAL_SOURCES.getLocalName());
+            ModelNode externalSourceNode = repository.get(ModelKeys.SOURCE);
+            for (Property externalSource : externalSourceNode.asPropertyList()) {
+                writer.writeStartElement(Element.SOURCE.getLocalName());
+                writer.writeAttribute(Attribute.NAME.getLocalName(), externalSource.getName());
+
+                ModelNode prop = externalSource.getValue();
+                ModelAttributes.CONNECTOR_CLASSNAME.marshallAsAttribute(prop, writer);
+                ModelAttributes.MODULE.marshallAsAttribute(prop, writer);
+                ModelAttributes.CACHE_TTL_SECONDS.marshallAsAttribute(prop, writer);
+                ModelAttributes.QUERYABLE.marshallAsAttribute(prop, writer);
+                ModelAttributes.READONLY.marshallAsAttribute(prop, writer);
+
+                // Write out the extra properties ...
+                if (has(prop, ModelKeys.PROPERTIES)) {
+                    ModelNode properties = prop.get(ModelKeys.PROPERTIES);
+                    for (Property property : properties.asPropertyList()) {
+                        writer.writeAttribute(property.getName(), property.getValue().asString());
+                    }
+                }
+
+                if (has(prop, ModelKeys.PROJECTIONS)) {
+                    List<ModelNode> projections = prop.get(ModelKeys.PROJECTIONS).asList();
+                    for (ModelNode projection : projections) {
+                        writer.writeStartElement(Element.PROJECTION.getLocalName());
+                        writer.writeCharacters(projection.asString());
+                        writer.writeEndElement();
+                    }
+                }
+                writer.writeEndElement();
+            }
+            writer.writeEndElement();
+        }
     }
 
     private void writeTextExtraction( XMLExtendedStreamWriter writer,

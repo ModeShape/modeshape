@@ -318,6 +318,46 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     }
 
     /**
+     * Immediately change and apply the specified external source field in the current repository configuration to the new value.
+     *
+     * @param defn the attribute definition for the value; may not be null
+     * @param newValue the new string value
+     * @param sourceName the name of the source
+     * @throws RepositoryException if there is a problem obtaining the repository configuration or applying the change
+     * @throws OperationFailedException if there is a problem obtaining the raw value from the supplied model node
+     */
+    public void changeSourceField( MappedAttributeDefinition defn,
+                                   ModelNode newValue,
+                                   String sourceName ) throws RepositoryException, OperationFailedException {
+        ModeShapeEngine engine = getEngine();
+        String repositoryName = repositoryName();
+
+        // Get a snapshot of the current configuration ...
+        RepositoryConfiguration config = engine.getRepositoryConfiguration(repositoryName);
+
+        // Now start to make changes ...
+        Editor editor = config.edit();
+
+        // Find the array of sequencer documents ...
+        EditableDocument externalSources = editor.getOrCreateDocument(FieldName.EXTERNAL_SOURCES);
+        EditableDocument externalSource = externalSources.getDocument(sourceName);
+        assert externalSource != null;
+
+        // Change the field ...
+        String fieldName = defn.getFieldName();
+        // Get the raw value from the model node ...
+        Object rawValue = defn.getTypedValue(newValue);
+        // And update the field ...
+        externalSource.set(fieldName, rawValue);
+
+        // Get and apply the changes to the current configuration. Note that the 'update' call asynchronously
+        // updates the configuration, and returns a Future<JcrRepository> that we could use if we wanted to
+        // wait for the changes to take place. But we don't want/need to wait, so we'll not use the Future ...
+        Changes changes = editor.getChanges();
+        engine.update(repositoryName, changes);
+    }
+
+    /**
      * Immediately change and apply the specified extractor field in the current repository configuration to the new value.
      * 
      * @param defn the attribute definition for the value; may not be null

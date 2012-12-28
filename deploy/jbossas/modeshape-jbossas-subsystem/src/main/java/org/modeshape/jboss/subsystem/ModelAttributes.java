@@ -115,6 +115,8 @@ public class ModelAttributes {
                                                                                                       true);
     private static final ParameterValidator PATH_EXPRESSION_VALIDATOR = new PathExpressionValidator(false);
 
+    private static final ParameterValidator PROJECTION_VALIDATOR = new ProjectionValidator(false);
+
     public static final SimpleAttributeDefinition ACCESS_TYPE = new MappedAttributeDefinitionBuilder(ModelKeys.ACCESS_TYPE,
                                                                                                      ModelType.STRING).setXmlName(Attribute.ACCESS_TYPE.getLocalName())
                                                                                                                       .setAllowExpression(true)
@@ -481,6 +483,47 @@ public class ModelAttributes {
                                                                                                                                                FieldName.PATH_EXPRESSIONS)
                                                                                                         .build();
 
+    public static final ListAttributeDefinition PROJECTIONS = MappedListAttributeDefinition.Builder.of(ModelKeys.PROJECTIONS,
+                                                                                                            new MappedAttributeDefinitionBuilder(
+                                                                                                                                                 ModelKeys.PROJECTION,
+                                                                                                                                                 ModelType.STRING).setAllowExpression(true)
+                                                                                                                                                                  .setAllowNull(false)
+                                                                                                                                                                  .setValidator(PROJECTION_VALIDATOR)
+                                                                                                                                                                  .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                                                  .build())
+                                                                                                        .setAllowNull(true)
+                                                                                                        .setMinSize(1)
+                                                                                                        .build();
+
+    public static final SimpleAttributeDefinition CONNECTOR_CLASSNAME = new MappedAttributeDefinitionBuilder(ModelKeys.CONNECTOR_CLASSNAME, ModelType.STRING)
+            .setXmlName(Attribute.CLASSNAME.getLocalName())
+            .setAllowExpression(false)
+            .setAllowNull(true)
+            .setFlags(AttributeAccess.Flag.RESTART_NONE)
+            .build();
+
+    public static final SimpleAttributeDefinition CACHE_TTL_SECONDS = new MappedAttributeDefinitionBuilder(ModelKeys.CACHE_TTL_SECONDS, ModelType.INT)
+            .setXmlName(Attribute.CACHE_TTL_SECONDS.getLocalName())
+            .setAllowExpression(false)
+            .setAllowNull(true)
+            .setFlags(AttributeAccess.Flag.RESTART_NONE)
+            .build();
+
+    public static final SimpleAttributeDefinition QUERYABLE = new MappedAttributeDefinitionBuilder(ModelKeys.QUERYABLE, ModelType.BOOLEAN)
+            .setXmlName(Attribute.QUERYABLE.getLocalName())
+            .setAllowExpression(false)
+            .setAllowNull(true)
+            .setFlags(AttributeAccess.Flag.RESTART_NONE)
+            .build();
+
+    public static final SimpleAttributeDefinition READONLY = new MappedAttributeDefinitionBuilder(ModelKeys.READONLY, ModelType.BOOLEAN)
+            .setXmlName(Attribute.READONLY.getLocalName())
+            .setAllowExpression(false)
+            .setAllowNull(true)
+            .setFlags(AttributeAccess.Flag.RESTART_NONE)
+            .build();
+
+
     public static final ListAttributeDefinition PREDEFINED_WORKSPACE_NAMES = MappedListAttributeDefinition.Builder.of(ModelKeys.PREDEFINED_WORKSPACE_NAMES,
                                                                                                                       new MappedAttributeDefinitionBuilder(
                                                                                                                                                            ModelKeys.PREDEFINED_WORKSPACE_NAME,
@@ -712,6 +755,8 @@ public class ModelAttributes {
         MINIMUM_STRING_SIZE, CLASSNAME, MODULE,};
 
     public static final AttributeDefinition[] SEQUENCER_ATTRIBUTES = {PATH_EXPRESSIONS, SEQUENCER_CLASSNAME, MODULE, PROPERTIES};
+    public static final AttributeDefinition[] SOURCE_ATTRIBUTES = {PROJECTIONS, CONNECTOR_CLASSNAME, READONLY,
+            CACHE_TTL_SECONDS, QUERYABLE, MODULE, PROPERTIES};
     public static final AttributeDefinition[] TEXT_EXTRACTOR_ATTRIBUTES = {TEXT_EXTRACTOR_CLASSNAME, MODULE, PROPERTIES};
     public static final AttributeDefinition[] AUTHENTICATOR_ATTRIBUTES = {AUTHENTICATOR_CLASSNAME, MODULE, PROPERTIES};
 }

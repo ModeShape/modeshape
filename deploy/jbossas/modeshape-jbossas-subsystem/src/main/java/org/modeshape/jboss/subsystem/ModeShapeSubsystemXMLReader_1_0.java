@@ -146,6 +146,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         ModelNode indexStorage = null;
         ModelNode binaryStorage = null;
         List<ModelNode> sequencers = new ArrayList<ModelNode>();
+        List<ModelNode> externalSources = new ArrayList<ModelNode>();
         List<ModelNode> textExtractors = new ArrayList<ModelNode>();
         List<ModelNode> authenticators = new ArrayList<ModelNode>();
         while (reader.hasNext() && (reader.nextTag() != XMLStreamConstants.END_ELEMENT)) {
@@ -215,6 +216,11 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                     sequencers = parseSequencers(reader, address, repositoryName);
                     break;
 
+                // External sources ...
+                case EXTERNAL_SOURCES:
+                    externalSources = parseExternalSources(reader, address, repositoryName);
+                    break;
+
                 // Text extracting ...
                 case TEXT_EXTRACTORS:
                     textExtractors = parseTextExtracting(reader, repositoryName);
@@ -228,6 +234,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         if (indexStorage != null) repositories.add(indexStorage);
         if (binaryStorage != null) repositories.add(binaryStorage);
         repositories.addAll(sequencers);
+        repositories.addAll(externalSources);
         repositories.addAll(textExtractors);
         repositories.addAll(authenticators);
     }
@@ -946,6 +953,92 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                  .add(ModelKeys.REPOSITORY, repositoryName)
                  .add(ModelKeys.SEQUENCER, name);
 
+    }
+
+    private List<ModelNode> parseExternalSources( final XMLExtendedStreamReader reader,
+                                                  final ModelNode parentAddress,
+                                                  final String repositoryName ) throws XMLStreamException {
+        requireNoAttributes(reader);
+
+        List<ModelNode> externalSources = new ArrayList<ModelNode>();
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case SOURCE:
+                    parseExternalSource(reader, repositoryName, externalSources);
+                    break;
+                default:
+                    throw ParseUtils.unexpectedElement(reader);
+            }
+        }
+
+        return externalSources;
+    }
+
+    private void parseExternalSource( XMLExtendedStreamReader reader,
+                                      String repositoryName,
+                                      final List<ModelNode> externalSources ) throws XMLStreamException {
+
+        final ModelNode externalSource = new ModelNode();
+        externalSource.get(OP).set(ADD);
+        String name = null;
+
+        externalSources.add(externalSource);
+
+        if (reader.getAttributeCount() > 0) {
+            for (int i = 0; i < reader.getAttributeCount(); i++) {
+                String attrName = reader.getAttributeLocalName(i);
+                String attrValue = reader.getAttributeValue(i);
+                Attribute attribute = Attribute.forName(attrName);
+                switch (attribute) {
+                    case NAME:
+                        name = attrValue;
+                        break;
+                    case CLASSNAME:
+                        ModelAttributes.CONNECTOR_CLASSNAME.parseAndSetParameter(attrValue, externalSource, reader);
+                        if (name == null) {
+                            name = attrValue;
+                        }
+                        break;
+                    case MODULE:
+                        ModelAttributes.MODULE.parseAndSetParameter(attrValue, externalSource, reader);
+                        break;
+                    case CACHE_TTL_SECONDS: {
+                        ModelAttributes.CACHE_TTL_SECONDS.parseAndSetParameter(attrValue, externalSource, reader);
+                        break;
+                    }
+                    case QUERYABLE: {
+                        ModelAttributes.QUERYABLE.parseAndSetParameter(attrValue, externalSource, reader);
+                        break;
+                    }
+                    case READONLY: {
+                        ModelAttributes.READONLY.parseAndSetParameter(attrValue, externalSource, reader);
+                        break;
+                    }
+                    default:
+                        // extra attributes are allowed to set externalSource-specific properties ...
+                        externalSource.get(ModelKeys.PROPERTIES).add(attrName, attrValue);
+                        break;
+                }
+            }
+        }
+
+        while (reader.hasNext() && (reader.nextTag() != XMLStreamConstants.END_ELEMENT)) {
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case PROJECTION:
+                    String value = reader.getElementText();
+                    ModelAttributes.PROJECTIONS.parseAndAddParameterElement(value, externalSource, reader);
+                    break;
+                default:
+                    throw ParseUtils.unexpectedElement(reader);
+            }
+        }
+
+        externalSource.get(OP_ADDR)
+                 .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                 .add(ModelKeys.REPOSITORY, repositoryName)
+                 .add(ModelKeys.SOURCE, name);
     }
 
     private List<ModelNode> parseTextExtracting( final XMLExtendedStreamReader reader,

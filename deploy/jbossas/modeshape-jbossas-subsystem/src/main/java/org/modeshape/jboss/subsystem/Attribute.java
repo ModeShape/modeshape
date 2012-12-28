@@ -80,7 +80,11 @@ public enum Attribute {
     SOURCE_RELATIVE_TO("source-relative-to"),
     THREAD_POOL("thread-pool"),
     USE_ANONYMOUS_IF_AUTH_FAILED("use-anonymous-upon-failed-authentication"),
-    WORKSPACE_NAMES("workspace-names");
+    WORKSPACE_NAMES("workspace-names"),
+    CACHE_TTL_SECONDS("cacheTtlSeconds"),
+    QUERYABLE("queryable"),
+    READONLY("readonly");
+
 
     private final String name;
 

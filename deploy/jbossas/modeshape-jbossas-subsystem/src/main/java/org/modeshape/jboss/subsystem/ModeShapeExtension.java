@@ -47,6 +47,7 @@ public class ModeShapeExtension implements Extension {
     static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
     static final PathElement REPOSITORY_PATH = PathElement.pathElement(ModelKeys.REPOSITORY);
     static final PathElement SEQUENCER_PATH = PathElement.pathElement(ModelKeys.SEQUENCER);
+    static final PathElement SOURCE_PATH = PathElement.pathElement(ModelKeys.SOURCE);
     static final PathElement TEXT_EXTRACTOR_PATH = PathElement.pathElement(ModelKeys.TEXT_EXTRACTOR);
     static final PathElement AUTHENTICATOR_PATH = PathElement.pathElement(ModelKeys.AUTHENTICATOR);
 
@@ -97,6 +98,9 @@ public class ModeShapeExtension implements Extension {
 
         // Sequencer submodel
         repositorySubmodel.registerSubModel(ModeShapeSequencerResource.INSTANCE);
+
+        // External sources submodel
+        repositorySubmodel.registerSubModel(ModeShapeSourceResource.INSTANCE);
 
         // Text extractor submodel
         repositorySubmodel.registerSubModel(ModeShapeTextExtractorResource.INSTANCE);
