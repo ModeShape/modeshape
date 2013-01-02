@@ -31,7 +31,6 @@ import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.collection.Problems;

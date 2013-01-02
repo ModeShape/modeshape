@@ -51,7 +51,6 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;

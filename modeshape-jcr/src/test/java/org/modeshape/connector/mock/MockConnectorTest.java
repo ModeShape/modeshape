@@ -59,6 +59,7 @@ public class MockConnectorTest extends SingleUseAbstractTest {
     private Node testRoot;
 
     @Before
+    @Override
     public void beforeEach() throws Exception {
         startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream("config/repo-config-mock-federation.json"));
 
