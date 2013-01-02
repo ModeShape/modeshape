@@ -37,7 +37,9 @@ import org.infinispan.schematic.SchemaLibrary.MismatchedTypeProblem;
 import org.infinispan.schematic.SchemaLibrary.Problem;
 import org.infinispan.schematic.SchemaLibrary.Results;
 import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Path;
+import org.infinispan.schematic.internal.document.DocumentEditor;
 
 /**
  * 
@@ -334,7 +336,14 @@ public class DocumentTransformer {
             LinkedList<Conversion> nestedConversions = entry.getValue();
             Document nested = original.getDocument(segment);
             Document newDoc = convertValuesWithMismatchedTypes(nested, nextLevel, nestedConversions);
-            changedFields.put(segment, newDoc);
+            if (newDoc instanceof DocumentEditor) {
+                //we need to make sure we don't store the converted documents as editors
+                //because if we do, the asserts from DocumentEditor#editable start failing
+                //This can be seen when running the FederationIntegrationTests, which behind the scenes
+                //(in the SourceService class) calls engine.applyChanges()
+                //to update a configuration containing system variables which need replacing
+                changedFields.put(segment, ((DocumentEditor)newDoc).unwrap());
+            }
         }
 
         // Now create a copy of the original document but with the changed fields ...
