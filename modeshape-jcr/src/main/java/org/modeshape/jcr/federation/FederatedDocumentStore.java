@@ -79,6 +79,7 @@ public class FederatedDocumentStore implements DocumentStore {
 
     /**
      * Creates a new instance with the given connectors and local db.
+     * 
      * @param connectors a {@code non-null} {@link Connectors} instance
      * @param localDb a {@code non-null} {@link SchematicDb} instance
      */
@@ -277,9 +278,8 @@ public class FederatedDocumentStore implements DocumentStore {
         if (!connector.isQueryable()) {
             translator.setQueryable(editableDocument, false);
             return editableDocument;
-        } else {
-            return editableDocument;
         }
+        return editableDocument;
     }
 
     @Override
