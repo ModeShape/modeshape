@@ -68,7 +68,7 @@
             <artifactId>modeshape-web-jcr-rest-war</artifactId>
             <type>war</type>
             <version>${project.version}</version>
-            <scope>integration-test</scope>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
