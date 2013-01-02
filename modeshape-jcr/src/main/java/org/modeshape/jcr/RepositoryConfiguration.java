@@ -677,11 +677,14 @@ public class RepositoryConfiguration {
         SEQUENCER_ALIASES = Collections.unmodifiableMap(aliases);
 
         String fileSystemConnector = FileSystemConnector.class.getName();
+        String gitConnector = "org.modeshape.connector.git.GitConnector";
 
         aliases = new HashMap<String, String>();
         aliases.put("files", fileSystemConnector);
         aliases.put("filesystem", fileSystemConnector);
         aliases.put("filesystemconnector", fileSystemConnector);
+        aliases.put("git", gitConnector);
+        aliases.put("gitconnector", gitConnector);
 
         CONNECTOR_ALIASES = Collections.unmodifiableMap(aliases);
 

@@ -113,6 +113,17 @@
             </includes>
         </dependencySet>
 
+        <!--Connectors-->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/connector/git/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-connector-git:jar</include>
+                <include>org.eclipse.jgit:org.eclipse.jgit:jar</include>
+                <include>com.jcraft:jsch:jar</include>
+            </includes>
+        </dependencySet>
+
         <!--Sequencers-->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
