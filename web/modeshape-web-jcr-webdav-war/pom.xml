@@ -18,8 +18,6 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-web-jcr-webdav</artifactId>
-            <version>${project.version}</version>
-            <scope>integration-test</scope>
         </dependency>
 
         <dependency>
@@ -34,29 +32,23 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
             <version>${project.version}</version>
-            <scope>integration-test</scope>
+            <scope>test</scope>
             <type>test-jar</type>
         </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.api.version}</version>
-            <scope>integration-test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-            <version>${slf4j.log4j.version}</version>
-            <scope>integration-test</scope>
         </dependency>
 
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
-            <version>${log4j.version}</version>
-            <scope>integration-test</scope>
         </dependency>
 
         <dependency>
@@ -72,7 +64,6 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
-            <scope>integration-test</scope>
         </dependency>
     </dependencies>
     <build>

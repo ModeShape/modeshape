@@ -33,7 +33,6 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
-            <scope>integration-test</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
