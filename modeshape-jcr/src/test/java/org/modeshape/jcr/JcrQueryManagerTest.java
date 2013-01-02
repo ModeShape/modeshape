@@ -1513,6 +1513,32 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, expectedColumns);
     }
 
+    @FixFor( "MODE-1737" )
+    @Test
+    public void shouldSupportSelectDistinct() throws RepositoryException {
+        String sql = "SELECT DISTINCT cars.[car:maker], cars.[car:lengthInInches] FROM [car:Car] AS cars";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 13L);
+        String[] expectedColumns = {"car:maker", "car:lengthInInches"};
+        assertResultsHaveColumns(result, expectedColumns);
+    }
+
+    @FixFor( "MODE-1737" )
+    @Test
+    public void shouldSupportJoinWithSelectDistinct() throws RepositoryException {
+        String sql = "SELECT DISTINCT category.[jcr:path], cars.[car:maker], cars.[car:lengthInInches] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 13L);
+        String[] expectedColumns = {"category.jcr:path", "cars.car:maker", "cars.car:lengthInInches"};
+        assertResultsHaveColumns(result, expectedColumns);
+    }
+
     @FixFor( "MODE-1020" )
     @Test
     public void shouldFindAllPublishAreas() throws Exception {
