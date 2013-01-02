@@ -47,6 +47,11 @@
 
         <dependency>
             <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-connector-git</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-images</artifactId>
         </dependency>
 
