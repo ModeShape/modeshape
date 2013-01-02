@@ -303,6 +303,7 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
         if (doc instanceof DocumentEditor) {
             return (DocumentEditor)doc;
         }
+        // TODO: ISPN 5.2 - Re-evaluate this logic when moving to Infinispan 5.2
         // Otherwise, create the editor ...
         if (!context.isDeltaContainingChangesEnabled()) {
             // This is a local cache, so no need to record any operations ...
