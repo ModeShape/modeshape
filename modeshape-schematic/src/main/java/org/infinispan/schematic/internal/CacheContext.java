@@ -63,21 +63,26 @@ final class CacheContext {
 
         // At this point, we're always going to create a Delta object that ships the entire document, because
         // of problems we're having in ISPN 5.1.x. See MODE-1733 for details.
-        this.deltaConsistsOfChanges = false;
+        boolean deltaConsistsOfChanges = false;
 
         Flag deltaWriteFlag = null;
         short ispnVersionActual = Version.getVersionShort();
-        short ispnVersion316 = Version.encodeVersion(3, 1, 6);
-        if (ispnVersionActual <= ispnVersion316) {
-            // This flag was introduced in Infinispan 5.1.6.FINAL (see ISPN-2094), so before this we have to
-            // handle deltas differently
+        short ispnVersion516 = Version.encodeVersion(5, 1, 6);
+        if (ispnVersionActual >= ispnVersion516) {
+            // This flag was introduced in Infinispan 5.1.6.FINAL (see ISPN-2094), so we can only use this flag
+            // if we're using 5.1.6 or later. See MODE-1733 for details.
             try {
                 deltaWriteFlag = Flag.valueOf("DELTA_WRITE");
+                // TODO: ISPN 5.2 - Re-evaluate after using 5.2, since this still doesn't work on 5.1.8
+                // deltaConsistsOfChanges = true;
             } catch (IllegalArgumentException e) {
             }
+        } else {
+            // This is before Infinispan 5.1.6.Final, so we can't actually use deltas. See MODE-1733 for details.
+            deltaConsistsOfChanges = false;
         }
-        EnumSet<Flag> flags = EnumSet.noneOf(Flag.class);
-        flags.add(Flag.SKIP_REMOTE_LOOKUP);
+
+        EnumSet<Flag> flags = EnumSet.of(Flag.SKIP_REMOTE_LOOKUP);
         if (deltaWriteFlag != null) {
             // When passivation is enabled, cache loader needs to attempt to load
             // the previous value in order to merge it if necessary, so mark atomic
@@ -93,6 +98,12 @@ final class CacheContext {
         }
         this.cacheForWriting = this.cache.withFlags(flags.toArray(new Flag[flags.size()]));
 
+        this.deltaConsistsOfChanges = deltaConsistsOfChanges;
+        if (this.deltaConsistsOfChanges) {
+            LOGGER.debug("Serializing changes to documents in '" + cache.getName() + "' as deltas.");
+        } else {
+            LOGGER.debug("Serializing changes to documents in '" + cache.getName() + "' without using deltas.");
+        }
         this.txnMgr = cache.getTransactionManager();
         this.transactionTable = cache.getComponentRegistry().getComponent(TransactionTable.class);
         LockingMode lockingMode = config.transaction().lockingMode();

@@ -65,17 +65,6 @@ public abstract class Operation {
         for (String fieldName : getParentPath()) {
             parent = (MutableDocument)parent.getDocument(fieldName);
         }
-        // Object child = parent.get(fieldName);
-        // if ( child instanceof MutableDocument ) {
-        // // Includes documents and arrays ...
-        // parent = (MutableDocument)child;
-        // } else {
-        // // Doesn't matter if child is null or a non-document (or non-array) value, because we need a document...
-        // BasicDocument childDoc = new BasicDocument();
-        // parent.put(fieldName,childDoc);
-        // parent = childDoc;
-        // }
-        // }
         return parent;
     }
 
