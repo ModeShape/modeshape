@@ -217,6 +217,13 @@ public interface QueryResults extends Serializable {
         public int getLocationCount();
 
         /**
+         * Get the index of the first {@link Location} objects in each tuple.
+         * 
+         * @return the index of the first Location object; always positive
+         */
+        public int getLocationStartIndexInTuple();
+
+        /**
          * Get the names of the selectors that are associated with these results. These results contain a single {@link Location}
          * object for each of the selectors.
          * 

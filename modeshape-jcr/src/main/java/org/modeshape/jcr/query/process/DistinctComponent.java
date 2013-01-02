@@ -48,7 +48,7 @@ public class DistinctComponent extends DelegatingComponent {
             Iterator<Object[]> iter = tuples.iterator();
 
             int locationCount = getColumns().getLocationCount();
-            int firstLocationIndex = getColumns().getColumnCount();
+            int firstLocationIndex = getColumns().getLocationStartIndexInTuple();
             if (locationCount == 1) {
                 // We can determine duplicates faster/cheaper using a single Set<Location> ...
                 Set<Location> found = new HashSet<Location>();
