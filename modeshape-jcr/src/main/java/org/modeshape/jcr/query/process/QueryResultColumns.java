@@ -80,9 +80,20 @@ public class QueryResultColumns implements Columns {
     private final Map<String, Integer> locationIndexBySelectorName;
     private final Map<String, Integer> locationIndexByColumnName;
     private final Map<Integer, Integer> locationIndexByColumnIndex;
-    private final Map<String, Map<String, Integer>> columnIndexByPropertyNameBySelectorName;
+    private final Map<String, Map<String, ColumnInfo>> columnIndexByPropertyNameBySelectorName;
     private final Map<String, Integer> fullTextSearchScoreIndexBySelectorName;
     private final Map<String, String> propertyNameByColumnName;
+
+    protected final static class ColumnInfo {
+        protected final int columnIndex;
+        protected final String type;
+
+        protected ColumnInfo( int columnIndex,
+                              String type ) {
+            this.columnIndex = columnIndex;
+            this.type = type;
+        }
+    }
 
     /**
      * Create a new definition for the query results given the supplied columns.
@@ -120,7 +131,7 @@ public class QueryResultColumns implements Columns {
         this.locationIndexByColumnIndex = new HashMap<Integer, Integer>();
         this.locationIndexByColumnName = new HashMap<String, Integer>();
         this.selectorNameByColumnName = new HashMap<String, String>();
-        this.columnIndexByPropertyNameBySelectorName = new HashMap<String, Map<String, Integer>>();
+        this.columnIndexByPropertyNameBySelectorName = new HashMap<String, Map<String, ColumnInfo>>();
         this.propertyNameByColumnName = new HashMap<String, String>();
         List<String> names = new ArrayList<String>(columnCount);
         List<String> selectorNames = new ArrayList<String>(columnCount);
@@ -157,12 +168,13 @@ public class QueryResultColumns implements Columns {
             locationIndexByColumnIndex.put(new Integer(i), selectorIndex);
             locationIndexByColumnName.put(columnName, selectorIndex);
             // Insert the entry by selector name and property name ...
-            Map<String, Integer> byPropertyName = columnIndexByPropertyNameBySelectorName.get(selectorName);
+            Map<String, ColumnInfo> byPropertyName = columnIndexByPropertyNameBySelectorName.get(selectorName);
             if (byPropertyName == null) {
-                byPropertyName = new HashMap<String, Integer>();
+                byPropertyName = new HashMap<String, ColumnInfo>();
                 columnIndexByPropertyNameBySelectorName.put(selectorName, byPropertyName);
             }
-            byPropertyName.put(column.getPropertyName(), new Integer(i));
+            String columnType = this.columnTypes.get(i);
+            byPropertyName.put(column.getPropertyName(), new ColumnInfo(i, columnType));
         }
         if (columns != null && selectorNames.isEmpty()) {
             String selectorName = DEFAULT_SELECTOR_NAME;
@@ -193,7 +205,7 @@ public class QueryResultColumns implements Columns {
         this.locationIndexBySelectorName = new HashMap<String, Integer>();
         this.locationIndexByColumnIndex = new HashMap<Integer, Integer>();
         this.locationIndexByColumnName = new HashMap<String, Integer>();
-        this.columnIndexByPropertyNameBySelectorName = new HashMap<String, Map<String, Integer>>();
+        this.columnIndexByPropertyNameBySelectorName = new HashMap<String, Map<String, ColumnInfo>>();
         this.propertyNameByColumnName = new HashMap<String, String>();
         this.selectorNameByColumnName = new HashMap<String, String>();
         this.selectorNames = new ArrayList<String>(columns.size());
@@ -234,18 +246,19 @@ public class QueryResultColumns implements Columns {
             }
             assert columnIndex != null;
             columnIndexByColumnName.put(columnName, columnIndex);
-            types.add(wrappedAround.getColumnTypes().get(columnIndex.intValue()));
+            String columnType = wrappedAround.getColumnTypes().get(columnIndex.intValue());
+            types.add(columnType);
             Integer selectorIndex = new Integer(wrappedAround.getLocationIndex(selectorName));
             locationIndexBySelectorName.put(selectorName, selectorIndex);
             locationIndexByColumnIndex.put(columnIndex, selectorIndex);
             locationIndexByColumnName.put(columnName, selectorIndex);
             // Insert the entry by selector name and property name ...
-            Map<String, Integer> byPropertyName = columnIndexByPropertyNameBySelectorName.get(selectorName);
+            Map<String, ColumnInfo> byPropertyName = columnIndexByPropertyNameBySelectorName.get(selectorName);
             if (byPropertyName == null) {
-                byPropertyName = new HashMap<String, Integer>();
+                byPropertyName = new HashMap<String, ColumnInfo>();
                 columnIndexByPropertyNameBySelectorName.put(selectorName, byPropertyName);
             }
-            byPropertyName.put(column.getPropertyName(), columnIndex);
+            byPropertyName.put(column.getPropertyName(), new ColumnInfo(columnIndex, columnType));
         }
         if (selectorNames.isEmpty()) {
             String selectorName = DEFAULT_SELECTOR_NAME;
@@ -441,15 +454,29 @@ public class QueryResultColumns implements Columns {
     @Override
     public int getColumnIndexForProperty( String selectorName,
                                           String propertyName ) {
-        Map<String, Integer> byPropertyName = columnIndexByPropertyNameBySelectorName.get(selectorName);
+        Map<String, ColumnInfo> byPropertyName = columnIndexByPropertyNameBySelectorName.get(selectorName);
         if (byPropertyName == null) {
             throw new NoSuchElementException(GraphI18n.selectorDoesNotExistInQuery.text(selectorName));
         }
-        Integer result = byPropertyName.get(propertyName);
+        ColumnInfo result = byPropertyName.get(propertyName);
         if (result == null) {
             throw new NoSuchElementException(GraphI18n.propertyOnSelectorIsNotUsedInQuery.text(propertyName, selectorName));
         }
-        return result.intValue();
+        return result.columnIndex;
+    }
+
+    @Override
+    public String getColumnTypeForProperty( String selectorName,
+                                            String propertyName ) {
+        Map<String, ColumnInfo> byPropertyName = columnIndexByPropertyNameBySelectorName.get(selectorName);
+        if (byPropertyName == null) {
+            throw new NoSuchElementException(GraphI18n.selectorDoesNotExistInQuery.text(selectorName));
+        }
+        ColumnInfo result = byPropertyName.get(propertyName);
+        if (result == null) {
+            throw new NoSuchElementException(GraphI18n.propertyOnSelectorIsNotUsedInQuery.text(propertyName, selectorName));
+        }
+        return result.type;
     }
 
     @Override

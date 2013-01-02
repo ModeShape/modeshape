@@ -321,6 +321,18 @@ public interface QueryResults extends Serializable {
                                               String propertyName );
 
         /**
+         * Get the type of the column given the name of the selector and the property name from where the column should be
+         * obtained.
+         * 
+         * @param selectorName the selector name
+         * @param propertyName the name of the property
+         * @return the type for the named column
+         * @throws NoSuchElementException if the selector name or the property name are invalid
+         */
+        public String getColumnTypeForProperty( String selectorName,
+                                                String propertyName );
+
+        /**
          * Get the index of the tuple value containing the full-text search score for the node taken from the named selector.
          * 
          * @param selectorName the selector name

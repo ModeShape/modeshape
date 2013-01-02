@@ -275,7 +275,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         JcrSession session = repository.login();
         try {
             Node jcrSystem = session.getNode("/jcr:system");
-            int nonIndexedSystemNodes = 3; //number of node below jcr:system which are not indexed
+            int nonIndexedSystemNodes = 3; // number of node below jcr:system which are not indexed
             totalSystemNodeCount = countAllNodesBelow(jcrSystem) - nonIndexedSystemNodes;
             totalNodeCount = totalSystemNodeCount + TOTAL_NON_SYSTEM_NODE_COUNT;
         } finally {
@@ -283,7 +283,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
-    private static int countAllNodesBelow(Node node) throws RepositoryException {
+    private static int countAllNodesBelow( Node node ) throws RepositoryException {
         int result = 1;
         NodeIterator nodeIterator = node.getNodes();
         while (nodeIterator.hasNext()) {
@@ -1485,6 +1485,32 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             Row row = iter.nextRow();
             assertThat(row, is(notNullValue()));
         }
+    }
+
+    @FixFor( "MODE-1738" )
+    @Test
+    public void shouldSupportJoinWithOrderByOnPseudoColumn() throws RepositoryException {
+        String sql = "SELECT category.[jcr:path], cars.[car:maker], cars.[car:lengthInInches] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars') ORDER BY cars.[mode:localName]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 13L);
+        String[] expectedColumns = {"category.jcr:path", "cars.car:maker", "cars.mode:localName", "cars.car:lengthInInches"};
+        assertResultsHaveColumns(result, expectedColumns);
+    }
+
+    @FixFor( "MODE-1738" )
+    @Test
+    public void shouldSupportJoinWithOrderByOnActualColumn() throws RepositoryException {
+        String sql = "SELECT category.[jcr:path], cars.[car:maker], cars.[car:lengthInInches] FROM [nt:unstructured] AS category JOIN [car:Car] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars') ORDER BY cars.[car:maker]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 13L);
+        String[] expectedColumns = {"category.jcr:path", "cars.car:maker", "cars.car:lengthInInches"};
+        assertResultsHaveColumns(result, expectedColumns);
     }
 
     @FixFor( "MODE-1020" )

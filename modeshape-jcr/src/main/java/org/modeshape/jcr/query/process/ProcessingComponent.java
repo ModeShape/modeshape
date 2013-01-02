@@ -157,7 +157,7 @@ public abstract class ProcessingComponent {
             String selectorName = propValue.selectorName().name();
             final int index = columns.getColumnIndexForProperty(selectorName, propertyName);
             // Find the expected property type of the value ...
-            final String expectedType = columns.getColumnTypes().get(index);
+            final String expectedType = columns.getColumnTypeForProperty(selectorName, propertyName);
             final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(expectedType);
             return new DynamicOperation() {
                 @Override
@@ -177,7 +177,7 @@ public abstract class ProcessingComponent {
             String selectorName = refValue.selectorName().name();
             final int index = columns.getColumnIndexForProperty(selectorName, propertyName);
             // Find the expected property type of the value ...
-            final String expectedType = columns.getColumnTypes().get(index);
+            final String expectedType = columns.getColumnTypeForProperty(selectorName, propertyName);
             final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(expectedType);
             return new DynamicOperation() {
                 @Override
@@ -199,7 +199,7 @@ public abstract class ProcessingComponent {
             String selectorName = value.selectorName().name();
             final int index = columns.getColumnIndexForProperty(selectorName, propertyName);
             // Find the expected property type of the value ...
-            final String expectedType = columns.getColumnTypes().get(index);
+            final String expectedType = columns.getColumnTypeForProperty(selectorName, propertyName);
             final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(expectedType);
             final TypeFactory<Long> longFactory = typeSystem.getLongFactory();
             return new DynamicOperation() {
