@@ -169,7 +169,6 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
             throw new RepositoryException(GitI18n.remoteDoesNotExist.text(this.remoteName, gitDir.getAbsolutePath()));
         }
         this.remoteName = remoteName;
-        assert this.remoteName != null;
 
         // Register the different functions ...
         functions = new HashMap<String, GitFunction>();

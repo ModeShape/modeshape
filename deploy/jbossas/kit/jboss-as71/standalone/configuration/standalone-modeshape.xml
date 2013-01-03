@@ -353,6 +353,9 @@
                         <projection>default:/projection1 => /</projection>
                         <projection>other:/projection1 => /</projection>
                     </source>
+                    <!--The directory path of the connector must point to a git repository root (in this case the local modeshape clone)-->
+                    <source name="git" classname="org.modeshape.connector.git.GitConnector"
+                            directoryPath="${jboss.server.data.dir}/../../../../../../" remoteName="upstream,origin" cacheTtlSeconds="1" readonly="true"/>
                 </external-sources>
             </repository>
         </subsystem>

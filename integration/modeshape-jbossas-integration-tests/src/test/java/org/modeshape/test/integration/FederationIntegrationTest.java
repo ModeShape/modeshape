@@ -26,6 +26,7 @@ package org.modeshape.test.integration;
 
 import java.io.File;
 import javax.annotation.Resource;
+import javax.jcr.Node;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -57,7 +58,7 @@ public class FederationIntegrationTest {
     }
 
     @Test
-    public void shouldLinkFileSystemSource() throws Exception {
+    public void shouldHaveFileSystemSourceConfigured() throws Exception {
         Session defaultSession = repository.login();
         //predefined
         assertNotNull(defaultSession.getNode("/projection1"));
@@ -69,5 +70,24 @@ public class FederationIntegrationTest {
         Session otherSession = repository.login("other");
         //predefined
         assertNotNull(otherSession.getNode("/projection1"));
+    }
+
+    @Test
+    public void shouldHaveGitSourceConfigured() throws Exception {
+        Session session = repository.login();
+        Node testRoot = session.getRootNode().addNode("repos");
+        session.save();
+
+        try {
+            FederationManager fedMgr = session.getWorkspace().getFederationManager();
+            fedMgr.createProjection(testRoot.getPath(), "git", "/", "git-modeshape");
+            Node gitNode = session.getNode("/repos/git-modeshape");
+            assertNotNull(gitNode);
+            assertNotNull(gitNode.getNode("branches"));
+            assertNotNull(gitNode.getNode("tags"));
+        } finally {
+            testRoot.remove();
+            session.save();
+        }
     }
 }
