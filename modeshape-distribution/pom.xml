@@ -272,6 +272,14 @@
 
                 <dependency>
                     <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-connector-git</artifactId>
+                    <classifier>module-with-dependencies</classifier>
+                    <version>${project.version}</version>
+                    <type>zip</type>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-extractor-tika</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
