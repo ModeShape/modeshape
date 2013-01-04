@@ -100,6 +100,7 @@ public class ModelKeys {
     static final String REMOVE_BINARY_STORAGE = "remove-binary-storage";
 
     static final String SEQUENCER = "sequencer";
+    static final String SOURCE = "source";
     static final String TEXT_EXTRACTOR = "text-extractor";
 
     static final String CONFIGURATION = "configuration";
@@ -125,4 +126,10 @@ public class ModelKeys {
     static final String NODE_TYPES = "node-types";
     static final String NODE_TYPE = "node-type";
 
+    static final String PROJECTIONS = "projections";
+    static final String PROJECTION = "projection";
+    static final String CONNECTOR_CLASSNAME = "classname";
+    static final String CACHE_TTL_SECONDS = "cacheTtlSeconds";
+    static final String QUERYABLE = "queryable";
+    static final String READONLY = "readonly";
 }

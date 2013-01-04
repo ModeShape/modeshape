@@ -307,12 +307,17 @@ public class Connectors {
      * @param internalNodeKey a {@code non-null} String
      */
     public void internalNodeRemoved (String internalNodeKey) {
+        List<String> externalNodeKeysToRemove = new ArrayList<String>();
         for (Projection projection : projections.values()) {
             if (internalNodeKey.equalsIgnoreCase(projection.getProjectedNodeKey())) {
                 String externalNodeKey = projection.getExternalNodeKey();
-                projections.remove(externalNodeKey);
+                externalNodeKeysToRemove.add(externalNodeKey);
                 removedProjections.add(externalNodeKey);
             }
+        }
+
+        for (String externalNodeKeyToRemove : externalNodeKeysToRemove) {
+            projections.remove(externalNodeKeyToRemove);
         }
     }
 

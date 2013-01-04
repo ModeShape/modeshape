@@ -58,7 +58,13 @@
         </xs:annotation>
       </xs:element>
 
-      <xs:element name="indexing" type="indexing" minOccurs="0" maxOccurs="1">
+        <xs:element name="external-sources" type="external-sources" minOccurs="0" maxOccurs="1">
+            <xs:annotation>
+                <xs:documentation>The definition of the external sources</xs:documentation>
+            </xs:annotation>
+        </xs:element>
+
+        <xs:element name="indexing" type="indexing" minOccurs="0" maxOccurs="1">
         <xs:annotation>
           <xs:documentation>The definition of the indexing mechanism.</xs:documentation>
         </xs:annotation>
@@ -329,7 +335,52 @@
     <xs:anyAttribute namespace="##any" processContents="lax"/>
   </xs:complexType>
 
-  <xs:complexType name="text-extractors">
+    <xs:complexType name="external-sources">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="source" type="source" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>The definition of an external source.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="source">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="projection" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>An expressions that describes a projection path expression, in the format wsName:/projectedPath => externalPath</xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string" />
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The name of the external source.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attributeGroup ref="implementation-class-attributes" />
+        <xs:attribute name="cacheTtlSeconds" type="xs:integer" use="optional">
+            <xs:annotation>
+                <xs:documentation>The number of seconds which an external node should be held in the workspace cache. If not specified, the effective TTL is deferred to the workspace cache configuration. If negative, an entry will be cached forever.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="readonly" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>Flag which indicates whether the external source is readonly or supports writing as well. By default, a source is read-only.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="queryable" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>Flag which indicates whether the entire external content provided by this source should be queryable or not by the repository. By default, it is.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:anyAttribute namespace="##any" processContents="lax"/>
+    </xs:complexType>
+
+    <xs:complexType name="text-extractors">
     <xs:sequence minOccurs="0" maxOccurs="unbounded">
       <xs:element name="text-extractor" type="text-extractor" minOccurs="0" maxOccurs="unbounded">
         <xs:annotation>

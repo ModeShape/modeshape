@@ -205,6 +205,12 @@
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
                     <file-store passivation="false" path="modeshape/store/preconfiguredRepository" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
+                <local-cache name="federatedRepository">
+                    <!-- ModeShape requires transactions -->
+                    <transaction mode="NON_XA"/>
+                    <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
+                    <file-store passivation="false" path="modeshape/store/federatedRepository" relative-to="jboss.server.data.dir" purge="false"/>
+                </local-cache>
             </cache-container>
             <cache-container name="binary-cache-container" default-cache="binary-fs">
                 <local-cache name="binary-fs">
@@ -335,6 +341,21 @@
                 </node-types>
                 <cache-index-storage cache-container="index-cache-container" data-cache-name="index-data"/>
                 <indexing analyzer-classname="org.apache.lucene.analysis.standard.ClassicAnalyzer"/>
+            </repository>
+            <repository name="federatedRepository">
+                <workspaces allow-workspace-creation="true" default-workspace="default">
+                    <workspace name="default"/>
+                    <workspace name="other"/>
+                </workspaces>
+                <external-sources>
+                    <source name="filesystem" classname="org.modeshape.connector.filesystem.FileSystemConnector"
+                            directoryPath="${rootDirectoryPath}" cacheTtlSeconds="1" readonly="true">
+                        <projection>default:/projection1 => /</projection>
+                        <projection>other:/projection1 => /</projection>
+                    </source>
+                    <source name="git" classname="org.modeshape.connector.git.GitConnector" module="org.modeshape.connector.git"
+                            directoryPath="${gitRepositoryRootPath}" remoteName="upstream,origin" cacheTtlSeconds="1" readonly="true"/>
+                </external-sources>
             </repository>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>

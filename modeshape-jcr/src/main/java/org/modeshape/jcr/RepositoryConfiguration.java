@@ -142,7 +142,7 @@ public class RepositoryConfiguration {
      * The regexp pattern used to parse & validate projection path expressions. Expects [workspaceName]:/[projectedPath] =>
      * [externalPath] expressions.
      */
-    final static Pattern PROJECTION_PATH_EXPRESSION_PATTERN = Pattern.compile("(\\w+):(/([a-zA-Z_0-9]/{0,1})+)\\s*=>\\s*([/a-zA-Z_0-9]+)");
+    public final static Pattern PROJECTION_PATH_EXPRESSION_PATTERN = Pattern.compile("(\\w+):(/([a-zA-Z_0-9]/{0,1})+)\\s*=>\\s*([/a-zA-Z_0-9]+)");
 
     final static TimeUnit GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT = TimeUnit.MINUTES;
 
