@@ -361,13 +361,12 @@
                 </workspaces>
                 <external-sources>
                     <source name="filesystem" classname="org.modeshape.connector.filesystem.FileSystemConnector"
-                            directoryPath="${jboss.server.data.dir}" cacheTtlSeconds="1" readonly="true">
+                            directoryPath="${rootDirectoryPath}" cacheTtlSeconds="1" readonly="true">
                         <projection>default:/projection1 => /</projection>
                         <projection>other:/projection1 => /</projection>
                     </source>
-                    <!--The directory path of the connector must point to a git repository root (in this case the local modeshape clone)-->
-                    <source name="git" classname="org.modeshape.connector.git.GitConnector"
-                            directoryPath="${jboss.server.data.dir}/../../../../../../" remoteName="upstream,origin" cacheTtlSeconds="1" readonly="true"/>
+                    <source name="git" classname="org.modeshape.connector.git.GitConnector" module="org.modeshape.connector.git"
+                            directoryPath="${gitRepositoryRootPath}" remoteName="upstream,origin" cacheTtlSeconds="1" readonly="true"/>
                 </external-sources>
             </repository>
         </subsystem>
