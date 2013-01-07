@@ -330,6 +330,9 @@
         <spring.webmvc>2.5.2</spring.webmvc>
         <spring.mock>2.0.7</spring.mock>
 
+        <!-- Apache chemistry version -->
+        <chemistry.version>0.7.0</chemistry.version>
+
         <!--
             JBOSS AS 7.1.1.Final
         -->
