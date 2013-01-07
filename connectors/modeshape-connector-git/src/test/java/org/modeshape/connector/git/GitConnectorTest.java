@@ -23,14 +23,10 @@
  */
 package org.modeshape.connector.git;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsSame.sameInstance;
-import static org.junit.Assert.assertThat;
 import javax.jcr.Item;
 import javax.jcr.Node;
 import javax.jcr.Value;
+import javax.jcr.query.Query;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -39,7 +35,15 @@ import org.modeshape.common.FixFor;
 import org.modeshape.jcr.MultiUseAbstractTest;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.Session;
+import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.federation.FederationManager;
+import static junit.framework.Assert.assertEquals;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertThat;
+
 
 public class GitConnectorTest extends MultiUseAbstractTest {
 
@@ -245,6 +249,29 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         }
         assertThat(commit.getProperty("git:diff").getString(), is(notNullValue()));
         assertThat(commit.getProperty("git:tree").getNode().getPath(), is(treePathFor(commit)));
+    }
+
+    @Test
+    public void shouldOnlyIndexMasterTree() throws Exception {
+        Node git = gitNode();
+        Workspace workspace = session.getWorkspace();
+
+        //force reindexing of tags and check that they haven't been indexed
+        workspace.reindex(git.getPath() + "/tags");
+        Query query = workspace.getQueryManager().createQuery("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '%/tags/%'", Query.JCR_SQL2);
+        assertEquals(0, query.execute().getNodes().getSize());
+
+        //force reindexing of branches and check that they haven't been indexed
+        workspace.reindex(git.getPath() + "/branches");
+        query = workspace.getQueryManager().createQuery("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '%/branches/%'", Query.JCR_SQL2);
+        assertEquals(0, query.execute().getNodes().getSize());
+
+        //force reindexing of a file under master/tree and check that it has been indexed
+        //(indexing everything under /tree/master is way too expensive)
+        workspace.reindex(git.getPath() + "/tree/master/.gitignore");
+        query = workspace.getQueryManager().createQuery("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '%/tree/master/%'", Query.JCR_SQL2);
+        assertEquals(2, query.execute().getNodes().getSize());
+
     }
 
     protected void assertNodeHasObjectIdProperty( Node node ) throws Exception {

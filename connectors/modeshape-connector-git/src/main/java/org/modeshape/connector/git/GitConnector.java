@@ -222,6 +222,10 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
             String parentId = callSpec.getParentId();
             assert parentId != null;
             writer.setParent(parentId);
+            //check if the document should be indexed or not, based on the global connector setting and the specific function
+            if (!this.isQueryable() || !function.isQueryable(callSpec)) {
+                writer.setNotQueryable();
+            }
             // Now call the function ...
             Document doc = function.execute(repository, git, callSpec, writer, values);
             // Log the result ...

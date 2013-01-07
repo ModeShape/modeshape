@@ -288,4 +288,9 @@ public class GitTree extends GitFunction implements PageableGitFunction {
         return writer.document();
     }
 
+    @Override
+    protected boolean isQueryable( CallSpecification callSpec ) {
+        //only tree/master should be indexed
+        return callSpec.parameterCount() != 0 && callSpec.parameter(0).equalsIgnoreCase("master");
+    }
 }
