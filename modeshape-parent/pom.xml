@@ -1078,6 +1078,45 @@
                 <scope>test</scope>
             </dependency>
 
+            <!-- Apache chemistry -->
+            <dependency>
+                <groupId>org.apache.chemistry.opencmis</groupId>
+                <artifactId>chemistry-opencmis-commons-api</artifactId>
+                <version>${chemistry.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.chemistry.opencmis</groupId>
+                <artifactId>chemistry-opencmis-commons-impl</artifactId>
+                <version>${chemistry.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.chemistry.opencmis</groupId>
+                <artifactId>chemistry-opencmis-server-support</artifactId>
+                <version>${chemistry.version}</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>org.apache.chemistry.opencmis</groupId>
+                <artifactId>chemistry-opencmis-server-jcr</artifactId>
+                <version>${chemistry.version}</version>
+                <classifier>classes</classifier>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.chemistry.opencmis</groupId>
+                <artifactId>chemistry-opencmis-server-bindings</artifactId>
+                <version>${chemistry.version}</version>
+                <classifier>classes</classifier>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.chemistry.opencmis</groupId>
+                <artifactId>chemistry-opencmis-client-impl</artifactId>
+                <version>${chemistry.version}</version>
+            </dependency>
+
             <!--
                 Demo module
             -->
