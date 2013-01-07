@@ -11,7 +11,7 @@
 
     <artifactId>modeshape-web-jcr-cmis</artifactId>
     <packaging>jar</packaging>
-    <name>ModeShape Chemistry Library</name>
+    <name>ModeShape CMIS Library</name>
     <description>ModeShape Apache Chemistry support library</description>
     <url>http://www.modeshape.org</url>
 
