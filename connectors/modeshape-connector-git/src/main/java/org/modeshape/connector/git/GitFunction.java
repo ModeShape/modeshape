@@ -258,6 +258,11 @@ public abstract class GitFunction {
         }
     }
 
+    protected boolean isQueryable( CallSpecification callSpec ) {
+        //by default, a git function does not return queryable content
+        return false;
+    }
+
     @Override
     public String toString() {
         return getName();
