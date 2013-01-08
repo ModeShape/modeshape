@@ -48,6 +48,7 @@ final class CacheContext {
 
     private final AdvancedCache<String, SchematicEntry> cache;
     private final AdvancedCache<String, SchematicEntry> cacheForWriting;
+    private final AdvancedCache<String, SchematicEntry> cacheForLocking;
     private final TransactionManager txnMgr;
     private final TransactionTable transactionTable;
     private final boolean explicitLockingEnabled;
@@ -99,15 +100,24 @@ final class CacheContext {
         this.cacheForWriting = this.cache.withFlags(flags.toArray(new Flag[flags.size()]));
 
         this.deltaConsistsOfChanges = deltaConsistsOfChanges;
-        if (this.deltaConsistsOfChanges) {
-            LOGGER.debug("Serializing changes to documents in '" + cache.getName() + "' as deltas.");
+        if (this.isDeltaContainingChangesEnabled()) {
+            LOGGER.debug("Deltas will be used to serializing changes to documents in '" + cache.getName() + "'.");
         } else {
-            LOGGER.debug("Serializing changes to documents in '" + cache.getName() + "' without using deltas.");
+            LOGGER.debug("Deltas will NOT be used to serializing changes to documents in '" + cache.getName() + "'.");
         }
         this.txnMgr = cache.getTransactionManager();
         this.transactionTable = cache.getComponentRegistry().getComponent(TransactionTable.class);
         LockingMode lockingMode = config.transaction().lockingMode();
         this.explicitLockingEnabled = lockingMode == LockingMode.PESSIMISTIC;
+        if (this.isExplicitLockingEnabled()) {
+            this.cacheForLocking = this.cache.withFlags(Flag.FAIL_SILENTLY);
+            LOGGER.debug("Explicit locks will be used when modifying documents in '" + cache.getName()
+                         + "' (Infinispan's locking mode is PESSIMISTIC).");
+        } else {
+            this.cacheForLocking = this.cache;
+            LOGGER.debug("Explicit locks will NOT be used when modifying documents in '" + cache.getName()
+                         + "' (Infinispan's locking mode is not PESSIMISTIC).");
+        }
     }
 
     /**
@@ -126,6 +136,15 @@ final class CacheContext {
      */
     public AdvancedCache<String, SchematicEntry> getCacheForWriting() {
         return cacheForWriting;
+    }
+
+    /**
+     * Get the advanced cache that should be used for locking.
+     * 
+     * @return the locking cache; never null
+     */
+    public AdvancedCache<String, SchematicEntry> getCacheForLocking() {
+        return cacheForLocking;
     }
 
     /**

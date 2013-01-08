@@ -54,6 +54,7 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.TimeoutException;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.AllPathsCache;
 import org.modeshape.jcr.cache.CachedNode;
@@ -96,8 +97,11 @@ import org.modeshape.jcr.value.Property;
 @ThreadSafe
 public class WritableSessionCache extends AbstractSessionCache {
 
+    private static final Logger LOGGER = Logger.getLogger(WritableSessionCache.class);
     private static final NodeKey REMOVED_KEY = new NodeKey("REMOVED_NODE_SHOULD_NEVER_BE_PERSISTED");
     private static final SessionNode REMOVED = new SessionNode(REMOVED_KEY, false);
+    private static final int MAX_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT = 4;
+    private static final long PAUSE_TIME_BEFORE_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT = 50L;
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private Map<NodeKey, SessionNode> changedNodes;
@@ -108,7 +112,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Create a new SessionCache that can be used for making changes to the workspace.
-     *
+     * 
      * @param context the execution context; may not be null
      * @param workspaceCache the (shared) workspace cache; may not be null
      * @param sessionContext the context for the session; may not be null
@@ -215,7 +219,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Returns the list of changed nodes at or below the given path, starting with the children.
-     *
+     * 
      * @param nodePath the path of the parent node
      * @return the list of changed nodes
      */
@@ -326,7 +330,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Persist the changes within a transaction.
-     *
+     * 
      * @throws LockFailureException if a requested lock could not be made
      * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
      *         document
@@ -361,56 +365,72 @@ public class WritableSessionCache extends AbstractSessionCache {
                 }
             }
 
-            try {
-                // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
-                txn = txns.begin();
+            final int numNodes = this.changedNodes.size();
 
-                // Get a monitor via the transaction ...
-                final Monitor monitor = txn.createMonitor();
+            int repeat = txns.isTransaction() ? 1 : MAX_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT;
+            while (--repeat >= 0) {
                 try {
-                    // Now persist the changes ...
-                    events = persistChanges(this.changedNodesInOrder, monitor);
-                    clearModifiedState();
-                } catch (RuntimeException e) {
-                    // Some error occurred (likely within our code) ...
-                    txn.rollback();
-                    throw e;
+                    // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
+                    txn = txns.begin();
+
+                    // Get a monitor via the transaction ...
+                    final Monitor monitor = txn.createMonitor();
+                    try {
+                        // Now persist the changes ...
+                        events = persistChanges(this.changedNodesInOrder, monitor);
+                        clearModifiedState();
+                    } catch (org.infinispan.util.concurrent.TimeoutException e) {
+                        txn.rollback();
+                        if (repeat <= 0) throw new TimeoutException(e.getMessage(), e);
+                        --repeat;
+                        Thread.sleep(PAUSE_TIME_BEFORE_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT);
+                        continue;
+                    } catch (RuntimeException e) {
+                        // Some error occurred (likely within our code) ...
+                        txn.rollback();
+                        throw e;
+                    }
+
+                    // Register a handler that will execute upon successful commit of the transaction (whever that happens) ...
+                    final ChangeSet changes = events;
+                    txn.uponCompletion(new TransactionFunction() {
+                        @Override
+                        public void transactionComplete() {
+                            if (changes != null && monitor != null) {
+                                monitor.recordChanged(changes.changedNodes().size());
+                            }
+                            clearState();
+                        }
+                    });
+
+                    LOGGER.debug("Altered {0} node(s)", numNodes);
+
+                    // Commit the transaction ...
+                    txn.commit();
+
+                } catch (NotSupportedException err) {
+                    // No nested transactions are supported ...
+                    return;
+                } catch (SecurityException err) {
+                    // No privilege to commit ...
+                    throw new SystemFailureException(err);
+                } catch (IllegalStateException err) {
+                    // Not associated with a txn??
+                    throw new SystemFailureException(err);
+                } catch (RollbackException err) {
+                    // Couldn't be committed, but the txn is already rolled back ...
+                    return;
+                } catch (HeuristicMixedException err) {
+                } catch (HeuristicRollbackException err) {
+                    // Rollback has occurred ...
+                    return;
+                } catch (SystemException err) {
+                    // System failed unexpectedly ...
+                    throw new SystemFailureException(err);
                 }
 
-                // Register a handler that will execute upon successful commit of the transaction (whever that happens) ...
-                final ChangeSet changes = events;
-                txn.uponCompletion(new TransactionFunction() {
-                    @Override
-                    public void transactionComplete() {
-                        if (changes != null && monitor != null) {
-                            monitor.recordChanged(changes.changedNodes().size());
-                        }
-                        clearState();
-                    }
-                });
-
-                // Commit the transaction ...
-                txn.commit();
-
-            } catch (NotSupportedException err) {
-                // No nested transactions are supported ...
-                return;
-            } catch (SecurityException err) {
-                // No privilege to commit ...
-                throw new SystemFailureException(err);
-            } catch (IllegalStateException err) {
-                // Not associated with a txn??
-                throw new SystemFailureException(err);
-            } catch (RollbackException err) {
-                // Couldn't be committed, but the txn is already rolled back ...
-                return;
-            } catch (HeuristicMixedException err) {
-            } catch (HeuristicRollbackException err) {
-                // Rollback has occurred ...
-                return;
-            } catch (SystemException err) {
-                // System failed unexpectedly ...
-                throw new SystemFailureException(err);
+                // If we've made it this far, we should never repeat ...
+                break;
             }
 
         } catch (RuntimeException e) {
@@ -470,77 +490,93 @@ public class WritableSessionCache extends AbstractSessionCache {
             thisLock.lock();
             thatLock.lock();
 
-            try {
-                // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
-                if (preSaveOperation != null) {
-                    SaveContext saveContext = new BasicSaveContext(context());
-                    for (MutableCachedNode node : this.changedNodes.values()) {
-                        if (node == REMOVED) {
-                            continue;
-                        }
-                        checkNodeNotRemovedByAnotherTransaction(node);
-                        preSaveOperation.process(node, saveContext);
+            // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
+            if (preSaveOperation != null) {
+                SaveContext saveContext = new BasicSaveContext(context());
+                for (MutableCachedNode node : this.changedNodes.values()) {
+                    if (node == REMOVED) {
+                        continue;
                     }
+                    checkNodeNotRemovedByAnotherTransaction(node);
+                    preSaveOperation.process(node, saveContext);
                 }
+            }
 
-                // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
-                txn = txns.begin();
+            final int numNodes = this.changedNodes.size() + that.changedNodes.size();
 
-                // Get a monitor via the transaction ...
-                final Monitor monitor = txn.createMonitor();
+            int repeat = txns.isTransaction() ? 1 : MAX_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT;
+            while (--repeat >= 0) {
                 try {
-                    // Now persist the changes ...
-                    events1 = persistChanges(this.changedNodesInOrder, monitor);
-                    events2 = that.persistChanges(that.changedNodesInOrder, monitor);
-                    this.clearModifiedState();
-                    that.clearModifiedState();
-                } catch (RuntimeException e) {
-                    // Some error occurred (likely within our code) ...
-                    txn.rollback();
-                    throw e;
+                    // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
+                    txn = txns.begin();
+
+                    // Get a monitor via the transaction ...
+                    final Monitor monitor = txn.createMonitor();
+                    try {
+                        // Now persist the changes ...
+                        events1 = persistChanges(this.changedNodesInOrder, monitor);
+                        events2 = that.persistChanges(that.changedNodesInOrder, monitor);
+                        this.clearModifiedState();
+                        that.clearModifiedState();
+                    } catch (org.infinispan.util.concurrent.TimeoutException e) {
+                        txn.rollback();
+                        if (repeat <= 0) throw new TimeoutException(e.getMessage(), e);
+                        --repeat;
+                        Thread.sleep(PAUSE_TIME_BEFORE_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT);
+                        continue;
+                    } catch (RuntimeException e) {
+                        // Some error occurred (likely within our code) ...
+                        txn.rollback();
+                        throw e;
+                    }
+
+                    // Register a handler that will execute upon successful commit of the transaction (whever that happens) ...
+                    final ChangeSet changes1 = events1;
+                    final ChangeSet changes2 = events2;
+                    txn.uponCompletion(new TransactionFunction() {
+                        @Override
+                        public void transactionComplete() {
+                            if (monitor != null) {
+                                if (changes1 != null) {
+                                    monitor.recordChanged(changes1.changedNodes().size());
+                                }
+                                if (changes2 != null) {
+                                    monitor.recordChanged(changes2.changedNodes().size());
+                                }
+                            }
+                            clearState();
+                            that.clearState();
+                        }
+                    });
+
+                    LOGGER.debug("Altered {0} node(s)", numNodes);
+
+                    // Commit the transaction ...
+                    txn.commit();
+
+                } catch (NotSupportedException err) {
+                    // No nested transactions are supported ...
+                    return;
+                } catch (SecurityException err) {
+                    // No privilege to commit ...
+                    throw new SystemFailureException(err);
+                } catch (IllegalStateException err) {
+                    // Not associated with a txn??
+                    throw new SystemFailureException(err);
+                } catch (RollbackException err) {
+                    // Couldn't be committed, but the txn is already rolled back ...
+                    return;
+                } catch (HeuristicMixedException err) {
+                } catch (HeuristicRollbackException err) {
+                    // Rollback has occurred ...
+                    return;
+                } catch (SystemException err) {
+                    // System failed unexpectedly ...
+                    throw new SystemFailureException(err);
                 }
 
-                // Register a handler that will execute upon successful commit of the transaction (whever that happens) ...
-                final ChangeSet changes1 = events1;
-                final ChangeSet changes2 = events2;
-                txn.uponCompletion(new TransactionFunction() {
-                    @Override
-                    public void transactionComplete() {
-                        if (monitor != null) {
-                            if (changes1 != null) {
-                                monitor.recordChanged(changes1.changedNodes().size());
-                            }
-                            if (changes2 != null) {
-                                monitor.recordChanged(changes2.changedNodes().size());
-                            }
-                        }
-                        clearState();
-                        that.clearState();
-                    }
-                });
-
-                // Commit the transaction ...
-                txn.commit();
-
-            } catch (NotSupportedException err) {
-                // No nested transactions are supported ...
-                return;
-            } catch (SecurityException err) {
-                // No privilege to commit ...
-                throw new SystemFailureException(err);
-            } catch (IllegalStateException err) {
-                // Not associated with a txn??
-                throw new SystemFailureException(err);
-            } catch (RollbackException err) {
-                // Couldn't be committed, but the txn is already rolled back ...
-                return;
-            } catch (HeuristicMixedException err) {
-            } catch (HeuristicRollbackException err) {
-                // Rollback has occurred ...
-                return;
-            } catch (SystemException err) {
-                // System failed unexpectedly ...
-                throw new SystemFailureException(err);
+                // If we've made it this far, we should never repeat ...
+                break;
             }
 
         } catch (RuntimeException e) {
@@ -573,7 +609,7 @@ public class WritableSessionCache extends AbstractSessionCache {
      * This method saves the changes made by both sessions within a single transaction. <b>Note that this must be used with
      * caution, as this method attempts to get write locks on both sessions, meaning they <i>cannot<i> be concurrently used
      * elsewhere (otherwise deadlocks might occur).</b>
-     *
+     * 
      * @param toBeSaved the set of keys identifying the nodes whose changes should be saved; may not be null
      * @param other the other session
      * @param preSaveOperation the pre-save operation
@@ -603,79 +639,95 @@ public class WritableSessionCache extends AbstractSessionCache {
             // Before we start the transaction, apply the pre-save operations to the new and changed nodes below the path ...
             final List<NodeKey> savedNodesInOrder = new LinkedList<NodeKey>();
 
-            try {
-                // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
-                if (preSaveOperation != null) {
-                    SaveContext saveContext = new BasicSaveContext(context());
-                    for (MutableCachedNode node : this.changedNodes.values()) {
-                        if (node == REMOVED || !toBeSaved.contains(node.getKey())) {
-                            continue;
-                        }
-                        checkNodeNotRemovedByAnotherTransaction(node);
-                        preSaveOperation.process(node, saveContext);
-                        savedNodesInOrder.add(node.getKey());
+            // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
+            if (preSaveOperation != null) {
+                SaveContext saveContext = new BasicSaveContext(context());
+                for (MutableCachedNode node : this.changedNodes.values()) {
+                    if (node == REMOVED || !toBeSaved.contains(node.getKey())) {
+                        continue;
                     }
+                    checkNodeNotRemovedByAnotherTransaction(node);
+                    preSaveOperation.process(node, saveContext);
+                    savedNodesInOrder.add(node.getKey());
                 }
+            }
 
-                // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
-                txn = txns.begin();
+            final int numNodes = savedNodesInOrder.size() + that.changedNodesInOrder.size();
 
-                // Get a monitor via the transaction ...
-                final Monitor monitor = txn.createMonitor();
-
+            int repeat = txns.isTransaction() ? 1 : MAX_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT;
+            while (--repeat >= 0) {
                 try {
-                    // Now persist the changes ...
-                    events1 = persistChanges(savedNodesInOrder, monitor);
-                    events2 = that.persistChanges(that.changedNodesInOrder, monitor);
-                    clearModifiedState(savedNodesInOrder);
-                    clearModifiedState();
-                } catch (RuntimeException e) {
-                    // Some error occurred (likely within our code) ...
-                    txn.rollback();
-                    throw e;
+                    // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
+                    txn = txns.begin();
+
+                    // Get a monitor via the transaction ...
+                    final Monitor monitor = txn.createMonitor();
+
+                    try {
+                        // Now persist the changes ...
+                        events1 = persistChanges(savedNodesInOrder, monitor);
+                        events2 = that.persistChanges(that.changedNodesInOrder, monitor);
+                        clearModifiedState(savedNodesInOrder);
+                        clearModifiedState();
+                    } catch (org.infinispan.util.concurrent.TimeoutException e) {
+                        txn.rollback();
+                        if (repeat <= 0) throw new TimeoutException(e.getMessage(), e);
+                        --repeat;
+                        Thread.sleep(PAUSE_TIME_BEFORE_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT);
+                        continue;
+                    } catch (RuntimeException e) {
+                        // Some error occurred (likely within our code) ...
+                        txn.rollback();
+                        throw e;
+                    }
+
+                    // Register a handler that will execute upon successful commit of the transaction (whever that happens) ...
+                    final ChangeSet changes1 = events1;
+                    final ChangeSet changes2 = events2;
+                    txn.uponCompletion(new TransactionFunction() {
+                        @Override
+                        public void transactionComplete() {
+                            if (monitor != null) {
+                                if (changes1 != null) {
+                                    monitor.recordChanged(changes1.changedNodes().size());
+                                }
+                                if (changes2 != null) {
+                                    monitor.recordChanged(changes2.changedNodes().size());
+                                }
+                            }
+                            clearState(savedNodesInOrder);
+                            that.clearState();
+                        }
+                    });
+
+                    LOGGER.debug("Altered {0} node(s)", numNodes);
+
+                    // Commit the transaction ...
+                    txn.commit();
+
+                } catch (NotSupportedException err) {
+                    // No nested transactions are supported ...
+                    return;
+                } catch (SecurityException err) {
+                    // No privilege to commit ...
+                    throw new SystemFailureException(err);
+                } catch (IllegalStateException err) {
+                    // Not associated with a txn??
+                    throw new SystemFailureException(err);
+                } catch (RollbackException err) {
+                    // Couldn't be committed, but the txn is already rolled back ...
+                    return;
+                } catch (HeuristicMixedException err) {
+                } catch (HeuristicRollbackException err) {
+                    // Rollback has occurred ...
+                    return;
+                } catch (SystemException err) {
+                    // System failed unexpectedly ...
+                    throw new SystemFailureException(err);
                 }
 
-                // Register a handler that will execute upon successful commit of the transaction (whever that happens) ...
-                final ChangeSet changes1 = events1;
-                final ChangeSet changes2 = events2;
-                txn.uponCompletion(new TransactionFunction() {
-                    @Override
-                    public void transactionComplete() {
-                        if (monitor != null) {
-                            if (changes1 != null) {
-                                monitor.recordChanged(changes1.changedNodes().size());
-                            }
-                            if (changes2 != null) {
-                                monitor.recordChanged(changes2.changedNodes().size());
-                            }
-                        }
-                        clearState(savedNodesInOrder);
-                        that.clearState();
-                    }
-                });
-
-                // Commit the transaction ...
-                txn.commit();
-
-            } catch (NotSupportedException err) {
-                // No nested transactions are supported ...
-                return;
-            } catch (SecurityException err) {
-                // No privilege to commit ...
-                throw new SystemFailureException(err);
-            } catch (IllegalStateException err) {
-                // Not associated with a txn??
-                throw new SystemFailureException(err);
-            } catch (RollbackException err) {
-                // Couldn't be committed, but the txn is already rolled back ...
-                return;
-            } catch (HeuristicMixedException err) {
-            } catch (HeuristicRollbackException err) {
-                // Rollback has occurred ...
-                return;
-            } catch (SystemException err) {
-                // System failed unexpectedly ...
-                throw new SystemFailureException(err);
+                // If we've made it this far, we should never repeat ...
+                break;
             }
 
         } catch (RuntimeException e) {
@@ -697,7 +749,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Persist the changes within an already-established transaction.
-     *
+     * 
      * @param changedNodesInOrder the nodes that are to be persisted; may not be null
      * @param monitor the monitor for these changes; may be null if not needed
      * @return the ChangeSet encapsulating the changes that were made
@@ -725,6 +777,24 @@ public class WritableSessionCache extends AbstractSessionCache {
 
         PathCache sessionPaths = new PathCache(this);
         PathCache workspacePaths = new PathCache(workspaceCache);
+
+        if (documentStore.updatesRequirePreparing()) {
+            // Try to acquire from the DocumentStore locks for all the nodes that we're going to change ...
+            Set<String> keysToLock = new HashSet<String>();
+            for (NodeKey key : changedNodesInOrder) {
+                SessionNode node = changedNodes.get(key);
+                if (node != REMOVED && !node.isNew()) {
+                    String keyStr = key.toString();
+                    keysToLock.add(keyStr);
+                }
+            }
+            if (!documentStore.prepareDocumentsForUpdate(keysToLock)) {
+                // try again ...
+                if (!documentStore.prepareDocumentsForUpdate(keysToLock)) {
+                    throw new org.infinispan.util.concurrent.TimeoutException("Unable to acquire storage locks: " + keysToLock);
+                }
+            }
+        }
 
         Set<NodeKey> removedNodes = null;
         Set<BinaryKey> unusedBinaryKeys = new HashSet<BinaryKey>();
@@ -944,10 +1014,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                     changes.nodeChanged(key, newPath);
                 }
 
-                //write additional node "metadata", meaning various flags which have internal meaning
+                // write additional node "metadata", meaning various flags which have internal meaning
                 boolean queryable = node.isQueryable(this);
                 if (!queryable) {
-                    //we are only interested if the node is not queryable, as by default all nodes are queryable.
+                    // we are only interested if the node is not queryable, as by default all nodes are queryable.
                     translator.setQueryable(doc, false);
                 }
 
@@ -976,10 +1046,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                         monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties().values());
                     }
                 } else {
-                    boolean isExternal = !workspaceCache().getRootKey().getSourceKey().equalsIgnoreCase(node.getKey().getSourceKey());
+                    boolean isExternal = !workspaceCache().getRootKey()
+                                                          .getSourceKey()
+                                                          .equalsIgnoreCase(node.getKey().getSourceKey());
                     boolean externalNodeChanged = isExternal && node.hasChanges();
                     if (externalNodeChanged) {
-                        //in the case of external nodes, only if there are changes should the update be called
+                        // in the case of external nodes, only if there are changes should the update be called
                         documentStore.updateDocument(keyStr, doc, node);
                     }
                     boolean isSameWorkspace = workspaceCache().getWorkspaceKey()
@@ -1174,7 +1246,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                 assert children != null;
                 for (ChildReference child : children) {
                     NodeKey childKey = child.getKey();
-                    //only recursively delete children from the same source (prevents deletion of external nodes in case of federation)
+                    // only recursively delete children from the same source (prevents deletion of external nodes in case of
+                    // federation)
                     if (childKey.getSourceKey().equalsIgnoreCase(key.getSourceKey())) {
                         keys.add(childKey);
                     }
@@ -1190,7 +1263,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 this.changedNodes.putAll(removed);
             } catch (RuntimeException e2) {
                 I18n msg = JcrI18n.failedWhileRollingBackDestroyToRuntimeError;
-                Logger.getLogger(getClass()).error(e2, msg, e2.getMessage(), e.getMessage());
+                LOGGER.error(e2, msg, e2.getMessage(), e.getMessage());
             } finally {
                 // Re-throw original exception ...
                 throw e;
@@ -1223,10 +1296,10 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Creates a projection for the given source and node, by specifying the external path and an optional alias.
-     *
-     * @param nodeKey a {@code non-null} {@link NodeKey} instance which represents the key of the node on which the projection should
-     * be created.
-     * @param sourceName a {@code non-null}  String the name of external source.
+     * 
+     * @param nodeKey a {@code non-null} {@link NodeKey} instance which represents the key of the node on which the projection
+     *        should be created.
+     * @param sourceName a {@code non-null} String the name of external source.
      * @param externalPath a {@code non-null} String the path from the external source to an external node.
      * @param alias an optional String representing the name under which the projection will be linked to the node.
      */
@@ -1244,11 +1317,12 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     /**
      * Removes from the given federated node a projection pointing towards an external node.
-     *
+     * 
      * @param federatedNodeKey a {@code non-null} {@link NodeKey}, the key of the federated node
      * @param externalNodeKey a {@code non-null} {@link NodeKey}, the key of the external node
      */
-    public void removeProjection(NodeKey federatedNodeKey, NodeKey externalNodeKey) {
+    public void removeProjection( NodeKey federatedNodeKey,
+                                  NodeKey externalNodeKey ) {
         // register the node in the changes, so it can be saved later
         mutable(federatedNodeKey);
         DocumentStore documentStore = workspaceCache().documentStore();

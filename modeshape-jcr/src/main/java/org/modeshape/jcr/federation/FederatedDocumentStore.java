@@ -308,6 +308,16 @@ public class FederatedDocumentStore implements DocumentStore {
     }
 
     @Override
+    public boolean updatesRequirePreparing() {
+        return false;
+    }
+
+    @Override
+    public boolean prepareDocumentsForUpdate( Collection<String> keys ) {
+        return true;
+    }
+
+    @Override
     public TransactionManager transactionManager() {
         return localStore().transactionManager();
     }

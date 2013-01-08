@@ -21,6 +21,7 @@
  */
 package org.infinispan.schematic.internal;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -397,6 +398,19 @@ public class CacheSchematicDb implements SchematicDb {
     @Override
     public NotifyingFuture<SchematicEntry> removeAsync( String key ) {
         return future(key, store.removeAsync(key), true);
+    }
+
+    @Override
+    public boolean lock( Collection<String> keys ) {
+        if (context.isExplicitLockingEnabled() && !keys.isEmpty()) {
+            return context.getCacheForLocking().lock(keys);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean isExplicitLockingEnabled() {
+        return context.isExplicitLockingEnabled();
     }
 
     protected class SchematicEntryProxyFuture implements NotifyingFuture<SchematicEntry> {

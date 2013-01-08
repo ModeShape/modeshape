@@ -169,9 +169,8 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
 
         // Now we've locked this value, can make the copy, and update the cache
         // (where it will be stored in the transaction table) ...
-        AdvancedCache<String, SchematicEntry> cache = context.getCacheForWriting();
         if (context.isExplicitLockingEnabled()) {
-            cache.lock(key); // released at TXN commit/rollback
+            context.getCacheForLocking().lock(key); // released at TXN commit/rollback
         }
 
         // Make a copy that we'll use for the updates ...
@@ -193,6 +192,7 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
         if (suppressLocks) {
             flagContainer.setFlags(Flag.SKIP_LOCKING);
         }
+        AdvancedCache<String, SchematicEntry> cache = context.getCacheForWriting();
         cache.put(key, copy);
         return copy;
     }

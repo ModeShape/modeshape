@@ -21,6 +21,7 @@
  */
 package org.infinispan.schematic;
 
+import java.util.Collection;
 import java.util.Map;
 import org.infinispan.Cache;
 import org.infinispan.lifecycle.Lifecycle;
@@ -220,6 +221,25 @@ public interface SchematicDb extends Lifecycle {
      * @return the entry that was removed, or null if there was no document with the supplied key
      */
     SchematicEntry remove( String key );
+
+    /**
+     * Lock all of the documents with the given keys. This must be called within the context of an existing transaction, and all
+     * locks will be held until the completion of the transaction.
+     * 
+     * @param keys the set of keys identifying the documents that are to be locked
+     * @return true if the documents were locked (or if locking is not required), or false if not all of the documents could be
+     *         locked
+     */
+    boolean lock( Collection<String> keys );
+
+    /**
+     * Return whether explicit {@link #lock(Collection) locking} is used when editing {@link SchematicEntry#editDocumentContent()
+     * document content} or {@link SchematicEntry#editMetadata() metadata}. If this method returns true, then it may be useful to
+     * {@link #lock(Collection) preemptively lock} documents that will be modified during a transactions.
+     * 
+     * @return true if explicit locking is enabled, or false otherwise
+     */
+    boolean isExplicitLockingEnabled();
 
     /**
      * Asynchronous version of {@link #get(String)}. This method does not block on remote calls, even if the library cache mode is
