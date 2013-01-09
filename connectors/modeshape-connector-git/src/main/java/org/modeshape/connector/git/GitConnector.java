@@ -26,7 +26,9 @@ package org.modeshape.connector.git;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.NamespaceRegistry;
@@ -58,6 +60,8 @@ import org.modeshape.jcr.value.binary.ExternalBinaryValue;
  * <li><strong><code>remoteName</code></strong> - The alias used by the local Git repository for the remote repository. The
  * default is the "<code>origin</code>". If the value contains commas, the value contains an ordered list of remote aliases that
  * should be searched; the first one to match an existing remote will be used.</li>
+ * <li><strong><code>queryableBranches</code></strong> - An array with the names of the branches that should be queryable by the
+ * repository. By default, only the master branch is queryable.</li>
  * </ul>
  * </p>
  * <p>
@@ -94,9 +98,10 @@ import org.modeshape.jcr.value.binary.ExternalBinaryValue;
  */
 public class GitConnector extends ReadOnlyConnector implements Pageable {
 
-    public static final boolean DEFAULT_INCLUDE_MIME_TYPE = false;
-    public static final String DEFAULT_REMOTE_NAME = "origin";
+    private static final boolean DEFAULT_INCLUDE_MIME_TYPE = false;
+    private static final String DEFAULT_REMOTE_NAME = "origin";
     private static final String GIT_DIRECTORY_NAME = ".git";
+    private static final List<String> DEFAULT_QUERYABLE_BRANCHES = Arrays.asList("master");
 
     private static final String GIT_CND_PATH = "org/modeshape/connector/git/git.cnd";
 
@@ -118,6 +123,11 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
      * via reflection.
      */
     private boolean includeMimeType = DEFAULT_INCLUDE_MIME_TYPE;
+
+    /**
+     * The optional list of branch names (under /tree) which should be indexed by the repository and therefore queryable.
+     */
+    private List<String> queryableBranches = DEFAULT_QUERYABLE_BRANCHES;
 
     private Repository repository;
     private Git git;
@@ -287,4 +297,7 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
         return remoteName;
     }
 
+    protected List<String> getQueryableBranches() {
+        return queryableBranches;
+    }
 }

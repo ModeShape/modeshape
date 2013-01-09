@@ -366,7 +366,8 @@
                         <projection>other:/projection1 => /</projection>
                     </source>
                     <source name="git" classname="org.modeshape.connector.git.GitConnector" module="org.modeshape.connector.git"
-                            directoryPath="${gitRepositoryRootPath}" remoteName="upstream,origin" cacheTtlSeconds="1" readonly="true"/>
+                            directoryPath="${gitRepositoryRootPath}" remoteName="upstream,origin" cacheTtlSeconds="1" readonly="true"
+                            queryableBranches="master,2.x"/>
                 </external-sources>
             </repository>
         </subsystem>

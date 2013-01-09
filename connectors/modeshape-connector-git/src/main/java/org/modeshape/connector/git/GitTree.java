@@ -290,7 +290,15 @@ public class GitTree extends GitFunction implements PageableGitFunction {
 
     @Override
     protected boolean isQueryable( CallSpecification callSpec ) {
-        //only tree/master should be indexed
-        return callSpec.parameterCount() != 0 && callSpec.parameter(0).equalsIgnoreCase("master");
+        if (callSpec.parameterCount() == 0) {
+            return true;
+        }
+        String branchName = callSpec.parameter(0);
+        for (String queryableBranchName : connector.getQueryableBranches()) {
+            if (branchName.equalsIgnoreCase(queryableBranchName)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
