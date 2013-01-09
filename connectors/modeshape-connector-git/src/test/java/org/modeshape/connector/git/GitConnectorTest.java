@@ -252,7 +252,7 @@ public class GitConnectorTest extends MultiUseAbstractTest {
     }
 
     @Test
-    public void shouldOnlyIndexMasterTree() throws Exception {
+    public void shouldIndexQueryableBranches() throws Exception {
         Node git = gitNode();
         Workspace workspace = session.getWorkspace();
 
@@ -272,6 +272,10 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         query = workspace.getQueryManager().createQuery("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '%/tree/master/%'", Query.JCR_SQL2);
         assertEquals(2, query.execute().getNodes().getSize());
 
+        //force reindexing of a file under another configured branch and check that it has been indexed
+        workspace.reindex(git.getPath() + "/tree/2.x/.gitignore");
+        query = workspace.getQueryManager().createQuery("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '%/tree/2.x/%'", Query.JCR_SQL2);
+        assertEquals(2, query.execute().getNodes().getSize());
     }
 
     protected void assertNodeHasObjectIdProperty( Node node ) throws Exception {

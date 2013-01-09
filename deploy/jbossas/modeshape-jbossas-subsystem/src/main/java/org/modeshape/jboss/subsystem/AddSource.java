@@ -25,6 +25,7 @@
 package org.modeshape.jboss.subsystem;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -59,6 +60,12 @@ public class AddSource extends AbstractAddStepHandler {
     static final AddSource INSTANCE = new AddSource();
 
     private static final Logger LOGGER = Logger.getLogger(AddSource.class.getPackage().getName());
+
+    /**
+     * The list of known custom connector properties which come in the form of comma-separated strings and should be transformed
+     * into Lists before being set on the connector classes.
+     */
+    private static final List<String> LIST_PROPERTIES = Arrays.asList("queryableBranches");
 
     private AddSource() {
     }
@@ -116,7 +123,7 @@ public class AddSource extends AbstractAddStepHandler {
                 props.put(RepositoryConfiguration.FieldName.PROJECTIONS, projections);
             } else if (key.equals(ModelKeys.PROPERTIES)) {
                 for (Property property : node.asPropertyList()) {
-                    props.put(property.getName(), property.getValue().asString());
+                    props.put(property.getName(), propertyValue(property));
                 }
             } else {
                 props.put(key, node.asString());
@@ -138,6 +145,22 @@ public class AddSource extends AbstractAddStepHandler {
         sourceServiceBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
         ServiceController<JcrRepository> controller = sourceServiceBuilder.install();
         newControllers.add(controller);
+    }
+
+    private Object propertyValue(Property property) {
+        String propertyName = property.getName();
+        String valueAsString = property.getValue().asString();
+
+        if (!LIST_PROPERTIES.contains(propertyName)) {
+            return valueAsString;
+        }
+
+        String[] values = valueAsString.split(",");
+        List<String> result = new ArrayList<String>(values.length);
+        for (String value : values) {
+            result.add(value.trim());
+        }
+        return result;
     }
 
     private void ensureClassLoadingPropertyIsSet( Properties sourceProperties ) {

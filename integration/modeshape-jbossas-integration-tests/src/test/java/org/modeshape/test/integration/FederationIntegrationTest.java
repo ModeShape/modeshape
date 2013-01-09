@@ -27,6 +27,7 @@ package org.modeshape.test.integration;
 import java.io.File;
 import javax.annotation.Resource;
 import javax.jcr.Node;
+import javax.jcr.query.Query;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -35,7 +36,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.api.Session;
+import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.federation.FederationManager;
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 
 /**
@@ -79,12 +82,24 @@ public class FederationIntegrationTest {
         session.save();
 
         try {
-            FederationManager fedMgr = session.getWorkspace().getFederationManager();
+            Workspace workspace = session.getWorkspace();
+
+            FederationManager fedMgr = workspace.getFederationManager();
+            //check that the projection is created correctly
             fedMgr.createProjection(testRoot.getPath(), "git", "/", "git-modeshape");
             Node gitNode = session.getNode("/repos/git-modeshape");
             assertNotNull(gitNode);
             assertNotNull(gitNode.getNode("branches"));
             assertNotNull(gitNode.getNode("tags"));
+
+            //check configured queryable branches
+            workspace.reindex(gitNode.getPath() + "/tree/master/.gitignore");
+            Query query = workspace.getQueryManager().createQuery("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '%/tree/master/%'", Query.JCR_SQL2);
+            assertEquals(2, query.execute().getNodes().getSize());
+
+            workspace.reindex(gitNode.getPath() + "/tree/2.x/.gitignore");
+            query = workspace.getQueryManager().createQuery("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '%/tree/2.x/%'", Query.JCR_SQL2);
+            assertEquals(2, query.execute().getNodes().getSize());
         } finally {
             testRoot.remove();
             session.save();
