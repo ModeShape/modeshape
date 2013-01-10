@@ -36,6 +36,12 @@
             <directory>../deploy/jbossas/modeshape-jbossas-web-webdav-war/target/modeshape-jbossas-web-webdav-war-${project.version}</directory>
             <outputDirectory>standalone/deployments/modeshape-webdav.war</outputDirectory>
         </fileSet>
+        
+        <!-- Deployment for the ModeShape CMIS service WAR (as an exploded directory) -->
+        <fileSet>
+            <directory>../deploy/jbossas/modeshape-jbossas-cmis-war/target/modeshape-jbossas-cmis-war-${project.version}</directory>
+            <outputDirectory>standalone/deployments/modeshape-cmis.war</outputDirectory>
+        </fileSet>
 
     </fileSets>
 	

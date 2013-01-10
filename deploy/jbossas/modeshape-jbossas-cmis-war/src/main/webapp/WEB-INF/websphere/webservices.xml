@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License. 
+-->
+<webservices xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/javaee_web_services_1_2.xsd" version="1.2">
+    <webservice-description>
+        <webservice-description-name>OpenCMIS Server</webservice-description-name>
+        <wsdl-file>WEB-INF/wsdl/CMISWS-Service.wsdl</wsdl-file>
+        <port-component>
+            <port-component-name>NavigationServicePort</port-component-name>
+            <wsdl-service xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:NavigationService</wsdl-service>
+            <wsdl-port xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:NavigationServicePort</wsdl-port>
+            <enable-mtom>true</enable-mtom>
+            <service-endpoint-interface>org.apache.chemistry.opencmis.commons.impl.jaxb.NavigationServicePort</service-endpoint-interface>
+            <service-impl-bean>
+                <servlet-link>NavigationService</servlet-link>
+            </service-impl-bean>
+            <handler-chains>
+                <handler-chain>
+                    <handler>
+                        <handler-name>authHandler</handler-name>
+                        <handler-class>org.apache.chemistry.opencmis.server.impl.webservices.WebSphereAuthHandler</handler-class>
+                    </handler>
+                </handler-chain>
+            </handler-chains>                
+        </port-component>
+        <port-component>
+            <port-component-name>PolicyServicePort</port-component-name>
+            <wsdl-service xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:PolicyService</wsdl-service>
+            <wsdl-port xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:PolicyServicePort</wsdl-port>
+            <enable-mtom>true</enable-mtom>
+            <service-endpoint-interface>org.apache.chemistry.opencmis.commons.impl.jaxb.PolicyServicePort</service-endpoint-interface>
+            <service-impl-bean>
+                <servlet-link>PolicyService</servlet-link>
+            </service-impl-bean>
+            <handler-chains>
+                <handler-chain>
+                    <handler>
+                        <handler-name>authHandler</handler-name>
+                        <handler-class>org.apache.chemistry.opencmis.server.impl.webservices.WebSphereAuthHandler</handler-class>
+                    </handler>
+                </handler-chain>
+            </handler-chains>  
+        </port-component>
+        <port-component>
+            <port-component-name>DiscoveryServicePort</port-component-name>
+            <wsdl-service xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:DiscoveryService</wsdl-service>
+            <wsdl-port xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:DiscoveryServicePort</wsdl-port>
+            <enable-mtom>true</enable-mtom>
+            <service-endpoint-interface>org.apache.chemistry.opencmis.commons.impl.jaxb.DiscoveryServicePort</service-endpoint-interface>
+            <service-impl-bean>
+                <servlet-link>DiscoveryService</servlet-link>
+            </service-impl-bean>
+            <handler>
+                <handler-name>WebSphere CMIS Authentication Handler</handler-name>
+                <handler-class>org.apache.chemistry.opencmis.server.impl.webservices.WebSphereAuthHandler</handler-class>
+            </handler>
+        </port-component>
+        <port-component>
+            <port-component-name>MultiFilingServicePort</port-component-name>
+            <wsdl-service xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:MultiFilingService</wsdl-service>
+            <wsdl-port xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:MultiFilingServicePort</wsdl-port>
+            <enable-mtom>true</enable-mtom>
+            <service-endpoint-interface>org.apache.chemistry.opencmis.commons.impl.jaxb.MultiFilingServicePort</service-endpoint-interface>
+            <service-impl-bean>
+                <servlet-link>MultiFilingService</servlet-link>
+            </service-impl-bean>
+            <handler-chains>
+                <handler-chain>
+                    <handler>
+                        <handler-name>authHandler</handler-name>
+                        <handler-class>org.apache.chemistry.opencmis.server.impl.webservices.WebSphereAuthHandler</handler-class>
+                    </handler>
+                </handler-chain>
+            </handler-chains>  
+        </port-component>
+        <port-component>
+            <port-component-name>RepositoryServicePort</port-component-name>
+            <wsdl-service xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:RepositoryService</wsdl-service>
+            <wsdl-port xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:RepositoryServicePort</wsdl-port>
+            <enable-mtom>true</enable-mtom>
+            <service-endpoint-interface>org.apache.chemistry.opencmis.commons.impl.jaxb.RepositoryServicePort</service-endpoint-interface>
+            <service-impl-bean>
+                <servlet-link>RepositoryService</servlet-link>
+            </service-impl-bean>
+            <handler-chains>
+                <handler-chain>
+                    <handler>
+                        <handler-name>authHandler</handler-name>
+                        <handler-class>org.apache.chemistry.opencmis.server.impl.webservices.WebSphereAuthHandler</handler-class>
+                    </handler>
+                </handler-chain>
+            </handler-chains>  
+        </port-component>
+        <port-component>
+            <port-component-name>RelationshipServicePort</port-component-name>
+            <wsdl-service xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:RelationshipService</wsdl-service>
+            <wsdl-port xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:RelationshipServicePort</wsdl-port>
+            <enable-mtom>true</enable-mtom>
+            <service-endpoint-interface>org.apache.chemistry.opencmis.commons.impl.jaxb.RelationshipServicePort</service-endpoint-interface>
+            <service-impl-bean>
+                <servlet-link>RelationshipService</servlet-link>
+            </service-impl-bean>
+            <handler-chains>
+                <handler-chain>
+                    <handler>
+                        <handler-name>authHandler</handler-name>
+                        <handler-class>org.apache.chemistry.opencmis.server.impl.webservices.WebSphereAuthHandler</handler-class>
+                    </handler>
+                </handler-chain>
+            </handler-chains>  
+        </port-component>
+        <port-component>
+            <port-component-name>VersioningServicePort</port-component-name>
+            <wsdl-service xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:VersioningService</wsdl-service>
+            <wsdl-port xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:VersioningServicePort</wsdl-port>
+            <enable-mtom>true</enable-mtom>
+            <service-endpoint-interface>org.apache.chemistry.opencmis.commons.impl.jaxb.VersioningServicePort</service-endpoint-interface>
+            <service-impl-bean>
+                <servlet-link>VersioningService</servlet-link>
+            </service-impl-bean>
+            <handler-chains>
+                <handler-chain>
+                    <handler>
+                        <handler-name>authHandler</handler-name>
+                        <handler-class>org.apache.chemistry.opencmis.server.impl.webservices.WebSphereAuthHandler</handler-class>
+                    </handler>
+                </handler-chain>
+            </handler-chains>  
+        </port-component>
+        <port-component>
+            <port-component-name>ObjectServicePort</port-component-name>
+            <wsdl-service xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:ObjectService</wsdl-service>
+            <wsdl-port xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:ObjectServicePort</wsdl-port>
+            <enable-mtom>true</enable-mtom>
+            <service-endpoint-interface>org.apache.chemistry.opencmis.commons.impl.jaxb.ObjectServicePort</service-endpoint-interface>
+            <service-impl-bean>
+                <servlet-link>ObjectService</servlet-link>
+            </service-impl-bean>
+            <handler-chains>
+                <handler-chain>
+                    <handler>
+                        <handler-name>authHandler</handler-name>
+                        <handler-class>org.apache.chemistry.opencmis.server.impl.webservices.WebSphereAuthHandler</handler-class>
+                    </handler>
+                </handler-chain>
+            </handler-chains>  
+        </port-component>
+        <port-component>
+            <port-component-name>ACLServicePort</port-component-name>
+            <wsdl-service xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:ACLService</wsdl-service>
+            <wsdl-port xmlns:cmis="http://docs.oasis-open.org/ns/cmis/ws/200908/">cmis:ACLServicePort</wsdl-port>
+            <enable-mtom>true</enable-mtom>
+            <service-endpoint-interface>org.apache.chemistry.opencmis.commons.impl.jaxb.ACLServicePort</service-endpoint-interface>
+            <service-impl-bean>
+                <servlet-link>ACLService</servlet-link>
+            </service-impl-bean>
+            <handler-chains>
+                <handler-chain>
+                    <handler>
+                        <handler-name>authHandler</handler-name>
+                        <handler-class>org.apache.chemistry.opencmis.server.impl.webservices.WebSphereAuthHandler</handler-class>
+                    </handler>
+                </handler-chain>
+            </handler-chains>  
+        </port-component>
+    </webservice-description>
+</webservices>
