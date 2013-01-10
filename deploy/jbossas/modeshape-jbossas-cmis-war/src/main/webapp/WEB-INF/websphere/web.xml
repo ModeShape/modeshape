@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.  
+-->
+<web-app version="2.5"
+    xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+
+    <display-name>OpenCMIS Server</display-name>
+
+    <welcome-file-list>
+        <welcome-file>index.jsp</welcome-file>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
+
+    <listener>
+        <listener-class>org.apache.chemistry.opencmis.server.impl.CmisRepositoryContextListener</listener-class>
+    </listener>
+    
+        <!--
+    <listener>
+        <listener-class>com.sun.xml.ws.transport.http.servlet.WSServletContextListener</listener-class>
+    </listener>
+        -->
+    <!-- 
+         A servlet filter that logs all requests in files. Useful for monitoring and debugging.
+         Use it with care! It can generate a huge amount of files and will slow down performance
+         significantly.
+    -->
+    <!--
+    <filter>
+           <filter-name>LoggingFilter</filter-name>
+          <filter-class>org.apache.chemistry.opencmis.server.support.filter.LoggingFilter</filter-class>
+           <init-param>
+              <param-name>LogDir</param-name>
+              <param-value></param-value>
+           </init-param>
+           <init-param>
+              <param-name>PrettyPrint</param-name>
+              <param-value>true</param-value>
+           </init-param>
+           <init-param>
+              <param-name>LogHeader</param-name>
+              <param-value>true</param-value>
+           </init-param>
+           <init-param>
+              <param-name>Indent</param-name>
+              <param-value>4</param-value>
+           </init-param>
+    </filter>
+    
+    <filter-mapping>
+           <filter-name>LoggingFilter</filter-name>
+           <servlet-name>cmisatom</servlet-name> 
+    </filter-mapping>
+    -->
+
+    <!--
+    <servlet>
+        <servlet-name>cmisws</servlet-name>
+        <servlet-class>com.sun.xml.ws.transport.http.servlet.WSServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    -->
+
+    <servlet>
+        <servlet-name>NavigationService</servlet-name>
+        <servlet-class>org.apache.chemistry.opencmis.server.impl.webservices.NavigationService</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet>
+        <servlet-name>PolicyService</servlet-name>
+        <servlet-class>org.apache.chemistry.opencmis.server.impl.webservices.PolicyService</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet>
+        <servlet-name>DiscoveryService</servlet-name>
+        <servlet-class>org.apache.chemistry.opencmis.server.impl.webservices.DiscoveryService</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet>
+        <servlet-name>MultiFilingService</servlet-name>
+        <servlet-class>org.apache.chemistry.opencmis.server.impl.webservices.MultiFilingService</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet>
+        <servlet-name>RepositoryService</servlet-name>
+        <servlet-class>org.apache.chemistry.opencmis.server.impl.webservices.RepositoryService</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    
+    <servlet>
+        <servlet-name>RelationshipService</servlet-name>
+        <servlet-class>org.apache.chemistry.opencmis.server.impl.webservices.RelationshipService</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    
+    <servlet>
+        <servlet-name>VersioningService</servlet-name>
+        <servlet-class>org.apache.chemistry.opencmis.server.impl.webservices.VersioningService</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    
+    <servlet>
+        <servlet-name>ObjectService</servlet-name>
+        <servlet-class>org.apache.chemistry.opencmis.server.impl.webservices.ObjectService</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    
+    <servlet>
+        <servlet-name>ACLService</servlet-name>
+        <servlet-class>org.apache.chemistry.opencmis.server.impl.webservices.AclService</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    
+
+    <servlet>
+        <servlet-name>cmisatom</servlet-name>
+        <servlet-class>org.apache.chemistry.opencmis.server.impl.atompub.CmisAtomPubServlet</servlet-class>
+        <init-param>
+            <param-name>callContextHandler</param-name>
+            <param-value>org.apache.chemistry.opencmis.server.shared.BasicAuthCallContextHandler</param-value>
+        </init-param>
+        <load-on-startup>2</load-on-startup>
+    </servlet>
+    
+    <!-- Browser Binding is deactivated until the implementation is complete. -->
+    <!--
+    <servlet>
+        <servlet-name>cmisbrowser</servlet-name>
+        <servlet-class>org.apache.chemistry.opencmis.server.impl.browser.CmisBrowserBindingServlet</servlet-class>
+        <init-param>
+            <param-name>callContextHandler</param-name>
+            <param-value>org.apache.chemistry.opencmis.server.shared.BasicAuthCallContextHandler</param-value>
+        </init-param>
+        <load-on-startup>2</load-on-startup>
+    </servlet>
+    -->
+
+    <!--
+    <servlet-mapping>
+        <servlet-name>cmisws</servlet-name>
+        <url-pattern>/services/*</url-pattern>
+    </servlet-mapping>
+    -->
+    
+    <servlet-mapping>
+        <servlet-name>NavigationService</servlet-name>
+        <url-pattern>/services/NavigationService</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>PolicyService</servlet-name>
+        <url-pattern>/services/PolicyService</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>DiscoveryService</servlet-name>
+        <url-pattern>/services/DiscoveryService</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>MultiFilingService</servlet-name>
+        <url-pattern>/services/MultiFilingService</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>RepositoryService</servlet-name>
+        <url-pattern>/services/RepositoryService</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>RelationshipService</servlet-name>
+        <url-pattern>/services/RelationshipService</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>VersioningService</servlet-name>
+        <url-pattern>/services/VersioningService</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>ObjectService</servlet-name>
+        <url-pattern>/services/ObjectService</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>ACLService</servlet-name>
+        <url-pattern>/services/ACLService</url-pattern>
+    </servlet-mapping>
+
+
+    <servlet-mapping>
+        <servlet-name>cmisatom</servlet-name>
+        <url-pattern>/atom/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- Browser Binding is deactivated until the implementation is complete. -->
+    <!--
+    <servlet-mapping>
+        <servlet-name>cmisbrowser</servlet-name>
+        <url-pattern>/browser/*</url-pattern>
+    </servlet-mapping>
+    -->
+
+    <session-config>
+        <session-timeout>60</session-timeout>
+    </session-config>
+</web-app>

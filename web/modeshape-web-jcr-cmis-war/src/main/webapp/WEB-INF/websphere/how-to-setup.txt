@@ -1,0 +1,2 @@
+In order to use the OpenCMIS server framework on WebSphere 7.0.0.5 or later,
+copy the files web.xml and webservices.xml from /WEB-INF/websphere to /WEB-INF.

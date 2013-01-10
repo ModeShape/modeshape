@@ -43,6 +43,7 @@ import org.apache.chemistry.opencmis.jcr.impl.DefaultUnversionedDocumentTypeHand
 import org.apache.chemistry.opencmis.jcr.type.JcrTypeHandlerManager;
 import org.apache.chemistry.opencmis.server.support.CmisServiceWrapper;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.web.jcr.NoSuchRepositoryException;
 import org.modeshape.web.jcr.RepositoryManager;
 
 /**
@@ -107,11 +108,17 @@ public class JcrServiceFactory extends AbstractServiceFactory {
         Set<String> names = RepositoryManager.getJcrRepositoryNames();
 
         for (String repositoryId : names) {
-            Map params = jcrConfig.get(repositoryId);
-            Repository repository = acquireJcrRepository(params);
-            list.put(repositoryId, new JcrRepository(repository, pathManger,
-                    typeManager, typeHandlerManager));
-            System.out.println("--- loaded repository " + repository);
+//            Map params = jcrConfig.get(repositoryId);
+//            Repository repository = acquireJcrRepository(params);
+            try {
+                Repository repository = RepositoryManager.getRepository(repositoryId);
+                list.put(repositoryId, new JcrRepository(repository, pathManger,
+                        typeManager, typeHandlerManager));
+                System.out.println("--- loaded repository " + repositoryId);
+            } catch (NoSuchRepositoryException e) {
+                //should never happen;
+                e.printStackTrace();
+            }
         }
 
         return list;
