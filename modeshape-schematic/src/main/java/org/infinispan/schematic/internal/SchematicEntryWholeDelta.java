@@ -62,11 +62,10 @@ public class SchematicEntryWholeDelta implements SchematicDelta {
             if (d != null && (d instanceof SchematicEntryLiteral)) {
                 other = (SchematicEntryLiteral)d;
                 other.setDocument(document);
-                LOG.trace("Merging delta into existing " + other.getClass() + " -> " + other);
+                LOG.trace("Merging whole doc delta into existing literal, resulting in " + other);
             } else {
                 other = new SchematicEntryLiteral((MutableDocument)document);
-                LOG.trace("Merging delta into new SchematicEntryLiteral; DeltaAware is " + (d != null ? d.getClass() : "null")
-                          + " -> " + d);
+                LOG.trace("Merging whole doc delta into new " + other);
             }
         } catch (RuntimeException e) {
             LOG.debug("Exception while merging delta " + this + " onto " + d, e);

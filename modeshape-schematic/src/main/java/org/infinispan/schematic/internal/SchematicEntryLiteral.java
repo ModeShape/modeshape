@@ -179,13 +179,11 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
     @Override
     public Delta delta() {
         SchematicDelta delta = this.delta.getAndSet(null);
-        return delta != null ? delta : new SchematicEntryWholeDelta(value.clone());
+        return delta != null ? delta : new SchematicEntryWholeDelta(value);
     }
 
     protected final SchematicDelta getDelta() {
-        SchematicDelta result = delta.get();
-        assert result != null;
-        return result;
+        return delta.get();
     }
 
     protected void createDelta( CacheContext context ) {
@@ -193,7 +191,7 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
         if (context.isDeltaContainingChangesEnabled()) {
             delta.set(new SchematicEntryDelta(key()));
         } else {
-            delta.set(new SchematicEntryWholeDelta(value.clone()));
+            delta.set(new SchematicEntryWholeDelta(value));
         }
     }
 

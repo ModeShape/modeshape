@@ -72,11 +72,10 @@ public class SchematicEntryDelta implements SchematicDelta {
         SchematicEntryLiteral other = null;
         if (d != null && (d instanceof SchematicEntryLiteral)) {
             other = (SchematicEntryLiteral)d;
-            LOG.trace("Merging delta into existing " + other.getClass() + " -> " + other);
+            LOG.trace("Merging delta " + changeLog + " into existing " + other);
         } else {
             other = new SchematicEntryLiteral();
-            LOG.trace("Merging delta into new SchematicEntryLiteral; DeltaAware is " + (d != null ? d.getClass() : "null")
-                      + " -> " + d);
+            LOG.trace("Merging delta " + changeLog + " into new SchematicEntryLiteral");
         }
         try {
             if (changeLog != null) {
