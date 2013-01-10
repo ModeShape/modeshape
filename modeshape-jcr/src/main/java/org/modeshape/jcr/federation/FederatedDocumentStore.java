@@ -309,12 +309,12 @@ public class FederatedDocumentStore implements DocumentStore {
 
     @Override
     public boolean updatesRequirePreparing() {
-        return false;
+        return localDocumentStore.updatesRequirePreparing();
     }
 
     @Override
     public boolean prepareDocumentsForUpdate( Collection<String> keys ) {
-        return true;
+        return localDocumentStore.prepareDocumentsForUpdate(keys);
     }
 
     @Override

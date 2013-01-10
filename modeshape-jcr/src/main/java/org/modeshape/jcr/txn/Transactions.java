@@ -96,7 +96,7 @@ public abstract class Transactions {
      * @return true if there is an existing transaction, or false if there is none
      * @throws SystemException If the transaction service fails in an unexpected way.
      */
-    public boolean isTransaction() throws SystemException {
+    public boolean isCurrentlyInTransaction() throws SystemException {
         return txnMgr.getTransaction() != null;
     }
 

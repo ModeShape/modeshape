@@ -367,7 +367,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
             final int numNodes = this.changedNodes.size();
 
-            int repeat = txns.isTransaction() ? 1 : MAX_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT;
+            int repeat = txns.isCurrentlyInTransaction() ? 1 : MAX_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT;
             while (--repeat >= 0) {
                 try {
                     // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
@@ -504,7 +504,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
             final int numNodes = this.changedNodes.size() + that.changedNodes.size();
 
-            int repeat = txns.isTransaction() ? 1 : MAX_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT;
+            int repeat = txns.isCurrentlyInTransaction() ? 1 : MAX_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT;
             while (--repeat >= 0) {
                 try {
                     // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
@@ -654,7 +654,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
             final int numNodes = savedNodesInOrder.size() + that.changedNodesInOrder.size();
 
-            int repeat = txns.isTransaction() ? 1 : MAX_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT;
+            int repeat = txns.isCurrentlyInTransaction() ? 1 : MAX_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT;
             while (--repeat >= 0) {
                 try {
                     // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
