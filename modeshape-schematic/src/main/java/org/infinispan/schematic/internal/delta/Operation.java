@@ -62,9 +62,17 @@ public abstract class Operation {
 
     protected MutableDocument mutableParent( MutableDocument delegate ) {
         MutableDocument parent = delegate;
-        for (String fieldName : getParentPath()) {
-            parent = (MutableDocument)parent.getDocument(fieldName);
+        MutableDocument parentOfParent = null;
+        Path parentPath = getParentPath();
+        for (String fieldName : parentPath) {
+            parentOfParent = parent;
+            parent = (MutableDocument)parentOfParent.getDocument(fieldName);
         }
+        // if (parent == null && parentOfParent != null) {
+        // // We need to create the document in the grandParent ...
+        // parent = new BasicDocument();
+        // parentOfParent.put(parentPath.getLast(), parent);
+        // }
         return parent;
     }
 

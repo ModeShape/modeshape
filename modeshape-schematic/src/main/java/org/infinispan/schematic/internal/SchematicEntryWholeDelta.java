@@ -58,16 +58,22 @@ public class SchematicEntryWholeDelta implements SchematicDelta {
     @Override
     public DeltaAware merge( DeltaAware d ) {
         SchematicEntryLiteral other = null;
-        if (d != null && (d instanceof SchematicEntryLiteral)) {
-            other = (SchematicEntryLiteral)d;
-            other.setDocument(document);
-            LOG.trace("Merging delta into existing " + other.getClass() + " -> " + other);
-        } else {
-            other = new SchematicEntryLiteral((MutableDocument)document);
-            LOG.trace("Merging delta into new SchematicEntryLiteral; DeltaAware is " + (d != null ? d.getClass() : "null")
-                      + " -> " + d);
+        try {
+            if (d != null && (d instanceof SchematicEntryLiteral)) {
+                other = (SchematicEntryLiteral)d;
+                other.setDocument(document);
+                LOG.trace("Merging delta into existing " + other.getClass() + " -> " + other);
+            } else {
+                other = new SchematicEntryLiteral((MutableDocument)document);
+                LOG.trace("Merging delta into new SchematicEntryLiteral; DeltaAware is " + (d != null ? d.getClass() : "null")
+                          + " -> " + d);
+            }
+        } catch (RuntimeException e) {
+            LOG.debug("Exception while merging delta " + this + " onto " + d, e);
+            throw e;
+        } finally {
+            if (other != null) other.commit();
         }
-        other.commit();
         return other;
     }
 
@@ -83,7 +89,7 @@ public class SchematicEntryWholeDelta implements SchematicDelta {
 
     @Override
     public String toString() {
-        return "SchematicValueDeltaDocument" + document;
+        return "SchematicEntryWholeDelta" + document;
     }
 
     @Override

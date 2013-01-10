@@ -53,6 +53,7 @@ public class AddValueOperation extends ArrayOperation {
     public AddValueOperation( Path path,
                               Object value ) {
         super(path, HashCode.compute(path, value, APPEND_INDEX));
+        assert value != null;
         this.value = value;
         this.index = APPEND_INDEX;
     }
@@ -61,6 +62,7 @@ public class AddValueOperation extends ArrayOperation {
                               Object value,
                               int index ) {
         super(path, HashCode.compute(path, value, index));
+        assert value != null;
         this.value = value;
         this.index = index;
     }

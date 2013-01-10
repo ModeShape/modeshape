@@ -49,7 +49,23 @@ public class SchematicEntryDelta implements SchematicDelta {
     private static final Log LOG = LogFactory.getLog(SchematicEntryDelta.class);
     private static final boolean TRACE = LOG.isTraceEnabled();
 
-    private List<Operation> changeLog = new LinkedList<Operation>();
+    private final String key;
+    private final List<Operation> changeLog;
+
+    public SchematicEntryDelta( String key ) {
+        this.key = key;
+        this.changeLog = new LinkedList<Operation>();
+        assert this.key != null;
+        assert this.changeLog != null;
+    }
+
+    public SchematicEntryDelta( String key,
+                                List<Operation> changeLog ) {
+        this.key = key;
+        this.changeLog = changeLog;
+        assert this.key != null;
+        assert this.changeLog != null;
+    }
 
     @Override
     public DeltaAware merge( DeltaAware d ) {
@@ -62,10 +78,16 @@ public class SchematicEntryDelta implements SchematicDelta {
             LOG.trace("Merging delta into new SchematicEntryLiteral; DeltaAware is " + (d != null ? d.getClass() : "null")
                       + " -> " + d);
         }
-        if (changeLog != null) {
-            other.apply(changeLog);
+        try {
+            if (changeLog != null) {
+                other.apply(changeLog);
+            }
+        } catch (RuntimeException e) {
+            LOG.debug("Exception while merging delta " + this + " onto " + d, e);
+            throw e;
+        } finally {
+            other.commit();
         }
-        other.commit();
         return other;
     }
 
@@ -81,7 +103,7 @@ public class SchematicEntryDelta implements SchematicDelta {
 
     @Override
     public String toString() {
-        return "SchematicValueDelta{" + "changeLog=" + changeLog + '}';
+        return "SchematicEntryDelta{key=" + key + "," + "changeLog=" + changeLog + '}';
     }
 
     @Override
@@ -105,16 +127,18 @@ public class SchematicEntryDelta implements SchematicDelta {
         @Override
         public void writeObject( ObjectOutput output,
                                  SchematicEntryDelta delta ) throws IOException {
-            if (TRACE) LOG.tracef("Serializing changeLog %s", delta.changeLog);
+            if (TRACE) LOG.tracef("Serializing %s", delta);
+            output.writeUTF(delta.key);
             output.writeObject(delta.changeLog);
         }
 
         @SuppressWarnings( {"synthetic-access", "unchecked"} )
         @Override
         public SchematicEntryDelta readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
-            SchematicEntryDelta delta = new SchematicEntryDelta();
-            delta.changeLog = (List<Operation>)input.readObject();
-            if (TRACE) LOG.tracef("Deserialized changeLog %s", delta.changeLog);
+            String key = input.readUTF();
+            List<Operation> changeLog = (List<Operation>)input.readObject();
+            SchematicEntryDelta delta = new SchematicEntryDelta(key, changeLog);
+            if (TRACE) LOG.tracef("Deserialized %s", delta);
             return delta;
         }
 
