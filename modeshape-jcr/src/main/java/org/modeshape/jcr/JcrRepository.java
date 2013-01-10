@@ -1259,19 +1259,24 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             // import the preconfigured node types before the initial content, in case the latter use custom types
             this.nodeTypesImporter.importNodeTypes();
 
-            // import initial content for each of the workspaces (this has to be done after the running state has "started"
-            this.cache.runSystemOneTimeInitializationOperation(new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    for (String workspaceName : repositoryCache().getWorkspaceNames()) {
-                        initialContentImporter().importInitialContent(workspaceName);
+            if (repositoryCache().isInitializingRepository()) {
+                // import initial content for each of the workspaces (this has to be done after the running state has "started"
+                this.cache.runSystemOneTimeInitializationOperation(new Callable<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        for (String workspaceName : repositoryCache().getWorkspaceNames()) {
+                            initialContentImporter().importInitialContent(workspaceName);
+                        }
+                        return null;
                     }
-                    return null;
-                }
-            });
+                });
+            }
 
             // connectors must be initialized after initial content because that can have an influence on projections
             this.connectors.initialize();
+
+            // Now record in the content that we're finished initializing the repository ...
+            repositoryCache().completeInitialization();
 
             // any potential transaction was suspended during the creation of the running state to make sure intialization is
             // atomic
