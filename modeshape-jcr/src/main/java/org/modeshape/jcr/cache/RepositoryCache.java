@@ -113,7 +113,7 @@ public class RepositoryCache implements Observable {
     private final String systemWorkspaceName;
     private final Logger logger;
     private final SessionEnvironment sessionContext;
-    private final boolean systemContentInitialized;
+    private final boolean createdSystemContent;
     private final CacheContainer workspaceCacheManager;
     private volatile boolean initializingRepository = false;
 
@@ -202,6 +202,7 @@ public class RepositoryCache implements Observable {
                 String msg = JcrI18n.repositoryWasNeverInitializedAfterMinutes.text(name, numMinutesToWait);
                 throw new SystemFailureException(msg);
             }
+            LOGGER.debug("Found repository '{0}' to be fully initialized", name);
         }
 
         this.systemWorkspaceName = RepositoryConfiguration.SYSTEM_WORKSPACE_NAME;
@@ -220,10 +221,13 @@ public class RepositoryCache implements Observable {
         SessionCache systemSession = createSession(context, systemWorkspaceName, false);
         NodeKey systemRootKey = systemSession.getRootKey();
         CachedNode systemRoot = systemSession.getNode(systemRootKey);
+        logger.debug("System root: {0}", systemRoot);
         ChildReference systemRef = systemRoot.getChildReferences(systemSession).getChild(JcrLexicon.SYSTEM);
+        logger.debug("jcr:system child reference: {0}", systemRef);
         CachedNode systemNode = systemRef != null ? systemSession.getNode(systemRef) : null;
+        logger.debug("System node: {0}", systemNode);
         if (systemRef == null || systemNode == null) {
-            logger.debug("Initializing the '{0}' workspace in repository '{1}'", systemWorkspaceName, name);
+            logger.debug("Creating the '{0}' workspace in repository '{1}'", systemWorkspaceName, name);
             // We have to create the initial "/jcr:system" content ...
             MutableCachedNode root = systemSession.mutable(systemRootKey);
             if (initializer == null) {
@@ -240,9 +244,9 @@ public class RepositoryCache implements Observable {
             if (systemRef == null) {
                 throw new SystemFailureException(JcrI18n.unableToInitializeSystemWorkspace.text(name));
             }
-            this.systemContentInitialized = true;
+            this.createdSystemContent = true;
         } else {
-            this.systemContentInitialized = false;
+            this.createdSystemContent = false;
             logger.debug("Found existing '{0}' workspace in repository '{1}'", systemWorkspaceName, name);
         }
         this.systemKey = systemRef.getKey();
@@ -362,8 +366,8 @@ public class RepositoryCache implements Observable {
         return minimumStringLengthForBinaryStorage.get();
     }
 
-    public boolean isSystemContentInitialized() {
-        return systemContentInitialized;
+    public boolean createdSystemContent() {
+        return createdSystemContent;
     }
 
     protected void refreshWorkspaces( boolean update ) {
@@ -623,7 +627,7 @@ public class RepositoryCache implements Observable {
                 // Some other thread snuck in and created the cache for this workspace, so use it instead ...
                 cache = existing;
             } else if (!this.systemWorkspaceName.equals(name)) {
-                logger.debug("Initializing '{0}' workspace in repository '{1}'", name, getName());
+                logger.debug("Creating '{0}' workspace in repository '{1}'", name, getName());
                 // Link the system node to have this root as an additional parent ...
                 SessionCache systemLinker = createSession(this.context, name, false);
                 MutableCachedNode systemNode = systemLinker.mutable(systemLinker.getRootKey());

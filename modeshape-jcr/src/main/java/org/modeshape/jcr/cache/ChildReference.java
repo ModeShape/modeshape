@@ -105,7 +105,7 @@ public class ChildReference implements Comparable<ChildReference> {
     }
 
     public String getString( NamespaceRegistry registry ) {
-        return this.segment.getString(registry);
+        return this.segment.getString(registry) + " (key=" + key + ")";
     }
 
     public ChildReference with( int snsIndex ) {

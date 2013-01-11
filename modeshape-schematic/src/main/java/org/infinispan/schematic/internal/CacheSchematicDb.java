@@ -244,6 +244,7 @@ public class CacheSchematicDb implements SchematicDb {
     public SchematicEntry put( String key,
                                Document document,
                                Document metadata ) {
+        if (metadata == null) metadata = Schematic.newDocument(FieldName.ID, key);
         SchematicEntry newEntry = new SchematicEntryLiteral(key, document, metadata, defaultContentTypeForDocument);
         SchematicEntry oldValue = store.put(key, newEntry);
         return oldValue != null ? removedResult(key, oldValue) : null;
@@ -253,6 +254,7 @@ public class CacheSchematicDb implements SchematicDb {
     public SchematicEntry put( String key,
                                Binary binaryContent,
                                Document metadata ) {
+        if (metadata == null) metadata = Schematic.newDocument(FieldName.ID, key);
         SchematicEntry newEntry = new SchematicEntryLiteral(key, binaryContent, metadata, defaultContentTypeForBinary);
         SchematicEntry oldValue = store.put(key, newEntry);
         return oldValue != null ? removedResult(key, oldValue) : null;
@@ -283,6 +285,7 @@ public class CacheSchematicDb implements SchematicDb {
     public SchematicEntry putIfAbsent( String key,
                                        Document document,
                                        Document metadata ) {
+        if (metadata == null) metadata = Schematic.newDocument(FieldName.ID, key);
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document, metadata, defaultContentTypeForDocument);
         SchematicEntry existingEntry = store.putIfAbsent(key, newEntry);
         if (existingEntry == null) return null;
@@ -293,6 +296,7 @@ public class CacheSchematicDb implements SchematicDb {
     public SchematicEntry putIfAbsent( String key,
                                        Binary binaryContent,
                                        Document metadata ) {
+        if (metadata == null) metadata = Schematic.newDocument(FieldName.ID, key);
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, binaryContent, metadata, defaultContentTypeForBinary);
         SchematicEntry existingEntry = store.putIfAbsent(key, newEntry);
         if (existingEntry == null) return null;
@@ -325,6 +329,7 @@ public class CacheSchematicDb implements SchematicDb {
     public SchematicEntry replace( String key,
                                    Document document,
                                    Document metadata ) {
+        if (metadata == null) metadata = Schematic.newDocument(FieldName.ID, key);
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document, metadata, defaultContentTypeForDocument);
         return removedResult(key, store.replace(key, newEntry));
     }
@@ -333,6 +338,7 @@ public class CacheSchematicDb implements SchematicDb {
     public SchematicEntry replace( String key,
                                    Binary binaryContent,
                                    Document metadata ) {
+        if (metadata == null) metadata = Schematic.newDocument(FieldName.ID, key);
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, binaryContent, metadata, defaultContentTypeForBinary);
         return removedResult(key, store.replace(key, newEntry));
     }
@@ -351,6 +357,7 @@ public class CacheSchematicDb implements SchematicDb {
     public NotifyingFuture<SchematicEntry> putAsync( String key,
                                                      Document document,
                                                      Document metadata ) {
+        if (metadata == null) metadata = Schematic.newDocument(FieldName.ID, key);
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document, metadata, defaultContentTypeForDocument);
         return future(key, store.putAsync(key, newEntry), true);
     }
@@ -359,6 +366,7 @@ public class CacheSchematicDb implements SchematicDb {
     public NotifyingFuture<SchematicEntry> putAsync( String key,
                                                      Binary binaryContent,
                                                      Document metadata ) {
+        if (metadata == null) metadata = Schematic.newDocument(FieldName.ID, key);
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, binaryContent, metadata, defaultContentTypeForBinary);
         return future(key, store.putAsync(key, newEntry), true);
     }
@@ -367,6 +375,7 @@ public class CacheSchematicDb implements SchematicDb {
     public NotifyingFuture<SchematicEntry> putIfAbsentAsync( String key,
                                                              Document document,
                                                              Document metadata ) {
+        if (metadata == null) metadata = Schematic.newDocument(FieldName.ID, key);
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document, metadata, defaultContentTypeForDocument);
         return future(key, store.putIfAbsentAsync(key, newEntry), true);
     }
@@ -375,6 +384,7 @@ public class CacheSchematicDb implements SchematicDb {
     public NotifyingFuture<SchematicEntry> putIfAbsentAsync( String key,
                                                              Binary binaryContent,
                                                              Document metadata ) {
+        if (metadata == null) metadata = Schematic.newDocument(FieldName.ID, key);
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, binaryContent, metadata, defaultContentTypeForBinary);
         return future(key, store.putIfAbsentAsync(key, newEntry), true);
     }
@@ -383,6 +393,7 @@ public class CacheSchematicDb implements SchematicDb {
     public NotifyingFuture<SchematicEntry> replaceAsync( String key,
                                                          Document document,
                                                          Document metadata ) {
+        if (metadata == null) metadata = Schematic.newDocument(FieldName.ID, key);
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document, metadata, defaultContentTypeForDocument);
         return future(key, store.replaceAsync(key, newEntry), true);
     }
@@ -391,6 +402,7 @@ public class CacheSchematicDb implements SchematicDb {
     public NotifyingFuture<SchematicEntry> replaceAsync( String key,
                                                          Binary binaryContent,
                                                          Document metadata ) {
+        if (metadata == null) metadata = Schematic.newDocument(FieldName.ID, key);
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, binaryContent, metadata, defaultContentTypeForBinary);
         return future(key, store.replaceAsync(key, newEntry), true);
     }

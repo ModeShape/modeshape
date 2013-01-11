@@ -222,7 +222,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         this.repositoryName.set(config.getName());
         this.logger = Logger.getLogger(getClass());
-        this.logger.debug("Initializing '{0}' repository", this.repositoryName);
+        this.logger.debug("Activating '{0}' repository", this.repositoryName);
 
         // Set up the descriptors ...
         this.descriptors = new HashMap<String, Object>();
@@ -1190,7 +1190,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                                                          indexingProps, indexStorageProps);
                 boolean shouldIndexSystemContent = !indexingProps.getProperty(FieldName.INDEXING_MODE_SYSTEM_CONTENT)
                                                                  .equalsIgnoreCase(RepositoryConfiguration.IndexingMode.DISABLED.toString());
-                if (this.cache.isSystemContentInitialized() && shouldIndexSystemContent) {
+                if (this.cache.createdSystemContent() && shouldIndexSystemContent) {
                     boolean async = indexingProps.getProperty(FieldName.INDEXING_MODE_SYSTEM_CONTENT)
                                                  .equalsIgnoreCase(RepositoryConfiguration.IndexingMode.ASYNC.toString());
                     this.repositoryQueryManager.reindexSystemContent(async);
