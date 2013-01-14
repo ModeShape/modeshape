@@ -101,11 +101,11 @@ public class ChildReference implements Comparable<ChildReference> {
 
     @Override
     public String toString() {
-        return getString(null);
+        return this.segment.getString() + " (key=" + key + ")";
     }
 
     public String getString( NamespaceRegistry registry ) {
-        return this.segment.getString(registry) + " (key=" + key + ")";
+        return this.segment.getString(registry);
     }
 
     public ChildReference with( int snsIndex ) {
