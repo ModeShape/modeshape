@@ -330,6 +330,9 @@
         <spring.webmvc>2.5.2</spring.webmvc>
         <spring.mock>2.0.7</spring.mock>
 
+        <!-- Apache chemistry version -->
+        <chemistry.version>0.7.0</chemistry.version>
+
         <!--
             JBOSS AS 7.1.1.Final
         -->
@@ -1073,6 +1076,45 @@
                 <artifactId>spring-mock</artifactId>
                 <version>${spring.mock}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <!-- Apache chemistry -->
+            <dependency>
+                <groupId>org.apache.chemistry.opencmis</groupId>
+                <artifactId>chemistry-opencmis-commons-api</artifactId>
+                <version>${chemistry.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.chemistry.opencmis</groupId>
+                <artifactId>chemistry-opencmis-commons-impl</artifactId>
+                <version>${chemistry.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.chemistry.opencmis</groupId>
+                <artifactId>chemistry-opencmis-server-support</artifactId>
+                <version>${chemistry.version}</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>org.apache.chemistry.opencmis</groupId>
+                <artifactId>chemistry-opencmis-server-jcr</artifactId>
+                <version>${chemistry.version}</version>
+                <classifier>classes</classifier>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.chemistry.opencmis</groupId>
+                <artifactId>chemistry-opencmis-server-bindings</artifactId>
+                <version>${chemistry.version}</version>
+                <classifier>classes</classifier>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.chemistry.opencmis</groupId>
+                <artifactId>chemistry-opencmis-client-impl</artifactId>
+                <version>${chemistry.version}</version>
             </dependency>
 
             <!--

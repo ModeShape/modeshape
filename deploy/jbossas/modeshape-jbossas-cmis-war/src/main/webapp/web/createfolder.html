@@ -1,0 +1,122 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- 
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+-->
+<html>
+<head>
+<title>OpenCMIS Browser Binding createFolder Demo</title>
+<link rel="stylesheet" type="text/css" href="../css/opencmis.css"/>
+<style type="text/css">
+.box {
+	border-width: 1px;
+	border-style: solid;
+	width: 100%;
+	padding: 3px;
+}
+
+td {
+	padding: 5px;
+}
+</style>
+<script type="text/javascript" src="opencmis.js"></script>
+<script type="text/javascript">
+var repositoryUrl;
+var rootFolderUrl;
+var lastTransaction;
+
+function loadRepositoryInfos(infos) {
+    for(repId in infos) {
+        var ri = infos[repId];		
+
+        // the InMemory repository has only one repository
+        repositoryUrl = ri.repositoryUrl;
+        rootFolderUrl = ri.rootFolderUrl; 
+    }
+}
+
+function createFolder() {
+    var createForm = document.getElementById('createForm');
+    var foldername = createForm["propertyValue[0]"].value;
+    document.getElementById('info').innerHTML = "Creating " + foldername + " ...";
+
+    createForm.action = rootFolderUrl + createForm.folder.value;
+    lastTransaction = createGUID();
+    createForm.cmistransaction.value = lastTransaction;
+ 
+    return true;
+}
+
+function createFolderCallback() {
+    if(lastTransaction) {
+        document.getElementById('info').innerHTML = 'Transaction: ' + lastTransaction
+
+        var script1 = document.createElement("script");
+        script1.setAttribute("src", repositoryUrl + "?cmisselector=lastResult&callback=showNewFolderId&transaction="+lastTransaction);
+        script1.setAttribute("type","text/javascript");                
+        document.body.appendChild(script1);
+    }
+}
+
+function showNewFolderId(result) {
+    if(result.objectId) {
+        alert("New folder id: " + result.objectId + "\nCode: " + result.code);
+    }
+    else {
+        alert("Error: " + result.message + "\nException: " + result.exception + "\nCode: " + result.code);
+    }
+}
+</script>
+</head>
+<body>
+<h1>OpenCMIS Browser Binding - Create Demo</h1>
+<br/>
+<h2>Create Folder</h2>
+
+<form id="createForm" action="" method="POST" target="result" onsubmit="return createFolder()">
+<input name="cmisaction" type="hidden" value="createFolder" />
+<input name="cmistransaction" type="hidden" value="" />
+<table>
+<tr>
+    <td>Folder:</td>
+    <td><input name="folder" type="text" size="100" maxlength="1000" value="/"></td>
+</tr>
+<tr>
+    <td>Name:</td>
+    <td><input id="docname" name="propertyValue[0]" type="text" size="100" maxlength="100" value="folder"></td>
+    <input name="propertyId[0]" type="hidden" value="cmis:name" />
+</tr>
+<tr>
+    <td>Object Type:</td>
+    <td><input name="propertyValue[1]" type="text" size="100" maxlength="100" value="cmis:folder"></td>
+    <input name="propertyId[1]" type="hidden" value="cmis:objectTypeId" />
+</tr>
+<tr>
+    <td></td>
+    <td><input type="submit" value="Create" /></td>
+</tr>
+</table>
+</form>
+
+<div id="info"></div>
+<iframe name="result" style="border:2px;width:800px;height:400px;" onload="createFolderCallback()"></iframe>
+
+<script type="text/javascript" src="../browser?callback=loadRepositoryInfos"></script>
+</body>
+</html>
