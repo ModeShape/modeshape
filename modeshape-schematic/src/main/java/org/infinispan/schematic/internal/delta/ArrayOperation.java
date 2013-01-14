@@ -49,22 +49,16 @@ public abstract class ArrayOperation extends Operation {
     @Override
     protected MutableArray mutableParent( MutableDocument delegate ) {
         Document parent = delegate;
-        Document parentOfParent = null;
         Path parentPath = getParentPath();
         for (String fieldName : parentPath) {
-            assert parent != null : "Unexpected null value in " + delegate + "\nUnable to apply operation " + this;
-            parentOfParent = parent;
-            parent = parentOfParent.getDocument(fieldName);
+            assert parent != null : "Unexpected to find path " + parentPath + " in " + delegate + ". Unable to apply operation "
+                                    + this;
+            parent = parent.getDocument(fieldName);
         }
         if (parent instanceof ArrayEditor) {
             ArrayEditor parentEditor = (ArrayEditor)parent;
             parent = parentEditor.unwrap();
         }
-        // if (parent == null && parentOfParent != null) {
-        // // We need to create the parent array ...
-        // parent = new BasicArray();
-        // ((MutableDocument)parentOfParent).put(parentPath.getLast(), new BasicArray());
-        // }
         return (MutableArray)parent;
     }
 
