@@ -36,6 +36,7 @@ import javax.transaction.Synchronization;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.cache.SessionEnvironment.Monitor;
 import org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory;
 import org.modeshape.jcr.cache.change.ChangeSet;
@@ -81,11 +82,22 @@ public abstract class Transactions {
 
     protected final TransactionManager txnMgr;
     protected final MonitorFactory monitorFactory;
+    protected final Logger logger = Logger.getLogger(Transactions.class);
 
     protected Transactions( MonitorFactory monitorFactory,
                             TransactionManager txnMgr ) {
         this.monitorFactory = monitorFactory;
         this.txnMgr = txnMgr;
+    }
+
+    /**
+     * Determine if the current thread is already associated with an existing transaction.
+     * 
+     * @return true if there is an existing transaction, or false if there is none
+     * @throws SystemException If the transaction service fails in an unexpected way.
+     */
+    public boolean isCurrentlyInTransaction() throws SystemException {
+        return txnMgr.getTransaction() != null;
     }
 
     /**
@@ -120,8 +132,9 @@ public abstract class Transactions {
 
     /**
      * Suspends the existing transaction, if there is one.
-     *
-     * @return either the {@link javax.transaction.Transaction} which was suspended or {@code null} if there isn't such a transaction.
+     * 
+     * @return either the {@link javax.transaction.Transaction} which was suspended or {@code null} if there isn't such a
+     *         transaction.
      * @throws SystemException if the operation fails.
      * @see javax.transaction.TransactionManager#suspend()
      */
@@ -130,14 +143,14 @@ public abstract class Transactions {
     }
 
     /**
-     * Resumes a transaction that was previously suspended via the {@link org.modeshape.jcr.txn.Transactions#suspend()}
-     * call. If there is no such transaction or there is another active transaction, nothing happens.
-     *
+     * Resumes a transaction that was previously suspended via the {@link org.modeshape.jcr.txn.Transactions#suspend()} call. If
+     * there is no such transaction or there is another active transaction, nothing happens.
+     * 
      * @param transaction a {@link javax.transaction.Transaction} instance which was suspended previously or {@code null}
      * @throws javax.transaction.SystemException if the operation fails.
      * @see javax.transaction.TransactionManager#resume(javax.transaction.Transaction)
      */
-    public void resume(javax.transaction.Transaction transaction) throws SystemException {
+    public void resume( javax.transaction.Transaction transaction ) throws SystemException {
         if (transaction != null && txnMgr.getTransaction() == null) {
             try {
                 txnMgr.resume(transaction);
@@ -250,6 +263,7 @@ public abstract class Transactions {
 
         @Override
         public void rollback() throws IllegalStateException, SecurityException, SystemException {
+            logger.trace("Rolling back transaction");
             txnMgr.rollback();
         }
 
@@ -258,6 +272,7 @@ public abstract class Transactions {
             throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
             IllegalStateException, SystemException {
             txnMgr.commit();
+            logger.trace("Committed transaction");
 
             // Execute the functions immediately ...
             executeFunctions();

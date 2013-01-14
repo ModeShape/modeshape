@@ -24,6 +24,7 @@
 
 package org.modeshape.jcr.cache.document;
 
+import java.util.Collection;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 import org.infinispan.Cache;
@@ -125,6 +126,16 @@ public class LocalDocumentStore implements DocumentStore {
     @Override
     public boolean remove( String key ) {
         return database.remove(key) != null;
+    }
+
+    @Override
+    public boolean prepareDocumentsForUpdate( Collection<String> keys ) {
+        return database.lock(keys);
+    }
+
+    @Override
+    public boolean updatesRequirePreparing() {
+        return database.isExplicitLockingEnabled();
     }
 
     @Override

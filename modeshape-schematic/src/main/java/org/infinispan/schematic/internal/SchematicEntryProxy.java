@@ -169,9 +169,8 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
 
         // Now we've locked this value, can make the copy, and update the cache
         // (where it will be stored in the transaction table) ...
-        AdvancedCache<String, SchematicEntry> cache = context.getCacheForWriting();
         if (context.isExplicitLockingEnabled()) {
-            cache.lock(key); // released at TXN commit/rollback
+            context.getCacheForLocking().lock(key); // released at TXN commit/rollback
         }
 
         // Make a copy that we'll use for the updates ...
@@ -193,6 +192,7 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
         if (suppressLocks) {
             flagContainer.setFlags(Flag.SKIP_LOCKING);
         }
+        AdvancedCache<String, SchematicEntry> cache = context.getCacheForWriting();
         cache.put(key, copy);
         return copy;
     }
@@ -303,12 +303,12 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
         if (doc instanceof DocumentEditor) {
             return (DocumentEditor)doc;
         }
-        // TODO: ISPN 5.2 - Re-evaluate this logic when moving to Infinispan 5.2
         // Otherwise, create the editor ...
-        if (!context.isDeltaContainingChangesEnabled()) {
-            // This is a local cache, so no need to record any operations ...
-            return new DocumentEditor((MutableDocument)doc);
+        if (context.isDeltaContainingChangesEnabled() && context.isClustered()) {
+            // It's clustered and we're supposed to record changes for the deltas ...
+            return new ObservableDocumentEditor((MutableDocument)doc, pathToDocument, observer, null);
         }
-        return new ObservableDocumentEditor((MutableDocument)doc, pathToDocument, observer, null);
+        // No need to record change operations ...
+        return new DocumentEditor((MutableDocument)doc);
     }
 }

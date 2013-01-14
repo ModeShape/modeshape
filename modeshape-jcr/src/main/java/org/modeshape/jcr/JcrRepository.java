@@ -222,7 +222,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         this.repositoryName.set(config.getName());
         this.logger = Logger.getLogger(getClass());
-        this.logger.debug("Initializing '{0}' repository", this.repositoryName);
+        this.logger.debug("Activating '{0}' repository", this.repositoryName);
 
         // Set up the descriptors ...
         this.descriptors = new HashMap<String, Object>();
@@ -1050,8 +1050,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 CacheContainer container = config.getContentCacheContainer();
                 String cacheName = config.getCacheName();
                 List<Component> connectorComponents = config.getFederation().getConnectors();
-                Map<String, List<RepositoryConfiguration.Federation.ProjectionConfiguration>> preconfiguredProjections = config.getFederation().getProjections();
+                Map<String, List<RepositoryConfiguration.Federation.ProjectionConfiguration>> preconfiguredProjections = config.getFederation()
+                                                                                                                               .getProjections();
                 this.connectors = new Connectors(this, connectorComponents, preconfiguredProjections);
+                logger.debug("Loading cache '{0}' from cache container {1}", cacheName, container);
                 SchematicDb database = Schematic.get(container, cacheName);
                 this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, database) : new LocalDocumentStore(
                                                                                                                                             database);
@@ -1188,7 +1190,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                                                          indexingProps, indexStorageProps);
                 boolean shouldIndexSystemContent = !indexingProps.getProperty(FieldName.INDEXING_MODE_SYSTEM_CONTENT)
                                                                  .equalsIgnoreCase(RepositoryConfiguration.IndexingMode.DISABLED.toString());
-                if (this.cache.isSystemContentInitialized() && shouldIndexSystemContent) {
+                if (this.cache.createdSystemContent() && shouldIndexSystemContent) {
                     boolean async = indexingProps.getProperty(FieldName.INDEXING_MODE_SYSTEM_CONTENT)
                                                  .equalsIgnoreCase(RepositoryConfiguration.IndexingMode.ASYNC.toString());
                     this.repositoryQueryManager.reindexSystemContent(async);
@@ -1257,19 +1259,24 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             // import the preconfigured node types before the initial content, in case the latter use custom types
             this.nodeTypesImporter.importNodeTypes();
 
-            // import initial content for each of the workspaces (this has to be done after the running state has "started"
-            this.cache.runSystemOneTimeInitializationOperation(new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    for (String workspaceName : repositoryCache().getWorkspaceNames()) {
-                        initialContentImporter().importInitialContent(workspaceName);
+            if (repositoryCache().isInitializingRepository()) {
+                // import initial content for each of the workspaces (this has to be done after the running state has "started"
+                this.cache.runSystemOneTimeInitializationOperation(new Callable<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        for (String workspaceName : repositoryCache().getWorkspaceNames()) {
+                            initialContentImporter().importInitialContent(workspaceName);
+                        }
+                        return null;
                     }
-                    return null;
-                }
-            });
+                });
+            }
 
-            //connectors must be initialized after initial content because that can have an influence on projections
+            // connectors must be initialized after initial content because that can have an influence on projections
             this.connectors.initialize();
+
+            // Now record in the content that we're finished initializing the repository ...
+            repositoryCache().completeInitialization();
 
             // any potential transaction was suspended during the creation of the running state to make sure intialization is
             // atomic

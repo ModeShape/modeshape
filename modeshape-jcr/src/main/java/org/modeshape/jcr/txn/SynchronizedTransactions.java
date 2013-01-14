@@ -60,6 +60,7 @@ public final class SynchronizedTransactions extends Transactions {
         javax.transaction.Transaction txn = txnMgr.getTransaction();
         if (txn == null) {
             // There is no transaction, so start one ...
+            logger.trace("Begin transaction");
             txnMgr.begin();
             // and return immediately ...
             return new SimpleTransaction(txnMgr);
@@ -115,7 +116,11 @@ public final class SynchronizedTransactions extends Transactions {
                 public void afterCompletion( int status ) {
                     switch (status) {
                         case Status.STATUS_COMMITTED:
+                            logger.trace("Committed transaction");
                             afterCommit();
+                            break;
+                        case Status.STATUS_ROLLEDBACK:
+                            logger.trace("Rolled back transaction");
                             break;
                         default:
                             // Don't do anything ...

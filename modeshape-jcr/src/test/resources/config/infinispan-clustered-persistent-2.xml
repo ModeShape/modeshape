@@ -25,7 +25,7 @@
              shared="false" 
              preload="false">
       <loader class="org.infinispan.loaders.file.FileCacheStore" 
-              fetchPersistentState="false" 
+              fetchPersistentState="true" 
               purgeOnStartup="false">
         <properties>
           <property name="location" value="target/clustered/repository_2/store" />
