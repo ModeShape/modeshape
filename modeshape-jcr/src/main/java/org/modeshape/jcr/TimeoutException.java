@@ -21,32 +21,41 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.txn;
-
-import javax.transaction.NotSupportedException;
-import javax.transaction.SystemException;
-import javax.transaction.TransactionManager;
-import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory;
+package org.modeshape.jcr;
 
 /**
- * An implementation of {@link Transactions} that does not even check whether there is a current transaction and instead always
- * attempts to create a transaction within the {@link SessionCache#save()} calls. This is more efficient when the repository can
- * be set up to never use container-managed or user-managed transactions.
+ * An exception that signals a timeout has occurred.
  */
-public class NoClientTransactions extends Transactions {
+public class TimeoutException extends javax.jcr.RepositoryException {
 
-    public NoClientTransactions( MonitorFactory monitorFactory,
-                                 TransactionManager txnMgr ) {
-        super(monitorFactory, txnMgr);
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * Create a new timeout exception with the specified message and cause.
+     * 
+     * @param message the message
+     * @param rootCause the cause
+     */
+    public TimeoutException( String message,
+                             Throwable rootCause ) {
+        super(message, rootCause);
     }
 
-    @Override
-    public Transaction begin() throws NotSupportedException, SystemException {
-        // Start a transaction ...
-        txnMgr.begin();
-        logger.trace("Begin transaction");
-        // and return immediately ...
-        return new SimpleTransaction(txnMgr);
+    /**
+     * Create a new timeout exception with the specified message and cause.
+     * 
+     * @param message the message
+     */
+    public TimeoutException( String message ) {
+        super(message);
+    }
+
+    /**
+     * Create a new timeout exception with the specified message and cause.
+     * 
+     * @param rootCause the cause
+     */
+    public TimeoutException( Throwable rootCause ) {
+        super(rootCause);
     }
 }

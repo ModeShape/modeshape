@@ -27,6 +27,7 @@ import org.infinispan.schematic.document.Array;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Immutable;
 import org.infinispan.schematic.document.Path;
+import org.infinispan.schematic.internal.document.ArrayEditor;
 import org.infinispan.schematic.internal.document.MutableArray;
 import org.infinispan.schematic.internal.document.MutableDocument;
 
@@ -48,8 +49,15 @@ public abstract class ArrayOperation extends Operation {
     @Override
     protected MutableArray mutableParent( MutableDocument delegate ) {
         Document parent = delegate;
-        for (String fieldName : getParentPath()) {
+        Path parentPath = getParentPath();
+        for (String fieldName : parentPath) {
+            assert parent != null : "Unexpected to find path " + parentPath + " in " + delegate + ". Unable to apply operation "
+                                    + this;
             parent = parent.getDocument(fieldName);
+        }
+        if (parent instanceof ArrayEditor) {
+            ArrayEditor parentEditor = (ArrayEditor)parent;
+            parent = parentEditor.unwrap();
         }
         return (MutableArray)parent;
     }

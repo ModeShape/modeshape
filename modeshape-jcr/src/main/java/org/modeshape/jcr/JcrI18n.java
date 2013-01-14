@@ -50,6 +50,7 @@ public final class JcrI18n {
     public static I18n indexRebuildingOfWorkspaceStarted;
     public static I18n indexRebuildingOfWorkspaceComplete;
     public static I18n unableToInitializeSystemWorkspace;
+    public static I18n repositoryWasNeverInitializedAfterMinutes;
 
     public static I18n cannotConvertValue;
     public static I18n loginFailed;
@@ -417,7 +418,6 @@ public final class JcrI18n {
     public static I18n unableToFindBinaryValue;
     public static I18n unableToFindBinaryValueInCache;
     public static I18n tempDirectorySystemPropertyMustBeSet;
-    public static I18n tempDirectoryLocation;
     public static I18n errorReadingBinaryValue;
     public static I18n errorStoringBinaryValue;
     public static I18n errorLockingBinaryValue;

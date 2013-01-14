@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import org.infinispan.Cache;
 import org.infinispan.atomic.Delta;
 import org.infinispan.atomic.DeltaAware;
@@ -36,7 +37,6 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Document.Field;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Path;
-import org.infinispan.schematic.internal.delta.NullDelta;
 import org.infinispan.schematic.internal.delta.Operation;
 import org.infinispan.schematic.internal.delta.PutOperation;
 import org.infinispan.schematic.internal.delta.RemoveOperation;
@@ -85,20 +85,19 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
         return value;
     }
 
-    private MutableDocument value;
-    private SchematicDelta delta = null;
+    private volatile MutableDocument value;
+    private final AtomicReference<SchematicDelta> delta = new AtomicReference<SchematicDelta>(null);
     private volatile SchematicEntryProxy proxy;
     volatile boolean copied = false;
     volatile boolean removed = false;
 
     public SchematicEntryLiteral() {
-        Document metadata = new BasicDocument();
-        value = new BasicDocument(FieldName.METADATA, metadata);
+        value = new BasicDocument(FieldName.METADATA, new BasicDocument(), FieldName.CONTENT, new BasicDocument());
     }
 
     public SchematicEntryLiteral( String key ) {
         Document metadata = new BasicDocument(FieldName.ID, key);
-        value = new BasicDocument(FieldName.METADATA, metadata);
+        value = new BasicDocument(FieldName.METADATA, metadata, FieldName.CONTENT, new BasicDocument());
     }
 
     public SchematicEntryLiteral( String key,
@@ -109,6 +108,7 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
 
     protected SchematicEntryLiteral( MutableDocument document ) {
         this.value = document;
+        assert this.value != null;
     }
 
     protected SchematicEntryLiteral( String key,
@@ -127,6 +127,10 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
         internalSetContent(content, metadata, defaultContentType);
     }
 
+    protected final String key() {
+        return getMetadata().getString(FieldName.ID);
+    }
+
     public SchematicEntryLiteral copyForWrite() {
         SchematicEntryLiteral clone = new SchematicEntryLiteral((MutableDocument)value.clone());
         clone.proxy = proxy;
@@ -139,12 +143,13 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
     }
 
     protected void setDocument( Document document ) {
+        assert this.value != null;
         this.value = (MutableDocument)document;
     }
 
     @Override
     public String toString() {
-        return "SchematicValueImpl" + value;
+        return "SchematicEntryLiteral" + value;
     }
 
     /**
@@ -173,22 +178,20 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
 
     @Override
     public Delta delta() {
-        Delta toReturn = delta == null ? NullDelta.INSTANCE : delta;
-        delta = null; // reset
-        return toReturn;
+        SchematicDelta delta = this.delta.getAndSet(null);
+        return delta != null ? delta : new SchematicEntryWholeDelta(value);
     }
 
     protected final SchematicDelta getDelta() {
-        assert delta != null;
-        return delta;
+        return delta.get();
     }
 
     protected void createDelta( CacheContext context ) {
-        assert delta == null;
+        assert delta.get() == null;
         if (context.isDeltaContainingChangesEnabled()) {
-            this.delta = new SchematicEntryDelta();
+            delta.set(new SchematicEntryDelta(key()));
         } else {
-            this.delta = new SchematicEntryWholeDelta(this.value);
+            delta.set(new SchematicEntryWholeDelta(value));
         }
     }
 
@@ -198,7 +201,7 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
             LOGGER.trace("Committed " + getKey() + ": " + data());
         }
         copied = false;
-        delta = null;
+        delta.set(null);
     }
 
     @Override
@@ -247,6 +250,7 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
     protected Object setContent( Object content ) {
         assert content != null;
         Object existing = this.value.put(FieldName.CONTENT, content);
+        SchematicDelta delta = this.delta.get();
         if (delta != null && delta.isRecordingOperations()) {
             if (existing != null) {
                 delta.addOperation(new PutOperation(FieldPath.ROOT, FieldName.CONTENT, existing, content));
@@ -279,6 +283,7 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
 
             // Now record the change ...
             value.put(FieldName.METADATA, newMetadata);
+            SchematicDelta delta = this.delta.get();
             if (delta != null && delta.isRecordingOperations()) {
                 PutOperation op = new PutOperation(FieldPath.ROOT, FieldName.METADATA, existingMetadata, newMetadata);
                 delta.addOperation(op);
@@ -335,8 +340,14 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
     }
 
     boolean apply( Iterable<Operation> changes ) {
-        for (Operation o : changes) {
-            o.replay(value);
+        try {
+            for (Operation o : changes) {
+                o.replay(value);
+            }
+        } catch (AssertionError e) {
+            System.out.println("Assertion while applying changes to " + value + " --> " + changes);
+            LOGGER.debug("Assertion while applying changes to " + value + " --> " + changes);
+            throw e;
         }
         return true;
     }

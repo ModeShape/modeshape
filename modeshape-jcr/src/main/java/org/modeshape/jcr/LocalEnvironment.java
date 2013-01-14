@@ -43,6 +43,7 @@ import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
 import org.infinispan.transaction.lookup.TransactionManagerLookup;
 import org.jgroups.Channel;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.DelegatingClassLoader;
 import org.modeshape.common.util.StringURLClassLoader;
@@ -81,6 +82,7 @@ public class LocalEnvironment implements Environment {
     private final Class<? extends TransactionManagerLookup> transactionManagerLookupClass;
     private final ConcurrentMap<String, CacheContainer> containers = new ConcurrentHashMap<String, CacheContainer>();
     private volatile boolean shared = false;
+    private final Logger logger = Logger.getLogger(getClass());
 
     public LocalEnvironment() {
         this.transactionManagerLookupClass = DEFAULT_TRANSACTION_MANAGER_LOOKUP_CLASS;
@@ -194,6 +196,7 @@ public class LocalEnvironment implements Environment {
         if (configFile != null && !configFile.equals(DEFAULT_CONFIGURATION_NAME)) {
             configFile = configFile.trim();
             try {
+                logger.debug("Starting cache manager using configuration at '{0}'", configFile);
                 container = new DefaultCacheManager(configFile);
             } catch (FileNotFoundException e) {
                 // Configuration file was not found, so try JNDI using configFileName as JNDI name...
@@ -226,6 +229,9 @@ public class LocalEnvironment implements Environment {
 
     protected CacheContainer createContainer( GlobalConfiguration globalConfiguration,
                                               Configuration configuration ) {
+        logger.debug("Starting cache manager with global configuration \n{0}\nand default configuration:\n{1}",
+                     globalConfiguration,
+                     configuration);
         return new DefaultCacheManager(globalConfiguration, configuration);
     }
 

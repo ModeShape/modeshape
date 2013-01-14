@@ -34,6 +34,7 @@ import org.junit.Test;
 
 public class OperationExternalizerTest extends AbstractExternalizerTest {
 
+    private String key;
     private SchematicDelta delta;
     private ObservableDocumentEditor docEditor;
     private MutableDocument doc;
@@ -42,14 +43,15 @@ public class OperationExternalizerTest extends AbstractExternalizerTest {
 
     @Before
     public void beforeEach() {
+        key = "doc1";
         doc = new BasicDocument();
-        delta = new SchematicEntryDelta();
+        delta = new SchematicEntryDelta(key);
         docEditor = new ObservableDocumentEditor(doc, Paths.rootPath(), delta, valueFactory);
         print = false;
     }
 
     protected void resetEditor() {
-        delta = new SchematicEntryDelta();
+        delta = new SchematicEntryDelta(key);
         docEditor = new ObservableDocumentEditor(doc, Paths.rootPath(), delta, valueFactory);
     }
 

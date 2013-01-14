@@ -31,6 +31,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Repository;
@@ -139,6 +140,44 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
         verify(new TotalNumberOfNodesExceptSystem(1 + totalOperations * nodesInTree(width, depth), "/"));
     }
 
+    @FixFor( "MODE-1739" )
+    @Test
+    public void shouldAllowMultipleThreadsToConcurrentlyModifySameNodesInDifferentOrder() throws Exception {
+        print = true;
+        // Create several nodes right under the root ...
+        final int numNodes = 3;
+        runOnce(new CreateSubgraph("/", "node", numNodes, 2), false);
+        verify(new NumberOfChildren(numNodes, "node1"));
+        print("/", false);
+        // Simultaneously try to modify the three nodes in different orders ...
+        final int totalOperations = 3;
+        final int threads = 16;
+        runConcurrently(totalOperations, threads, new ModifyPropertiesOnChildren("/node1", "foo", 3));
+    }
+
+    /**
+     * Method that can be called within a test method to run the supplied {@link Operation} just once in one thread. This is often
+     * useful for initializing content.
+     * 
+     * @param operation the operation to be performed
+     * @param async true if the operation should be run in a separate thread, or false if it this thread should block while the
+     *        operation completes
+     * @throws Exception if there is a problem executing the operation the specified number of times
+     */
+    protected void runOnce( final Operation operation,
+                            boolean async ) throws Exception {
+        if (async) {
+            run(1, 1, 0, operation);
+        } else {
+            Session session = repository.login();
+            try {
+                operation.run(session);
+            } finally {
+                session.logout();
+            }
+        }
+    }
+
     /**
      * Method that can be called within a test method to run the supplied {@link Operation} a total number of times using a
      * specific number of threads.
@@ -229,6 +268,69 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
             Node parentNode = session.getNode(path);
             addChildren(parentNode, this.depth);
             session.save();
+        }
+    }
+
+    /**
+     * An {@link Operation} that modifies a supplied property on the children of the supplied parent node. Each time this instance
+     * is called (perhaps in separate threads), the children will be modified in a different order.
+     */
+    @Immutable
+    public static class ModifyPropertiesOnChildren implements Operation {
+
+        private final String parentPath;
+        private final String propertyName;
+        private final int childrenToUpdate;
+        private final ReentrantLock nextIndexLock = new ReentrantLock();
+        private long nextIndex;
+        private final AtomicInteger propertyValueCounter = new AtomicInteger(1);
+
+        public ModifyPropertiesOnChildren( String parentPath,
+                                           String propertyName,
+                                           int childrenToUpdate ) {
+            this.parentPath = parentPath;
+            this.propertyName = propertyName;
+            this.childrenToUpdate = childrenToUpdate;
+        }
+
+        @Override
+        public void run( Session session ) throws RepositoryException {
+            Node parentNode = session.getNode(parentPath);
+            NodeIterator childIter = parentNode.getNodes();
+            // Get the first iterator that starts at the 'nth' child (each thread starts at a different child) ...
+            long numChildren = childIter.getSize();
+            long offset = getOffset(numChildren);
+            childIter.skip(offset);
+            // Modify a set of children ...
+            int childrenToUpdate = Math.min(this.childrenToUpdate, (int)numChildren);
+            for (int i = 0; i != childrenToUpdate; ++i) {
+                childIter = validateIterator(childIter, parentNode);
+                Node child = childIter.nextNode();
+                child.setProperty(propertyName, "change" + propertyValueCounter.getAndIncrement());
+            }
+            // Save the changes ...
+            session.save();
+        }
+
+        protected NodeIterator validateIterator( NodeIterator iterator,
+                                                 Node parentNode ) throws RepositoryException {
+            if (iterator.hasNext()) return iterator;
+            // Otherwise get a new iterator ...
+            return parentNode.getNodes();
+        }
+
+        protected final long getOffset( long maxNumberOfChildren ) {
+            try {
+                nextIndexLock.lock();
+                ++nextIndex;
+                if (nextIndex >= maxNumberOfChildren) {
+                    nextIndex = 0;
+                }
+                assert nextIndex < maxNumberOfChildren;
+                return nextIndex;
+            } finally {
+                nextIndexLock.unlock();
+            }
         }
     }
 

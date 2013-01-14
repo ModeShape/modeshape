@@ -62,7 +62,10 @@ public abstract class Operation {
 
     protected MutableDocument mutableParent( MutableDocument delegate ) {
         MutableDocument parent = delegate;
-        for (String fieldName : getParentPath()) {
+        Path parentPath = getParentPath();
+        for (String fieldName : parentPath) {
+            assert parent != null : "Unexpected to find path " + parentPath + " in " + delegate + ". Unable to apply operation "
+                                    + this;
             parent = (MutableDocument)parent.getDocument(fieldName);
         }
         return parent;

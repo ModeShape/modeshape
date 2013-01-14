@@ -26,10 +26,17 @@ package org.modeshape.jcr.cache;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import javax.transaction.HeuristicMixedException;
+import javax.transaction.HeuristicRollbackException;
+import javax.transaction.NotSupportedException;
+import javax.transaction.RollbackException;
+import javax.transaction.SystemException;
 import org.infinispan.Cache;
 import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.manager.CacheContainer;
@@ -58,9 +65,12 @@ import org.modeshape.jcr.cache.change.WorkspaceAdded;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
+import org.modeshape.jcr.cache.document.LocalDocumentStore;
 import org.modeshape.jcr.cache.document.ReadOnlySessionCache;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
 import org.modeshape.jcr.cache.document.WritableSessionCache;
+import org.modeshape.jcr.txn.Transactions;
+import org.modeshape.jcr.txn.Transactions.Transaction;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
@@ -71,6 +81,8 @@ import org.modeshape.jcr.value.ValueFactory;
  */
 public class RepositoryCache implements Observable {
 
+    private static final long MAX_NUMBER_OF_MINUTES_TO_WAIT_FOR_REPOSITORY_INITIALIZATION = 10;
+
     private static final Logger LOGGER = Logger.getLogger(RepositoryCache.class);
 
     private static final String SYSTEM_METADATA_IDENTIFIER = "jcr:system/mode:metadata";
@@ -80,6 +92,8 @@ public class RepositoryCache implements Observable {
     private static final String REPOSITORY_SOURCE_NAME_FIELD_NAME = "sourceName";
     private static final String REPOSITORY_SOURCE_KEY_FIELD_NAME = "sourceKey";
     private static final String REPOSITORY_CREATED_AT_FIELD_NAME = "createdAt";
+    private static final String REPOSITORY_INITIALIZED_AT_FIELD_NAME = "intializedAt";
+    private static final String REPOSITORY_INITIALIZER_FIELD_NAME = "intializer";
     private static final String REPOSITORY_CREATED_WITH_MODESHAPE_VERSION_FIELD_NAME = "createdWithModeShapeVersion";
 
     private final ExecutionContext context;
@@ -99,8 +113,9 @@ public class RepositoryCache implements Observable {
     private final String systemWorkspaceName;
     private final Logger logger;
     private final SessionEnvironment sessionContext;
-    private final boolean systemContentInitialized;
+    private final boolean createdSystemContent;
     private final CacheContainer workspaceCacheManager;
+    private volatile boolean initializingRepository = false;
 
     public RepositoryCache( ExecutionContext context,
                             DocumentStore documentStore,
@@ -122,8 +137,11 @@ public class RepositoryCache implements Observable {
         this.workspaceCachesByName = new ConcurrentHashMap<String, WorkspaceCache>();
         this.workspaceNames = new CopyOnWriteArraySet<String>(configuration.getAllWorkspaceNames());
 
-        SchematicEntry repositoryInfo = this.documentStore.get(REPOSITORY_INFO_KEY);
+        SchematicEntry repositoryInfo = this.documentStore.localStore().get(REPOSITORY_INFO_KEY);
         if (repositoryInfo == null) {
+            // Create a UUID that we'll use as the string specifying who is doing the initialization ...
+            String initializerId = UUID.randomUUID().toString();
+
             // Must be a new repository (or one created before 3.0.0.Final) ...
             this.repoKey = NodeKey.keyForSourceName(this.name);
             this.sourceKey = NodeKey.keyForSourceName(configuration.getStoreName());
@@ -135,9 +153,19 @@ public class RepositoryCache implements Observable {
             doc.setString(REPOSITORY_SOURCE_NAME_FIELD_NAME, configuration.getStoreName());
             doc.setString(REPOSITORY_SOURCE_KEY_FIELD_NAME, this.sourceKey);
             doc.setDate(REPOSITORY_CREATED_AT_FIELD_NAME, now.toDate());
+            doc.setString(REPOSITORY_INITIALIZER_FIELD_NAME, initializerId);
             doc.setString(REPOSITORY_CREATED_WITH_MODESHAPE_VERSION_FIELD_NAME, ModeShape.getVersion());
-            this.documentStore.localStore().put(REPOSITORY_INFO_KEY, doc);
+
+            // Try to put it, but don't overwrite one that might have been stored since we checked ...
+            this.documentStore.localStore().putIfAbsent(REPOSITORY_INFO_KEY, doc);
             repositoryInfo = this.documentStore.get(REPOSITORY_INFO_KEY);
+
+            if (repositoryInfo.getContentAsDocument().getString(REPOSITORY_INITIALIZER_FIELD_NAME).equals(initializerId)) {
+                // We're doing the initialization ...
+                initializingRepository = true;
+                LOGGER.debug("Initializing the '{0}' repository", name);
+            }
+
         } else {
             // Get the repository key and source key from the repository info document ...
             Document info = repositoryInfo.getContentAsDocument();
@@ -145,6 +173,36 @@ public class RepositoryCache implements Observable {
             String sourceName = info.getString(REPOSITORY_SOURCE_NAME_FIELD_NAME, configuration.getStoreName());
             this.repoKey = info.getString(REPOSITORY_KEY_FIELD_NAME, NodeKey.keyForSourceName(repoName));
             this.sourceKey = info.getString(REPOSITORY_SOURCE_KEY_FIELD_NAME, NodeKey.keyForSourceName(sourceName));
+        }
+
+        // If we're not doing the initialization of the repository, block for at most 5 minutes while another process does ...
+        if (!initializingRepository) {
+            final long numMinutesToWait = MAX_NUMBER_OF_MINUTES_TO_WAIT_FOR_REPOSITORY_INITIALIZATION;
+            final long startTime = System.currentTimeMillis();
+            final long quitTime = startTime + TimeUnit.MILLISECONDS.convert(numMinutesToWait, TimeUnit.MINUTES);
+            boolean initialized = false;
+            while (System.currentTimeMillis() < quitTime) {
+                LOGGER.debug("Waiting for repository '{0}' to be fully initialized by another process in the cluster", name);
+                Document info = repositoryInfo.getContentAsDocument();
+                if (info.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) != null) {
+                    initialized = true;
+                    break;
+                }
+                // Otherwise, sleep for a short bit ...
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Thread.interrupted();
+                    break;
+                }
+            }
+
+            if (!initialized) {
+                LOGGER.error(JcrI18n.repositoryWasNeverInitializedAfterMinutes, name, numMinutesToWait);
+                String msg = JcrI18n.repositoryWasNeverInitializedAfterMinutes.text(name, numMinutesToWait);
+                throw new SystemFailureException(msg);
+            }
+            LOGGER.debug("Found repository '{0}' to be fully initialized", name);
         }
 
         this.systemWorkspaceName = RepositoryConfiguration.SYSTEM_WORKSPACE_NAME;
@@ -163,10 +221,13 @@ public class RepositoryCache implements Observable {
         SessionCache systemSession = createSession(context, systemWorkspaceName, false);
         NodeKey systemRootKey = systemSession.getRootKey();
         CachedNode systemRoot = systemSession.getNode(systemRootKey);
+        logger.debug("System root: {0}", systemRoot);
         ChildReference systemRef = systemRoot.getChildReferences(systemSession).getChild(JcrLexicon.SYSTEM);
+        logger.debug("jcr:system child reference: {0}", systemRef);
         CachedNode systemNode = systemRef != null ? systemSession.getNode(systemRef) : null;
+        logger.debug("System node: {0}", systemNode);
         if (systemRef == null || systemNode == null) {
-            logger.debug("Initializing the '{0}' workspace in repository '{1}'", systemWorkspaceName, name);
+            logger.debug("Creating the '{0}' workspace in repository '{1}'", systemWorkspaceName, name);
             // We have to create the initial "/jcr:system" content ...
             MutableCachedNode root = systemSession.mutable(systemRootKey);
             if (initializer == null) {
@@ -183,9 +244,9 @@ public class RepositoryCache implements Observable {
             if (systemRef == null) {
                 throw new SystemFailureException(JcrI18n.unableToInitializeSystemWorkspace.text(name));
             }
-            this.systemContentInitialized = true;
+            this.createdSystemContent = true;
         } else {
-            this.systemContentInitialized = false;
+            this.createdSystemContent = false;
             logger.debug("Found existing '{0}' workspace in repository '{1}'", systemWorkspaceName, name);
         }
         this.systemKey = systemRef.getKey();
@@ -196,6 +257,57 @@ public class RepositoryCache implements Observable {
 
     protected Name name( String name ) {
         return context.getValueFactories().getNameFactory().create(name);
+    }
+
+    public final boolean isInitializingRepository() {
+        return initializingRepository;
+    }
+
+    public void completeInitialization() {
+        if (initializingRepository) {
+            LOGGER.debug("Marking repository '{0}' as fully initialized", name);
+            // Start a transaction ...
+            Transactions txns = sessionContext.getTransactions();
+            try {
+                Transaction txn = txns.begin();
+                try {
+                    LocalDocumentStore store = this.documentStore.localStore();
+                    store.prepareDocumentsForUpdate(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
+                    SchematicEntry repositoryInfo = store.get(REPOSITORY_INFO_KEY);
+                    EditableDocument editor = repositoryInfo.editDocumentContent();
+                    if (editor.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) == null) {
+                        DateTime now = context.getValueFactories().getDateFactory().create();
+                        editor.setDate(REPOSITORY_INITIALIZED_AT_FIELD_NAME, now.toDate());
+                    }
+                } catch (RuntimeException e) {
+                    txn.rollback();
+                    throw e;
+                }
+                txn.commit();
+                LOGGER.debug("Repository '{0}' is fully initialized", name);
+            } catch (NotSupportedException err) {
+                // No nested transactions are supported ...
+                return;
+            } catch (SecurityException err) {
+                // No privilege to commit ...
+                throw new SystemFailureException(err);
+            } catch (IllegalStateException err) {
+                // Not associated with a txn??
+                throw new SystemFailureException(err);
+            } catch (RollbackException err) {
+                // Couldn't be committed, but the txn is already rolled back ...
+                return;
+            } catch (HeuristicMixedException err) {
+            } catch (HeuristicRollbackException err) {
+                // Rollback has occurred ...
+                return;
+            } catch (SystemException err) {
+                // System failed unexpectedly ...
+                throw new SystemFailureException(err);
+            } finally {
+                initializingRepository = false;
+            }
+        }
     }
 
     public void startShutdown() {
@@ -254,8 +366,8 @@ public class RepositoryCache implements Observable {
         return minimumStringLengthForBinaryStorage.get();
     }
 
-    public boolean isSystemContentInitialized() {
-        return systemContentInitialized;
+    public boolean createdSystemContent() {
+        return createdSystemContent;
     }
 
     protected void refreshWorkspaces( boolean update ) {
@@ -515,7 +627,7 @@ public class RepositoryCache implements Observable {
                 // Some other thread snuck in and created the cache for this workspace, so use it instead ...
                 cache = existing;
             } else if (!this.systemWorkspaceName.equals(name)) {
-                logger.debug("Initializing '{0}' workspace in repository '{1}'", name, getName());
+                logger.debug("Creating '{0}' workspace in repository '{1}'", name, getName());
                 // Link the system node to have this root as an additional parent ...
                 SessionCache systemLinker = createSession(this.context, name, false);
                 MutableCachedNode systemNode = systemLinker.mutable(systemLinker.getRootKey());

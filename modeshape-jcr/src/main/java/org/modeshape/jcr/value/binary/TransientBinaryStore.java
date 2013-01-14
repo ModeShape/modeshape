@@ -86,7 +86,9 @@ public final class TransientBinaryStore extends FileSystemBinaryStore {
         if (!printedLocation && System.getProperty(JBOSS_SERVER_DATA_DIR) == null) {
             // We're not running in JBoss AS (where we always specify the directory where the binaries are stored),
             // so log where the temporary directory is ...
-            Logger.getLogger(getClass()).info(JcrI18n.tempDirectoryLocation, getDirectory().getAbsolutePath());
+            Logger logger = Logger.getLogger(getClass());
+            logger.debug("ModeShape repositories will use the following directory for transient storage of binary values unless repository configurations specify otherwise: {0}",
+                         getDirectory().getAbsolutePath());
             printedLocation = true;
         }
         super.start();

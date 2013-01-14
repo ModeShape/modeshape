@@ -24,6 +24,7 @@
 
 package org.modeshape.jcr.cache.document;
 
+import java.util.Collection;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 import org.infinispan.schematic.SchematicEntry;
@@ -71,6 +72,24 @@ public interface DocumentStore {
                                 SessionNode sessionNode );
 
     /**
+     * Return whether {@link #prepareDocumentsForUpdate(Collection)} should be called before updating the documents.
+     * 
+     * @return true if {@link #prepareDocumentsForUpdate(Collection)} should be called, or false otherwise
+     */
+    public boolean updatesRequirePreparing();
+
+    /**
+     * Prepare to update all of the documents with the given keys.
+     * 
+     * @param keys the set of keys identifying the documents that are to be updated via
+     *        {@link #updateDocument(String, Document, SessionNode)} or via {@link #get(String)} followed by
+     *        {@link SchematicEntry#editDocumentContent()}.
+     * @return true if the documents were locked, or false if not all of the documents could be locked
+     * @throws DocumentStoreException if there is an error or problem while obtaining the locks
+     */
+    public boolean prepareDocumentsForUpdate( Collection<String> keys );
+
+    /**
      * Remove the existing document at the given key.
      * 
      * @param key the key or identifier for the document
@@ -96,7 +115,7 @@ public interface DocumentStore {
 
     /**
      * Returns the value of the local repository source key.
-     *
+     * 
      * @return a {@code non-null} string
      */
     public String getLocalSourceKey();
@@ -126,7 +145,6 @@ public interface DocumentStore {
      * Creates an external projection from the federated node with the given key, towards the external node from the given path,
      * from a source.
      * 
-     *
      * @param projectedNodeKey a {@code non-null} string, the key of the federated node which will contain the projection
      * @param sourceName a {@code non-null} string, the name of an external source.
      * @param externalPath a {@code non-null} string, representing a path towards a node from the source
@@ -159,13 +177,13 @@ public interface DocumentStore {
     public Document getChildReference( String parentKey,
                                        String childKey );
 
-
     /**
      * Retrieves a binary value which has the given id and which is not stored by ModeShape.
-     *
+     * 
      * @param sourceName a {@code non-null} String; the name of an external source
      * @param id a {@code non-null} String; the id of an external binary value
      * @return either an {@code ExternalBinaryValue} implementation or {@code null}
      */
-    public ExternalBinaryValue getExternalBinary(String sourceName, String id);
+    public ExternalBinaryValue getExternalBinary( String sourceName,
+                                                  String id );
 }
