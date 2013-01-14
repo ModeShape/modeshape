@@ -3,14 +3,14 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
+ * See the AUTHORS.txt file in the distribution for a full listing of
  * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -1243,6 +1243,40 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, new String[] {"car.jcr:name", "category.jcr:primaryType"});
     }
 
+    @FixFor("MODE-1750")
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithLeftOuterJoinOnNullCondition() throws RepositoryException {
+        // given
+        final String sql = "SELECT car1.[jcr:name] from [car:Car] as car1 LEFT OUTER JOIN [car:Car] as car2 ON car1.[car:alternateModesl] = car2.[UUID]";
+        final Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+
+        // when
+        final QueryResult result = query.execute();
+
+        // then
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 13L);
+        assertResultsHaveColumns(result, new String[] {"car1.jcr:name"});
+    }
+
+    @FixFor("MODE-1750")
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithRightOuterJoinOnNullCondition() throws RepositoryException {
+        // given
+        final String sql = "SELECT car2.[jcr:name] from [car:Car] as car1 RIGHT OUTER JOIN [car:Car] as car2 ON car1.[car:alternateModesl] = car2.[UUID]";
+        final Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+
+        // when
+        final QueryResult result = query.execute();
+
+        // then
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 13L);
+        assertResultsHaveColumns(result, new String[] {"car2.jcr:name"});
+    }
+
     @FixFor( "MODE-1679" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindReferenceableNodes() throws RepositoryException {
@@ -1815,7 +1849,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     /**
      * Tests that the child nodes (but no grandchild nodes) are returned.
-     * 
+     *
      * @throws RepositoryException
      */
     @SuppressWarnings( "deprecation" )
@@ -1834,7 +1868,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     /**
      * Tests that the child nodes (but no grandchild nodes) are returned.
-     * 
+     *
      * @throws RepositoryException
      */
     @SuppressWarnings( "deprecation" )
