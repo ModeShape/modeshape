@@ -326,8 +326,7 @@
                     <type>zip</type>
                 </dependency>
 		
-		<!-- CMIS library -->
-		<dependency>
+                <dependency>
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-web-jcr-cmis</artifactId>
                     <classifier>module-with-dependencies</classifier>

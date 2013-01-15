@@ -9,7 +9,7 @@
         <relativePath>../../modeshape-parent</relativePath>
     </parent>
 
-    <artifactId>modeshape-cmis</artifactId>
+    <artifactId>modeshape-web-jcr-cmis</artifactId>
     <packaging>jar</packaging>
     <name>ModeShape CMIS Library</name>
     <description>ModeShape Apache Chemistry support library</description>
