@@ -991,6 +991,24 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertEquals(binaryFile.length(), binary.getSize());
     }
 
+    @Test
+    public void shouldImportEmptyGuvnorRepository() throws Exception {
+         // Register node types first
+         session.nodeTypeManager().registerNodeTypes(resourceStream("guvnor/configuration_node_type.cnd"), true);
+         session.nodeTypeManager().registerNodeTypes(resourceStream("guvnor/tag_node_type.cnd"), true);
+         session.nodeTypeManager().registerNodeTypes(resourceStream("guvnor/state_node_type.cnd"), true);
+         session.nodeTypeManager().registerNodeTypes(resourceStream("guvnor/versionable_node_type.cnd"), true);
+         session.nodeTypeManager().registerNodeTypes(resourceStream("guvnor/versionable_asset_folder_node_type.cnd"), true);
+         session.nodeTypeManager().registerNodeTypes(resourceStream("guvnor/rule_node_type.cnd"), true);
+         session.nodeTypeManager().registerNodeTypes(resourceStream("guvnor/rulepackage_node_type.cnd"), true);
+         session.save();
+         // Import the empty guvnor repository
+         importContent(session.getRootNode(), "guvnor/guvnor-empty-repository.xml", ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
+         session.save();
+         assertNode("/drools:repository", "nt:folder");
+         assertNode("/drools:repository/drools:package_area", "nt:folder");
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Utilities
     // ----------------------------------------------------------------------------------------------------------------
