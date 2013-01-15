@@ -328,7 +328,7 @@
 		
                 <dependency>
                     <groupId>org.modeshape</groupId>
-                    <artifactId>modeshape-web-jcr-cmis</artifactId>
+                    <artifactId>modeshape-web-cmis</artifactId>
                     <classifier>module-with-dependencies</classifier>
                     <version>${project.version}</version>
                     <type>zip</type>

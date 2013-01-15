@@ -22,7 +22,7 @@
     <module>modeshape-webdav-war</module>
     <module>modeshape-web-jcr-webdav</module>
     <module>modeshape-web-jcr-webdav-war</module>
-    <module>modeshape-web-jcr-cmis</module>
-    <module>modeshape-web-jcr-cmis-war</module>
+    <module>modeshape-web-cmis</module>
+    <module>modeshape-web-cmis-war</module>
   </modules>
 </project>

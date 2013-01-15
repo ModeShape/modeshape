@@ -7,7 +7,7 @@
         <version>3.1-SNAPSHOT</version>
         <relativePath>../../modeshape-parent</relativePath>
     </parent>
-    <artifactId>modeshape-cmis-war</artifactId>
+    <artifactId>modeshape-web-cmis-war</artifactId>
     <packaging>war</packaging>
     <name>ModeShape CMIS Servlet Test WAR</name>
     <description>ModeShape Servlet WAR which allows integration testing of the CMIS library</description>
@@ -16,7 +16,7 @@
         <!--  TESTING DEPENDENCIES -->
         <dependency>
             <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-cmis</artifactId>
+            <artifactId>modeshape-web-cmis</artifactId>
             <version>${project.version}</version>
         </dependency>
 
