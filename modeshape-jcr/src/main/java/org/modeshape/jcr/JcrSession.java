@@ -1696,7 +1696,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                                 jcrNode.setProperty(propName, defaultValues, defn.getRequiredType(), false);
                             } else {
                                 // don't skip constraint checks or protected checks
-                                jcrNode.setProperty(propName, defaultValues[0], false, false);
+                                jcrNode.setProperty(propName, defaultValues[0], false, false, false);
                             }
                         } else {
                             // There is no default for this mandatory property, so this is a constraint violation ...

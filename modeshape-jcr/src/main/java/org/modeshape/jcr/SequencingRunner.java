@@ -252,7 +252,8 @@ final class SequencingRunner implements Runnable {
         // set by the system session when it saves and it will default to "modeshape-worker"
         for (AbstractJcrNode node : outputNodes) {
             if (node.isNodeType(JcrMixLexicon.CREATED)) {
-                node.setProperty(JcrLexicon.CREATED_BY, outputSession.getValueFactory().createValue(work.getUserId()), true, true);
+                node.setProperty(JcrLexicon.CREATED_BY, outputSession.getValueFactory().createValue(work.getUserId()), true, true,
+                                 false);
             }
         }
     }

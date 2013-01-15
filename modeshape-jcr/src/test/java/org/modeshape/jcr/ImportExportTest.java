@@ -991,6 +991,23 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertEquals(binaryFile.length(), binary.getSize());
     }
 
+    @FixFor( "MODE-1478" )
+    @Test
+    public void shouldBeAbleToImportDroolsXMLIntoSystemView() throws Exception {
+        startRepositoryWithConfiguration(resourceStream("config/drools-repository.json"));
+        session.importXML("/", resourceStream("io/drools-system-view.xml"), ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
+
+        assertNode("/drools:repository", "nt:folder");
+        assertNode("/drools:repository/drools:package_area", "nt:folder");
+        assertNode("/drools:repository/drools:package_area/defaultPackage", "drools:packageNodeType");
+        assertNode("/drools:repository/drools:package_area/defaultPackage/assets", "drools:versionableAssetFolder");
+        assertNode("/drools:repository/drools:package_area/defaultPackage/assets/drools", "drools:assetNodeType");
+        assertNode("/drools:repository/drools:packagesnapshot_area", "nt:folder");
+        assertNode("/drools:repository/drools:tag_area", "nt:folder");
+        assertNode("/drools:repository/drools:state_area", "nt:folder");
+        assertNode("/drools:repository/drools.package.migrated", "nt:folder");
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Utilities
     // ----------------------------------------------------------------------------------------------------------------

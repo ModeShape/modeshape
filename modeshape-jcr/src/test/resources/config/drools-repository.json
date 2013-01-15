@@ -1,0 +1,20 @@
+{
+    "name": "Drools Repository",
+    "storage": {
+        "transactionManagerLookup": "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
+    },
+    "workspaces": {
+        "predefined": ["ws1", "ws2"],
+        "default": "default",
+        "allowCreation": true
+    },
+    "node-types": [
+        "cnd/drools/configuration_node_type.cnd",
+        "cnd/drools/tag_node_type.cnd",
+        "cnd/drools/state_node_type.cnd",
+        "cnd/drools/versionable_node_type.cnd",
+        "cnd/drools/versionable_asset_folder_node_type.cnd",
+        "cnd/drools/rule_node_type.cnd",
+        "cnd/drools/rulepackage_node_type.cnd"
+    ]
+}
