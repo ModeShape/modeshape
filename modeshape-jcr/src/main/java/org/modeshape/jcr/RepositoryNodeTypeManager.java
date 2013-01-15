@@ -1124,7 +1124,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
         /**
          * Get the auto-created property definitions for the named node type. This method is used when
-         * {@link AbstractJcrNode#addChildNode(Name, Name, NodeKey) creating nodes}, which only needs the auto-created properties
+         * {@link AbstractJcrNode#addChildNode(org.modeshape.jcr.value.Name, org.modeshape.jcr.value.Name, org.modeshape.jcr.cache.NodeKey, boolean) creating nodes}, which only needs the auto-created properties
          * for the primary type. It's also used when {@link AbstractJcrNode#addMixin(String) adding a mixin}.
          * 
          * @param nodeType the node type name; may not be null
@@ -1136,7 +1136,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
         /**
          * Get the auto-created child node definitions for the named node type. This method is used when
-         * {@link AbstractJcrNode#addChildNode(Name, Name, NodeKey) creating nodes}, which only needs the auto-created properties
+         * {@link AbstractJcrNode#addChildNode(org.modeshape.jcr.value.Name, org.modeshape.jcr.value.Name, org.modeshape.jcr.cache.NodeKey, boolean) creating nodes}, which only needs the auto-created properties
          * for the primary type. It's also used when {@link AbstractJcrNode#addMixin(String) adding a mixin}.
          * 
          * @param nodeType the node type name; may not be null

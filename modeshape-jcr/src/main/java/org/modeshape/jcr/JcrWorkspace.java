@@ -190,7 +190,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             /*
             * Use the JCR add child here to perform the parent validations
             */
-            AbstractJcrNode copy = parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), null);
+            AbstractJcrNode copy = parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), null, false);
             Map<NodeKey, NodeKey> nodeKeyCorrespondence = copy.mutable().deepCopy(copySession.cache(),
                                                                                   sourceNode.node(),
                                                                                   sourceSession.cache());
@@ -213,7 +213,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 if (dstNode.isNodeType(JcrMixLexicon.REFERENCEABLE) && dstNode.hasProperty(JcrLexicon.UUID)) {
                     // for referenceable nodes, update the UUID to be be same as the new identifier
                     JcrValue identifierValue = dstNode.valueFactory().createValue(dstNode.getIdentifier());
-                    dstNode.setProperty(JcrLexicon.UUID, identifierValue, true, true);
+                    dstNode.setProperty(JcrLexicon.UUID, identifierValue, true, true, false);
 
                     // if there are any incoming references within the copied subgraph, they need to point to the new nodes
                     for (PropertyIterator incomingReferencesIterator = dstNode.getAllReferences(); incomingReferencesIterator.hasNext();) {
@@ -384,7 +384,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
 
                 // Use the JCR add child here to perform the parent validations
                 NodeKey cloneKey = parentNode.key().withId(sourceNode.key().getIdentifier());
-                parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), cloneKey);
+                parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), cloneKey, false);
 
                 deepClone(sourceSession, sourceNode.key(), cloneSession, cloneKey);
             }
