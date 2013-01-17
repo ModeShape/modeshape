@@ -38,4 +38,18 @@ public interface QueryResult extends javax.jcr.query.QueryResult {
      *         {@link QueryResult#getColumnNames()}.
      */
     public String[] getColumnTypes();
+
+    /**
+     * Get a description of ModeShape's plan for executing this query. The plan uses relational algebra and operations, and may be
+     * used to get insight into what operations are performed when executing the query.
+     * <p>
+     * Note that as of ModeShape 3.1, the plan is always captured and available, though this may change in future versions. This
+     * means that clients should be written to never <i>expect</i> a non-null String response from this method.
+     * </p>
+     * 
+     * @return the string representation of the query plan as executed by the query; may be null if the query plan was not
+     *         captured for the query (though currently it is always captured)
+     */
+    public String getPlan();
+
 }

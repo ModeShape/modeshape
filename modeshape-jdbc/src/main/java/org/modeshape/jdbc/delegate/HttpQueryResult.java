@@ -70,6 +70,11 @@ public final class HttpQueryResult implements QueryResult {
     }
 
     @Override
+    public String getPlan() {
+        return null;
+    }
+
+    @Override
     public String[] getColumnNames() {
         return columns.keySet().toArray(new String[columns.size()]);
     }

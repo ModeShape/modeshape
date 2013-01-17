@@ -23,20 +23,7 @@
  */
 package org.modeshape.jdbc;
 
-import javax.jcr.Binary;
-import javax.jcr.ItemNotFoundException;
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
-import javax.jcr.Value;
-import javax.jcr.ValueFormatException;
-import javax.jcr.query.QueryResult;
-import javax.jcr.query.Row;
-import javax.jcr.query.RowIterator;
-import org.mockito.Mockito;
 import static org.mockito.Mockito.when;
-import org.modeshape.jcr.InMemoryTestBinary;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -49,6 +36,19 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.TimeZone;
+import javax.jcr.Binary;
+import javax.jcr.ItemNotFoundException;
+import javax.jcr.Node;
+import javax.jcr.NodeIterator;
+import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
+import javax.jcr.ValueFormatException;
+import javax.jcr.query.QueryResult;
+import javax.jcr.query.Row;
+import javax.jcr.query.RowIterator;
+import org.mockito.Mockito;
+import org.modeshape.jcr.InMemoryTestBinary;
 
 /**
  * This provides common result set metadata used by various tests
@@ -124,23 +124,23 @@ public class TestUtil {
          *  the tuples data types for each column correspond to @see TYPE_NAMES
          */
 
-        TUPLES.add(new Object[] { "r1c1", (long)1, null, null, (double)1, true, cal_instance, "Heres my data at r1"
-                .getBytes(), null });
+        TUPLES.add(new Object[] {"r1c1", (long)1, null, null, (double)1, true, cal_instance, "Heres my data at r1".getBytes(),
+            null});
 
         cal_instance = createTestCalendar();
 
-        TUPLES.add(new Object[] { "r2c1", (long)2, null, null, (double)2, false, cal_instance, "Heres my data r2   "
-                .getBytes(), null });
+        TUPLES.add(new Object[] {"r2c1", (long)2, null, null, (double)2, false, cal_instance, "Heres my data r2   ".getBytes(),
+            null});
 
         cal_instance = createTestCalendar();
 
-        TUPLES.add(new Object[] { "r3c1", (long)3, null, null, (double)3, true, cal_instance, "Heres my data at r3  "
-                .getBytes(), null });
+        TUPLES.add(new Object[] {"r3c1", (long)3, null, null, (double)3, true, cal_instance, "Heres my data at r3  ".getBytes(),
+            null});
 
         cal_instance = createTestCalendar();
 
-        TUPLES.add(new Object[] { "r4c1", 4L, null, null, 4D, Boolean.TRUE, cal_instance, "Heres  my  data    r4  "
-                .getBytes(), null });
+        TUPLES.add(new Object[] {"r4c1", 4L, null, null, 4D, Boolean.TRUE, cal_instance, "Heres  my  data    r4  ".getBytes(),
+            null});
     }
 
     private static Calendar createTestCalendar() {
@@ -176,7 +176,7 @@ public class TestUtil {
         return nodes;
     }
 
-    public static int minorVersion(String versionString) {
+    public static int minorVersion( String versionString ) {
         String[] coords = versionString.split("[.-]");
         @SuppressWarnings( "unused" )
         final int major = Integer.parseInt(coords[0]);
@@ -184,7 +184,7 @@ public class TestUtil {
         return Integer.parseInt(coords[1]);
     }
 
-    public static int majorVersion(String versionString) {
+    public static int majorVersion( String versionString ) {
         String[] coords = versionString.split("[.-]");
         return Integer.parseInt(coords[0]);
     }
@@ -193,6 +193,11 @@ public class TestUtil {
         final Node[] nodes = createNodes();
 
         QueryResult qr = new org.modeshape.jcr.api.query.QueryResult() {
+
+            @Override
+            public String getPlan() {
+                return null;
+            }
 
             @Override
             public String[] getColumnNames() {

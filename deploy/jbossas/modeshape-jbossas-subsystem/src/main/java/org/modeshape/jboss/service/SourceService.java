@@ -27,7 +27,6 @@ package org.modeshape.jboss.service;
 import java.util.List;
 import java.util.Properties;
 import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Editor;
 import org.jboss.msc.service.Service;
@@ -35,8 +34,6 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.modeshape.common.collection.Problems;
-import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.NoSuchRepositoryException;
@@ -44,7 +41,7 @@ import org.modeshape.jcr.RepositoryConfiguration;
 
 /**
  * {@link Service} implementation handling external sources
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class SourceService implements Service<JcrRepository> {
