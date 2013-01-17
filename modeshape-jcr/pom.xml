@@ -279,9 +279,9 @@
                                         of the form "package#method". One per line. For example:
                                         org.apache.jackrabbit.test.api.ShareableNodeTest#testModifyDescendantAndSave
                                         -->
-                                        <!-- See https://issues.apache.org/jira/browse/JCR-3492 -->
+                                        <!-- See https://issues.apache.org/jira/browse/JCR-3493 -->
                                         org.apache.jackrabbit.test.api.query.qom.EquiJoinConditionTest#testRightOuterJoin1
-                                        <!-- See https://issues.apache.org/jira/browse/JCR-3492 -->
+                                        <!-- See https://issues.apache.org/jira/browse/JCR-3493 -->
                                         org.apache.jackrabbit.test.api.query.qom.EquiJoinConditionTest#testLeftOuterJoin2
                                     </value>
                                 </property>
