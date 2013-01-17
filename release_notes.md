@@ -1,21 +1,49 @@
 # Release Notes for ModeShape &version;
 
-The ModeShape &version; release is the first stable release of our new architecture.
+The ModeShape &version; release is the second stable release of our new architecture.
 It's been a long journey with fourteen different alphas, betas, and candidate releases.
 But this is a huge improvement over the 2.x series. We hope you enjoy it!
 
 ## What's new
 
 &version; provides a fast, distributed, hierarchical database that clients
-work with via the standard JCR 2.0 (JSR-283) API. ModeShape 3.0 is a major upgrade over 2.x
+work with via the standard JCR 2.0 (JSR-283) API. ModeShape 3 is a major upgrade over 2.x
 and offers significant improvements in performance and scalability, while retaining all of
-ModeShape 2's JCR-related features. ModeShape 3.0 has complete integration with JBoss AS 7.1
-and 7.2, allowing deployed components to simply lookup and use repositories managed by 
-ModeShape's service.
+ModeShape 2's JCR-related features. ModeShape 3 has complete integration with JBoss AS 7.1,
+allowing deployed components to simply lookup and use repositories managed by ModeShape's 
+service.
 
-Overall, ModeShape 3.0 has changed a lot since ModeShape 2.8.x:
+This release brings these improvements:
 
-- ModeShape now uses Infinispan for all caching and storage, giving a powerful and flexible
+- Federated content that exists in external systems and project it into the repository as
+regular content. Several connectors are provided out of the box: a file system connector 
+(very similar to what was in 2.x) that accesses files and folders on the file system
+and projects them as 'nt:file' and 'nt:folder' nodes; and a Git connector that accesses a local
+Git repository (can be a clone of one or more remotes) and projects the branches, tags, commits
+and trees within the Git repository as a node structure in the repository.
+- New support for the CMIS API. This is still a 'technology preview', and we're seeking users
+that can try it out and give us feedback.
+- New JCA adapter to simplify deployment to application servers and containers other than
+JBoss AS and EAP. (Recall that ModeShape can already be deployed as a service within AS7/EAP6).
+- Separately control the size of strings and binary values that are stored in the binary store.
+This repositories to always store binary values in binary storage, but only larger string values.
+- Improved how repository configurations can also configure JGroups.
+- Clustering bug fixes and improvements.
+- Compatibility with Infinispan 5.1.2.FINAL through 5.1.8.Final. Expected to work with 
+Infinispan 5.2.0.Final (when available).
+- Fixes to how variables are handled in configuration files.
+- Kit to install ModeShape into an existing JBoss AS7.1.1 installation now also installs
+CMIS API for all repositories. Configure connectors along with all the other components.
+- Improved support for very large numbers of child nodes under a single parent, including
+when these nodes are projected from connectors.
+- Over 50 issues (bugs, tasks, features, etc.) resolved in this release.
+
+
+## Features
+
+ModeShape &version; has changed a lot since ModeShape 2.8.x:
+
+- ModeShape uses Infinispan for all caching and storage, giving a powerful and flexible
 foundation for creating JCR repositories that are fast, scalable, and highly available.
 Infinispan offers a great deal of storage options (via cache loaders), but using Infinispan 
 as a distributed, mulit-site, in-memory data grid provides incredible scalability and performance.
@@ -34,14 +62,16 @@ add/change/remove sequencers, authorization providers, and many other configurat
 while the repository is in use.
 - Each repository can be deployed, started, stopped, and undeployed while the engine and other
 repositories are still in use.
-- Sessions now immediately see all changes persisted/committed by other sessions, although
+- Sessions immediately see all changes persisted/committed by other sessions, although
 transient changes made by the session always take precedence.
 - Support for participation in JTA transactions, allowing (container-managed or bean-managed)
 EJBs and JCR clients that programmatically use transactions to commit the changes in the transactions.
-- New monitoring API with over a dozen metrics.
-- New sequencing API, so sequencers now use the JCR API to get at the content being processed
-and create/update the derived content. Sequencers can also dynamically register namespaces and
-node types. Now it's easy to create custom sequencers.
+- Monitoring API with over a dozen metrics.
+- Sequencing SPI that uses the JCR API to get at the content being processed and create/update the 
+derived content. Sequencers can also dynamically register namespaces and node types. Now it's easy 
+to create custom sequencers.
+- Connector SPI that defines how external systems are accessed and optionally updated to project
+the external information into the repository as regular nodes.
 - Simplified API for implementing custom MIME type detectors. ModeShape still has a built-in
 Tika-based detector that determines MIME types using the filename extensions and binary content.
 - New and simpler API for implementing custom text extractors, which extracts from binary values
@@ -55,9 +85,7 @@ There weren't many of these; most of the ModeShape API remains the same as 2.x.
 the AS7 tooling can be used to define and manage repositories independently of each other
 and while the server is running.
 - Local and remote JDBC drivers for issuing JCR-SQL2 queries and getting database metadata via the JDBC API
-- Many bug fixes and minor improvements
 
-## Features
 
 All of the JCR features previously supported in 2.x are working and ready for use. 
 If any issues are found, please log a bug report in our JIRA.
@@ -128,7 +156,16 @@ If any issues are found, please log a bug report in our JIRA.
 - Cassandra
 - Cloud storage (e.g., Amazon's S3, Rackspace's Cloudfiles, or any other provider supported by JClouds)
 - Remote Infinispan
-- Separate large binary storage on file system (database and Infinispan coming soon)
+
+### Binary Storage Options
+- File system
+- JDBC database
+- Infinispan
+- MongoDB
+
+### ModeShape Federation Connectors
+- File system connector (read and write)
+- Git repository connector (read-only)
 
 ### ModeShape Sequencers
 - Compact Node Definition (CND) Sequencer
@@ -149,8 +186,10 @@ If any issues are found, please log a bug report in our JIRA.
 ### ModeShape Deployment/Access Models
 - JNDI-Based Deployment
 - Deploy as a subsystem in JBoss AS7, with access to repositories via @Resource injection
+- Deploy to other containers using ModeShape's JCA adapter
 - Access through two RESTful Services (the 2.x-compatible API and a new improved API)
 - Access through WebDAV Service
+- Access through CMIS Service
 - Local and remote JDBC drivers for accessing ModeShape content through JDBC API and JCR-SQL2 queries
 - Embedded (in Server or JEE Archive) Deployment
 - JTA support, allowing Sessions to participate in XA and container-managed transactions 
@@ -169,5 +208,5 @@ earlier with full support for JCR 2.0.
 
 ## Bug Fixes, Features, and other Issues
 
-The following are the bugs, features and other issues that have been fixed in the 3.0.0.Final release:
+The following are the bugs, features and other issues that have been fixed in the 3.1.0.Final release:
 
