@@ -23,23 +23,23 @@
  */
 package org.modeshape.jcr;
 
+import java.util.HashSet;
+import java.util.Set;
+import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import javax.jcr.ImportUUIDBehavior;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
-import java.util.HashSet;
-import java.util.Set;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class JcrNodeTest extends MultiUseAbstractTest {
 
@@ -205,5 +205,24 @@ public class JcrNodeTest extends MultiUseAbstractTest {
         Node referenceableCar2 = session.getNode("/Cars/referenceableCar2");
         uuid = referenceableCar2.getProperty(JcrLexicon.UUID.getString()).getString();
         assertEquals(referenceableCar2.getIdentifier(), uuid);
+    }
+
+    @Test
+    @FixFor( "MODE-1751" )
+    public void shouldNotCauseReferentialIntegrityExceptionWhenSameReferrerUpdatedMultipleTimes() throws Exception {
+        Node nodeA = session.getRootNode().addNode("nodeA");
+        nodeA.addMixin("mix:referenceable");
+        Node nodeB = session.getRootNode().addNode("nodeB");
+        nodeB.setProperty("nodeA", session.getValueFactory().createValue(nodeA, false));
+        session.save();
+
+        nodeB.setProperty("nodeA", session.getValueFactory().createValue(nodeA, false));
+        session.save();
+
+        nodeB.remove();
+        session.save();
+
+        nodeA.remove();
+        session.save();
     }
 }

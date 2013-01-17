@@ -69,8 +69,10 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
+import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
 import org.modeshape.jcr.value.basic.StringReference;
+import org.modeshape.jcr.value.basic.UuidReference;
 
 /**
  * A node used within a {@link SessionCache session} when that node has (or may have) transient (unsaved) changes. This node is an
@@ -714,66 +716,119 @@ public class SessionNode implements MutableCachedNode {
         Name name = property.getName();
         changedProperties.put(name, property);
         if (!isNew) removedProperties.remove(name);
-        updateReferences(cache, name);
+        updateReferences(cache, name, null);
+    }
+
+    @Override
+    public void setReference( SessionCache cache,
+                              Property property,
+                              SessionCache systemCache ) {
+        assert property.isReference();
+
+        writableSession(cache).assertInSession(this);
+        Name name = property.getName();
+        changedProperties.put(name, property);
+        if (!isNew) removedProperties.remove(name);
+        updateReferences(cache, name, systemCache);
     }
 
     private void updateReferences( SessionCache cache,
-                                   Name propertyName ) {
+                                   Name propertyName,
+                                   SessionCache systemCache) {
+        //first try to determine if there's old reference property with the same name so that old references can be removed
+        boolean oldPropertyWasReference = false;
+        List<Reference> referencesToRemove = new ArrayList<Reference>();
         if (!isNew()) {
             // remove potential existing references
-            Property oldProperty = nodeInWorkspace(session(cache)).getProperty(propertyName, cache);
-            addOrRemoveReferrers(cache, oldProperty, false);
+            CachedNode persistedNode = nodeInWorkspace(session(cache));
+            Property oldProperty = persistedNode.getProperty(propertyName, cache);
+            if (oldProperty != null && oldProperty.isReference()) {
+                oldPropertyWasReference = true;
+                for (Object referenceObject : oldProperty.getValuesAsArray()) {
+                    assert referenceObject instanceof Reference;
+                    referencesToRemove.add((Reference)referenceObject);
+                }
+            }
         }
 
+        //if the updated property is a reference, determine which are the references that need updating
+        boolean updatedPropertyIsReference = false;
+        List<Reference> referencesToAdd = new ArrayList<Reference>();
         Property property = changedProperties.get(propertyName);
-        addOrRemoveReferrers(cache, property, true);
+        if (property != null && property.isReference()) {
+            updatedPropertyIsReference = true;
+            for (Object referenceObject : property.getValuesAsArray()) {
+                assert referenceObject instanceof Reference;
+                Reference updatedReference = (Reference) referenceObject;
+                if (referencesToRemove.contains(updatedReference)) {
+                    //the reference is already present on a property with the same name, so this is a no-op for that reference
+                    //therefore we remove it from the list of references that will be removed
+                    referencesToRemove.remove(updatedReference);
+                } else {
+                    //this is a new reference (either via key or type)
+                    referencesToAdd.add(updatedReference);
+                }
+            }
+        }
+
+        //if an existing reference property was just updated with the same value, it is a no-op so we should just remove it from the list of changed properties
+        if (referencesToRemove.isEmpty() && referencesToAdd.isEmpty() && oldPropertyWasReference && updatedPropertyIsReference) {
+            changedProperties.remove(propertyName);
+            return;
+        }
+
+        if (!referencesToRemove.isEmpty()) {
+            addOrRemoveReferrers(cache, systemCache, referencesToRemove.iterator(), false);
+        }
+        if (!referencesToAdd.isEmpty()) {
+            addOrRemoveReferrers(cache, systemCache, referencesToAdd.iterator(), true);
+        }
     }
 
     protected void removeAllReferences( SessionCache cache ) {
         for (Iterator<Property> it = this.getProperties(cache); it.hasNext();) {
             Property property = it.next();
-            this.addOrRemoveReferrers(cache, property, false);
+            if (!property.isReference()) {
+                continue;
+            }
+
+            this.addOrRemoveReferrers(cache, null, property.getValues(), false);
         }
     }
 
     protected void addOrRemoveReferrers( SessionCache cache,
-                                         Property property,
+                                         SessionCache systemCache,
+                                         Iterator<?> referenceValuesIterator,
                                          boolean add ) {
 
-        if (property == null || !property.isReference()) {
-            return;
-        }
 
         boolean isFrozenNode = JcrNtLexicon.FROZEN_NODE.equals(this.getPrimaryType(cache));
 
-        for (Object value : property.getValuesAsArray()) {
-            NodeKey referredKey = null;
-            boolean isWeak = false;
-            if (value instanceof NodeKeyReference) {
-                NodeKeyReference nkref = (NodeKeyReference)value;
-                isWeak = nkref.isWeak();
-                referredKey = ((NodeKeyReference)value).getNodeKey();
-            } else if (value instanceof StringReference) {
-                String refStr = ((StringReference)value).getString();
-                if (!NodeKey.isValidFormat(refStr)) {
-                    // not a valid reference, so just return ...
-                    return;
-                }
-                // This is a rare case when a StringReference was created because we couldn't create a NodeKeyReference.
-                // In that case, we should assume 'weak' ...
-                referredKey = new NodeKey(refStr);
-                isWeak = true; // assumed
-            }
+        while (referenceValuesIterator.hasNext()) {
+            Object value = referenceValuesIterator.next();
+            assert value instanceof Reference;
+
+            Reference reference = (Reference) value;
+            NodeKey referredKey = nodeKeyFromReference(reference);
+            boolean isWeak = reference.isWeak();
 
             if (isFrozenNode && !isWeak) {
                 // JCR 3.13.4.6 ignore all strong outgoing references from a frozen node
                 return;
             }
 
-            if (cache.getNode(referredKey) == null) {
+            SessionNode referredNode = null;
+            //first search for a referred node in the cache of the current session and if nothing is found, look in the system session
+            if (cache.getNode(referredKey) != null) {
+                referredNode = writableSession(cache).mutable(referredKey);
+            } else if (systemCache != null && systemCache.getNode(referredKey) != null) {
+                referredNode = writableSession(systemCache).mutable(referredKey);
+            }
+
+            if (referredNode == null) {
                 continue;
             }
-            SessionNode referredNode = writableSession(cache).mutable(referredKey);
+
             ReferenceType referenceType = isWeak ? ReferenceType.WEAK : ReferenceType.STRONG;
             if (add) {
                 referredNode.addReferrer(cache, key, referenceType);
@@ -781,6 +836,18 @@ public class SessionNode implements MutableCachedNode {
                 referredNode.removeReferrer(cache, key, referenceType);
             }
         }
+    }
+
+    private NodeKey nodeKeyFromReference(Reference reference) {
+        if (reference instanceof NodeKeyReference) {
+           return  ((NodeKeyReference)reference).getNodeKey();
+        } else if (reference instanceof StringReference) {
+            return new NodeKey(reference.getString());
+        } else if (reference instanceof UuidReference) {
+            UuidReference uuidReference = (UuidReference) reference;
+            return getKey().withId(uuidReference.getString());
+        }
+        throw new IllegalArgumentException("Unknown reference type: " + reference.getClass().getSimpleName());
     }
 
     @Override
@@ -802,7 +869,7 @@ public class SessionNode implements MutableCachedNode {
             Name name = property.getName();
             changedProperties.put(name, property);
             if (!isNew) removedProperties.remove(name);
-            updateReferences(cache, name);
+            updateReferences(cache, name, null);
         }
     }
 
@@ -815,7 +882,7 @@ public class SessionNode implements MutableCachedNode {
             Name name = property.getName();
             changedProperties.put(name, property);
             if (!isNew) removedProperties.remove(name);
-            updateReferences(cache, name);
+            updateReferences(cache, name, null);
         }
     }
 
@@ -825,7 +892,7 @@ public class SessionNode implements MutableCachedNode {
         writableSession(cache).assertInSession(this);
         changedProperties.remove(name);
         if (!isNew) removedProperties.put(name, name);
-        updateReferences(cache, name);
+        updateReferences(cache, name, null);
     }
 
     @Override
@@ -835,7 +902,7 @@ public class SessionNode implements MutableCachedNode {
             Name name = propertyIterator.next().getName();
             changedProperties.remove(name);
             if (!isNew) removedProperties.put(name, name);
-            updateReferences(cache, name);
+            updateReferences(cache, name, null);
         }
     }
 
