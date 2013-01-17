@@ -1,6 +1,6 @@
 # Overview
 
-ModeShape 3.0 is the first JCR content repository that is seriously fast, extremely scalable, and highly available.
+ModeShape 3 is the first JCR content repository that is seriously fast, extremely scalable, and highly available.
 It's easy and lightweight enough to embed into small application, but also powerful enough to build a large peer-to-peer
 cluster capable of storing huge volumes of content and supporting many concurrent and active clients.
 It's fully open source with a business-friendly license and written in Java, so it can run almost anywhere.
