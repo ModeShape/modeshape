@@ -1,0 +1,5 @@
+Unless otherwise specified, ModeShape is licensed under the LGPL.  
+- Please see LICENSE-LGPL.txt.
+
+ModeShape's WebDAV Servlet is licensed under the ASL.
+- Please see LICENSE-ASL.txt
