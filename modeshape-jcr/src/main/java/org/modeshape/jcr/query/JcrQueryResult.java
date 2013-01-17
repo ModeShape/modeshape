@@ -165,11 +165,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         return new QueryResultRowIterator(context, queryStatement, results, tuples.iterator(), numRows);
     }
 
-    /**
-     * Get a description of the query plan, if requested.
-     * 
-     * @return the query plan, or null if the plan was not requested
-     */
+    @Override
     public String getPlan() {
         return results.getPlan();
     }
