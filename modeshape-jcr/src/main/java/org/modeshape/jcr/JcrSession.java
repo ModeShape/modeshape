@@ -1664,14 +1664,14 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                                                                context.getTime());
                     }
 
-                    // Now update the node as if it's checked in (with the exception of the predecessors...
+                    // Now update the node as if it's checked in (with the exception of the predecessors...)
                     Reference historyRef = referenceFactory.create(historyKey, true);
                     Reference baseVersionRef = referenceFactory.create(baseVersionKey, true);
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
-                    node.setProperty(cache, propertyFactory.create(JcrLexicon.VERSION_HISTORY, historyRef));
-                    node.setProperty(cache, propertyFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef));
+                    node.setReference(cache, propertyFactory.create(JcrLexicon.VERSION_HISTORY, historyRef), systemContent.cache());
+                    node.setReference(cache, propertyFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef), systemContent.cache());
                     // JSR 283 - 15.1
-                    node.setProperty(cache, propertyFactory.create(JcrLexicon.PREDECESSORS, new Object[] {baseVersionRef}));
+                    node.setReference(cache, propertyFactory.create(JcrLexicon.PREDECESSORS, new Object[] {baseVersionRef}), systemContent.cache());
                 }
             }
 

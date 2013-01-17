@@ -95,6 +95,19 @@ public interface MutableCachedNode extends CachedNode {
                       Property property );
 
     /**
+     * Sets a property of type reference in the case when there's an active system cache and the property is a reference
+     * towards a transient node from the system cache.
+     *
+     * @param cache the cache to which this node belongs; may not be null
+     * @param property the property; may not be null
+     * @param systemCache an existing system cache which contains transient nodes towards which the property points.
+     * @throws NodeNotFoundException if this node no longer exists
+     */
+    void setReference(SessionCache cache,
+                      Property property,
+                      SessionCache systemCache);
+
+    /**
      * Set the given property only if it has not been set previously and therefore appear as changed.
      * 
      * @param cache the cache to which this node belongs; may not be null
