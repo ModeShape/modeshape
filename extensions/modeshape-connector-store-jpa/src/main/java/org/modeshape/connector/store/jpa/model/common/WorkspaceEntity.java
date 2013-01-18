@@ -97,18 +97,10 @@ public class WorkspaceEntity implements Serializable {
         this.name = name;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#hashCode()
-     */
+
     @Override
     public int hashCode() {
-<<<<<<< HEAD
-        return id.hashCode();
-=======
-    	return  HashCode.compute(id);
->>>>>>> 9b2abcd... MODE-1740 Updated entity hashCode() and equals() methods to handle null IDs
+    	return HashCode.compute(id);
     }
 
     /**
