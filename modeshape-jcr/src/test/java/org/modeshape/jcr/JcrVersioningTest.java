@@ -24,6 +24,22 @@
 
 package org.modeshape.jcr;
 
+import java.net.URL;
+import javax.jcr.Node;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.version.Version;
+import javax.jcr.version.VersionException;
+import javax.jcr.version.VersionHistory;
+import javax.jcr.version.VersionIterator;
+import javax.jcr.version.VersionManager;
+import org.junit.Before;
+import org.junit.Test;
+import org.modeshape.common.FixFor;
+import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertFalse;
@@ -31,19 +47,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import java.net.URL;
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import javax.jcr.UnsupportedRepositoryOperationException;
-import javax.jcr.version.VersionException;
-import javax.jcr.version.VersionHistory;
-import javax.jcr.version.VersionManager;
-import org.junit.Before;
-import org.junit.Test;
-import org.modeshape.common.FixFor;
-import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
-import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 
 /**
  * Unit test for versioning behaviour (see JSR_285#15)
@@ -326,6 +329,148 @@ public class JcrVersioningTest {
         assertThat(versionManager.isCheckedOut(child2.getPath()), is(false));
         child2.remove();
         session.save();
+    }
+
+    @FixFor( "MODE-1624" )
+    @Test
+    public void shouldAllowRemovingVersionFromVersionHistory() throws Exception {
+        boolean print = false;
+
+        Node outerNode = session.getRootNode().addNode("outerFolder");
+        Node innerNode = outerNode.addNode("innerFolder");
+        Node fileNode = innerNode.addNode("testFile.dat");
+        fileNode.setProperty("jcr:mimeType", "text/plain");
+        fileNode.setProperty("jcr:data", "Original content");
+        session.save();
+
+        fileNode.addMixin("mix:versionable");
+        session.save();
+
+        // Make several changes ...
+        String path = fileNode.getPath();
+        for (int i = 2; i != 7; ++i) {
+            versionManager.checkout(path);
+            fileNode.setProperty("jcr:data", "Original content " + i);
+            session.save();
+            versionManager.checkin(path);
+        }
+
+        // Get the version history ...
+        VersionHistory history = versionManager.getVersionHistory(path);
+        if (print) System.out.println("Before: \n" + history);
+        assertThat(history, is(notNullValue()));
+        assertThat(history.getAllLinearVersions().getSize(), is(6L));
+
+        // Get the versions ...
+        VersionIterator iter = history.getAllLinearVersions();
+        Version v1 = iter.nextVersion();
+        Version v2 = iter.nextVersion();
+        Version v3 = iter.nextVersion();
+        Version v4 = iter.nextVersion();
+        Version v5 = iter.nextVersion();
+        Version v6 = iter.nextVersion();
+        assertThat(iter.hasNext(), is(false));
+        String versionName = v3.getName();
+        assertThat(v1, is(notNullValue()));
+        assertThat(v2, is(notNullValue()));
+        assertThat(v3, is(notNullValue()));
+        assertThat(v4, is(notNullValue()));
+        assertThat(v5, is(notNullValue()));
+        assertThat(v6, is(notNullValue()));
+
+        // Remove the 3rd version (that is, i=3) ...
+        history.removeVersion(versionName);
+
+        if (print) System.out.println("After (same history used to remove): \n" + history);
+        assertThat(history.getAllLinearVersions().getSize(), is(5L));
+
+        // Get the versions using the history node we already have ...
+        iter = history.getAllLinearVersions();
+        Version v1a = iter.nextVersion();
+        Version v2a = iter.nextVersion();
+        Version v4a = iter.nextVersion();
+        Version v5a = iter.nextVersion();
+        Version v6a = iter.nextVersion();
+        assertThat(iter.hasNext(), is(false));
+        assertThat(v1a.getName(), is(v1.getName()));
+        assertThat(v2a.getName(), is(v2.getName()));
+        assertThat(v4a.getName(), is(v4.getName()));
+        assertThat(v5a.getName(), is(v5.getName()));
+        assertThat(v6a.getName(), is(v6.getName()));
+
+        // Get the versions using a fresh history node ...
+        VersionHistory history2 = versionManager.getVersionHistory(path);
+        if (print) System.out.println("After (fresh history): \n" + history2);
+        assertThat(history.getAllLinearVersions().getSize(), is(5L));
+
+        iter = history2.getAllLinearVersions();
+        Version v1b = iter.nextVersion();
+        Version v2b = iter.nextVersion();
+        Version v4b = iter.nextVersion();
+        Version v5b = iter.nextVersion();
+        Version v6b = iter.nextVersion();
+        assertThat(iter.hasNext(), is(false));
+        assertThat(v1b.getName(), is(v1.getName()));
+        assertThat(v2b.getName(), is(v2.getName()));
+        assertThat(v4b.getName(), is(v4.getName()));
+        assertThat(v5b.getName(), is(v5.getName()));
+        assertThat(v6b.getName(), is(v6.getName()));
+    }
+
+    @FixFor( "MODE-1624" )
+    @Test
+    public void shouldAllowRemovingVersionFromVersionHistoryByRemovingVersionNode() throws Exception {
+        boolean print = false;
+
+        Node outerNode = session.getRootNode().addNode("outerFolder");
+        Node innerNode = outerNode.addNode("innerFolder");
+        Node fileNode = innerNode.addNode("testFile.dat");
+        fileNode.setProperty("jcr:mimeType", "text/plain");
+        fileNode.setProperty("jcr:data", "Original content");
+        session.save();
+
+        fileNode.addMixin("mix:versionable");
+        session.save();
+
+        // Make several changes ...
+        String path = fileNode.getPath();
+        for (int i = 2; i != 7; ++i) {
+            versionManager.checkout(path);
+            fileNode.setProperty("jcr:data", "Original content " + i);
+            session.save();
+            versionManager.checkin(path);
+        }
+
+        // Get the version history ...
+        VersionHistory history = versionManager.getVersionHistory(path);
+        if (print) System.out.println("Before: \n" + history);
+        assertThat(history, is(notNullValue()));
+        assertThat(history.getAllLinearVersions().getSize(), is(6L));
+
+        // Get the versions ...
+        VersionIterator iter = history.getAllLinearVersions();
+        Version v1 = iter.nextVersion();
+        Version v2 = iter.nextVersion();
+        Version v3 = iter.nextVersion();
+        Version v4 = iter.nextVersion();
+        Version v5 = iter.nextVersion();
+        Version v6 = iter.nextVersion();
+        assertThat(iter.hasNext(), is(false));
+        assertThat(v1, is(notNullValue()));
+        assertThat(v2, is(notNullValue()));
+        assertThat(v3, is(notNullValue()));
+        assertThat(v4, is(notNullValue()));
+        assertThat(v5, is(notNullValue()));
+        assertThat(v6, is(notNullValue()));
+
+        // Remove the 3rd version (that is, i=3) ...
+        // history.removeVersion(versionName);
+        try {
+            v3.remove();
+            fail("Should not allow removing a protected node");
+        } catch (ConstraintViolationException e) {
+            // expected
+        }
     }
 
     private void registerNodeTypes( Session session,
