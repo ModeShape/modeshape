@@ -149,18 +149,33 @@ public class MSOfficeMetadataSequencer extends Sequencer {
 
         sequencedNode.setProperty(JCR_MIME_TYPE, mimeType);
         if (isPowerpoint(mimeType)) {
-            sequencePowerpoint(sequencedNode, context.valueFactory(), binaryValue.getStream());
-            return true;
+            InputStream stream = binaryValue.getStream();
+            try {
+                sequencePowerpoint(sequencedNode, context.valueFactory(), stream);
+                return true;
+            } finally {
+                stream.close();
+            }
         }
 
         if (isWord(mimeType)) {
-            sequenceWord(sequencedNode, context.valueFactory(), binaryValue.getStream());
-            return true;
+            InputStream stream = binaryValue.getStream();
+            try {
+                sequenceWord(sequencedNode, context.valueFactory(), binaryValue.getStream());
+                return true;
+            } finally {
+                stream.close();
+            }
         }
 
         if (isExcel(mimeType)) {
-            sequenceExcel(sequencedNode, context.valueFactory(), binaryValue.getStream());
-            return true;
+            InputStream stream = binaryValue.getStream();
+            try {
+                sequenceExcel(sequencedNode, context.valueFactory(), binaryValue.getStream());
+                return true;
+            } finally {
+                stream.close();
+            }
         }
 
         getLogger().warn("Unknown mimetype: {0} for microsoft office", mimeType);

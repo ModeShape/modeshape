@@ -24,6 +24,7 @@
 
 package org.modeshape.web.jcr.rest;
 
+import java.io.IOException;
 import java.io.InputStream;
 import javax.jcr.Binary;
 import javax.jcr.Property;
@@ -219,9 +220,18 @@ public final class ModeShapeRestService {
          * https://issues.jboss.org/browse/RESTEASY-741 so we need to be aware that with the current version the stream won't be
          * closed.
          */
-        Response.ResponseBuilder responseBuilder = Response.ok(binary.getStream(), mimeType);
-        responseBuilder.header("Content-Disposition", contentDisposition);
-        return responseBuilder.build();
+        InputStream stream = binary.getStream();
+        try {
+            Response.ResponseBuilder responseBuilder = Response.ok(stream, mimeType);
+            responseBuilder.header("Content-Disposition", contentDisposition);
+            return responseBuilder.build();
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException e) {
+                throw new RepositoryException(e);
+            }
+        }
     }
 
     /**

@@ -30,6 +30,7 @@ import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.METADATA_NODE;
 import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.TITLE;
 import static org.modeshape.sequencer.mp3.Mp3MetadataLexicon.YEAR;
 import java.io.IOException;
+import java.io.InputStream;
 import javax.jcr.Binary;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -77,7 +78,13 @@ public class Mp3MetadataSequencer extends Sequencer {
         Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
         try {
-            Mp3Metadata metadata = Mp3Metadata.instance(binaryValue.getStream());
+            Mp3Metadata metadata = null;
+            InputStream stream = binaryValue.getStream();
+            try {
+                metadata = Mp3Metadata.instance(stream);
+            } finally {
+                stream.close();
+            }
             Node sequencedNode = outputNode;
             if (outputNode.isNew()) {
                 outputNode.setPrimaryType(METADATA_NODE);
