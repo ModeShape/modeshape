@@ -24,6 +24,7 @@
 package org.modeshape.sequencer.image;
 
 import java.io.IOException;
+import java.io.InputStream;
 import javax.jcr.Binary;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -89,20 +90,25 @@ public class ImageMetadataSequencer extends Sequencer {
                             Context context ) throws Exception {
         Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
+        InputStream stream = binaryValue.getStream();
+        try {
 
-        ImageMetadata metadata = new ImageMetadata();
-        metadata.setInput(binaryValue.getStream());
-        metadata.setDetermineImageNumber(true);
-        metadata.setCollectComments(true);
+            ImageMetadata metadata = new ImageMetadata();
+            metadata.setInput(stream);
+            metadata.setDetermineImageNumber(true);
+            metadata.setCollectComments(true);
 
-        // Process the image stream and extract the metadata ...
-        if (!metadata.check()) {
-            getLogger().info("Unknown format detected. Skipping sequencing");
-            return false;
+            // Process the image stream and extract the metadata ...
+            if (!metadata.check()) {
+                getLogger().info("Unknown format detected. Skipping sequencing");
+                return false;
+            }
+            Node imageNode = getImageMetadataNode(outputNode);
+            setImagePropertiesOnNode(imageNode, metadata);
+            return true;
+        } finally {
+            stream.close();
         }
-        Node imageNode = getImageMetadataNode(outputNode);
-        setImagePropertiesOnNode(imageNode, metadata);
-        return true;
     }
 
     private Node getImageMetadataNode( Node outputNode ) throws RepositoryException {

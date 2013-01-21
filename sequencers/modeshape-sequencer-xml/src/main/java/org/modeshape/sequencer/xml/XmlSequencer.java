@@ -24,6 +24,7 @@
 package org.modeshape.sequencer.xml;
 
 import java.io.IOException;
+import java.io.InputStream;
 import javax.jcr.Binary;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -127,7 +128,12 @@ public class XmlSequencer extends Sequencer {
         // Prevent the resolving of DTD entities into fully-qualified URIS
         setFeature(reader, RESOLVE_DTD_URIS_FEATURE, false);
         // Parse XML document
-        reader.parse(new InputSource(binaryValue.getStream()));
+        InputStream stream = binaryValue.getStream();
+        try {
+            reader.parse(new InputSource(stream));
+        } finally {
+            stream.close();
+        }
         return true;
     }
 
