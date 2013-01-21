@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.modeshape</groupId>
         <artifactId>modeshape-parent</artifactId>
-        <version>3.1.0.Final</version>
+        <version>3.1.1-SNAPSHOT</version>
         <relativePath>../modeshape-parent/pom.xml</relativePath>
     </parent>
     <!-- The groupId and version values are inherited from parent -->
