@@ -38,6 +38,7 @@ import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.Sequencers.SequencingContext;
 import org.modeshape.jcr.Sequencers.SequencingWorkItem;
@@ -50,6 +51,12 @@ import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.change.RecordingChanges;
 
 final class SequencingRunner implements Runnable {
+
+    /** We don't use the standard logging convention here; we want clients to easily configure logging for sequencing */
+    private static final Logger LOGGER = Logger.getLogger("org.modeshape.jcr.sequencing.runner");
+    private static final boolean TRACE = LOGGER.isTraceEnabled();
+    private static final boolean DEBUG = LOGGER.isDebugEnabled();
+
     private final JcrRepository repository;
     private final SequencingWorkItem work;
 
@@ -78,8 +85,31 @@ final class SequencingRunner implements Runnable {
 
             // Get the sequencer ...
             sequencer = state.sequencers().getSequencer(work.getSequencerId());
-            if (sequencer == null) return;
+            if (sequencer == null) {
+                if (DEBUG) {
+                    LOGGER.debug("Unable to find sequencer with ID '{0}' in repository '{1}'; skipping input '{3}:{2}' and output '{5}:{4}'",
+                                 work.getSequencerId(),
+                                 repository.getName(),
+                                 work.getInputPath(),
+                                 work.getInputWorkspaceName(),
+                                 work.getOutputPath(),
+                                 work.getOutputWorkspaceName());
+                }
+                return;
+            }
             sequencerName = sequencer.getName();
+
+            String logMsg = null;
+            if (TRACE || DEBUG) {
+                logMsg = StringUtil.createString("sequencer '{0}' in repository '{1}' with input '{3}:{2}' to produce '{5}:{4}'",
+                                                 sequencerName,
+                                                 repository.getName(),
+                                                 work.getInputPath(),
+                                                 work.getInputWorkspaceName(),
+                                                 work.getOutputPath(),
+                                                 work.getOutputWorkspaceName() != null ? work.getOutputWorkspaceName() : work.getInputWorkspaceName());
+                LOGGER.debug("Running {0}", logMsg);
+            }
 
             // Find the selected node ...
             AbstractJcrNode selectedNode = inputSession.getNode(work.getSelectedPath());
@@ -136,6 +166,7 @@ final class SequencingRunner implements Runnable {
 
                 // See if the sequencer accepts the MIME type ...
                 if (mimeType != null && !sequencer.isAccepted(mimeType)) {
+                    LOGGER.debug("Skipping sequencing because MIME type of input doesn't match expectations for {0}", logMsg);
                     return; // nope
                 }
             }
@@ -152,6 +183,7 @@ final class SequencingRunner implements Runnable {
                 try {
                     parentOfOutput = outputSession.getNode(work.getOutputPath());
                 } catch (PathNotFoundException e) {
+                    LOGGER.trace("Creating missing output path for {0}", logMsg);
                     JcrTools tools = new JcrTools();
                     parentOfOutput = tools.findOrCreateNode(outputSession, work.getOutputPath());
                 }
@@ -160,13 +192,19 @@ final class SequencingRunner implements Runnable {
                 String outputNodeName = computeOutputNodeName(selectedNode);
 
                 // Remove any existing output (from a prior sequencing run on this same input) ...
-                removeExistingOutputNodes(parentOfOutput, outputNodeName, work.getSelectedPath());
+                removeExistingOutputNodes(parentOfOutput, outputNodeName, work.getSelectedPath(), logMsg);
 
                 // Create the output node
                 if (parentOfOutput.isNew() && parentOfOutput.getName().equals(outputNodeName)) {
                     // avoid creating a duplicate path with the same name
                     outputNode = (AbstractJcrNode)parentOfOutput;
                 } else {
+                    if (TRACE) {
+                        LOGGER.trace("Creating output node '{0}' under parent '{1}' for {2}",
+                                     outputNodeName,
+                                     parentOfOutput.getPath(),
+                                     logMsg);
+                    }
                     outputNode = (AbstractJcrNode)parentOfOutput.addNode(outputNodeName, JcrConstants.NT_UNSTRUCTURED);
                 }
 
@@ -182,7 +220,10 @@ final class SequencingRunner implements Runnable {
                 final long start = System.nanoTime();
 
                 try {
+                    LOGGER.trace("Executing {0}", logMsg);
                     if (sequencer.execute(changedProperty, outputNode, context)) {
+                        LOGGER.trace("Completed executing {0}", logMsg);
+
                         // Make sure that the sequencer did not change the primary type of the selected node ..
                         if (selectedNode == outputNode && !selectedNode.getPrimaryNodeType().getName().equals(primaryType)) {
                             String msg = RepositoryI18n.sequencersMayNotChangeThePrimaryTypeOfTheSelectedNode.text();
@@ -197,9 +238,11 @@ final class SequencingRunner implements Runnable {
                         setCreatedByIfNecessary(outputSession, outputNodes);
 
                         // outputSession
+                        LOGGER.trace("Saving session used by {0}", logMsg);
                         outputSession.save();
 
                         // fire the sequencing event after save (hopefully by this time the transaction has been committed)
+                        LOGGER.trace("Firing events resulting from {0}", logMsg);
                         fireSequencingEvent(selectedNode, outputNodes, outputSession, sequencerName);
 
                         long durationInNanos = Math.abs(System.nanoTime() - start);
@@ -252,7 +295,10 @@ final class SequencingRunner implements Runnable {
         // set by the system session when it saves and it will default to "modeshape-worker"
         for (AbstractJcrNode node : outputNodes) {
             if (node.isNodeType(JcrMixLexicon.CREATED)) {
-                node.setProperty(JcrLexicon.CREATED_BY, outputSession.getValueFactory().createValue(work.getUserId()), true, true,
+                node.setProperty(JcrLexicon.CREATED_BY,
+                                 outputSession.getValueFactory().createValue(work.getUserId()),
+                                 true,
+                                 true,
                                  false);
             }
         }
@@ -354,12 +400,17 @@ final class SequencingRunner implements Runnable {
      * @param parentOfOutput the parent of the output; may not be null
      * @param outputNodeName the name of the output node; may not be null or empty
      * @param selectedPath the path of the node that was selected for sequencing
+     * @param logMsg the log message, or null if trace/debug logging is not being used (this is passed in for efficiency reasons)
      * @throws RepositoryException if there is a problem accessing the repository content
      */
-    protected final void removeExistingOutputNodes( Node parentOfOutput,
-                                                    String outputNodeName,
-                                                    String selectedPath ) throws RepositoryException {
+    private final void removeExistingOutputNodes( Node parentOfOutput,
+                                                  String outputNodeName,
+                                                  String selectedPath,
+                                                  String logMsg ) throws RepositoryException {
         // Determine if there is an existing output node ...
+        if (TRACE) {
+            LOGGER.trace("Looking under '{0}' for existing output to be removed for {1}", parentOfOutput.getPath(), logMsg);
+        }
         NodeIterator outputIter = parentOfOutput.getNodes(outputNodeName);
         while (outputIter.hasNext()) {
             Node outputNode = outputIter.nextNode();
@@ -369,6 +420,9 @@ final class SequencingRunner implements Runnable {
                 String derivedFrom = outputNode.getProperty("mode:derivedFrom").getPath();
                 if (selectedPath.equals(derivedFrom)) {
                     // Delete it ...
+                    if (TRACE) {
+                        LOGGER.trace("Removing existing output node '{0}' for {1}", outputNode.getPath(), logMsg);
+                    }
                     outputNode.remove();
                 }
             }
