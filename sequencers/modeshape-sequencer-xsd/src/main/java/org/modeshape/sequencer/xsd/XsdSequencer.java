@@ -26,6 +26,7 @@ package org.modeshape.sequencer.xsd;
 
 import static org.modeshape.sequencer.xsd.XsdLexicon.SCHEMA_DOCUMENT;
 import java.io.IOException;
+import java.io.InputStream;
 import javax.jcr.Binary;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -74,7 +75,12 @@ public class XsdSequencer extends AbstractSrampSequencer {
         } else {
             outputNode = outputNode.addNode(SCHEMA_DOCUMENT, SCHEMA_DOCUMENT);
         }
-        new XsdReader(context).read(binaryValue.getStream(), outputNode);
+        InputStream stream = binaryValue.getStream();
+        try {
+            new XsdReader(context).read(stream, outputNode);
+        } finally {
+            stream.close();
+        }
         return true;
     }
 }

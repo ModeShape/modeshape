@@ -23,14 +23,19 @@
  */
 package org.modeshape.sequencer.classfile;
 
-import javax.jcr.*;
+import java.io.IOException;
+import java.io.InputStream;
+import javax.jcr.Binary;
+import javax.jcr.NamespaceRegistry;
+import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.sequencer.classfile.metadata.ClassFileMetadataReader;
 import org.modeshape.sequencer.classfile.metadata.ClassMetadata;
-import java.io.IOException;
 
 @ThreadSafe
 public class ClassFileSequencer extends Sequencer {
@@ -40,34 +45,42 @@ public class ClassFileSequencer extends Sequencer {
     private ClassFileRecorder classFileRecorder = DEFAULT_CLASS_FILE_RECORDER;
 
     @Override
-    public boolean execute( Property inputProperty, Node outputNode, Context context ) throws Exception {
+    public boolean execute( Property inputProperty,
+                            Node outputNode,
+                            Context context ) throws Exception {
         Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
-        ClassMetadata classMetadata = ClassFileMetadataReader.instance(binaryValue.getStream());
-        classFileRecorder.recordClass(context, outputNode, classMetadata);
-        return true;
+        InputStream stream = binaryValue.getStream();
+        try {
+            ClassMetadata classMetadata = ClassFileMetadataReader.instance(stream);
+            classFileRecorder.recordClass(context, outputNode, classMetadata);
+            return true;
+        } finally {
+            stream.close();
+        }
     }
 
     @Override
-    public void initialize( NamespaceRegistry registry, NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
+    public void initialize( NamespaceRegistry registry,
+                            NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         registerNodeTypes("sequencer-classfile.cnd", nodeTypeManager, true);
     }
 
     /**
      * Sets the custom {@link ClassFileRecorder} by specifying a class name. This method attempts to instantiate an instance of
      * the custom {@link ClassFileRecorder} class prior to ensure that the new value represents a valid implementation.
-     *
+     * 
      * @param classFileRecorderClassName the fully-qualified class name of the new custom class file recorder implementation; null
-     * indicates that {@link DefaultClassFileRecorder the default class file recorder} should be used.
+     *        indicates that {@link DefaultClassFileRecorder the default class file recorder} should be used.
      * @throws ClassNotFoundException if the the class for the {@code ClassFileRecorder} implementation cannot be located
      * @throws IllegalAccessException if the row factory class or its nullary constructor is not accessible.
      * @throws InstantiationException if the row factory represents an abstract class, an interface, an array class, a primitive
-     * type, or void; or if the class has no nullary constructor; or if the instantiation fails for some other reason.
+     *         type, or void; or if the class has no nullary constructor; or if the instantiation fails for some other reason.
      * @throws ClassCastException if the instantiated class file recorder does not implement the {@link ClassFileRecorder}
-     * interface
+     *         interface
      */
     public void setClassFileRecorderClassName( String classFileRecorderClassName )
-            throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+        throws ClassNotFoundException, IllegalAccessException, InstantiationException {
 
         if (classFileRecorderClassName == null) {
             this.classFileRecorder = DEFAULT_CLASS_FILE_RECORDER;
@@ -81,9 +94,9 @@ public class ClassFileSequencer extends Sequencer {
     /**
      * Sets a custom {@link ClassFileRecorder}. If {@code classFileRecorder} is null, then the {@link DefaultClassFileRecorder
      * default class file recorder} will be used.
-     *
+     * 
      * @param classFileRecorder the new custom class file recorder implementation; null indicates that
-     * {@link DefaultClassFileRecorder the default class file recorder} should be used.
+     *        {@link DefaultClassFileRecorder the default class file recorder} should be used.
      */
     public void setClassFileRecorder( ClassFileRecorder classFileRecorder ) {
         this.classFileRecorder = classFileRecorder == null ? DEFAULT_CLASS_FILE_RECORDER : classFileRecorder;

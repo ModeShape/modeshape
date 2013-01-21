@@ -26,6 +26,7 @@ package org.modeshape.sequencer.wsdl;
 
 import static org.modeshape.sequencer.wsdl.WsdlLexicon.WSDL_DOCUMENT;
 import java.io.IOException;
+import java.io.InputStream;
 import javax.jcr.Binary;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -70,7 +71,12 @@ public class WsdlSequencer extends AbstractSrampSequencer {
         }
 
         String baseUri = inputProperty.getParent().getPath();
-        new Wsdl11Reader(context, baseUri).read(binaryValue.getStream(), outputNode);
+        InputStream stream = binaryValue.getStream();
+        try {
+            new Wsdl11Reader(context, baseUri).read(stream, outputNode);
+        } finally {
+            stream.close();
+        }
         return true;
     }
 }
