@@ -24,6 +24,7 @@
 package org.modeshape.sequencer.ddl;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -42,10 +43,10 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import org.modeshape.common.annotation.NotThreadSafe;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
@@ -189,15 +190,18 @@ public class DdlSequencer extends Sequencer {
 
         // Perform the parsing
         final AstNode rootNode;
+        DdlParsers parsers = createParsers(getParserList());
+        InputStream stream = ddlContent.getStream();
         try {
-            DdlParsers parsers = createParsers(getParserList());
-            rootNode = parsers.parse(IoUtil.read(ddlContent.getStream()), fileName);
+            rootNode = parsers.parse(IoUtil.read(stream), fileName);
         } catch (ParsingException e) {
             LOGGER.error(e, DdlSequencerI18n.errorParsingDdlContent, e.getLocalizedMessage());
             return false;
         } catch (IOException e) {
             LOGGER.error(e, DdlSequencerI18n.errorSequencingDdlContent, e.getLocalizedMessage());
             return false;
+        } finally {
+            stream.close();
         }
 
         Queue<AstNode> queue = new LinkedList<AstNode>();
