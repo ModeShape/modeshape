@@ -666,7 +666,9 @@ public class LuceneSearchSession implements WorkspaceSession {
             ExecutionContext execContext = processor.getExecutionContext();
             TextExtractor extractor = execContext.getTextExtractor();
             if (!(extractor instanceof TextExtractors) || ((TextExtractors)extractor).size() != 0) {
-                logger.trace("Found {0} text extractors", ((TextExtractors) extractor).size());
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Found {0} text extractors", ((TextExtractors) extractor).size());
+                }
                 // Find the mime type for the content ...
                 MimeTypeDetector detector = execContext.getMimeTypeDetector();
                 String contentName = nameStr;
