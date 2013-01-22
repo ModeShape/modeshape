@@ -146,16 +146,19 @@ public class TikaTextExtractorTest {
         String rndString = randomString(DEFAULT_TIKA_WRITE_LIMIT + 1);
 
         File tempFile = File.createTempFile("tika_extraction_",  ".txt");
-        tempFile.deleteOnExit();
-        IoUtil.write(rndString, tempFile);
+        try {
+            IoUtil.write(rndString, tempFile);
 
-        SimpleProblems problems = new SimpleProblems();
-        TextExtractorContext context = new TextExtractorContext(execContext, path(tempFile.getName()), inputProperties, "text/plain",
-                                                                problems);
+            SimpleProblems problems = new SimpleProblems();
+            TextExtractorContext context = new TextExtractorContext(execContext, path(tempFile.getName()), inputProperties, "text/plain",
+                                                                    problems);
 
-        extractor.extractFrom(new FileInputStream(tempFile), new StringTextExtractorOutput(), context);
+            extractor.extractFrom(new FileInputStream(tempFile), new StringTextExtractorOutput(), context);
 
-        assertEquals(1, problems.size());
+            assertEquals(1, problems.size());
+        } finally {
+            tempFile.delete();
+        }
     }
 
     @Test
@@ -165,19 +168,22 @@ public class TikaTextExtractorTest {
         String rndString = randomString(stringLength);
 
         File tempFile = File.createTempFile("tika_extraction_",  ".txt");
-        tempFile.deleteOnExit();
-        IoUtil.write(rndString, tempFile);
+        try {
+            IoUtil.write(rndString, tempFile);
 
-        SimpleProblems problems = new SimpleProblems();
-        TextExtractorContext context = new TextExtractorContext(execContext, path(tempFile.getName()), inputProperties, "text/plain",
-                                                                problems);
-        StringTextExtractorOutput output = new StringTextExtractorOutput();
+            SimpleProblems problems = new SimpleProblems();
+            TextExtractorContext context = new TextExtractorContext(execContext, path(tempFile.getName()), inputProperties, "text/plain",
+                                                                    problems);
+            StringTextExtractorOutput output = new StringTextExtractorOutput();
 
-        extractor.setWriteLimit(stringLength);
-        extractor.extractFrom(new FileInputStream(tempFile), output, context);
+            extractor.setWriteLimit(stringLength);
+            extractor.extractFrom(new FileInputStream(tempFile), output, context);
 
-        assertTrue(problems.toString(), problems.isEmpty());
-        assertEquals(rndString, output.toString());
+            assertTrue(problems.toString(), problems.isEmpty());
+            assertEquals(rndString, output.toString());
+        } finally {
+            tempFile.delete();
+        }
     }
 
     public static String randomString(int length) {
