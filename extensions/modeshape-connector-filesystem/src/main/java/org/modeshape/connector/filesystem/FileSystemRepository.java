@@ -192,12 +192,6 @@ public class FileSystemRepository extends Repository<PathNode, FileSystemWorkspa
             return new FileSystemWorkspace(this.getContext(), repository, name);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.connector.base.PathTransaction#validateNode(org.modeshape.graph.connector.base.PathWorkspace,
-         *      org.modeshape.graph.connector.base.PathNode)
-         */
         @Override
         protected void validateNode( FileSystemWorkspace workspace,
                                      PathNode node ) {
@@ -268,11 +262,6 @@ public class FileSystemRepository extends Repository<PathNode, FileSystemWorkspa
             super.process(request);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.connector.base.Processor#process(org.modeshape.graph.request.VerifyWorkspaceRequest)
-         */
         @Override
         public void process( VerifyWorkspaceRequest request ) {
             FileSystemWorkspace workspace = getWorkspace(request, request.workspaceName());
@@ -282,11 +271,6 @@ public class FileSystemRepository extends Repository<PathNode, FileSystemWorkspa
             }
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.request.processor.RequestProcessor#absoluteMaximumDepthForBranchReads()
-         */
         @Override
         protected int absoluteMaximumDepthForBranchReads() {
             // never read more than two levels from a file system repository, as the file content can get too big
