@@ -438,10 +438,15 @@ public class FileSystemConnector extends Connector {
             writer.setPrimaryType(NT_FOLDER);
             writer.addProperty(JCR_CREATED, factories().getDateFactory().create(file.lastModified()));
             writer.addProperty(JCR_CREATED_BY, null); // ignored
-            for (String childName : file.list(filenameFilter)) {
-                // We use identifiers that contain the file/directory name ...
-                String childId = isRoot ? DELIMITER + childName : id + DELIMITER + childName;
-                writer.addChild(childId, childName);
+            for (File child : file.listFiles(filenameFilter)) {
+                // Only include as a child if we can access and read the file. Permissions might prevent us from
+                // reading the file, and the file might not exist if it is a broken symlink (see MODE-1768 for details).
+                if (child.exists() && child.canRead() && (child.isFile() || child.isDirectory())) {
+                    // We use identifiers that contain the file/directory name ...
+                    String childName = child.getName();
+                    String childId = isRoot ? DELIMITER + childName : id + DELIMITER + childName;
+                    writer.addChild(childId, childName);
+                }
             }
         }
         // Set the reference to the parent ...
