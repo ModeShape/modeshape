@@ -569,6 +569,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> implements NodeCaching
             if (file == null) return null;
 
             if (file.isDirectory()) {
+                List<String> children = new ArrayList<String>();
                 String[] childNames = null;
                 int attempts = 5;
                 while (childNames == null && (--attempts) >= 0) {
@@ -583,9 +584,19 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> implements NodeCaching
                                                        path.getString(registry));
                     return null;
                 }
-                Arrays.sort(childNames);
 
-                List<Segment> childSegments = new ArrayList<Segment>(childNames.length);
+                for (String childName : childNames) {
+                    File child = new File(file, childName);
+                    //in the case of dangling symbolic links on Linux, exists() should return false
+                    //see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4956115
+                    if (!child.exists() || !child.canRead() || !(child.isDirectory() || child.isFile())) {
+                        continue;
+                    }
+                    children.add(childName);
+                }
+                Collections.sort(children);
+
+                List<Segment> childSegments = new ArrayList<Segment>(children.size());
                 for (String childName : childNames) {
                     childSegments.add(pathFactory.createSegment(childName));
                 }
@@ -654,11 +665,6 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> implements NodeCaching
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.base.PathWorkspace#verifyNodeExists(org.modeshape.graph.property.Path)
-     */
     @Override
     public Location verifyNodeExists( Path path ) {
         File file = fileFor(path, true);
