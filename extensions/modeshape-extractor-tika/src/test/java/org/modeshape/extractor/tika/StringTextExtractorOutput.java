@@ -29,11 +29,6 @@ public class StringTextExtractorOutput implements TextExtractorOutput {
 
     private final StringBuilder sb = new StringBuilder();
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.text.TextExtractorOutput#recordText(java.lang.String)
-     */
     @Override
     public void recordText( String text ) {
         if (text != null) {
@@ -42,11 +37,6 @@ public class StringTextExtractorOutput implements TextExtractorOutput {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         return sb.toString();

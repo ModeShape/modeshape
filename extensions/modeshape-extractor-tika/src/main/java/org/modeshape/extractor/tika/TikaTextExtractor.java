@@ -97,20 +97,13 @@ public class TikaTextExtractor implements TextExtractor {
     private final Set<String> supportedMediaTypes = new HashSet<String>();
 
     private final Lock initLock = new ReentrantLock();
+    private Integer writeLimit;
     private DefaultParser parser;
 
-    /**
-     * 
-     */
     public TikaTextExtractor() {
         this.excludedMimeTypes.addAll(DEFAULT_EXCLUDED_MIME_TYPES);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.text.TextExtractor#supportsMimeType(java.lang.String)
-     */
     @Override
     public boolean supportsMimeType( String mimeType ) {
         if (excludedMimeTypes.contains(mimeType)) return false;
@@ -119,12 +112,6 @@ public class TikaTextExtractor implements TextExtractor {
                                                                                       && includedMimeTypes.contains(mimeType);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.text.TextExtractor#extractFrom(java.io.InputStream, org.modeshape.graph.text.TextExtractorOutput,
-     *      org.modeshape.graph.text.TextExtractorContext)
-     */
     @Override
     public void extractFrom( InputStream stream,
                              TextExtractorOutput output,
@@ -133,7 +120,7 @@ public class TikaTextExtractor implements TextExtractor {
         Metadata metadata = prepareMetadata(stream, context);
 
         try {
-            ContentHandler textHandler = new BodyContentHandler();
+            ContentHandler textHandler = writeLimit != null ? new BodyContentHandler(writeLimit) : new BodyContentHandler();
             // Parse the input stream ...
             parser.parse(stream, textHandler, metadata, new ParseContext());
 
@@ -162,8 +149,10 @@ public class TikaTextExtractor implements TextExtractor {
         if (StringUtil.isBlank(context.getMimeType())) {
             LOGGER.warn(TikaI18n.warnMimeTypeNotSet);
             metadata.set(Metadata.RESOURCE_NAME_KEY, context.getInputPath().getLastSegment().getString());
-            MediaType autoDetectedMimeType = new DefaultDetector(this.getClass().getClassLoader()).detect(stream, metadata);
-            metadata.set(Metadata.CONTENT_TYPE, autoDetectedMimeType.toString());
+            if (stream.markSupported()) {
+                MediaType autoDetectedMimeType = new DefaultDetector(this.getClass().getClassLoader()).detect(stream, metadata);
+                metadata.set(Metadata.CONTENT_TYPE, autoDetectedMimeType.toString());
+            }
         }
         else {
             metadata.set(Metadata.CONTENT_TYPE, context.getMimeType());
@@ -173,7 +162,7 @@ public class TikaTextExtractor implements TextExtractor {
 
     /**
      * This class lazily initializes the {@link DefaultParser} instance.
-     * 
+     *
      * @return the default parser; same as {@link #parser}
      */
     protected DefaultParser initialize() {
@@ -199,7 +188,7 @@ public class TikaTextExtractor implements TextExtractor {
     /**
      * Get the MIME types that are explicitly requested to be included. This list may not correspond to the MIME types that can be
      * handled via the available Parser implementations.
-     * 
+     *
      * @return the set of MIME types that are to be included; never null
      */
     public Set<String> getIncludedMimeTypes() {
@@ -208,7 +197,7 @@ public class TikaTextExtractor implements TextExtractor {
 
     /**
      * Set the MIME types that should be included. This method clears all previously-set excluded MIME types.
-     * 
+     *
      * @param includedMimeTypes the whitespace-delimited or comma-separated list of MIME types that are to be included
      */
     public void setIncludedMimeTypes( String includedMimeTypes ) {
@@ -221,7 +210,7 @@ public class TikaTextExtractor implements TextExtractor {
 
     /**
      * Add another MIME type that should be excluded. This method does not clear any included MIME types that were previously set.
-     * 
+     *
      * @param includedMimeType the MIME type that is to be included
      */
     public void addIncludedMimeType( String includedMimeType ) {
@@ -231,7 +220,7 @@ public class TikaTextExtractor implements TextExtractor {
 
     /**
      * Include the MIME type from extraction.
-     * 
+     *
      * @param mimeType MIME type that should be included
      */
     public void includeMimeType( String mimeType ) {
@@ -242,7 +231,7 @@ public class TikaTextExtractor implements TextExtractor {
 
     /**
      * Set the MIME types that should be excluded.
-     * 
+     *
      * @return the set of MIME types that are to be excluded; never null
      */
     public Set<String> getExcludedMimeTypes() {
@@ -251,7 +240,7 @@ public class TikaTextExtractor implements TextExtractor {
 
     /**
      * Set the MIME types that should be excluded. This method clears all previously-set excluded MIME types.
-     * 
+     *
      * @param excludedMimeTypes the whitespace-delimited or comma-separated list of MIME types that are to be excluded
      */
     public void setExcludedMimeTypes( String excludedMimeTypes ) {
@@ -264,7 +253,7 @@ public class TikaTextExtractor implements TextExtractor {
 
     /**
      * Add another MIME type that should be excluded. This method does not clear any excluded MIME types that were previously set.
-     * 
+     *
      * @param excludedMimeType the MIME type that is to be excluded
      */
     public void addExcludedMimeType( String excludedMimeType ) {
@@ -274,12 +263,38 @@ public class TikaTextExtractor implements TextExtractor {
 
     /**
      * Exclude the MIME type from extraction.
-     * 
+     *
      * @param mimeType MIME type that should be excluded
      */
     public void excludeMimeType( String mimeType ) {
         if (mimeType == null) return;
         mimeType = mimeType.trim();
         if (mimeType.length() != 0) excludedMimeTypes.add(mimeType);
+    }
+
+    /**
+     * Sets the write limit for the Tika parser, representing the maximum number of characters that should be extracted by the
+     * TIKA parser.
+     *
+     * @param writeLimit a {@link String} which represents the write limit; may be null
+     * @see BodyContentHandler#BodyContentHandler(int)
+     */
+    public void setWriteLimit( String writeLimit ) {
+        try {
+            setWriteLimit(Integer.valueOf(writeLimit));
+        } catch (NumberFormatException e) {
+            LOGGER.debug("Invalid value for writeLimit parameter: " + writeLimit);
+        }
+    }
+
+    /**
+     * Sets the write limit for the Tika parser, representing the maximum number of characters that should be extracted by the
+     * TIKA parser.
+     *
+     * @param writeLimit an {@link Integer} which represents the write limit; may be null
+     * @see BodyContentHandler#BodyContentHandler(int)
+     */
+    public void setWriteLimit( Integer writeLimit ) {
+        this.writeLimit = writeLimit;
     }
 }
