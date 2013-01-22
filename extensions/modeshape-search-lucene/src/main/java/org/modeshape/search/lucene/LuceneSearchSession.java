@@ -661,10 +661,12 @@ public class LuceneSearchSession implements WorkspaceSession {
 
         // Process the binary properties ...
         if (binaryProperties != null) {
+            logger.trace("Detected binary properties, attempting text extraction....");
             // Get the text extractor ...
             ExecutionContext execContext = processor.getExecutionContext();
             TextExtractor extractor = execContext.getTextExtractor();
             if (!(extractor instanceof TextExtractors) || ((TextExtractors)extractor).size() != 0) {
+                logger.trace("Found {0} text extractors", ((TextExtractors) extractor).size());
                 // Find the mime type for the content ...
                 MimeTypeDetector detector = execContext.getMimeTypeDetector();
                 String contentName = nameStr;
@@ -697,6 +699,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                                     stream.close();
                                     stream = binary.getStream();
                                 }
+                                logger.trace("Extracting text from binary property: {0} with mime-type: {1}", binaryProp.getName(), mimeType);
                                 TextExtractorContext context = new TextExtractorContext(execContext, path, nonBinaryProperties,
                                                                                         mimeType, problems);
                                 extractor.extractFrom(stream, output, context);
@@ -712,12 +715,17 @@ public class LuceneSearchSession implements WorkspaceSession {
                         }
                     }
                 }
+            } else {
+                logger.trace("No text extractors found, ignoring binary properties");
             }
         }
 
         // Add the full-text-search field ...
         if (fullTextSearchValue.length() != 0) {
+            logger.trace("Extracted text: {0}", fullTextSearchValue);
             doc.add(new Field(ContentIndex.FULL_TEXT, fullTextSearchValue.toString(), Field.Store.NO, Field.Index.ANALYZED));
+        } else  {
+            logger.trace("Text extractors did not manage to extract any text");
         }
         if (logger.isTraceEnabled()) {
             logger.trace("index for \"{0}\" workspace: ADD {1} {2}", workspace.getWorkspaceName(), pathStr, doc);

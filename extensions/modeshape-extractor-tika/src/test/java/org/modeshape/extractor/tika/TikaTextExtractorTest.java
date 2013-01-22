@@ -26,17 +26,23 @@ package org.modeshape.extractor.tika;
 import org.apache.tika.exception.TikaException;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.IoUtil;
@@ -48,6 +54,10 @@ import org.modeshape.graph.text.TextExtractorOutput;
 import org.xml.sax.SAXException;
 
 public class TikaTextExtractorTest {
+
+    private static final int DEFAULT_TIKA_WRITE_LIMIT = 100000;
+    private static final String CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final Random RANDOM = new Random();
 
     private TikaTextExtractor extractor;
     private ExecutionContext execContext;
@@ -128,6 +138,54 @@ public class TikaTextExtractorTest {
     public void shouldExtractTextFromPdfFileGS() throws IOException, SAXException, TikaException {
         extractTermsFrom("modeshape_gs.pdf");
         assertExtractedMatchesExpected();
+    }
+
+    @Test
+    @FixFor( "MODE-1561" )
+    public void shouldNotExtractPastDefaultTikaWriteLimit() throws IOException {
+        String rndString = randomString(DEFAULT_TIKA_WRITE_LIMIT + 1);
+
+        File tempFile = File.createTempFile("tika_extraction_",  ".txt");
+        tempFile.deleteOnExit();
+        IoUtil.write(rndString, tempFile);
+
+        SimpleProblems problems = new SimpleProblems();
+        TextExtractorContext context = new TextExtractorContext(execContext, path(tempFile.getName()), inputProperties, "text/plain",
+                                                                problems);
+
+        extractor.extractFrom(new FileInputStream(tempFile), new StringTextExtractorOutput(), context);
+
+        assertEquals(1, problems.size());
+    }
+
+    @Test
+    @FixFor( "MODE-1561" )
+    public void shouldExtractPastTikaWriteLimitIfConfigured() throws Exception {
+        int stringLength = DEFAULT_TIKA_WRITE_LIMIT + 1;
+        String rndString = randomString(stringLength);
+
+        File tempFile = File.createTempFile("tika_extraction_",  ".txt");
+        tempFile.deleteOnExit();
+        IoUtil.write(rndString, tempFile);
+
+        SimpleProblems problems = new SimpleProblems();
+        TextExtractorContext context = new TextExtractorContext(execContext, path(tempFile.getName()), inputProperties, "text/plain",
+                                                                problems);
+        StringTextExtractorOutput output = new StringTextExtractorOutput();
+
+        extractor.setWriteLimit(stringLength);
+        extractor.extractFrom(new FileInputStream(tempFile), output, context);
+
+        assertTrue(problems.toString(), problems.isEmpty());
+        assertEquals(rndString, output.toString());
+    }
+
+    public static String randomString(int length) {
+        StringBuilder rndStringBuilder = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            rndStringBuilder.append(CHARS.charAt(RANDOM.nextInt(CHARS.length())));
+        }
+        return rndStringBuilder.toString();
     }
 
     @Test

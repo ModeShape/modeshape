@@ -32,6 +32,8 @@
         <mode:repository jcr:name="Content" mode:source="Store">
             <mode:options>
                 <mode:option jcr:name="jaasLoginConfigName" value="modeshape-jcr"/>
+                <mode:option jcr:name="queryIndexesUpdatedSynchronously" value="true"/>
+                <mode:option jcr:name="queryIndexDirectory" mode:value="./target/index" />
             </mode:options>
             <jcr:nodeTypes>
                 <mode:resource>/org/modeshape/sequencer/msoffice/msoffice.cnd</mode:resource>
@@ -56,6 +58,7 @@
         <mode:textExtractor jcr:name="Tika Extractor">
             <mode:description>Text extractor that uses the Tika library of parsers</mode:description>        
             <mode:classname>org.modeshape.extractor.tika.TikaTextExtractor</mode:classname>
+            <mode:writeLimit>100</mode:writeLimit>
         </mode:textExtractor>
     </mode:textExtractors>
 </configuration>
