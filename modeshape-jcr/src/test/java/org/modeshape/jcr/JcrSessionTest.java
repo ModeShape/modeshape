@@ -67,6 +67,7 @@ import org.mockito.Mockito;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.api.AnonymousCredentials;
+import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.value.Path;
 
 public class JcrSessionTest extends SingleUseAbstractTest {
@@ -894,6 +895,128 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         assertThat(node1.hasProperty("notion:stringAutoCreatedPropertyWithDefault"), is(true));
         assertThat(node1.getProperty("notion:booleanAutoCreatedPropertyWithDefault").getBoolean(), is(true));
         assertThat(node1.getProperty("notion:stringAutoCreatedPropertyWithDefault").getString(), is("default string value"));
+    }
+
+    @FixFor( "MODE-1767" )
+    @Test
+    public void shouldAutomaticallyAddMimeTypePropertyToNtResourceUponSave() throws Exception {
+        // Start the repository ...
+        ClassLoader cl = getClass().getClassLoader();
+        startRepositoryWithConfiguration(cl.getResourceAsStream("config/simple-repo-config.json"));
+
+        // Add a node under which we'll do our work ...
+        Node node1 = session.getRootNode().addNode("node1");
+        session.save();
+
+        // Upload a file
+        JcrTools tools = new JcrTools();
+        tools.uploadFile(session, "/node1/simple.json", getResourceFile("data/simple.json"));
+        Node fileNode = node1.getNode("simple.json");
+        Node contentNode = fileNode.getNode("jcr:content");
+        assertThat(contentNode.getPrimaryNodeType().getName(), is("nt:resource"));
+        assertThat(contentNode.hasProperty("jcr:mimeType"), is(false));
+        assertThat(contentNode.hasProperty("jcr:data"), is(true));
+
+        // Save the session, and verify that the "jcr:mimeType" property is added ...
+        session.save();
+        assertThat(contentNode.hasProperty("jcr:data"), is(true));
+        assertThat(contentNode.hasProperty("jcr:mimeType"), is(true));
+        assertThat(contentNode.getProperty("jcr:mimeType").getString(), is("application/json"));
+    }
+
+    @FixFor( "MODE-1767" )
+    @Test
+    public void shouldAutomaticallyAddMimeTypePropertyToNtResourceSubtypeUponSave() throws Exception {
+        // Start the repository ...
+        ClassLoader cl = getClass().getClassLoader();
+        startRepositoryWithConfiguration(cl.getResourceAsStream("config/simple-repo-config.json"));
+
+        // Register a new node type that is a subtype of 'nt:resource'
+        NodeTypeManager ntMgr = session.getWorkspace().getNodeTypeManager();
+        NodeTypeTemplate template = ntMgr.createNodeTypeTemplate();
+        template.setDeclaredSuperTypeNames(new String[] {"nt:resource"});
+        template.setName("customResourceType");
+        NodeType ntResourceSubtype = ntMgr.registerNodeType(template, false);
+        assertThat(ntResourceSubtype.getDeclaredSupertypes()[0].getName(), is("nt:resource"));
+
+        // Add a node under which we'll do our work ...
+        Node node1 = session.getRootNode().addNode("node1");
+        session.save();
+
+        // Upload a file
+        JcrTools tools = new JcrTools();
+        tools.uploadFile(session, "/node1/simple.json", getResourceFile("data/simple.json"));
+        Node fileNode = node1.getNode("simple.json");
+        Node contentNode = fileNode.getNode("jcr:content");
+        contentNode.setPrimaryType(ntResourceSubtype.getName());
+        assertThat(contentNode.getPrimaryNodeType().getName(), is(ntResourceSubtype.getName()));
+        assertThat(contentNode.hasProperty("jcr:mimeType"), is(false));
+        assertThat(contentNode.hasProperty("jcr:data"), is(true));
+
+        // Save the session, and verify that the "jcr:mimeType" property is added ...
+        session.save();
+        assertThat(contentNode.hasProperty("jcr:data"), is(true));
+        assertThat(contentNode.hasProperty("jcr:mimeType"), is(true));
+        assertThat(contentNode.getProperty("jcr:mimeType").getString(), is("application/json"));
+    }
+
+    @FixFor( "MODE-1767" )
+    @Test
+    public void shouldNotOverrideManuallyAddedMimeTypePropertyToNtResourceUponSave() throws Exception {
+        // Start the repository ...
+        ClassLoader cl = getClass().getClassLoader();
+        startRepositoryWithConfiguration(cl.getResourceAsStream("config/simple-repo-config.json"));
+
+        // Add a node under which we'll do our work ...
+        Node node1 = session.getRootNode().addNode("node1");
+        session.save();
+
+        // Upload a file
+        JcrTools tools = new JcrTools();
+        tools.uploadFile(session, "/node1/simple.json", getResourceFile("data/simple.json"));
+        Node fileNode = node1.getNode("simple.json");
+        Node contentNode = fileNode.getNode("jcr:content");
+        contentNode.setProperty("jcr:mimeType", "bogus");
+        assertThat(contentNode.getPrimaryNodeType().getName(), is("nt:resource"));
+        assertThat(contentNode.getProperty("jcr:mimeType").getString(), is("bogus"));
+        assertThat(contentNode.hasProperty("jcr:data"), is(true));
+
+        // Save the session, and verify that the "jcr:mimeType" property is added ...
+        session.save();
+        assertThat(contentNode.hasProperty("jcr:data"), is(true));
+        assertThat(contentNode.hasProperty("jcr:mimeType"), is(true));
+        assertThat(contentNode.getProperty("jcr:mimeType").getString(), is("bogus"));
+    }
+
+    @FixFor( "MODE-1767" )
+    @Test
+    public void shouldNotAddMimeTypePropertyUnderNtFileIfContentNodeIsNotNtResource() throws Exception {
+        // Start the repository ...
+        ClassLoader cl = getClass().getClassLoader();
+        startRepositoryWithConfiguration(cl.getResourceAsStream("config/simple-repo-config.json"));
+
+        // Add a node under which we'll do our work ...
+        Node node1 = session.getRootNode().addNode("node1");
+        session.save();
+
+        // Upload a file
+        JcrTools tools = new JcrTools();
+        tools.uploadFile(session, "/node1/simple.json", getResourceFile("data/simple.json"));
+        Node fileNode = node1.getNode("simple.json");
+        Node contentNode = fileNode.getNode("jcr:content");
+        assertThat(contentNode.getPrimaryNodeType().getName(), is("nt:resource"));
+        contentNode.setPrimaryType("nt:unstructured");
+        assertThat(contentNode.hasProperty("jcr:mimeType"), is(false));
+        assertThat(contentNode.hasProperty("jcr:data"), is(true));
+
+        // Save the session, and verify that the "jcr:mimeType" property is added ...
+        session.save();
+        assertThat(contentNode.hasProperty("jcr:mimeType"), is(false));
+        assertThat(contentNode.hasProperty("jcr:data"), is(true));
+    }
+
+    protected InputStream getResourceFile( String path ) {
+        return getClass().getClassLoader().getResourceAsStream(path);
     }
 
     /**
