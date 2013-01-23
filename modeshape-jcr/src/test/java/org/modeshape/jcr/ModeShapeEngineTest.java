@@ -39,6 +39,7 @@ import org.infinispan.schematic.document.Editor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.ClientLoad.Client;
 import org.modeshape.jcr.ClientLoad.ClientResultProcessor;
 import org.modeshape.jcr.ModeShapeEngine.State;
@@ -348,5 +349,20 @@ public class ModeShapeEngineTest extends AbstractTransactionalTest {
         assertThat(exprs2.size(), is(2));
         assertThat((String)exprs2.get(0), is("//*.ddl"));
         assertThat((String)exprs2.get(1), is("//*.xml"));
+    }
+
+    @FixFor( "MODE-1769" )
+    @Test
+    public void shouldAllowUsingAsyncCacheStore() throws Exception {
+        URL configUrl = getClass().getClassLoader().getResource("config/repo-config-persistent-async-cache.json");
+        engine.start();
+        config = RepositoryConfiguration.read(configUrl);
+        JcrRepository repository = engine.deploy(config);
+        Session session = null;
+        try {
+            session = repository.login();
+        } finally {
+            if (session != null) session.logout();
+        }
     }
 }
