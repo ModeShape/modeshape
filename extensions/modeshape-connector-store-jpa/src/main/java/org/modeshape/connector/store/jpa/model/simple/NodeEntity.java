@@ -429,21 +429,11 @@ public class NodeEntity implements Serializable {
         this.referentialIntegrityEnforced = referentialIntegrityEnforced;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#hashCode()
-     */
     @Override
     public int hashCode() {
         return HashCode.compute(id);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
@@ -455,11 +445,6 @@ public class NodeEntity implements Serializable {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

@@ -208,6 +208,15 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     private static final boolean DEFAULT_COMPRESS_DATA = true;
     private static final boolean DEFAULT_ENFORCE_REFERENTIAL_INTEGRITY = true;
 
+    private static final int[] ISOLATION_LEVELS = new int[] { Connection.TRANSACTION_NONE,
+            Connection.TRANSACTION_READ_COMMITTED, Connection.TRANSACTION_READ_UNCOMMITTED,
+            Connection.TRANSACTION_REPEATABLE_READ, Connection.TRANSACTION_SERIALIZABLE };
+
+    static {
+        //sort them, so we can perform binary search
+        Arrays.sort(ISOLATION_LEVELS);
+    }
+
     /**
      * The {@link #getAutoGenerateSchema() automatic schema generation setting} that should be used in production is "{@value} ".
      * When using this value, the connector assumes that the database schema is already configured properly, and nothing will be
@@ -1112,18 +1121,18 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             isolationLevel = DEFAULT_ISOLATION_LEVEL;
         }
 
-        if (isolationLevel != DEFAULT_ISOLATION_LEVEL && isolationLevel != Connection.TRANSACTION_NONE
-            && isolationLevel != Connection.TRANSACTION_READ_COMMITTED
-            && isolationLevel != Connection.TRANSACTION_READ_UNCOMMITTED
-            && isolationLevel != Connection.TRANSACTION_REPEATABLE_READ && isolationLevel != Connection.TRANSACTION_SERIALIZABLE) {
+        if (isolationLevel.equals(this.isolationLevel)) {
+            return;
+        }
+
+        if (Arrays.binarySearch(ISOLATION_LEVELS, isolationLevel) < 0) {
             throw new RepositorySourceException(this.name, JpaConnectorI18n.invalidIsolationLevel.text(isolationLevel));
         }
 
-        if (this.isolationLevel == isolationLevel) return;
-
-        EntityManagers oldEntityManagers = this.entityManagers;
-        this.entityManagers = null;
-        oldEntityManagers.close();
+        if (this.entityManagers != null) {
+            this.entityManagers.close();
+            this.entityManagers = null;
+        }
 
         this.isolationLevel = isolationLevel;
     }
