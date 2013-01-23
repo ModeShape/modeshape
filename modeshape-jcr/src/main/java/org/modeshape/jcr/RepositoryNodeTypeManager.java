@@ -769,6 +769,10 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
          */
         private final Set<Name> lastModifiedNodeTypeNames = new HashSet<Name>();
         /**
+         * The set of names for the node types that are 'mix:mimeType'. See {@link #isNtResource(Name)}
+         */
+        private final Set<Name> resourceNodeTypeNames = new HashSet<Name>();
+        /**
          * The set of names for the node types that are 'mix:etag'. See {@link #isETag(Name, Set)}
          */
         private final Set<Name> etagNodeTypeNames = new HashSet<Name>();
@@ -844,6 +848,10 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
                     }
                     if (nodeType.isNodeType(JcrMixLexicon.LAST_MODIFIED)) {
                         lastModifiedNodeTypeNames.add(name);
+                        fullyDefined = false;
+                    }
+                    if (nodeType.isNodeType(JcrNtLexicon.RESOURCE)) {
+                        resourceNodeTypeNames.add(name);
                         fullyDefined = false;
                     }
                     if (nodeType.isNodeType(JcrMixLexicon.ETAG)) {
@@ -979,7 +987,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         }
 
         /**
-         * Determine if at last one of the named primary node type or mixin types is or subtypes the 'mix:created' mixin type.
+         * Determine if at least one of the named primary node type or mixin types is or subtypes the 'mix:created' mixin type.
          * 
          * @param primaryType the primary type name; may not be null
          * @param mixinTypes the mixin type names; may not be null but may be empty
@@ -995,7 +1003,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         }
 
         /**
-         * Determine if at last one of the named primary node type or mixin types is or subtypes the 'mix:lastModified' mixin
+         * Determine if at least one of the named primary node type or mixin types is or subtypes the 'mix:lastModified' mixin
          * type.
          * 
          * @param primaryType the primary type name; may not be null
@@ -1012,7 +1020,18 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         }
 
         /**
-         * Determine if at last one of the named primary node type or mixin types is or subtypes the 'mix:etag' mixin type.
+         * Determine if the named primary node type is or subtypes the 'nt:resource' node type.
+         * 
+         * @param primaryType the primary type name; may not be null
+         * @return true if the primary node type is an 'nt:resource' node type (or subtype), or false otherwise
+         */
+        public boolean isNtResource( Name primaryType ) {
+            // 'nt:resource' is a node type (not a mixin), so it can't appear in the mixin types ...
+            return resourceNodeTypeNames.contains(primaryType);
+        }
+
+        /**
+         * Determine if at least one of the named primary node type or mixin types is or subtypes the 'mix:etag' mixin type.
          * 
          * @param primaryType the primary type name; may not be null
          * @param mixinTypes the mixin type names; may not be null but may be empty
@@ -1028,7 +1047,8 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         }
 
         /**
-         * Determine if at last one of the named primary node type or mixin types is or subtypes the 'mix:versionable' mixin type.
+         * Determine if at least one of the named primary node type or mixin types is or subtypes the 'mix:versionable' mixin
+         * type.
          * 
          * @param primaryType the primary type name; may be null
          * @param mixinTypes the mixin type names; may not be null but may be empty
@@ -1124,8 +1144,9 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
         /**
          * Get the auto-created property definitions for the named node type. This method is used when
-         * {@link AbstractJcrNode#addChildNode(org.modeshape.jcr.value.Name, org.modeshape.jcr.value.Name, org.modeshape.jcr.cache.NodeKey, boolean) creating nodes}, which only needs the auto-created properties
-         * for the primary type. It's also used when {@link AbstractJcrNode#addMixin(String) adding a mixin}.
+         * {@link AbstractJcrNode#addChildNode(org.modeshape.jcr.value.Name, org.modeshape.jcr.value.Name, org.modeshape.jcr.cache.NodeKey, boolean)
+         * creating nodes}, which only needs the auto-created properties for the primary type. It's also used when
+         * {@link AbstractJcrNode#addMixin(String) adding a mixin}.
          * 
          * @param nodeType the node type name; may not be null
          * @return the collection of auto-created property definitions; never null but possibly empty
@@ -1136,8 +1157,9 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
         /**
          * Get the auto-created child node definitions for the named node type. This method is used when
-         * {@link AbstractJcrNode#addChildNode(org.modeshape.jcr.value.Name, org.modeshape.jcr.value.Name, org.modeshape.jcr.cache.NodeKey, boolean) creating nodes}, which only needs the auto-created properties
-         * for the primary type. It's also used when {@link AbstractJcrNode#addMixin(String) adding a mixin}.
+         * {@link AbstractJcrNode#addChildNode(org.modeshape.jcr.value.Name, org.modeshape.jcr.value.Name, org.modeshape.jcr.cache.NodeKey, boolean)
+         * creating nodes}, which only needs the auto-created properties for the primary type. It's also used when
+         * {@link AbstractJcrNode#addMixin(String) adding a mixin}.
          * 
          * @param nodeType the node type name; may not be null
          * @return the collection of auto-created child node definitions; never null but possibly empty

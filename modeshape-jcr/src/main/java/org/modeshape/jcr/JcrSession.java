@@ -70,6 +70,7 @@ import org.modeshape.jcr.JcrNamespaceRegistry.Behavior;
 import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.JcrSharedNodeCache.SharedSet;
 import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.monitor.DurationMetric;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.cache.CachedNode;
@@ -1668,10 +1669,45 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                     Reference historyRef = referenceFactory.create(historyKey, true);
                     Reference baseVersionRef = referenceFactory.create(baseVersionKey, true);
                     node.setProperty(cache, propertyFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
-                    node.setReference(cache, propertyFactory.create(JcrLexicon.VERSION_HISTORY, historyRef), systemContent.cache());
-                    node.setReference(cache, propertyFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef), systemContent.cache());
+                    node.setReference(cache,
+                                      propertyFactory.create(JcrLexicon.VERSION_HISTORY, historyRef),
+                                      systemContent.cache());
+                    node.setReference(cache,
+                                      propertyFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef),
+                                      systemContent.cache());
                     // JSR 283 - 15.1
-                    node.setReference(cache, propertyFactory.create(JcrLexicon.PREDECESSORS, new Object[] {baseVersionRef}), systemContent.cache());
+                    node.setReference(cache,
+                                      propertyFactory.create(JcrLexicon.PREDECESSORS, new Object[] {baseVersionRef}),
+                                      systemContent.cache());
+                }
+            }
+
+            // -----------
+            // nt:resource
+            // -----------
+            if (nodeTypeCapabilities.isNtResource(primaryType)) {
+                // If there is no "jcr:mimeType" property ...
+                if (!node.hasProperty(JcrLexicon.MIMETYPE, cache)) {
+                    // Try to get the MIME type for the binary value ...
+                    org.modeshape.jcr.value.Property dataProp = node.getProperty(JcrLexicon.DATA, cache);
+                    if (dataProp != null) {
+                        Object dataValue = dataProp.getFirstValue();
+                        if (dataValue instanceof Binary) {
+                            Binary binaryValue = (Binary)dataValue;
+                            // Get the name of this node's parent ...
+                            String fileName = null;
+                            NodeKey parentKey = node.getParentKey(cache);
+                            if (parentKey != null) {
+                                CachedNode parent = cache.getNode(parentKey);
+                                Name parentName = parent.getName(cache);
+                                fileName = stringFactory().create(parentName);
+                            }
+                            String mimeType = binaryValue.getMimeType(fileName);
+                            if (mimeType != null) {
+                                node.setProperty(cache, propertyFactory.create(JcrLexicon.MIMETYPE, mimeType));
+                            }
+                        }
+                    }
                 }
             }
 
