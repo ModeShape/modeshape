@@ -32,6 +32,7 @@ import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.context.Flag;
 import org.infinispan.eviction.EvictionStrategy;
+import org.infinispan.interceptors.IsMarshallableInterceptor;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionTable;
@@ -61,6 +62,11 @@ final class CacheContext {
         // We're clustered if the cache mode is not local ...
         this.clustered = config.clustering().cacheMode() != CacheMode.LOCAL;
 
+        // ********************************************************************************************************
+        // TODO 3.2 Remove all the version-specific code in our 3.2 release, since that will be upgrading ISPN 5.2.x
+        // See MODE-1771
+        // ********************************************************************************************************
+
         // At this point, we're always going to create a Delta object that ships the entire document, because
         // of problems we're having in ISPN 5.1.x. See MODE-1733 for details.
         boolean deltaConsistsOfChanges = false;
@@ -81,10 +87,26 @@ final class CacheContext {
                 LOGGER.debug("Failed to find DELTA_WRITE flag");
             }
         } else {
-            // This is before Infinispan 5.1.6.Final, so we can't actually use deltas. See MODE-1733 for details.
+            // This is before Infinispan 5.2.0, so we can't actually use deltas. See MODE-1733 for details.
             deltaConsistsOfChanges = false;
             LOGGER.debug("No DELTA_WRITE flag available");
         }
+
+        boolean pre520Final = ispnVersionActual < ispnVersion520
+                              || (ispnVersionActual == ispnVersion520 && !Version.VERSION.toLowerCase().endsWith("final"));
+        if (pre520Final && config.loaders().usingAsyncStore()) {
+            // This is one of the non-final releases of 5.2.0 or an earlier release, which has a bug when using an async cache
+            // store (see MODE-1733 and ISPN-2748). The workaround is to remove the IsMarshallableInterceptor ...
+            this.cache.removeInterceptor(IsMarshallableInterceptor.class);
+            LOGGER.debug("Removing IsMarshallableInterceptor from interceptor stack in pre-5.2.0.Final Infinispan cache '"
+                         + cache.getName() + "'");
+        }
+        LOGGER.trace("ispnVersionActual = " + ispnVersionActual);
+        LOGGER.trace("ispnVersion520    = " + ispnVersion520);
+        LOGGER.trace("Version.VERSION   = " + Version.VERSION);
+        LOGGER.trace("Version.VERSION.toLowerCase().endsWith('final') = " + Version.VERSION.toLowerCase().endsWith("final"));
+        LOGGER.trace("is pre-5.2.0.Final = " + pre520Final);
+        LOGGER.trace("config.loaders().usingAsyncStore()    = " + config.loaders().usingAsyncStore());
 
         EnumSet<Flag> flags = EnumSet.noneOf(Flag.class);
         flags.add(Flag.SKIP_REMOTE_LOOKUP);
