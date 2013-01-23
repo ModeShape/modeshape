@@ -62,6 +62,11 @@ final class CacheContext {
         // We're clustered if the cache mode is not local ...
         this.clustered = config.clustering().cacheMode() != CacheMode.LOCAL;
 
+        // ********************************************************************************************************
+        // TODO 3.2 Remove all the version-specific code in our 3.2 release, since that will be upgrading ISPN 5.2.x
+        // See MODE-1771
+        // ********************************************************************************************************
+
         // At this point, we're always going to create a Delta object that ships the entire document, because
         // of problems we're having in ISPN 5.1.x. See MODE-1733 for details.
         boolean deltaConsistsOfChanges = false;
