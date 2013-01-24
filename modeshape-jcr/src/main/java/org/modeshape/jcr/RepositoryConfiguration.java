@@ -140,9 +140,21 @@ public class RepositoryConfiguration {
 
     /**
      * The regexp pattern used to parse & validate projection path expressions. Expects [workspaceName]:/[projectedPath] =>
-     * [externalPath] expressions.
+     * [externalPath] expressions. The expression is:
+     * 
+     * <pre>
+     * (\w+):((([/]([^/=]|(\\.))+)+)|[/])\s*=>\s*((([/]([^/]|(\\.))+)+)|[/])
+     * </pre>
+     * 
+     * where:
+     * <ul>
+     * <li>Group 1 is the workspace name</li>
+     * <li>Group 2 is the path of the existing node</li>
+     * <li>Group 7 is the path in the external source</li>
+     * </ul>
      */
-    public final static Pattern PROJECTION_PATH_EXPRESSION_PATTERN = Pattern.compile("(\\w+):(/([a-zA-Z_0-9]/{0,1})+)\\s*=>\\s*([/a-zA-Z_0-9]+)");
+    private final static String PROJECTION_PATH_EXPRESSION_STRING = "(\\w+):((([/]([^/=]|(\\\\.))+)+)|[/])\\s*=>\\s*((([/]([^/]|(\\\\.))+)+)|[/])";
+    public final static Pattern PROJECTION_PATH_EXPRESSION_PATTERN = Pattern.compile(PROJECTION_PATH_EXPRESSION_STRING);
 
     final static TimeUnit GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT = TimeUnit.MINUTES;
 
@@ -2003,10 +2015,10 @@ public class RepositoryConfiguration {
 
                 workspaceName = expressionMatcher.group(1);
                 projectedPath = expressionMatcher.group(2);
-                if (projectedPath.endsWith("/")) {
+                if (projectedPath.endsWith("/") && projectedPath.length() > 1) {
                     projectedPath = projectedPath.substring(0, projectedPath.length() - 1);
                 }
-                externalPath = expressionMatcher.group(4);
+                externalPath = expressionMatcher.group(7);
             }
 
             /**
