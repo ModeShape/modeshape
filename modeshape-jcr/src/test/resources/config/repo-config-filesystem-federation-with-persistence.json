@@ -1,0 +1,28 @@
+{
+    "name" : "Federated repository",
+    "workspaces" : {
+        "predefined" : ["ws1", "ws2"],
+        "default" : "default",
+        "allowCreation" : true,
+        "initialContent" : {
+            "default" : "xmlImport/docWithFederationRoot.xml",
+        }
+    },
+    "storage" : {
+        "cacheName" : "persistentRepository",
+        "cacheConfiguration" : "config/infinispan-federation-persistent.xml"
+    },
+    "externalSources" : {
+        "targetDirectory" : {
+            "classname" : "filesystem",
+            "directoryPath" : "target",
+            "extraPropertiesStorage" : "none",
+            "projections" : [
+                "default:/federation/generated-sources => /generated-sources",
+                "default:/federation/surefire => /generated-surefire",
+                "default:/federation/classes => /classes",
+                "default:/federation/fs => /doesnt-exist"
+            ]
+        }
+    }
+}
