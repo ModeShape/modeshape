@@ -30,7 +30,9 @@ import java.io.InputStream;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Session;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
 
 public class FederationConfigurationTest extends SingleUseAbstractTest {
@@ -41,6 +43,8 @@ public class FederationConfigurationTest extends SingleUseAbstractTest {
         return stream;
     }
 
+    @Ignore
+    @FixFor( "MODE-1772" )
     @Test
     public void shouldStartRepositoryWithFileSystemConnectorAccessingAncestorOfCacheStoreDirectory() throws Exception {
         // Clean up and create some initial files ...
