@@ -23,6 +23,19 @@
  */
 package org.modeshape.test.integration.jpa;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import javax.jcr.Credentials;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.NamespaceRegistry;
@@ -33,13 +46,8 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.Workspace;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
 import org.junit.After;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -50,17 +58,11 @@ import org.modeshape.jcr.JaasTestUtil;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.test.ModeShapeUnitTest;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.GregorianCalendar;
-import java.util.Random;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 public class JcrRepositoryWithJpaSourceTest extends ModeShapeUnitTest {
 
@@ -274,7 +276,9 @@ public class JcrRepositoryWithJpaSourceTest extends ModeShapeUnitTest {
 
         File f = new File("./src/test/resources/test.txt");
 
-        if (!f.exists()) throw new Exception("File " + f.getAbsolutePath() + " is not found");
+        if (!f.exists()) {
+            throw new Exception("File " + f.getAbsolutePath() + " is not found");
+        }
         System.out.println("FILE: " + f.getAbsolutePath());
         InputStream is = new FileInputStream(f);
         content.setProperty("jcr:data", session.getValueFactory().createBinary(is));
@@ -286,7 +290,7 @@ public class JcrRepositoryWithJpaSourceTest extends ModeShapeUnitTest {
     }
 
     @Test
-    @FixFor("MODE-1421")
+    @FixFor( "MODE-1421" )
     public void removeItemAfterRegisteringSessionNamespace() throws Exception {
         NamespaceRegistry namespaceRegistry = session.getWorkspace().getNamespaceRegistry();
         namespaceRegistry.registerNamespace("rh", "http://www.redhat.com");
@@ -302,8 +306,8 @@ public class JcrRepositoryWithJpaSourceTest extends ModeShapeUnitTest {
     }
 
     @Test
-    @FixFor("MODE-1470")
-    @Ignore("Ignored atm because it doesn't reproduce the issue and takes quite a bit of time to run")
+    @FixFor( "MODE-1470" )
+    @Ignore( "Ignored atm because it doesn't reproduce the issue and takes quite a bit of time to run" )
     public void jpaEntityShouldNotHaveNullId() throws Exception {
         //create /foo nodes
         final int nodesCount = 100;
@@ -366,6 +370,67 @@ public class JcrRepositoryWithJpaSourceTest extends ModeShapeUnitTest {
         removerResult.get();
     }
 
+    @Test
+    @FixFor( "MODE-1623" )
+    @Ignore( "Ignored because this is a valid issue, which can be prevented using the mode:isolationLevel setting. See JIRA for more information ")
+    public void shouldNotCorruptDataWhenAddingSNSFromMultipleThreads() throws Exception {
+        List<Callable<Void>> callables = new ArrayList<Callable<Void>>();
+
+        int threadCount = 2;
+
+        for (int t = 0; t < threadCount; t++) {
+            callables.add(new Callable<Void>() {
+                public Void call() throws Exception {
+                    Random rand = new Random();
+                    for (int i = 0; i < 100; i++) {
+                        addDocumentGroupWithDocument(i);
+                        Thread.sleep(rand.nextInt(500));
+                    }
+
+                    return null;
+                }
+            });
+        }
+
+        List<Future<Void>> outcome = new ArrayList<Future<Void>>(callables.size());
+        for (Callable<Void> callable : callables) {
+            outcome.add(Executors.newSingleThreadExecutor().submit(callable));
+            Thread.sleep(1000);
+        }
+
+        for (Future<Void> future : outcome) {
+            future.get();
+        }
+    }
+
+    private String addDocumentGroupWithDocument( int iterationCount ) throws Exception {
+        Session session = null;
+
+        try {
+            session = repository.login();
+
+            Node rootNode = session.getRootNode();
+
+            // Store content
+            Node docGroupNode = rootNode.addNode("documentGroup");
+            docGroupNode.addNode("document");
+            //System.out.println("[Thread: " + Thread.currentThread().getId() + "][Iteration: " + iterationCount + "]" + " root node count:" + rootNode.getNodes().getSize());
+            session.save();
+
+            session.logout();
+            session = null;
+
+            System.out.println("[Thread: " + Thread.currentThread().getId() + "][Iteration: " + iterationCount + "] Added a new document");
+
+            return docGroupNode.getIdentifier();
+        } finally {
+            if (session != null) {
+                session.logout();
+            }
+        }
+    }
+
+
     protected void registerNodeTypes( String pathToCndResourceFile,
                                       Session session ) throws IOException, RepositoryException {
         // Register the cars node type(s) ...
@@ -402,7 +467,9 @@ public class JcrRepositoryWithJpaSourceTest extends ModeShapeUnitTest {
                                    String... expected ) {
         // Each expected must appear in the actuals ...
         for (String expect : expected) {
-            if (expect == null) continue;
+            if (expect == null) {
+                continue;
+            }
             boolean found = false;
             for (String actual : actuals) {
                 if (expect.equals(actual)) {

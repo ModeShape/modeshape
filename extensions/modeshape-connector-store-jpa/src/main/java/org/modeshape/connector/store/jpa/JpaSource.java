@@ -208,14 +208,11 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     private static final boolean DEFAULT_COMPRESS_DATA = true;
     private static final boolean DEFAULT_ENFORCE_REFERENTIAL_INTEGRITY = true;
 
-    private static final int[] ISOLATION_LEVELS = new int[] { Connection.TRANSACTION_NONE,
-            Connection.TRANSACTION_READ_COMMITTED, Connection.TRANSACTION_READ_UNCOMMITTED,
-            Connection.TRANSACTION_REPEATABLE_READ, Connection.TRANSACTION_SERIALIZABLE };
-
-    static {
-        //sort them, so we can perform binary search
-        Arrays.sort(ISOLATION_LEVELS);
-    }
+    private static final List<Integer> ISOLATION_LEVELS = Arrays.asList(Connection.TRANSACTION_NONE,
+                                                                        Connection.TRANSACTION_READ_COMMITTED,
+                                                                        Connection.TRANSACTION_READ_UNCOMMITTED,
+                                                                        Connection.TRANSACTION_REPEATABLE_READ,
+                                                                        Connection.TRANSACTION_SERIALIZABLE);
 
     /**
      * The {@link #getAutoGenerateSchema() automatic schema generation setting} that should be used in production is "{@value} ".
@@ -401,11 +398,6 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     private transient RepositoryContext repositoryContext;
     private transient UUID rootUuid = UUID.fromString(rootNodeUuid);
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.RepositorySource#getName()
-     */
     @Override
     public String getName() {
         return name;
@@ -428,11 +420,6 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         this.name = name;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.RepositorySource#getCapabilities()
-     */
     @Override
     public RepositorySourceCapabilities getCapabilities() {
         return capabilities;
@@ -521,21 +508,11 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         assert this.autoGenerateSchema.length() != 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.RepositorySource#getRetryLimit()
-     */
     @Override
     public int getRetryLimit() {
         return retryLimit;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.RepositorySource#setRetryLimit(int)
-     */
     @Override
     public synchronized void setRetryLimit( int limit ) {
         if (limit < 0) limit = 0;
@@ -1125,7 +1102,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             return;
         }
 
-        if (Arrays.binarySearch(ISOLATION_LEVELS, isolationLevel) < 0) {
+        if (!(ISOLATION_LEVELS.contains(isolationLevel))) {
             throw new RepositorySourceException(this.name, JpaConnectorI18n.invalidIsolationLevel.text(isolationLevel));
         }
 
@@ -1137,21 +1114,11 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         this.isolationLevel = isolationLevel;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.RepositorySource#initialize(org.modeshape.graph.connector.RepositoryContext)
-     */
     @Override
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
         this.repositoryContext = context;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.naming.Referenceable#getReference()
-     */
     @Override
     public Reference getReference() {
         String className = getClass().getName();
@@ -1210,9 +1177,6 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         return repositoryContext;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Object getObjectInstance( Object obj,
                                      javax.naming.Name name,
@@ -1304,11 +1268,6 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.RepositorySource#getConnection()
-     */
     @Override
     public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
         if (this.name == null || this.name.trim().length() == 0) {
@@ -1382,11 +1341,6 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         return model.createConnection(this);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.RepositorySource#close()
-     */
     @Override
     public synchronized void close() {
         if (entityManagers != null) {

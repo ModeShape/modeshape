@@ -162,11 +162,6 @@ public class SimpleRequestProcessor extends MapRequestProcessor {
         super.process(request);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.request.processor.RequestProcessor#process(org.modeshape.graph.request.CollectGarbageRequest)
-     */
     @Override
     public void process( CollectGarbageRequest request ) {
         boolean additionalPassRequired = !repository.collectGarbage();
