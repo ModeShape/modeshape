@@ -410,11 +410,11 @@ public class RepositoryService implements AdministeredService, Observer {
                     } else {
                         value = factory.create(property.getFirstValue());
                         // Convert to the correct primitive, if needed ...
-                        if (Integer.TYPE.equals(paramType)) {
+                        if (Integer.TYPE.equals(paramType) || Integer.class.equals(paramType)) {
                             value = new Integer(((Long)value).intValue());
-                        } else if (Short.TYPE.equals(paramType)) {
+                        } else if (Short.TYPE.equals(paramType) || Short.class.equals(paramType)) {
                             value = new Short(((Long)value).shortValue());
-                        } else if (Float.TYPE.equals(paramType)) {
+                        } else if (Float.TYPE.equals(paramType) || Float.class.equals(paramType)) {
                             value = new Float(((Double)value).floatValue());
                         }
                     }
