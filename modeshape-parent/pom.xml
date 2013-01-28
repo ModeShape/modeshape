@@ -871,6 +871,11 @@
                 <scope>provided</scope>
             </dependency>
             <dependency>
+                <groupId>org.jboss.spec.javax.resource</groupId>
+                <artifactId>jboss-connector-api_1.6_spec</artifactId>
+                <version>1.0.1.Final</version>
+            </dependency>
+            <dependency>
                 <groupId>org.jboss.spec.javax.security.jacc</groupId>
                 <artifactId>jboss-jacc-api_1.4_spec</artifactId>
                 <version>${javax.jacc.version}</version>
