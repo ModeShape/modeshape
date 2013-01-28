@@ -28,17 +28,18 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import org.modeshape.jcr.cache.NodeKey;
 
 /**
- *
+ * A Node implementation that is used to represent all nodes within the "/jcr:system" subgraph.
  */
 public class JcrSystemNode extends JcrNode {
 
-    /**
-     * @param session
-     * @param nodeKey
-     */
     JcrSystemNode( JcrSession session,
                    NodeKey nodeKey ) {
         super(session, nodeKey);
+    }
+
+    @Override
+    boolean isSystem() {
+        return true;
     }
 
     @Override

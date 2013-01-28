@@ -441,6 +441,26 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         }
     }
 
+    @SuppressWarnings( "deprecation" )
+    @Test
+    @FixFor( "MODE-1775" )
+    public void shouldFindVersionNodeByIdentifierAndByUuid() throws Exception {
+        registerNodeTypes(session, "cnd/versioning.cnd");
+
+        // Set up parent node and check it in ...
+        Node parent = session.getRootNode().addNode("versionableNode", "ver:versionable");
+        parent.setProperty("versionProp", "v");
+        parent.setProperty("copyProp", "c");
+        parent.setProperty("ignoreProp", "i");
+        session.save();
+        Version version = versionManager.checkin(parent.getPath());
+
+        // Now look for the version node by identifier, using the different ways to get an identifier ...
+        assertThat(session.getNodeByIdentifier(version.getIdentifier()), is((Node)version));
+        assertThat(session.getNodeByIdentifier(version.getProperty("jcr:uuid").getString()), is((Node)version));
+        assertThat(session.getNodeByUUID(version.getProperty("jcr:uuid").getString()), is((Node)version));
+    }
+
     private void registerNodeTypes( Session session,
                                     String resourcePathToCnd ) throws Exception {
         NodeTypeManager nodeTypes = (NodeTypeManager)session.getWorkspace().getNodeTypeManager();
