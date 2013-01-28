@@ -196,44 +196,72 @@
       </dependencies>
       <build>
         <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <version>${version.dependency.plugin}</version>
-            <executions>
-              <execution>
-                <id>unpack</id>
-                <phase>process-test-classes</phase>
-                <goals>
-                  <goal>unpack</goal>
-                </goals>
-                <configuration>
-                    <artifactItems>
-                        <!-- Unpack the JBoss AS7 version (from the Maven repository) into the 'target' directory -->
-                        <artifactItem>
-                            <groupId>org.jboss.as</groupId>
-                            <artifactId>jboss-as-dist</artifactId>
-                            <version>${jbossas-version}</version>
-                            <type>zip</type>
-                            <overWrite>false</overWrite>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                        </artifactItem>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${version.dependency.plugin}</version>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <!-- Unpack the JBoss AS7 version (from the Maven repository) into the 'target' directory -->
+                                <artifactItem>
+                                    <groupId>org.jboss.as</groupId>
+                                    <artifactId>jboss-as-dist</artifactId>
+                                    <version>${jbossas-version}</version>
+                                    <type>zip</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                </artifactItem>
 
-                        <!-- Unpack the ModeShape distribution which is installed (hopefully) locally-->
-                        <artifactItem>
-                            <groupId>org.modeshape</groupId>
-                            <artifactId>modeshape-distribution</artifactId>
-                            <version>${project.version}</version>
-                            <classifier>jbossas-${jbossas7.assembly.descriptor.version}-dist</classifier>
-                            <type>zip</type>
-                            <overWrite>false</overWrite>
+                                <!-- Unpack the ModeShape distribution which is installed (hopefully) locally-->
+                                <artifactItem>
+                                    <groupId>org.modeshape</groupId>
+                                    <artifactId>modeshape-distribution</artifactId>
+                                    <version>${project.version}</version>
+                                    <classifier>jbossas-${jbossas7.assembly.descriptor.version}-dist</classifier>
+                                    <type>zip</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/jboss-as-${jbossas-version}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--Copy & overwrite if necessary any test-specific files, including the configuration -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>${version.resources.plugin}</version>
+                <executions>
+                    <execution>
+                        <id>copy-test-profile</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
                             <outputDirectory>${project.build.directory}/jboss-as-${jbossas-version}</outputDirectory>
-                        </artifactItem>
-                    </artifactItems>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
+                            <overwrite>true</overwrite>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/resources/kit/jboss-as${jbossas7.assembly.descriptor.version}</directory>
+                                    <filtering>false</filtering>
+                                    <includes>
+                                        <include>**/*.*</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
       </build>
     </profile>
