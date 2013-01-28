@@ -28,10 +28,15 @@ import java.io.File;
 import javax.annotation.Resource;
 import javax.jcr.Node;
 import javax.jcr.query.Query;
+import org.jboss.arquillian.container.impl.client.container.ContainerRegistryCreator;
 import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.container.test.api.OperateOnDeployment;
+import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.jcr.JcrRepository;
@@ -48,6 +53,15 @@ import static junit.framework.Assert.assertNotNull;
  */
 @RunWith( Arquillian.class )
 public class FederationIntegrationTest {
+
+    static {
+        System.setProperty("arquillian.launch", "jboss7-test");
+    }
+
+    @AfterClass
+    public static void clearActiveContainer() {
+       System.clearProperty("arquillian.launch");
+    }
 
     @Resource( mappedName = "/jcr/federatedRepository" )
     private JcrRepository repository;

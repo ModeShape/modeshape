@@ -199,42 +199,6 @@
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
                     <file-store passivation="false" path="modeshape/store/artifacts" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
-                <local-cache name="preconfiguredRepository">
-                    <!-- ModeShape requires transactions -->
-                    <transaction mode="NON_XA"/>
-                    <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store passivation="false" path="modeshape/store/preconfiguredRepository" relative-to="jboss.server.data.dir" purge="false"/>
-                </local-cache>
-                <local-cache name="federatedRepository">
-                    <!-- ModeShape requires transactions -->
-                    <transaction mode="NON_XA"/>
-                    <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store passivation="false" path="modeshape/store/federatedRepository" relative-to="jboss.server.data.dir" purge="false"/>
-                </local-cache>
-            </cache-container>
-            <cache-container name="binary-cache-container" default-cache="binary-fs">
-                <local-cache name="binary-fs">
-                    <transaction mode="NON_XA"/>
-                    <file-store passivation="false" path="modeshape/binary-store/ispn-data" relative-to="jboss.server.data.dir" purge="false"/>
-                </local-cache>
-                <local-cache name="binary-fs-meta">
-                    <transaction mode="NON_XA"/>
-                    <file-store passivation="false" path="modeshape/binary-store/ispn-meta" relative-to="jboss.server.data.dir" purge="false"/>
-                </local-cache>
-            </cache-container>
-            <cache-container name="index-cache-container" default-cache="index-data">
-                <local-cache name="index-data" batching="true">
-                    <transaction mode="NON_XA"/>
-                    <file-store passivation="false" path="modeshape/index-cache-container" relative-to="jboss.server.data.dir" purge="false"/>
-                </local-cache>
-            </cache-container>
-            <!--Sample workspace cache container which should really be used only in special cases, when the provided default is not enough-->
-            <cache-container name="ws-cache-container" default-cache="ws-cache">
-                <local-cache name="ws-cache">
-                    <transaction mode="NON_XA"/>
-                    <eviction strategy="LRU" max-entries="100"/>
-                    <expiration lifespan="10000" interval="1000" max-idle="5000"/>
-                </local-cache>
             </cache-container>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:modeshape:1.0">
@@ -249,6 +213,7 @@
                     <workspace name="default"/>
                     <workspace name="other"/>
                     <workspace name="extra"/>
+                    <initial-content>initial-content-default.xml</initial-content>
                 </workspaces>
                 <!--
                 Define a bunch of sequencers. Carefully note the differences in the path expressions; some sequencers
@@ -320,43 +285,6 @@
                 <text-extractors>
                     <text-extractor name="tika-extractor" classname="tika" module="org.modeshape.extractor.tika"/>
                 </text-extractors>
-                <cache-binary-storage data-cache-name="binary-fs" metadata-cache-name="binary-fs-meta" cache-container="binary-cache-container"/>
-                <!--<db-binary-storage data-source-jndi-name="java:jboss/datasources/ModeshapeBinaryDS"/>-->
-            </repository>
-            <repository name="preconfiguredRepository">
-               <workspaces cache-container="ws-cache-container">
-                   <workspace name="default"/>
-                   <workspace name="other"/>
-                   <workspace name="extra">
-                       <initial-content>initial-content-custom.xml</initial-content>
-                   </workspace>
-                   <workspace name="empty">
-                       <initial-content/>
-                   </workspace>
-                   <!--Defines a default initial content which will be imported in all the workspaces which don't have smth configured-->
-                   <initial-content>initial-content-default.xml</initial-content>
-               </workspaces>
-                <node-types>
-                    <node-type>custom.cnd</node-type>
-                </node-types>
-                <cache-index-storage cache-container="index-cache-container" data-cache-name="index-data"/>
-                <indexing analyzer-classname="org.apache.lucene.analysis.standard.ClassicAnalyzer"/>
-            </repository>
-            <repository name="federatedRepository">
-                <workspaces allow-workspace-creation="true" default-workspace="default">
-                    <workspace name="default"/>
-                    <workspace name="other"/>
-                </workspaces>
-                <external-sources>
-                    <source name="filesystem" classname="org.modeshape.connector.filesystem.FileSystemConnector"
-                            directoryPath="${rootDirectoryPath}" cacheTtlSeconds="1" readonly="true">
-                        <projection>default:/projection1 => /</projection>
-                        <projection>other:/projection1 => /</projection>
-                    </source>
-                    <source name="git" classname="org.modeshape.connector.git.GitConnector" module="org.modeshape.connector.git"
-                            directoryPath="${gitRepositoryRootPath}" remoteName="upstream,origin" cacheTtlSeconds="1" readonly="true"
-                            queryableBranches="master,2.x"/>
-                </external-sources>
             </repository>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>

@@ -17,4 +17,13 @@
     <!--<module>modeshape-integration-tests</module>-->
     <module>modeshape-jbossas-integration-tests</module>
   </modules>
+
+    <profiles>
+        <profile>
+            <id>assembly</id>
+            <modules>
+                <module>modeshape-jbossas-kit-tests</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
