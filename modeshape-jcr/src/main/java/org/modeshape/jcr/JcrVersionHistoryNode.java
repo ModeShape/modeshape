@@ -356,7 +356,7 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
 
     @Override
     public VersionIterator getAllLinearVersions() throws RepositoryException {
-        AbstractJcrNode existingNode = session().getNodeByIdentifier(getVersionableIdentifier());
+        AbstractJcrNode existingNode = session().getNonSystemNodeByIdentifier(getVersionableIdentifier());
         if (existingNode == null) return getAllVersions();
 
         assert existingNode.isNodeType(JcrMixLexicon.VERSIONABLE);
@@ -382,8 +382,8 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
         try {
             StringBuilder sb = new StringBuilder();
             String versionableId = getVersionableIdentifier();
-            sb.append("Version history for " + session.getNodeByIdentifier(versionableId).location() + " (" + versionableId
-                      + ") stored at " + location() + ":\n");
+            sb.append("Version history for " + session.getNonSystemNodeByIdentifier(versionableId).location() + " ("
+                      + versionableId + ") stored at " + location() + ":\n");
             VersionIterator iter = getAllLinearVersions();
             while (iter.hasNext()) {
                 Version v = iter.nextVersion();

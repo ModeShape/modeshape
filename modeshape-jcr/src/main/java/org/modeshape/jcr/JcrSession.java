@@ -670,6 +670,49 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                 // continue ...
             }
         }
+        // First, we're given a partial key, so look first in this workspace's content ...
+        NodeKey key = null;
+        ItemNotFoundException first = null;
+        try {
+            // Try as node key identifier ...
+            key = this.rootNode.key.withId(id);
+            return node(key, null);
+        } catch (ItemNotFoundException e) {
+            // Not found, so capture the exception (which we might use later) and continue ...
+            first = e;
+        }
+        // Next look for it using the same key except with the system workspace part ...
+        try {
+            String systemWorkspaceKey = this.repository().systemWorkspaceKey();
+            key = key.withWorkspaceKey(systemWorkspaceKey);
+            return node(key, null);
+        } catch (ItemNotFoundException e) {
+            // Not found, so throw the original exception ...
+            throw first;
+        }
+    }
+
+    /**
+     * A variant of the standard {@link #getNodeByIdentifier(String)} method that does <i>not</i> find nodes within the system
+     * area. This is often needed by the {@link JcrVersionManager} functionality.
+     * 
+     * @param id the string identifier
+     * @return the node; never null
+     * @throws ItemNotFoundException if a node cannot be found in the non-system content of the repository
+     * @throws RepositoryException if there is another problem
+     * @see #getNodeByIdentifier(String)
+     */
+    public AbstractJcrNode getNonSystemNodeByIdentifier( String id ) throws ItemNotFoundException, RepositoryException {
+        checkLive();
+        if (NodeKey.isValidFormat(id)) {
+            // Try the identifier as a node key ...
+            try {
+                NodeKey key = new NodeKey(id);
+                return node(key, null);
+            } catch (ItemNotFoundException e) {
+                // continue ...
+            }
+        }
         // Try as node key identifier ...
         NodeKey key = this.rootNode.key.withId(id);
         return node(key, null);
