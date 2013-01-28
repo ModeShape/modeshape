@@ -39,6 +39,7 @@ import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
 import org.infinispan.transaction.lookup.TransactionManagerLookup;
@@ -217,6 +218,7 @@ public class LocalEnvironment implements Environment {
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.transaction().transactionMode(TransactionMode.TRANSACTIONAL);
         configurationBuilder.transaction().transactionManagerLookup(transactionManagerLookupInstance());
+        configurationBuilder.transaction().lockingMode(LockingMode.PESSIMISTIC);
         return configurationBuilder.build();
     }
 
