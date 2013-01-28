@@ -556,6 +556,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return false;
     }
 
+    boolean isSystem() {
+        return false;
+    }
+
     final JcrValue valueFrom( int propertyType,
                               Object value ) {
         return new JcrValue(context().getValueFactories(), propertyType, value);
@@ -991,7 +995,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
      * Adds the a new node with the given primary type (if specified) at the given relative path with the given UUID (if
      * specified).
      * 
-     *
      * @param childName the name for the new node; may not be null
      * @param childPrimaryNodeTypeName the desired primary type for the new node; null value indicates that the default primary
      *        type from the appropriate definition for this node should be used
@@ -1553,7 +1556,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     }
 
     /**
-     *
      * @param name the name of the property; may not be null
      * @param value the value of the property; may not be null
      * @param skipReferenceValidation indicates whether constraints on REFERENCE properties should be enforced
@@ -1596,12 +1598,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             if (existing.getDefinition().getRequiredType() == value.getType()) {
                 // The new value's type and the existing type are the same, so just delegate to the existing JCR property ...
                 try {
-                    //set the property via the public method, so that additional checks are performed
+                    // set the property via the public method, so that additional checks are performed
                     existing.setValue(value);
                 } catch (VersionException e) {
                     if (skipVersioningValidation) {
-                        //the node is checked in, but we should ignore that, so set the property via the protected method
-                        ((JcrSingleValueProperty) existing).setValue(value);
+                        // the node is checked in, but we should ignore that, so set the property via the protected method
+                        ((JcrSingleValueProperty)existing).setValue(value);
                     } else {
                         throw e;
                     }

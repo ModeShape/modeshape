@@ -642,7 +642,7 @@ final class JcrVersionManager implements VersionManager {
             }
 
             try {
-                AbstractJcrNode existingNode = restoreSession.getNodeByIdentifier(history.getVersionableIdentifier());
+                AbstractJcrNode existingNode = restoreSession.getNonSystemNodeByIdentifier(history.getVersionableIdentifier());
                 existingVersions.put((JcrVersionNode)versions[i], existingNode);
                 versionRootPaths.add(existingNode.path());
             } catch (ItemNotFoundException infe) {
@@ -701,7 +701,8 @@ final class JcrVersionManager implements VersionManager {
         validateSessionLiveWithoutPendingChanges();
         // Create a new session in which we'll finish the restore, so this session remains thread-safe ...
         JcrSession restoreSession = session.spawnSession(false);
-        AbstractJcrNode node = restoreSession.getNodeByIdentifier(version.getContainingHistory().getVersionableIdentifier());
+        String identifier = version.getContainingHistory().getVersionableIdentifier();
+        AbstractJcrNode node = restoreSession.getNonSystemNodeByIdentifier(identifier);
         Path path = node.path();
         restore(restoreSession, path, version, null, removeExisting);
     }
@@ -1532,7 +1533,7 @@ final class JcrVersionManager implements VersionManager {
 
             String idStr = string(idProp.getFirstValue());
             try {
-                AbstractJcrNode match = session.getNodeByIdentifier(idStr);
+                AbstractJcrNode match = session.getNonSystemNodeByIdentifier(idStr);
                 if (nodeIsOutsideRestoredForest(match)) return null;
                 return match.node();
             } catch (ItemNotFoundException infe) {
@@ -1568,11 +1569,16 @@ final class JcrVersionManager implements VersionManager {
          * @throws RepositoryException if any other error occurs while accessing the repository
          */
         private boolean nodeIsOutsideRestoredForest( AbstractJcrNode node ) throws ItemExistsException, RepositoryException {
+            if (node.isSystem()) {
+                // System nodes are always outside the restored forest ...
+                return true;
+            }
+            if (node.isShareable()) return false;
+            // Check the path ...
             Path nodePath = node.path();
             for (Path rootPath : versionRootPaths) {
                 if (nodePath.isAtOrBelow(rootPath)) return false;
             }
-            if (node.isShareable()) return false;
             if (!removeExisting) {
                 throw new ItemExistsException(JcrI18n.itemAlreadyExistsWithUuid.text(node.key(),
                                                                                      session.workspace().getName(),
