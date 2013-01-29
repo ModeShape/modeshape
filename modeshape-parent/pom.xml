@@ -194,7 +194,6 @@
     </contributors>
 
     <properties>
-
         <!-- Used to define the JCR Descriptor value -->
         <jcr.repository.vendor>${project.organization.name}</jcr.repository.vendor>
         <jcr.repository.name>ModeShape</jcr.repository.name>
@@ -430,6 +429,19 @@
             ###################################################################
         -->
 
+        <!-- This profile is active unless the '-DskipLongRunningTests=<boolean>' is specified. -->
+        <profile>
+            <id>skipLongRunningTestsProfile</id>
+            <activation>
+                <property>
+                    <name>!skipLongRunningTests</name>
+                </property>
+            </activation>
+            <properties combine.children="overwrite">
+                <skipLongRunningTests>true</skipLongRunningTests>
+            </properties>
+        </profile>
+
         <!--
               The default test environment is H2
           -->
@@ -646,6 +658,10 @@
                         <property>
                             <name>java.net.preferIPv6Addresses</name>
                             <value>${jgroups.preferIpv6}</value>
+                        </property>
+                        <property>
+                            <name>skipLongRunningTests</name>
+                            <value>${skipLongRunningTests}</value>
                         </property>
                     </systemProperties>
                     <argLine>-Xmx1024M ${debug.argline} -XX:MaxPermSize=256M</argLine>

@@ -425,6 +425,8 @@ public class VdbSequencerTest extends AbstractSequencerTest {
 
     @Test
     public void shouldSequenceVdbBqtVdb() throws Exception {
+        thisLongRunningTestCanBeSkipped();
+
         createNodeWithContentFromFile("vdb/BqtVdb.vdb", "vdb/BqtVdb.vdb");
         Node outputNode = getOutputNode(this.rootNode, "vdbs/BqtVdb.vdb", 60);
         assertNotNull(outputNode);
