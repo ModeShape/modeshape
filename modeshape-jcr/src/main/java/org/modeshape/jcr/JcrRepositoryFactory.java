@@ -452,7 +452,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
                                 case RUNNING:
                                     return repository;
                                 default:
-                                    LOG.error(JcrI18n.repositoryIsNotRunningOrHasBeenShutDownInEngineAtJndiLocation,
+                                    LOG.debug("The '{0}' repository in JNDI at '{1}' is not (yet) running, but may be (re)started when needed.",
                                               repositoryName,
                                               jndiName);
                                     return null;
