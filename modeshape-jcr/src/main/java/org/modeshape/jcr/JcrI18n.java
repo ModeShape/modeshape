@@ -385,7 +385,6 @@ public final class JcrI18n {
     public static I18n failedToShutdownDeployedRepository;
     public static I18n repositoryIsAlreadyDeployed;
     public static I18n repositoryIsNotRunningOrHasBeenShutDown;
-    public static I18n repositoryIsNotRunningOrHasBeenShutDownInEngineAtJndiLocation;
     public static I18n repositoryNotFoundInEngineAtJndiLocation;
     public static I18n repositoriesNotFoundInEngineAtJndiLocation;
     public static I18n potentialClasspathErrorAtJndiLocation;
