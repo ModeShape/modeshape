@@ -405,7 +405,7 @@ public class FileSystemConnector extends Connector {
     @Override
     public Document getDocumentById( String id ) {
         File file = fileFor(id);
-        if (isExcluded(file)) return null;
+        if (isExcluded(file) || !file.exists()) return null;
         boolean isRoot = isRoot(id);
         boolean isResource = isContentNode(id);
         DocumentWriter writer = newDocument(id);
@@ -526,6 +526,12 @@ public class FileSystemConnector extends Connector {
         } catch (IOException e) {
             throw new DocumentStoreException(id, e);
         }
+    }
+
+    @Override
+    public String newDocumentId( String parentId,
+                                 Name newDocumentName ) {
+        return parentId + DELIMITER + newDocumentName.getString();
     }
 
     @Override

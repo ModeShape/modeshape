@@ -26,6 +26,7 @@ package org.modeshape.jcr.federation.spi;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.cache.DocumentStoreException;
+import org.modeshape.jcr.value.Name;
 
 /**
  * A specialized abstract {@link Connector} class that is readable and can <i>never</i> update content. The connector always
@@ -54,5 +55,11 @@ public abstract class ReadOnlyConnector extends Connector {
         String documentId = documentChanges.getDocumentId();
         String msg = JcrI18n.connectorIsReadOnly.text(getSourceName(), documentId);
         throw new DocumentStoreException(documentId, msg);
+    }
+
+    @Override
+    public String newDocumentId( String parentId,
+                                 Name newDocumentName ) {
+        throw new DocumentStoreException(JcrI18n.connectorIsReadOnly.text(getSourceName(), newDocumentName));
     }
 }
