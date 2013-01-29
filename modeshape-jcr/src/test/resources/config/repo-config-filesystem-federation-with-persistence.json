@@ -16,7 +16,7 @@
         "targetDirectory" : {
             "classname" : "filesystem",
             "directoryPath" : "target",
-            "extraPropertiesStorage" : "none",
+            "extraPropertiesStorage" : "json",
             "projections" : [
                 "default:/federation/generated-sources => /generated-sources",
                 "default:/federation/surefire => /generated-surefire",
