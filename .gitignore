@@ -11,6 +11,9 @@ target
 /.metadata
 /RemoteSystemsTempFiles
 
+# ignore overlay folders
+overlays
+
 # ignore IDEA files
 *.iml
 *.ipr
