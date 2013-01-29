@@ -206,6 +206,12 @@ public class MockConnector extends Connector implements Pageable {
     }
 
     @Override
+    public String newDocumentId( String parentId,
+                                 Name newDocumentName ) {
+        return null;
+    }
+
+    @Override
     public void updateDocument( DocumentChanges documentChanges ) {
         String id = documentChanges.getDocumentId();
         if (!documentsById.containsKey(id)) {

@@ -23,17 +23,17 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
 import java.io.InputStream;
+import java.util.UUID;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Session;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
 
 public class FederationConfigurationTest extends SingleUseAbstractTest {
 
@@ -43,7 +43,6 @@ public class FederationConfigurationTest extends SingleUseAbstractTest {
         return stream;
     }
 
-    @Ignore
     @FixFor( "MODE-1772" )
     @Test
     public void shouldStartRepositoryWithFileSystemConnectorAccessingAncestorOfCacheStoreDirectory() throws Exception {
@@ -54,7 +53,7 @@ public class FederationConfigurationTest extends SingleUseAbstractTest {
         startRepositoryWithConfiguration(resource("config/repo-config-filesystem-federation-with-persistence.json"));
         Session session = session();
         Node federation = session.getNode("/federation");
-        print(federation, false, 100, 4);
+
         // Get the children under federation ...
         NodeIterator iter = federation.getNodes();
         while (iter.hasNext()) {
@@ -68,24 +67,21 @@ public class FederationConfigurationTest extends SingleUseAbstractTest {
             assertThat(newNode, is(notNullValue()));
             session.save();
         }
-        print(federation, false, 100, 4);
 
         // Add a node directly under 'federation/classes/org' (which is a federated node)...
         Node org = federation.getNode("classes/org");
         for (int i = 0; i != 3; ++i) {
-            Node newNode = org.addNode("GeneratedFolder", "nt:folder");
+            Node newNode = org.addNode("GeneratedFolder_" + UUID.randomUUID().toString(), "nt:folder");
             assertThat(newNode, is(notNullValue()));
             session.save();
         }
-        print(federation, false, 100, 4);
 
         // Add a node directly under 'federation/generated-sources' (which is a federated node)...
         Node generated = federation.getNode("generated-sources");
         for (int i = 0; i != 3; ++i) {
-            Node newNode = generated.addNode("GeneratedFolder", "nt:folder");
+            Node newNode = generated.addNode("GeneratedFolder_" + UUID.randomUUID().toString(), "nt:folder");
             assertThat(newNode, is(notNullValue()));
             session.save();
         }
-        print(federation, false, 100, 4);
     }
 }

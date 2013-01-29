@@ -31,6 +31,7 @@ import org.infinispan.Cache;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 
 /**
@@ -74,6 +75,13 @@ public class LocalDocumentStore implements DocumentStore {
                                 Document document,
                                 SessionNode sessionNode ) {
         // do nothing, the way the local store updates is via deltas
+    }
+
+    @Override
+    public String newDocumentKey( String parentKey,
+                                  Name documentName ) {
+        //the local store doesn't generate explicit keys for new nodes
+        return null;
     }
 
     /**

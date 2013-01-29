@@ -377,6 +377,22 @@ public abstract class Connector {
      */
     public abstract void updateDocument( DocumentChanges documentChanges );
 
+
+    /**
+     * Generates an identifier which will be assigned when a new document (aka. child) is created under an existing document (aka.parent).
+     * This method should be implemented only by connectors which support writing.
+     *
+     * @param parentId a {@code non-null} {@link String} which represents the identifier of the parent under which the new document
+     * will be created.
+     * @param newDocumentName a {@code non-null} {@link Name} which represents the name that will be given to the child document
+     * @return either a {@code non-null} {@link String} which will be assigned as the new identifier, or {@code null} which means
+     * that no "special" id format is required. In this last case, the repository will auto-generate a random id.
+     *
+     * @throws org.modeshape.jcr.cache.DocumentStoreException if the connector is readonly.
+     */
+    public abstract String newDocumentId( String parentId,
+                                          Name newDocumentName );
+
     /**
      * Utility method that checks whether the field with the supplied name is set.
      * 

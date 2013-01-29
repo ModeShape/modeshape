@@ -1050,6 +1050,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new VersionException(msg.text(segment, readable(parentPathStr), childDefn.getName(), opv));
         }
 
+        //If there isn't a desired key, check if the document store doesn't require a certain key format (this is especially used by federation)
+        if (desiredKey == null) {
+            String documentStoreKey = session().repository().documentStore().newDocumentKey(key().toString(), childName);
+            if (documentStoreKey != null) {
+                desiredKey = new NodeKey(documentStoreKey);
+            }
+        }
+
         // We can create the child, so start by building the required properties ...
         PropertyFactory propFactory = session.propertyFactory();
         Property ptProp = propFactory.create(JcrLexicon.PRIMARY_TYPE, childPrimaryNodeTypeName);
