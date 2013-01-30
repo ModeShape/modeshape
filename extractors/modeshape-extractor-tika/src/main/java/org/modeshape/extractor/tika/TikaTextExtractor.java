@@ -44,6 +44,7 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.text.TextExtractor;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * A {@link TextExtractor} that uses the Apache Tika library.
@@ -96,6 +97,8 @@ public class TikaTextExtractor extends TextExtractor {
     private Set<String> includedMimeTypes = new HashSet<String>();
     private Set<String> supportedMediaTypes = new HashSet<String>();
 
+    private Integer writeLimit;
+
     private final Lock initLock = new ReentrantLock();
     private DefaultParser parser;
 
@@ -103,9 +106,6 @@ public class TikaTextExtractor extends TextExtractor {
         this.excludedMimeTypes.addAll(DEFAULT_EXCLUDED_MIME_TYPES);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean supportsMimeType( String mimeType ) {
         if (excludedMimeTypes.contains(mimeType)) return false;
@@ -114,9 +114,6 @@ public class TikaTextExtractor extends TextExtractor {
                                                                                       && includedMimeTypes.contains(mimeType);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void extractFrom( final Binary binary,
                              final TextExtractor.Output output,
@@ -129,7 +126,9 @@ public class TikaTextExtractor extends TextExtractor {
                 Metadata metadata = prepareMetadata(binary, context);
                 try {
                     LOGGER.debug("Using TikaTextExtractor to extract text");
-                    ContentHandler textHandler = new BodyContentHandler();
+                    //TODO author=Horia Chiorean date=1/30/13 description=//TIKA 1.2 TXTParser seems to have a bug, always adding 1 ignorable whitespace to the actual chars to be parsed
+                    //https://issues.apache.org/jira/browse/TIKA-1069
+                    ContentHandler textHandler = writeLimit == null ? new BodyContentHandler() : new BodyContentHandler(writeLimit + 1);
                     // Parse the input stream ...
                     parser.parse(stream, textHandler, metadata, new ParseContext());
 
@@ -137,6 +136,8 @@ public class TikaTextExtractor extends TextExtractor {
                     String text = textHandler.toString().trim();
                     output.recordText(text);
                     LOGGER.debug("TikaTextExtractor found text: " + text);
+                } catch (SAXException sae) {
+                    LOGGER.warn(TikaI18n.parseExceptionWhileExtractingText, sae.getMessage());
                 } catch (Throwable e) {
                     LOGGER.error(e, TikaI18n.errorWhileExtractingTextFrom, e.getMessage());
                 }
@@ -276,5 +277,17 @@ public class TikaTextExtractor extends TextExtractor {
         if (mimeType == null) return;
         mimeType = mimeType.trim();
         if (mimeType.length() != 0) excludedMimeTypes.add(mimeType);
+    }
+
+
+    /**
+     * Sets the write limit for the Tika parser, representing the maximum number of characters that should be extracted by the
+     * TIKA parser.
+     *
+     * @param writeLimit an {@link Integer} which represents the write limit; may be null
+     * @see BodyContentHandler#BodyContentHandler(int)
+     */
+    public void setWriteLimit( Integer writeLimit ) {
+        this.writeLimit = writeLimit;
     }
 }
