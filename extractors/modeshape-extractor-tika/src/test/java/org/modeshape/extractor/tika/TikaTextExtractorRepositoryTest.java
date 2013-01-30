@@ -25,12 +25,14 @@
 package org.modeshape.extractor.tika;
 
 import static junit.framework.Assert.assertEquals;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.query.JcrQuery;
@@ -46,27 +48,50 @@ public class TikaTextExtractorRepositoryTest extends SingleUseAbstractTest {
 
     private JcrTools jcrTools = new JcrTools();
 
-    @Override
-    public void beforeEach() throws Exception {
-        startRepositoryWithConfiguration(getResource("repo-config.json"));
-    }
-
     @Test
     public void shouldExtractAndIndexContentFromPlainTextFile() throws Exception {
+        startRepositoryWithConfiguration(getResource("repo-config.json"));
         uploadFile("text-file.txt");
         assertExtractedTextHasBeenIndexed("select [jcr:path] from [nt:resource] as res where contains(res.*, 'The Quick Red Fox Jumps Over the Lazy Brown Dog')");
     }
 
     @Test
     public void shouldExtractAndIndexContentFromDocFile() throws Exception {
+        startRepositoryWithConfiguration(getResource("repo-config.json"));
         uploadFile("modeshape.doc");
         assertExtractedTextHasBeenIndexed("select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')");
     }
 
     @Test
     public void shouldExtractAndIndexContentFromPdfGSFile() throws Exception {
+        startRepositoryWithConfiguration(getResource("repo-config.json"));
         uploadFile("modeshape_gs.pdf");
         assertExtractedTextHasBeenIndexed("select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')");
+    }
+
+    @Test
+    @FixFor( "MODE-1561" )
+    public void shouldNotExtractPastWriteLimit() throws Exception {
+        startRepositoryWithConfiguration(getResource("repo-config-text-extraction-limit.json"));
+        //configured in the cfg file
+        int configuredWriteLimit = 100;
+
+        //generate a string the size of the configured limit and check that it's been indexed
+        String randomString = TikaTextExtractorTest.randomString(configuredWriteLimit);
+        jcrTools.uploadFile(session, "/testFile", new ByteArrayInputStream(randomString.getBytes()));
+        session.save();
+
+        //test text extraction via querying, since that's where it's actually used
+        String sql = "select [jcr:path] from [nt:base] where contains([nt:base].*, '" + randomString + "')";
+        jcrTools.printQuery(session, sql, 1);
+
+        //generate a string larger than the limit and check that it hasn't been indexed
+        randomString = TikaTextExtractorTest.randomString(configuredWriteLimit + 1);
+        jcrTools.uploadFile(session, "testFile1", new ByteArrayInputStream(randomString.getBytes()));
+        session.save();
+
+        sql = "select [jcr:path] from [nt:base] where contains([nt:base].*, '" + randomString + "')";
+        jcrTools.printQuery(session, sql, 0);
     }
 
     private void assertExtractedTextHasBeenIndexed( String validationQuery ) throws RepositoryException {
