@@ -16,7 +16,8 @@
             "extractors" : {
                 "tikaExtractor":{
                     "name" : "Tika content-based extractor",
-                    "classname" : "tika"
+                    "classname" : "tika",
+                    "writeLimit" : 100
                 }
             }
         }

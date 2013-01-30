@@ -23,24 +23,30 @@
  */
 package org.modeshape.extractor.tika;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Random;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.InMemoryTestBinary;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetectors;
 import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.text.TextExtractorOutput;
+import static junit.framework.Assert.assertEquals;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
 
 /**
  * Unit test for {@link TikaTextExtractor}
@@ -48,9 +54,14 @@ import org.modeshape.jcr.text.TextExtractorOutput;
 public class TikaTextExtractorTest {
 
     private static final MimeTypeDetector DETECTOR = new MimeTypeDetectors();
+    private static final int DEFAULT_TIKA_WRITE_LIMIT = 100000;
+    private static final String CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final Random RANDOM = new Random();
+
     private TikaTextExtractor extractor;
     private LinkedList<String> extracted = null;
     private LinkedList<String> expected = null;
+
 
     @Before
     public void beforeEach() {
@@ -129,10 +140,38 @@ public class TikaTextExtractorTest {
     }
 
     @Test
+    @FixFor( "MODE-1561" )
+    public void shouldExtractUsingWriteLimit() throws Exception {
+        int stringLength = DEFAULT_TIKA_WRITE_LIMIT + 2;
+        String rndString = randomString(stringLength);
+
+        File tempFile = File.createTempFile("tika_extraction_",  ".txt");
+        try {
+            IoUtil.write(rndString, tempFile);
+
+            extractor.setWriteLimit(stringLength);
+            TextExtractorOutput output = new TextExtractorOutput();
+            extractor.extractFrom(new InMemoryTestBinary(new FileInputStream(tempFile)), output, new TextExtractorContext(DETECTOR));
+
+            assertEquals(rndString, output.getText());
+        } finally {
+            FileUtil.delete(tempFile);
+        }
+    }
+
+    @Test
     @Ignore( "Exposes the Tika/PDF box bug that characters get duplicated when parsing pdfs produced by PDF Context" )
     public void shouldExtractTextFromPdfFilePdfContext() throws Exception {
         extractTermsFrom("modeshape_pdfcontext.pdf");
         assertExtractedMatchesExpected();
+    }
+
+    public static String randomString(int length) {
+        StringBuilder rndStringBuilder = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            rndStringBuilder.append(CHARS.charAt(RANDOM.nextInt(CHARS.length())));
+        }
+        return rndStringBuilder.toString();
     }
 
     private void assertExtractedMatchesExpected() throws IOException {
