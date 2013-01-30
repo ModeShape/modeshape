@@ -1,6 +1,7 @@
 # Release Notes for ModeShape &version;
 
-The ModeShape &version; release is the second stable release of our new architecture.
+The ModeShape &version; release is the first patch release for the 
+second stable release of our new architecture.
 It's been a long journey with fourteen different alphas, betas, and candidate releases.
 But this is a huge improvement over the 2.x series. We hope you enjoy it!
 
@@ -13,30 +14,7 @@ ModeShape 2's JCR-related features. ModeShape 3 has complete integration with JB
 allowing deployed components to simply lookup and use repositories managed by ModeShape's 
 service.
 
-This release brings these improvements:
-
-- Federated content that exists in external systems and project it into the repository as
-regular content. Several connectors are provided out of the box: a file system connector 
-(very similar to what was in 2.x) that accesses files and folders on the file system
-and projects them as 'nt:file' and 'nt:folder' nodes; and a Git connector that accesses a local
-Git repository (can be a clone of one or more remotes) and projects the branches, tags, commits
-and trees within the Git repository as a node structure in the repository.
-- New support for the CMIS API. This is still a 'technology preview', and we're seeking users
-that can try it out and give us feedback.
-- New JCA adapter to simplify deployment to application servers and containers other than
-JBoss AS and EAP. (Recall that ModeShape can already be deployed as a service within AS7/EAP6).
-- Separately control the size of strings and binary values that are stored in the binary store.
-This repositories to always store binary values in binary storage, but only larger string values.
-- Improved how repository configurations can also configure JGroups.
-- Clustering bug fixes and improvements.
-- Compatibility with Infinispan 5.1.2.FINAL through 5.1.8.Final. Expected to work with 
-Infinispan 5.2.0.Final (when available).
-- Fixes to how variables are handled in configuration files.
-- Kit to install ModeShape into an existing JBoss AS7.1.1 installation now also installs
-CMIS API for all repositories. Configure connectors along with all the other components.
-- Improved support for very large numbers of child nodes under a single parent, including
-when these nodes are projected from connectors.
-- Over 50 issues (bugs, tasks, features, etc.) resolved in this release.
+This release is a bug-fix release that includes 14 fixes (see below for details).
 
 
 ## Features
@@ -208,5 +186,5 @@ earlier with full support for JCR 2.0.
 
 ## Bug Fixes, Features, and other Issues
 
-The following are the bugs, features and other issues that have been fixed in the 3.1.0.Final release:
+The following are the bugs, features and other issues that have been fixed in the &version; release:
 
