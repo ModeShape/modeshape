@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -37,6 +38,7 @@ import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
+import javax.jcr.nodetype.ConstraintViolationException;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -114,12 +116,12 @@ public class JcrPropertyTest extends MultiUseAbstractTest {
         Mockito.verify(visitor).visit(altimaModel);
     }
 
-    @Test( expected = IllegalArgumentException.class )
+    @Test(expected = IllegalArgumentException.class)
     public void shouldNotAllowVisitationIfNoVisitor() throws Exception {
         altimaModel.accept(null);
     }
 
-    @Test( expected = ItemNotFoundException.class )
+    @Test(expected = ItemNotFoundException.class)
     public void shouldNotAllowNegativeAncestorDepth() throws Exception {
         altimaModel.getAncestor(-1);
     }
@@ -140,7 +142,7 @@ public class JcrPropertyTest extends MultiUseAbstractTest {
         assertThat(altimaModel.getAncestor(altimaModel.getDepth() - 1), is((Item)altima));
     }
 
-    @Test( expected = ItemNotFoundException.class )
+    @Test(expected = ItemNotFoundException.class)
     public void shouldFailToReturnAncestorWhenDepthIsGreaterThanNodeDepth() throws Exception {
         altimaModel.getAncestor(40);
     }
@@ -194,7 +196,7 @@ public class JcrPropertyTest extends MultiUseAbstractTest {
         assertThat(model.isSame(model2), is(false));
     }
 
-    @FixFor( "MODE-1254" )
+    @FixFor("MODE-1254")
     @Test
     public void shouldNotIncludeBinaryContentsInToString() throws Exception {
         // System.out.println(binaryProp.toString());
@@ -203,7 +205,7 @@ public class JcrPropertyTest extends MultiUseAbstractTest {
         assertThat(binaryProp.getParent().toString().indexOf("**binary-value") > 0, is(true));
     }
 
-    @FixFor( "MODE-1308" )
+    @FixFor("MODE-1308")
     @Test
     public void shouldAllowAnyBinaryImplementation() throws Exception {
         Node node = binaryProp.getParent();
@@ -226,5 +228,31 @@ public class JcrPropertyTest extends MultiUseAbstractTest {
             byteOut.write(buffer, 0, available);
         }
         assertThat(stringValue.getBytes(), is(byteOut.toByteArray()));
+    }
+
+    @FixFor( "MODE-1783" )
+    @Test
+    public void shouldValidateStringPropertyConstraints() throws Exception {
+        JcrWorkspace workspace = session.getWorkspace();
+        workspace.getNodeTypeManager().registerNodeTypes(getClass().getClassLoader().getResourceAsStream(
+                "cnd/propertyWithConstraint.cnd"), true);
+
+        Node testNode = session.getRootNode().addNode("testNode", "test:nodeType");
+        try {
+            testNode.setProperty("test:stringProp", "aa");
+            fail("Regexp constraint not validated on property");
+        } catch (ConstraintViolationException e) {
+            //expected
+            testNode.setProperty("test:stringProp", "a");
+        }
+        session.save();
+        testNode = session.getNode("/testNode");
+
+        try {
+            testNode.setProperty("test:stringProp", "bb");
+            fail("Regexp constraint not validated on property");
+        } catch (ConstraintViolationException e) {
+            //expected
+        }
     }
 }
