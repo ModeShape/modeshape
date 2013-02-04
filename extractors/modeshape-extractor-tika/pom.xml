@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.modeshape</groupId>
         <artifactId>modeshape-extractors</artifactId>
-        <version>3.1.1-SNAPSHOT</version>
+        <version>3.1.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <!-- The groupId and version values are inherited from parent -->
