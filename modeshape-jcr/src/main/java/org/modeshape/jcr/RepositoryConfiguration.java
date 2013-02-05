@@ -2011,14 +2011,17 @@ public class RepositoryConfiguration {
             public ProjectionConfiguration( String pathExpression ) {
                 Matcher expressionMatcher = PROJECTION_PATH_EXPRESSION_PATTERN.matcher(pathExpression);
                 // should be validated by the repository schema
-                assert expressionMatcher.matches();
+                if (expressionMatcher.matches()){
 
-                workspaceName = expressionMatcher.group(1);
-                projectedPath = expressionMatcher.group(2);
-                if (projectedPath.endsWith("/") && projectedPath.length() > 1) {
-                    projectedPath = projectedPath.substring(0, projectedPath.length() - 1);
+                	workspaceName = expressionMatcher.group(1);
+                	projectedPath = expressionMatcher.group(2);
+                	if (projectedPath.endsWith("/") && projectedPath.length() > 1) {
+                		projectedPath = projectedPath.substring(0, projectedPath.length() - 1);
+                	}
+                	externalPath = expressionMatcher.group(7);
+                }else{
+                	throw new IllegalStateException("No match found!");
                 }
-                externalPath = expressionMatcher.group(7);
             }
 
             /**
