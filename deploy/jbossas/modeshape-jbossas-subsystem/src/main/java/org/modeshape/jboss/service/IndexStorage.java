@@ -42,20 +42,24 @@ public class IndexStorage {
         this.queryConfig = queryConfig;
     }
 
-    void setDefaultValues( String dataDirPath ) {
-        queryConfig.set(RepositoryConfiguration.FieldName.REBUILD_UPON_STARTUP, RepositoryConfiguration.QueryRebuild.IF_MISSING.toString().toLowerCase());
-
-        EditableDocument indexing = queryConfig.getOrCreateDocument(RepositoryConfiguration.FieldName.INDEXING);
-        EditableDocument backend = indexing.getOrCreateDocument(RepositoryConfiguration.FieldName.INDEXING_BACKEND);
-        backend.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.INDEXING_BACKEND_TYPE_LUCENE);
-
+    void setDefaultValuesForIndexStorage( String dataDirPath ) {
         EditableDocument indexStorage = queryConfig.getOrCreateDocument(RepositoryConfiguration.FieldName.INDEX_STORAGE);
         indexStorage.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.INDEX_STORAGE_FILESYSTEM);
         indexStorage.set(RepositoryConfiguration.FieldName.INDEX_STORAGE_LOCATION, dataDirPath + "/indexes");
     }
 
-    boolean useDefaultValues() {
+    void setDefaultValuesForIndexing() {
+        EditableDocument indexing = queryConfig.getOrCreateDocument(RepositoryConfiguration.FieldName.INDEXING);
+        EditableDocument backend = indexing.getOrCreateDocument(RepositoryConfiguration.FieldName.INDEXING_BACKEND);
+        backend.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.INDEXING_BACKEND_TYPE_LUCENE);
+    }
+
+    boolean useDefaultValuesForIndexStorage() {
         return !queryConfig.containsField(RepositoryConfiguration.FieldName.INDEX_STORAGE);
+    }
+
+    boolean useDefaultValuesForIndexing() {
+        return !queryConfig.containsField(RepositoryConfiguration.FieldName.INDEXING);
     }
 
     /**

@@ -235,6 +235,7 @@
             <repository name="sample"/>
             <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
             <repository name="artifacts">
+                <indexing rebuild-upon-startup="never"/>
                 <!-- Define 3 workspaces to exist upon startup -->
                 <workspaces default-workspace="default" allow-workspace-creation="false">
                     <workspace name="default"/>
@@ -315,6 +316,7 @@
                 <!--<db-binary-storage data-source-jndi-name="java:jboss/datasources/ModeshapeBinaryDS"/>-->
             </repository>
             <repository name="preconfiguredRepository">
+                <indexing rebuild-upon-startup="never"/>
                 <workspaces cache-container="ws-cache-container">
                     <workspace name="default"/>
                     <workspace name="other"/>
@@ -334,6 +336,8 @@
                 <indexing analyzer-classname="org.apache.lucene.analysis.standard.ClassicAnalyzer"/>
             </repository>
             <repository name="federatedRepository">
+                <!--Turn off initial indexing for performance reasons-->
+                <indexing rebuild-upon-startup="never"/>
                 <workspaces allow-workspace-creation="true" default-workspace="default">
                     <workspace name="default"/>
                     <workspace name="other"/>

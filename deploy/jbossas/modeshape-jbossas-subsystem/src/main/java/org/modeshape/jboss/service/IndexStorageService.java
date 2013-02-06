@@ -89,10 +89,14 @@ public class IndexStorageService implements Service<IndexStorage> {
 
     @Override
     public IndexStorage getValue() throws IllegalStateException, IllegalArgumentException {
-        if (indexStorage.useDefaultValues()) {
+        if (indexStorage.useDefaultValuesForIndexStorage()) {
             //use optional value because this service is dynamically queried from AbstractAddIndexStorage
-            indexStorage.setDefaultValues(dataDirectoryPathInjector.getOptionalValue());
+            indexStorage.setDefaultValuesForIndexStorage(dataDirectoryPathInjector.getOptionalValue());
         }
+        if (indexStorage.useDefaultValuesForIndexing()) {
+            indexStorage.setDefaultValuesForIndexing();
+        }
+
         indexStorage.setCacheContainer(cacheContainerInjectedValue.getOptionalValue());
         return indexStorage;
     }

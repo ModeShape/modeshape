@@ -78,10 +78,6 @@ public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
         IndexStorageService existingService = (IndexStorageService)context.getServiceRegistry(false).getService(indexStorageServiceName).getService();
         //get the query instance from the existing service, so that any indexing attributes set via "AddRepository" are not lost
         EditableDocument query = existingService.getValue().getQueryConfiguration();
-        if (!query.containsField(FieldName.REBUILD_UPON_STARTUP)) {
-            String rebuild = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP.resolveModelAttribute(context, storage).asString().toLowerCase();
-            query.set(FieldName.REBUILD_UPON_STARTUP, rebuild);
-        }
 
         // Build the 'query/indexing' nested document ...
         EditableDocument indexing = query.getOrCreateDocument(FieldName.INDEXING);
