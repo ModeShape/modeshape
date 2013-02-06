@@ -319,15 +319,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             MapReduceTask<String, Metadata, String, String> task = new MapReduceTask<String, Metadata, String, String>(
                                                                                                                        metadataCache);
             task.mappedWith(new UnusedMapper(minimumAgeInMS));
-            task.reducedWith(new Reducer<String, String>() {
-                private static final long serialVersionUID = 1L;
-
-                @Override
-                public String reduce( String s,
-                                      Iterator<String> stringIterator ) {
-                    return s;
-                }
-            });
+            task.reducedWith(new DummyReducer());
             Map<String, String> result = task.execute();
             for (String key : result.values()) {
                 InfinispanBinaryStore.Lock lock = lockFactory.writeLock(key);
@@ -615,5 +607,15 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     interface Lock {
 
         void unlock() throws BinaryStoreException;
+    }
+
+    private static class DummyReducer implements Reducer<String, String> {
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public String reduce( String s,
+                              Iterator<String> stringIterator ) {
+            return s;
+        }
     }
 }
