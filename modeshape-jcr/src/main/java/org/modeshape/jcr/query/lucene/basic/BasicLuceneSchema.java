@@ -28,10 +28,16 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.FieldSelector;
+import org.apache.lucene.document.FieldSelectorResult;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.Version;
 import org.hibernate.search.SearchFactory;
@@ -40,6 +46,8 @@ import org.hibernate.search.backend.spi.Work;
 import org.hibernate.search.backend.spi.WorkType;
 import org.hibernate.search.backend.spi.Worker;
 import org.hibernate.search.engine.spi.SearchFactoryImplementor;
+import org.hibernate.search.indexes.spi.IndexManager;
+import org.hibernate.search.indexes.spi.ReaderProvider;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
@@ -506,5 +514,37 @@ public class BasicLuceneSchema implements LuceneSchema {
     public TupleCollector createTupleCollector( QueryContext queryContext,
                                                 Columns columns ) {
         return new BasicTupleCollector(queryContext, columns);
+    }
+
+    @Override
+    public Set<NodeKey> indexedNodes() {
+        IndexManager indexManager = searchFactory.getAllIndexesManager().getIndexManager(NodeInfoIndex.INDEX_NAME);
+        if (indexManager == null) {
+            return Collections.emptySet();
+        }
+
+        ReaderProvider readerProvider = indexManager.getReaderProvider();
+        IndexReader indexReader = readerProvider.openIndexReader();
+        Set<NodeKey> indexedNodes = new HashSet<NodeKey>();
+        try {
+            for (int docNumber = 0; docNumber < indexReader.numDocs(); docNumber++) {
+                if (indexReader.isDeleted(docNumber)) {
+                    continue;
+                }
+                Document doc = indexReader.document(docNumber, new FieldSelector() {
+                    @Override
+                    public FieldSelectorResult accept( String fieldName ) {
+                        return FieldName.ID.equalsIgnoreCase(fieldName) ?
+                               FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
+                    }
+                });
+                indexedNodes.add(new NodeKey(doc.get(FieldName.ID)));
+            }
+            return indexedNodes;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            readerProvider.closeIndexReader(indexReader);
+        }
     }
 }

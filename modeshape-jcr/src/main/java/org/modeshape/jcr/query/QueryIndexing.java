@@ -81,6 +81,13 @@ public interface QueryIndexing {
                       NodeTypeSchemata schemata,
                       TransactionContext txnCtx );
 
+    /**
+     * Retrieve the set of keys of the nodes that are currently stored in the index.
+     *
+     * @return a {@code Set} of {@code NodeKey} instances; never {@code null}
+     */
+    Set<NodeKey> indexedNodes();
+
     void removeFromIndex( String workspace,
                           Iterable<NodeKey> keys,
                           TransactionContext txnCtx );

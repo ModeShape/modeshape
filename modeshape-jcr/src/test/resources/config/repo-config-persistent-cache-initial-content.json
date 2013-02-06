@@ -24,6 +24,6 @@
             "type" : "filesystem",
             "location" : "target/persistent_repository_initial_content/index"
         },
-        "rebuildUponStartup" : "if_missing"
+        "rebuildUponStartup" : "never"
     }
 }
