@@ -32,6 +32,8 @@ import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Session;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryManager;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
@@ -273,6 +275,41 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 } catch (PathNotFoundException e) {
                     //expected
                 }
+                return null;
+            }
+        }, repositoryConfigFile);
+    }
+
+    @Test
+    @FixFor( "MODE-1785" )
+    public void shouldRebuildIndexesIfConfiguredTo() throws Exception {
+        FileUtil.delete("target/persistent_repository");
+
+        String repositoryConfigFile = "config/repo-config-persistent-always-rebuild-indexes.json";
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+                session.getRootNode().addNode("testNode");
+                session.save();
+
+                QueryManager queryManager = session.getWorkspace().getQueryManager();
+                Query query = queryManager.createQuery("select * from [nt:base] where [jcr:path] like '/testNode'", Query.JCR_SQL2);
+                assertEquals(1, query.execute().getNodes().getSize());
+
+                return null;
+            }
+        }, repositoryConfigFile);
+
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+
+                QueryManager queryManager = session.getWorkspace().getQueryManager();
+                Query query = queryManager.createQuery("select * from [nt:unstructured] where [jcr:path] like '/testNode'", Query.JCR_SQL2);
+                assertEquals(1, query.execute().getNodes().getSize());
+
                 return null;
             }
         }, repositoryConfigFile);

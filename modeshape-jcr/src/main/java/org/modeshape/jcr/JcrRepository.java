@@ -499,7 +499,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             start();
             logger.debug("Started '{0}' after content has been restored; beginning indexing of content", getName());
             // Reindex all content ...
-            queryManager().reindexContent();
+            queryManager().reindexContent(false, true, false);
             logger.debug("Completed reindexing all content in '{0}' after restore.", getName());
         }
     }
@@ -959,6 +959,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final SystemContentInitializer systemContentInitializer;
         private final NodeTypesImporter nodeTypesImporter;
         private final Connectors connectors;
+        private final RepositoryConfiguration.QueryRebuild indexRebuildMode;
 
         private Transaction runningTransaction;
 
@@ -1188,15 +1189,19 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 Properties indexStorageProps = query.getIndexStorageProperties();
                 this.repositoryQueryManager = new RepositoryQueryManager(this, config.getQuery(), indexingExecutor, backendProps,
                                                                          indexingProps, indexStorageProps);
-                boolean shouldIndexSystemContent = !indexingProps.getProperty(FieldName.INDEXING_MODE_SYSTEM_CONTENT)
-                                                                 .equalsIgnoreCase(RepositoryConfiguration.IndexingMode.DISABLED.toString());
-                if (this.cache.createdSystemContent() && shouldIndexSystemContent) {
-                    boolean async = indexingProps.getProperty(FieldName.INDEXING_MODE_SYSTEM_CONTENT)
-                                                 .equalsIgnoreCase(RepositoryConfiguration.IndexingMode.ASYNC.toString());
-                    this.repositoryQueryManager.reindexSystemContent(async);
-                }
+//                boolean shouldIndexSystemContent = !indexingProps.getProperty(FieldName.INDEXING_MODE_SYSTEM_CONTENT)
+//                                                                 .equalsIgnoreCase(RepositoryConfiguration.IndexingMode.DISABLED.toString());
+//
+//                boolean asyncSystemContent = indexingProps.getProperty(FieldName.INDEXING_MODE_SYSTEM_CONTENT)
+//                                             .equalsIgnoreCase(RepositoryConfiguration.IndexingMode.ASYNC.toString());
+//                if (this.cache.createdSystemContent() && shouldIndexSystemContent) {
+//                    this.repositoryQueryManager.reindexSystemContent(asyncSystemContent);
+//                }
+
+                this.indexRebuildMode = query.getRebuildIndexesUponStartup();
             } else {
                 this.repositoryQueryManager = null;
+                this.indexRebuildMode = null;
             }
 
             // Check that we have parsers for all the required languages ...
@@ -1277,6 +1282,31 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             // Now record in the content that we're finished initializing the repository ...
             repositoryCache().completeInitialization();
+
+            //check the re-indexing options and do the re-indexing (this must be done after all of the above have finished)
+            if (indexRebuildMode != null) {
+                switch (indexRebuildMode) {
+                    case ALWAYS: {
+                        this.repositoryQueryManager.reindexContent(false, true, false);
+                        break;
+                    }
+                    case IF_MISSING: {
+                        this.repositoryQueryManager.reindexContent(true, true, false);
+                        break;
+                    }
+                    case NEVER: {
+                        Set<NodeKey> existingIndexes = queryManager().getIndexes().indexedNodes();
+                        if (existingIndexes.isEmpty()) {
+                            logger.info(JcrI18n.noReindex, getName());
+                        } else {
+                            logger.debug(
+                                    "Index rebuild option is 'never' for repository {0} so nothing will be re-indexed. The existing indexed node are: {1}",
+                                    name(), existingIndexes);
+                        }
+                        break;
+                    }
+                }
+            }
 
             // any potential transaction was suspended during the creation of the running state to make sure intialization is
             // atomic

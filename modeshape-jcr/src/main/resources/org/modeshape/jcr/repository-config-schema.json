@@ -443,7 +443,7 @@
                 },
                 "rebuildUponStartup" : {
                     "type" : "string",
-                    "enum" : ["if_missing","always"],
+                    "enum" : ["if_missing","always","never"],
                     "default" : "if_missing",
                     "description" : "Specifies whether the indexes need to be rebuilt immediately when each ModeShape process starts up."
                 },

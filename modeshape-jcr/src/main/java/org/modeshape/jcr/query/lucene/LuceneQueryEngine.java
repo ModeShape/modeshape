@@ -72,6 +72,8 @@ import org.modeshape.jcr.query.validate.Schemata;
  */
 public class LuceneQueryEngine extends QueryEngine {
 
+    private static final Logger LOGGER = Logger.getLogger(LuceneQueryEngine.class);
+
     private final ExecutionContext repositoryContext;
     private final BasicLuceneSchema schema;
 
@@ -265,7 +267,9 @@ public class LuceneQueryEngine extends QueryEngine {
 
             // Create the Lucene queries ...
             LuceneQuery queries = schema.createQuery(sourceName, andedConstraints, processingContext);
-
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Executing the lucene query: {0}", queries.toString());
+            }
             // Check whether the constraints were such that no results should be returned ...
             if (queries.matchesNone()) {
                 // There are no results ...

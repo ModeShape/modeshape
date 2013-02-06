@@ -1621,6 +1621,7 @@ public class RepositoryConfiguration {
      */
     public enum QueryRebuild {
         ALWAYS,
+        NEVER,
         IF_MISSING;
     }
 
@@ -1680,9 +1681,8 @@ public class RepositoryConfiguration {
          * @return whether to rebuild the indexes upon repository startup
          */
         public QueryRebuild getRebuildIndexesUponStartup() {
-            String rebuild = query.getString(FieldName.REBUILD_UPON_STARTUP);
-            QueryRebuild result = QueryRebuild.valueOf(rebuild);
-            return result != null ? result : QueryRebuild.IF_MISSING;
+            String rebuild = query.getString(FieldName.REBUILD_UPON_STARTUP, QueryRebuild.IF_MISSING.name());
+            return QueryRebuild.valueOf(rebuild.toUpperCase()) ;
         }
 
         /**

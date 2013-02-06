@@ -460,6 +460,10 @@ public final class JcrI18n {
     public static I18n invalidProjectionPath;
     public static I18n invalidProjectionExpression;
     
+    public static I18n reindexMissingNoIndexesExist;
+    public static I18n noReindex;
+    public static I18n reindexAll;
+
     static {
         try {
             I18n.initialize(JcrI18n.class);
