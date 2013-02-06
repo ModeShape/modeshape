@@ -3,14 +3,14 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
+ * See the AUTHORS.txt file in the distribution for a full listing of
  * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -234,7 +234,7 @@ public class FileSystemConnector extends Connector {
 
     /**
      * Get the namespace registry.
-     * 
+     *
      * @return the namespace registry; never null
      */
     NamespaceRegistry registry() {
@@ -245,7 +245,7 @@ public class FileSystemConnector extends Connector {
      * Utility method for determining if the supplied identifier is for the "jcr:content" child node of a file. * Subclasses may
      * override this method to change the format of the identifiers, but in that case should also override the
      * {@link #fileFor(String)}, {@link #isRoot(String)}, and {@link #idFor(File)} methods.
-     * 
+     *
      * @param id the identifier; may not be null
      * @return true if the identifier signals the "jcr:content" child node of a file, or false otherwise
      * @see #isRoot(String)
@@ -260,7 +260,7 @@ public class FileSystemConnector extends Connector {
      * Utility method for obtaining the {@link File} object that corresponds to the supplied identifier. Subclasses may override
      * this method to change the format of the identifiers, but in that case should also override the {@link #isRoot(String)},
      * {@link #isContentNode(String)}, and {@link #idFor(File)} methods.
-     * 
+     *
      * @param id the identifier; may not be null
      * @return the File object for the given identifier
      * @see #isRoot(String)
@@ -269,6 +269,9 @@ public class FileSystemConnector extends Connector {
      */
     protected File fileFor( String id ) {
         assert id.startsWith(DELIMITER);
+        if (id.endsWith(DELIMITER)) {
+            id = id.substring(0, id.length() - DELIMITER.length());
+        }
         if (isContentNode(id)) {
             id = id.substring(0, id.length() - JCR_CONTENT_SUFFIX_LENGTH);
         }
@@ -279,7 +282,7 @@ public class FileSystemConnector extends Connector {
      * Utility method for determining if the node identifier is the identifier of the root node in this external source.
      * Subclasses may override this method to change the format of the identifiers, but in that case should also override the
      * {@link #fileFor(String)}, {@link #isContentNode(String)}, and {@link #idFor(File)} methods.
-     * 
+     *
      * @param id the identifier; may not be null
      * @return true if the identifier is for the root of this source, or false otherwise
      * @see #isContentNode(String)
@@ -294,7 +297,7 @@ public class FileSystemConnector extends Connector {
      * Utility method for determining the node identifier for the supplied file. Subclasses may override this method to change the
      * format of the identifiers, but in that case should also override the {@link #fileFor(String)},
      * {@link #isContentNode(String)}, and {@link #isRoot(String)} methods.
-     * 
+     *
      * @param file the file; may not be null
      * @return the node identifier; never null
      * @see #isRoot(String)
@@ -320,7 +323,7 @@ public class FileSystemConnector extends Connector {
     /**
      * Utility method for creating a {@link BinaryValue} for the given {@link File} object. Subclasses should rarely override this
      * method.
-     * 
+     *
      * @param file the file; may not be null
      * @return the BinaryValue; never null
      */
@@ -339,7 +342,7 @@ public class FileSystemConnector extends Connector {
     /**
      * Utility method to create a {@link BinaryValue} object for the given file. Subclasses should rarely override this method,
      * since the {@link UrlBinaryValue} will be applicable in most situations.
-     * 
+     *
      * @param key the binary key; never null
      * @param file the file for which the {@link BinaryValue} is to be created; never null
      * @return the binary value; never null
@@ -358,7 +361,7 @@ public class FileSystemConnector extends Connector {
      * Subclasses can override this method to transform the URL into something different. For example, if the files are being
      * served by a web server, the overridden method might transform the file-based URL into the corresponding HTTP-based URL.
      * </p>
-     * 
+     *
      * @param file the file for which the URL is to be created; never null
      * @return the URL for the file; never null
      * @throws IOException if there is an error creating the URL
@@ -369,7 +372,7 @@ public class FileSystemConnector extends Connector {
 
     /**
      * Utility method to determine if the file is excluded by the inclusion/exclusion filter.
-     * 
+     *
      * @param file the file
      * @return true if the file is excluded, or false if it is to be included
      */
@@ -379,7 +382,7 @@ public class FileSystemConnector extends Connector {
 
     /**
      * Utility method to ensure that the file is writable by this connector.
-     * 
+     *
      * @param id the identifier of the node
      * @param file the file
      * @throws DocumentStoreException if the file is expected to be writable but is not or is excluded, or if the connector is
@@ -427,6 +430,9 @@ public class FileSystemConnector extends Connector {
             }
             writer.addProperty(JCR_LAST_MODIFIED, factories().getDateFactory().create(file.lastModified()));
             writer.addProperty(JCR_LAST_MODIFIED_BY, null); // ignored
+
+            //make these binary not queryable. If we really want to query them, we need to switch to external binaries
+            writer.setNotQueryable();
             parentFile = file;
         } else if (file.isFile()) {
             writer.setPrimaryType(NT_FILE);
@@ -449,9 +455,12 @@ public class FileSystemConnector extends Connector {
                 }
             }
         }
-        // Set the reference to the parent ...
-        String parentId = idFor(parentFile);
-        writer.setParents(parentId);
+
+        if (!isRoot) {
+            // Set the reference to the parent ...
+            String parentId = idFor(parentFile);
+            writer.setParents(parentId);
+        }
 
         // Add the extra properties (if there are any), overwriting any properties with the same names
         // (e.g., jcr:primaryType, jcr:mixinTypes, jcr:mimeType, etc.) ...
