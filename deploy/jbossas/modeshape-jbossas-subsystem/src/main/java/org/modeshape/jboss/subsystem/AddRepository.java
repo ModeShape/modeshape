@@ -134,7 +134,7 @@ public class AddRepository extends AbstractAddStepHandler {
         EditableDocument workspacesDoc = parseWorkspaces(context, model, configDoc);
 
         // Set the storage information (that was set on the repository ModelNode) ...
-        parseStorage(cacheName, configDoc);
+        setRepositoryStorageConfiguration(cacheName, configDoc);
 
         // Indexing ...
         EditableDocument query = parseIndexing(context, model, configDoc);
@@ -303,6 +303,12 @@ public class AddRepository extends AbstractAddStepHandler {
         EditableDocument query = configDoc.getOrCreateDocument(FieldName.QUERY);
         EditableDocument indexing = query.getOrCreateDocument(FieldName.INDEXING);
 
+        String rebuildOnStartup = RepositoryConfiguration.QueryRebuild.IF_MISSING.name();
+        if (model.hasDefined(ModelKeys.REBUILD_INDEXES_UPON_STARTUP)) {
+            rebuildOnStartup = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP.resolveModelAttribute(context, model).asString().toLowerCase();
+        }
+        query.set(FieldName.REBUILD_UPON_STARTUP, rebuildOnStartup);
+
         String analyzerClassname = ModelAttributes.ANALYZER_CLASSNAME.resolveModelAttribute(context, model).asString();
         indexing.set(FieldName.INDEXING_ANALYZER, analyzerClassname);
 
@@ -340,8 +346,8 @@ public class AddRepository extends AbstractAddStepHandler {
         return query;
     }
 
-    private void parseStorage( String cacheName,
-                               EditableDocument configDoc ) {
+    private void setRepositoryStorageConfiguration( String cacheName,
+                                                    EditableDocument configDoc ) {
         EditableDocument storage = configDoc.getOrCreateDocument(FieldName.STORAGE);
         storage.set(FieldName.CACHE_NAME, cacheName);
         storage.set(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP, JBossTransactionManagerLookup.class.getName());

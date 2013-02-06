@@ -804,6 +804,7 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="if_missing" />
       <xs:enumeration value="always" />
+      <xs:enumeration value="never" />
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="file-system-access-type-enum">
