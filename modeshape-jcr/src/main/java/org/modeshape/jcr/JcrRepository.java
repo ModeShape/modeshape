@@ -959,7 +959,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final SystemContentInitializer systemContentInitializer;
         private final NodeTypesImporter nodeTypesImporter;
         private final Connectors connectors;
-        private final RepositoryConfiguration.QueryRebuild indexRebuildMode;
+        private final RepositoryConfiguration.IndexRebuildOptions indexRebuildOptions;
 
         private Transaction runningTransaction;
 
@@ -1189,19 +1189,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 Properties indexStorageProps = query.getIndexStorageProperties();
                 this.repositoryQueryManager = new RepositoryQueryManager(this, config.getQuery(), indexingExecutor, backendProps,
                                                                          indexingProps, indexStorageProps);
-//                boolean shouldIndexSystemContent = !indexingProps.getProperty(FieldName.INDEXING_MODE_SYSTEM_CONTENT)
-//                                                                 .equalsIgnoreCase(RepositoryConfiguration.IndexingMode.DISABLED.toString());
-//
-//                boolean asyncSystemContent = indexingProps.getProperty(FieldName.INDEXING_MODE_SYSTEM_CONTENT)
-//                                             .equalsIgnoreCase(RepositoryConfiguration.IndexingMode.ASYNC.toString());
-//                if (this.cache.createdSystemContent() && shouldIndexSystemContent) {
-//                    this.repositoryQueryManager.reindexSystemContent(asyncSystemContent);
-//                }
-
-                this.indexRebuildMode = query.getRebuildIndexesUponStartup();
+                this.indexRebuildOptions = query.getIndexRebuildOptions();
             } else {
                 this.repositoryQueryManager = null;
-                this.indexRebuildMode = null;
+                this.indexRebuildOptions = null;
             }
 
             // Check that we have parsers for all the required languages ...
@@ -1284,14 +1275,18 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             repositoryCache().completeInitialization();
 
             //check the re-indexing options and do the re-indexing (this must be done after all of the above have finished)
-            if (indexRebuildMode != null) {
-                switch (indexRebuildMode) {
+            if (indexRebuildOptions != null) {
+                RepositoryConfiguration.QueryRebuild when = indexRebuildOptions.getWhen();
+                boolean includeSystemContent = indexRebuildOptions.includeSystemContent();
+                boolean async = indexRebuildOptions.getMode() == RepositoryConfiguration.IndexingMode.ASYNC;
+
+                switch (when) {
                     case ALWAYS: {
-                        this.repositoryQueryManager.reindexContent(false, true, false);
+                        this.repositoryQueryManager.reindexContent(false, includeSystemContent, async);
                         break;
                     }
                     case IF_MISSING: {
-                        this.repositoryQueryManager.reindexContent(true, true, false);
+                        this.repositoryQueryManager.reindexContent(true, includeSystemContent, async);
                         break;
                     }
                     case NEVER: {

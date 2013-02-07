@@ -211,9 +211,6 @@ class RepositoryQueryManager {
             logger.debug("Starting reindex of system content in '{0}' repository.", runningState.name());
             reindexSystemContent(rootNode, Integer.MAX_VALUE, schemata, excludedKeysFromIndexing);
             logger.debug("Completed reindex of system content in '{0}' repository.", runningState.name());
-
-            //add the indexed nodes to the exclusion list, because we don't want to index them again below
-            excludedKeysFromIndexing.addAll(getIndexes().indexedNodes());
         }
 
         // Index the non-system workspaces ...
@@ -279,7 +276,7 @@ class RepositoryQueryManager {
                                    NodeCache cache,
                                    CachedNode node,
                                    int depth,
-                                   boolean lookForSystemNode,
+                                   boolean reindexSystemContent,
                                    Set<NodeKey> keysToExclude ) {
         boolean excludeCertainKeys = keysToExclude != null && !keysToExclude.isEmpty();
 
@@ -310,7 +307,7 @@ class RepositoryQueryManager {
         // Create a queue for processing the subgraph
         final Queue<NodeKey> queue = new LinkedList<NodeKey>();
 
-        if (lookForSystemNode) {
+        if (reindexSystemContent) {
             // We need to look for the system node, and index it differently ...
             ChildReferences childRefs = node.getChildReferences(cache);
             ChildReference systemRef = childRefs.getChild(JcrLexicon.SYSTEM);
@@ -328,7 +325,11 @@ class RepositoryQueryManager {
         } else {
             // Add all children to the queue ...
             for (ChildReference childRef : node.getChildReferences(cache)) {
-                queue.add(childRef.getKey());
+                NodeKey childKey = childRef.getKey();
+                //we should not reindex anything which is in the system area
+                if (!childKey.getWorkspaceKey().equals(runningState.systemWorkspaceKey())) {
+                    queue.add(childKey);
+                }
             }
         }
 
@@ -373,7 +374,7 @@ class RepositoryQueryManager {
         RepositoryCache repoCache = runningState.repositoryCache();
         String workspaceName = repoCache.getSystemWorkspaceName();
         NodeCache systemWorkspaceCache = repoCache.getWorkspaceCache(workspaceName);
-        reindexContent(workspaceName, schemata, systemWorkspaceCache, nodeInSystemBranch, depth, false, keysToExclude);
+        reindexContent(workspaceName, schemata, systemWorkspaceCache, nodeInSystemBranch, depth, true, keysToExclude);
     }
 
     protected void reindexSystemContent( boolean async ) {

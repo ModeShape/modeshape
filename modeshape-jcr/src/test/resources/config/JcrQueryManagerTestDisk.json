@@ -11,7 +11,9 @@
             "fileSystemAccessType" : "auto"
         },
         "indexing": {
-            "systemContentMode" : "sync"
+            "rebuildOnStartup": {
+                "includeSystemContent": true
+            }
         }
     }
 }

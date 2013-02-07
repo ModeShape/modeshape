@@ -10,6 +10,10 @@
     },
     "query" : {
         "enabled" : true,
-        "rebuildUponStartup" : "always"
+        "indexing" : {
+            "rebuildOnStartup" : {
+                "when" : "always"
+            }
+        }
     }
 }

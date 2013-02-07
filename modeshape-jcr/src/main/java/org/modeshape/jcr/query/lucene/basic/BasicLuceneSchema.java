@@ -526,18 +526,21 @@ public class BasicLuceneSchema implements LuceneSchema {
         ReaderProvider readerProvider = indexManager.getReaderProvider();
         IndexReader indexReader = readerProvider.openIndexReader();
         Set<NodeKey> indexedNodes = new HashSet<NodeKey>();
+
+        FieldSelector fieldSelector = new FieldSelector() {
+            @Override
+            public FieldSelectorResult accept( String fieldName ) {
+                return FieldName.ID.equalsIgnoreCase(fieldName) ?
+                       FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
+            }
+        };
+
         try {
             for (int docNumber = 0; docNumber < indexReader.numDocs(); docNumber++) {
                 if (indexReader.isDeleted(docNumber)) {
                     continue;
                 }
-                Document doc = indexReader.document(docNumber, new FieldSelector() {
-                    @Override
-                    public FieldSelectorResult accept( String fieldName ) {
-                        return FieldName.ID.equalsIgnoreCase(fieldName) ?
-                               FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
-                    }
-                });
+                Document doc = indexReader.document(docNumber, fieldSelector);
                 indexedNodes.add(new NodeKey(doc.get(FieldName.ID)));
             }
             return indexedNodes;

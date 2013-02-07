@@ -26,6 +26,10 @@
         }
     },
     "query" : {
-        "rebuildUponStartup" : "never"
+        "indexing" : {
+            "rebuildOnStartup" : {
+                "when" : "never"
+            }
+        }
     }
 }
