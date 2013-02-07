@@ -48,18 +48,8 @@ public class IndexStorage {
         indexStorage.set(RepositoryConfiguration.FieldName.INDEX_STORAGE_LOCATION, dataDirPath + "/indexes");
     }
 
-    void setDefaultValuesForIndexing() {
-        EditableDocument indexing = queryConfig.getOrCreateDocument(RepositoryConfiguration.FieldName.INDEXING);
-        EditableDocument backend = indexing.getOrCreateDocument(RepositoryConfiguration.FieldName.INDEXING_BACKEND);
-        backend.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.INDEXING_BACKEND_TYPE_LUCENE);
-    }
-
     boolean useDefaultValuesForIndexStorage() {
         return !queryConfig.containsField(RepositoryConfiguration.FieldName.INDEX_STORAGE);
-    }
-
-    boolean useDefaultValuesForIndexing() {
-        return !queryConfig.containsField(RepositoryConfiguration.FieldName.INDEXING);
     }
 
     /**

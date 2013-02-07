@@ -303,11 +303,10 @@ public class AddRepository extends AbstractAddStepHandler {
         EditableDocument query = configDoc.getOrCreateDocument(FieldName.QUERY);
         EditableDocument indexing = query.getOrCreateDocument(FieldName.INDEXING);
 
-        String rebuildOnStartup = RepositoryConfiguration.QueryRebuild.IF_MISSING.name();
-        if (model.hasDefined(ModelKeys.REBUILD_INDEXES_UPON_STARTUP)) {
-            rebuildOnStartup = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP.resolveModelAttribute(context, model).asString().toLowerCase();
-        }
-        query.set(FieldName.REBUILD_UPON_STARTUP, rebuildOnStartup);
+        parseIndexRebuildOptions(context, model, indexing);
+
+        EditableDocument backend = indexing.getOrCreateDocument(RepositoryConfiguration.FieldName.INDEXING_BACKEND);
+        backend.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.INDEXING_BACKEND_TYPE_LUCENE);
 
         String analyzerClassname = ModelAttributes.ANALYZER_CLASSNAME.resolveModelAttribute(context, model).asString();
         indexing.set(FieldName.INDEXING_ANALYZER, analyzerClassname);
@@ -329,9 +328,6 @@ public class AddRepository extends AbstractAddStepHandler {
         String indexMode = ModelAttributes.MODE.resolveModelAttribute(context, model).asString();
         indexing.set(FieldName.INDEXING_MODE, indexMode);
 
-        String systemContentIndexingMode = ModelAttributes.SYSTEM_CONTENT_MODE.resolveModelAttribute(context, model).asString();
-        indexing.set(FieldName.INDEXING_MODE_SYSTEM_CONTENT, systemContentIndexingMode);
-
         int indexAsyncThreadPoolSize = ModelAttributes.ASYNC_THREAD_POOL_SIZE.resolveModelAttribute(context, model).asInt();
         indexing.set(FieldName.INDEXING_ASYNC_THREAD_POOL_SIZE, indexAsyncThreadPoolSize);
 
@@ -344,6 +340,44 @@ public class AddRepository extends AbstractAddStepHandler {
             }
         }
         return query;
+    }
+
+    private void parseIndexRebuildOptions( OperationContext context,
+                                           ModelNode model,
+                                           EditableDocument indexing ) throws OperationFailedException {
+        EditableDocument rebuildIndexingOptions = indexing.getOrCreateDocument(FieldName.REBUILD_ON_STARTUP);
+
+        if (model.hasDefined(ModelKeys.REBUILD_INDEXES_UPON_STARTUP)) {
+            String rebuildWhen = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP.resolveModelAttribute(context, model).asString();
+            rebuildIndexingOptions.set(FieldName.REBUILD_WHEN, rebuildWhen);
+        }
+
+        if (model.hasDefined(ModelKeys.REBUILD_INDEXES_UPON_STARTUP_MODE)) {
+            String rebuildMode = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_MODE.resolveModelAttribute(context, model).asString();
+            rebuildIndexingOptions.set(FieldName.REBUILD_MODE, rebuildMode);
+        }
+
+        if (model.hasDefined(ModelKeys.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT)) {
+            boolean rebuildIncludeSystemContent = ModelAttributes.REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT.resolveModelAttribute(context, model).asBoolean();
+            rebuildIndexingOptions.setBoolean(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT, rebuildIncludeSystemContent);
+        }
+
+        if (model.hasDefined(ModelKeys.SYSTEM_CONTENT_MODE)) {
+            String deprecatedSystemContentMode = ModelAttributes.SYSTEM_CONTENT_MODE.resolveModelAttribute(context, model).asString();
+            boolean deprecatedBooleanIncludesSystemContent = deprecatedSystemContentMode.equalsIgnoreCase(
+                    RepositoryConfiguration.IndexingMode.SYNC.name()) || deprecatedSystemContentMode.equalsIgnoreCase(
+                    RepositoryConfiguration.IndexingMode.ASYNC.name());
+            String deprecatedRebuildMode = !RepositoryConfiguration.IndexingMode.DISABLED.name().equalsIgnoreCase(deprecatedSystemContentMode) ?
+                                           deprecatedSystemContentMode : RepositoryConfiguration.IndexingMode.SYNC.name();
+
+            if (!rebuildIndexingOptions.containsField(FieldName.REBUILD_MODE)) {
+                rebuildIndexingOptions.set(FieldName.REBUILD_MODE, deprecatedRebuildMode);
+            }
+
+            if (!rebuildIndexingOptions.containsField(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT)) {
+                rebuildIndexingOptions.setBoolean(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT, deprecatedBooleanIncludesSystemContent);
+            }
+        }
     }
 
     private void setRepositoryStorageConfiguration( String cacheName,

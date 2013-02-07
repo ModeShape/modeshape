@@ -439,6 +439,9 @@ public class ModelAttributes {
                                                                                                                                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                                .build();
 
+    /**
+     * @deprecated use the REBUILD_INDEXES_UPON_STARTUP,REBUILD_INDEXES_UPON_STARTUP_MODE, REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT attributes
+     */
     public static final SimpleAttributeDefinition SYSTEM_CONTENT_MODE = new MappedAttributeDefinitionBuilder(
                                                                                                              ModelKeys.SYSTEM_CONTENT_MODE,
                                                                                                              ModelType.STRING).setXmlName(Attribute.SYSTEM_CONTENT_MODE.getLocalName())
@@ -587,22 +590,67 @@ public class ModelAttributes {
                                                                                                          ModelKeys.READER_STRATEGY,
                                                                                                          ModelType.STRING).setXmlName(Attribute.READER_STRATEGY.getLocalName())
                                                                                                                           .setAllowExpression(true)
-                                                                                                                          .setAllowNull(true)
-                                                                                                                          .setDefaultValue(new ModelNode().set(IndexReaderStrategy.SHARED.toString()))
-                                                                                                                          .setValidator(READER_STRATEGY_VALIDATOR)
+                                                                                                                          .setAllowNull(
+                                                                                                                                  true)
+                                                                                                                          .setDefaultValue(
+                                                                                                                                  new ModelNode()
+                                                                                                                                          .set(IndexReaderStrategy
+                                                                                                                                                       .SHARED
+                                                                                                                                                       .toString()))
+                                                                                                                          .setValidator(
+                                                                                                                                  READER_STRATEGY_VALIDATOR)
                                                                                                                           .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                           .build();
 
     public static final SimpleAttributeDefinition REBUILD_INDEXES_UPON_STARTUP = new MappedAttributeDefinitionBuilder(
                                                                                                                       ModelKeys.REBUILD_INDEXES_UPON_STARTUP,
                                                                                                                       ModelType.STRING).setXmlName(Attribute.REBUILD_UPON_STARTUP.getLocalName())
-                                                                                                                                       .setAllowExpression(true)
+                                                                                                                                       .setAllowExpression(
+                                                                                                                                               true)
+                                                                                                                                       .setAllowNull(
+                                                                                                                                               true)
+                                                                                                                                       .setDefaultValue(
+                                                                                                                                               new ModelNode()
+                                                                                                                                                       .set(QueryRebuild
+                                                                                                                                                                    .IF_MISSING
+                                                                                                                                                                    .toString()))
+                                                                                                                                       .setValidator(
+                                                                                                                                               REBUILD_INDEXES_VALIDATOR)
+                                                                                                                                       .setFlags(
+                                                                                                                                               AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                       .setFieldPathInRepositoryConfiguration(
+                                                                                                                                               FieldName.QUERY,
+                                                                                                                                               FieldName.INDEXING,
+                                                                                                                                               FieldName.REBUILD_ON_STARTUP,
+                                                                                                                                               FieldName.REBUILD_WHEN)
+                                                                                                                                       .build();
+
+    public static final SimpleAttributeDefinition REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT = new MappedAttributeDefinitionBuilder(
+                                                                                                                      ModelKeys.REBUILD_INDEXES_UPON_STARTUP_MODE,
+                                                                                                                      ModelType.BOOLEAN).setXmlName(Attribute.REBUILD_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT.getLocalName())
+                                                                                                                                       .setAllowExpression(false)
                                                                                                                                        .setAllowNull(true)
-                                                                                                                                       .setDefaultValue(new ModelNode().set(QueryRebuild.IF_MISSING.toString()))
-                                                                                                                                       .setValidator(REBUILD_INDEXES_VALIDATOR)
+                                                                                                                                       .setDefaultValue(new ModelNode().set(false))
                                                                                                                                        .setFlags(AttributeAccess.Flag.RESTART_NONE)
                                                                                                                                        .setFieldPathInRepositoryConfiguration(FieldName.QUERY,
-                                                                                                                                                                              FieldName.REBUILD_UPON_STARTUP)
+                                                                                                                                                                              FieldName.INDEXING,
+                                                                                                                                                                              FieldName.REBUILD_ON_STARTUP,
+                                                                                                                                                                              FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT)
+                                                                                                                                       .build();
+
+
+    public static final SimpleAttributeDefinition REBUILD_INDEXES_UPON_STARTUP_MODE = new MappedAttributeDefinitionBuilder(
+                                                                                                                      ModelKeys.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT,
+                                                                                                                      ModelType.STRING).setXmlName(Attribute.REBUILD_UPON_STARTUP_MODE.getLocalName())
+                                                                                                                                       .setAllowExpression(true)
+                                                                                                                                       .setAllowNull(true)
+                                                                                                                                       .setDefaultValue(new ModelNode().set(IndexingMode.SYNC.toString()))
+                                                                                                                                       .setValidator(INDEXING_MODE_VALIDATOR)
+                                                                                                                                       .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                       .setFieldPathInRepositoryConfiguration(FieldName.QUERY,
+                                                                                                                                                                              FieldName.INDEXING,
+                                                                                                                                                                              FieldName.REBUILD_ON_STARTUP,
+                                                                                                                                                                              FieldName.REBUILD_MODE)
                                                                                                                                        .build();
 
     public static final SimpleAttributeDefinition REFRESH_PERIOD = new MappedAttributeDefinitionBuilder(ModelKeys.REFRESH_PERIOD,
