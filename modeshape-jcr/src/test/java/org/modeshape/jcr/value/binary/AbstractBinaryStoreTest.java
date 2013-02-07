@@ -54,26 +54,34 @@ import org.modeshape.jcr.value.BinaryValue;
  */
 public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest {
 
-    public static final byte[] LARGE_DATA = new byte[6 * 1024 * 1024];
-    public static final BinaryKey LARGE_KEY;
-    public static final byte[] SMALL_DATA = new byte[1024];
-    public static final BinaryKey SMALL_KEY;
-    public static final byte[] MEDIUM_DATA = new byte[1024 * 100];
-    public static final BinaryKey MEDIUM_KEY;
-    public static final byte[] ZERO_DATA = new byte[0];
-    public static final BinaryKey ZERO_KEY;
+    /**
+     * We need to generate the test byte arrays based on the minimum binary size, because that controls the distinction
+     * between Stored/In Memory binary values.
+     */
+    public static final byte[] STORED_LARGE_BINARY = new byte[(int)(AbstractBinaryStore.DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES * 4)];
+    public static final BinaryKey STORED_LARGE_KEY;
+    public static final byte[] IN_MEMORY_BINARY = new byte[(int)(AbstractBinaryStore.DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES / 2)];
+    public static final BinaryKey IN_MEMORY_KEY;
+    public static final byte[] STORED_MEDIUM_BINARY = new byte[(int)(AbstractBinaryStore.DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES * 2)];
+    public static final BinaryKey STORED_MEDIUM_KEY;
+    public static final byte[] EMPTY_BINARY = new byte[0];
+    public static final BinaryKey EMPTY_BINARY_KEY;
     public static final String TEXT_DATA;
 
     private static final Random RANDOM = new Random();
 
     static {
-        RANDOM.nextBytes(LARGE_DATA);
-        LARGE_KEY = BinaryKey.keyFor(LARGE_DATA);
-        RANDOM.nextBytes(SMALL_DATA);
-        SMALL_KEY = BinaryKey.keyFor(SMALL_DATA);
-        RANDOM.nextBytes(MEDIUM_DATA);
-        MEDIUM_KEY = BinaryKey.keyFor(MEDIUM_DATA);
-        ZERO_KEY = BinaryKey.keyFor(new byte[0]);
+        RANDOM.nextBytes(STORED_LARGE_BINARY);
+        STORED_LARGE_KEY = BinaryKey.keyFor(STORED_LARGE_BINARY);
+
+        RANDOM.nextBytes(IN_MEMORY_BINARY);
+        IN_MEMORY_KEY = BinaryKey.keyFor(IN_MEMORY_BINARY);
+
+        RANDOM.nextBytes(STORED_MEDIUM_BINARY);
+        STORED_MEDIUM_KEY = BinaryKey.keyFor(STORED_MEDIUM_BINARY);
+
+        EMPTY_BINARY_KEY = BinaryKey.keyFor(EMPTY_BINARY);
+
         TEXT_DATA = "Flash Gordon said: Ich bin Bärliner." + UUID.randomUUID().toString();
     }
 
@@ -97,22 +105,22 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
 
     @Test
     public void shouldStoreLargeBinary() throws BinaryStoreException, IOException {
-        storeAndValidate(LARGE_KEY, LARGE_DATA);
+        storeAndValidate(STORED_LARGE_KEY, STORED_LARGE_BINARY);
     }
 
     @Test
     public void shouldStoreMediumBinary() throws BinaryStoreException, IOException {
-        storeAndValidate(MEDIUM_KEY, MEDIUM_DATA);
+        storeAndValidate(STORED_MEDIUM_KEY, STORED_MEDIUM_BINARY);
     }
 
     @Test
     public void shouldStoreSmallBinary() throws BinaryStoreException, IOException {
-        storeAndValidate(SMALL_KEY, SMALL_DATA);
+        storeAndValidate(IN_MEMORY_KEY, IN_MEMORY_BINARY);
     }
 
     @Test
     public void shouldStoreZeroLengthBinary() throws BinaryStoreException, IOException {
-        storeAndValidate(ZERO_KEY, ZERO_DATA);
+        storeAndValidate(EMPTY_BINARY_KEY, EMPTY_BINARY);
     }
 
     private BinaryValue storeAndValidate( BinaryKey key,
@@ -129,9 +137,9 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
 
     @Test
     public void shouldCleanupUnunsedValues() throws Exception {
-        getBinaryStore().storeValue(new ByteArrayInputStream(SMALL_DATA));
+        getBinaryStore().storeValue(new ByteArrayInputStream(IN_MEMORY_BINARY));
         List<BinaryKey> keys = new ArrayList<BinaryKey>();
-        keys.add(SMALL_KEY);
+        keys.add(IN_MEMORY_KEY);
         getBinaryStore().markAsUnused(keys);
         Thread.sleep(1000);
         // now remove and test if still there
@@ -139,7 +147,7 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
 
         try {
             // no annotation used here to differ from other BinaryStoreException
-            getBinaryStore().getInputStream(SMALL_KEY);
+            getBinaryStore().getInputStream(IN_MEMORY_KEY);
             fail("Key was not removed");
         } catch (BinaryStoreException ex) {
         }
@@ -161,10 +169,10 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
 
     @Test
     public void shouldReturnAllStoredKeys() throws Exception {
-        storeAndValidate(MEDIUM_KEY, MEDIUM_DATA);
-        storeAndValidate(SMALL_KEY, SMALL_DATA);
+        storeAndValidate(STORED_MEDIUM_KEY, STORED_MEDIUM_BINARY);
+        storeAndValidate(IN_MEMORY_KEY, IN_MEMORY_BINARY);
 
-        List<String> keys = new ArrayList<String>(Arrays.asList(MEDIUM_KEY.toString(), SMALL_KEY.toString()));
+        List<String> keys = new ArrayList<String>(Arrays.asList(STORED_MEDIUM_KEY.toString(), IN_MEMORY_KEY.toString()));
         for (BinaryKey key : getBinaryStore().getAllBinaryKeys()) {
             keys.remove(key.toString());
         }
@@ -174,7 +182,7 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
     @Test
     public void shouldExtractAndStoreMimeTypeWhenDetectorConfigured() throws RepositoryException, IOException {
         getBinaryStore().setMimeTypeDetector(new DummyMimeTypeDetector());
-        BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(SMALL_DATA));
+        BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(IN_MEMORY_BINARY));
         assertNull(((AbstractBinaryStore)getBinaryStore()).getStoredMimeType(binaryValue));
         // unclean stuff... a getter modifies silently data
         assertEquals(DummyMimeTypeDetector.DEFAULT_TYPE, getBinaryStore().getMimeType(binaryValue, "foobar.txt"));
@@ -188,12 +196,13 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         BinaryStore binaryStore = getBinaryStore();
         binaryStore.setTextExtractors(extractors);
 
-        byte[] randomBinary = new byte[1024];
-        RANDOM.nextBytes(randomBinary);
-
-        BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(randomBinary));
-        assertNull(((AbstractBinaryStore)getBinaryStore()).getStoredMimeType(binaryValue));
+        BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(STORED_LARGE_BINARY));
         String extractedText = binaryStore.getText(binaryValue);
+        if (extractedText == null) {
+            //if nothing is found the first time, sleep and try again - Mongo on Windows seems to exibit this problem for some reason
+            Thread.sleep(TimeUnit.SECONDS.toMillis(2));
+            extractedText = binaryStore.getText(binaryValue);
+        }
         assertEquals(DummyTextExtractor.EXTRACTED_TEXT, extractedText);
         assertEquals(DummyTextExtractor.EXTRACTED_TEXT, ((AbstractBinaryStore)binaryStore).getExtractedText(binaryValue));
     }
