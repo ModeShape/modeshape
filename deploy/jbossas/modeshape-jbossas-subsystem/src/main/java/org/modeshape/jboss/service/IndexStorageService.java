@@ -93,10 +93,6 @@ public class IndexStorageService implements Service<IndexStorage> {
             //use optional value because this service is dynamically queried from AbstractAddIndexStorage
             indexStorage.setDefaultValuesForIndexStorage(dataDirectoryPathInjector.getOptionalValue());
         }
-        if (indexStorage.useDefaultValuesForIndexing()) {
-            indexStorage.setDefaultValuesForIndexing();
-        }
-
         indexStorage.setCacheContainer(cacheContainerInjectedValue.getOptionalValue());
         return indexStorage;
     }

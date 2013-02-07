@@ -337,7 +337,7 @@
             </repository>
             <repository name="federatedRepository">
                 <!--Turn off initial indexing for performance reasons-->
-                <indexing rebuild-upon-startup="never"/>
+                <indexing rebuild-upon-startup="never" rebuild-upon-startup-include-system-content="false" rebuild-upon-startup-mode="sync"/>
                 <workspaces allow-workspace-creation="true" default-workspace="default">
                     <workspace name="default"/>
                     <workspace name="other"/>
