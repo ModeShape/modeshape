@@ -458,7 +458,8 @@ public final class JcrI18n {
 
     public static I18n federationNodeKeyDoesNotBelongToSource;
     public static I18n invalidProjectionPath;
-
+    public static I18n invalidProjectionExpression;
+    
     static {
         try {
             I18n.initialize(JcrI18n.class);
