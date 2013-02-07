@@ -24,5 +24,12 @@
                 "default:/federation/fs => /doesnt-exist"
             ]
         }
+    },
+    "query" : {
+        "indexing" : {
+            "rebuildOnStartup" : {
+                "when" : "never"
+            }
+        }
     }
 }

@@ -29,6 +29,13 @@
             "classname" : "filesystem",
             "directoryPath" : "target/federation/files-none",
             "extraPropertiesStorage" : "none",
-        },
+        }
+    },
+    "query" : {
+        "indexing" : {
+            "rebuildOnStartup" : {
+                "when" : "never"
+            }
+        }
     }
 }

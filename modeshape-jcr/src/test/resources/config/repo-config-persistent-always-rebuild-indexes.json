@@ -1,0 +1,19 @@
+{
+    "name" : "Persistent Repository",
+    "storage" : {
+        "cacheName" : "persistentRepository",
+        "cacheConfiguration" : "config/infinispan-persistent.xml"
+    },
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "query" : {
+        "enabled" : true,
+        "indexing" : {
+            "rebuildOnStartup" : {
+                "when" : "always"
+            }
+        }
+    }
+}

@@ -3,14 +3,14 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
+ * See the AUTHORS.txt file in the distribution for a full listing of
  * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
@@ -157,32 +158,74 @@ class RepositoryQueryManager {
 
     /**
      * Crawl and index all of the repository content.
+     *
+     * @param indexOnlyIfMissing flag which indicates whether all the nodes should be re-indexed or only nodes which are not part
+     * of the existing indexes
+     * @param includeSystemContent flag which indicates whether content in the system workspace (below /jcr:system) should be re-indexed or not.
+     * @param async flag which indicates whether the operation should be done synchronously or asynchronously
      */
-    protected void reindexContent() {
+    protected void reindexContent(final boolean indexOnlyIfMissing, final boolean includeSystemContent, boolean async) {
+        if (async) {
+            indexingExecutorService.submit(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    reindexContent(indexOnlyIfMissing, includeSystemContent);
+                    return null;
+                }
+            });
+        } else {
+            reindexContent(indexOnlyIfMissing, includeSystemContent);
+        }
+    }
+
+    /**
+     * Crawl and index all of the repository content.
+     */
+    private void reindexContent(boolean indexOnlyIfMissing, boolean includeSystemContent) {
         // The node type schemata changes every time a node type is (un)registered, so get the snapshot that we'll use throughout
         NodeTypeSchemata schemata = runningState.nodeTypeManager().getRepositorySchemata();
         RepositoryCache repoCache = runningState.repositoryCache();
 
-        // Index the system content ...
-        logger.debug("Starting reindex of system content in '{0}' repository.", runningState.name());
-        NodeCache nodeCache = repoCache.getWorkspaceCache(repoCache.getSystemWorkspaceName());
-        CachedNode rootNode = nodeCache.getNode(nodeCache.getRootKey());
-        reindexSystemContent(rootNode, Integer.MAX_VALUE, schemata);
-        logger.debug("Completed reindex of system content in '{0}' repository.", runningState.name());
+        //If we want to index only missing nodes, we need load what's already indexed
+        Set<NodeKey> excludedKeysFromIndexing = new HashSet<NodeKey>();
+        if (indexOnlyIfMissing) {
+            excludedKeysFromIndexing.addAll(getIndexes().indexedNodes());
+        }
+
+        if (indexOnlyIfMissing) {
+            if (excludedKeysFromIndexing.isEmpty()) {
+                logger.info(JcrI18n.reindexMissingNoIndexesExist, runningState.name());
+            } else {
+                logger.debug(
+                        "Only missing indexes will be re-indexed in the {0} repository. The existing nodes are indexed: {1}",
+                        runningState.name(), excludedKeysFromIndexing);
+            }
+        } else {
+            logger.info(JcrI18n.reindexAll, runningState.name());
+        }
+
+        if (includeSystemContent) {
+            NodeCache systemWorkspaceCache = repoCache.getWorkspaceCache(repoCache.getSystemWorkspaceName());
+            CachedNode rootNode = systemWorkspaceCache.getNode(repoCache.getSystemKey());
+            // Index the system content ...
+            logger.debug("Starting reindex of system content in '{0}' repository.", runningState.name());
+            reindexSystemContent(rootNode, Integer.MAX_VALUE, schemata, excludedKeysFromIndexing);
+            logger.debug("Completed reindex of system content in '{0}' repository.", runningState.name());
+        }
 
         // Index the non-system workspaces ...
         for (String workspaceName : repoCache.getWorkspaceNames()) {
-            nodeCache = repoCache.getWorkspaceCache(workspaceName);
-            rootNode = nodeCache.getNode(nodeCache.getRootKey());
+            NodeCache workspaceCache = repoCache.getWorkspaceCache(workspaceName);
+            CachedNode rootNode = workspaceCache.getNode(workspaceCache.getRootKey());
             logger.debug("Starting reindex of workspace '{0}' content in '{1}' repository.", runningState.name(), workspaceName);
-            reindexContent(workspaceName, schemata, nodeCache, rootNode, Integer.MAX_VALUE, true);
+            reindexContent(workspaceName, schemata, workspaceCache, rootNode, Integer.MAX_VALUE, false, excludedKeysFromIndexing);
             logger.debug("Completed reindex of workspace '{0}' content in '{1}' repository.", runningState.name(), workspaceName);
         }
     }
 
     /**
      * Crawl and index the content in the named workspace.
-     * 
+     *
      * @param workspace the workspace
      * @throws IllegalArgumentException if the workspace is null
      */
@@ -192,7 +235,7 @@ class RepositoryQueryManager {
 
     /**
      * Crawl and index the content starting at the supplied path in the named workspace, to the designated depth.
-     * 
+     *
      * @param workspace the workspace
      * @param path the path of the content to be indexed
      * @param depth the depth of the content to be indexed
@@ -221,10 +264,10 @@ class RepositoryQueryManager {
         // If the node is in the system workspace ...
         String systemWorkspaceKey = runningState.repositoryCache().getSystemWorkspaceKey();
         if (node.getKey().getWorkspaceKey().equals(systemWorkspaceKey)) {
-            reindexSystemContent(node, depth, schemata);
+            reindexSystemContent(node, depth, schemata, null);
         } else {
             // It's just a regular node in the workspace ...
-            reindexContent(workspaceName, schemata, cache, node, depth, path.isRoot());
+            reindexContent(workspaceName, schemata, cache, node, depth, path.isRoot(), null);
         }
     }
 
@@ -233,7 +276,10 @@ class RepositoryQueryManager {
                                    NodeCache cache,
                                    CachedNode node,
                                    int depth,
-                                   boolean lookForSystemNode ) {
+                                   boolean reindexSystemContent,
+                                   Set<NodeKey> keysToExclude ) {
+        boolean excludeCertainKeys = keysToExclude != null && !keysToExclude.isEmpty();
+
         if (!node.isQueryable(cache)) {
             return;
         }
@@ -245,21 +291,23 @@ class RepositoryQueryManager {
         // Index the first node ...
         final QueryIndexing indexes = getIndexes();
         final TransactionContext txnCtx = NO_TRANSACTION;
-        indexes.updateIndex(workspaceName,
-                            node.getKey(),
-                            nodePath,
-                            node.getPrimaryType(cache),
-                            node.getMixinTypes(cache),
-                            node.getProperties(cache),
-                            schemata,
-                            txnCtx);
+        if (!excludeCertainKeys || !keysToExclude.contains(node.getKey())) {
+            indexes.updateIndex(workspaceName,
+                                node.getKey(),
+                                nodePath,
+                                node.getPrimaryType(cache),
+                                node.getMixinTypes(cache),
+                                node.getProperties(cache),
+                                schemata,
+                                txnCtx);
+        }
 
         if (depth == 1) return;
 
         // Create a queue for processing the subgraph
         final Queue<NodeKey> queue = new LinkedList<NodeKey>();
 
-        if (lookForSystemNode) {
+        if (reindexSystemContent) {
             // We need to look for the system node, and index it differently ...
             ChildReferences childRefs = node.getChildReferences(cache);
             ChildReference systemRef = childRefs.getChild(JcrLexicon.SYSTEM);
@@ -269,7 +317,7 @@ class RepositoryQueryManager {
                 if (childKey.equals(systemKey)) {
                     // This is the "/jcr:system" node ...
                     node = cache.getNode(childKey);
-                    reindexSystemContent(node, depth - 1, schemata);
+                    reindexSystemContent(node, depth - 1, schemata, keysToExclude);
                 } else {
                     queue.add(childKey);
                 }
@@ -277,7 +325,11 @@ class RepositoryQueryManager {
         } else {
             // Add all children to the queue ...
             for (ChildReference childRef : node.getChildReferences(cache)) {
-                queue.add(childRef.getKey());
+                NodeKey childKey = childRef.getKey();
+                //we should not reindex anything which is in the system area
+                if (!childKey.getWorkspaceKey().equals(runningState.systemWorkspaceKey())) {
+                    queue.add(childKey);
+                }
             }
         }
 
@@ -293,15 +345,17 @@ class RepositoryQueryManager {
             }
             nodePath = paths.getPath(node);
 
-            // Index the node ...
-            indexes.updateIndex(workspaceName,
-                                node.getKey(),
-                                nodePath,
-                                node.getPrimaryType(cache),
-                                node.getMixinTypes(cache),
-                                node.getProperties(cache),
-                                schemata,
-                                txnCtx);
+            if (!excludeCertainKeys || !keysToExclude.contains(key)) {
+                // Index the node ...
+                indexes.updateIndex(workspaceName,
+                                    node.getKey(),
+                                    nodePath,
+                                    node.getPrimaryType(cache),
+                                    node.getMixinTypes(cache),
+                                    node.getProperties(cache),
+                                    schemata,
+                                    txnCtx);
+            }
 
             // Check the depth ...
             if (nodePath.size() <= depth) {
@@ -315,11 +369,12 @@ class RepositoryQueryManager {
 
     protected void reindexSystemContent( CachedNode nodeInSystemBranch,
                                          int depth,
-                                         NodeTypeSchemata schemata ) {
+                                         NodeTypeSchemata schemata,
+                                         Set<NodeKey> keysToExclude) {
         RepositoryCache repoCache = runningState.repositoryCache();
         String workspaceName = repoCache.getSystemWorkspaceName();
         NodeCache systemWorkspaceCache = repoCache.getWorkspaceCache(workspaceName);
-        reindexContent(workspaceName, schemata, systemWorkspaceCache, nodeInSystemBranch, depth, false);
+        reindexContent(workspaceName, schemata, systemWorkspaceCache, nodeInSystemBranch, depth, true, keysToExclude);
     }
 
     protected void reindexSystemContent( boolean async ) {
@@ -343,16 +398,16 @@ class RepositoryQueryManager {
                                                NodeCache systemWorkspaceCache ) {
         final NodeTypeSchemata schemata = runningState.nodeTypeManager().getRepositorySchemata();
         // first reindex only /jcr:system
-        reindexSystemContent(systemRoot, 1, schemata);
+        reindexSystemContent(systemRoot, 1, schemata, null);
         for (ChildReference childReference : systemRoot.getChildReferences(systemWorkspaceCache)) {
             CachedNode systemNode = systemWorkspaceCache.getNode(childReference.getKey());
-            reindexSystemContent(systemNode, Integer.MAX_VALUE, schemata);
+            reindexSystemContent(systemNode, Integer.MAX_VALUE, schemata, null);
         }
     }
 
     /**
      * Asynchronously crawl and index the content in the named workspace.
-     * 
+     *
      * @param workspace the workspace
      * @return the future for the asynchronous operation; never null
      * @throws IllegalArgumentException if the workspace is null
@@ -369,7 +424,7 @@ class RepositoryQueryManager {
 
     /**
      * Asynchronously crawl and index the content starting at the supplied path in the named workspace, to the designated depth.
-     * 
+     *
      * @param workspace the workspace
      * @param path the path of the content to be indexed
      * @param depth the depth of the content to be indexed

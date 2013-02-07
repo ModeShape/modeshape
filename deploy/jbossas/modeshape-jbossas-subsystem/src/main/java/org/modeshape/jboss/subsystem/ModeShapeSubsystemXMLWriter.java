@@ -171,6 +171,18 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                                                  ModelAttributes.REBUILD_INDEXES_UPON_STARTUP,
                                                  Element.INDEXING,
                                                  started);
+            } else if (ModelKeys.REBUILD_INDEXES_UPON_STARTUP_MODE.equals(key)) {
+                started = startAndWriteAttribute(writer,
+                                                 repository,
+                                                 ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_MODE,
+                                                 Element.INDEXING,
+                                                 started);
+            } else if (ModelKeys.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT.equals(key)) {
+                started = startAndWriteAttribute(writer,
+                                                 repository,
+                                                 ModelAttributes.REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT,
+                                                 Element.INDEXING,
+                                                 started);
             } else if (ModelKeys.ANALYZER_CLASSNAME.equals(key)) {
                 started = startAndWriteAttribute(writer,
                                                  repository,

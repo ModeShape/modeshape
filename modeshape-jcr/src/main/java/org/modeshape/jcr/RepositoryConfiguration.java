@@ -398,7 +398,6 @@ public class RepositoryConfiguration {
         public static final String METADATA_CACHE_NAME = "metadataCacheName";
         public static final String QUERY = "query";
         public static final String QUERY_ENABLED = "enabled";
-        public static final String REBUILD_UPON_STARTUP = "rebuildUponStartup";
         public static final String INDEX_STORAGE = "indexStorage";
         public static final String INDEXING = "indexing";
         public static final String INDEXING_BACKEND = "backend";
@@ -428,7 +427,6 @@ public class RepositoryConfiguration {
         public static final String INDEXING_INDEX_FORMAT = "indexFormat";
         public static final String INDEXING_READER_STRATEGY = "readerStrategy";
         public static final String INDEXING_MODE = "mode";
-        public static final String INDEXING_MODE_SYSTEM_CONTENT = "systemContentMode";
         public static final String INDEXING_ASYNC_THREAD_POOL_SIZE = "asyncThreadPoolSize";
         public static final String INDEXING_ASYNC_MAX_QUEUE_SIZE = "asyncMaxQueueSize";
 
@@ -450,6 +448,22 @@ public class RepositoryConfiguration {
         public static final String INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME = "queueJndiName";
         public static final String INDEXING_BACKEND_JGROUPS_CHANNEL_NAME = "channelName";
         public static final String INDEXING_BACKEND_JGROUPS_CHANNEL_CONFIGURATION = "channelConfiguration";
+
+        /**
+         * @deprecated use REBUILD_ON_STARTUP document
+         */
+        public static final String REBUILD_UPON_STARTUP = "rebuildUponStartup";
+
+        /**
+         * @deprecated use REBUILD_ON_STARTUP document
+         */
+        public static final String INDEXING_MODE_SYSTEM_CONTENT = "systemContentMode";
+
+        public static final String REBUILD_ON_STARTUP = "rebuildOnStartup";
+        public static final String REBUILD_WHEN = "when";
+        public static final String REBUILD_INCLUDE_SYSTEM_CONTENT = "includeSystemContent";
+        public static final String REBUILD_MODE = "mode";
+
 
         /**
          * The name of the clustering top-level configuration document
@@ -1621,6 +1635,7 @@ public class RepositoryConfiguration {
      */
     public enum QueryRebuild {
         ALWAYS,
+        NEVER,
         IF_MISSING;
     }
 
@@ -1675,23 +1690,21 @@ public class RepositoryConfiguration {
         }
 
         /**
-         * Get the specification for when the indexes should be built when the system starts up.
-         * 
-         * @return whether to rebuild the indexes upon repository startup
-         */
-        public QueryRebuild getRebuildIndexesUponStartup() {
-            String rebuild = query.getString(FieldName.REBUILD_UPON_STARTUP);
-            QueryRebuild result = QueryRebuild.valueOf(rebuild);
-            return result != null ? result : QueryRebuild.IF_MISSING;
-        }
-
-        /**
          * Get the name of the thread pool that should be used for indexing work.
          * 
          * @return the thread pool name; never null
          */
         public String getThreadPoolName() {
             return query.getString(FieldName.THREAD_POOL, Default.QUERY_THREAD_POOL);
+        }
+
+        /**
+         * Returns the options that should be used for rebuilding indexes when the repository starts up.
+         *
+         * @return a {@code non-null} {@link IndexRebuildOptions} instance.
+         */
+        public IndexRebuildOptions getIndexRebuildOptions() {
+            return new IndexRebuildOptions(query);
         }
 
         /**
@@ -1777,8 +1790,6 @@ public class RepositoryConfiguration {
             setDefProp(props, FieldName.INDEXING_INDEX_FORMAT, Default.INDEXING_INDEX_FORMAT);
             setDefProp(props, FieldName.INDEXING_READER_STRATEGY, Default.INDEXING_READER_STRATEGY.toString().toLowerCase());
             setDefProp(props, FieldName.INDEXING_MODE, Default.INDEXING_MODE.toString().toLowerCase());
-            setDefProp(props, FieldName.INDEXING_MODE_SYSTEM_CONTENT, Default.INDEXING_MODE_SYSTEM_CONTENT.toString()
-                                                                                                          .toLowerCase());
             setDefProp(props, FieldName.INDEXING_ASYNC_THREAD_POOL_SIZE, Default.INDEXING_ASYNC_THREAD_POOL_SIZE);
             setDefProp(props, FieldName.INDEXING_ASYNC_MAX_QUEUE_SIZE, Default.INDEXING_ASYNC_MAX_QUEUE_SIZE);
             return props;
@@ -1817,6 +1828,92 @@ public class RepositoryConfiguration {
             if (!props.containsKey(name) && defaultValue != null) {
                 props.setProperty(name, defaultValue);
             }
+        }
+    }
+
+    @Immutable
+    public class IndexRebuildOptions {
+
+        private final QueryRebuild when;
+        private final Boolean includeSystemContent;
+        private final IndexingMode mode;
+
+        private IndexRebuildOptions( Document query ) {
+            assert query != null;
+
+            //first parse the deprecated fields (we need to avoid breaking client compatibility)
+            QueryRebuild deprecatedQueryRebuild = QueryRebuild.IF_MISSING;
+            if (query.containsField(FieldName.REBUILD_UPON_STARTUP)) {
+                deprecatedQueryRebuild = QueryRebuild.valueOf(query.getString(FieldName.REBUILD_UPON_STARTUP).toUpperCase());
+            }
+
+            Boolean deprecatedIncludeSystemContent = false;
+            IndexingMode deprecatedIndexingMode = IndexingMode.SYNC;
+            if (query.containsField(FieldName.INDEXING_MODE_SYSTEM_CONTENT)) {
+                deprecatedIndexingMode = IndexingMode.valueOf(query.getString(FieldName.INDEXING_MODE_SYSTEM_CONTENT).toUpperCase());
+                switch (deprecatedIndexingMode) {
+                    case SYNC: {
+                        deprecatedIncludeSystemContent = true;
+                        break;
+                    }
+                    case ASYNC: {
+                        deprecatedIncludeSystemContent = true;
+                        break;
+                    }
+                    case DISABLED: {
+                        //we don't support disabled in the new indexing mode, so fallback to the default
+                        deprecatedIndexingMode = IndexingMode.SYNC;
+                        break;
+                    }
+                }
+            }
+
+            //look for the new document structure
+            Document rebuildOnStartupDocument = null;
+            if (query.containsField(FieldName.INDEXING)) {
+                Document indexingDocument = query.getDocument(FieldName.INDEXING);
+                rebuildOnStartupDocument = indexingDocument.getDocument(FieldName.REBUILD_ON_STARTUP);
+            }
+
+            if (rebuildOnStartupDocument == null) {
+                //there isn't the newer version of the rebuildOnStartupDocument present, so we need to use the old values
+                this.when = deprecatedQueryRebuild;
+                this.includeSystemContent = deprecatedIncludeSystemContent;
+                this.mode = deprecatedIndexingMode;
+            } else {
+                String when = rebuildOnStartupDocument.getString(FieldName.REBUILD_WHEN, deprecatedQueryRebuild.name()).toUpperCase();
+                this.when = QueryRebuild.valueOf(when);
+                this.includeSystemContent = rebuildOnStartupDocument.getBoolean(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT, deprecatedIncludeSystemContent.booleanValue());
+                String mode = rebuildOnStartupDocument.getString(FieldName.REBUILD_MODE, deprecatedIndexingMode.name()).toUpperCase();
+                this.mode = IndexingMode.valueOf(mode);
+            }
+        }
+
+        /**
+         * Returns the value of the flag that controls whether system content should be reindexed or not at startup.
+         *
+         * @return {@code true} if system content should be reindexed at startup; {@code false} otherwise
+         */
+        public boolean includeSystemContent() {
+            return includeSystemContent;
+        }
+
+        /**
+         * Returns the mode in which indexes should be rebuilt.
+         *
+         * @return a {@code non-null} {@link IndexingMode} instance
+         */
+        public IndexingMode getMode() {
+            return mode;
+        }
+
+        /**
+         * Returns the strategy used for rebuilding indexes.
+         *
+         * @return a {@code non-null} {@link QueryRebuild} instance
+         */
+        public QueryRebuild getWhen() {
+            return when;
         }
     }
 

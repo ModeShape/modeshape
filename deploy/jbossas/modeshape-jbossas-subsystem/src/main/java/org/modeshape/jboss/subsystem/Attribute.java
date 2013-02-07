@@ -63,6 +63,9 @@ public enum Attribute {
     MIN_VALUE_SIZE("min-value-size"),
     MIN_STRING_SIZE("min-string-size"),
     MODE("mode"),
+    /**
+     * @deprecated use the REBUILD_UPON_STARTUP, REBUILD_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT, REBUILD_UPON_STARTUP_MODE attributes
+     */
     SYSTEM_CONTENT_MODE("systemContentMode"),
     MODULE("module"),
     NAME("name"),
@@ -71,6 +74,8 @@ public enum Attribute {
     QUEUE_JNDI_NAME("queue-jndi-name"),
     READER_STRATEGY("reader-strategy"),
     REBUILD_UPON_STARTUP("rebuild-upon-startup"),
+    REBUILD_UPON_STARTUP_MODE("rebuild-upon-startup-mode"),
+    REBUILD_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT("rebuild-upon-startup-include-system-content"),
     REFRESH_PERIOD("refresh-period"),
     RELATIVE_TO("relative-to"),
     RETRY_MARKER_LOOKUP("retry-marker-lookup"),

@@ -627,6 +627,16 @@
           each ModeShape process starts up.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
+    <xs:attribute name="rebuild-upon-startup-mode" type="synchronous-enum" use="optional" default="sync">
+      <xs:annotation>
+        <xs:documentation>Specifies whether the rebuild process should be done synchronously or asynchronously</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="rebuild-upon-startup-include-system-content" type="xs:boolean" use="optional" default="false">
+      <xs:annotation>
+        <xs:documentation>Specifies whether the index rebuild process should take system content into account or not</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
     <xs:attribute name="thread-pool" type="xs:string" use="optional" default="modeshape-workers">
       <xs:annotation>
         <xs:documentation>Name of the thread pool that should be used for background re-indexing.
@@ -663,10 +673,7 @@
     </xs:attribute>
     <xs:attribute name="systemContentMode" type="systemContentIndexing-enum" use="optional" default="disabled">
       <xs:annotation>
-        <xs:documentation>Specifies whether the system content of the repository (/jcr:system and its descendants) should be
-            indexed at startup synchronously, asynchronously or not at all. By default the system content isn't indexed,
-            as the cases when this is needed are probably rare.
-        </xs:documentation>
+        <xs:documentation>DEPRECATED. Use the [rebuild-upon-startup-mode, rebuild-upon-startup-include-system-content] attributes</xs:documentation>
       </xs:annotation>
     </xs:attribute>
     <xs:attribute name="async-thread-pool-size" type="xs:int" use="optional" default="1">
@@ -804,6 +811,7 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="if_missing" />
       <xs:enumeration value="always" />
+      <xs:enumeration value="never" />
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="file-system-access-type-enum">
