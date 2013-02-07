@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import javax.jcr.Binary;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
@@ -43,6 +42,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import javax.jcr.Binary;
 import javax.jcr.Credentials;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
@@ -424,7 +424,7 @@ public class ImportExportTest {
         JcrTools tools = new JcrTools();
 
         File binaryFile = new File("src/test/resources/io/binary.pdf");
-        assert(binaryFile.exists() && binaryFile.isFile());
+        assert (binaryFile.exists() && binaryFile.isFile());
 
         File outputFile = File.createTempFile("modeshape_import_export_" + System.currentTimeMillis(), "_test");
         outputFile.deleteOnExit();
@@ -444,6 +444,18 @@ public class ImportExportTest {
         Binary binary = data.getBinary();
         assertNotNull(binary);
         assertEquals(binaryFile.length(), binary.getSize());
+    }
+
+    @FixFor( "MODE-1795" )
+    @Test
+    public void shouldBeAbleToImportXmlFileThatUsesDefaultNamespaceWithNonBlankUri() throws Exception {
+        importFile("/", "io/simple-document-view-with-default-namespace.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+
+        // Get the prefix for the namespace used in the imported file ...
+        new JcrTools().printSubgraph(session.getRootNode(), 2);
+        String prefix = session.getWorkspace().getNamespaceRegistry().getPrefix("http://www.ns.com");
+        assertNotNull(session.getNode("/" + prefix + ":childNode"));
+        assertNotNull(session.getNode("/" + prefix + ":childNode").getPrimaryNodeType().getName(), is("nt:unstructured"));
     }
 
     protected void assertSameProperties( Node node1,
