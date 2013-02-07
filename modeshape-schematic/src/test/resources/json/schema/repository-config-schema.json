@@ -343,7 +343,7 @@
                     "type" : "string",
                     "enum" : ["if_missing","always"],
                     "default" : "if_missing",
-                    "description" : "Specifies whether the indexes need to be rebuilt immediately when each ModeShape process starts up."
+                    "description" : "DEPRECATED. See indexing/rebuildOnStartup"
                 },
                 "textExtracting" : {
                     "type" : "object",
@@ -678,6 +678,29 @@
                             "default" : 1,
                             "minimum" : 0,
                             "description" : "Specifies the maximum size of the queue used for making asynchronous updates. When the queue is filled, updates block until the queue catches up. A value of '0' is the default and implies no limit to the queue size."
+                        },
+                        "rebuildOnStartup" : {
+                            "type" : "object",
+                            "description" : "Controls the behavior of index rebuilding, when the repository starts up",
+                            "additionalProperties" : false,
+                            "properties" : {
+                                "when" : {
+                                    "enum" : ["if_missing","always","never"],
+                                    "default" : "if_missing",
+                                    "description" : "Specifies whether the indexes need to be rebuilt immediately when each ModeShape process starts up, or only missing indexes are to be rebuilt or nothing should be rebuilt"
+                                },
+                                "includeSystemContent" : {
+                                    "type" : "boolean",
+                                    "default" : false,
+                                    "description" : "Specifies if system content should be re-indexed on startup or not"
+                                },
+                                "mode" : {
+                                    "enum" : ["sync","async"],
+                                    "default" : "sync",
+                                    "description" : "Specifies if index rebuilding should be done synchronously or asynchronously"
+                                }
+                            }
+
                         },
                         "description" : {
                             "type" : "string",

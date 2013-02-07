@@ -17,6 +17,10 @@
         "cacheConfiguration" : "config/infinispan-federation-persistent.xml"
     },
     "query" : {
-        "rebuildUponStartup" : "never"
+        "indexing" : {
+            "rebuildOnStartup" : {
+                "when" : "never"
+            }
+        }
     }
 }

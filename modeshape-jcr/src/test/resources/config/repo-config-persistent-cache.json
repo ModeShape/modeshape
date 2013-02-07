@@ -24,7 +24,6 @@
         }
     },
     "query" : {
-        "enabled" : true,
-        "rebuildUponStartup" : "never"
+        "enabled" : true
     }
 }
