@@ -104,7 +104,7 @@ class JcrContentHandler extends DefaultHandler {
     private final NamespaceRegistry namespaces;
     private final ValueFactory jcrValueFactory;
     private final JcrNodeTypeManager nodeTypes;
-    private final javax.jcr.NamespaceRegistry jcrNamespaceRegistry;
+    private final org.modeshape.jcr.api.NamespaceRegistry jcrNamespaceRegistry;
     private final SaveMode saveMode;
     protected final int uuidBehavior;
     protected final boolean retentionInfoRetained;
@@ -172,7 +172,7 @@ class JcrContentHandler extends DefaultHandler {
 
         this.jcrValueFactory = session.getValueFactory();
         this.nodeTypes = session.nodeTypeManager();
-        this.jcrNamespaceRegistry = session.workspace().getNamespaceRegistry();
+        this.jcrNamespaceRegistry = (org.modeshape.jcr.api.NamespaceRegistry)session.workspace().getNamespaceRegistry();
 
         this.primaryTypeName = JcrLexicon.PRIMARY_TYPE.getString(this.namespaces);
         this.mixinTypesName = JcrLexicon.MIXIN_TYPES.getString(this.namespaces);
@@ -199,6 +199,11 @@ class JcrContentHandler extends DefaultHandler {
         return nameFactory.create(name);
     }
 
+    protected final Name nameFor( String uri,
+                                  String localName ) {
+        return nameFactory.create(uri, localName);
+    }
+
     protected final Path pathFor( Name... names ) {
         return pathFor(pathFactory.createRootPath(), names);
     }
@@ -222,7 +227,7 @@ class JcrContentHandler extends DefaultHandler {
 
         JcrNodeType nodeType = nodeTypeFor(primaryTypeName);
         if (nodeType == null) {
-            //nt:share seems to fall into this category
+            // nt:share seems to fall into this category
             return propertyTypesMap;
         }
         for (JcrPropertyDefinition propertyDefinition : nodeType.getPropertyDefinitions()) {
@@ -530,10 +535,13 @@ class JcrContentHandler extends DefaultHandler {
                     // prefix/uri mapping is already in registry
                     return;
                 }
-                throw new RepositoryException("Prefix " + prefix + " is already permanently mapped");
+                // The prefix is used and it does not match the registered namespace. Therefore, register using
+                // a generated namespace ...
+                this.jcrNamespaceRegistry.registerNamespace(uri);
+            } else {
+                // It is not yet registered, so register through the JCR workspace to ensure consistency
+                this.jcrNamespaceRegistry.registerNamespace(prefix, uri);
             }
-            // Register through the JCR workspace to ensure consistency
-            this.jcrNamespaceRegistry.registerNamespace(prefix, uri);
         } catch (RepositoryException re) {
             throw new EnclosingSAXException(re);
         }
@@ -1146,13 +1154,13 @@ class JcrContentHandler extends DefaultHandler {
                                   String name,
                                   Attributes atts ) throws SAXException {
             // Create the new handler for the new node ...
-            String nodeName = DOCUMENT_VIEW_NAME_DECODER.decode(name);
-            current = nodeHandlerFactory.createFor(nameFor(nodeName), current, uuidBehavior);
+            String decodedLocalName = DOCUMENT_VIEW_NAME_DECODER.decode(localName);
+            current = nodeHandlerFactory.createFor(nameFor(uri, decodedLocalName), current, uuidBehavior);
 
             String primaryType = null;
             Map<Name, String> propertiesNamesValues = new HashMap<Name, String>();
             for (int i = 0; i < atts.getLength(); i++) {
-                Name propertyName = nameFor(DOCUMENT_VIEW_NAME_DECODER.decode(atts.getQName(i)));
+                Name propertyName = nameFor(atts.getURI(i), DOCUMENT_VIEW_NAME_DECODER.decode(atts.getLocalName(i)));
                 String value = atts.getValue(i);
                 if (value != null) {
                     propertiesNamesValues.put(propertyName, value);
@@ -1162,8 +1170,7 @@ class JcrContentHandler extends DefaultHandler {
                 }
             }
 
-            Map<Name, Integer> propertyTypes = primaryType != null ? propertyTypesFor(primaryType) :
-                    java.util.Collections.<Name, Integer>emptyMap();
+            Map<Name, Integer> propertyTypes = primaryType != null ? propertyTypesFor(primaryType) : java.util.Collections.<Name, Integer>emptyMap();
             for (Map.Entry<Name, String> entry : propertiesNamesValues.entrySet()) {
                 Name propertyName = entry.getKey();
                 Integer propertyDefinitionType = propertyTypes.get(propertyName);

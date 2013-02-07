@@ -33,6 +33,7 @@ import javax.jcr.AccessDeniedException;
 import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.xml.XMLConstants;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
@@ -41,8 +42,8 @@ import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrMixLexicon;
 import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.NamespaceRegistry.Namespace;
+import org.modeshape.graph.property.Path;
 
 /**
  * A thread-safe JCR {@link javax.jcr.NamespaceRegistry} implementation that has the standard JCR namespaces pre-registered and
@@ -54,7 +55,7 @@ import org.modeshape.graph.property.NamespaceRegistry.Namespace;
  * </p>
  */
 @NotThreadSafe
-class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
+class JcrNamespaceRegistry implements org.modeshape.jcr.api.NamespaceRegistry {
 
     public static enum Behavior {
         SESSION,
@@ -290,6 +291,55 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
         // Now we're sure the prefix and URI are valid and okay for a custom mapping ...
         try {
             registry.register(prefix, uri);
+        } catch (RuntimeException e) {
+            throw new RepositoryException(e.getMessage(), e.getCause());
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.jcr.api.NamespaceRegistry#registerNamespace(java.lang.String)
+     */
+    public String registerNamespace( String uri )
+        throws UnsupportedRepositoryOperationException, AccessDeniedException, RepositoryException {
+        CheckArg.isNotNull(uri, "uri");
+        checkSession();
+
+        // See if the namespace is already registered, so this will handle all built-in namespaces ...
+        String prefix = registry.getPrefixForNamespaceUri(uri, false);
+        if (prefix != null) {
+            return prefix; // permission checks necessary ...
+        }
+
+        boolean global = false;
+        switch (behavior) {
+            case SESSION:
+                // --------------------------------------
+                // JSR-283 Session remapping behavior ...
+                // --------------------------------------
+
+            case WORKSPACE:
+                // --------------------------------------------------
+                // JSR-170 & JSR-283 Workspace namespace registry ...
+                // --------------------------------------------------
+                global = true;
+                try {
+                    session.checkPermission((Path)null, ModeShapePermissions.REGISTER_NAMESPACE);
+                } catch (AccessControlException ace) {
+                    throw new AccessDeniedException(ace);
+                }
+                break;
+            default:
+                assert false; // should never happen
+        }
+
+        // Now we're sure the prefix and URI are valid and okay for a custom mapping ...
+        try {
+            prefix = registry.getPrefixForNamespaceUri(uri, true);
+            // Signal the local node type manager ...
+            session.signalNamespaceChanges(global);
+            return prefix;
         } catch (RuntimeException e) {
             throw new RepositoryException(e.getMessage(), e.getCause());
         }
