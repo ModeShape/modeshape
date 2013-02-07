@@ -2020,7 +2020,7 @@ public class RepositoryConfiguration {
                 	}
                 	externalPath = expressionMatcher.group(7);
                 }else{
-                	throw new IllegalStateException("No match found!");
+                	throw new IllegalStateException(JcrI18n.invalidProjectionExpression.text(pathExpression));
                 }
             }
 
