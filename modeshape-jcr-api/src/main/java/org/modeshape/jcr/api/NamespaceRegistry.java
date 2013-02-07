@@ -23,7 +23,9 @@
  */
 package org.modeshape.jcr.api;
 
+import javax.jcr.AccessDeniedException;
 import javax.jcr.RepositoryException;
+import javax.jcr.UnsupportedRepositoryOperationException;
 
 /**
  * An extension of JCR 2.0's {@link javax.jcr.NamespaceRegistry} interface, with a few ModeShape-specific enhancements.
@@ -47,5 +49,18 @@ public interface NamespaceRegistry extends javax.jcr.NamespaceRegistry {
      * @throws RepositoryException if another error occurs.
      */
     boolean isRegisteredUri( String uri ) throws RepositoryException;
+
+    /**
+     * Get the prefix for a registered namespace with the supplied URI or, if no such namespace is registered, register it with a
+     * generated prefix and return that prefix.
+     * 
+     * @param uri The URI of the namespace; may not be null
+     * @return the prefix of the already-registered namespace, or the newly-generated prefix if no such namespace was registered
+     * @throws UnsupportedRepositoryOperationException if this repository does not support namespace registry changes.
+     * @throws AccessDeniedException if the current session does not have sufficent access to register the namespace.
+     * @throws RepositoryException if another error occurs.
+     */
+    public String registerNamespace( String uri )
+        throws UnsupportedRepositoryOperationException, AccessDeniedException, RepositoryException;
 
 }
