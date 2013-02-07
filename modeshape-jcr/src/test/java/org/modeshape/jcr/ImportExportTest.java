@@ -23,6 +23,21 @@
  */
 package org.modeshape.jcr;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.ItemExistsException;
 import javax.jcr.Node;
@@ -32,27 +47,12 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.value.Path;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 /**
  * Tests of round-trip importing/exporting of repository content.
@@ -66,7 +66,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
     private static final String BAD_CHARACTER_STRING = "Test & <Test>*";
 
-    private String expectedIdentifier ="e41075cb-a09a-4910-87b1-90ce8b4ca9dd";
+    private String expectedIdentifier = "e41075cb-a09a-4910-87b1-90ce8b4ca9dd";
 
     private void testImportExport( String sourcePath,
                                    String targetPath,
@@ -969,7 +969,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         JcrTools tools = new JcrTools();
 
         File binaryFile = new File("src/test/resources/io/binary.pdf");
-        assert(binaryFile.exists() && binaryFile.isFile());
+        assert (binaryFile.exists() && binaryFile.isFile());
 
         File outputFile = File.createTempFile("modeshape_import_export_" + System.currentTimeMillis(), "_test");
         outputFile.deleteOnExit();
@@ -1006,6 +1006,18 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertNode("/drools:repository/drools:tag_area", "nt:folder");
         assertNode("/drools:repository/drools:state_area", "nt:folder");
         assertNode("/drools:repository/drools.package.migrated", "nt:folder");
+    }
+
+    @FixFor( "MODE-1795" )
+    @Test
+    public void shouldBeAbleToImportXmlFileThatUsesDefaultNamespaceWithNonBlankUri() throws Exception {
+        session.importXML("/",
+                          resourceStream("io/simple-document-view-with-default-namespace.xml"),
+                          ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
+
+        // Get the prefix for the namespace used in the imported file ...
+        String prefix = session.getWorkspace().getNamespaceRegistry().getPrefix("http://www.ns.com");
+        assertNode("/" + prefix + ":childNode", "nt:unstructured");
     }
 
     // ----------------------------------------------------------------------------------------------------------------

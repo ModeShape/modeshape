@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<jcr:root xmlns="http://www.ns.com" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <childNode jcr:primaryType="nt:unstructured"/>
+</jcr:root>
