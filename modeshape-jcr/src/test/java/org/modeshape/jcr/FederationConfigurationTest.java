@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.util.UUID;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -49,7 +50,6 @@ public class FederationConfigurationTest extends SingleUseAbstractTest {
         // Clean up and create some initial files ...
         FileUtil.delete("target/federation_persistent_repository");
 
-        print = true;
         startRepositoryWithConfiguration(resource("config/repo-config-filesystem-federation-with-persistence.json"));
         Session session = session();
         Node federation = session.getNode("/federation");
@@ -83,5 +83,16 @@ public class FederationConfigurationTest extends SingleUseAbstractTest {
             assertThat(newNode, is(notNullValue()));
             session.save();
         }
+    }
+
+    @Test(expected = RepositoryException.class)
+    public void shouldNotAllowPreconfiguredProjectionIfAliasNotProvided() throws Exception {
+        //we expect this to fail because there is already an internal node that is supposed to be used as an alias as well
+        startRepositoryWithConfiguration(resource("config/repo-config-filesystem-federation-invalid-alias.json"));
+    }
+
+    @Override
+    protected boolean startRepositoryAutomatically() {
+        return false;
     }
 }

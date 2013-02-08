@@ -8,19 +8,13 @@
             "default" : "xmlImport/docWithFederationRoot.xml",
         }
     },
-    "storage" : {
-        "cacheName" : "persistentRepository",
-        "cacheConfiguration" : "config/infinispan-federation-persistent.xml"
-    },
     "externalSources" : {
-        "targetDirectory" : {
-            "classname" : "filesystem",
-            "directoryPath" : "target",
+        "targetClassesDirectory" : {
+            "classname" : "org.modeshape.connector.filesystem.FileSystemConnector",
+            "directoryPath" : "target/classes",
             "extraPropertiesStorage" : "json",
             "projections" : [
-                "default:/federation/generated-sources => /generated-sources",
-                "default:/federation/surefire => /generated-surefire",
-                "default:/federation/classes => /classes"
+                "default:/federation => /"
             ]
         }
     },

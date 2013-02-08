@@ -2058,14 +2058,14 @@ public class RepositoryConfiguration {
         }
 
         /**
-         * Returns the [sourceName, list(projections)] configured for each source.
+         * Returns the [workspaceName, list(projections)] of projections configured for each workspace.
          * 
          * @return a {@link Map} instance, never null.
          */
-        public Map<String, List<ProjectionConfiguration>> getProjections() {
-            Map<String, List<ProjectionConfiguration>> result = new HashMap<String, List<ProjectionConfiguration>>();
+        public Map<String, List<ProjectionConfiguration>> getProjectionsByWorkspace() {
+            Map<String, List<ProjectionConfiguration>> projectionsByWorkspace = new HashMap<String, List<ProjectionConfiguration>>();
             if (!federation.containsField(FieldName.EXTERNAL_SOURCES)) {
-                return result;
+                return projectionsByWorkspace;
             }
             Document externalSources = federation.getDocument(FieldName.EXTERNAL_SOURCES);
             for (String sourceName : externalSources.keySet()) {
@@ -2073,98 +2073,107 @@ public class RepositoryConfiguration {
                 if (!externalSource.containsField(FieldName.PROJECTIONS)) {
                     continue;
                 }
-                List<ProjectionConfiguration> projectionConfigurations = new ArrayList<ProjectionConfiguration>();
+
                 for (Object projectionExpression : externalSource.getArray(FieldName.PROJECTIONS)) {
-                    projectionConfigurations.add(new ProjectionConfiguration(projectionExpression.toString()));
+                    ProjectionConfiguration projectionConfiguration = new ProjectionConfiguration(sourceName, projectionExpression.toString());
+                    String workspaceName = projectionConfiguration.getWorkspaceName();
+
+                    List<ProjectionConfiguration> projectionsInWorkspace = projectionsByWorkspace.get(workspaceName);
+                    if (projectionsInWorkspace == null) {
+                        projectionsInWorkspace = new ArrayList<ProjectionConfiguration>();
+                        projectionsByWorkspace.put(workspaceName, projectionsInWorkspace);
+                    }
+                    projectionsInWorkspace.add(projectionConfiguration);
                 }
-                result.put(sourceName, projectionConfigurations);
             }
-            return result;
+            return projectionsByWorkspace;
+        }
+    }
+
+    /**
+     * Object representation of a projection configuration within an external source
+     */
+    @Immutable
+    public class ProjectionConfiguration {
+        private final String workspaceName;
+        private final String externalPath;
+        private final String sourceName;
+
+        private String projectedPath;
+
+        /**
+         * Creates a new projection using a string expression
+         *
+         * @param pathExpression a {@code non-null} String
+         */
+        public ProjectionConfiguration( String sourceName, String pathExpression ) {
+            Matcher expressionMatcher = PROJECTION_PATH_EXPRESSION_PATTERN.matcher(pathExpression);
+            // should be validated by the repository schema
+            if (expressionMatcher.matches()) {
+                this.sourceName = sourceName;
+                workspaceName = expressionMatcher.group(1);
+                projectedPath = expressionMatcher.group(2);
+                projectedPath = expressionMatcher.group(2);
+                if (projectedPath.endsWith("/") && projectedPath.length() > 1) {
+                    projectedPath = projectedPath.substring(0, projectedPath.length() - 1);
+                }
+                externalPath = expressionMatcher.group(7);
+            } else {
+                throw new IllegalArgumentException(JcrI18n.invalidProjectionExpression.text(pathExpression));
+            }
         }
 
         /**
-         * Validate the list of connector configurations.
-         * 
-         * @param problems the container for problems reading the configuration information; may not be null
+         * Returns the projection's external path.
+         *
+         * @return a {@code non-null} String
          */
-        protected void validateConnectors( Problems problems ) {
-            readComponents(federation, FieldName.EXTERNAL_SOURCES, FieldName.CLASSNAME, CONNECTOR_ALIASES, problems);
+        public String getExternalPath() {
+            return externalPath;
         }
 
         /**
-         * Object representation of a projection configuration within an external source
+         * Returns the projected path
+         *
+         * @return a {@code non-null} String
          */
-        public class ProjectionConfiguration {
-            private final String workspaceName;
-            private final String externalPath;
+        public String getProjectedPath() {
+            return projectedPath;
+        }
 
-            private String projectedPath;
+        /**
+         * Returns the projection's workspace name
+         *
+         * @return a {@code non-null} String
+         */
+        public String getWorkspaceName() {
+            return workspaceName;
+        }
 
-            /**
-             * Creates a new projection using a string expression
-             * 
-             * @param pathExpression a {@code non-null} String
-             */
-            public ProjectionConfiguration( String pathExpression ) {
-                Matcher expressionMatcher = PROJECTION_PATH_EXPRESSION_PATTERN.matcher(pathExpression);
-                // should be validated by the repository schema
-                if (expressionMatcher.matches()){
+        /**
+         * Returns the alias of a projection.
+         *
+         * @return a {@code non-null} String
+         */
+        public String getAlias() {
+            return projectedPath.substring(projectedPath.lastIndexOf("/") + 1);
+        }
 
-                	workspaceName = expressionMatcher.group(1);
-                	projectedPath = expressionMatcher.group(2);
-                	if (projectedPath.endsWith("/") && projectedPath.length() > 1) {
-                		projectedPath = projectedPath.substring(0, projectedPath.length() - 1);
-                	}
-                	externalPath = expressionMatcher.group(7);
-                }else{
-                	throw new IllegalStateException(JcrI18n.invalidProjectionExpression.text(pathExpression));
-                }
-            }
+        /**
+         * Returns the repository path
+         *
+         * @return a {@code non-null} String
+         */
+        public String getRepositoryPath() {
+            return projectedPath.substring(0, projectedPath.lastIndexOf("/") + 1);
+        }
 
-            /**
-             * Returns the projection's external path.
-             * 
-             * @return a {@code non-null} String
-             */
-            public String getExternalPath() {
-                return externalPath;
-            }
-
-            /**
-             * Returns the projected path
-             * 
-             * @return a {@code non-null} String
-             */
-            public String getProjectedPath() {
-                return projectedPath;
-            }
-
-            /**
-             * Returns the projection's workspace name
-             * 
-             * @return a {@code non-null} String
-             */
-            public String getWorkspaceName() {
-                return workspaceName;
-            }
-
-            /**
-             * Returns the alias of a projection.
-             * 
-             * @return a {@code non-null} String
-             */
-            public String getAlias() {
-                return projectedPath.substring(projectedPath.lastIndexOf("/") + 1);
-            }
-
-            /**
-             * Returns the repository path
-             * 
-             * @return a {@code non-null} String
-             */
-            public String getRepositoryPath() {
-                return projectedPath.substring(0, projectedPath.lastIndexOf("/") + 1);
-            }
+        /**
+         * Returns the name of the source for which the projection is configured
+         * @return a {@code non-null} String
+         */
+        public String getSourceName() {
+            return sourceName;
         }
     }
 
