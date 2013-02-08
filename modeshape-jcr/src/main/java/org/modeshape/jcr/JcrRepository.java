@@ -1051,9 +1051,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 CacheContainer container = config.getContentCacheContainer();
                 String cacheName = config.getCacheName();
                 List<Component> connectorComponents = config.getFederation().getConnectors();
-                Map<String, List<RepositoryConfiguration.Federation.ProjectionConfiguration>> preconfiguredProjections = config.getFederation()
-                                                                                                                               .getProjections();
-                this.connectors = new Connectors(this, connectorComponents, preconfiguredProjections);
+                Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjectionsByWorkspace
+                        = config.getFederation().getProjectionsByWorkspace();
+                this.connectors = new Connectors(this, connectorComponents, preconfiguredProjectionsByWorkspace);
                 logger.debug("Loading cache '{0}' from cache container {1}", cacheName, container);
                 SchematicDb database = Schematic.get(container, cacheName);
                 this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, database) : new LocalDocumentStore(
