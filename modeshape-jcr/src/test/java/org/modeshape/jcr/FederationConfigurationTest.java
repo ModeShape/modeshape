@@ -84,4 +84,23 @@ public class FederationConfigurationTest extends SingleUseAbstractTest {
             session.save();
         }
     }
+
+
+    @FixFor( "MODE-1798" )
+    @Test
+    public void shouldStartRepositoryWithOneFederationNodeAndNoSpecialsInNodeIds() throws Exception {
+        // Clean up and create some initial files ...
+        FileUtil.delete("target/federation_persistent_repository");
+        print = true;
+        startRepositoryWithConfiguration(resource("config/repo-config-filesystem-federation-with-persistence-simple.json"));
+        Session session = repository().login("default");
+        Node root = session.getNode("/");
+        // Get the children under federation ...
+        NodeIterator iter = root.getNodes();
+        assertThat(iter.getSize(),  is(2L));
+        while (iter.hasNext()) {
+            Node child = iter.nextNode();
+            assertThat(child.getIdentifier().contains("/"), is(Boolean.FALSE));
+        }
+    }
 }

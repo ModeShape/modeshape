@@ -1,0 +1,24 @@
+{
+    "name" : "Federated repository",
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : false,
+        "initialContent" : {
+            "default" : "xmlImport/docWithFederationRootNtFolder.xml",
+        }
+    },
+    "storage" : {
+        "cacheName" : "persistentRepository",
+        "cacheConfiguration" : "config/infinispan-federation-persistent.xml"
+    },
+    "externalSources" : {
+        "targetDirectory" : {
+            "classname" : "filesystem",
+            "directoryPath" : "target/classes",
+            "extraPropertiesStorage" : "json",
+            "projections" : [
+                "default:/federation => /"
+            ]
+        }
+    }
+}
