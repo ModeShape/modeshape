@@ -72,7 +72,7 @@ import org.modeshape.jcr.query.validate.Schemata;
  */
 public class LuceneQueryEngine extends QueryEngine {
 
-    private static final Logger LOGGER = Logger.getLogger(LuceneQueryEngine.class);
+    protected static final Logger LOGGER = Logger.getLogger(LuceneQueryEngine.class);
 
     private final ExecutionContext repositoryContext;
     private final BasicLuceneSchema schema;

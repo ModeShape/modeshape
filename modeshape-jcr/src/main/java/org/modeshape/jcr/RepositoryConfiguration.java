@@ -452,11 +452,13 @@ public class RepositoryConfiguration {
         /**
          * @deprecated use REBUILD_ON_STARTUP document
          */
+        @Deprecated
         public static final String REBUILD_UPON_STARTUP = "rebuildUponStartup";
 
         /**
          * @deprecated use REBUILD_ON_STARTUP document
          */
+        @Deprecated
         public static final String INDEXING_MODE_SYSTEM_CONTENT = "systemContentMode";
 
         public static final String REBUILD_ON_STARTUP = "rebuildOnStartup";
@@ -1832,13 +1834,13 @@ public class RepositoryConfiguration {
     }
 
     @Immutable
-    public class IndexRebuildOptions {
+    public static class IndexRebuildOptions {
 
         private final QueryRebuild when;
         private final Boolean includeSystemContent;
         private final IndexingMode mode;
 
-        private IndexRebuildOptions( Document query ) {
+        protected IndexRebuildOptions( Document query ) {
             assert query != null;
 
             //first parse the deprecated fields (we need to avoid breaking client compatibility)
@@ -2104,6 +2106,7 @@ public class RepositoryConfiguration {
         /**
          * Creates a new projection using a string expression
          *
+         * @param sourceName the source name
          * @param pathExpression a {@code non-null} String
          */
         public ProjectionConfiguration( String sourceName, String pathExpression ) {

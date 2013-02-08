@@ -442,6 +442,7 @@ public class ModelAttributes {
     /**
      * @deprecated use the REBUILD_INDEXES_UPON_STARTUP,REBUILD_INDEXES_UPON_STARTUP_MODE, REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT attributes
      */
+    @Deprecated
     public static final SimpleAttributeDefinition SYSTEM_CONTENT_MODE = new MappedAttributeDefinitionBuilder(
                                                                                                              ModelKeys.SYSTEM_CONTENT_MODE,
                                                                                                              ModelType.STRING).setXmlName(Attribute.SYSTEM_CONTENT_MODE.getLocalName())

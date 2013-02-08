@@ -160,6 +160,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         }
     }
 
+    @SuppressWarnings( "deprecation" )
     private void writeIndexing( XMLExtendedStreamWriter writer,
                                 ModelNode repository ) throws XMLStreamException {
         // Repository's indexing attributes

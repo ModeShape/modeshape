@@ -120,6 +120,7 @@ public class TikaTextExtractor extends TextExtractor {
                              final Context context ) throws Exception {
 
         final DefaultParser parser = initialize();
+        final Integer writeLimit = this.writeLimit;
         processStream(binary, new BinaryOperation<Object>() {
             @Override
             public Object execute( InputStream stream ) throws Exception {
