@@ -103,14 +103,15 @@ public class FederatedDocumentStore implements DocumentStore {
 
     @Override
     public String newDocumentKey( String parentKey,
-                                  Name documentName ) {
+                                  Name documentName,
+                                  Name documentPrimaryType ) {
         if (isLocalSource(parentKey)) {
-            return localStore().newDocumentKey(parentKey, documentName);
+            return localStore().newDocumentKey(parentKey, documentName, null);
         }
         Connector connector = connectors.getConnectorForSourceKey(sourceKey(parentKey));
         if (connector != null) {
             String parentDocumentId = documentIdFromNodeKey(parentKey);
-            String newChildId = connector.newDocumentId(parentDocumentId, documentName);
+            String newChildId = connector.newDocumentId(parentDocumentId, documentName, documentPrimaryType);
             if (!StringUtil.isBlank(newChildId)) {
                 return documentIdToNodeKey(connector.getSourceName(), newChildId).toString();
             }
