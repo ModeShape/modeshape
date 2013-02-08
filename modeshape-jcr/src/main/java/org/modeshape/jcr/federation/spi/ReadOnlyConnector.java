@@ -59,7 +59,8 @@ public abstract class ReadOnlyConnector extends Connector {
 
     @Override
     public String newDocumentId( String parentId,
-                                 Name newDocumentName ) {
+                                 Name newDocumentName,
+                                 Name newDocumentPrimaryType ) {
         throw new DocumentStoreException(JcrI18n.connectorIsReadOnly.text(getSourceName(), newDocumentName));
     }
 }
