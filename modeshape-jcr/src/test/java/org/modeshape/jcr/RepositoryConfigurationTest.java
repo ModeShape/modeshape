@@ -331,6 +331,11 @@ public class RepositoryConfigurationTest {
         assertNotValid(9, "config/repo-config-federation-invalid-projections.json");
     }
 
+    @Test
+    public void shouldAllowJdbcBinaryStorage() throws Exception {
+        assertValid("config/repo-config-jdbc-binary-storage.json");
+    }
+
     protected RepositoryConfiguration assertValid( RepositoryConfiguration config ) {
         Problems results = config.validate();
         assertThat(results.toString(), results.hasProblems(), is(false));
