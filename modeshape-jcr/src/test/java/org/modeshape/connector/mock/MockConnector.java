@@ -207,7 +207,8 @@ public class MockConnector extends Connector implements Pageable {
 
     @Override
     public String newDocumentId( String parentId,
-                                 Name newDocumentName ) {
+                                 Name newDocumentName,
+                                 Name newDocumentPrimaryType ) {
         return null;
     }
 

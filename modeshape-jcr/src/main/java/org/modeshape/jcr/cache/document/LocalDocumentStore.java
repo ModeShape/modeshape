@@ -79,7 +79,8 @@ public class LocalDocumentStore implements DocumentStore {
 
     @Override
     public String newDocumentKey( String parentKey,
-                                  Name documentName ) {
+                                  Name documentName,
+                                  Name documentPrimaryType ) {
         //the local store doesn't generate explicit keys for new nodes
         return null;
     }

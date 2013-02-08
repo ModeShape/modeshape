@@ -539,7 +539,8 @@ public class FileSystemConnector extends Connector {
 
     @Override
     public String newDocumentId( String parentId,
-                                 Name newDocumentName ) {
+                                 Name newDocumentName,
+                                 Name newDocumentPrimaryType ) {
         return parentId + DELIMITER + newDocumentName.getString();
     }
 
