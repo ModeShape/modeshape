@@ -609,7 +609,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         void unlock() throws BinaryStoreException;
     }
 
-    private static class DummyReducer implements Reducer<String, String> {
+    protected static class DummyReducer implements Reducer<String, String> {
         private static final long serialVersionUID = 1L;
 
         @Override
