@@ -411,7 +411,7 @@ public class RepositoryConfiguration {
         public static final String PATH_EXPRESSION = "pathExpression";
         public static final String PATH_EXPRESSIONS = "pathExpressions";
         public static final String JDBC_DRIVER_CLASS = "driverClass";
-        public static final String CONNECTION_URL = "connectionURL";
+        public static final String CONNECTION_URL = "url";
         /**
          * The name for the field (under "sequencing" and "query") specifying the thread pool that should be used for sequencing.
          * By default, all repository instances will use the same thread pool within the engine. To use a dedicated thread pool

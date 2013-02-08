@@ -29,6 +29,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -144,7 +145,8 @@ public class RepositoryPersistenceTest extends MultiPassAbstractTest {
     }
 
     protected File getFile( String resourcePath ) throws URISyntaxException {
-        return new File(getClass().getClassLoader().getResource(resourcePath).toURI());
+        URL resource = getClass().getClassLoader().getResource(resourcePath);
+        assertNotNull(resourcePath + " not found", resource);
+        return new File(resource.toURI());
     }
-
 }
