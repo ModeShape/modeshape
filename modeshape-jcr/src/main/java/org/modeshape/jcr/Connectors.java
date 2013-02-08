@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.NamespaceRegistry;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.nodetype.NodeTypeManager;
@@ -82,7 +83,7 @@ public class Connectors {
     /**
      * A map of [workspaceName, projection] instances which holds the preconfigured projections for each workspace
      */
-    private Map<String, List<Projection>> preconfiguredProjections = new HashMap<String, List<Projection>>();
+    private Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections = new HashMap<String, List<RepositoryConfiguration.ProjectionConfiguration>>();
 
     /**
      * A map of (externalNodeKey, Projection) instances holds the projections
@@ -96,26 +97,14 @@ public class Connectors {
 
     protected Connectors( JcrRepository.RunningState repository,
                        Collection<Component> components,
-                       Map<String, List<RepositoryConfiguration.Federation.ProjectionConfiguration>> preconfiguredProjections) {
+                       Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections) {
         this.repository = repository;
         this.logger = Logger.getLogger(getClass());
+        this.preconfiguredProjections = preconfiguredProjections;
+
         registerConnectors(components);
-        loadPreconfiguredProjections(preconfiguredProjections);
     }
 
-    private void loadPreconfiguredProjections( Map<String, List<RepositoryConfiguration.Federation.ProjectionConfiguration>> preconfiguredProjections ) {
-        for (String sourceName : preconfiguredProjections.keySet()) {
-            for (RepositoryConfiguration.Federation.ProjectionConfiguration projectionCfg : preconfiguredProjections.get(sourceName)) {
-                String workspaceName = projectionCfg.getWorkspaceName();
-                List<Projection> projections = this.preconfiguredProjections.get(workspaceName);
-                if (projections == null) {
-                    projections = new ArrayList<Projection>();
-                    this.preconfiguredProjections.put(workspaceName, projections);
-                }
-                projections.add(new Projection(sourceName, projectionCfg.getAlias(), projectionCfg.getRepositoryPath(), projectionCfg.getExternalPath()));
-            }
-        }
-    }
 
     private void registerConnectors( Collection<Component> components ) {
         for (Component component : components) {
@@ -147,22 +136,33 @@ public class Connectors {
             JcrSession session = repository.loginInternalSession(workspaceName);
             try {
                 FederationManager federationManager = session.getWorkspace().getFederationManager();
-                List<Projection> projections = preconfiguredProjections.get(workspaceName);
-                for (Projection projection : projections) {
-                    String repositoryPath = projection.getRepositoryPath();
-                    String alias = projection.getAlias();
+                List<RepositoryConfiguration.ProjectionConfiguration> projections = preconfiguredProjections.get(workspaceName);
+                for (RepositoryConfiguration.ProjectionConfiguration projectionCfg : projections) {
+                    String repositoryPath = projectionCfg.getRepositoryPath();
+                    String alias = projectionCfg.getAlias();
 
                     AbstractJcrNode node = session.getNode(repositoryPath);
-                    //only create the projection if one doesn't exist with the same alias
+                    //only create the projectionCfg if one doesn't exist with the same alias
                     if (!projectionExists(alias, node.key().toString())) {
-                        federationManager.createProjection(repositoryPath, projection.getSourceName(),
-                                                           projection.getExternalPath(),
+                        checkRepositoryPathDoesNotExist(session, projectionCfg);
+                        federationManager.createProjection(repositoryPath, projectionCfg.getSourceName(),
+                                                           projectionCfg.getExternalPath(),
                                                            alias);
                     }
                 }
             } finally {
                 session.logout();
             }
+        }
+    }
+
+    private void checkRepositoryPathDoesNotExist( JcrSession session,
+                                                  RepositoryConfiguration.ProjectionConfiguration projection ) throws RepositoryException {
+        try {
+            session.getNode(projection.getProjectedPath());
+            throw new RepositoryException(JcrI18n.projectedPathPointsTowardsInternalNode.text(projection.getProjectedPath()));
+        } catch (PathNotFoundException e) {
+            //expected
         }
     }
 
@@ -554,33 +554,12 @@ public class Connectors {
         private final String projectedNodeKey;
         private final String alias;
 
-        private final String repositoryPath;
-        private final String externalPath;
-        private final String sourceName;
-
         protected Projection( String externalNodeKey,
                               String projectedNodeKey,
-                              String alias ) {
+                              String alias) {
             this.externalNodeKey = externalNodeKey;
             this.alias = alias;
             this.projectedNodeKey = projectedNodeKey;
-
-            this.repositoryPath = null;
-            this.externalPath = null;
-            this.sourceName = null;
-        }
-
-        protected Projection( String sourceName,
-                              String alias,
-                              String repositoryPath,
-                              String externalPath ) {
-            this.alias = alias;
-            this.repositoryPath = repositoryPath;
-            this.externalPath = externalPath;
-            this.sourceName = sourceName;
-
-            this.projectedNodeKey = null;
-            this.externalNodeKey = null;
         }
 
         protected boolean hasAlias(String alias) {
@@ -597,18 +576,6 @@ public class Connectors {
 
         protected String getAlias() {
             return alias;
-        }
-
-        protected String getExternalPath() {
-            return externalPath;
-        }
-
-        protected String getRepositoryPath() {
-            return repositoryPath;
-        }
-
-        protected String getSourceName() {
-            return sourceName;
         }
 
         protected String getExternalNodeKey() {
