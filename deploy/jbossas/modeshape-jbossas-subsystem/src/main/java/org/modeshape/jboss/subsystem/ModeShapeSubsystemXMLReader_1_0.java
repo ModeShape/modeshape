@@ -356,6 +356,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         }
     }
 
+    @SuppressWarnings( "deprecation" )
     private void parseIndexing( final XMLExtendedStreamReader reader,
                                 final ModelNode parentAddress,
                                 final ModelNode repository ) throws XMLStreamException {

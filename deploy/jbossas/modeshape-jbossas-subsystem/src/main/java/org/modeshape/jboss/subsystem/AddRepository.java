@@ -342,6 +342,7 @@ public class AddRepository extends AbstractAddStepHandler {
         return query;
     }
 
+    @SuppressWarnings( "deprecation" )
     private void parseIndexRebuildOptions( OperationContext context,
                                            ModelNode model,
                                            EditableDocument indexing ) throws OperationFailedException {

@@ -67,6 +67,7 @@ public class ModelKeys {
     /**
      * @deprecated use the REBUILD_INDEXES_UPON_STARTUP, REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT and REBUILD_INDEXES_UPON_STARTUP_MODE attributes
      */
+    @Deprecated
     static final String SYSTEM_CONTENT_MODE = "system-content-indexing-mode";
     static final String MODULE = "module";
     static final String NAME = "name";

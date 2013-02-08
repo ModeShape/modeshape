@@ -66,6 +66,7 @@ public enum Attribute {
     /**
      * @deprecated use the REBUILD_UPON_STARTUP, REBUILD_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT, REBUILD_UPON_STARTUP_MODE attributes
      */
+    @Deprecated
     SYSTEM_CONTENT_MODE("systemContentMode"),
     MODULE("module"),
     NAME("name"),

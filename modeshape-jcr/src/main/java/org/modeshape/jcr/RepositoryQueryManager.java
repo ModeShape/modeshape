@@ -167,6 +167,7 @@ class RepositoryQueryManager {
     protected void reindexContent(final boolean indexOnlyIfMissing, final boolean includeSystemContent, boolean async) {
         if (async) {
             indexingExecutorService.submit(new Callable<Void>() {
+                @SuppressWarnings( "synthetic-access" )
                 @Override
                 public Void call() throws Exception {
                     reindexContent(indexOnlyIfMissing, includeSystemContent);
@@ -180,6 +181,9 @@ class RepositoryQueryManager {
 
     /**
      * Crawl and index all of the repository content.
+     * 
+     * @param indexOnlyIfMissing true if the reindexing should be performed if the indexes are missing
+     * @param includeSystemContent true if the system content should also be indexed
      */
     private void reindexContent(boolean indexOnlyIfMissing, boolean includeSystemContent) {
         // The node type schemata changes every time a node type is (un)registered, so get the snapshot that we'll use throughout
@@ -291,7 +295,7 @@ class RepositoryQueryManager {
         // Index the first node ...
         final QueryIndexing indexes = getIndexes();
         final TransactionContext txnCtx = NO_TRANSACTION;
-        if (!excludeCertainKeys || !keysToExclude.contains(node.getKey())) {
+        if (!excludeCertainKeys || keysToExclude == null || !keysToExclude.contains(node.getKey())) {
             indexes.updateIndex(workspaceName,
                                 node.getKey(),
                                 nodePath,
@@ -345,7 +349,7 @@ class RepositoryQueryManager {
             }
             nodePath = paths.getPath(node);
 
-            if (!excludeCertainKeys || !keysToExclude.contains(key)) {
+            if (!excludeCertainKeys || keysToExclude == null || !keysToExclude.contains(key)) {
                 // Index the node ...
                 indexes.updateIndex(workspaceName,
                                     node.getKey(),
