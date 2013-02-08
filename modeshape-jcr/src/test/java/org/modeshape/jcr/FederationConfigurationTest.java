@@ -84,4 +84,31 @@ public class FederationConfigurationTest extends SingleUseAbstractTest {
             session.save();
         }
     }
+
+
+    @FixFor( "MODE-1802" )
+    @Test
+    public void shouldNotRelateOnHowFederationIsConfigured() throws Exception {
+        // try target
+        FileUtil.delete("target/federation_persistent_repository");
+        print = true;
+        startRepositoryWithConfiguration(resource("config/repo-config-filesystem-federation-projection-to-root.json"));
+        Session session = session();
+        Node root = session.getNode("/fs");
+        Node folder1 = root.addNode("test", "nt:folder");
+        session.save();
+        Node folder2 = root.getNode("test");
+        assertThat(folder1.getIdentifier(), is(folder2.getIdentifier()));
+
+        // try target/classes
+        FileUtil.delete("target/federation_persistent_repository");
+        print = true;
+        startRepositoryWithConfiguration(resource("config/repo-config-filesystem-federation-projection-to-root2.json"));
+        Session session2 = session();
+        Node root2 = session2.getNode("/fs");
+        Node folder12 = root2.addNode("test", "nt:folder");
+        session.save();
+        Node folder22 = root2.getNode("test");
+        assertThat(folder12.getIdentifier(), is(folder22.getIdentifier()));
+    }
 }

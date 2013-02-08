@@ -1,0 +1,21 @@
+{
+    "name" : "Federated repository",
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true,
+    },
+    "storage" : {
+        "cacheName" : "persistentRepository",
+        "cacheConfiguration" : "config/infinispan-federation-persistent.xml"
+    },
+    "externalSources" : {
+        "targetDirectory" : {
+            "classname" : "filesystem",
+            "directoryPath" : "target",
+            "extraPropertiesStorage" : "json",
+            "projections" : [
+                "default:/fs => /"
+            ]
+        }
+    }
+}

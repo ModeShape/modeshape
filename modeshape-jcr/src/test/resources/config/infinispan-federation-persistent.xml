@@ -18,7 +18,7 @@
             <loader
                     class="org.infinispan.loaders.file.FileCacheStore"
                     fetchPersistentState="false"
-                    purgeOnStartup="false">
+                    purgeOnStartup="true">
                 <properties>
                     <property name="location" value="target/federation_persistent_repository/store"/>
                 </properties>
