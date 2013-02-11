@@ -200,7 +200,6 @@
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store passivation="false" path="modeshape/store/federatedRepository" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
             </cache-container>
             <cache-container name="binary-cache-container" default-cache="binary-fs">

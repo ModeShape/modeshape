@@ -179,6 +179,7 @@ public class MockConnector extends Connector implements Pageable {
 
     @Override
     public boolean removeDocument( String id ) {
+        checkConnectorIsWritable(id);
         Document doc = documentsById.remove(id);
         if (doc != null) {
             for (Iterator<Map.Entry<String, Document>> iterator = documentsByLocation.entrySet().iterator(); iterator.hasNext(); ) {
@@ -201,6 +202,7 @@ public class MockConnector extends Connector implements Pageable {
     public void storeDocument( Document document ) {
         DocumentReader reader = readDocument(document);
         String documentId = reader.getDocumentId();
+        checkConnectorIsWritable(documentId);
         assert documentId != null;
         documentsById.put(documentId, document);
     }
@@ -215,6 +217,7 @@ public class MockConnector extends Connector implements Pageable {
     @Override
     public void updateDocument( DocumentChanges documentChanges ) {
         String id = documentChanges.getDocumentId();
+        checkConnectorIsWritable(id);
         if (!documentsById.containsKey(id)) {
             return;
         }

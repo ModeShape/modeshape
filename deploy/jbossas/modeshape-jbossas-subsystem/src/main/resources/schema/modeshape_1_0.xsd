@@ -367,9 +367,9 @@
                 <xs:documentation>The number of seconds which an external node should be held in the workspace cache. If not specified, the effective TTL is deferred to the workspace cache configuration. If negative, an entry will be cached forever.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="readonly" type="xs:boolean" use="optional" default="true">
+        <xs:attribute name="readonly" type="xs:boolean" use="optional" default="false">
             <xs:annotation>
-                <xs:documentation>Flag which indicates whether the external source is readonly or supports writing as well. By default, a source is read-only.</xs:documentation>
+                <xs:documentation>Flag which indicates whether the external source is readonly or supports writing as well. By default, a source support both reads and writes.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="queryable" type="xs:boolean" use="optional" default="true">
