@@ -34,6 +34,7 @@ import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 public class FederationConfigurationTest extends SingleUseAbstractTest {
@@ -85,10 +86,27 @@ public class FederationConfigurationTest extends SingleUseAbstractTest {
         }
     }
 
-    @Test(expected = RepositoryException.class)
+    @Test( expected = RepositoryException.class )
+    @FixFor( "MODE-1798" )
     public void shouldNotAllowPreconfiguredProjectionIfAliasNotProvided() throws Exception {
         //we expect this to fail because there is already an internal node that is supposed to be used as an alias as well
         startRepositoryWithConfiguration(resource("config/repo-config-filesystem-federation-invalid-alias.json"));
+    }
+
+    @Test
+    @FixFor( "MODE-1802" )
+    public void fileSystemSourceShouldSupportRootProjection() throws Exception {
+        // Clean up
+        FileUtil.delete("target/classes/test");
+
+        startRepositoryWithConfiguration(resource("config/repo-config-filesystem-federation-root-projection.json"));
+        Session session = session();
+        Node root = session.getNode("/fs");
+        assertNotNull(root);
+        Node folder1 = root.addNode("test", "nt:folder");
+        session.save();
+        Node folder2 = root.getNode("test");
+        assertThat(folder1.getIdentifier(), is(folder2.getIdentifier()));
     }
 
     @Override
