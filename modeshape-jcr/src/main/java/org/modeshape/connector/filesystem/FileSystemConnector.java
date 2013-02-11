@@ -144,13 +144,6 @@ public class FileSystemConnector extends Connector {
     private int directoryAbsolutePathLength;
 
     /**
-     * A boolean flag that specifies whether this connector should only read existing files and directories on the file system and
-     * should never write, update, or create files and directories on the file systems. This is set via reflection and defaults to
-     * "<code>false</code>".
-     */
-    private boolean readonly = false;
-
-    /**
      * A boolean flag that specifies whether this connector should add the 'mix:mimeType' mixin to the 'nt:resource' nodes to
      * include the 'jcr:mimeType' property. If set to <code>true</code>, the MIME type is computed immediately when the
      * 'nt:resource' node is accessed, which might be expensive for larger files. This is <code>false</code> by default.
@@ -389,12 +382,8 @@ public class FileSystemConnector extends Connector {
      * @throws DocumentStoreException if the file is expected to be writable but is not or is excluded, or if the connector is
      *         readonly
      */
-    protected void checkWritable( String id,
-                                  File file ) {
-        if (readonly) {
-            String msg = JcrI18n.fileConnectorIsReadOnly.text(getSourceName(), id, file.getAbsolutePath());
-            throw new DocumentStoreException(id, msg);
-        }
+    protected void checkFileNotExcluded( String id,
+                                         File file ) {
         if (isExcluded(file)) {
             String msg = JcrI18n.fileConnectorCannotStoreFileThatIsExcluded.text(getSourceName(), id, file.getAbsolutePath());
             throw new DocumentStoreException(id, msg);
@@ -485,8 +474,10 @@ public class FileSystemConnector extends Connector {
 
     @Override
     public boolean removeDocument( String id ) {
+        checkConnectorIsWritable(id);
+
         File file = fileFor(id);
-        checkWritable(id, file);
+        checkFileNotExcluded(id, file);
         // Remove the extra properties at the old location ...
         extraPropertiesStore().removeProperties(id);
         // Now remove the file (if it is there) ...
@@ -500,8 +491,9 @@ public class FileSystemConnector extends Connector {
         // Create a new directory or file described by the document ...
         DocumentReader reader = readDocument(document);
         String id = reader.getDocumentId();
+        checkConnectorIsWritable(id);
         File file = fileFor(id);
-        checkWritable(id, file);
+        checkFileNotExcluded(id, file);
         File parent = file.getParentFile();
         if (!parent.exists()) {
             parent.mkdirs();
@@ -557,11 +549,12 @@ public class FileSystemConnector extends Connector {
     @Override
     public void updateDocument( DocumentChanges documentChanges ) {
         String id = documentChanges.getDocumentId();
+        checkConnectorIsWritable(id);
+
         Document document = documentChanges.getDocument();
         DocumentReader reader = readDocument(document);
 
         File file = fileFor(id);
-        checkWritable(id, file);
 
         //if we're dealing with the root of the connector, we can't process any moves/removes because that would go "outside" the connector scope
         if (!isRoot(id)) {
