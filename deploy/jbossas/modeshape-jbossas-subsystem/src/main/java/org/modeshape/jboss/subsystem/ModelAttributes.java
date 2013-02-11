@@ -525,6 +525,7 @@ public class ModelAttributes {
             .setAllowExpression(false)
             .setAllowNull(true)
             .setFlags(AttributeAccess.Flag.RESTART_NONE)
+            .setDefaultValue(new ModelNode(false))
             .build();
 
 

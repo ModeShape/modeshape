@@ -228,6 +228,11 @@
                         "default" : true,
                         "description" : "Optional flag which indicates whether this source's content should be indexed or not by the repository. By default, all content is queryable "
                     },
+                    "readonly" : {
+                        "type" : "boolean",
+                        "default" : false,
+                        "description" : "Optional flag which indicates if an external source should support both writing and reading, or just reading. By default, an external source supports both"
+                    },
                     "projections" : {
                         "type" : "array",
                         "items" : {

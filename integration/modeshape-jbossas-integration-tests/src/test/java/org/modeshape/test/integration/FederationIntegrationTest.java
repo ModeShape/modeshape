@@ -27,6 +27,7 @@ package org.modeshape.test.integration;
 import java.io.File;
 import javax.annotation.Resource;
 import javax.jcr.Node;
+import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -41,6 +42,7 @@ import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.federation.FederationManager;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.fail;
 
 /**
  * Integration test which verifies that various external sources are correctly set-up via the JBoss AS subsystem.
@@ -83,6 +85,19 @@ public class FederationIntegrationTest {
         Session otherSession = repository.login("other");
         //predefined
         assertNotNull(otherSession.getNode("/projection1"));
+    }
+
+    @Test
+    public void shouldNotAllowWritesIfConfiguredAsReadonly() throws Exception {
+        Session defaultSession = repository.login();
+        Node projection1 = defaultSession.getNode("/projection1");
+        projection1.addNode("test", "nt:file");
+        try {
+            defaultSession.save();
+            fail("Write operation should not be possible if connector is readonly");
+        } catch (RepositoryException e) {
+            //expected
+        }
     }
 
     @Test
