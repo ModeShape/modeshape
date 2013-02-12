@@ -547,7 +547,8 @@ public class FileSystemConnector extends Connector {
             documentIdBuilder.append(DELIMITER);
         }
         if (!StringUtil.isBlank(newDocumentName.getNamespaceUri()))  {
-            documentIdBuilder.append(newDocumentName.getNamespaceUri());
+            //the FS connector does not support namespaces in names
+            getLogger().warn(JcrI18n.fileConnectorNamespaceIgnored, getSourceName(), newDocumentName.getNamespaceUri());
         }
         documentIdBuilder.append(newDocumentName.getLocalName());
         return documentIdBuilder.toString();

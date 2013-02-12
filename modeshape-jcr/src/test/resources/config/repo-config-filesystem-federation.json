@@ -29,6 +29,14 @@
             "classname" : "filesystem",
             "directoryPath" : "target/federation/files-none",
             "extraPropertiesStorage" : "none",
+        } ,
+        "targetDirectory" : {
+            "classname" : "filesystem",
+            "directoryPath" : "target/classes",
+            "extraPropertiesStorage" : "json",
+            "projections" : [
+                "default:/fs => /"
+            ]
         }
     },
     "query" : {

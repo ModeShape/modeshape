@@ -93,22 +93,6 @@ public class FederationConfigurationTest extends SingleUseAbstractTest {
         startRepositoryWithConfiguration(resource("config/repo-config-filesystem-federation-invalid-alias.json"));
     }
 
-    @Test
-    @FixFor( "MODE-1802" )
-    public void fileSystemSourceShouldSupportRootProjection() throws Exception {
-        // Clean up
-        FileUtil.delete("target/classes/test");
-
-        startRepositoryWithConfiguration(resource("config/repo-config-filesystem-federation-root-projection.json"));
-        Session session = session();
-        Node root = session.getNode("/fs");
-        assertNotNull(root);
-        Node folder1 = root.addNode("test", "nt:folder");
-        session.save();
-        Node folder2 = root.getNode("test");
-        assertThat(folder1.getIdentifier(), is(folder2.getIdentifier()));
-    }
-
     @Override
     protected boolean startRepositoryAutomatically() {
         return false;
