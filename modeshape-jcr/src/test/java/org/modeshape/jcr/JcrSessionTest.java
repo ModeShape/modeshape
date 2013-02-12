@@ -30,6 +30,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -647,6 +648,21 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         } catch (PathNotFoundException e) {
             // Expected
         }
+    }
+
+    @Test
+    @FixFor( "MODE-1799" )
+    public void shouldMoveNodesUnderRoot() throws Exception {
+        initializeData();
+        session.getRootNode().addNode("d");
+        session.save();
+
+        session.move("/a", "/d");
+        session.save();
+
+        assertNotNull(session.getNode("/d"));
+        assertNotNull(session.getNode("/d/b"));
+        assertNotNull(session.getNode("/d/b/c"));
     }
 
     @SuppressWarnings( "unchecked" )

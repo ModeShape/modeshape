@@ -933,7 +933,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         // is actually underneath the source node by walking up the destination path to see if there are any
         // shared nodes (including the shareable node) below the source path ...
         AbstractJcrNode destAncestor = destParentNode;
-        do {
+        while (!destAncestor.isRoot()) {
             if (destAncestor.isShareable()) {
                 SharedSet sharedSet = destAncestor.sharedSet();
                 AbstractJcrNode sharedNodeThatCreatesCircularity = sharedSet.getSharedNodeAtOrBelow(srcPath);
@@ -945,7 +945,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                 }
             }
             destAncestor = destAncestor.getParent();
-        } while (!destAncestor.isRoot());
+        }
 
         try {
             MutableCachedNode mutableSrcParent = srcParent.mutable();
