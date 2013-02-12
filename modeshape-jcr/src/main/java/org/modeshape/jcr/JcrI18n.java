@@ -104,6 +104,7 @@ public final class JcrI18n {
     public static I18n fileConnectorNodeIdentifierIsNotWithinScopeOfConnector;
     public static I18n fileConnectorIsReadOnly;
     public static I18n fileConnectorCannotStoreFileThatIsExcluded;
+    public static I18n fileConnectorNamespaceIgnored;
     public static I18n couldNotStoreProperties;
     public static I18n couldNotStoreProperty;
     public static I18n couldNotGetMimeType;

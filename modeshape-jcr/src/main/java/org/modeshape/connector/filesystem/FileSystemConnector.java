@@ -39,6 +39,7 @@ import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.SecureHash.Algorithm;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.RepositoryConfiguration;
@@ -541,50 +542,63 @@ public class FileSystemConnector extends Connector {
     public String newDocumentId( String parentId,
                                  Name newDocumentName,
                                  Name newDocumentPrimaryType ) {
-        return parentId + DELIMITER + newDocumentName.getString();
+        StringBuilder documentIdBuilder = new StringBuilder(parentId);
+        if (!parentId.endsWith(DELIMITER)) {
+            documentIdBuilder.append(DELIMITER);
+        }
+        if (!StringUtil.isBlank(newDocumentName.getNamespaceUri()))  {
+            //the FS connector does not support namespaces in names
+            getLogger().warn(JcrI18n.fileConnectorNamespaceIgnored, getSourceName(), newDocumentName.getNamespaceUri());
+        }
+        documentIdBuilder.append(newDocumentName.getLocalName());
+        return documentIdBuilder.toString();
     }
 
     @Override
     public void updateDocument( DocumentChanges documentChanges ) {
         String id = documentChanges.getDocumentId();
         Document document = documentChanges.getDocument();
-
-        // Create a new directory or file described by the document ...
         DocumentReader reader = readDocument(document);
-        String parentId = reader.getParentIds().get(0);
+
         File file = fileFor(id);
         checkWritable(id, file);
-        File parent = file.getParentFile();
-        String newParentId = idFor(parent);
-        if (!parentId.equals(newParentId)) {
-            // The node has a new parent (via the 'update' method), meaning it was moved ...
-            File newParent = fileFor(newParentId);
-            File newFile = new File(newParent, file.getName());
-            file.renameTo(newFile);
-            if (!parent.exists()) {
-                parent.mkdirs(); // in case they were removed since we created them ...
-            }
-            if (!parent.canWrite()) {
-                String parentPath = newParent.getAbsolutePath();
-                String msg = JcrI18n.fileConnectorCannotWriteToDirectory.text(getSourceName(), getClass(), parentPath);
-                throw new DocumentStoreException(id, msg);
-            }
-            parent = newParent;
-            // Remove the extra properties at the old location ...
-            extraPropertiesStore().removeProperties(id);
-            // Set the id to the new location ...
-            id = idFor(newFile);
-        } else {
-            // It is the same parent as before ...
-            if (!parent.exists()) {
-                parent.mkdirs(); // in case they were removed since we created them ...
-            }
-            if (!parent.canWrite()) {
-                String parentPath = parent.getAbsolutePath();
-                String msg = JcrI18n.fileConnectorCannotWriteToDirectory.text(getSourceName(), getClass(), parentPath);
-                throw new DocumentStoreException(id, msg);
+
+        //if we're dealing with the root of the connector, we can't process any moves/removes because that would go "outside" the connector scope
+        if (!isRoot(id)) {
+            String parentId = reader.getParentIds().get(0);
+            File parent = file.getParentFile();
+            String newParentId = idFor(parent);
+            if (!parentId.equals(newParentId)) {
+                // The node has a new parent (via the 'update' method), meaning it was moved ...
+                File newParent = fileFor(newParentId);
+                File newFile = new File(newParent, file.getName());
+                file.renameTo(newFile);
+                if (!parent.exists()) {
+                    parent.mkdirs(); // in case they were removed since we created them ...
+                }
+                if (!parent.canWrite()) {
+                    String parentPath = newParent.getAbsolutePath();
+                    String msg = JcrI18n.fileConnectorCannotWriteToDirectory.text(getSourceName(), getClass(), parentPath);
+                    throw new DocumentStoreException(id, msg);
+                }
+                parent = newParent;
+                // Remove the extra properties at the old location ...
+                extraPropertiesStore().removeProperties(id);
+                // Set the id to the new location ...
+                id = idFor(newFile);
+            } else {
+                // It is the same parent as before ...
+                if (!parent.exists()) {
+                    parent.mkdirs(); // in case they were removed since we created them ...
+                }
+                if (!parent.canWrite()) {
+                    String parentPath = parent.getAbsolutePath();
+                    String msg = JcrI18n.fileConnectorCannotWriteToDirectory.text(getSourceName(), getClass(), parentPath);
+                    throw new DocumentStoreException(id, msg);
+                }
             }
         }
+
         String primaryType = reader.getPrimaryTypeName();
         Map<Name, Property> properties = reader.getProperties();
         ExtraProperties extraProperties = extraPropertiesFor(id, true);
