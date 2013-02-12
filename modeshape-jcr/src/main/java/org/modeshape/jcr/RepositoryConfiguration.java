@@ -2100,6 +2100,7 @@ public class RepositoryConfiguration {
         private final String workspaceName;
         private final String externalPath;
         private final String sourceName;
+        private final String pathExpression;
 
         private String projectedPath;
 
@@ -2113,6 +2114,7 @@ public class RepositoryConfiguration {
             Matcher expressionMatcher = PROJECTION_PATH_EXPRESSION_PATTERN.matcher(pathExpression);
             // should be validated by the repository schema
             if (expressionMatcher.matches()) {
+                this.pathExpression = pathExpression;
                 this.sourceName = sourceName;
                 workspaceName = expressionMatcher.group(1);
                 projectedPath = expressionMatcher.group(2);
@@ -2177,6 +2179,11 @@ public class RepositoryConfiguration {
          */
         public String getSourceName() {
             return sourceName;
+        }
+
+        @Override
+        public String toString() {
+            return pathExpression;
         }
     }
 
