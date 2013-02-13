@@ -27,6 +27,7 @@ import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.io.InputStream;
@@ -813,6 +814,21 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
 
         // and now Session.save() will work ...
         session.save();
+    }
+
+    @Test
+    @FixFor( "MODE-1807" )
+    public void shouldRegisterCNDFileWithResidualChildDefinition() throws Exception {
+        session = createSession();
+
+        InputStream cndStream = getClass().getResourceAsStream("/cnd/orc.cnd");
+        assertThat(cndStream, is(notNullValue()));
+        session.getWorkspace().getNodeTypeManager().registerNodeTypes(cndStream, true);
+
+        session.getRootNode().addNode("patient", "orc:patient").addNode("patientcase", "orc:patientcase");
+        session.save();
+
+        assertNotNull(session.getNode("/patient/patientcase"));
     }
 
     @Test

@@ -2521,7 +2521,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
                     for (Name name : node.requiredPrimaryTypeNames()) {
                         JcrNodeType npt = findTypeInMapOrList(name, pendingTypes);
 
-                        if (npt.isNodeType(apt.getName())) {
+                        if (npt != null && npt.isNodeType(apt.getName())) {
                             found = true;
                             break;
                         }
