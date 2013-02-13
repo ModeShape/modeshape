@@ -91,8 +91,8 @@ public class FederationIntegrationTest {
     public void shouldNotAllowWritesIfConfiguredAsReadonly() throws Exception {
         Session defaultSession = repository.login();
         Node projection1 = defaultSession.getNode("/projection1");
-        projection1.addNode("test", "nt:file");
         try {
+            projection1.addNode("test", "nt:file");
             defaultSession.save();
             fail("Write operation should not be possible if connector is readonly");
         } catch (RepositoryException e) {

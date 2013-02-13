@@ -41,7 +41,6 @@ import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
 import org.modeshape.jcr.cache.DocumentNotFoundException;
-import org.modeshape.jcr.cache.DocumentStoreException;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.federation.FederatedDocumentReader;
 import org.modeshape.jcr.federation.FederatedDocumentWriter;
@@ -57,6 +56,9 @@ import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 /**
  * SPI of a generic external connector, representing the interface to an external system integrated with ModeShape. Since it is
  * expected that the documents are well formed (structure-wise), the {@link FederatedDocumentWriter} class should be used.
+ *
+ * This is the base class for {@link WritableConnector} and {@link ReadOnlyConnector} which is what connector implementations
+ * are expected to implement.
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
@@ -107,12 +109,6 @@ public abstract class Connector {
      * </p>
      */
     private boolean queryable = true;
-
-    /**
-     * A flag which indicates whether a connector allows both write & read operations, or only read operations. If a connector
-     * is read-only, any attempt to write content (add/update/delete etc) will result in an exception being raised.
-     */
-    private boolean readonly = false;
 
     private boolean initialized = false;
 
@@ -220,15 +216,6 @@ public abstract class Connector {
         return queryable;
     }
 
-    /**
-     * Indicates if the connector instance has been configured in read-only mode.
-     *
-     * @return {@code true} if the connector has been configured in read-only mode, false otherwise.
-     */
-    public boolean isReadonly() {
-        return readonly;
-    }
-
     protected ExtraProperties extraPropertiesFor( String id,
                                                   boolean update ) {
         return new ExtraProperties(id, update);
@@ -330,6 +317,13 @@ public abstract class Connector {
      * @return either the id of the document or {@code null}
      */
     public abstract String getDocumentId( String path );
+
+    /**
+     * Indicates if the connector instance has been configured in read-only mode.
+     *
+     * @return {@code true} if the connector has been configured in read-only mode, false otherwise.
+     */
+    public abstract boolean isReadonly();
 
     /**
      * Returns a document representing a single child reference from the supplied parent to the supplied child. This method is
@@ -472,20 +466,6 @@ public abstract class Connector {
     protected Document newChildReference( String childId,
                                           String childName ) {
         return DocumentFactory.newDocument(DocumentTranslator.KEY, childId, DocumentTranslator.NAME, childName);
-    }
-
-    /**
-     * Verifies that the connector implementation is configured in "writable" mode (non read-only) prior to editing a document.
-     * This should be used by writable connector implementations which support the "read-only" attribute, before any write operation
-     * takes place.
-     *
-     * @param documentId a {@code non-null} {@link String} representing the id of document that will be edited.
-     * @throws DocumentStoreException if the connector has been configured as read-only.
-     */
-    protected void checkConnectorIsWritable( String documentId ) throws DocumentStoreException {
-        if (isReadonly()) {
-            throw new DocumentStoreException(JcrI18n.connectorIsReadOnly.text(getSourceName(), documentId));
-        }
     }
 
     /**

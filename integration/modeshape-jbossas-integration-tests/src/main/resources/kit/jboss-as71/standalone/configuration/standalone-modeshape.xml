@@ -199,7 +199,6 @@
                 <local-cache name="federatedRepository">
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
-                    <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
                 </local-cache>
             </cache-container>
             <cache-container name="binary-cache-container" default-cache="binary-fs">
@@ -312,7 +311,6 @@
                     <text-extractor name="tika-extractor" classname="tika" module="org.modeshape.extractor.tika"/>
                 </text-extractors>
                 <cache-binary-storage data-cache-name="binary-fs" metadata-cache-name="binary-fs-meta" cache-container="binary-cache-container"/>
-                <!--<db-binary-storage data-source-jndi-name="java:jboss/datasources/ModeshapeBinaryDS"/>-->
             </repository>
             <repository name="preconfiguredRepository">
                 <indexing rebuild-upon-startup="never"/>
