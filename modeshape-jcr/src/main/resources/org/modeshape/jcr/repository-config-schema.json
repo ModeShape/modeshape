@@ -325,6 +325,11 @@
                         "type" : "integer",
                         "description" : "The optional number of seconds which an external node should be held in the workspace cache. If not specified, the effective TTL is deferred to the workspace cache configuration. If negative, an entry will be cached forever."
                     },
+                    "readonly" : {
+                        "type" : "boolean",
+                        "default" : false,
+                        "description" : "Optional flag which indicates if an external source should support both writing and reading, or just reading. This flag is ignored for read-only sources and makes sense only for writable sources."
+                    },
                     "projections" : {
                         "type" : "array",
                         "items" : {

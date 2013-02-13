@@ -51,6 +51,7 @@ import org.modeshape.jcr.federation.spi.Connector;
 import org.modeshape.jcr.federation.spi.DocumentChanges;
 import org.modeshape.jcr.federation.spi.DocumentReader;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
+import org.modeshape.jcr.federation.spi.WritableConnector;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
@@ -105,7 +106,7 @@ import org.modeshape.jcr.value.binary.UrlBinaryValue;
  * </tr>
  * </table>
  */
-public class FileSystemConnector extends Connector {
+public class FileSystemConnector extends WritableConnector {
 
     private static final String FILE_SEPARATOR = System.getProperty("file.separator");
     private static final String DELIMITER = "/";
@@ -474,8 +475,6 @@ public class FileSystemConnector extends Connector {
 
     @Override
     public boolean removeDocument( String id ) {
-        checkConnectorIsWritable(id);
-
         File file = fileFor(id);
         checkFileNotExcluded(id, file);
         // Remove the extra properties at the old location ...
@@ -491,7 +490,6 @@ public class FileSystemConnector extends Connector {
         // Create a new directory or file described by the document ...
         DocumentReader reader = readDocument(document);
         String id = reader.getDocumentId();
-        checkConnectorIsWritable(id);
         File file = fileFor(id);
         checkFileNotExcluded(id, file);
         File parent = file.getParentFile();
@@ -549,7 +547,6 @@ public class FileSystemConnector extends Connector {
     @Override
     public void updateDocument( DocumentChanges documentChanges ) {
         String id = documentChanges.getDocumentId();
-        checkConnectorIsWritable(id);
 
         Document document = documentChanges.getDocument();
         DocumentReader reader = readDocument(document);
