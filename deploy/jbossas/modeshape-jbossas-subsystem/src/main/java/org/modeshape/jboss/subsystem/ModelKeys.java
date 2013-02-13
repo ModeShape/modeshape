@@ -55,6 +55,7 @@ public class ModelKeys {
     static final String DATA_SOURCE_JNDI_NAME = "data-source-jndi-name";
     static final String DEFAULT_WORKSPACE = "default-workspace";
     static final String ENABLE_MONITORING = "enable-monitoring";
+    static final String ENABLE_QUERIES = "enable-queries";
     static final String INDEX_FORMAT = "index-format";
     static final String INDEX_STORAGE_TYPE = "index-storage-type";
     static final String JNDI_NAME = "jndi-name";

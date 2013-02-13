@@ -65,6 +65,9 @@ import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
 public class AddRepository extends AbstractAddStepHandler {
 
+    private static final org.jboss.logging.Logger LOG = org.jboss.logging.Logger.getLogger(AddRepository.class.getPackage()
+                                                                                                              .getName());
+
     public static final AddRepository INSTANCE = new AddRepository();
 
     private AddRepository() {
@@ -108,6 +111,7 @@ public class AddRepository extends AbstractAddStepHandler {
         final String clusterChannelName = attribute(context, model, ModelAttributes.CLUSTER_NAME, null);
         final String clusterStackName = attribute(context, model, ModelAttributes.CLUSTER_STACK, null);
         final boolean enableMonitoring = attribute(context, model, ModelAttributes.ENABLE_MONITORING).asBoolean();
+        final boolean enableQueries = attribute(context, model, ModelAttributes.ENABLE_QUERIES).asBoolean();
 
         // Figure out which cache container to use (by default we'll use Infinispan subsystem's default cache container) ...
         String namedContainer = attribute(context, model, ModelAttributes.CACHE_CONTAINER, "modeshape");
@@ -124,7 +128,7 @@ public class AddRepository extends AbstractAddStepHandler {
             jndiAlias = null;
         }
 
-        // Always enable monitoring ...
+        // Always set whether monitoring is enabled ...
         enableMonitoring(enableMonitoring, configDoc);
 
         // Initial node-types if configured
@@ -137,9 +141,16 @@ public class AddRepository extends AbstractAddStepHandler {
         setRepositoryStorageConfiguration(cacheName, configDoc);
 
         // Indexing ...
-        EditableDocument query = parseIndexing(context, model, configDoc);
+        EditableDocument query = null;
+        if (enableQueries) {
+            LOG.debugv("**** Queries are ENABLED for {0} *****", repositoryName);
+            query = parseIndexing(context, model, configDoc);
+        } else {
+            LOG.debugv("**** Queries are DISABLED for {0} *****", repositoryName);
+            query = Schematic.newDocument(FieldName.QUERY_ENABLED, false);
+        }
 
-        //security
+        // security
         parseSecurity(context, model, configDoc);
 
         // Clustering and the JGroups channel ...
@@ -230,9 +241,9 @@ public class AddRepository extends AbstractAddStepHandler {
         // Add dependency to the data directory ...
         ServiceName dataDirServiceName = ModeShapeServiceNames.dataDirectoryServiceName(repositoryName);
         ServiceController<String> dataDirServiceController = RelativePathService.addService(dataDirServiceName,
-                                                                     "modeshape/" + repositoryName,
-                                                                     ModeShapeExtension.DATA_DIR_VARIABLE,
-                                                                     target);
+                                                                                            "modeshape/" + repositoryName,
+                                                                                            ModeShapeExtension.DATA_DIR_VARIABLE,
+                                                                                            target);
         newControllers.add(dataDirServiceController);
         builder.addDependency(dataDirServiceName, String.class, repositoryService.getDataDirectoryPathInjector());
 
@@ -354,29 +365,33 @@ public class AddRepository extends AbstractAddStepHandler {
         }
 
         if (model.hasDefined(ModelKeys.REBUILD_INDEXES_UPON_STARTUP_MODE)) {
-            String rebuildMode = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_MODE.resolveModelAttribute(context, model).asString();
+            String rebuildMode = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_MODE.resolveModelAttribute(context, model)
+                                                                                  .asString();
             rebuildIndexingOptions.set(FieldName.REBUILD_MODE, rebuildMode);
         }
 
         if (model.hasDefined(ModelKeys.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT)) {
-            boolean rebuildIncludeSystemContent = ModelAttributes.REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT.resolveModelAttribute(context, model).asBoolean();
+            boolean rebuildIncludeSystemContent = ModelAttributes.REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT.resolveModelAttribute(context,
+                                                                                                                                    model)
+                                                                                                             .asBoolean();
             rebuildIndexingOptions.setBoolean(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT, rebuildIncludeSystemContent);
         }
 
         if (model.hasDefined(ModelKeys.SYSTEM_CONTENT_MODE)) {
-            String deprecatedSystemContentMode = ModelAttributes.SYSTEM_CONTENT_MODE.resolveModelAttribute(context, model).asString();
-            boolean deprecatedBooleanIncludesSystemContent = deprecatedSystemContentMode.equalsIgnoreCase(
-                    RepositoryConfiguration.IndexingMode.SYNC.name()) || deprecatedSystemContentMode.equalsIgnoreCase(
-                    RepositoryConfiguration.IndexingMode.ASYNC.name());
-            String deprecatedRebuildMode = !RepositoryConfiguration.IndexingMode.DISABLED.name().equalsIgnoreCase(deprecatedSystemContentMode) ?
-                                           deprecatedSystemContentMode : RepositoryConfiguration.IndexingMode.SYNC.name();
+            String deprecatedSystemContentMode = ModelAttributes.SYSTEM_CONTENT_MODE.resolveModelAttribute(context, model)
+                                                                                    .asString();
+            boolean deprecatedBooleanIncludesSystemContent = deprecatedSystemContentMode.equalsIgnoreCase(RepositoryConfiguration.IndexingMode.SYNC.name())
+                                                             || deprecatedSystemContentMode.equalsIgnoreCase(RepositoryConfiguration.IndexingMode.ASYNC.name());
+            String deprecatedRebuildMode = !RepositoryConfiguration.IndexingMode.DISABLED.name()
+                                                                                         .equalsIgnoreCase(deprecatedSystemContentMode) ? deprecatedSystemContentMode : RepositoryConfiguration.IndexingMode.SYNC.name();
 
             if (!rebuildIndexingOptions.containsField(FieldName.REBUILD_MODE)) {
                 rebuildIndexingOptions.set(FieldName.REBUILD_MODE, deprecatedRebuildMode);
             }
 
             if (!rebuildIndexingOptions.containsField(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT)) {
-                rebuildIndexingOptions.setBoolean(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT, deprecatedBooleanIncludesSystemContent);
+                rebuildIndexingOptions.setBoolean(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT,
+                                                  deprecatedBooleanIncludesSystemContent);
             }
         }
     }

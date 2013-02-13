@@ -106,6 +106,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
+    public void testOutputPersistenceOfConfigurationWithDisabledQueries() throws Exception {
+        parse(readResource("modeshape-disabled-queries.xml"));
+    }
+
+    @Test
     public void testOutputPersistenceOfConfigurationWithCustomIndexRebuildOptions() throws Exception {
         parse(readResource("modeshape-index-rebuilding-config.xml"));
     }

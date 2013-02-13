@@ -28,6 +28,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.InputStream;
 import java.util.HashSet;
@@ -850,6 +851,38 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
             if (!passed.get()) {
                 fail("one or more threads got an exception");
             }
+        }
+    }
+
+    @FixFor( "MODE-1805" )
+    @Test
+    public void shouldCreateRepositoryInstanceWithQueriesDisabled() throws Exception {
+        RepositoryConfiguration config = RepositoryConfiguration.read("{ 'name' : 'noQueries', 'query' : { 'enabled' : false } }");
+        JcrRepository repository = new JcrRepository(config);
+        repository.start();
+        try {
+            Session session = repository.login();
+            assertThat(session, is(notNullValue()));
+
+            // Add some content ...
+            Node testNode = session.getRootNode().addNode("repos");
+            session.save();
+            session.logout();
+
+            session = repository.login();
+            Node testNode2 = session.getNode("/repos");
+            assertTrue(testNode.isSame(testNode2));
+            session.logout();
+
+            // Queries return nothing ...
+            session = repository.login();
+            Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", Query.JCR_SQL2);
+            QueryResult results = query.execute();
+            assertTrue(results.getNodes().getSize() == 0);
+            session.logout();
+        } finally {
+            repository.shutdown().get(3L, TimeUnit.SECONDS);
+            JTATestUtil.clearJBossJTADefaultStoreLocation();
         }
     }
 

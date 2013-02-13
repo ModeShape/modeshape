@@ -25,6 +25,7 @@ package org.modeshape.jboss.service;
 
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.document.EditableDocument;
+import org.jboss.logging.Logger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StopContext;
@@ -32,6 +33,8 @@ import org.jboss.msc.value.InjectedValue;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
 public class IndexStorageService implements Service<IndexStorage> {
+
+    private static final Logger LOG = Logger.getLogger(IndexStorageService.class.getPackage().getName());
 
     private final InjectedValue<String> indexStorageBasePathInjector = new InjectedValue<String>();
     private final InjectedValue<String> indexStorageSourceBasePathInjector = new InjectedValue<String>();
@@ -89,9 +92,11 @@ public class IndexStorageService implements Service<IndexStorage> {
 
     @Override
     public IndexStorage getValue() throws IllegalStateException, IllegalArgumentException {
-        if (indexStorage.useDefaultValuesForIndexStorage()) {
-            //use optional value because this service is dynamically queried from AbstractAddIndexStorage
-            indexStorage.setDefaultValuesForIndexStorage(dataDirectoryPathInjector.getOptionalValue());
+        if (indexStorage.isEnabled()) {
+            if (indexStorage.useDefaultValuesForIndexStorage()) {
+                // use optional value because this service is dynamically queried from AbstractAddIndexStorage
+                indexStorage.setDefaultValuesForIndexStorage(dataDirectoryPathInjector.getOptionalValue());
+            }
         }
         indexStorage.setCacheContainer(cacheContainerInjectedValue.getOptionalValue());
         return indexStorage;
@@ -103,26 +108,31 @@ public class IndexStorageService implements Service<IndexStorage> {
         // When this is injected into the RepositoryService, the RepositoryService will use the
         // properties to update the configuration.
 
-        // All we need to do is update the relative paths and make them absolute, given the absolute paths that are injected ...
+        if (indexStorage.isEnabled()) {
+            // All we need to do is update the relative paths and make them absolute,
+            // given the absolute paths that are injected ...
 
-        String indexStorageBasePath = getIndexStorageBasePath();
-        if (indexStorageBasePath != null) {
-            // Set the index storage directory ...
-            EditableDocument indexStorage = this.indexStorage.getQueryConfiguration().getDocument(FieldName.INDEX_STORAGE);
-            String relativePath = indexStorage.getString(FieldName.INDEX_STORAGE_LOCATION);
-            if (relativePath != null) {
-                indexStorage.set(FieldName.INDEX_STORAGE_LOCATION, indexStorageBasePath + relativePath);
+            String indexStorageBasePath = getIndexStorageBasePath();
+            if (indexStorageBasePath != null) {
+                // Set the index storage directory ...
+                EditableDocument indexStorage = this.indexStorage.getQueryConfiguration().getDocument(FieldName.INDEX_STORAGE);
+                String relativePath = indexStorage.getString(FieldName.INDEX_STORAGE_LOCATION);
+                if (relativePath != null) {
+                    indexStorage.set(FieldName.INDEX_STORAGE_LOCATION, indexStorageBasePath + relativePath);
+                }
             }
-        }
 
-        String indexStorageSourceBasePath = getIndexStorageSourceBasePath();
-        if (indexStorageSourceBasePath != null) {
-            // Set the index source storage directory ...
-            EditableDocument indexStorage = this.indexStorage.getQueryConfiguration().getDocument(FieldName.INDEX_STORAGE);
-            String relativePath = indexStorage.getString(FieldName.INDEX_STORAGE_LOCATION);
-            if (relativePath != null) {
-                indexStorage.set(FieldName.INDEX_STORAGE_LOCATION, indexStorageSourceBasePath + relativePath);
+            String indexStorageSourceBasePath = getIndexStorageSourceBasePath();
+            if (indexStorageSourceBasePath != null) {
+                // Set the index source storage directory ...
+                EditableDocument indexStorage = this.indexStorage.getQueryConfiguration().getDocument(FieldName.INDEX_STORAGE);
+                String relativePath = indexStorage.getString(FieldName.INDEX_STORAGE_LOCATION);
+                if (relativePath != null) {
+                    indexStorage.set(FieldName.INDEX_STORAGE_LOCATION, indexStorageSourceBasePath + relativePath);
+                }
             }
+        } else {
+            LOG.warnv("Queries are disabled for the repository, so all configured index storage will be disabled.");
         }
     }
 
