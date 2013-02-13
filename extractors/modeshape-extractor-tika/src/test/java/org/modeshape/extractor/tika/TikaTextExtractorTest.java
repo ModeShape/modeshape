@@ -47,6 +47,7 @@ import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit test for {@link TikaTextExtractor}
@@ -164,6 +165,13 @@ public class TikaTextExtractorTest {
     public void shouldExtractTextFromPdfFilePdfContext() throws Exception {
         extractTermsFrom("modeshape_pdfcontext.pdf");
         assertExtractedMatchesExpected();
+    }
+
+    @Test
+    @FixFor( "MODE-1810" )
+    public void shouldExtractTextFromXlsxFile() throws Exception {
+        extractTermsFrom("sample-file.xlsx");
+        assertTrue(!extracted.isEmpty());
     }
 
     public static String randomString(int length) {

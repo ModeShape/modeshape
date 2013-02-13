@@ -41,6 +41,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.query.JcrQuery;
@@ -87,6 +88,13 @@ public class TikaTextExtractorIntegrationTest {
     public void shouldExtractAndIndexContentFromDocFile() throws Exception {
         String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')";
         uploadFileAndCheckExtraction("text-extractor/modeshape.doc", queryString);
+    }
+
+    @Test
+    @FixFor( "MODE-1810" )
+    public void shouldExtractAndIndexContentFromXlsxFile() throws Exception {
+        String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'Operations')";
+        uploadFileAndCheckExtraction("text-extractor/sample-file.xlsx", queryString);
     }
 
     private void uploadFileAndCheckExtraction( String filepath,
