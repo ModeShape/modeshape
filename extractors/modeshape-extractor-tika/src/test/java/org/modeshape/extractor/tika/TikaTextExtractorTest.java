@@ -167,8 +167,11 @@ public class TikaTextExtractorTest {
     }
 
     public static String randomString(int length) {
+        //write a text only header to make sure Tika Mimetype detector doesn't get confused...
+        String header = "this is a text file ";
         StringBuilder rndStringBuilder = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
+        rndStringBuilder.append(header);
+        for (int i = 0; i < length - header.length(); i++) {
             rndStringBuilder.append(CHARS.charAt(RANDOM.nextInt(CHARS.length())));
         }
         return rndStringBuilder.toString();

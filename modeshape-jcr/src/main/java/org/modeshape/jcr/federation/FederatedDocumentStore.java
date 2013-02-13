@@ -110,6 +110,7 @@ public class FederatedDocumentStore implements DocumentStore {
         }
         Connector connector = connectors.getConnectorForSourceKey(sourceKey(parentKey));
         if (connector != null) {
+            checkConnectorIsWritable(connector);
             String parentDocumentId = documentIdFromNodeKey(parentKey);
             String newChildId = connector.newDocumentId(parentDocumentId, documentName, documentPrimaryType);
             if (!StringUtil.isBlank(newChildId)) {
@@ -128,6 +129,7 @@ public class FederatedDocumentStore implements DocumentStore {
         }
         Connector connector = connectors.getConnectorForSourceKey(sourceKey(key));
         if (connector != null) {
+            checkConnectorIsWritable(connector);
             EditableDocument editableDocument = replaceNodeKeysWithDocumentIds(document);
             connector.storeDocument(editableDocument);
         }
@@ -143,6 +145,7 @@ public class FederatedDocumentStore implements DocumentStore {
         } else {
             Connector connector = connectors.getConnectorForSourceKey(sourceKey(key));
             if (connector != null) {
+                checkConnectorIsWritable(connector);
                 EditableDocument editableDocument = replaceNodeKeysWithDocumentIds(document);
                 String documentId = documentIdFromNodeKey(key);
                 SessionNode.NodeChanges nodeChanges = sessionNode.getNodeChanges();
@@ -319,6 +322,7 @@ public class FederatedDocumentStore implements DocumentStore {
         }
         Connector connector = connectors.getConnectorForSourceKey(sourceKey(key));
         if (connector != null) {
+            checkConnectorIsWritable(connector);
             boolean result = connector.removeDocument(documentIdFromNodeKey(key));
             connectors.externalNodeRemoved(key);
             return result;
@@ -577,5 +581,12 @@ public class FederatedDocumentStore implements DocumentStore {
 
         return writer.document();
     }
+
+    private void checkConnectorIsWritable( Connector connector ) throws ConnectorException {
+        if (connector.isReadonly()) {
+            throw new ConnectorException(JcrI18n.connectorIsReadOnly.text(connector.getSourceName()));
+        }
+    }
+
 
 }

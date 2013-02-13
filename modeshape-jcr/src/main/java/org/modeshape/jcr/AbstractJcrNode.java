@@ -1052,7 +1052,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
         //If there isn't a desired key, check if the document store doesn't require a certain key format (this is especially used by federation)
         if (desiredKey == null) {
-            String documentStoreKey = session().repository().documentStore().newDocumentKey(key().toString(), childName, childPrimaryNodeTypeName);
+            String documentStoreKey = null;
+            try {
+                documentStoreKey = session().repository().documentStore().newDocumentKey(key().toString(), childName, childPrimaryNodeTypeName);
+            } catch (Exception e) {
+                throw new RepositoryException(e);
+            }
             if (documentStoreKey != null) {
                 desiredKey = new NodeKey(documentStoreKey);
             }

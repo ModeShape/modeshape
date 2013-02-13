@@ -37,27 +37,28 @@ public abstract class ReadOnlyConnector extends Connector {
 
     @Override
     public final boolean removeDocument( String id ) {
-        checkConnectorIsWritable(id);
-        return false;
+        //this should never really be called, because FederatedDocumentStore performs the check
+        throw new UnsupportedOperationException("Connector is readonly");
     }
 
     @Override
     public final void storeDocument( Document document ) {
-        DocumentReader reader = readDocument(document);
-        checkConnectorIsWritable(reader.getDocumentId());
+        //this should never really be called, because FederatedDocumentStore performs the check
+        throw new UnsupportedOperationException("Connector is readonly");
     }
 
     @Override
     public final void updateDocument( DocumentChanges documentChanges ) {
-        checkConnectorIsWritable(documentChanges.getDocumentId());
+        //this should never really be called, because FederatedDocumentStore performs the check
+        throw new UnsupportedOperationException("Connector is readonly");
     }
 
     @Override
     public String newDocumentId( String parentId,
                                  Name newDocumentName,
                                  Name newDocumentPrimaryType ) {
-        checkConnectorIsWritable(newDocumentName.getString());
-        return null;
+        //this should never really be called, because FederatedDocumentStore performs the check
+        throw new UnsupportedOperationException("Connector is readonly");
     }
 
     @Override
