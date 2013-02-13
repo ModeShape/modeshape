@@ -200,6 +200,12 @@
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                 </local-cache>
+                <local-cache name="noQueryRepository">
+                    <!-- ModeShape requires transactions -->
+                    <transaction mode="NON_XA"/>
+                    <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
+                    <file-store passivation="false" path="modeshape/store/noQueryRepository" relative-to="jboss.server.data.dir" purge="false"/>
+                </local-cache>
             </cache-container>
             <cache-container name="binary-cache-container" default-cache="binary-fs">
                 <local-cache name="binary-fs">
@@ -350,6 +356,7 @@
                             queryableBranches="master,2.x"/>
                 </external-sources>
             </repository>
+            <repository name="noQueryRepository" enable-queries="false" />
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>
         <subsystem xmlns="urn:jboss:domain:jca:1.1">

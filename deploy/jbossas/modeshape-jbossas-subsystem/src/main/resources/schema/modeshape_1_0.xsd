@@ -166,6 +166,15 @@
           enabled.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
+    <xs:attribute name="enable-queries" type="xs:boolean" default="true">
+      <xs:annotation>
+        <xs:documentation>Specifies whether the repository is to enable the query system and text extractors
+          as configured. The default value is 'true', meaning queries are enabled. If 'false', then all
+          indexing related attributes, index storage configuration, and text extract configurations are
+          ignored, while JDBC access and direct queries will not work or will return no data.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
     <xs:attribute name="security-domain" type="xs:string" default="modeshape-security">
       <xs:annotation>
         <xs:documentation>The name of the security domain that should be used for JAAS authentication.

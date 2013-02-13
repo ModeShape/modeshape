@@ -70,6 +70,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         ModelAttributes.CACHE_CONTAINER.marshallAsAttribute(repository, false, writer);
         ModelAttributes.JNDI_NAME.marshallAsAttribute(repository, false, writer);
         ModelAttributes.ENABLE_MONITORING.marshallAsAttribute(repository, false, writer);
+        ModelAttributes.ENABLE_QUERIES.marshallAsAttribute(repository, false, writer);
         ModelAttributes.SECURITY_DOMAIN.marshallAsAttribute(repository, false, writer);
         writeAttributeAsList(writer, repository, ModelAttributes.ANONYMOUS_ROLES);
         ModelAttributes.ANONYMOUS_USERNAME.marshallAsAttribute(repository, false, writer);
