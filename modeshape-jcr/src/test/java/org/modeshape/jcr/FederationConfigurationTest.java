@@ -27,13 +27,13 @@ import java.io.InputStream;
 import java.util.UUID;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
-import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
@@ -86,11 +86,14 @@ public class FederationConfigurationTest extends SingleUseAbstractTest {
         }
     }
 
-    @Test( expected = RepositoryException.class )
-    @FixFor( "MODE-1798" )
-    public void shouldNotAllowPreconfiguredProjectionIfAliasNotProvided() throws Exception {
-        //we expect this to fail because there is already an internal node that is supposed to be used as an alias as well
+    @Test
+    public void shouldIgnorePreconfiguredProjectionIfProjectedPathPointsTowardsInternalNode() throws Exception {
         startRepositoryWithConfiguration(resource("config/repo-config-filesystem-federation-invalid-alias.json"));
+        //check that there only the internal node + 1 child and that the projection has not been created
+        Session session = session();
+        Node federation = session.getNode("/federation");
+        assertEquals(1, federation.getNodes().getSize());
+        assertNotNull(session.getNode("/federation/fs"));
     }
 
     @Override
