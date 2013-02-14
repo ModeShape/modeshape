@@ -1,0 +1,22 @@
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<orc='http://www.orc.org/jcr/orcs/1.0'>
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+[orc:patient] > nt:unstructured
+  + * (orc:patientcase)
+
+[orc:patientcase] > nt:unstructured
+  - orc:name (string)
+  + procedure (orc:procedure)
+
+[orc:procedure] > nt:unstructured
+  - orc:name (string)
+
+[orc:specialcase] > orc:patientcase
+ + procedure (orc:specialprocedure)
+
+[orc:specialprocedure] > orc:procedure
