@@ -33,7 +33,6 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.jcr.JcrRepository;
@@ -51,15 +50,6 @@ import static junit.framework.Assert.fail;
  */
 @RunWith( Arquillian.class )
 public class FederationIntegrationTest {
-
-    static {
-        System.setProperty("arquillian.launch", "jboss7-test");
-    }
-
-    @AfterClass
-    public static void clearActiveContainer() {
-       System.clearProperty("arquillian.launch");
-    }
 
     @Resource( mappedName = "/jcr/federatedRepository" )
     private JcrRepository repository;
