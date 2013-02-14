@@ -39,7 +39,6 @@ import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.Session;
 import org.modeshape.jcr.api.federation.FederationManager;
-import org.modeshape.jcr.federation.spi.ConnectorException;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
