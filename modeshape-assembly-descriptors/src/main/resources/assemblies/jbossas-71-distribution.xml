@@ -43,6 +43,17 @@
             <outputDirectory>standalone/deployments/modeshape-cmis.war</outputDirectory>
         </fileSet>
 
+        <!--
+         TODO author=Horia Chiorean date=2/14/13 description=MODE-1811 - Hack to allow Infinispan to access a classes from modeshape
+     -->
+        <fileSet>
+            <directory>../modeshape-jcr/${project.build.outputDirectory}</directory>
+            <includes>
+                <include>**/Metadata.class</include>
+            </includes>
+            <outputDirectory>modules/org/infinispan/main/classes</outputDirectory>
+        </fileSet>
+
     </fileSets>
 	
 	<dependencySets>
@@ -257,7 +268,7 @@
         </dependencySet>
 
         <!--
-            //TODO author=Horia Chiorean date=6/22/12 description=MODE-1534 - This is a temporary workaround because of the schematic Module for Infinispan
+            TODO author=Horia Chiorean date=6/22/12 description=MODE-1534 - This is a temporary workaround because of the schematic Module for Infinispan
         -->
 		<dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
