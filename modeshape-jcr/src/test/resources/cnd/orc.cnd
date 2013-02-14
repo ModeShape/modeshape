@@ -11,3 +11,12 @@
 
 [orc:patientcase] > nt:unstructured
   - orc:name (string)
+  + procedure (orc:procedure)
+
+[orc:procedure] > nt:unstructured
+  - orc:name (string)
+
+[orc:specialcase] > orc:patientcase
+ + procedure (orc:specialprocedure)
+
+[orc:specialprocedure] > orc:procedure
