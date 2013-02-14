@@ -55,6 +55,7 @@ public enum Attribute {
     DATA_SOURCE_JNDI_NAME("data-source-jndi-name"),
     DEFAULT_WORKSPACE("default-workspace"),
     ENABLE_MONITORING("enable-monitoring"),
+    ENABLE_QUERIES("enable-queries"),
     FORMAT("format"),
     JNDI_NAME("jndi-name"),
     LOCK_CACHE_NAME("lock-cache-name"),
@@ -90,7 +91,6 @@ public enum Attribute {
     CACHE_TTL_SECONDS("cacheTtlSeconds"),
     QUERYABLE("queryable"),
     READONLY("readonly");
-
 
     private final String name;
 

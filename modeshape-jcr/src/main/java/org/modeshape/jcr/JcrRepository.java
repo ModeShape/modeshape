@@ -1051,8 +1051,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 CacheContainer container = config.getContentCacheContainer();
                 String cacheName = config.getCacheName();
                 List<Component> connectorComponents = config.getFederation().getConnectors();
-                Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjectionsByWorkspace
-                        = config.getFederation().getProjectionsByWorkspace();
+                Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjectionsByWorkspace = config.getFederation()
+                                                                                                                               .getProjectionsByWorkspace();
                 this.connectors = new Connectors(this, connectorComponents, preconfiguredProjectionsByWorkspace);
                 logger.debug("Loading cache '{0}' from cache container {1}", cacheName, container);
                 SchematicDb database = Schematic.get(container, cacheName);
@@ -1191,8 +1191,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                                                          indexingProps, indexStorageProps);
                 this.indexRebuildOptions = query.getIndexRebuildOptions();
             } else {
-                this.repositoryQueryManager = null;
+                this.repositoryQueryManager = new RepositoryDisabledQueryManager(this, config.getQuery());
                 this.indexRebuildOptions = null;
+                logger.debug("Queries have been DISABLED for the '{0}' repository. Nothing will be indexed, and all queries will return empty results.",
+                             repositoryName());
             }
 
             // Check that we have parsers for all the required languages ...
@@ -1274,7 +1276,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             // Now record in the content that we're finished initializing the repository ...
             repositoryCache().completeInitialization();
 
-            //check the re-indexing options and do the re-indexing (this must be done after all of the above have finished)
+            // check the re-indexing options and do the re-indexing (this must be done after all of the above have finished)
             if (indexRebuildOptions != null) {
                 RepositoryConfiguration.QueryRebuild when = indexRebuildOptions.getWhen();
                 boolean includeSystemContent = indexRebuildOptions.includeSystemContent();
@@ -1294,9 +1296,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         if (existingIndexes.isEmpty()) {
                             logger.info(JcrI18n.noReindex, getName());
                         } else {
-                            logger.debug(
-                                    "Index rebuild option is 'never' for repository {0} so nothing will be re-indexed. The existing indexed node are: {1}",
-                                    name(), existingIndexes);
+                            logger.debug("Index rebuild option is 'never' for repository {0} so nothing will be re-indexed. The existing indexed node are: {1}",
+                                         name(),
+                                         existingIndexes);
                         }
                         break;
                     }

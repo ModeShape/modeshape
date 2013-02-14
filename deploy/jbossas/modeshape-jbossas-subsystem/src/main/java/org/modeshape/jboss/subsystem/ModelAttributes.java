@@ -355,6 +355,17 @@ public class ModelAttributes {
                                                                                                                                                                     FieldName.MONITORING_ENABLED)
                                                                                                                              .build();
 
+    public static final SimpleAttributeDefinition ENABLE_QUERIES = new MappedAttributeDefinitionBuilder(
+                                                                                                           ModelKeys.ENABLE_QUERIES,
+                                                                                                           ModelType.BOOLEAN).setXmlName(Attribute.ENABLE_QUERIES.getLocalName())
+                                                                                                                             .setAllowNull(true)
+                                                                                                                             .setAllowExpression(true)
+                                                                                                                             .setDefaultValue(new ModelNode().set(true))
+                                                                                                                             .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                             .setFieldPathInRepositoryConfiguration(FieldName.QUERY,
+                                                                                                                                                                    FieldName.QUERY_ENABLED)
+                                                                                                                             .build();
+
     public static final SimpleAttributeDefinition INDEX_FORMAT = new MappedAttributeDefinitionBuilder(ModelKeys.INDEX_FORMAT,
                                                                                                       ModelType.STRING).setXmlName(Attribute.FORMAT.getLocalName())
                                                                                                                        .setAllowExpression(true)
@@ -767,7 +778,7 @@ public class ModelAttributes {
     public static final AttributeDefinition[] SUBSYSTEM_ATTRIBUTES = {};
 
     public static final AttributeDefinition[] REPOSITORY_ATTRIBUTES = {CACHE_NAME, CACHE_CONTAINER, JNDI_NAME, ENABLE_MONITORING,
-        SECURITY_DOMAIN, ANONYMOUS_ROLES, ANONYMOUS_USERNAME, USE_ANONYMOUS_IF_AUTH_FAILED, NODE_TYPES, DEFAULT_WORKSPACE,
+        ENABLE_QUERIES, SECURITY_DOMAIN, ANONYMOUS_ROLES, ANONYMOUS_USERNAME, USE_ANONYMOUS_IF_AUTH_FAILED, NODE_TYPES, DEFAULT_WORKSPACE,
         PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, WORKSPACES_CACHE_CONTAINER, DEFAULT_INITIAL_CONTENT,
         WORKSPACES_INITIAL_CONTENT, MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE, THREAD_POOL, BATCH_SIZE, READER_STRATEGY, MODE,
         SYSTEM_CONTENT_MODE, ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME, ANALYZER_MODULE,

@@ -30,6 +30,7 @@ import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Editor;
+import org.jboss.logging.Logger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -42,12 +43,15 @@ import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
+import org.modeshape.jcr.RepositoryConfiguration.Default;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
 /**
  * {@link Service} implementation which exposes ModeShape's text extraction feature.
  */
 public class TextExtractorService implements Service<JcrRepository> {
+
+    private static final Logger LOG = Logger.getLogger(TextExtractorService.class.getPackage().getName());
 
     private final InjectedValue<ModeShapeEngine> engineInjector = new InjectedValue<ModeShapeEngine>();
     private final InjectedValue<JcrRepository> jcrRepositoryInjector = new InjectedValue<JcrRepository>();
@@ -85,6 +89,14 @@ public class TextExtractorService implements Service<JcrRepository> {
 
         Editor configEditor = repositoryConfig.edit();
         EditableDocument queryDocument = configEditor.getDocument(FieldName.QUERY);
+
+        if (!queryDocument.getBoolean(FieldName.QUERY_ENABLED, Default.QUERY_ENABLED)) {
+            // Queries are disabled, so do nothing for text extraction ...
+            queryDocument.remove(FieldName.TEXT_EXTRACTING);
+            LOG.warnv("Queries are disabled for the '{0}' repository, so all configured text extractors will be disabled.",
+                      repositoryConfig.getName());
+            return;
+        }
 
         EditableDocument textExtracting = queryDocument.getOrCreateDocument(FieldName.TEXT_EXTRACTING);
         EditableDocument extractors = textExtracting.getOrCreateDocument(FieldName.EXTRACTORS);

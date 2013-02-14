@@ -79,6 +79,13 @@ class RepositoryQueryManager {
     private volatile LuceneQueryEngine queryEngine;
     private final Logger logger = Logger.getLogger(getClass());
 
+    protected RepositoryQueryManager( RunningState runningState,
+                                      QuerySystem querySystem ) {
+        this.runningState = runningState;
+        this.indexingExecutorService = null;
+        this.config = null;
+    }
+
     RepositoryQueryManager( RunningState runningState,
                             QuerySystem querySystem,
                             ExecutorService indexingExecutorService,
@@ -158,13 +165,16 @@ class RepositoryQueryManager {
 
     /**
      * Crawl and index all of the repository content.
-     *
+     * 
      * @param indexOnlyIfMissing flag which indicates whether all the nodes should be re-indexed or only nodes which are not part
-     * of the existing indexes
-     * @param includeSystemContent flag which indicates whether content in the system workspace (below /jcr:system) should be re-indexed or not.
+     *        of the existing indexes
+     * @param includeSystemContent flag which indicates whether content in the system workspace (below /jcr:system) should be
+     *        re-indexed or not.
      * @param async flag which indicates whether the operation should be done synchronously or asynchronously
      */
-    protected void reindexContent(final boolean indexOnlyIfMissing, final boolean includeSystemContent, boolean async) {
+    protected void reindexContent( final boolean indexOnlyIfMissing,
+                                   final boolean includeSystemContent,
+                                   boolean async ) {
         if (async) {
             indexingExecutorService.submit(new Callable<Void>() {
                 @SuppressWarnings( "synthetic-access" )
@@ -185,12 +195,13 @@ class RepositoryQueryManager {
      * @param indexOnlyIfMissing true if the reindexing should be performed if the indexes are missing
      * @param includeSystemContent true if the system content should also be indexed
      */
-    private void reindexContent(boolean indexOnlyIfMissing, boolean includeSystemContent) {
+    private void reindexContent( boolean indexOnlyIfMissing,
+                                 boolean includeSystemContent ) {
         // The node type schemata changes every time a node type is (un)registered, so get the snapshot that we'll use throughout
         NodeTypeSchemata schemata = runningState.nodeTypeManager().getRepositorySchemata();
         RepositoryCache repoCache = runningState.repositoryCache();
 
-        //If we want to index only missing nodes, we need load what's already indexed
+        // If we want to index only missing nodes, we need load what's already indexed
         Set<NodeKey> excludedKeysFromIndexing = new HashSet<NodeKey>();
         if (indexOnlyIfMissing) {
             excludedKeysFromIndexing.addAll(getIndexes().indexedNodes());
@@ -200,9 +211,9 @@ class RepositoryQueryManager {
             if (excludedKeysFromIndexing.isEmpty()) {
                 logger.info(JcrI18n.reindexMissingNoIndexesExist, runningState.name());
             } else {
-                logger.debug(
-                        "Only missing indexes will be re-indexed in the {0} repository. The existing nodes are indexed: {1}",
-                        runningState.name(), excludedKeysFromIndexing);
+                logger.debug("Only missing indexes will be re-indexed in the {0} repository. The existing nodes are indexed: {1}",
+                             runningState.name(),
+                             excludedKeysFromIndexing);
             }
         } else {
             logger.info(JcrI18n.reindexAll, runningState.name());
@@ -229,7 +240,7 @@ class RepositoryQueryManager {
 
     /**
      * Crawl and index the content in the named workspace.
-     *
+     * 
      * @param workspace the workspace
      * @throws IllegalArgumentException if the workspace is null
      */
@@ -239,7 +250,7 @@ class RepositoryQueryManager {
 
     /**
      * Crawl and index the content starting at the supplied path in the named workspace, to the designated depth.
-     *
+     * 
      * @param workspace the workspace
      * @param path the path of the content to be indexed
      * @param depth the depth of the content to be indexed
@@ -330,7 +341,7 @@ class RepositoryQueryManager {
             // Add all children to the queue ...
             for (ChildReference childRef : node.getChildReferences(cache)) {
                 NodeKey childKey = childRef.getKey();
-                //we should not reindex anything which is in the system area
+                // we should not reindex anything which is in the system area
                 if (!childKey.getWorkspaceKey().equals(runningState.systemWorkspaceKey())) {
                     queue.add(childKey);
                 }
@@ -374,7 +385,7 @@ class RepositoryQueryManager {
     protected void reindexSystemContent( CachedNode nodeInSystemBranch,
                                          int depth,
                                          NodeTypeSchemata schemata,
-                                         Set<NodeKey> keysToExclude) {
+                                         Set<NodeKey> keysToExclude ) {
         RepositoryCache repoCache = runningState.repositoryCache();
         String workspaceName = repoCache.getSystemWorkspaceName();
         NodeCache systemWorkspaceCache = repoCache.getWorkspaceCache(workspaceName);
@@ -411,7 +422,7 @@ class RepositoryQueryManager {
 
     /**
      * Asynchronously crawl and index the content in the named workspace.
-     *
+     * 
      * @param workspace the workspace
      * @return the future for the asynchronous operation; never null
      * @throws IllegalArgumentException if the workspace is null
@@ -428,7 +439,7 @@ class RepositoryQueryManager {
 
     /**
      * Asynchronously crawl and index the content starting at the supplied path in the named workspace, to the designated depth.
-     *
+     * 
      * @param workspace the workspace
      * @param path the path of the content to be indexed
      * @param depth the depth of the content to be indexed
