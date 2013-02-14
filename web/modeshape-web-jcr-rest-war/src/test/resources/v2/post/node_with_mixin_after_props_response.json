@@ -1,0 +1,7 @@
+{
+    "self":"http://localhost:8090/resources/repo/default/items/testNode",
+    "up":"http://localhost:8090/resources/repo/default/items/",
+    "jcr:title" : "This is a title",
+    "jcr:primaryType" : "nt:folder",
+    "jcr:mixinTypes":"mix:title"
+}
