@@ -23,12 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -61,6 +55,12 @@ import org.modeshape.jcr.RepositoryStatistics.Statistics;
 import org.modeshape.jcr.api.monitor.DurationMetric;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.monitor.Window;
+import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 public class JcrRepositoryTest extends AbstractTransactionalTest {
 
