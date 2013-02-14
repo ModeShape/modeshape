@@ -32,6 +32,7 @@ import java.io.ByteArrayOutputStream;
 import javax.ws.rs.core.MediaType;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.web.jcr.rest.handler.RestBinaryHandler;
 
@@ -232,6 +233,14 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         return "v2/query/query_result_jcrSql2.json";
     }
 
+    protected String nodeWithMixinAfterPropsRequest() {
+        return "v2/post/node_with_mixin_after_props_request.json";
+    }
+
+    protected String nodeWithMixinAfterPropsResponse() {
+        return "v2/post/node_with_mixin_after_props_response.json";
+    }
+
     @Override
     @Ignore( "Ignored because the deprecated parameter isn't supported anymore" )
     public void shouldRetrieveRootNodeWhenDeprecatedDepthSet() throws Exception {
@@ -415,5 +424,13 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
         // Delete by ID ...
         response = doDelete(nodesUrl(id)).isDeleted();
         // System.out.println("**** GET-BY-ID: \n" + response);
+    }
+
+    @Test
+    @FixFor( "MODE-1816" )
+    public void shouldAllowPostingNodeWithMixinAndPrimaryTypesPropertiesAfterProperties() throws Exception {
+        doPost(nodeWithMixinAfterPropsRequest(), itemsUrl(TEST_NODE)).isCreated()
+                                                                     .isJSONObjectLikeFile(nodeWithMixinAfterPropsResponse());
+        doGet(itemsUrl(TEST_NODE)).isOk().isJSONObjectLikeFile(nodeWithMixinAfterPropsResponse());
     }
 }
