@@ -34,28 +34,17 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.api.Session;
 
 /**
- * Integration test which verifies that various external sources are correctly set-up via the JBoss AS subsystem.
- * 
- * @author Horia Chiorean (hchiorea@redhat.com)
+ * Integration test that accesses the repository with disabled queries to verify the functionality still works, though executing
+ * queries will fail.
  */
 @RunWith( Arquillian.class )
 public class NoQueriesIntegrationTest {
-
-    static {
-        System.setProperty("arquillian.launch", "jboss7-test");
-    }
-
-    @AfterClass
-    public static void clearActiveContainer() {
-        System.clearProperty("arquillian.launch");
-    }
 
     @Resource( mappedName = "/jcr/noQueryRepository" )
     private JcrRepository repository;
