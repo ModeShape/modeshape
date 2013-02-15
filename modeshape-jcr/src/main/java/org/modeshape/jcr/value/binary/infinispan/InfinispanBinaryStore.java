@@ -39,6 +39,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.infinispan.Cache;
+import org.infinispan.configuration.cache.AbstractLoaderConfiguration;
+import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.context.Flag;
 import org.infinispan.distexec.mapreduce.Collector;
 import org.infinispan.distexec.mapreduce.MapReduceTask;
@@ -306,15 +308,17 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             cacheLoaderShared = cacheLoaderManager.isShared();
         }
 
-        if (!metadataCache.getCacheManager().isCoordinator() && cacheLoaderShared) {
-            // in this case an other node will care...
+        boolean isCoordinator = metadataCache.getCacheManager().isCoordinator();
+        if (!isCoordinator && cacheLoaderShared) {
+            // in this case an other process in the cluster will care...
             return;
         }
 
         long minimumAgeInMS = unit.toMillis(minimumAge);
         Set<Object> processedKeys = new HashSet<Object>();
-        if (metadataCache.getCacheConfiguration().clustering().cacheMode().isDistributed()
-            && metadataCache.getCacheManager().isCoordinator()) {
+        boolean distributed = metadataCache.getCacheConfiguration().clustering().cacheMode().isDistributed();
+        boolean isRemoteCache = isRemoteCache(metadataCache);
+        if (!isRemoteCache && distributed && isCoordinator) {
             // distributed mapper finds unused...
             MapReduceTask<String, Metadata, String, String> task = new MapReduceTask<String, Metadata, String, String>(
                                                                                                                        metadataCache);
@@ -347,7 +351,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             }
 
         }
-        if (metadataCache.getCacheManager().isCoordinator() && cacheLoader != null) {
+        if (isCoordinator && cacheLoader != null) {
             // process cache loader content
             try {
                 for (Object key : new ArrayList<Object>(cacheLoader.loadAllKeys(processedKeys))) {
@@ -369,6 +373,15 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             }
         }
 
+    }
+
+    static boolean isRemoteCache( Cache<?, ?> cache ) {
+        if (cache.getClass().getName().startsWith("org.infinispan.client.hotrod.RemoteCache")) return true;
+        Configuration config = cache.getCacheConfiguration();
+        for (AbstractLoaderConfiguration loaderConfig : config.loaders().cacheLoaders()) {
+            if (loaderConfig.getClass().getName().startsWith("org.infinispan.loaders.remote")) return true;
+        }
+        return false;
     }
 
     static boolean isValueUnused( Metadata metadata,
