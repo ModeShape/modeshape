@@ -81,7 +81,7 @@ public abstract class ProcessingComponent {
      * 
      * @return the column mappings; never null
      */
-    public final Columns getColumns() {
+    public Columns getColumns() {
         return columns;
     }
 
@@ -507,7 +507,7 @@ public abstract class ProcessingComponent {
         final Comparator<Location> typeComparator = Location.getComparator();
         if (numLocations == 1) {
             // We can do this a tad faster if we know there is only one Location object ...
-            final int locationIndex = columns.getColumnCount();
+            final int locationIndex = columns.getLocationStartIndexInTuple();
             return new Comparator<Object[]>() {
                 @Override
                 public int compare( Object[] tuple1,
@@ -518,7 +518,7 @@ public abstract class ProcessingComponent {
                 }
             };
         }
-        final int firstLocationIndex = columns.getColumnCount();
+        final int firstLocationIndex = columns.getLocationStartIndexInTuple();
         return new Comparator<Object[]>() {
             @Override
             public int compare( Object[] tuple1,
