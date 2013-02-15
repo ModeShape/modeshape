@@ -769,12 +769,12 @@
                                             "required" : true,
                                             "description" : "The specification of the Lucene backend for writing all updates directly to Lucene."
                                         },
-                                        "connectionFactoryJndiName" : { 
+                                        "connectionFactoryJndiName" : {
                                             "type" : "string",
                                             "required" : true,
                                             "description" : "Defines the name in JNDI where the JMS connection factory can be found. The value is often '/ConnectionFactory' by default in JBoss AS.",
                                         },
-                                        "queueJndiName" : { 
+                                        "queueJndiName" : {
                                             "type" : "string",
                                             "required" : true,
                                             "description" : "Defines the name in JNDI where JMS queue can be found. The queue will be used to post work messages.",
@@ -804,7 +804,7 @@
                                         "channelConfiguration" : { 
                                             "type" : "string",
                                             "required" : true,
-                                            "description" : "The JGroups channel configuration. The value can either be the path to a resource file on the classpath, or a value containing the JGroups configuration (in either XML or old-style format)."
+                                            "description" : "The JGroups channel configuration. The value should be the path to a resource file on the classpath containing the JGroups configuration."
                                         },
                                         "description" : {
                                             "type" : "string",
@@ -823,15 +823,15 @@
                                             "required" : true,
                                             "description" : "The specification of the Lucene backend for writing all updates directly to Lucene."
                                         },
-                                        "connectionFactoryJndiName" : { 
+                                        "channelName" : {
                                             "type" : "string",
                                             "required" : true,
-                                            "description" : "Defines the name in JNDI where the JMS connection factory can be found. The value is often '/ConnectionFactory' by default in JBoss AS.",
+                                            "description" : "The name of the JGroups channel used for indexing updates."
                                         },
-                                        "queueJndiName" : { 
+                                        "channelConfiguration" : {
                                             "type" : "string",
                                             "required" : true,
-                                            "description" : "Defines the name in JNDI where JMS queue can be found. The queue will be used to post work messages.",
+                                            "description" : "The JGroups channel configuration. The value should be the path to a resource file on the classpath containing the JGroups configuration."
                                         },
                                         "description" : {
                                             "type" : "string",
