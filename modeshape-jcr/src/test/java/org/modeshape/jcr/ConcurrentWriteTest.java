@@ -29,6 +29,7 @@ import static org.junit.Assert.fail;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
@@ -153,6 +154,33 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
         final int totalOperations = 3;
         final int threads = 16;
         runConcurrently(totalOperations, threads, new ModifyPropertiesOnChildren("/node1", "foo", 3));
+    }
+
+    @FixFor( "MODE-1817" )
+    @Test
+    public void shouldAllowMultipleSessionsToConcurrentlyRemoveSameNode() throws Exception {
+        // This issue can be replicated by having two separate threads (each using their own transaction) to
+        // try removing the same node.
+        // First, add some nodes ...
+        Node node = session().getRootNode().addNode("/node");
+        Node subnode = node.addNode("subnode");
+        subnode.getSession().save();
+
+        // Now run two threads that are timed very carefully ...
+        int numThreads = 2;
+        final CyclicBarrier barrier = new CyclicBarrier(numThreads);
+        Operation operation = new Operation() {
+            @Override
+            public void run( Session session ) throws Exception {
+                Node subnode = session.getNode("/node/subnode");
+                subnode.remove();
+                barrier.await();
+                session.save();
+            }
+        };
+        runConcurrently(numThreads, numThreads, operation);
+
+        verify(new NumberOfChildren(0, "node"));
     }
 
     /**
@@ -398,7 +426,7 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
      */
     @ThreadSafe
     protected static interface Operation {
-        void run( Session session ) throws RepositoryException;
+        void run( Session session ) throws RepositoryException, Exception;
     }
 
     private void run( final int totalNumberOfOperations,
