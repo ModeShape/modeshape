@@ -26,13 +26,13 @@
             versions of artifacts. Here we use the jboss-javaee-6.0-with-tools stack
             (you can read this as the JBoss stack of the Java EE 6 APIs, with some extras
             tools for your project, such as Arquillian for testing) -->
-      <dependency>
-        <groupId>org.jboss.bom</groupId>
-        <artifactId>jboss-javaee-6.0-with-tools</artifactId>
-        <version>1.0.0.M11</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
+        <dependency>
+            <groupId>org.jboss.bom</groupId>
+            <artifactId>jboss-javaee-6.0-with-tools</artifactId>
+            <version>1.0.4.Final</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
     </dependencies>
   </dependencyManagement>
   <!--
@@ -80,16 +80,25 @@
       <artifactId>arquillian-junit-container</artifactId>
       <scope>test</scope>
     </dependency>
+
       <dependency>
-          <groupId>org.jboss.shrinkwrap.resolver</groupId>
-          <artifactId>shrinkwrap-resolver-impl-maven</artifactId>
+          <groupId>org.jboss.arquillian.protocol</groupId>
+          <artifactId>arquillian-protocol-servlet</artifactId>
           <scope>test</scope>
       </dependency>
-    <dependency>
-      <groupId>org.jboss.arquillian.protocol</groupId>
-      <artifactId>arquillian-protocol-servlet</artifactId>
-      <scope>test</scope>
-    </dependency>
+
+      <dependency>
+          <groupId>org.jboss.shrinkwrap.resolver</groupId>
+          <artifactId>shrinkwrap-resolver-depchain</artifactId>
+          <type>pom</type>
+          <scope>test</scope>
+      </dependency>
+
+      <dependency>
+          <groupId>org.jboss.shrinkwrap</groupId>
+          <artifactId>shrinkwrap-impl-base</artifactId>
+          <scope>test</scope>
+      </dependency>
 
       <dependency>
           <groupId>org.modeshape</groupId>
