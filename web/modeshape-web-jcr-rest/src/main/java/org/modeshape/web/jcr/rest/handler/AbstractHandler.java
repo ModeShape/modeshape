@@ -255,6 +255,7 @@ public abstract class AbstractHandler {
         List<String> values = restPropertyValues(property, baseUrl, session);
         String url = RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, property.getPath());
         String parentUrl = RestHelper.urlFrom(baseUrl, ITEMS_METHOD_NAME, property.getParent().getPath());
-        return new RestProperty(property.getName(), url, parentUrl, values);
+        boolean multiValued = property.isMultiple();
+        return new RestProperty(property.getName(), url, parentUrl, values, multiValued);
     }
 }
