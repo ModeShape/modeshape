@@ -32,11 +32,10 @@ import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.modeshape.common.FixFor;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -60,49 +59,14 @@ public class CDITest {
         return archive;
     }
 
-    /**
-     * Creates the following deployable:
-     *
-     * cdi-test-ear.ear
-     *     /lib/cdi-ear-producer.jar
-     *              /META-INF/beans.xml
-     *     /cdi-ear-test.war
-     *             /WEB-INF/beans.xml
-     *     /META-INF/MANIFEST.MF
-     */
-    @Deployment(name = "cdi-test-ear")
-    public static EnterpriseArchive createEarDeployment() {
-
-        JavaArchive providerLib = ShrinkWrap.create(JavaArchive.class, "cdi-ear-producer.jar")
-                                                     .addAsManifestResource(EmptyAsset.INSTANCE, ArchivePaths.create(
-                                                             "beans.xml"))
-                                                     .addClass(CDIRepositoryProvider.class);
-
-        WebArchive webapp = ShrinkWrap.create(WebArchive.class, "cdi-ear-test.war")
-                                      .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"))
-                                      .addClass(CDITest.class)
-                                      .addClass(CDIRepositoryConsumer.class);
-
-        return ShrinkWrap.create(EnterpriseArchive.class, "cdi-ear-test.ear")
-                                          .addAsModule(webapp)
-                                          .addAsLibraries(providerLib)
-                                          .addAsManifestResource(new File("src/main/webapp/META-INF/MANIFEST.MF"));
-    }
-
     @Inject
     private CDIRepositoryConsumer consumer;
 
-    @Test
-    @OperateOnDeployment("cdi-test-war")
-    public void testInjectionInWar() throws Exception {
-        assertNotNull(consumer.nodeAt("/"));
-        assertNotNull(consumer.importContentHandler("/"));
-    }
 
+    @FixFor( "MODE-1813" )
+    @OperateOnDeployment("cdi-test-war")
     @Test
-    @OperateOnDeployment("cdi-test-ear")
-    public void testInjectionInEar() throws Exception {
-        assertNotNull(consumer.nodeAt("/"));
-        assertNotNull(consumer.importContentHandler("/"));
+    public void testInjectionInWar() throws Exception {
+        assertNotNull(consumer.getSession());
     }
 }

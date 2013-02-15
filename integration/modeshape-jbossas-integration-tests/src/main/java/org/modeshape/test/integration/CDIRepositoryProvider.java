@@ -25,6 +25,8 @@
 package org.modeshape.test.integration;
 
 import javax.annotation.Resource;
+import javax.enterprise.context.RequestScoped;
+import javax.enterprise.inject.Disposes;
 import javax.enterprise.inject.Produces;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -37,12 +39,17 @@ import javax.jcr.Session;
  */
 public class CDIRepositoryProvider {
 
-    @Resource(mappedName="/jcr/sample")
+    @Resource( mappedName = "/jcr/sample" )
     @Produces
     private Repository sampleRepository;
 
+    @RequestScoped
     @Produces
-    public Session getSampleRepositorySession() throws RepositoryException {
+    public Session getCurrentSession() throws RepositoryException {
         return sampleRepository.login();
+    }
+
+    public void logoutSession( @Disposes final Session session ) {
+        session.logout();
     }
 }

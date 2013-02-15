@@ -25,10 +25,7 @@
 package org.modeshape.test.integration;
 
 import javax.inject.Inject;
-import javax.jcr.ImportUUIDBehavior;
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
-import org.xml.sax.ContentHandler;
+import javax.jcr.Session;
 
 /**
  * A test class which uses CDI and the {@link RepositoryProvider} class to obtain a node at a given path.
@@ -38,13 +35,9 @@ import org.xml.sax.ContentHandler;
 public class CDIRepositoryConsumer {
 
     @Inject
-    private CDIRepositoryProvider repositoryProvider;
+    private Session session;
 
-    protected Node nodeAt(String absPath) throws RepositoryException {
-        return repositoryProvider.getSampleRepositorySession().getNode(absPath);
-    }
-
-    protected ContentHandler importContentHandler(String absPath) throws RepositoryException {
-        return repositoryProvider.getSampleRepositorySession().getImportContentHandler(absPath, ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
+    public Session getSession() {
+        return session;
     }
 }
