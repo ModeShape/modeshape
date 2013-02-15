@@ -1115,8 +1115,12 @@ public class WritableSessionCache extends AbstractSessionCache {
             Set<NodeKey> referrers = new HashSet<NodeKey>();
             for (NodeKey removedKey : removedNodes) {
                 // we need the current document from the documentStore, because this differs from what's persisted
-                Document doc = documentStore.get(removedKey.toString()).getContentAsDocument();
-                referrers.addAll(translator.getReferrers(doc, ReferenceType.STRONG));
+                SchematicEntry entry = documentStore.get(removedKey.toString());
+                if (entry != null) {
+                    // The entry hasn't yet been removed by another (concurrent) session ...
+                    Document doc = documentStore.get(removedKey.toString()).getContentAsDocument();
+                    referrers.addAll(translator.getReferrers(doc, ReferenceType.STRONG));
+                }
             }
             // check referential integrity ...
             referrers.removeAll(removedNodes);
