@@ -35,6 +35,7 @@ import org.hibernate.search.cfg.spi.SearchConfiguration;
 import org.hibernate.search.impl.SimpleInitializer;
 import org.hibernate.search.spi.InstanceInitializer;
 import org.hibernate.search.spi.ServiceProvider;
+import org.modeshape.common.logging.Logger;
 
 /**
  * The Hibernate Search {@link SearchConfiguration} implementation that specifies how Hibernate Search should be configured.
@@ -43,6 +44,8 @@ public abstract class LuceneSearchConfiguration implements SearchConfiguration {
 
     protected static final String HIBERNATE_PROPERTY_PREFIX = "hibernate.search.";
     protected static final String DEFAULT_INDEX = "default.";
+
+    protected Logger logger = Logger.getLogger(LuceneSearchConfiguration.class);
 
     private final Map<String, Class<?>> classes = new HashMap<String, Class<?>>();
     private final Map<String, Class<?>> unmodifiableClasses;
