@@ -107,7 +107,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         "/jcr:system/mode:namespaces", "/jcr:system/mode:repository"};
 
     private static final String[] NON_INDEXED_SYSTEM_NODES_PATHS = new String[] {"/", "/jcr:system/mode:locks",
-            "/jcr:system/jcr:versionStorage"};
+        "/jcr:system/jcr:versionStorage"};
 
     private static final boolean WRITE_INDEXES_TO_FILE = false;
 
@@ -283,14 +283,16 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         JcrSession session = repository.login();
         try {
             NodeCache systemSession = repository.createSystemSession(session.context(), true);
-            totalSystemNodeCount = countAllNodesBelow(systemSession.getRootKey(), systemSession) - NON_INDEXED_SYSTEM_NODES_PATHS.length;
+            totalSystemNodeCount = countAllNodesBelow(systemSession.getRootKey(), systemSession)
+                                   - NON_INDEXED_SYSTEM_NODES_PATHS.length;
             totalNodeCount = totalSystemNodeCount + TOTAL_NON_SYSTEM_NODE_COUNT;
         } finally {
             session.logout();
         }
     }
 
-    private static int countAllNodesBelow( NodeKey nodeKey, NodeCache cache ) throws RepositoryException {
+    private static int countAllNodesBelow( NodeKey nodeKey,
+                                           NodeCache cache ) throws RepositoryException {
         int result = 1;
         CachedNode node = cache.getNode(nodeKey);
         ChildReferences childReferences = node.getChildReferences(cache);
@@ -1109,6 +1111,20 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, carColumnNames("car"));
     }
 
+    @FixFor( "MODE-1809" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2UnionOfQueriesWithJoins() throws RepositoryException {
+        String sql1 = "SELECT car.* from [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category) WHERE NAME(category) LIKE 'Utility'";
+        String sql2 = "SELECT car.* from [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category) WHERE NAME(category) LIKE 'Sports'";
+        String sql = sql1 + " UNION " + sql2;
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 7);
+        assertResultsHaveColumns(result, carColumnNames("car"));
+    }
+
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithDescendantNodeJoinAndColumnsFromBothSidesOfJoin()
         throws RepositoryException {
@@ -1252,7 +1268,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, new String[] {"car.jcr:name", "category.jcr:primaryType"});
     }
 
-    @FixFor("MODE-1750")
+    @FixFor( "MODE-1750" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithLeftOuterJoinOnNullCondition() throws RepositoryException {
         // given
@@ -1269,7 +1285,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, new String[] {"car1.jcr:name"});
     }
 
-    @FixFor("MODE-1750")
+    @FixFor( "MODE-1750" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithRightOuterJoinOnNullCondition() throws RepositoryException {
         // given
@@ -1858,7 +1874,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     /**
      * Tests that the child nodes (but no grandchild nodes) are returned.
-     *
+     * 
      * @throws RepositoryException
      */
     @SuppressWarnings( "deprecation" )
@@ -1877,7 +1893,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     /**
      * Tests that the child nodes (but no grandchild nodes) are returned.
-     *
+     * 
      * @throws RepositoryException
      */
     @SuppressWarnings( "deprecation" )
