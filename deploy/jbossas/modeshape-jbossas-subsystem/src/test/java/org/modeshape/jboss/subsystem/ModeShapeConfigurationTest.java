@@ -111,6 +111,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
+    public void testOutputPersistenceOfConfigurationWithGarbageCollectionSpecified() throws Exception {
+        parse(readResource("modeshape-garbage-collection.xml"));
+    }
+
+    @Test
     public void testOutputPersistenceOfConfigurationWithCustomIndexRebuildOptions() throws Exception {
         parse(readResource("modeshape-index-rebuilding-config.xml"));
     }

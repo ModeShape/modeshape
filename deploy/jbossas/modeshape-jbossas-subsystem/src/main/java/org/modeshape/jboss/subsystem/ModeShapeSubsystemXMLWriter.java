@@ -77,6 +77,9 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         ModelAttributes.USE_ANONYMOUS_IF_AUTH_FAILED.marshallAsAttribute(repository, false, writer);
         ModelAttributes.CLUSTER_NAME.marshallAsAttribute(repository, false, writer);
         ModelAttributes.CLUSTER_STACK.marshallAsAttribute(repository, false, writer);
+        ModelAttributes.GARBAGE_COLLECTION_THREAD_POOL.marshallAsAttribute(repository, false, writer);
+        ModelAttributes.GARBAGE_COLLECTION_INITIAL_TIME.marshallAsAttribute(repository, false, writer);
+        ModelAttributes.GARBAGE_COLLECTION_INTERVAL.marshallAsAttribute(repository, false, writer);
 
         // Nested elements ...
         writeNodeTypes(writer, repository);
