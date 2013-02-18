@@ -59,6 +59,36 @@ public class CDITest {
         return archive;
     }
 
+    /**
+     * Creates the following deployable:
+     *
+     * cdi-test-ear.ear
+     *     /lib/cdi-ear-producer.jar
+     *              /META-INF/beans.xml
+     *     /cdi-ear-test.war
+     *             /WEB-INF/beans.xml
+     *     /META-INF/MANIFEST.MF
+     *    @return the archive
+     */
+    @Deployment(name = "cdi-test-ear")
+    public static EnterpriseArchive createEarDeployment() {
+
+        JavaArchive providerLib = ShrinkWrap.create(JavaArchive.class, "cdi-ear-producer.jar")
+                                                     .addAsManifestResource(EmptyAsset.INSTANCE, ArchivePaths.create(
+                                                             "beans.xml"))
+                                                     .addClass(CDIRepositoryProvider.class);
+
+        WebArchive webapp = ShrinkWrap.create(WebArchive.class, "cdi-ear-test.war")
+                                      .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"))
+                                      .addClass(CDITest.class)
+                                      .addClass(CDIRepositoryConsumer.class);
+
+        return ShrinkWrap.create(EnterpriseArchive.class, "cdi-ear-test.ear")
+                                          .addAsModule(webapp)
+                                          .addAsLibraries(providerLib)
+                                          .addAsManifestResource(new File("src/main/webapp/META-INF/MANIFEST.MF"));
+    }
+
     @Inject
     private CDIRepositoryConsumer consumer;
 

@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
@@ -418,7 +419,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
     }
 
     @Override
-    public ExecutorService getScheduledThreadPool( String name ) {
+    public ScheduledExecutorService getScheduledThreadPool( String name ) {
         return this.threadPools.getScheduledThreadPool(name);
     }
 

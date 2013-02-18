@@ -44,6 +44,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -51,6 +52,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.regex.Matcher;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
@@ -87,6 +89,7 @@ import org.modeshape.jcr.RepositoryConfiguration.AnonymousSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.BinaryStorage;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import org.modeshape.jcr.RepositoryConfiguration.GarbageCollection;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.QuerySystem;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
@@ -98,6 +101,7 @@ import org.modeshape.jcr.api.RepositoryManager;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.query.Query;
+import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.bus.ChangeBus;
 import org.modeshape.jcr.bus.ClusteredRepositoryChangeBus;
 import org.modeshape.jcr.bus.RepositoryChangeBus;
@@ -134,6 +138,7 @@ import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.txn.NoClientTransactions;
 import org.modeshape.jcr.txn.SynchronizedTransactions;
 import org.modeshape.jcr.txn.Transactions;
+import org.modeshape.jcr.value.DateTimeFactory;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Property;
@@ -868,19 +873,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         descriptors.put(Repository.REPOSITORY_NAME, repositoryName());
     }
 
-    /**
-     * Clean up the repository content's garbage.
-     * 
-     * @see ModeShapeEngine.GarbageCollectionTask#run()
-     */
-    void cleanUp() {
-        RunningState running = runningState.get();
-        if (running != null) {
-            running.cleanUpLocks();
-            running.cleanUpBinaryValues();
-        }
-    }
-
     Collection<Cache<?, ?>> caches() {
         RunningState running = runningState.get();
         if (running == null) return Collections.emptyList();
@@ -960,6 +952,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final NodeTypesImporter nodeTypesImporter;
         private final Connectors connectors;
         private final RepositoryConfiguration.IndexRebuildOptions indexRebuildOptions;
+        private final List<ScheduledFuture<?>> gcProcesses = new ArrayList<ScheduledFuture<?>>();
 
         private Transaction runningTransaction;
 
@@ -987,7 +980,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.statistics = other != null ? other.statistics : new RepositoryStatistics(tempContext);
                 if (this.config.getMonitoring().enabled()) {
                     // Start the Cron service, with a minimum of a single thread ...
-                    this.statsRollupService = (ScheduledExecutorService)tempContext.getScheduledThreadPool("modeshape-stats");
+                    this.statsRollupService = tempContext.getScheduledThreadPool("modeshape-stats");
                     this.statistics.start(this.statsRollupService);
                 } else {
                     this.statsRollupService = null;
@@ -1309,6 +1302,25 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             // atomic
             this.transactions.resume(runningTransaction);
             this.runningTransaction = null;
+
+            // Register the background processes ...
+            GarbageCollection gcConfig = config.getGarbageCollection();
+            String threadPoolName = gcConfig.getThreadPoolName();
+            ScheduledExecutorService garbageCollectionService = this.context.getScheduledThreadPool(threadPoolName);
+            long binaryGcInitialTime = determineInitialDelay(gcConfig.getInitialTimeExpression());
+            long binaryGcInterval = gcConfig.getIntervalInHours();
+            gcProcesses.add(garbageCollectionService.scheduleAtFixedRate(new LockGarbageCollectionTask(),
+                                                                         RepositoryConfiguration.LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD,
+                                                                         RepositoryConfiguration.LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD,
+                                                                         RepositoryConfiguration.LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT));
+            if (binaryGcInitialTime >= 0) {
+                gcProcesses.add(garbageCollectionService.scheduleAtFixedRate(new BinaryValueGarbageCollectionTask(),
+                                                                             binaryGcInitialTime,
+                                                                             binaryGcInterval,
+                                                                             TimeUnit.HOURS));
+            } else {
+                logger.warn(JcrI18n.invalidGarbageCollectionInitialTime, repositoryName(), gcConfig.getInitialTimeExpression());
+            }
         }
 
         protected final Sequencers sequencers() {
@@ -1506,6 +1518,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             // shutdown the connectors
             this.connectors.shutdown();
 
+            // Remove the scheduled operations ...
+            for (ScheduledFuture<?> future : gcProcesses) {
+                future.cancel(true);
+            }
+
             // Unregister from JNDI ...
             unbindFromJndi();
 
@@ -1645,7 +1662,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         /**
-         * @see JcrRepository#cleanUp()
+         * @see LockGarbageCollectionTask
          */
         void cleanUpLocks() {
             if (logger.isDebugEnabled()) {
@@ -1682,7 +1699,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         /**
-         * @see JcrRepository#cleanUp()
+         * @see BinaryValueGarbageCollectionTask
          */
         void cleanUpBinaryValues() {
             if (logger.isDebugEnabled()) {
@@ -1887,6 +1904,40 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         public void logout() {
             // do nothing
         }
+    }
+
+    protected class BinaryValueGarbageCollectionTask implements Runnable {
+        @Override
+        public void run() {
+            runningState().cleanUpBinaryValues();
+        }
+    }
+
+    protected class LockGarbageCollectionTask implements Runnable {
+        @Override
+        public void run() {
+            runningState().cleanUpLocks();
+        }
+    }
+
+    protected long determineInitialDelay( String initialTimeExpression ) {
+        Matcher matcher = RepositoryConfiguration.INITIAL_TIME_PATTERN.matcher(initialTimeExpression);
+        if (matcher.matches()) {
+            int hours = Integer.decode(matcher.group(1));
+            int mins = Integer.decode(matcher.group(2));
+            DateTimeFactory factory = runningState().context().getValueFactories().getDateFactory();
+            DateTime now = factory.create();
+            DateTime initialTime = factory.create(now.getYear(), now.getMonthOfYear(), now.getDayOfMonth(), hours, mins, 0, 0);
+            long delay = initialTime.getMilliseconds() - System.currentTimeMillis();
+            if (delay <= 0L) {
+                initialTime = initialTime.plusDays(1);
+                delay = initialTime.getMilliseconds() - System.currentTimeMillis();
+            }
+            assert delay >= 0;
+            return delay;
+        }
+        assert false;
+        return -1;
     }
 
 }

@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.modeshape.common.annotation.ThreadSafe;
 
@@ -54,9 +55,10 @@ public class ThreadPools implements ThreadPoolFactory {
     }
 
     @Override
-    public ExecutorService getScheduledThreadPool( String name ) {
-        return getOrCreateNewPool(name,
-                                  Executors.newScheduledThreadPool(DEFAULT_SCHEDULED_THREAD_COUNT, new NamedThreadFactory(name)));
+    public ScheduledExecutorService getScheduledThreadPool( String name ) {
+        return (ScheduledExecutorService)getOrCreateNewPool(name,
+                                                            Executors.newScheduledThreadPool(DEFAULT_SCHEDULED_THREAD_COUNT,
+                                                                                             new NamedThreadFactory(name)));
     }
 
     private ExecutorService getOrCreateNewPool( String name,
