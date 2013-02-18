@@ -68,6 +68,11 @@ If you have *any* trouble building (or don't like the '-s settings.xml' usage), 
 
 ModeShape is open source, and we welcome anybody that wants to participate and contribute!
 
+Before committing anything, PLEASE make sure you have set up all of the development tools
+(see http://community.jboss.org/wiki/ModeShapeDevelopmentTools), are following the project's
+guidelines (see http://community.jboss.org/wiki/ModeShapeDevelopmentGuidelines), and are 
+using our accepted workflow (see http://community.jboss.org/wiki/ModeShapeDevelopmentWorkflow).
+
 If you want to fix a bug or make any changes, please log an issue in the [ModeShape JIRA](https://issues.jboss.org/browse/MODE) describing the bug
 or new feature. Then we highly recommend making the changes on a topic branch named with the JIRA issue number. For example, this command creates
 a branch for the MODE-1234 issue:
