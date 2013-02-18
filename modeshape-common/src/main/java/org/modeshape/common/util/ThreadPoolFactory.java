@@ -24,6 +24,7 @@
 package org.modeshape.common.util;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -57,7 +58,7 @@ public interface ThreadPoolFactory {
      * @param name the name of the thread pool; may not be null
      * @return the thread pool executor; never null
      */
-    ExecutorService getScheduledThreadPool( String name );
+    ScheduledExecutorService getScheduledThreadPool( String name );
 
     /**
      * Performs a {@link java.util.concurrent.ExecutorService#shutdownNow()} on the given pool, if the pool has been created

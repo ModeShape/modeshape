@@ -156,13 +156,14 @@ public class RepositoryConfiguration {
     private final static String PROJECTION_PATH_EXPRESSION_STRING = "(\\w+):((([/]([^/=]|(\\\\.))+)+)|[/])\\s*=>\\s*((([/]([^/]|(\\\\.))+)+)|[/])";
     public final static Pattern PROJECTION_PATH_EXPRESSION_PATTERN = Pattern.compile(PROJECTION_PATH_EXPRESSION_STRING);
 
-    final static TimeUnit GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT = TimeUnit.MINUTES;
+    final static TimeUnit LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT = TimeUnit.MINUTES;
 
     /**
      * The process of garbage collecting locks and binary values runs periodically, and this value controls how often it runs. The
      * value is currently set to 5 minutes.
      */
-    final static int GARBAGE_COLLECTION_SWEEP_PERIOD = (int)TimeUnit.MILLISECONDS.convert(5, GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT);
+    final static int LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD = (int)TimeUnit.MILLISECONDS.convert(5,
+                                                                                               LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT);
 
     /**
      * Each time the garbage collection process runs, session-scoped locks that are still used by active sessions will have their
@@ -174,26 +175,28 @@ public class RepositoryConfiguration {
      * slight deviation in the period does not cause locks to be expired prematurely.
      * </p>
      */
-    final static int LOCK_EXTENSION_INTERVAL_IN_MILLIS = (int)TimeUnit.MILLISECONDS.convert(GARBAGE_COLLECTION_SWEEP_PERIOD * 2,
-                                                                                            GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT);
+    final static int LOCK_EXTENSION_INTERVAL_IN_MILLIS = (int)TimeUnit.MILLISECONDS.convert(LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD * 2,
+                                                                                            LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT);
 
     /**
      * The amount of time that a lock may be expired before being removed. The sweep process will extend the locks for active
      * sessions, so only unused locks will have an unmodified expiry time. The value is currently twice the sweep period.
      */
-    final static int LOCK_EXPIRY_AGE_IN_MILLIS = (int)TimeUnit.MILLISECONDS.convert(GARBAGE_COLLECTION_SWEEP_PERIOD * 2,
-                                                                                    GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT);
+    final static int LOCK_EXPIRY_AGE_IN_MILLIS = (int)TimeUnit.MILLISECONDS.convert(LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD * 2,
+                                                                                    LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT);
 
     /**
      * As binary values are no longer used, they are quarantined in the binary store. When the garbage collection process runs,
      * any binary values that have been quarantined longer than this duration will be removed.
      * <p>
-     * The age is generally twice the length of the period that the garbage collection process runs, ensuring that any slight
-     * deviation in the period does not cause binary values to be removed prematurely.
+     * The age is 1 hour, to ensure that binary values are not removed prematurely (e.g., when one session removes a binary value
+     * from a property while another session shortly thereafter reuses it).
      * </p>
      */
-    final static int UNUSED_BINARY_VALUE_AGE_IN_MILLIS = (int)TimeUnit.MILLISECONDS.convert(GARBAGE_COLLECTION_SWEEP_PERIOD * 2,
-                                                                                            GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT);
+    final static int UNUSED_BINARY_VALUE_AGE_IN_MILLIS = (int)TimeUnit.MILLISECONDS.convert(1, TimeUnit.HOURS);
+
+    final static String INITIAL_TIME_REGEX = "(\\d\\d):(\\d\\d)";
+    final static Pattern INITIAL_TIME_PATTERN = Pattern.compile(INITIAL_TIME_REGEX);
 
     protected static final Document EMPTY = Schematic.newDocument();
 
@@ -412,6 +415,10 @@ public class RepositoryConfiguration {
         public static final String PATH_EXPRESSIONS = "pathExpressions";
         public static final String JDBC_DRIVER_CLASS = "driverClass";
         public static final String CONNECTION_URL = "url";
+
+        public static final String GARBAGE_COLLECTION = "garbageCollection";
+        public static final String INITIAL_TIME = "initialTime";
+        public static final String INTERVAL_IN_HOURS = "intervalInHours";
         /**
          * The name for the field (under "sequencing" and "query") specifying the thread pool that should be used for sequencing.
          * By default, all repository instances will use the same thread pool within the engine. To use a dedicated thread pool
@@ -465,7 +472,6 @@ public class RepositoryConfiguration {
         public static final String REBUILD_WHEN = "when";
         public static final String REBUILD_INCLUDE_SYSTEM_CONTENT = "includeSystemContent";
         public static final String REBUILD_MODE = "mode";
-
 
         /**
          * The name of the clustering top-level configuration document
@@ -548,6 +554,7 @@ public class RepositoryConfiguration {
 
         public static final String SEQUENCING_POOL = "modeshape-sequencer";
         public static final String QUERY_THREAD_POOL = "modeshape-indexer";
+        public static final String GARBAGE_COLLECTION_POOL = "modeshape-gc";
 
         public static final String INDEXING_ANALYZER = StandardAnalyzer.class.getName();
         public static final String INDEXING_SIMILARITY = DefaultSimilarity.class.getName();
@@ -572,6 +579,9 @@ public class RepositoryConfiguration {
 
         public static final String CLUSTER_NAME = "ModeShape-JCR";
         public static final String CHANNEL_PROVIDER = DefaultChannelProvider.class.getName();
+
+        public static final String INITIAL_TIME = "00:00";
+        public static final int INTERVAL_IN_HOURS = 24;
     }
 
     public static final class FieldValue {
@@ -1702,7 +1712,7 @@ public class RepositoryConfiguration {
 
         /**
          * Returns the options that should be used for rebuilding indexes when the repository starts up.
-         *
+         * 
          * @return a {@code non-null} {@link IndexRebuildOptions} instance.
          */
         public IndexRebuildOptions getIndexRebuildOptions() {
@@ -1843,7 +1853,7 @@ public class RepositoryConfiguration {
         protected IndexRebuildOptions( Document query ) {
             assert query != null;
 
-            //first parse the deprecated fields (we need to avoid breaking client compatibility)
+            // first parse the deprecated fields (we need to avoid breaking client compatibility)
             QueryRebuild deprecatedQueryRebuild = QueryRebuild.IF_MISSING;
             if (query.containsField(FieldName.REBUILD_UPON_STARTUP)) {
                 deprecatedQueryRebuild = QueryRebuild.valueOf(query.getString(FieldName.REBUILD_UPON_STARTUP).toUpperCase());
@@ -1852,7 +1862,8 @@ public class RepositoryConfiguration {
             Boolean deprecatedIncludeSystemContent = false;
             IndexingMode deprecatedIndexingMode = IndexingMode.SYNC;
             if (query.containsField(FieldName.INDEXING_MODE_SYSTEM_CONTENT)) {
-                deprecatedIndexingMode = IndexingMode.valueOf(query.getString(FieldName.INDEXING_MODE_SYSTEM_CONTENT).toUpperCase());
+                deprecatedIndexingMode = IndexingMode.valueOf(query.getString(FieldName.INDEXING_MODE_SYSTEM_CONTENT)
+                                                                   .toUpperCase());
                 switch (deprecatedIndexingMode) {
                     case SYNC: {
                         deprecatedIncludeSystemContent = true;
@@ -1863,14 +1874,14 @@ public class RepositoryConfiguration {
                         break;
                     }
                     case DISABLED: {
-                        //we don't support disabled in the new indexing mode, so fallback to the default
+                        // we don't support disabled in the new indexing mode, so fallback to the default
                         deprecatedIndexingMode = IndexingMode.SYNC;
                         break;
                     }
                 }
             }
 
-            //look for the new document structure
+            // look for the new document structure
             Document rebuildOnStartupDocument = null;
             if (query.containsField(FieldName.INDEXING)) {
                 Document indexingDocument = query.getDocument(FieldName.INDEXING);
@@ -1878,22 +1889,25 @@ public class RepositoryConfiguration {
             }
 
             if (rebuildOnStartupDocument == null) {
-                //there isn't the newer version of the rebuildOnStartupDocument present, so we need to use the old values
+                // there isn't the newer version of the rebuildOnStartupDocument present, so we need to use the old values
                 this.when = deprecatedQueryRebuild;
                 this.includeSystemContent = deprecatedIncludeSystemContent;
                 this.mode = deprecatedIndexingMode;
             } else {
-                String when = rebuildOnStartupDocument.getString(FieldName.REBUILD_WHEN, deprecatedQueryRebuild.name()).toUpperCase();
+                String when = rebuildOnStartupDocument.getString(FieldName.REBUILD_WHEN, deprecatedQueryRebuild.name())
+                                                      .toUpperCase();
                 this.when = QueryRebuild.valueOf(when);
-                this.includeSystemContent = rebuildOnStartupDocument.getBoolean(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT, deprecatedIncludeSystemContent.booleanValue());
-                String mode = rebuildOnStartupDocument.getString(FieldName.REBUILD_MODE, deprecatedIndexingMode.name()).toUpperCase();
+                this.includeSystemContent = rebuildOnStartupDocument.getBoolean(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT,
+                                                                                deprecatedIncludeSystemContent.booleanValue());
+                String mode = rebuildOnStartupDocument.getString(FieldName.REBUILD_MODE, deprecatedIndexingMode.name())
+                                                      .toUpperCase();
                 this.mode = IndexingMode.valueOf(mode);
             }
         }
 
         /**
          * Returns the value of the flag that controls whether system content should be reindexed or not at startup.
-         *
+         * 
          * @return {@code true} if system content should be reindexed at startup; {@code false} otherwise
          */
         public boolean includeSystemContent() {
@@ -1902,7 +1916,7 @@ public class RepositoryConfiguration {
 
         /**
          * Returns the mode in which indexes should be rebuilt.
-         *
+         * 
          * @return a {@code non-null} {@link IndexingMode} instance
          */
         public IndexingMode getMode() {
@@ -1911,7 +1925,7 @@ public class RepositoryConfiguration {
 
         /**
          * Returns the strategy used for rebuilding indexes.
-         *
+         * 
          * @return a {@code non-null} {@link QueryRebuild} instance
          */
         public QueryRebuild getWhen() {
@@ -1973,6 +1987,60 @@ public class RepositoryConfiguration {
      */
     public Federation getFederation() {
         return new Federation(doc);
+    }
+
+    /**
+     * Get the configuration for the security-related aspects of this repository.
+     * 
+     * @return the security configuration; never null
+     */
+    public GarbageCollection getGarbageCollection() {
+        return new GarbageCollection(doc.getDocument(FieldName.GARBAGE_COLLECTION));
+    }
+
+    @Immutable
+    public class GarbageCollection {
+        private final Document gc;
+
+        protected GarbageCollection( Document garbageCollection ) {
+            this.gc = garbageCollection != null ? garbageCollection : EMPTY;
+        }
+
+        /**
+         * Get the name of the thread pool that should be used for garbage collection work.
+         * 
+         * @return the thread pool name; never null
+         */
+        public String getThreadPoolName() {
+            return gc.getString(FieldName.THREAD_POOL, Default.GARBAGE_COLLECTION_POOL);
+        }
+
+        /**
+         * Get the time that the first garbage collection process should be run.
+         * 
+         * @return the initial time; never null
+         */
+        public String getInitialTimeExpression() {
+            return gc.getString(FieldName.INITIAL_TIME, Default.INITIAL_TIME);
+        }
+
+        /**
+         * Get the garbage collection interval in hours.
+         * 
+         * @return the interval; never null
+         */
+        public int getIntervalInHours() {
+            return gc.getInteger(FieldName.INTERVAL_IN_HOURS, Default.INTERVAL_IN_HOURS);
+        }
+
+        /**
+         * Get the minimum time that a binary value should be unused before it can be garbage collected.
+         * 
+         * @return the minimum time; never null
+         */
+        public long getUnusedBinaryValueTimeInMillis() {
+            return UNUSED_BINARY_VALUE_AGE_IN_MILLIS;
+        }
     }
 
     /**
@@ -2077,7 +2145,8 @@ public class RepositoryConfiguration {
                 }
 
                 for (Object projectionExpression : externalSource.getArray(FieldName.PROJECTIONS)) {
-                    ProjectionConfiguration projectionConfiguration = new ProjectionConfiguration(sourceName, projectionExpression.toString());
+                    ProjectionConfiguration projectionConfiguration = new ProjectionConfiguration(sourceName,
+                                                                                                  projectionExpression.toString());
                     String workspaceName = projectionConfiguration.getWorkspaceName();
 
                     List<ProjectionConfiguration> projectionsInWorkspace = projectionsByWorkspace.get(workspaceName);
@@ -2106,11 +2175,12 @@ public class RepositoryConfiguration {
 
         /**
          * Creates a new projection using a string expression
-         *
+         * 
          * @param sourceName the source name
          * @param pathExpression a {@code non-null} String
          */
-        public ProjectionConfiguration( String sourceName, String pathExpression ) {
+        public ProjectionConfiguration( String sourceName,
+                                        String pathExpression ) {
             Matcher expressionMatcher = PROJECTION_PATH_EXPRESSION_PATTERN.matcher(pathExpression);
             // should be validated by the repository schema
             if (expressionMatcher.matches()) {
@@ -2130,7 +2200,7 @@ public class RepositoryConfiguration {
 
         /**
          * Returns the projection's external path.
-         *
+         * 
          * @return a {@code non-null} String
          */
         public String getExternalPath() {
@@ -2139,7 +2209,7 @@ public class RepositoryConfiguration {
 
         /**
          * Returns the projected path
-         *
+         * 
          * @return a {@code non-null} String
          */
         public String getProjectedPath() {
@@ -2148,7 +2218,7 @@ public class RepositoryConfiguration {
 
         /**
          * Returns the projection's workspace name
-         *
+         * 
          * @return a {@code non-null} String
          */
         public String getWorkspaceName() {
@@ -2157,7 +2227,7 @@ public class RepositoryConfiguration {
 
         /**
          * Returns the alias of a projection.
-         *
+         * 
          * @return a {@code non-null} String
          */
         public String getAlias() {
@@ -2166,7 +2236,7 @@ public class RepositoryConfiguration {
 
         /**
          * Returns the repository path
-         *
+         * 
          * @return a {@code non-null} String
          */
         public String getRepositoryPath() {
@@ -2175,6 +2245,7 @@ public class RepositoryConfiguration {
 
         /**
          * Returns the name of the source for which the projection is configured
+         * 
          * @return a {@code non-null} String
          */
         public String getSourceName() {
