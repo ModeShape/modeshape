@@ -25,6 +25,8 @@
 
   <dependencies>
     <module name="javax.transaction.api" export="true"/>
+    <!--Fix for MODE-1813-->
+    <module name="javax.api" export="true"/>
   </dependencies>
   
   <resources>
