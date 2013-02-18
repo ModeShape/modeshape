@@ -1,0 +1,36 @@
+{
+    "name" : "Persisted-Repository",
+    "workspaces" : {
+        "predefined" : ["otherWorkspace"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    },
+    "externalSources" : {
+        "cmis" : {
+            "classname" : "org.modeshape.connector.CmisConnector",
+            "cacheTtlSeconds" : 5,
+            "aclService" : "http://localhost:8080/modeshape-cmis/services/ACLService?wsdl",
+            "discoveryService" : "http://localhost:8080/modeshape-cmis/services/DiscoveryService?wsdl",
+            "multifilingService" : "http://localhost:8080/modeshape-cmis/services/MultifilingService?wsdl",
+            "navigationService" : "http://localhost:8080/modeshape-cmis/services/NavigationService?wsdl",
+            "objectService" : "http://localhost:8080/modeshape-cmis/services/ObjectService?wsdl",
+            "policyService" : "http://localhost:8080/modeshape-cmis/services/PolicyService?wsdl",
+            "relationshipService" : "http://localhost:8080/modeshape-cmis/services/RelationshipService?wsdl",
+            "repositoryService" : "http://localhost:8080/modeshape-cmis/services/RepositoryService?wsdl",
+            "versioningService" : "http://localhost:8080/modeshape-cmis/services/VersioniongService?wsdl",
+            "repositoryId" : "cmis:default",
+            "mode" : "test",
+            "projections" : [ "default:/cmis => /" ]
+        }
+    },
+    "storage" : {
+        "cacheName" : "persistentRepository",
+        "cacheConfiguration" : "config/infinispan-federation-persistent.xml"
+    }
+}

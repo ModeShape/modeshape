@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<infinispan
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="urn:infinispan:config:5.1 http://www.infinispan.org/schemas/infinispan-config-5.1.xsd"
+        xmlns="urn:infinispan:config:5.1">
+
+    <global/>
+
+    <namedCache name="persistentRepository">
+        <transaction
+                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
+                transactionMode="TRANSACTIONAL"
+                lockingMode="OPTIMISTIC"/>
+        <loaders
+                passivation="false"
+                shared="false"
+                preload="false">
+            <loader
+                    class="org.infinispan.loaders.file.FileCacheStore"
+                    fetchPersistentState="false"
+                    purgeOnStartup="false">
+                <properties>
+                    <property name="location" value="target/federation_persistent_repository/store"/>
+                </properties>
+            </loader>
+        </loaders>
+    </namedCache>
+</infinispan>

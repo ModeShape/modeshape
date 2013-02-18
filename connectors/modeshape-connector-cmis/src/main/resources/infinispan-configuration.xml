@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="urn:infinispan:config:5.1 http://www.infinispan.org/schemas/infinispan-config-5.1.xsd"
+            xmlns="urn:infinispan:config:5.1">
+    <global>
+    </global>
+
+    <default>
+    </default>
+
+    <namedCache name="persisted-repository">
+        <loaders passivation="false" shared="false" preload="false">
+            <loader class="org.infinispan.loaders.bdbje.BdbjeCacheStore"
+                                      fetchPersistentState="false" purgeOnStartup="fals">
+                <properties>
+                    <property name="location" value="repos" />
+                </properties>
+            </loader>
+        </loaders>
+
+        <transaction
+            transactionManagerLookupClass="org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
+            transactionMode="TRANSACTIONAL" lockingMode="OPTIMISTIC" />
+            
+    </namedCache>
+
+</infinispan>
