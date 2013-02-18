@@ -5,7 +5,9 @@
     },
     "query" : {
         "indexing": {
-            "systemContentMode" : "sync"
+            "rebuildOnStartup": {
+                "includeSystemContent": true
+            }
         }
     }
 }

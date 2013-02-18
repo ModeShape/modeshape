@@ -36,6 +36,7 @@ public abstract class SetOperationComponent extends ProcessingComponent {
 
     private final Iterable<ProcessingComponent> sources;
     protected final Comparator<Object[]> removeDuplicatesComparator;
+    private final Columns columns;
 
     protected SetOperationComponent( QueryContext context,
                                      Columns columns,
@@ -45,7 +46,9 @@ public abstract class SetOperationComponent extends ProcessingComponent {
         super(context, columns);
         assert unionCompatible(columns, sources);
         this.sources = wrapWithLocationOrdering(sources, alreadySorted);
-        this.removeDuplicatesComparator = all ? null : createSortComparator(context, columns);
+        // Use for sorting the columns that may have been wrapped with location ordering ...
+        this.columns = this.sources.iterator().next().getColumns();
+        this.removeDuplicatesComparator = all ? null : createSortComparator(context, this.columns);
     }
 
     protected static boolean unionCompatible( Columns columns,
@@ -54,6 +57,11 @@ public abstract class SetOperationComponent extends ProcessingComponent {
             if (!columns.isUnionCompatible(source.getColumns())) return false;
         }
         return true;
+    }
+
+    @Override
+    public Columns getColumns() {
+        return columns;
     }
 
     /**

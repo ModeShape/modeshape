@@ -23,7 +23,12 @@
 <module xmlns="urn:jboss:module:1.1" name="org.infinispan">
     <resources>
         <resource-root path="infinispan-core-${infinispan.version}.jar"/>
+        <!--
+            The following artifacts and paths are hacks necessary for AS 7.1.1 and ISPN 5.1.x, which need to be able to access
+            classes from the ModeShape module.
+        -->
         <resource-root path="modeshape-schematic-${project.version}.jar" />
+        <resource-root path="classes" />
     </resources>
 
     <dependencies>

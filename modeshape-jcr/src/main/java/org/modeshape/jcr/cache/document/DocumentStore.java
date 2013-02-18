@@ -75,13 +75,16 @@ public interface DocumentStore {
     /**
      * Generates a new key which will be assigned to a new child document when it is being added to its parent.
      *
+     *
      * @param parentKey a {@code non-null} {@link String}, the key of the existing parent
-     * @param documentName {@code non-null} {@link Name}, the name of the new child document.
+     * @param documentName {@code non-null} {@link org.modeshape.jcr.value.Name}, the name of the new child document.
+     * @param documentPrimaryType {@code non-null} {@link org.modeshape.jcr.value.Name}, the name of the primary type of the new child document
      * @return a {@link String} which will be assigned as key to the new child, or {@code null} indicating that no preferred key
      * is to be used. If this is the case, the repository will assign a random key.
      */
     public String newDocumentKey( String parentKey,
-                                  Name documentName );
+                                  Name documentName,
+                                  Name documentPrimaryType );
 
     /**
      * Return whether {@link #prepareDocumentsForUpdate(Collection)} should be called before updating the documents.

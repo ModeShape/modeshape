@@ -38,19 +38,19 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
-import org.modeshape.jcr.federation.spi.Connector;
 import org.modeshape.jcr.federation.spi.DocumentChanges;
 import org.modeshape.jcr.federation.spi.DocumentReader;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
 import org.modeshape.jcr.federation.spi.PageKey;
 import org.modeshape.jcr.federation.spi.Pageable;
+import org.modeshape.jcr.federation.spi.WritableConnector;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 
 /**
  * Mock implementation of a {@code Connector} which uses some hard-coded, in-memory external nodes to validate the Connector SPI.
  */
-public class MockConnector extends Connector implements Pageable {
+public class MockConnector extends WritableConnector implements Pageable {
     public static final String DOC1_LOCATION = "/doc1";
     public static final String DOC2_LOCATION = "/doc2";
 
@@ -207,7 +207,8 @@ public class MockConnector extends Connector implements Pageable {
 
     @Override
     public String newDocumentId( String parentId,
-                                 Name newDocumentName ) {
+                                 Name newDocumentName,
+                                 Name newDocumentPrimaryType ) {
         return null;
     }
 

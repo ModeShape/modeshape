@@ -47,6 +47,7 @@ import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit test for {@link TikaTextExtractor}
@@ -166,9 +167,19 @@ public class TikaTextExtractorTest {
         assertExtractedMatchesExpected();
     }
 
+    @Test
+    @FixFor( "MODE-1810" )
+    public void shouldExtractTextFromXlsxFile() throws Exception {
+        extractTermsFrom("sample-file.xlsx");
+        assertTrue(!extracted.isEmpty());
+    }
+
     public static String randomString(int length) {
+        //write a text only header to make sure Tika Mimetype detector doesn't get confused...
+        String header = "this is a text file ";
         StringBuilder rndStringBuilder = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
+        rndStringBuilder.append(header);
+        for (int i = 0; i < length - header.length(); i++) {
             rndStringBuilder.append(CHARS.charAt(RANDOM.nextInt(CHARS.length())));
         }
         return rndStringBuilder.toString();

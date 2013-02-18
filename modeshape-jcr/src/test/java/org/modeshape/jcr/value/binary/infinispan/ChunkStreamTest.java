@@ -90,35 +90,35 @@ public class ChunkStreamTest {
 
     @Test
     public void testStreamingLarge() throws IOException {
-        ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, AbstractBinaryStoreTest.LARGE_KEY.toString());
-        chunkOutputStream.write(AbstractBinaryStoreTest.LARGE_DATA);
+        ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, AbstractBinaryStoreTest.STORED_LARGE_KEY.toString());
+        chunkOutputStream.write(AbstractBinaryStoreTest.STORED_LARGE_BINARY);
         chunkOutputStream.close();
-        assertEquals(6, chunkOutputStream.getNumberChunks());
+        assertEquals(1, chunkOutputStream.getNumberChunks());
 
-        ChunkInputStream chunkInputStream = new ChunkInputStream(blobCache, AbstractBinaryStoreTest.LARGE_KEY.toString());
-        assertEquals(AbstractBinaryStoreTest.LARGE_KEY, BinaryKey.keyFor(IoUtil.readBytes(chunkInputStream)));
+        ChunkInputStream chunkInputStream = new ChunkInputStream(blobCache, AbstractBinaryStoreTest.STORED_LARGE_KEY.toString());
+        assertEquals(AbstractBinaryStoreTest.STORED_LARGE_KEY, BinaryKey.keyFor(IoUtil.readBytes(chunkInputStream)));
     }
 
     @Test
     public void testStreamingSmall() throws IOException {
-        ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, AbstractBinaryStoreTest.SMALL_KEY.toString());
-        chunkOutputStream.write(AbstractBinaryStoreTest.SMALL_DATA);
+        ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, AbstractBinaryStoreTest.IN_MEMORY_KEY.toString());
+        chunkOutputStream.write(AbstractBinaryStoreTest.IN_MEMORY_BINARY);
         chunkOutputStream.close();
         assertEquals(1, chunkOutputStream.getNumberChunks());
 
-        ChunkInputStream chunkInputStream = new ChunkInputStream(blobCache, AbstractBinaryStoreTest.SMALL_KEY.toString());
-        assertEquals(AbstractBinaryStoreTest.SMALL_KEY, BinaryKey.keyFor(IoUtil.readBytes(chunkInputStream)));
+        ChunkInputStream chunkInputStream = new ChunkInputStream(blobCache, AbstractBinaryStoreTest.IN_MEMORY_KEY.toString());
+        assertEquals(AbstractBinaryStoreTest.IN_MEMORY_KEY, BinaryKey.keyFor(IoUtil.readBytes(chunkInputStream)));
     }
 
     @Test
     public void testStreamingZero() throws IOException {
-        ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, AbstractBinaryStoreTest.ZERO_KEY.toString());
-        chunkOutputStream.write(AbstractBinaryStoreTest.ZERO_DATA);
+        ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, AbstractBinaryStoreTest.EMPTY_BINARY_KEY.toString());
+        chunkOutputStream.write(AbstractBinaryStoreTest.EMPTY_BINARY);
         chunkOutputStream.close();
         assertEquals(0, chunkOutputStream.getNumberChunks());
 
-        ChunkInputStream chunkInputStream = new ChunkInputStream(blobCache, AbstractBinaryStoreTest.ZERO_KEY.toString());
-        assertEquals(AbstractBinaryStoreTest.ZERO_KEY, BinaryKey.keyFor(IoUtil.readBytes(chunkInputStream)));
+        ChunkInputStream chunkInputStream = new ChunkInputStream(blobCache, AbstractBinaryStoreTest.EMPTY_BINARY_KEY.toString());
+        assertEquals(AbstractBinaryStoreTest.EMPTY_BINARY_KEY, BinaryKey.keyFor(IoUtil.readBytes(chunkInputStream)));
     }
 
     @Test

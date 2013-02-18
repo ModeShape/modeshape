@@ -33,6 +33,8 @@ import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 public class FederationConfigurationTest extends SingleUseAbstractTest {
@@ -49,7 +51,6 @@ public class FederationConfigurationTest extends SingleUseAbstractTest {
         // Clean up and create some initial files ...
         FileUtil.delete("target/federation_persistent_repository");
 
-        print = true;
         startRepositoryWithConfiguration(resource("config/repo-config-filesystem-federation-with-persistence.json"));
         Session session = session();
         Node federation = session.getNode("/federation");
@@ -83,5 +84,20 @@ public class FederationConfigurationTest extends SingleUseAbstractTest {
             assertThat(newNode, is(notNullValue()));
             session.save();
         }
+    }
+
+    @Test
+    public void shouldIgnorePreconfiguredProjectionIfProjectedPathPointsTowardsInternalNode() throws Exception {
+        startRepositoryWithConfiguration(resource("config/repo-config-filesystem-federation-invalid-alias.json"));
+        //check that there only the internal node + 1 child and that the projection has not been created
+        Session session = session();
+        Node federation = session.getNode("/federation");
+        assertEquals(1, federation.getNodes().getSize());
+        assertNotNull(session.getNode("/federation/fs"));
+    }
+
+    @Override
+    protected boolean startRepositoryAutomatically() {
+        return false;
     }
 }

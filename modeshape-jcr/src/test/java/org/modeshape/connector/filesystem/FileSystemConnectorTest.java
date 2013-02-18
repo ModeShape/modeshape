@@ -32,6 +32,7 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
@@ -39,6 +40,7 @@ import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.Session;
 import org.modeshape.jcr.api.federation.FederationManager;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
@@ -174,6 +176,39 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
             // expected
         }
     }
+
+    @Test
+    @FixFor( "MODE-1802" )
+    public void shouldSupportRootProjection() throws Exception {
+        // Clean up the folder that the test creates
+        FileUtil.delete("target/classes/test");
+
+        javax.jcr.Session session = session();
+        Node root = session.getNode("/fs");
+        assertNotNull(root);
+        Node folder1 = root.addNode("test", "nt:folder");
+        session.save();
+        Node folder2 = root.getNode("test");
+        assertThat(folder1.getIdentifier(), is(folder2.getIdentifier()));
+    }
+
+    @Test
+    @FixFor( "MODE-1802" )
+    public void shouldIgnoreNamespaces() throws Exception {
+        // Clean up the folder that the test creates
+        FileUtil.delete("target/classes/test");
+
+        javax.jcr.Session session = session();
+        session.setNamespacePrefix("ms_test", "http://www.modeshape.org/test/");
+        Node root = session.getNode("/fs");
+        assertNotNull(root);
+
+        root.addNode("ms_test:test", "nt:folder");
+        session.save();
+
+        assertNotNull(root.getNode("test"));
+    }
+
 
     protected void assertNoSidecarFile( Projection projection,
                                         String filePath ) {

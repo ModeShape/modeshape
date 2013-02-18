@@ -1783,6 +1783,11 @@ public class DocumentTranslator {
             projectionAlias = projectionAlias.substring(projectionAlias.lastIndexOf("/") + 1);
         }
 
+        if (StringUtil.isBlank(projectionAlias)) {
+            //we cannot create an external projection without a valid alias
+            return;
+        }
+
         String externalNodeKey = documentStore.createExternalProjection(documentKey, sourceName, externalPath, projectionAlias);
         if (!StringUtil.isBlank(externalNodeKey)) {
             EditableDocument federatedSegment = DocumentFactory.newDocument(KEY, externalNodeKey, NAME, projectionAlias);

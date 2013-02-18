@@ -27,16 +27,12 @@ package org.modeshape.test.integration;
 import java.io.File;
 import javax.annotation.Resource;
 import javax.jcr.Node;
+import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
-import org.jboss.arquillian.container.impl.client.container.ContainerRegistryCreator;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.OperateOnDeployment;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.jcr.JcrRepository;
@@ -45,6 +41,7 @@ import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.federation.FederationManager;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.fail;
 
 /**
  * Integration test which verifies that various external sources are correctly set-up via the JBoss AS subsystem.
@@ -53,15 +50,6 @@ import static junit.framework.Assert.assertNotNull;
  */
 @RunWith( Arquillian.class )
 public class FederationIntegrationTest {
-
-    static {
-        System.setProperty("arquillian.launch", "jboss7-test");
-    }
-
-    @AfterClass
-    public static void clearActiveContainer() {
-       System.clearProperty("arquillian.launch");
-    }
 
     @Resource( mappedName = "/jcr/federatedRepository" )
     private JcrRepository repository;
@@ -87,6 +75,19 @@ public class FederationIntegrationTest {
         Session otherSession = repository.login("other");
         //predefined
         assertNotNull(otherSession.getNode("/projection1"));
+    }
+
+    @Test
+    public void shouldNotAllowWritesIfConfiguredAsReadonly() throws Exception {
+        Session defaultSession = repository.login();
+        Node projection1 = defaultSession.getNode("/projection1");
+        try {
+            projection1.addNode("test", "nt:file");
+            defaultSession.save();
+            fail("Write operation should not be possible if connector is readonly");
+        } catch (RepositoryException e) {
+            //expected
+        }
     }
 
     @Test

@@ -103,14 +103,16 @@ public class FederatedDocumentStore implements DocumentStore {
 
     @Override
     public String newDocumentKey( String parentKey,
-                                  Name documentName ) {
+                                  Name documentName,
+                                  Name documentPrimaryType ) {
         if (isLocalSource(parentKey)) {
-            return localStore().newDocumentKey(parentKey, documentName);
+            return localStore().newDocumentKey(parentKey, documentName, null);
         }
         Connector connector = connectors.getConnectorForSourceKey(sourceKey(parentKey));
         if (connector != null) {
+            checkConnectorIsWritable(connector);
             String parentDocumentId = documentIdFromNodeKey(parentKey);
-            String newChildId = connector.newDocumentId(parentDocumentId, documentName);
+            String newChildId = connector.newDocumentId(parentDocumentId, documentName, documentPrimaryType);
             if (!StringUtil.isBlank(newChildId)) {
                 return documentIdToNodeKey(connector.getSourceName(), newChildId).toString();
             }
@@ -127,6 +129,7 @@ public class FederatedDocumentStore implements DocumentStore {
         }
         Connector connector = connectors.getConnectorForSourceKey(sourceKey(key));
         if (connector != null) {
+            checkConnectorIsWritable(connector);
             EditableDocument editableDocument = replaceNodeKeysWithDocumentIds(document);
             connector.storeDocument(editableDocument);
         }
@@ -142,6 +145,7 @@ public class FederatedDocumentStore implements DocumentStore {
         } else {
             Connector connector = connectors.getConnectorForSourceKey(sourceKey(key));
             if (connector != null) {
+                checkConnectorIsWritable(connector);
                 EditableDocument editableDocument = replaceNodeKeysWithDocumentIds(document);
                 String documentId = documentIdFromNodeKey(key);
                 SessionNode.NodeChanges nodeChanges = sessionNode.getNodeChanges();
@@ -318,6 +322,7 @@ public class FederatedDocumentStore implements DocumentStore {
         }
         Connector connector = connectors.getConnectorForSourceKey(sourceKey(key));
         if (connector != null) {
+            checkConnectorIsWritable(connector);
             boolean result = connector.removeDocument(documentIdFromNodeKey(key));
             connectors.externalNodeRemoved(key);
             return result;
@@ -576,5 +581,12 @@ public class FederatedDocumentStore implements DocumentStore {
 
         return writer.document();
     }
+
+    private void checkConnectorIsWritable( Connector connector ) throws ConnectorException {
+        if (connector.isReadonly()) {
+            throw new ConnectorException(JcrI18n.connectorIsReadOnly.text(connector.getSourceName()));
+        }
+    }
+
 
 }

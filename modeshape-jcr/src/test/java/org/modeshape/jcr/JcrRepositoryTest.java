@@ -27,7 +27,9 @@ import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.InputStream;
 import java.util.HashSet;
@@ -816,6 +818,21 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
     }
 
     @Test
+    @FixFor( "MODE-1807" )
+    public void shouldRegisterCNDFileWithResidualChildDefinition() throws Exception {
+        session = createSession();
+
+        InputStream cndStream = getClass().getResourceAsStream("/cnd/orc.cnd");
+        assertThat(cndStream, is(notNullValue()));
+        session.getWorkspace().getNodeTypeManager().registerNodeTypes(cndStream, true);
+
+        session.getRootNode().addNode("patient", "orc:patient").addNode("patientcase", "orc:patientcase");
+        session.save();
+
+        assertNotNull(session.getNode("/patient/patientcase"));
+    }
+
+    @Test
     @FixFor( "MODE-1360" )
     public void shouldHandleMultipleConcurrentReadWriteSessions() throws Exception {
         int numThreads = 100;
@@ -850,6 +867,38 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
             if (!passed.get()) {
                 fail("one or more threads got an exception");
             }
+        }
+    }
+
+    @FixFor( "MODE-1805" )
+    @Test
+    public void shouldCreateRepositoryInstanceWithQueriesDisabled() throws Exception {
+        RepositoryConfiguration config = RepositoryConfiguration.read("{ 'name' : 'noQueries', 'query' : { 'enabled' : false } }");
+        JcrRepository repository = new JcrRepository(config);
+        repository.start();
+        try {
+            Session session = repository.login();
+            assertThat(session, is(notNullValue()));
+
+            // Add some content ...
+            Node testNode = session.getRootNode().addNode("repos");
+            session.save();
+            session.logout();
+
+            session = repository.login();
+            Node testNode2 = session.getNode("/repos");
+            assertTrue(testNode.isSame(testNode2));
+            session.logout();
+
+            // Queries return nothing ...
+            session = repository.login();
+            Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", Query.JCR_SQL2);
+            QueryResult results = query.execute();
+            assertTrue(results.getNodes().getSize() == 0);
+            session.logout();
+        } finally {
+            repository.shutdown().get(3L, TimeUnit.SECONDS);
+            JTATestUtil.clearJBossJTADefaultStoreLocation();
         }
     }
 

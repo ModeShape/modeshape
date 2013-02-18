@@ -345,7 +345,8 @@ public class CacheSchematicDb implements SchematicDb {
 
     @Override
     public SchematicEntry remove( String key ) {
-        return removedResult(key, store.remove(key));
+        SchematicEntry existing = store.remove(key);
+        return existing == null ? null : removedResult(key, existing);
     }
 
     @Override

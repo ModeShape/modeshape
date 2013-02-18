@@ -45,7 +45,7 @@ public class AddSlaveFileSystemIndexStorage extends AbstractAddFileSystemIndexSt
                                                       ModelNode storage,
                                                       EditableDocument backend ) throws OperationFailedException {
         // Set the type of indexing backend ...
-        backend.set(FieldName.TYPE, FieldValue.INDEXING_BACKEND_TYPE_JMS_MASTER);
+        backend.set(FieldName.TYPE, FieldValue.INDEXING_BACKEND_TYPE_JMS_SLAVE);
         String connJndi = ModelAttributes.CONNECTION_FACTORY_JNDI_NAME.resolveModelAttribute(context, storage).asString();
         String queueJndi = ModelAttributes.QUEUE_JNDI_NAME.resolveModelAttribute(context, storage).asString();
         backend.set(FieldName.INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME, connJndi);

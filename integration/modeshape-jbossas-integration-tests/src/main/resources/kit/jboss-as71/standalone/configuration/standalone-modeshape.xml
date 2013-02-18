@@ -199,8 +199,12 @@
                 <local-cache name="federatedRepository">
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
+                </local-cache>
+                <local-cache name="noQueryRepository">
+                    <!-- ModeShape requires transactions -->
+                    <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store passivation="false" path="modeshape/store/federatedRepository" relative-to="jboss.server.data.dir" purge="false"/>
+                    <file-store passivation="false" path="modeshape/store/noQueryRepository" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
             </cache-container>
             <cache-container name="binary-cache-container" default-cache="binary-fs">
@@ -235,6 +239,7 @@
             <repository name="sample"/>
             <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
             <repository name="artifacts">
+                <indexing rebuild-upon-startup="never"/>
                 <!-- Define 3 workspaces to exist upon startup -->
                 <workspaces default-workspace="default" allow-workspace-creation="false">
                     <workspace name="default"/>
@@ -312,9 +317,9 @@
                     <text-extractor name="tika-extractor" classname="tika" module="org.modeshape.extractor.tika"/>
                 </text-extractors>
                 <cache-binary-storage data-cache-name="binary-fs" metadata-cache-name="binary-fs-meta" cache-container="binary-cache-container"/>
-                <!--<db-binary-storage data-source-jndi-name="java:jboss/datasources/ModeshapeBinaryDS"/>-->
             </repository>
             <repository name="preconfiguredRepository">
+                <indexing rebuild-upon-startup="never"/>
                 <workspaces cache-container="ws-cache-container">
                     <workspace name="default"/>
                     <workspace name="other"/>
@@ -334,6 +339,8 @@
                 <indexing analyzer-classname="org.apache.lucene.analysis.standard.ClassicAnalyzer"/>
             </repository>
             <repository name="federatedRepository">
+                <!--Turn off initial indexing for performance reasons-->
+                <indexing rebuild-upon-startup="never" rebuild-upon-startup-include-system-content="false" rebuild-upon-startup-mode="sync"/>
                 <workspaces allow-workspace-creation="true" default-workspace="default">
                     <workspace name="default"/>
                     <workspace name="other"/>
@@ -349,6 +356,7 @@
                             queryableBranches="master,2.x"/>
                 </external-sources>
             </repository>
+            <repository name="noQueryRepository" enable-queries="false" />
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>
         <subsystem xmlns="urn:jboss:domain:jca:1.1">

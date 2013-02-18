@@ -42,8 +42,8 @@ import org.modeshape.jcr.api.federation.FederationManager;
 import org.modeshape.jcr.api.query.QueryManager;
 import org.modeshape.jcr.federation.spi.ConnectorException;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -480,6 +480,16 @@ public class MockConnectorTest extends SingleUseAbstractTest {
         session.save();
 
         assertEquals(0, query.execute().getNodes().getSize());
+    }
+
+    @Test(expected = RepositoryException.class)
+    public void shouldNotAllowWritesIfReadonly() throws Exception {
+        federationManager.createProjection("/testRoot", "mock-source-readonly", MockConnector.DOC1_LOCATION, "federated1");
+        Node doc1Federated = session.getNode("/testRoot/federated1");
+        Node externalNode1 = doc1Federated.addNode("federated1_1", null);
+        externalNode1.addNode("federated1_1_1", null);
+
+        session.save();
     }
 
     private void assertExternalNodeHasChildren( String externalNodePath,

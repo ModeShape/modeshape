@@ -69,6 +69,11 @@
             "systemContentMode" : "async",
             "asyncThreadPoolSize" : 1,
             "asyncMaxQueueSize" : 0,
+            "rebuildOnStartup" : {
+                "when" : "always",
+                "includeSystemContent" : true,
+                "mode" : "async"
+            },
             "backend" : {
                 "type" : "lucene",
                 

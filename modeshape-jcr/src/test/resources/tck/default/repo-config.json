@@ -12,7 +12,9 @@
         "enabled" : true,
         "enableFullTextSearch" : true,
         "indexing": {
-            "systemContentMode" : "sync"
+            "rebuildOnStartup": {
+                "includeSystemContent": true
+            }
         }
     },
     "security" : {

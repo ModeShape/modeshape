@@ -26,16 +26,13 @@ package org.modeshape.jcr;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.jcr.NamespaceRegistry;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.nodetype.NodeTypeManager;
@@ -69,6 +66,8 @@ import org.modeshape.jcr.value.PropertyFactory;
  */
 public class Connectors {
 
+    private static final Logger LOGGER = Logger.getLogger(Connectors.class);
+
     private final JcrRepository.RunningState repository;
     private final Logger logger;
 
@@ -82,40 +81,23 @@ public class Connectors {
     /**
      * A map of [workspaceName, projection] instances which holds the preconfigured projections for each workspace
      */
-    private Map<String, List<Projection>> preconfiguredProjections = new HashMap<String, List<Projection>>();
+    private Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections = new HashMap<String, List<RepositoryConfiguration.ProjectionConfiguration>>();
 
     /**
-     * A map of (externalNodeKey, Projection) instances holds the projections
+     * A map of (externalNodeKey, Projection) instances holds the existing projections in-memory
      */
     private Map<String, Projection> projections;
 
-    /**
-     * A set of (externalNodeKey) containing the keys of the projections that have been removed and should be cleaned up
-     */
-    private Set<String> removedProjections = new HashSet<String>();
-
     protected Connectors( JcrRepository.RunningState repository,
                        Collection<Component> components,
-                       Map<String, List<RepositoryConfiguration.Federation.ProjectionConfiguration>> preconfiguredProjections) {
+                       Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections) {
         this.repository = repository;
         this.logger = Logger.getLogger(getClass());
+        this.preconfiguredProjections = preconfiguredProjections;
+
         registerConnectors(components);
-        loadPreconfiguredProjections(preconfiguredProjections);
     }
 
-    private void loadPreconfiguredProjections( Map<String, List<RepositoryConfiguration.Federation.ProjectionConfiguration>> preconfiguredProjections ) {
-        for (String sourceName : preconfiguredProjections.keySet()) {
-            for (RepositoryConfiguration.Federation.ProjectionConfiguration projectionCfg : preconfiguredProjections.get(sourceName)) {
-                String workspaceName = projectionCfg.getWorkspaceName();
-                List<Projection> projections = this.preconfiguredProjections.get(workspaceName);
-                if (projections == null) {
-                    projections = new ArrayList<Projection>();
-                    this.preconfiguredProjections.put(workspaceName, projections);
-                }
-                projections.add(new Projection(sourceName, projectionCfg.getAlias(), projectionCfg.getRepositoryPath(), projectionCfg.getExternalPath()));
-            }
-        }
-    }
 
     private void registerConnectors( Collection<Component> components ) {
         for (Component component : components) {
@@ -147,22 +129,33 @@ public class Connectors {
             JcrSession session = repository.loginInternalSession(workspaceName);
             try {
                 FederationManager federationManager = session.getWorkspace().getFederationManager();
-                List<Projection> projections = preconfiguredProjections.get(workspaceName);
-                for (Projection projection : projections) {
-                    String repositoryPath = projection.getRepositoryPath();
-                    String alias = projection.getAlias();
+                List<RepositoryConfiguration.ProjectionConfiguration> projections = preconfiguredProjections.get(workspaceName);
+                for (RepositoryConfiguration.ProjectionConfiguration projectionCfg : projections) {
+                    String repositoryPath = projectionCfg.getRepositoryPath();
+                    String alias = projectionCfg.getAlias();
 
                     AbstractJcrNode node = session.getNode(repositoryPath);
-                    //only create the projection if one doesn't exist with the same alias
-                    if (!projectionExists(alias, node.key().toString())) {
-                        federationManager.createProjection(repositoryPath, projection.getSourceName(),
-                                                           projection.getExternalPath(),
+                    //only create the projectionCfg if one doesn't exist with the same alias
+                    if (!projectionExists(alias, node.key().toString()) && !projectedPathExists(session, projectionCfg)) {
+                        federationManager.createProjection(repositoryPath, projectionCfg.getSourceName(),
+                                                           projectionCfg.getExternalPath(),
                                                            alias);
                     }
                 }
             } finally {
                 session.logout();
             }
+        }
+    }
+
+    private boolean projectedPathExists( JcrSession session,
+                                         RepositoryConfiguration.ProjectionConfiguration projectionCfg ) throws RepositoryException {
+        try {
+            session.getNode(projectionCfg.getProjectedPath());
+            LOGGER.warn(JcrI18n.projectedPathPointsTowardsInternalNode, projectionCfg, projectionCfg.getSourceName(), projectionCfg.getProjectedPath());
+            return true;
+        } catch (PathNotFoundException e) {
+            return false;
         }
     }
 
@@ -182,15 +175,13 @@ public class Connectors {
 
         CachedNode systemNode = getSystemNode(systemSession);
         ChildReference federationNodeRef = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.FEDERATION);
-        this.projections = federationNodeRef != null ? storedProjections(systemSession,
-                                                                         federationNodeRef,
-                                                                         Collections.<String>emptySet())
+        this.projections = federationNodeRef != null ? loadStoredProjections(systemSession,
+                                                                             federationNodeRef)
                                                      : new HashMap<String, Projection>();
     }
 
-    private Map<String, Projection> storedProjections( SessionCache systemSession,
-                                                       ChildReference federationNodeRef,
-                                                       Set<String> projectionsToRemove ) {
+    private Map<String, Projection> loadStoredProjections( SessionCache systemSession,
+                                                           ChildReference federationNodeRef ) {
         CachedNode federationNode = systemSession.getNode(federationNodeRef.getKey());
         ChildReferences federationChildRefs = federationNode.getChildReferences(systemSession);
         //the stored projection mappings use SNS
@@ -204,10 +195,7 @@ public class Connectors {
             String externalNodeKey = projection.getProperty(ModeShapeLexicon.EXTERNAL_NODE_KEY, systemSession).getFirstValue()
                                                .toString();
             assert externalNodeKey != null;
-            if (projectionsToRemove.contains(externalNodeKey)) {
-                systemSession.destroy(projectionRefKey);
-                continue;
-            }
+
             String projectedNodeKey = projection.getProperty(ModeShapeLexicon.PROJECTED_NODE_KEY, systemSession).getFirstValue()
                                                 .toString();
             assert projectedNodeKey != null;
@@ -274,7 +262,46 @@ public class Connectors {
     public void addProjection( String externalNodeKey,
                                String projectedNodeKey,
                                String alias ) {
-        projections.put(externalNodeKey, new Projection(externalNodeKey, projectedNodeKey, alias));
+        Projection projection = new Projection(externalNodeKey, projectedNodeKey, alias);
+        projections.put(externalNodeKey, projection);
+        storeProjection(projection);
+    }
+
+    private void storeProjection( Projection projection ) {
+        PropertyFactory propertyFactory = repository.context().getPropertyFactory();
+
+        //we need to store the projection mappings so that we don't loose that information
+        SessionCache systemSession = repository.createSystemSession(repository.context(), false);
+        NodeKey systemNodeKey = getSystemNode(systemSession).getKey();
+        MutableCachedNode systemNode = systemSession.mutable(systemNodeKey);
+        ChildReference federationNodeRef = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.FEDERATION);
+
+        if (federationNodeRef == null) {
+            //there isn't a federation node present, so we need to add it
+            try {
+                Property primaryType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.FEDERATION);
+                systemNode.createChild(systemSession, systemNodeKey.withId("mode:federation"),
+                                       ModeShapeLexicon.FEDERATION, primaryType);
+                systemSession.save();
+                federationNodeRef = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.FEDERATION);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        NodeKey federationNodeKey = federationNodeRef.getKey();
+        MutableCachedNode federationNode = systemSession.mutable(federationNodeKey);
+
+        Property primaryType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.PROJECTION);
+        Property externalNodeKeyProp = propertyFactory.create(ModeShapeLexicon.EXTERNAL_NODE_KEY, projection.getExternalNodeKey());
+
+        Property projectedNodeKeyProp = propertyFactory.create(ModeShapeLexicon.PROJECTED_NODE_KEY,
+                                                               projection.getProjectedNodeKey());
+        Property alias = propertyFactory.create(ModeShapeLexicon.PROJECTION_ALIAS, projection.getAlias());
+        federationNode.createChild(systemSession, federationNodeKey.withRandomId(), ModeShapeLexicon.PROJECTION,
+                                   primaryType, externalNodeKeyProp, projectedNodeKeyProp, alias);
+
+        systemSession.save();
     }
 
     /**
@@ -297,7 +324,8 @@ public class Connectors {
     public void externalNodeRemoved( String externalNodeKey ) {
         Projection removedProjection = projections.remove(externalNodeKey);
         if (removedProjection != null) {
-            removedProjections.add(externalNodeKey);
+            //the external node was the root of a projection, so we need to remove that projection
+            removeStoredProjection(externalNodeKey);
         }
     }
 
@@ -306,18 +334,46 @@ public class Connectors {
      *
      * @param internalNodeKey a {@code non-null} String
      */
-    public void internalNodeRemoved (String internalNodeKey) {
-        List<String> externalNodeKeysToRemove = new ArrayList<String>();
-        for (Projection projection : projections.values()) {
+    public void internalNodeRemoved( String internalNodeKey ) {
+        //identify all the projections which from this internal (aka. federated node) and remove them
+        for (Iterator<Map.Entry<String, Projection>> projectionsIt = projections.entrySet().iterator(); projectionsIt.hasNext();) {
+            Projection projection = projectionsIt.next().getValue();
             if (internalNodeKey.equalsIgnoreCase(projection.getProjectedNodeKey())) {
                 String externalNodeKey = projection.getExternalNodeKey();
-                externalNodeKeysToRemove.add(externalNodeKey);
-                removedProjections.add(externalNodeKey);
+                removeStoredProjection(externalNodeKey);
+                projectionsIt.remove();
             }
         }
+    }
 
-        for (String externalNodeKeyToRemove : externalNodeKeysToRemove) {
-            projections.remove(externalNodeKeyToRemove);
+    private void removeStoredProjection(String externalNodeKey) {
+        SessionCache systemSession = repository.createSystemSession(repository.context(), false);
+        NodeKey systemNodeKey = getSystemNode(systemSession).getKey();
+        MutableCachedNode systemNode = systemSession.mutable(systemNodeKey);
+        ChildReference federationNodeRef = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.FEDERATION);
+
+        //if we're removing a projection, one had to be stored previously, so there should be a federation node present
+        assert federationNodeRef != null;
+
+        NodeKey federationNodeKey = federationNodeRef.getKey();
+        MutableCachedNode federationNode = systemSession.mutable(federationNodeKey);
+        ChildReferences federationChildRefs = federationNode.getChildReferences(systemSession);
+
+        int projectionsCount = federationChildRefs.getChildCount(ModeShapeLexicon.PROJECTION);
+
+        for (int i = 1; i <= projectionsCount; i++) {
+            ChildReference projectionRef = federationChildRefs.getChild(ModeShapeLexicon.PROJECTION, i);
+            NodeKey projectionRefKey = projectionRef.getKey();
+            CachedNode storedProjection = systemSession.getNode(projectionRefKey);
+            String storedProjectionExternalNodeKey = storedProjection.getProperty(ModeShapeLexicon.EXTERNAL_NODE_KEY, systemSession).getFirstValue()
+                                                                     .toString();
+            assert storedProjectionExternalNodeKey != null;
+            if (storedProjectionExternalNodeKey.equals(externalNodeKey)) {
+                federationNode.removeChild(systemSession, projectionRefKey);
+                systemSession.destroy(projectionRefKey);
+                systemSession.save();
+                break;
+            }
         }
     }
 
@@ -443,12 +499,8 @@ public class Connectors {
         if (!initialized || !hasConnectors()) {
             return;
         }
-
-        storeProjections();
         shutdownConnectors();
-
         projections.clear();
-        removedProjections.clear();
     }
 
     private void shutdownConnectors() {
@@ -457,57 +509,6 @@ public class Connectors {
         }
         sourceKeyToConnectorMap.clear();
         sourceKeyToConnectorMap = null;
-    }
-
-    private void storeProjections() {
-        if (projections.isEmpty()) {
-            return;
-        }
-
-        PropertyFactory propertyFactory = repository.context().getPropertyFactory();
-
-        //we need to store the projection mappings so that we don't loose that information
-        SessionCache systemSession = repository.createSystemSession(repository.context(), false);
-        NodeKey systemNodeKey = getSystemNode(systemSession).getKey();
-        MutableCachedNode systemNode = systemSession.mutable(systemNodeKey);
-        ChildReference federationNodeRef = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.FEDERATION);
-
-        if (federationNodeRef == null) {
-            //there isn't a federation node present, so we need to add it
-            try {
-                Property primaryType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.FEDERATION);
-                systemNode.createChild(systemSession, systemNodeKey.withId("mode:federation"),
-                                       ModeShapeLexicon.FEDERATION, primaryType);
-                systemSession.save();
-                federationNodeRef = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.FEDERATION);
-            } catch (Exception e) {
-                logger.debug("Cannot create federation node", e);
-                return;
-            }
-        }
-
-        //we need to remove from the current map the ones which are already stored
-        Map<String, Projection> existingStoredProjections = storedProjections(systemSession, federationNodeRef, this.removedProjections);
-        for (String storedExternalNodeKey : existingStoredProjections.keySet()) {
-            projections.remove(storedExternalNodeKey);
-        }
-
-        //the ones that remained in the map are new projection ids that we need to store
-        NodeKey federationNodeKey = federationNodeRef.getKey();
-        MutableCachedNode federationNode = systemSession.mutable(federationNodeKey);
-        //iterate the existing mapping and save
-        for (String externalNodeKey : projections.keySet()) {
-            Property primaryType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.PROJECTION);
-            Property externalNodeKeyProp = propertyFactory.create(ModeShapeLexicon.EXTERNAL_NODE_KEY, externalNodeKey);
-
-            Projection projection = projections.get(externalNodeKey);
-            Property projectedNodeKeyProp = propertyFactory.create(ModeShapeLexicon.PROJECTED_NODE_KEY,
-                                                                   projection.getProjectedNodeKey());
-            Property alias = propertyFactory.create(ModeShapeLexicon.PROJECTION_ALIAS, projection.getAlias());
-            federationNode.createChild(systemSession, federationNodeKey.withRandomId(), ModeShapeLexicon.PROJECTION,
-                                       primaryType, externalNodeKeyProp, projectedNodeKeyProp, alias);
-        }
-        systemSession.save();
     }
 
     /**
@@ -554,33 +555,12 @@ public class Connectors {
         private final String projectedNodeKey;
         private final String alias;
 
-        private final String repositoryPath;
-        private final String externalPath;
-        private final String sourceName;
-
         protected Projection( String externalNodeKey,
                               String projectedNodeKey,
-                              String alias ) {
+                              String alias) {
             this.externalNodeKey = externalNodeKey;
             this.alias = alias;
             this.projectedNodeKey = projectedNodeKey;
-
-            this.repositoryPath = null;
-            this.externalPath = null;
-            this.sourceName = null;
-        }
-
-        protected Projection( String sourceName,
-                              String alias,
-                              String repositoryPath,
-                              String externalPath ) {
-            this.alias = alias;
-            this.repositoryPath = repositoryPath;
-            this.externalPath = externalPath;
-            this.sourceName = sourceName;
-
-            this.projectedNodeKey = null;
-            this.externalNodeKey = null;
         }
 
         protected boolean hasAlias(String alias) {
@@ -597,18 +577,6 @@ public class Connectors {
 
         protected String getAlias() {
             return alias;
-        }
-
-        protected String getExternalPath() {
-            return externalPath;
-        }
-
-        protected String getRepositoryPath() {
-            return repositoryPath;
-        }
-
-        protected String getSourceName() {
-            return sourceName;
         }
 
         protected String getExternalNodeKey() {

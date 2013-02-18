@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -83,6 +84,10 @@ import org.modeshape.jcr.api.query.QueryManager;
 import org.modeshape.jcr.api.query.qom.Limit;
 import org.modeshape.jcr.api.query.qom.QueryObjectModelFactory;
 import org.modeshape.jcr.api.query.qom.SelectQuery;
+import org.modeshape.jcr.cache.CachedNode;
+import org.modeshape.jcr.cache.ChildReferences;
+import org.modeshape.jcr.cache.NodeCache;
+import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.query.JcrQueryResult;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path.Segment;
@@ -100,6 +105,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     private static final String[] INDEXED_SYSTEM_NODES_PATHS = new String[] {"/jcr:system/jcr:nodeTypes",
         "/jcr:system/mode:namespaces", "/jcr:system/mode:repository"};
+
+    private static final String[] NON_INDEXED_SYSTEM_NODES_PATHS = new String[] {"/", "/jcr:system/mode:locks",
+        "/jcr:system/jcr:versionStorage"};
 
     private static final boolean WRITE_INDEXES_TO_FILE = false;
 
@@ -209,9 +217,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
                 registerNodeTypes(session, "cnd/notionalTypes.cnd");
                 registerNodeTypes(session, "cnd/cars.cnd");
 
-                // Initialize the nodes count
-                initNodesCount();
-
                 InputStream stream = resourceStream("io/cars-system-view.xml");
                 try {
                     session.getWorkspace().importXML("/", stream, ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
@@ -253,6 +258,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
                 session.getRootNode().addNode("NodeB", "nt:unstructured").setProperty("myUrl", "http://www.acme.com/foo/bar");
                 session.save();
 
+                // Initialize the nodes count
+                initNodesCount();
+
                 // Prime creating a first XPath query and SQL query ...
                 session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
                 session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", Query.JCR_SQL2);
@@ -274,20 +282,23 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     private static void initNodesCount() throws RepositoryException {
         JcrSession session = repository.login();
         try {
-            Node jcrSystem = session.getNode("/jcr:system");
-            int nonIndexedSystemNodes = 3; // number of node below jcr:system which are not indexed
-            totalSystemNodeCount = countAllNodesBelow(jcrSystem) - nonIndexedSystemNodes;
+            NodeCache systemSession = repository.createSystemSession(session.context(), true);
+            totalSystemNodeCount = countAllNodesBelow(systemSession.getRootKey(), systemSession)
+                                   - NON_INDEXED_SYSTEM_NODES_PATHS.length;
             totalNodeCount = totalSystemNodeCount + TOTAL_NON_SYSTEM_NODE_COUNT;
         } finally {
             session.logout();
         }
     }
 
-    private static int countAllNodesBelow( Node node ) throws RepositoryException {
+    private static int countAllNodesBelow( NodeKey nodeKey,
+                                           NodeCache cache ) throws RepositoryException {
         int result = 1;
-        NodeIterator nodeIterator = node.getNodes();
-        while (nodeIterator.hasNext()) {
-            result += countAllNodesBelow(nodeIterator.nextNode());
+        CachedNode node = cache.getNode(nodeKey);
+        ChildReferences childReferences = node.getChildReferences(cache);
+        for (Iterator<NodeKey> nodeKeyIterator = childReferences.getAllKeys(); nodeKeyIterator.hasNext();) {
+            NodeKey childKey = nodeKeyIterator.next();
+            result += countAllNodesBelow(childKey, cache);
         }
         return result;
     }
@@ -1100,6 +1111,20 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, carColumnNames("car"));
     }
 
+    @FixFor( "MODE-1809" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2UnionOfQueriesWithJoins() throws RepositoryException {
+        String sql1 = "SELECT car.* from [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category) WHERE NAME(category) LIKE 'Utility'";
+        String sql2 = "SELECT car.* from [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category) WHERE NAME(category) LIKE 'Sports'";
+        String sql = sql1 + " UNION " + sql2;
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 7);
+        assertResultsHaveColumns(result, carColumnNames("car"));
+    }
+
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithDescendantNodeJoinAndColumnsFromBothSidesOfJoin()
         throws RepositoryException {
@@ -1243,7 +1268,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, new String[] {"car.jcr:name", "category.jcr:primaryType"});
     }
 
-    @FixFor("MODE-1750")
+    @FixFor( "MODE-1750" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithLeftOuterJoinOnNullCondition() throws RepositoryException {
         // given
@@ -1260,7 +1285,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, new String[] {"car1.jcr:name"});
     }
 
-    @FixFor("MODE-1750")
+    @FixFor( "MODE-1750" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithRightOuterJoinOnNullCondition() throws RepositoryException {
         // given
@@ -1849,7 +1874,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     /**
      * Tests that the child nodes (but no grandchild nodes) are returned.
-     *
+     * 
      * @throws RepositoryException
      */
     @SuppressWarnings( "deprecation" )
@@ -1868,7 +1893,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     /**
      * Tests that the child nodes (but no grandchild nodes) are returned.
-     *
+     * 
      * @throws RepositoryException
      */
     @SuppressWarnings( "deprecation" )

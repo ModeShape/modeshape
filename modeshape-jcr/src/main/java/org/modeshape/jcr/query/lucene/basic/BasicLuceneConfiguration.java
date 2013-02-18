@@ -24,9 +24,9 @@
 package org.modeshape.jcr.query.lucene.basic;
 
 import java.io.File;
-import java.net.URL;
 import java.util.Properties;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.hibernate.search.backend.impl.jgroups.JGroupsChannelProvider;
 import org.hibernate.search.cfg.spi.SearchConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
@@ -208,46 +208,13 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
             String channel = backend.getProperty(FieldName.INDEXING_BACKEND_JGROUPS_CHANNEL_NAME);
             String config = backend.getProperty(FieldName.INDEXING_BACKEND_JGROUPS_CHANNEL_CONFIGURATION);
             setProperty("hibernate.search.default.worker.backend", type);
-            setProperty("hibernate.search.default.worker.jgroups.clusterName", channel);
-            if (isFileOrClasspath(config)) {
-                setProperty("hibernate.search.default.worker.backend.jgroups.configurationFile", config);
-            } else if (isJGroupsXml(config)) {
-                setProperty("hibernate.search.default.worker.backend.jgroups.configurationXml", config);
-            } else {
-                setProperty("hibernate.search.default.worker.backend.jgroups.configurationString", config);
-            }
+            setProperty(JGroupsChannelProvider.CLUSTER_NAME, channel);
+            setProperty(JGroupsChannelProvider.CONFIGURATION_FILE, config);
         } else if (storageType.equals(FieldValue.INDEX_STORAGE_CUSTOM)) {
             String classname = backend.getProperty(FieldName.CLASSNAME);
             setProperty("hibernate.search.default.worker.backend", classname);
         }
 
-    }
-
-    protected static boolean isFileOrClasspath( String value ) {
-        if (value == null) return false;
-        value = value.trim();
-        try {
-            // Try a file ...
-            File file = new File(value);
-            if (file.exists() && file.isFile()) return true;
-        } catch (Throwable t) {
-            // ignore ...
-        }
-        try {
-            // Try a classpath resource ...
-            URL url = BasicLuceneConfiguration.class.getClassLoader().getResource(value);
-            if (url != null) return true;
-        } catch (Throwable t) {
-            // ignore ...
-        }
-        return false;
-    }
-
-    protected static boolean isJGroupsXml( String value ) {
-        if (value == null) return false;
-        value = value.trim();
-        if (value.contains("<config") && value.contains("xmlns=\"urn:org:jgroups\"")) return true;
-        return false;
     }
 
     @Override

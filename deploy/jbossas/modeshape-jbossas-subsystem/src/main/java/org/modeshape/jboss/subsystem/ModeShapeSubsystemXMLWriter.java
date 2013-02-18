@@ -70,6 +70,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         ModelAttributes.CACHE_CONTAINER.marshallAsAttribute(repository, false, writer);
         ModelAttributes.JNDI_NAME.marshallAsAttribute(repository, false, writer);
         ModelAttributes.ENABLE_MONITORING.marshallAsAttribute(repository, false, writer);
+        ModelAttributes.ENABLE_QUERIES.marshallAsAttribute(repository, false, writer);
         ModelAttributes.SECURITY_DOMAIN.marshallAsAttribute(repository, false, writer);
         writeAttributeAsList(writer, repository, ModelAttributes.ANONYMOUS_ROLES);
         ModelAttributes.ANONYMOUS_USERNAME.marshallAsAttribute(repository, false, writer);
@@ -160,6 +161,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         }
     }
 
+    @SuppressWarnings( "deprecation" )
     private void writeIndexing( XMLExtendedStreamWriter writer,
                                 ModelNode repository ) throws XMLStreamException {
         // Repository's indexing attributes
@@ -169,6 +171,18 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                 started = startAndWriteAttribute(writer,
                                                  repository,
                                                  ModelAttributes.REBUILD_INDEXES_UPON_STARTUP,
+                                                 Element.INDEXING,
+                                                 started);
+            } else if (ModelKeys.REBUILD_INDEXES_UPON_STARTUP_MODE.equals(key)) {
+                started = startAndWriteAttribute(writer,
+                                                 repository,
+                                                 ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_MODE,
+                                                 Element.INDEXING,
+                                                 started);
+            } else if (ModelKeys.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT.equals(key)) {
+                started = startAndWriteAttribute(writer,
+                                                 repository,
+                                                 ModelAttributes.REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT,
                                                  Element.INDEXING,
                                                  started);
             } else if (ModelKeys.ANALYZER_CLASSNAME.equals(key)) {

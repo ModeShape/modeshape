@@ -24,8 +24,11 @@
 package org.modeshape.jboss.service;
 
 import org.infinispan.manager.CacheContainer;
+import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.RepositoryConfiguration;
+import org.modeshape.jcr.RepositoryConfiguration.Default;
+import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
 /**
  * 
@@ -42,27 +45,27 @@ public class IndexStorage {
         this.queryConfig = queryConfig;
     }
 
-    void setDefaultValues( String dataDirPath ) {
-        queryConfig.set(RepositoryConfiguration.FieldName.REBUILD_UPON_STARTUP, RepositoryConfiguration.QueryRebuild.IF_MISSING.toString().toLowerCase());
-
-        EditableDocument indexing = queryConfig.getOrCreateDocument(RepositoryConfiguration.FieldName.INDEXING);
-        EditableDocument backend = indexing.getOrCreateDocument(RepositoryConfiguration.FieldName.INDEXING_BACKEND);
-        backend.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.INDEXING_BACKEND_TYPE_LUCENE);
-
-        EditableDocument indexStorage = queryConfig.getOrCreateDocument(RepositoryConfiguration.FieldName.INDEX_STORAGE);
-        indexStorage.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.INDEX_STORAGE_FILESYSTEM);
-        indexStorage.set(RepositoryConfiguration.FieldName.INDEX_STORAGE_LOCATION, dataDirPath + "/indexes");
+    void setDefaultValuesForIndexStorage( String dataDirPath ) {
+        if (isEnabled()) {
+            EditableDocument indexStorage = queryConfig.getOrCreateDocument(RepositoryConfiguration.FieldName.INDEX_STORAGE);
+            indexStorage.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.INDEX_STORAGE_FILESYSTEM);
+            indexStorage.set(RepositoryConfiguration.FieldName.INDEX_STORAGE_LOCATION, dataDirPath + "/indexes");
+        }
     }
 
-    boolean useDefaultValues() {
+    boolean useDefaultValuesForIndexStorage() {
         return !queryConfig.containsField(RepositoryConfiguration.FieldName.INDEX_STORAGE);
+    }
+
+    public boolean isEnabled() {
+        return this.queryConfig.getBoolean(FieldName.QUERY_ENABLED, Default.QUERY_ENABLED);
     }
 
     /**
      * @return the repository's query configuration
      */
     public EditableDocument getQueryConfiguration() {
-        return queryConfig;
+        return isEnabled() ? queryConfig : Schematic.newDocument(FieldName.QUERY_ENABLED, false);
     }
 
     CacheContainer getCacheContainer() {

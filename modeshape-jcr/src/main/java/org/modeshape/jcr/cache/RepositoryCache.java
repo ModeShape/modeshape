@@ -175,7 +175,7 @@ public class RepositoryCache implements Observable {
             this.sourceKey = info.getString(REPOSITORY_SOURCE_KEY_FIELD_NAME, NodeKey.keyForSourceName(sourceName));
         }
 
-        // If we're not doing the initialization of the repository, block for at most 5 minutes while another process does ...
+        // If we're not doing the initialization of the repository, block for at most 10 minutes while another process does ...
         if (!initializingRepository) {
             final long numMinutesToWait = MAX_NUMBER_OF_MINUTES_TO_WAIT_FOR_REPOSITORY_INITIALIZATION;
             final long startTime = System.currentTimeMillis();

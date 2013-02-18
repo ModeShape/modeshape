@@ -228,6 +228,11 @@
                         "default" : true,
                         "description" : "Optional flag which indicates whether this source's content should be indexed or not by the repository. By default, all content is queryable "
                     },
+                    "readonly" : {
+                        "type" : "boolean",
+                        "default" : false,
+                        "description" : "Optional flag which indicates if an external source should support both writing and reading, or just reading. By default, an external source supports both"
+                    },
                     "projections" : {
                         "type" : "array",
                         "items" : {
@@ -343,7 +348,7 @@
                     "type" : "string",
                     "enum" : ["if_missing","always"],
                     "default" : "if_missing",
-                    "description" : "Specifies whether the indexes need to be rebuilt immediately when each ModeShape process starts up."
+                    "description" : "DEPRECATED. See indexing/rebuildOnStartup"
                 },
                 "textExtracting" : {
                     "type" : "object",
@@ -679,6 +684,29 @@
                             "minimum" : 0,
                             "description" : "Specifies the maximum size of the queue used for making asynchronous updates. When the queue is filled, updates block until the queue catches up. A value of '0' is the default and implies no limit to the queue size."
                         },
+                        "rebuildOnStartup" : {
+                            "type" : "object",
+                            "description" : "Controls the behavior of index rebuilding, when the repository starts up",
+                            "additionalProperties" : false,
+                            "properties" : {
+                                "when" : {
+                                    "enum" : ["if_missing","always","never"],
+                                    "default" : "if_missing",
+                                    "description" : "Specifies whether the indexes need to be rebuilt immediately when each ModeShape process starts up, or only missing indexes are to be rebuilt or nothing should be rebuilt"
+                                },
+                                "includeSystemContent" : {
+                                    "type" : "boolean",
+                                    "default" : false,
+                                    "description" : "Specifies if system content should be re-indexed on startup or not"
+                                },
+                                "mode" : {
+                                    "enum" : ["sync","async"],
+                                    "default" : "sync",
+                                    "description" : "Specifies if index rebuilding should be done synchronously or asynchronously"
+                                }
+                            }
+
+                        },
                         "description" : {
                             "type" : "string",
                             "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
@@ -741,12 +769,12 @@
                                             "required" : true,
                                             "description" : "The specification of the Lucene backend for writing all updates directly to Lucene."
                                         },
-                                        "connectionFactoryJndiName" : { 
+                                        "connectionFactoryJndiName" : {
                                             "type" : "string",
                                             "required" : true,
                                             "description" : "Defines the name in JNDI where the JMS connection factory can be found. The value is often '/ConnectionFactory' by default in JBoss AS.",
                                         },
-                                        "queueJndiName" : { 
+                                        "queueJndiName" : {
                                             "type" : "string",
                                             "required" : true,
                                             "description" : "Defines the name in JNDI where JMS queue can be found. The queue will be used to post work messages.",
@@ -776,7 +804,7 @@
                                         "channelConfiguration" : { 
                                             "type" : "string",
                                             "required" : true,
-                                            "description" : "The JGroups channel configuration. The value can either be the path to a resource file on the classpath, or a value containing the JGroups configuration (in either XML or old-style format)."
+                                            "description" : "The JGroups channel configuration. The value should be the path to a resource file on the classpath containing the JGroups configuration."
                                         },
                                         "description" : {
                                             "type" : "string",
@@ -795,15 +823,15 @@
                                             "required" : true,
                                             "description" : "The specification of the Lucene backend for writing all updates directly to Lucene."
                                         },
-                                        "connectionFactoryJndiName" : { 
+                                        "channelName" : {
                                             "type" : "string",
                                             "required" : true,
-                                            "description" : "Defines the name in JNDI where the JMS connection factory can be found. The value is often '/ConnectionFactory' by default in JBoss AS.",
+                                            "description" : "The name of the JGroups channel used for indexing updates."
                                         },
-                                        "queueJndiName" : { 
+                                        "channelConfiguration" : {
                                             "type" : "string",
                                             "required" : true,
-                                            "description" : "Defines the name in JNDI where JMS queue can be found. The queue will be used to post work messages.",
+                                            "description" : "The JGroups channel configuration. The value should be the path to a resource file on the classpath containing the JGroups configuration."
                                         },
                                         "description" : {
                                             "type" : "string",

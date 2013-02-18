@@ -321,10 +321,16 @@ public class ItemHandler extends AbstractHandler {
             newNode = parentNode.addNode(nodeName);
         }
 
+        if (properties.has(MIXIN_TYPES_PROPERTY)) {
+            // Be sure to set this property first, before the other properties in case the other properties
+            // are defined only on one of the mixin types ...
+            setPropertyOnNode(newNode, MIXIN_TYPES_PROPERTY, properties.get(MIXIN_TYPES_PROPERTY));
+        }
+
         for (Iterator<?> iter = properties.keys(); iter.hasNext();) {
             String key = (String)iter.next();
 
-            if (PRIMARY_TYPE_PROPERTY.equals(key)) {
+            if (PRIMARY_TYPE_PROPERTY.equals(key) || MIXIN_TYPES_PROPERTY.equals(key)) {
                 continue;
             }
             setPropertyOnNode(newNode, key, properties.get(key));
@@ -607,10 +613,26 @@ public class ItemHandler extends AbstractHandler {
 
         changes.checkout(node);
 
+        // Change the primary type first ...
+        if (properties.has(PRIMARY_TYPE_PROPERTY)) {
+            String primaryType = properties.getString(PRIMARY_TYPE_PROPERTY);
+            primaryType = primaryType.trim();
+            if (primaryType.length() != 0 && !node.getPrimaryNodeType().getName().equals(primaryType)) {
+                node.setPrimaryType(primaryType);
+            }
+        }
+
+        if (properties.has(MIXIN_TYPES_PROPERTY)) {
+            // Next set the mixin types ...
+            Object mixinTypes = properties.get(MIXIN_TYPES_PROPERTY);
+            setPropertyOnNode(node, MIXIN_TYPES_PROPERTY, mixinTypes); // handles both string and array value forms
+        }
+
+        // Now set all the other properties ...
         for (Iterator<?> iter = properties.keys(); iter.hasNext();) {
             String key = (String)iter.next();
-            if (PRIMARY_TYPE_PROPERTY.equals(key) || CHILD_NODE_HOLDER.equals(key)) {
-                continue; // can't change the primary type
+            if (PRIMARY_TYPE_PROPERTY.equals(key) || MIXIN_TYPES_PROPERTY.equals(key) || CHILD_NODE_HOLDER.equals(key)) {
+                continue;
             }
             setPropertyOnNode(node, key, properties.get(key));
         }

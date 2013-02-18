@@ -166,6 +166,15 @@
           enabled.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
+    <xs:attribute name="enable-queries" type="xs:boolean" default="true">
+      <xs:annotation>
+        <xs:documentation>Specifies whether the repository is to enable the query system and text extractors
+          as configured. The default value is 'true', meaning queries are enabled. If 'false', then all
+          indexing related attributes, index storage configuration, and text extract configurations are
+          ignored, while JDBC access and direct queries will not work or will return no data.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
     <xs:attribute name="security-domain" type="xs:string" default="modeshape-security">
       <xs:annotation>
         <xs:documentation>The name of the security domain that should be used for JAAS authentication.
@@ -367,9 +376,9 @@
                 <xs:documentation>The number of seconds which an external node should be held in the workspace cache. If not specified, the effective TTL is deferred to the workspace cache configuration. If negative, an entry will be cached forever.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="readonly" type="xs:boolean" use="optional" default="true">
+        <xs:attribute name="readonly" type="xs:boolean" use="optional" default="false">
             <xs:annotation>
-                <xs:documentation>Flag which indicates whether the external source is readonly or supports writing as well. By default, a source is read-only.</xs:documentation>
+                <xs:documentation>Flag which indicates whether the external source is readonly or supports writing as well. By default, a source support both reads and writes.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="queryable" type="xs:boolean" use="optional" default="true">
@@ -627,6 +636,16 @@
           each ModeShape process starts up.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
+    <xs:attribute name="rebuild-upon-startup-mode" type="synchronous-enum" use="optional" default="sync">
+      <xs:annotation>
+        <xs:documentation>Specifies whether the rebuild process should be done synchronously or asynchronously</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="rebuild-upon-startup-include-system-content" type="xs:boolean" use="optional" default="false">
+      <xs:annotation>
+        <xs:documentation>Specifies whether the index rebuild process should take system content into account or not</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
     <xs:attribute name="thread-pool" type="xs:string" use="optional" default="modeshape-workers">
       <xs:annotation>
         <xs:documentation>Name of the thread pool that should be used for background re-indexing.
@@ -663,10 +682,7 @@
     </xs:attribute>
     <xs:attribute name="systemContentMode" type="systemContentIndexing-enum" use="optional" default="disabled">
       <xs:annotation>
-        <xs:documentation>Specifies whether the system content of the repository (/jcr:system and its descendants) should be
-            indexed at startup synchronously, asynchronously or not at all. By default the system content isn't indexed,
-            as the cases when this is needed are probably rare.
-        </xs:documentation>
+        <xs:documentation>DEPRECATED. Use the [rebuild-upon-startup-mode, rebuild-upon-startup-include-system-content] attributes</xs:documentation>
       </xs:annotation>
     </xs:attribute>
     <xs:attribute name="async-thread-pool-size" type="xs:int" use="optional" default="1">
@@ -804,6 +820,7 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="if_missing" />
       <xs:enumeration value="always" />
+      <xs:enumeration value="never" />
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="file-system-access-type-enum">

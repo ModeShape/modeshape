@@ -104,6 +104,7 @@ public final class JcrI18n {
     public static I18n fileConnectorNodeIdentifierIsNotWithinScopeOfConnector;
     public static I18n fileConnectorIsReadOnly;
     public static I18n fileConnectorCannotStoreFileThatIsExcluded;
+    public static I18n fileConnectorNamespaceIgnored;
     public static I18n couldNotStoreProperties;
     public static I18n couldNotStoreProperty;
     public static I18n couldNotGetMimeType;
@@ -458,6 +459,12 @@ public final class JcrI18n {
 
     public static I18n federationNodeKeyDoesNotBelongToSource;
     public static I18n invalidProjectionPath;
+    public static I18n invalidProjectionExpression;
+    public static I18n projectedPathPointsTowardsInternalNode;
+    
+    public static I18n reindexMissingNoIndexesExist;
+    public static I18n noReindex;
+    public static I18n reindexAll;
 
     static {
         try {

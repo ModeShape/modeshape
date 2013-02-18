@@ -3,14 +3,14 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
+ * See the AUTHORS.txt file in the distribution for a full listing of
  * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -39,6 +39,7 @@ import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.SecureHash.Algorithm;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.RepositoryConfiguration;
@@ -50,6 +51,7 @@ import org.modeshape.jcr.federation.spi.Connector;
 import org.modeshape.jcr.federation.spi.DocumentChanges;
 import org.modeshape.jcr.federation.spi.DocumentReader;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
+import org.modeshape.jcr.federation.spi.WritableConnector;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
@@ -104,7 +106,7 @@ import org.modeshape.jcr.value.binary.UrlBinaryValue;
  * </tr>
  * </table>
  */
-public class FileSystemConnector extends Connector {
+public class FileSystemConnector extends WritableConnector {
 
     private static final String FILE_SEPARATOR = System.getProperty("file.separator");
     private static final String DELIMITER = "/";
@@ -141,13 +143,6 @@ public class FileSystemConnector extends Connector {
      */
     private String directoryAbsolutePath;
     private int directoryAbsolutePathLength;
-
-    /**
-     * A boolean flag that specifies whether this connector should only read existing files and directories on the file system and
-     * should never write, update, or create files and directories on the file systems. This is set via reflection and defaults to
-     * "<code>false</code>".
-     */
-    private boolean readonly = false;
 
     /**
      * A boolean flag that specifies whether this connector should add the 'mix:mimeType' mixin to the 'nt:resource' nodes to
@@ -234,7 +229,7 @@ public class FileSystemConnector extends Connector {
 
     /**
      * Get the namespace registry.
-     * 
+     *
      * @return the namespace registry; never null
      */
     NamespaceRegistry registry() {
@@ -245,7 +240,7 @@ public class FileSystemConnector extends Connector {
      * Utility method for determining if the supplied identifier is for the "jcr:content" child node of a file. * Subclasses may
      * override this method to change the format of the identifiers, but in that case should also override the
      * {@link #fileFor(String)}, {@link #isRoot(String)}, and {@link #idFor(File)} methods.
-     * 
+     *
      * @param id the identifier; may not be null
      * @return true if the identifier signals the "jcr:content" child node of a file, or false otherwise
      * @see #isRoot(String)
@@ -260,7 +255,7 @@ public class FileSystemConnector extends Connector {
      * Utility method for obtaining the {@link File} object that corresponds to the supplied identifier. Subclasses may override
      * this method to change the format of the identifiers, but in that case should also override the {@link #isRoot(String)},
      * {@link #isContentNode(String)}, and {@link #idFor(File)} methods.
-     * 
+     *
      * @param id the identifier; may not be null
      * @return the File object for the given identifier
      * @see #isRoot(String)
@@ -269,6 +264,9 @@ public class FileSystemConnector extends Connector {
      */
     protected File fileFor( String id ) {
         assert id.startsWith(DELIMITER);
+        if (id.endsWith(DELIMITER)) {
+            id = id.substring(0, id.length() - DELIMITER.length());
+        }
         if (isContentNode(id)) {
             id = id.substring(0, id.length() - JCR_CONTENT_SUFFIX_LENGTH);
         }
@@ -279,7 +277,7 @@ public class FileSystemConnector extends Connector {
      * Utility method for determining if the node identifier is the identifier of the root node in this external source.
      * Subclasses may override this method to change the format of the identifiers, but in that case should also override the
      * {@link #fileFor(String)}, {@link #isContentNode(String)}, and {@link #idFor(File)} methods.
-     * 
+     *
      * @param id the identifier; may not be null
      * @return true if the identifier is for the root of this source, or false otherwise
      * @see #isContentNode(String)
@@ -294,7 +292,7 @@ public class FileSystemConnector extends Connector {
      * Utility method for determining the node identifier for the supplied file. Subclasses may override this method to change the
      * format of the identifiers, but in that case should also override the {@link #fileFor(String)},
      * {@link #isContentNode(String)}, and {@link #isRoot(String)} methods.
-     * 
+     *
      * @param file the file; may not be null
      * @return the node identifier; never null
      * @see #isRoot(String)
@@ -320,7 +318,7 @@ public class FileSystemConnector extends Connector {
     /**
      * Utility method for creating a {@link BinaryValue} for the given {@link File} object. Subclasses should rarely override this
      * method.
-     * 
+     *
      * @param file the file; may not be null
      * @return the BinaryValue; never null
      */
@@ -339,7 +337,7 @@ public class FileSystemConnector extends Connector {
     /**
      * Utility method to create a {@link BinaryValue} object for the given file. Subclasses should rarely override this method,
      * since the {@link UrlBinaryValue} will be applicable in most situations.
-     * 
+     *
      * @param key the binary key; never null
      * @param file the file for which the {@link BinaryValue} is to be created; never null
      * @return the binary value; never null
@@ -358,7 +356,7 @@ public class FileSystemConnector extends Connector {
      * Subclasses can override this method to transform the URL into something different. For example, if the files are being
      * served by a web server, the overridden method might transform the file-based URL into the corresponding HTTP-based URL.
      * </p>
-     * 
+     *
      * @param file the file for which the URL is to be created; never null
      * @return the URL for the file; never null
      * @throws IOException if there is an error creating the URL
@@ -369,7 +367,7 @@ public class FileSystemConnector extends Connector {
 
     /**
      * Utility method to determine if the file is excluded by the inclusion/exclusion filter.
-     * 
+     *
      * @param file the file
      * @return true if the file is excluded, or false if it is to be included
      */
@@ -379,18 +377,14 @@ public class FileSystemConnector extends Connector {
 
     /**
      * Utility method to ensure that the file is writable by this connector.
-     * 
+     *
      * @param id the identifier of the node
      * @param file the file
      * @throws DocumentStoreException if the file is expected to be writable but is not or is excluded, or if the connector is
      *         readonly
      */
-    protected void checkWritable( String id,
-                                  File file ) {
-        if (readonly) {
-            String msg = JcrI18n.fileConnectorIsReadOnly.text(getSourceName(), id, file.getAbsolutePath());
-            throw new DocumentStoreException(id, msg);
-        }
+    protected void checkFileNotExcluded( String id,
+                                         File file ) {
         if (isExcluded(file)) {
             String msg = JcrI18n.fileConnectorCannotStoreFileThatIsExcluded.text(getSourceName(), id, file.getAbsolutePath());
             throw new DocumentStoreException(id, msg);
@@ -427,6 +421,9 @@ public class FileSystemConnector extends Connector {
             }
             writer.addProperty(JCR_LAST_MODIFIED, factories().getDateFactory().create(file.lastModified()));
             writer.addProperty(JCR_LAST_MODIFIED_BY, null); // ignored
+
+            //make these binary not queryable. If we really want to query them, we need to switch to external binaries
+            writer.setNotQueryable();
             parentFile = file;
         } else if (file.isFile()) {
             writer.setPrimaryType(NT_FILE);
@@ -449,9 +446,12 @@ public class FileSystemConnector extends Connector {
                 }
             }
         }
-        // Set the reference to the parent ...
-        String parentId = idFor(parentFile);
-        writer.setParents(parentId);
+
+        if (!isRoot) {
+            // Set the reference to the parent ...
+            String parentId = idFor(parentFile);
+            writer.setParents(parentId);
+        }
 
         // Add the extra properties (if there are any), overwriting any properties with the same names
         // (e.g., jcr:primaryType, jcr:mixinTypes, jcr:mimeType, etc.) ...
@@ -476,7 +476,7 @@ public class FileSystemConnector extends Connector {
     @Override
     public boolean removeDocument( String id ) {
         File file = fileFor(id);
-        checkWritable(id, file);
+        checkFileNotExcluded(id, file);
         // Remove the extra properties at the old location ...
         extraPropertiesStore().removeProperties(id);
         // Now remove the file (if it is there) ...
@@ -491,7 +491,7 @@ public class FileSystemConnector extends Connector {
         DocumentReader reader = readDocument(document);
         String id = reader.getDocumentId();
         File file = fileFor(id);
-        checkWritable(id, file);
+        checkFileNotExcluded(id, file);
         File parent = file.getParentFile();
         if (!parent.exists()) {
             parent.mkdirs();
@@ -530,51 +530,65 @@ public class FileSystemConnector extends Connector {
 
     @Override
     public String newDocumentId( String parentId,
-                                 Name newDocumentName ) {
-        return parentId + DELIMITER + newDocumentName.getString();
+                                 Name newDocumentName,
+                                 Name newDocumentPrimaryType ) {
+        StringBuilder documentIdBuilder = new StringBuilder(parentId);
+        if (!parentId.endsWith(DELIMITER)) {
+            documentIdBuilder.append(DELIMITER);
+        }
+        if (!StringUtil.isBlank(newDocumentName.getNamespaceUri()))  {
+            //the FS connector does not support namespaces in names
+            getLogger().warn(JcrI18n.fileConnectorNamespaceIgnored, getSourceName(), newDocumentName.getNamespaceUri());
+        }
+        documentIdBuilder.append(newDocumentName.getLocalName());
+        return documentIdBuilder.toString();
     }
 
     @Override
     public void updateDocument( DocumentChanges documentChanges ) {
         String id = documentChanges.getDocumentId();
-        Document document = documentChanges.getDocument();
 
-        // Create a new directory or file described by the document ...
+        Document document = documentChanges.getDocument();
         DocumentReader reader = readDocument(document);
-        String parentId = reader.getParentIds().get(0);
+
         File file = fileFor(id);
-        checkWritable(id, file);
-        File parent = file.getParentFile();
-        String newParentId = idFor(parent);
-        if (!parentId.equals(newParentId)) {
-            // The node has a new parent (via the 'update' method), meaning it was moved ...
-            File newParent = fileFor(newParentId);
-            File newFile = new File(newParent, file.getName());
-            file.renameTo(newFile);
-            if (!parent.exists()) {
-                parent.mkdirs(); // in case they were removed since we created them ...
-            }
-            if (!parent.canWrite()) {
-                String parentPath = newParent.getAbsolutePath();
-                String msg = JcrI18n.fileConnectorCannotWriteToDirectory.text(getSourceName(), getClass(), parentPath);
-                throw new DocumentStoreException(id, msg);
-            }
-            parent = newParent;
-            // Remove the extra properties at the old location ...
-            extraPropertiesStore().removeProperties(id);
-            // Set the id to the new location ...
-            id = idFor(newFile);
-        } else {
-            // It is the same parent as before ...
-            if (!parent.exists()) {
-                parent.mkdirs(); // in case they were removed since we created them ...
-            }
-            if (!parent.canWrite()) {
-                String parentPath = parent.getAbsolutePath();
-                String msg = JcrI18n.fileConnectorCannotWriteToDirectory.text(getSourceName(), getClass(), parentPath);
-                throw new DocumentStoreException(id, msg);
+
+        //if we're dealing with the root of the connector, we can't process any moves/removes because that would go "outside" the connector scope
+        if (!isRoot(id)) {
+            String parentId = reader.getParentIds().get(0);
+            File parent = file.getParentFile();
+            String newParentId = idFor(parent);
+            if (!parentId.equals(newParentId)) {
+                // The node has a new parent (via the 'update' method), meaning it was moved ...
+                File newParent = fileFor(newParentId);
+                File newFile = new File(newParent, file.getName());
+                file.renameTo(newFile);
+                if (!parent.exists()) {
+                    parent.mkdirs(); // in case they were removed since we created them ...
+                }
+                if (!parent.canWrite()) {
+                    String parentPath = newParent.getAbsolutePath();
+                    String msg = JcrI18n.fileConnectorCannotWriteToDirectory.text(getSourceName(), getClass(), parentPath);
+                    throw new DocumentStoreException(id, msg);
+                }
+                parent = newParent;
+                // Remove the extra properties at the old location ...
+                extraPropertiesStore().removeProperties(id);
+                // Set the id to the new location ...
+                id = idFor(newFile);
+            } else {
+                // It is the same parent as before ...
+                if (!parent.exists()) {
+                    parent.mkdirs(); // in case they were removed since we created them ...
+                }
+                if (!parent.canWrite()) {
+                    String parentPath = parent.getAbsolutePath();
+                    String msg = JcrI18n.fileConnectorCannotWriteToDirectory.text(getSourceName(), getClass(), parentPath);
+                    throw new DocumentStoreException(id, msg);
+                }
             }
         }
+
         String primaryType = reader.getPrimaryTypeName();
         Map<Name, Property> properties = reader.getProperties();
         ExtraProperties extraProperties = extraPropertiesFor(id, true);

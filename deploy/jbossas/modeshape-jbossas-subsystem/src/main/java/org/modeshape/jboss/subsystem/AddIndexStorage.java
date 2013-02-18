@@ -39,8 +39,5 @@ public class AddIndexStorage extends AbstractAddStepHandler {
     @Override
     protected void populateModel( ModelNode operation,
                                   ModelNode model ) {
-        // TODO Auto-generated method stub
-
     }
-
 }

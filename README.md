@@ -1,20 +1,5 @@
 # The ModeShape project
 
-**NOTE** **Pardon our mess while we improve ModeShape.
-This branch is currently in the midst of a major refactoring to use Infinispan in a much more central fashion.
-For details, see [MODE-1289](https://issues.jboss.org/browse/MODE-1289)**
-
-To build the newer code, simply use the standard Maven command:
-
-    mvn clean install
-    
-However, this branch still contains (some of) the older 2.x-style code as well, and to build that use the "legacy" profile:
-
-    mvn clean install -Plegacy
-
-
-## Summary
-
 This is the official Git repository for the ModeShape project.
 
 ModeShape is an open source implementation of the JCR 2.0 ([JSR-283](http://www.jcp.org/en/jsr/detail?id=283])) specification and standard API.
@@ -67,6 +52,11 @@ If you have *any* trouble building (or don't like the '-s settings.xml' usage), 
 ## Contribute fixes and features
 
 ModeShape is open source, and we welcome anybody that wants to participate and contribute!
+
+Before committing anything, PLEASE make sure you have set up all of the development tools
+(see http://community.jboss.org/wiki/ModeShapeDevelopmentTools), are following the project's
+guidelines (see http://community.jboss.org/wiki/ModeShapeDevelopmentGuidelines), and are 
+using our accepted workflow (see http://community.jboss.org/wiki/ModeShapeDevelopmentWorkflow).
 
 If you want to fix a bug or make any changes, please log an issue in the [ModeShape JIRA](https://issues.jboss.org/browse/MODE) describing the bug
 or new feature. Then we highly recommend making the changes on a topic branch named with the JIRA issue number. For example, this command creates

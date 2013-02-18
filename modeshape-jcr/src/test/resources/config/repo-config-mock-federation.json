@@ -20,6 +20,11 @@
             "classname" : "org.modeshape.connector.mock.MockConnector",
             "cacheTtlSeconds" : 1,
             "queryable" : false
+        },
+        "mock-source-readonly" : {
+            "classname" : "org.modeshape.connector.mock.MockConnector",
+            "cacheTtlSeconds" : 1,
+            "readonly" : true
         }
     }
 }

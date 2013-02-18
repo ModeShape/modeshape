@@ -117,6 +117,9 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                     case ENABLE_MONITORING:
                         ModelAttributes.ENABLE_MONITORING.parseAndSetParameter(attrValue, repository, reader);
                         break;
+                    case ENABLE_QUERIES:
+                        ModelAttributes.ENABLE_QUERIES.parseAndSetParameter(attrValue, repository, reader);
+                        break;
                     case SECURITY_DOMAIN:
                         ModelAttributes.SECURITY_DOMAIN.parseAndSetParameter(attrValue, repository, reader);
                         break;
@@ -356,6 +359,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         }
     }
 
+    @SuppressWarnings( "deprecation" )
     private void parseIndexing( final XMLExtendedStreamReader reader,
                                 final ModelNode parentAddress,
                                 final ModelNode repository ) throws XMLStreamException {
@@ -367,6 +371,12 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                 switch (element) {
                     case REBUILD_UPON_STARTUP:
                         ModelAttributes.REBUILD_INDEXES_UPON_STARTUP.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case REBUILD_UPON_STARTUP_MODE:
+                        ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_MODE.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case REBUILD_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT:
+                        ModelAttributes.REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT.parseAndSetParameter(attrValue, repository, reader);
                         break;
                     case THREAD_POOL:
                         ModelAttributes.THREAD_POOL.parseAndSetParameter(attrValue, repository, reader);

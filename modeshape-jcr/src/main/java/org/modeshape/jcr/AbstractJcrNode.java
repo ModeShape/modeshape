@@ -1052,7 +1052,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
         //If there isn't a desired key, check if the document store doesn't require a certain key format (this is especially used by federation)
         if (desiredKey == null) {
-            String documentStoreKey = session().repository().documentStore().newDocumentKey(key().toString(), childName);
+            String documentStoreKey = null;
+            try {
+                documentStoreKey = session().repository().documentStore().newDocumentKey(key().toString(), childName, childPrimaryNodeTypeName);
+            } catch (Exception e) {
+                throw new RepositoryException(e);
+            }
             if (documentStoreKey != null) {
                 desiredKey = new NodeKey(documentStoreKey);
             }
@@ -1599,11 +1604,21 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 throw new javax.jcr.ValueFormatException(msg.text(readable(name), location(), workspaceName()));
             }
 
-            if (!skipProtectedValidation && existing.getDefinition().isProtected()) {
+            JcrPropertyDefinition propertyDefinition = existing.getDefinition();
+
+            if (!skipProtectedValidation && propertyDefinition.isProtected()) {
                 String text = JcrI18n.cannotSetProtectedPropertyValue.text(value, name, location(), workspaceName());
                 throw new ConstraintViolationException(text);
             }
-            if (existing.getDefinition().getRequiredType() == value.getType()) {
+
+            if (!propertyDefinition.canCastToTypeAndSatisfyConstraints(value, session)) {
+                String defnName = propertyDefinition.getName();
+                String nodeTypeName = propertyDefinition.getDeclaringNodeType().getName();
+                I18n msg = JcrI18n.valueViolatesConstraintsOnDefinition;
+                throw new ConstraintViolationException(msg.text(existing.getName(), value.getString(), location(), defnName, nodeTypeName));
+            }
+
+            if (propertyDefinition.getRequiredType() == value.getType()) {
                 // The new value's type and the existing type are the same, so just delegate to the existing JCR property ...
                 try {
                     // set the property via the public method, so that additional checks are performed

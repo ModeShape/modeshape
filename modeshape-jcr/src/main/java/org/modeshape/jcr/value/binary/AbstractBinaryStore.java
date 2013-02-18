@@ -47,7 +47,7 @@ public abstract class AbstractBinaryStore implements BinaryStore {
     /**
      * The default minimum size (in bytes) of binary values that are persisted in the binary store is 4096 bytes, or 4KB.
      */
-    private static final long DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES = 1024 * 4;
+    static final long DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES = 1024 * 4;
 
     private static final long DEFAULT_LATCH_WAIT_IN_SECONDS = 10L;
 

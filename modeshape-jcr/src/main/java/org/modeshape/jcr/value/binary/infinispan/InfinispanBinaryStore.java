@@ -186,10 +186,11 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
 
     @Override
     public BinaryValue storeValue( InputStream inputStream ) throws BinaryStoreException, SystemFailureException {
+        File tmpFile = null;
         try {
             // using tmp file to determine SHA1
             SecureHash.HashingInputStream hashingStream = SecureHash.createHashingStream(SecureHash.Algorithm.SHA_1, inputStream);
-            File tmpFile = File.createTempFile("ms-ispn-binstore", "hashing");
+            tmpFile = File.createTempFile("ms-ispn-binstore", "hashing");
             IoUtil.write(hashingStream,
                          new BufferedOutputStream(new FileOutputStream(tmpFile)),
                          AbstractBinaryStore.MEDIUM_BUFFER_SIZE);
@@ -213,12 +214,17 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
                 logger.debug("Store binary value into chunks.");
                 // store the chunks based referenced to SHA1-key
                 final String dataKey = dataKeyFrom(binaryKey);
+                final long lastModified = tmpFile.lastModified();
+                final long fileLength = tmpFile.length();
+                int bufferSize = 8192;
+                if (bufferSize > fileLength) bufferSize = 4096;
+                if (bufferSize > fileLength) bufferSize = 2096;
                 ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, dataKey);
-                IoUtil.write(new FileInputStream(tmpFile), chunkOutputStream);
+                IoUtil.write(new FileInputStream(tmpFile), chunkOutputStream, bufferSize);
                 // now store metadata
-                metadata = new Metadata(tmpFile.lastModified(), tmpFile.length(), chunkOutputStream.getNumberChunks());
+                metadata = new Metadata(lastModified, fileLength, chunkOutputStream.getNumberChunks());
                 putMetadata(metadataKey, metadata);
-                value = new StoredBinaryValue(this, binaryKey, tmpFile.length());
+                value = new StoredBinaryValue(this, binaryKey, fileLength);
             } finally {
                 lock.unlock();
             }
@@ -232,7 +238,11 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         } catch (NoSuchAlgorithmException e) {
             throw new SystemFailureException(e);
         } finally {
-            IoUtil.closeQuietly(inputStream);
+            try {
+                IoUtil.closeQuietly(inputStream);
+            } finally {
+                if (tmpFile != null) tmpFile.delete();
+            }
         }
     }
 
@@ -309,15 +319,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             MapReduceTask<String, Metadata, String, String> task = new MapReduceTask<String, Metadata, String, String>(
                                                                                                                        metadataCache);
             task.mappedWith(new UnusedMapper(minimumAgeInMS));
-            task.reducedWith(new Reducer<String, String>() {
-                private static final long serialVersionUID = 1L;
-
-                @Override
-                public String reduce( String s,
-                                      Iterator<String> stringIterator ) {
-                    return s;
-                }
-            });
+            task.reducedWith(new DummyReducer());
             Map<String, String> result = task.execute();
             for (String key : result.values()) {
                 InfinispanBinaryStore.Lock lock = lockFactory.writeLock(key);
@@ -605,5 +607,15 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
     interface Lock {
 
         void unlock() throws BinaryStoreException;
+    }
+
+    protected static class DummyReducer implements Reducer<String, String> {
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public String reduce( String s,
+                              Iterator<String> stringIterator ) {
+            return s;
+        }
     }
 }

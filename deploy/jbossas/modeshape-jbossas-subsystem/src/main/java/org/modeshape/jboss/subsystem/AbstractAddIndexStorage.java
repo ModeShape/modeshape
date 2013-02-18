@@ -78,14 +78,10 @@ public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
         IndexStorageService existingService = (IndexStorageService)context.getServiceRegistry(false).getService(indexStorageServiceName).getService();
         //get the query instance from the existing service, so that any indexing attributes set via "AddRepository" are not lost
         EditableDocument query = existingService.getValue().getQueryConfiguration();
-        if (!query.containsField(FieldName.REBUILD_UPON_STARTUP)) {
-            String rebuild = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP.resolveModelAttribute(context, storage).asString().toLowerCase();
-            query.set(FieldName.REBUILD_UPON_STARTUP, rebuild);
-        }
 
         // Build the 'query/indexing' nested document ...
         EditableDocument indexing = query.getOrCreateDocument(FieldName.INDEXING);
-        writeIndexingConfiguration(context, storage, indexing);
+        writeIndexStorageSpecificIndexingConfiguration(context, storage, indexing);
 
         // Build the 'query/indexingStorage' nested document from scratch
         EditableDocument indexStorage = query.setDocument(FieldName.INDEX_STORAGE);
@@ -110,9 +106,9 @@ public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
                                                             final ModelNode storage,
                                                             EditableDocument indexStorage ) throws OperationFailedException;
 
-    protected void writeIndexingConfiguration( final OperationContext context,
-                                               final ModelNode storage,
-                                               EditableDocument indexing ) throws OperationFailedException {
+    protected void writeIndexStorageSpecificIndexingConfiguration( final OperationContext context,
+                                                                   final ModelNode storage,
+                                                                   EditableDocument indexing ) throws OperationFailedException {
         String format = ModelAttributes.INDEX_FORMAT.resolveModelAttribute(context, storage).asString();
         indexing.set(FieldName.INDEXING_INDEX_FORMAT, format);
     }

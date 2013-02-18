@@ -20,9 +20,15 @@
             "projections" : [
                 "default:/federation/generated-sources => /generated-sources",
                 "default:/federation/surefire => /generated-surefire",
-                "default:/federation/classes => /classes",
-                "default:/federation/fs => /doesnt-exist"
+                "default:/federation/classes => /classes"
             ]
+        }
+    },
+    "query" : {
+        "indexing" : {
+            "rebuildOnStartup" : {
+                "when" : "never"
+            }
         }
     }
 }

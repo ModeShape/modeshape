@@ -56,6 +56,9 @@ import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 /**
  * SPI of a generic external connector, representing the interface to an external system integrated with ModeShape. Since it is
  * expected that the documents are well formed (structure-wise), the {@link FederatedDocumentWriter} class should be used.
+ *
+ * This is the base class for {@link WritableConnector} and {@link ReadOnlyConnector} which is what connector implementations
+ * are expected to implement.
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
@@ -316,6 +319,13 @@ public abstract class Connector {
     public abstract String getDocumentId( String path );
 
     /**
+     * Indicates if the connector instance has been configured in read-only mode.
+     *
+     * @return {@code true} if the connector has been configured in read-only mode, false otherwise.
+     */
+    public abstract boolean isReadonly();
+
+    /**
      * Returns a document representing a single child reference from the supplied parent to the supplied child. This method is
      * called when there are an unknown number of children on a node.
      * <p>
@@ -384,14 +394,16 @@ public abstract class Connector {
      *
      * @param parentId a {@code non-null} {@link String} which represents the identifier of the parent under which the new document
      * will be created.
-     * @param newDocumentName a {@code non-null} {@link Name} which represents the name that will be given to the child document
+     * @param newDocumentName a {@code non-null} {@link org.modeshape.jcr.value.Name} which represents the name that will be given to the child document
+     * @param newDocumentPrimaryType a {@code non-null} {@link org.modeshape.jcr.value.Name} which represents the child document's primary type.
      * @return either a {@code non-null} {@link String} which will be assigned as the new identifier, or {@code null} which means
      * that no "special" id format is required. In this last case, the repository will auto-generate a random id.
      *
      * @throws org.modeshape.jcr.cache.DocumentStoreException if the connector is readonly.
      */
     public abstract String newDocumentId( String parentId,
-                                          Name newDocumentName );
+                                          Name newDocumentName,
+                                          Name newDocumentPrimaryType );
 
     /**
      * Utility method that checks whether the field with the supplied name is set.

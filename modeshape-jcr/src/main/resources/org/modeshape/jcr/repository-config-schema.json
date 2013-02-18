@@ -325,6 +325,11 @@
                         "type" : "integer",
                         "description" : "The optional number of seconds which an external node should be held in the workspace cache. If not specified, the effective TTL is deferred to the workspace cache configuration. If negative, an entry will be cached forever."
                     },
+                    "readonly" : {
+                        "type" : "boolean",
+                        "default" : false,
+                        "description" : "Optional flag which indicates if an external source should support both writing and reading, or just reading. This flag is ignored for read-only sources and makes sense only for writable sources."
+                    },
                     "projections" : {
                         "type" : "array",
                         "items" : {
@@ -443,9 +448,9 @@
                 },
                 "rebuildUponStartup" : {
                     "type" : "string",
-                    "enum" : ["if_missing","always"],
+                    "enum" : ["if_missing","always","never"],
                     "default" : "if_missing",
-                    "description" : "Specifies whether the indexes need to be rebuilt immediately when each ModeShape process starts up."
+                    "description" : "DEPRECATED. See indexing/rebuildOnStartup/when"
                 },
                 "textExtracting" : {
                     "type" : "object",
@@ -773,7 +778,7 @@
                             "type" : "string",
                             "enum" : [ "sync", "async", "disabled"],
                             "default" : "disabled",
-                            "description" : "Specifies whether the system content should be indexed synchronously or asynchronously at repository startup or should be disabled. Since indexing system content is an expensive operation, this is disabled by default."
+                            "description" : "DEPRECATED. See indexing/rebuildOnStartup"
                         },
                         "asyncThreadPoolSize" : {
                             "type" : "integer",
@@ -786,6 +791,29 @@
                             "default" : 1,
                             "minimum" : 0,
                             "description" : "Specifies the maximum size of the queue used for making asynchronous updates. When the queue is filled, updates block until the queue catches up. A value of '0' is the default and implies no limit to the queue size."
+                        },
+                        "rebuildOnStartup" : {
+                            "type" : "object",
+                            "description" : "Controls the behavior of index rebuilding, when the repository starts up",
+                            "additionalProperties" : false,
+                            "properties" : {
+                                "when" : {
+                                    "enum" : ["if_missing","always","never"],
+                                    "default" : "if_missing",
+                                    "description" : "Specifies whether the indexes need to be rebuilt immediately when each ModeShape process starts up, or only missing indexes are to be rebuilt or nothing should be rebuilt"
+                                },
+                                "includeSystemContent" : {
+                                    "type" : "boolean",
+                                    "default" : false,
+                                    "description" : "Specifies if system content should be re-indexed on startup or not"
+                                },
+                                "mode" : {
+                                    "enum" : ["sync","async"],
+                                    "default" : "sync",
+                                    "description" : "Specifies if index rebuilding should be done synchronously or asynchronously"
+                                }
+                            }
+
                         },
                         "description" : {
                             "type" : "string",
@@ -884,7 +912,7 @@
                                         "channelConfiguration" : { 
                                             "type" : "string",
                                             "required" : true,
-                                            "description" : "The JGroups channel configuration. The value can either be the path to a resource file on the classpath, or a value containing the JGroups configuration (in either XML or old-style format)."
+                                            "description" : "The JGroups channel configuration. The value should be the path to a resource file on the classpath containing the JGroups configuration."
                                         },
                                         "description" : {
                                             "type" : "string",
@@ -903,15 +931,15 @@
                                             "required" : true,
                                             "description" : "The specification of the Lucene backend for writing all updates directly to Lucene."
                                         },
-                                        "connectionFactoryJndiName" : { 
+                                        "channelName" : {
                                             "type" : "string",
                                             "required" : true,
-                                            "description" : "Defines the name in JNDI where the JMS connection factory can be found. The value is often '/ConnectionFactory' by default in JBoss AS.",
+                                            "description" : "The name of the JGroups channel used for indexing updates."
                                         },
-                                        "queueJndiName" : { 
+                                        "channelConfiguration" : {
                                             "type" : "string",
                                             "required" : true,
-                                            "description" : "Defines the name in JNDI where JMS queue can be found. The queue will be used to post work messages.",
+                                            "description" : "The JGroups channel configuration. The value should be the path to a resource file on the classpath containing the JGroups configuration."
                                         },
                                         "description" : {
                                             "type" : "string",

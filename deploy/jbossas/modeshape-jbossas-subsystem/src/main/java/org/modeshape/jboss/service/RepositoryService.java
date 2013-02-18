@@ -172,16 +172,19 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
             // Get the index storage configuration ...
             IndexStorage indexStorageConfig = indexStorageConfigInjector.getValue();
             assert indexStorageConfig != null;
-            // if there's a cache container, validate that it's different from the repository's
-            CacheContainer indexStorageCacheContainer = indexStorageConfig.getCacheContainer();
-            if (indexStorageCacheContainer != null) {
-                CacheContainer repositoryCacheContainer = getCacheContainer(null);
-                if (indexStorageCacheContainer == repositoryCacheContainer) {
-                    throw new StartException(
-                                             "The repository cache container and the index storage cannot container cannot be the same");
+            if (indexStorageConfig.isEnabled()) {
+                // if there's a cache container, validate that it's different from the repository's
+                CacheContainer indexStorageCacheContainer = indexStorageConfig.getCacheContainer();
+                if (indexStorageCacheContainer != null) {
+                    CacheContainer repositoryCacheContainer = getCacheContainer(null);
+                    if (indexStorageCacheContainer == repositoryCacheContainer) {
+                        throw new StartException(
+                                                 "The repository cache container and the index storage cannot container cannot be the same");
+                    }
                 }
+            } else {
+                LOG.warnv("Queries are disabled for the '{0}' repository", repositoryName);
             }
-
             Document queryConfig = indexStorageConfig.getQueryConfiguration();
             assert queryConfig != null;
 
@@ -319,7 +322,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
     /**
      * Immediately change and apply the specified external source field in the current repository configuration to the new value.
-     *
+     * 
      * @param defn the attribute definition for the value; may not be null
      * @param newValue the new string value
      * @param sourceName the name of the source
