@@ -140,6 +140,15 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                     case CLUSTER_NAME:
                         ModelAttributes.CLUSTER_NAME.parseAndSetParameter(attrValue, repository, reader);
                         break;
+                    case GARBAGE_COLLECTION_THREAD_POOL:
+                        ModelAttributes.GARBAGE_COLLECTION_THREAD_POOL.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case GARBAGE_COLLECTION_INITIAL_TIME:
+                        ModelAttributes.GARBAGE_COLLECTION_INITIAL_TIME.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case GARBAGE_COLLECTION_INTERVAL:
+                        ModelAttributes.GARBAGE_COLLECTION_INTERVAL.parseAndSetParameter(attrValue, repository, reader);
+                        break;
                     default:
                         throw ParseUtils.unexpectedAttribute(reader, i);
                 }
@@ -376,7 +385,9 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                         ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_MODE.parseAndSetParameter(attrValue, repository, reader);
                         break;
                     case REBUILD_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT:
-                        ModelAttributes.REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT.parseAndSetParameter(attrValue, repository, reader);
+                        ModelAttributes.REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT.parseAndSetParameter(attrValue,
+                                                                                                         repository,
+                                                                                                         reader);
                         break;
                     case THREAD_POOL:
                         ModelAttributes.THREAD_POOL.parseAndSetParameter(attrValue, repository, reader);
@@ -1046,9 +1057,9 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         }
 
         externalSource.get(OP_ADDR)
-                 .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-                 .add(ModelKeys.REPOSITORY, repositoryName)
-                 .add(ModelKeys.SOURCE, name);
+                      .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                      .add(ModelKeys.REPOSITORY, repositoryName)
+                      .add(ModelKeys.SOURCE, name);
     }
 
     private List<ModelNode> parseTextExtracting( final XMLExtendedStreamReader reader,

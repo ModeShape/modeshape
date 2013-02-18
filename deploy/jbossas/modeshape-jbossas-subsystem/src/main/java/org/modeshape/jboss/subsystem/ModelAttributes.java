@@ -366,6 +366,37 @@ public class ModelAttributes {
                                                                                                                                                                     FieldName.QUERY_ENABLED)
                                                                                                                              .build();
 
+    public static final SimpleAttributeDefinition GARBAGE_COLLECTION_THREAD_POOL = new MappedAttributeDefinitionBuilder(
+                                                                                                                        ModelKeys.GARBAGE_COLLECTION_THREAD_POOL,
+                                                                                                                        ModelType.STRING).setXmlName(Attribute.GARBAGE_COLLECTION_THREAD_POOL.getLocalName())
+                                                                                                                                      .setAllowExpression(true)
+                                                                                                                                      .setAllowNull(true)
+                                                                                                                                      .setDefaultValue(new ModelNode().set("modeshape-gc"))
+                                                                                                                                      .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                      .setFieldPathInRepositoryConfiguration(FieldName.GARBAGE_COLLECTION,
+                                                                                                                                                                             FieldName.THREAD_POOL)
+                                                                                                                                      .build();
+    public static final SimpleAttributeDefinition GARBAGE_COLLECTION_INITIAL_TIME = new MappedAttributeDefinitionBuilder(
+                                                                                                                        ModelKeys.GARBAGE_COLLECTION_INITIAL_TIME,
+                                                                                                                        ModelType.STRING).setXmlName(Attribute.GARBAGE_COLLECTION_INITIAL_TIME.getLocalName())
+                                                                                                                                      .setAllowExpression(true)
+                                                                                                                                      .setAllowNull(true)
+                                                                                                                                      .setDefaultValue(new ModelNode().set("00:00"))
+                                                                                                                                      .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                      .setFieldPathInRepositoryConfiguration(FieldName.GARBAGE_COLLECTION,
+                                                                                                                                                                             FieldName.INITIAL_TIME)
+                                                                                                                                      .build();
+    public static final SimpleAttributeDefinition GARBAGE_COLLECTION_INTERVAL = new MappedAttributeDefinitionBuilder(
+                                                                                                                        ModelKeys.GARBAGE_COLLECTION_INTERVAL,
+                                                                                                                        ModelType.INT).setXmlName(Attribute.GARBAGE_COLLECTION_INTERVAL.getLocalName())
+                                                                                                                                      .setAllowExpression(true)
+                                                                                                                                      .setAllowNull(true)
+                                                                                                                                      .setDefaultValue(new ModelNode().set(24))
+                                                                                                                                      .setMeasurementUnit(MeasurementUnit.HOURS)
+                                                                                                                                      .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                      .setFieldPathInRepositoryConfiguration(FieldName.GARBAGE_COLLECTION,
+                                                                                                                                                                             FieldName.INTERVAL_IN_HOURS)
+                                                                                                                                      .build();
     public static final SimpleAttributeDefinition INDEX_FORMAT = new MappedAttributeDefinitionBuilder(ModelKeys.INDEX_FORMAT,
                                                                                                       ModelType.STRING).setXmlName(Attribute.FORMAT.getLocalName())
                                                                                                                        .setAllowExpression(true)
@@ -782,7 +813,8 @@ public class ModelAttributes {
         PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, WORKSPACES_CACHE_CONTAINER, DEFAULT_INITIAL_CONTENT,
         WORKSPACES_INITIAL_CONTENT, MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE, THREAD_POOL, BATCH_SIZE, READER_STRATEGY, MODE,
         SYSTEM_CONTENT_MODE, ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME, ANALYZER_MODULE,
-        REBUILD_INDEXES_UPON_STARTUP, CLUSTER_NAME, CLUSTER_STACK};
+        REBUILD_INDEXES_UPON_STARTUP, CLUSTER_NAME, CLUSTER_STACK, 
+        GARBAGE_COLLECTION_THREAD_POOL, GARBAGE_COLLECTION_INITIAL_TIME, GARBAGE_COLLECTION_INTERVAL};
 
     public static final AttributeDefinition[] RAM_INDEX_STORAGE_ATTRIBUTES = {INDEX_STORAGE_TYPE,};
 

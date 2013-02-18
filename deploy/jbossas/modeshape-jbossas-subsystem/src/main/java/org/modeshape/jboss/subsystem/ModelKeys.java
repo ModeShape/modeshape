@@ -56,6 +56,9 @@ public class ModelKeys {
     static final String DEFAULT_WORKSPACE = "default-workspace";
     static final String ENABLE_MONITORING = "enable-monitoring";
     static final String ENABLE_QUERIES = "enable-queries";
+    static final String GARBAGE_COLLECTION_THREAD_POOL = "garbage-collection-thread-pool";
+    static final String GARBAGE_COLLECTION_INITIAL_TIME = "garbage-collection-initial-time";
+    static final String GARBAGE_COLLECTION_INTERVAL = "garbage-collection-interval";
     static final String INDEX_FORMAT = "index-format";
     static final String INDEX_STORAGE_TYPE = "index-storage-type";
     static final String JNDI_NAME = "jndi-name";
@@ -66,7 +69,8 @@ public class ModelKeys {
     static final String MINIMUM_STRING_SIZE = "minimum-string-size";
     static final String MODE = "indexing-mode";
     /**
-     * @deprecated use the REBUILD_INDEXES_UPON_STARTUP, REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT and REBUILD_INDEXES_UPON_STARTUP_MODE attributes
+     * @deprecated use the REBUILD_INDEXES_UPON_STARTUP, REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT and
+     *             REBUILD_INDEXES_UPON_STARTUP_MODE attributes
      */
     @Deprecated
     static final String SYSTEM_CONTENT_MODE = "system-content-indexing-mode";
