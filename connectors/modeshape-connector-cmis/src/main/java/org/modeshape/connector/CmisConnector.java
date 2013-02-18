@@ -263,7 +263,8 @@ public class CmisConnector extends Connector {
     private void cmisFolder(Document document) {
         String key = document.getString("key");
         String parentId = document.getString("parent");
-
+System.out.println("KEY=" + key);
+System.out.println("ParentId=" + parentId);
         Folder parent = (Folder) session.getObject(parentId);
 
         String name = key.substring(key.indexOf("/") + 1);
