@@ -25,6 +25,7 @@ package org.modeshape.jcr;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.security.AccessControlContext;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1303,24 +1304,22 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             this.transactions.resume(runningTransaction);
             this.runningTransaction = null;
 
-            // Register the background processes ...
+            // Register the background processes. Do this last since we want the repository running before these are started ...
             GarbageCollection gcConfig = config.getGarbageCollection();
             String threadPoolName = gcConfig.getThreadPoolName();
-            ScheduledExecutorService garbageCollectionService = this.context.getScheduledThreadPool(threadPoolName);
             long binaryGcInitialTime = determineInitialDelay(gcConfig.getInitialTimeExpression());
             long binaryGcInterval = gcConfig.getIntervalInHours();
-            gcProcesses.add(garbageCollectionService.scheduleAtFixedRate(new LockGarbageCollectionTask(),
-                                                                         RepositoryConfiguration.LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD,
-                                                                         RepositoryConfiguration.LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD,
-                                                                         RepositoryConfiguration.LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT));
-            if (binaryGcInitialTime >= 0) {
-                gcProcesses.add(garbageCollectionService.scheduleAtFixedRate(new BinaryValueGarbageCollectionTask(),
-                                                                             binaryGcInitialTime,
-                                                                             binaryGcInterval,
-                                                                             TimeUnit.HOURS));
-            } else {
-                logger.warn(JcrI18n.invalidGarbageCollectionInitialTime, repositoryName(), gcConfig.getInitialTimeExpression());
-            }
+            int lockSweepIntervalInMinutes = gcConfig.getLockSweepIntervalInMinutes();
+            assert binaryGcInitialTime >= 0;
+            ScheduledExecutorService garbageCollectionService = this.context.getScheduledThreadPool(threadPoolName);
+            gcProcesses.add(garbageCollectionService.scheduleAtFixedRate(new LockGarbageCollectionTask(JcrRepository.this),
+                                                                         lockSweepIntervalInMinutes,
+                                                                         lockSweepIntervalInMinutes,
+                                                                         TimeUnit.MINUTES));
+            gcProcesses.add(garbageCollectionService.scheduleAtFixedRate(new BinaryValueGarbageCollectionTask(JcrRepository.this),
+                                                                         binaryGcInitialTime,
+                                                                         binaryGcInterval,
+                                                                         TimeUnit.HOURS));
         }
 
         protected final Sequencers sequencers() {
@@ -1906,20 +1905,14 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
     }
 
-    protected class BinaryValueGarbageCollectionTask implements Runnable {
-        @Override
-        public void run() {
-            runningState().cleanUpBinaryValues();
-        }
-    }
-
-    protected class LockGarbageCollectionTask implements Runnable {
-        @Override
-        public void run() {
-            runningState().cleanUpLocks();
-        }
-    }
-
+    /**
+     * Determine the initial delay before the garbage collection process(es) should be run, based upon the supplied initial
+     * expression. Note that the initial expression specifies the hours and minutes in local time, whereas this method should
+     * return the delay in milliseconds after the current time.
+     * 
+     * @param initialTimeExpression the expression of the form "<code>hh:mm</code>"; never null
+     * @return the number of milliseconds after now that the process(es) should be started
+     */
     protected long determineInitialDelay( String initialTimeExpression ) {
         Matcher matcher = RepositoryConfiguration.INITIAL_TIME_PATTERN.matcher(initialTimeExpression);
         if (matcher.matches()) {
@@ -1933,11 +1926,62 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 initialTime = initialTime.plusDays(1);
                 delay = initialTime.getMilliseconds() - System.currentTimeMillis();
             }
+            if (delay < 10000L) delay += 10000L; // at least 10 second delay to let repository finish starting ...
             assert delay >= 0;
             return delay;
         }
-        assert false;
-        return -1;
+        String msg = JcrI18n.invalidGarbageCollectionInitialTime.text(repositoryName(), initialTimeExpression);
+        throw new IllegalArgumentException(msg);
     }
 
+    /**
+     * The garbage collection tasks should get cancelled before the repository is shut down, but just in case we'll use a weak
+     * reference to hold onto the JcrRepository instance and we'll also check that the repository is running before we actually do
+     * any work.
+     */
+    protected static abstract class GarbageCollectionTask implements Runnable {
+        private WeakReference<JcrRepository> repositoryRef;
+
+        protected GarbageCollectionTask( JcrRepository repository ) {
+            assert repository != null;
+            this.repositoryRef = new WeakReference<JcrRepository>(repository);
+        }
+
+        @Override
+        public final void run() {
+            JcrRepository repository = repositoryRef.get();
+            if (repository != null && repository.getState() == State.RUNNING) {
+                doRun(repository);
+            }
+        }
+
+        /**
+         * Perform the garbage collection task.
+         * 
+         * @param repository the non-null and {@link State#RUNNING running} repository instance
+         */
+        protected abstract void doRun( JcrRepository repository );
+    }
+
+    protected static class BinaryValueGarbageCollectionTask extends GarbageCollectionTask {
+        protected BinaryValueGarbageCollectionTask( JcrRepository repository ) {
+            super(repository);
+        }
+
+        @Override
+        protected void doRun( JcrRepository repository ) {
+            repository.runningState().cleanUpBinaryValues();
+        }
+    }
+
+    protected static class LockGarbageCollectionTask extends GarbageCollectionTask {
+        protected LockGarbageCollectionTask( JcrRepository repository ) {
+            super(repository);
+        }
+
+        @Override
+        protected void doRun( JcrRepository repository ) {
+            repository.runningState().cleanUpLocks();
+        }
+    }
 }
