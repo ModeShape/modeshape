@@ -156,14 +156,12 @@ public class RepositoryConfiguration {
     private final static String PROJECTION_PATH_EXPRESSION_STRING = "(\\w+):((([/]([^/=]|(\\\\.))+)+)|[/])\\s*=>\\s*((([/]([^/]|(\\\\.))+)+)|[/])";
     public final static Pattern PROJECTION_PATH_EXPRESSION_PATTERN = Pattern.compile(PROJECTION_PATH_EXPRESSION_STRING);
 
-    final static TimeUnit LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT = TimeUnit.MINUTES;
-
     /**
      * The process of garbage collecting locks and binary values runs periodically, and this value controls how often it runs. The
      * value is currently set to 5 minutes.
      */
-    final static int LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD = (int)TimeUnit.MILLISECONDS.convert(5,
-                                                                                               LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT);
+    final static int LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD = 5;
+    private final static TimeUnit LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT = TimeUnit.MINUTES;
 
     /**
      * Each time the garbage collection process runs, session-scoped locks that are still used by active sessions will have their
@@ -2040,6 +2038,15 @@ public class RepositoryConfiguration {
          */
         public long getUnusedBinaryValueTimeInMillis() {
             return UNUSED_BINARY_VALUE_AGE_IN_MILLIS;
+        }
+
+        /**
+         * Get the number of minutes between sweeping the locks.
+         * 
+         * @return the interval for lock sweeping, in minutes; never null
+         */
+        public int getLockSweepIntervalInMinutes() {
+            return LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD;
         }
     }
 
