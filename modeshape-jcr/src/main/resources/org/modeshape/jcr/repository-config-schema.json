@@ -25,7 +25,7 @@
         },
         "monitoring" : {
             "type" : "object",
-            "description" : "The specification for the monitoring system for the repositories.",
+            "description" : "The specification for the monitoring system for the repository.",
             "additionalProperties" : false,
             "properties" : {
                 "enabled" : {
@@ -36,6 +36,29 @@
                 "description" : {
                     "type" : "string",
                     "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                },
+            }
+        },
+        "garbageCollection" : {
+            "type" : "object",
+            "description" : "The specification for reclaiming unused persistent storage for the repository.",
+            "additionalProperties" : false,
+            "properties" : {
+                "threadPool" : {
+                    "type" : "string",
+                    "default" : "modeshape-gc",
+                    "description" : "Name of the thread pool that should be used to asynchronously reclaim unused persistent storage. Thread pools are named globally within a single ModeShape engine, and by default all repositories use the same thread pool for garbage collection."
+                },
+                "initialTime" : {
+                    "type" : "string",
+                    "default" : "00:00",
+                    "pattern" : "(([0-1][0-9])|([2][0-3])):[0-5][0-9]",
+                    "description" : "The local time that the first garbage collection process should be run. Garbage collection may be relatively expensive, as it involves scanning all persisted content, so it's recommended that this be done durign off hours if possible. By default, garbage collection is run at midnight (local time) after the repository is started."
+                },
+                "intervalInHours" : {
+                    "type" : "integer",
+                    "default" : "24",
+                    "description" : "The number of hours between garbage collection runs. By default the interval is 24 hours (meaning it runs once per day)."
                 },
             }
         },

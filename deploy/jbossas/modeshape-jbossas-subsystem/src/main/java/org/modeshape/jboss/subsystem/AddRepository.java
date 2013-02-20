@@ -112,6 +112,9 @@ public class AddRepository extends AbstractAddStepHandler {
         final String clusterStackName = attribute(context, model, ModelAttributes.CLUSTER_STACK, null);
         final boolean enableMonitoring = attribute(context, model, ModelAttributes.ENABLE_MONITORING).asBoolean();
         final boolean enableQueries = attribute(context, model, ModelAttributes.ENABLE_QUERIES).asBoolean();
+        final String gcThreadPool = attribute(context, model, ModelAttributes.GARBAGE_COLLECTION_THREAD_POOL, null);
+        final String gcInitialTime = attribute(context, model, ModelAttributes.GARBAGE_COLLECTION_INITIAL_TIME, null);
+        final int gcIntervalInHours = attribute(context, model, ModelAttributes.GARBAGE_COLLECTION_INTERVAL).asInt();
 
         // Figure out which cache container to use (by default we'll use Infinispan subsystem's default cache container) ...
         String namedContainer = attribute(context, model, ModelAttributes.CACHE_CONTAINER, "modeshape");
@@ -166,6 +169,15 @@ public class AddRepository extends AbstractAddStepHandler {
 
         // Add dependency to the ModeShape engine service ...
         builder.addDependency(ModeShapeServiceNames.ENGINE, ModeShapeEngine.class, repositoryService.getEngineInjector());
+
+        // Add garbage collection information ...
+        if (gcThreadPool != null) {
+            configDoc.getOrCreateDocument(FieldName.GARBAGE_COLLECTION).setString(FieldName.THREAD_POOL, gcThreadPool);
+        }
+        if (gcInitialTime != null) {
+            configDoc.getOrCreateDocument(FieldName.GARBAGE_COLLECTION).setString(FieldName.INITIAL_TIME, gcInitialTime);
+        }
+        configDoc.getOrCreateDocument(FieldName.GARBAGE_COLLECTION).setNumber(FieldName.INTERVAL_IN_HOURS, gcIntervalInHours);
 
         // Add dependency to the JGroups channel (used for events) ...
         if (clusterStackName != null) {

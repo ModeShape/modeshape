@@ -1,0 +1,13 @@
+{
+    "name" : "Garbage collecting repository",
+    "workspaces" : {
+        "predefined" : ["ws1", "ws2"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "garbageCollection" : {
+        "threadPool" : "modeshape-gc-pool",
+        "initialTime" : "04:01",
+        "intervalInHours" : 5,
+    }
+}

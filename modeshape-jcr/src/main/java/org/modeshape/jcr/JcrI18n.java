@@ -198,6 +198,8 @@ public final class JcrI18n {
     public static I18n errorDuringInitialImport;
     public static I18n nodeTypesNotFoundInXml;
 
+    public static I18n invalidGarbageCollectionInitialTime;
+
     public static I18n failedToQueryForDerivedContent;
 
     public static I18n systemSourceNameOptionValueDoesNotReferenceExistingSource;
@@ -461,7 +463,7 @@ public final class JcrI18n {
     public static I18n invalidProjectionPath;
     public static I18n invalidProjectionExpression;
     public static I18n projectedPathPointsTowardsInternalNode;
-    
+
     public static I18n reindexMissingNoIndexesExist;
     public static I18n noReindex;
     public static I18n reindexAll;
