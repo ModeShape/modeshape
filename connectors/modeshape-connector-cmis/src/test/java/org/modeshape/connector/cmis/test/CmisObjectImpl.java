@@ -23,6 +23,8 @@
  */
 package org.modeshape.connector.cmis.test;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -45,11 +47,20 @@ import org.apache.chemistry.opencmis.commons.enums.PropertyType;
 public class CmisObjectImpl implements CmisObject {
 
     protected ArrayList<Property<?>> properties = new ArrayList();
+    private MessageDigest md;
 
     public CmisObjectImpl(Map<String, ?> params) {
-        String id = (String) params.get(PropertyIds.OBJECT_ID);
+        try {
+            md = MessageDigest.getInstance("SHA-1");
+        } catch (NoSuchAlgorithmException e) {
+        }
+
         String path = (String) params.get(PropertyIds.PATH);
         String name = (String) params.get(PropertyIds.NAME);
+
+        String fqn = path + "/" + name;
+        String id = new String(md.digest(fqn.getBytes()));
+
         String baseTypeId = (String) params.get(PropertyIds.BASE_TYPE_ID);
         String objectTypeId = (String) params.get(PropertyIds.OBJECT_TYPE_ID);
         String createdBy = (String) params.get(PropertyIds.CREATED_BY);

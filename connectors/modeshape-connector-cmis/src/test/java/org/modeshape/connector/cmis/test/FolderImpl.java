@@ -55,6 +55,7 @@ public class FolderImpl extends CmisObjectImpl implements Folder {
         properties.add(new PropertyImpl(PropertyType.STRING,
                 "cmis:parentId", "Patent Id", "cmis:parentId", "cmis:parentId", parentId));
 
+        repository.map.put(this.getId(), this);
     }
 
     private String name(String path) {
@@ -73,14 +74,26 @@ public class FolderImpl extends CmisObjectImpl implements Folder {
 
     @Override
     public Document createDocument(Map<String, ?> params, ContentStream stream, VersioningState vs, List<Policy> list, List<Ace> list1, List<Ace> list2, OperationContext oc) {
-        DocumentImpl document = new DocumentImpl(repository, this, params);
-        this.add(document);
-        return document;
+        DocumentImpl doc = new DocumentImpl(repository, this, params);
+
+        if (stream != null) {
+            doc.setContentStream(stream, true);
+        }
+
+        this.add(doc);
+        return doc;
     }
 
     @Override
-    public Document createDocument(Map<String, ?> map, ContentStream stream, VersioningState vs) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public Document createDocument(Map<String, ?> params, ContentStream stream, VersioningState vs) {
+        DocumentImpl doc = new DocumentImpl(repository, this, params);
+
+        if (stream != null) {
+            doc.setContentStream(stream, true);
+        }
+
+        this.add(doc);
+        return doc;
     }
 
     @Override
@@ -99,8 +112,11 @@ public class FolderImpl extends CmisObjectImpl implements Folder {
     }
 
     @Override
-    public Folder createFolder(Map<String, ?> map) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public Folder createFolder(Map<String, ?> params) {
+        HashMap<String, Object> p = new HashMap();
+        p.putAll(params);
+        FolderImpl f = new FolderImpl(repository, this, p);
+        return f;
     }
 
     @Override

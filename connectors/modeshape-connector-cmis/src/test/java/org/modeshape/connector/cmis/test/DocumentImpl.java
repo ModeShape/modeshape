@@ -42,6 +42,8 @@ public class DocumentImpl extends CmisObjectImpl implements Document {
 
     public DocumentImpl(CmisRepository repository, Folder parent, Map<String, ?> params) {
         super(params);
+        repository.map.put(this.getId(), this);
+        
         this.parent = parent;
         this.repository = repository;
         properties.add(new PropertyImpl(PropertyType.STRING,

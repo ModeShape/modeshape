@@ -7,6 +7,7 @@ package org.modeshape.connector.cmis.test;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.chemistry.opencmis.client.api.CmisObject;
+import org.apache.chemistry.opencmis.client.api.Folder;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
 import org.junit.*;
 import static org.junit.Assert.*;
@@ -53,5 +54,18 @@ public class SessionImplTest {
 
         CmisObject object = session.getObjectByPath("/src/main/java");
         assertTrue(object != null);
+    }
+
+    @Test
+    public void testCreateFolder() {
+        Map props = new HashMap();
+        props.put(PropertyIds.PATH, "/src");
+        props.put(PropertyIds.NAME, "src");
+
+        Folder root = session.getRootFolder();
+        Folder src = root.createFolder(props);
+
+        CmisObject cmisObject = session.getObject(src.getId());
+        assertEquals(src, cmisObject);
     }
 }

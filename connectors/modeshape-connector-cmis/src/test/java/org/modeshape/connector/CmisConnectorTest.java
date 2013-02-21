@@ -23,6 +23,7 @@
  */
 package org.modeshape.connector;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.Calendar;
@@ -254,8 +255,15 @@ public class CmisConnectorTest extends AbstractConnectorTest {
         Node node = root.addNode("test", "cmis:folder");
         node.setProperty("cmis:name", "test-name");
 
-//        root = getSession().getNode("/cmis/src");
-//        Node node1 = root.addNode("test-1", "cmis:document");
+        root = getSession().getNode("/cmis/src");
+        Node node1 = root.addNode("test-1", "cmis:document");
+
+        byte[] content = "Hello World".getBytes();
+        ByteArrayInputStream bin = new ByteArrayInputStream(content);
+        bin.reset();
+
+        ValueFactory valueFactory = getSession().getValueFactory();
+        node1.setProperty("jcr:data", valueFactory.createBinary(bin));
 
 //        Node node2 = node.addNode("org", "cmis:folder");
         getSession().save();

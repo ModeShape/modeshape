@@ -23,9 +23,11 @@
  */
 package org.modeshape.connector;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URI;
 import java.util.*;
 import javax.jcr.RepositoryException;
@@ -39,6 +41,8 @@ import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.data.RepositoryInfo;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
 import org.apache.chemistry.opencmis.commons.enums.VersioningState;
+import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
+import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
@@ -179,41 +183,37 @@ public class CmisConnector extends Connector {
         String key = document.getString("key");
         String parent = document.getString("parent");
 
-        System.out.println("Store document: " + parent+ "/" + key);
-        Document properties = document.getDocument("properties").getDocument(JcrLexicon.Namespace.URI);
-        String nodeType = properties.getDocument(JcrLexicon.PRIMARY_TYPE.getLocalName()).getString("$name");
+        //update properties here
+        System.out.println("------------- STORE DOCUMENT--------");
+        System.out.println("Asking document with key=" + key);
 
-        //nodeType = nodeType.replace("{" + CmisLexicon.Namespace.URI + "}", CmisLexicon.Namespace.PREFIX + ":");
+        CmisObject cmisObject = session.getObject(key);
+        System.out.println("Cmis object: " + cmisObject);
 
-        if (nodeType.equals(CmisLexicon.FOLDER.toString())) {
-            cmisFolder(document);
-        } else if (nodeType.equals(CmisLexicon.DOCUMENT.toString())) {
-            System.out.println("Construction document");
-            cmisDocument(document);
-        }
+        Document props = document.getDocument("properties").getDocument(JcrLexicon.Namespace.URI);
+        System.out.println(props);
+
         
-        //String created = properties.getDocument(JcrLexicon.CREATED.getLocalName()).getString("$date");
-        //String createdBy = properties.getString(JcrLexicon.CREATED_BY.getLocalName());
+        switch (cmisObject.getBaseTypeId()) {
+            case CMIS_FOLDER :
+                break;
+            case CMIS_DOCUMENT:
+                //store binary content
+                Binary value = props.getBinary("data");
+                System.out.println("Binary value=" + value);
 
-        //Folder folder = (Folder) session.getObject(parent);
-        //folder.createFolder(null);
+                byte[] content = value.getBytes();
+                ByteArrayInputStream bin = new ByteArrayInputStream(content);
+                bin.reset();
 
-        System.out.println("------------- STORE DOCUMENT-------");
-        System.out.println("Node type=" + nodeType);
+                System.out.println("Content=" + new String(content));
 
-//        Document props = properties.getDocument(JcrLexicon.Namespace.URI);
-
-//        System.out.println(props);
-        
-//        System.out.println(props.getDocument(JcrLexicon.PRIMARY_TYPE.getLocalName()));
-//        System.out.println(props.getDocument(JcrLexicon.PRIMARY_TYPE.getLocalName()).getString("$name"));
-
-/*        Iterator<Field> fields = props.fields().iterator();
-        while (fields.hasNext()) {
-            Field f = fields.next();
-            System.out.println(f.getName() + ":" + f.getValue());
+                ContentStreamImpl contentStream = new ContentStreamImpl("", BigInteger.valueOf(content.length), "", bin);
+                ((org.apache.chemistry.opencmis.client.api.Document)cmisObject).setContentStream(contentStream, true);
+                
+                break;
         }
-  */
+        //set binary value and properties
     }
 
     @Override
@@ -221,19 +221,44 @@ public class CmisConnector extends Connector {
     }
 
     @Override
-    public String newDocumentId(String parentId, Name newDocumentName) {
-        return parentId + "/" + newDocumentName.getLocalName();
-/*        session.crea
-        newNodes.put(parentId, mode)
-        CmisObject cmisObject = session.getObject(new ObjectIdImpl(parentId));
-        cmisObject.
-        System.out.println("<----- newDocumentId has been called: " + parentId + ": " + newDocumentName);
-        session.createObjectId(parentId);
-        String id = UUID.randomUUID().toString();
-        System.out.println("<-- ID=" + id);
-        return id;
-        *
-        */
+    public boolean isReadonly() {
+        return false;
+    }
+
+    @Override
+    public String newDocumentId(String parentId, Name name, Name primaryType) {
+        HashMap<String, Object> params = new HashMap();
+
+        //Creating CMIS folder
+        if (primaryType.equals(CmisLexicon.FOLDER)) {
+            Folder parent = (Folder) session.getObject(parentId);
+            String path = parent.getPath() + "/" + name.getLocalName();
+
+            //minimal set of parameters
+            params.put(PropertyIds.OBJECT_TYPE_ID,  "cmis:folder");
+            params.put(PropertyIds.NAME, name.getLocalName());
+            params.put(PropertyIds.PATH, path);
+
+            Folder folder = parent.createFolder(params);
+            return folder.getId();
+        }
+
+        //Creating CMIS document
+        if (primaryType.equals(CmisLexicon.DOCUMENT)) {
+            Folder parent = (Folder) session.getObject(parentId);
+            String path = parent.getPath() + "/" + name.getLocalName();
+
+            //minimal set of parameters
+            params.put(PropertyIds.OBJECT_TYPE_ID,  "cmis:document");
+            params.put(PropertyIds.NAME, name.getLocalName());
+            params.put(PropertyIds.PATH, path);
+
+            String id = parent.createDocument(params, null, VersioningState.NONE).getId();
+            System.out.println("Created document with id = " + id);
+            return id;
+        }
+
+        return null;
     }
 
     /**
@@ -296,8 +321,11 @@ System.out.println("ParentId=" + parentId);
 
         cmisProperties(doc, writer);
 
-        BinaryValue content = factories.getBinaryFactory().create(doc.getContentStream().getStream());
-        writer.addProperty(JcrLexicon.DATA, content);
+        //copy binary value
+        if (doc.getContentStream() != null) {
+            BinaryValue content = factories.getBinaryFactory().create(doc.getContentStream().getStream());
+            writer.addProperty(JcrLexicon.DATA, content);
+        }
 
         return writer.document();
     }

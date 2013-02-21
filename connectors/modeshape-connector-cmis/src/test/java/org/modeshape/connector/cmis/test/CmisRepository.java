@@ -49,7 +49,7 @@ public class CmisRepository {
     private FolderImpl root;
     private RepositoryInfoImpl repositoryInfo = new RepositoryInfoImpl();
 
-    private HashMap<String, Object> map;
+    protected HashMap<String, Object> map;
     protected final String username = "modeshape";
 
     private MessageDigest md;
@@ -60,6 +60,7 @@ public class CmisRepository {
         } catch (NoSuchAlgorithmException e) {
         }
 
+        map = new HashMap();
         String rootPath = "/";
 
         Map<String, Object> params = new HashMap();
@@ -68,9 +69,6 @@ public class CmisRepository {
         params.put(PropertyIds.PATH, rootPath);
 
         root = new FolderImpl(this, null, params);
-        map = new HashMap();
-
-        map.put(root.getId(), root);
     }
     
     public Session openSession() {
@@ -112,7 +110,6 @@ public class CmisRepository {
         FolderImpl folder = new FolderImpl(this, parent, params);
         
         parent.add(folder);
-        map.put(folder.getId(), folder);
         
         return new ObjectIdImpl(folder.getId());
     }
@@ -133,7 +130,6 @@ public class CmisRepository {
         FolderImpl folder = new FolderImpl(this, parent, params);
 
         parent.add(folder);
-        map.put(folder.getId(), folder);
 
         return new ObjectIdImpl(folder.getId());
     }
@@ -189,9 +185,10 @@ public class CmisRepository {
         FolderImpl folder = (FolderImpl) find(path);
         DocumentImpl doc = new DocumentImpl(this, folder, params);
 
-        doc.setContentStream(stream, true);
+        if (stream != null) {
+            doc.setContentStream(stream, true);
+        }
 
-        map.put(doc.getId(), doc);
         folder.add(doc);
 
         return new ObjectIdImpl(doc.getId());
