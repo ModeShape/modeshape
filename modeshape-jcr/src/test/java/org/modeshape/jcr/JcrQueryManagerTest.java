@@ -67,9 +67,11 @@ import javax.jcr.query.RowIterator;
 import javax.jcr.query.qom.ChildNode;
 import javax.jcr.query.qom.Column;
 import javax.jcr.query.qom.Constraint;
+import javax.jcr.query.qom.Join;
 import javax.jcr.query.qom.Literal;
 import javax.jcr.query.qom.Ordering;
 import javax.jcr.query.qom.PropertyValue;
+import javax.jcr.query.qom.QueryObjectModelConstants;
 import javax.jcr.query.qom.Selector;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Json;
@@ -912,6 +914,26 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertRow(result).has("car:model", "Altima").and("car:msrp", "$18,260").and("car:year", 2008);
         assertRow(result).has("car:model", "Highlander").and("car:msrp", "$34,200").and("car:year", 2008);
         assertRow(result).has("car:model", "Prius").and("car:msrp", "$21,500").and("car:year", 2008);
+    }
+
+    @FixFor ( "MODE-1824" )
+    @Test
+    public void shouldBeAbleToExecuteQueryWithTwoColumns() throws RepositoryException {
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        QueryObjectModelFactory factory = queryManager.getQOMFactory();
+        Selector car1Selector = factory.selector("car:Car", "car1");
+        Selector car2Selector = factory.selector("car:Car", "car2");
+        Join join = factory.join(car1Selector, car2Selector, QueryObjectModelConstants.JCR_JOIN_TYPE_INNER,
+            factory.equiJoinCondition("car1", "car:maker", "car2", "car:maker"));
+        Column[] columns = new Column[]{
+            factory.column("car1", "car:maker", "maker"),
+            factory.column("car2", "car:model", "model")
+        };
+        Query query = factory.createQuery(join, null, null, columns);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 21L);
     }
 
     @Test
