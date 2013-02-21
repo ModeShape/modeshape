@@ -246,6 +246,19 @@ public class QueryResultColumns implements Columns {
                     String columnNameWithSelector = column.selectorName() + "." + columnNameWithoutSelector;
                     columnIndex = wrappedAround.columnIndexForName(columnNameWithSelector);
                 }
+                // if column index is still null, lookup the column index by property name.
+                if (columnIndex == null) {
+                  columnNameWithoutSelector = column.getPropertyName();
+                  if (columnNameWithoutSelector.startsWith(selectorName + ".")
+                      && columnNameWithoutSelector.length() > (selectorName.length() + 1)) {
+                    columnNameWithoutSelector = columnNameWithoutSelector.substring(selectorName.length() + 1);
+                  }
+                  columnIndex = wrappedAround.columnIndexForName(columnNameWithoutSelector);
+                  if (columnIndex == null) {
+                    String columnNameWithSelector = column.selectorName() + "." + columnNameWithoutSelector;
+                    columnIndex = wrappedAround.columnIndexForName(columnNameWithSelector);
+                  }
+                }
             }
             assert columnIndex != null;
             columnIndexByColumnName.put(columnName, columnIndex);
