@@ -291,6 +291,8 @@ public class CmisConnector extends Connector {
         if (doc.getContentStream() != null) {
             BinaryValue content = factories.getBinaryFactory().create(doc.getContentStream().getStream());
             writer.addProperty(CmisLexicon.DATA, content);
+            writer.addProperty(CmisLexicon.FILE_NAME, doc.getContentStream().getFileName());
+            writer.addProperty(CmisLexicon.MIME_TYPE, doc.getContentStream().getMimeType());
         }
 
         return writer.document();
@@ -514,13 +516,15 @@ public class CmisConnector extends Connector {
         }
 
         byte[] content = value.getBytes();
+        String fileName = props.getString("fileName");
+        String mimeType = props.getString("mimeType");
 
         //wrap with input stream
         ByteArrayInputStream bin = new ByteArrayInputStream(content);
         bin.reset();
 
         //create content stream
-        ContentStreamImpl contentStream = new ContentStreamImpl("", BigInteger.valueOf(content.length), "", bin);
+        ContentStreamImpl contentStream = new ContentStreamImpl(fileName, BigInteger.valueOf(content.length), mimeType, bin);
 
         return contentStream;
     }

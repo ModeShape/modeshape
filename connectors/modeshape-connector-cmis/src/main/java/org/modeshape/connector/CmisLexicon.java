@@ -59,5 +59,7 @@ public class CmisLexicon {
 
     public static final Name DATA = new BasicName(Namespace.URI, "data");
 
+    public static final Name MIME_TYPE = new BasicName(Namespace.URI, "mimeType");
+    public static final Name FILE_NAME = new BasicName(Namespace.URI, "fileName");
 
 }
