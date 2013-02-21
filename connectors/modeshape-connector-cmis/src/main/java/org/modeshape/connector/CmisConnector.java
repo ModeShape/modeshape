@@ -38,6 +38,7 @@ import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.runtime.ObjectIdImpl;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
 import org.apache.chemistry.opencmis.commons.SessionParameter;
+import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.data.RepositoryInfo;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
 import org.apache.chemistry.opencmis.commons.enums.VersioningState;
@@ -85,9 +86,6 @@ public class CmisConnector extends Connector {
 
     //path to node definition file
     private String nodeDefinitionFile = CMIS_CND_PATH;
-
-    //maps for new nodes
-    private HashMap<String, String> newNodes = new HashMap();
 
     public CmisConnector() {
         super();
@@ -180,37 +178,27 @@ public class CmisConnector extends Connector {
 
     @Override
     public void storeDocument(Document document) {
+        //find object
         String key = document.getString("key");
-        String parent = document.getString("parent");
-
-        //update properties here
-        System.out.println("------------- STORE DOCUMENT--------");
-        System.out.println("Asking document with key=" + key);
-
         CmisObject cmisObject = session.getObject(key);
-        System.out.println("Cmis object: " + cmisObject);
 
+        //no such object? just exit
+        if (cmisObject == null) {
+            return;
+        }
+
+        //pickup node properties
         Document props = document.getDocument("properties").getDocument(JcrLexicon.Namespace.URI);
-        System.out.println(props);
-
         
         switch (cmisObject.getBaseTypeId()) {
             case CMIS_FOLDER :
                 break;
             case CMIS_DOCUMENT:
                 //store binary content
-                Binary value = props.getBinary("data");
-                System.out.println("Binary value=" + value);
-
-                byte[] content = value.getBytes();
-                ByteArrayInputStream bin = new ByteArrayInputStream(content);
-                bin.reset();
-
-                System.out.println("Content=" + new String(content));
-
-                ContentStreamImpl contentStream = new ContentStreamImpl("", BigInteger.valueOf(content.length), "", bin);
-                ((org.apache.chemistry.opencmis.client.api.Document)cmisObject).setContentStream(contentStream, true);
-                
+                ContentStream stream = getContentStream(document);
+                if (stream != null) {
+                    ((org.apache.chemistry.opencmis.client.api.Document)cmisObject).setContentStream(stream, true);
+                }
                 break;
         }
         //set binary value and properties
@@ -285,28 +273,6 @@ public class CmisConnector extends Connector {
         return writer.document();
     }
 
-    private void cmisFolder(Document document) {
-        String key = document.getString("key");
-        String parentId = document.getString("parent");
-System.out.println("KEY=" + key);
-System.out.println("ParentId=" + parentId);
-        Folder parent = (Folder) session.getObject(parentId);
-
-        String name = key.substring(key.indexOf("/") + 1);
-        String path = parent.getPath() + "/" + name;
-
-        Map<String, Object> params = new HashMap();
-        params.put(PropertyIds.NAME, name);
-        params.put(PropertyIds.PATH, path);
-
-        System.out.println("------ DOCUMENT-------");
-        System.out.println(document);
-        System.out.println("name=" + name);
-        System.out.println("path=" + path);
-
-        session.createFolder(params, new ObjectIdImpl(parent.getId()));
-    }
-
     /**
      * Translates cmis document object to JCR node.
      * 
@@ -324,31 +290,10 @@ System.out.println("ParentId=" + parentId);
         //copy binary value
         if (doc.getContentStream() != null) {
             BinaryValue content = factories.getBinaryFactory().create(doc.getContentStream().getStream());
-            writer.addProperty(JcrLexicon.DATA, content);
+            writer.addProperty(CmisLexicon.DATA, content);
         }
 
         return writer.document();
-    }
-
-    private void cmisDocument(Document document) {
-        System.out.println("Creating DOCUMENT-------!!!!!!!!!!!!");
-        String key = document.getString("key");
-        String parentId = document.getString("parent");
-
-        Folder parent = (Folder) session.getObject(parentId);
-
-        String name = key.substring(key.indexOf("/") + 1);
-        String path = parent.getPath() + "/" + name;
-
-        Map<String, Object> params = new HashMap();
-        params.put(PropertyIds.NAME, name);
-        params.put(PropertyIds.PATH, path);
-
-        System.out.println(document);
-        System.out.println("name=" + name);
-        System.out.println("path=" + path);
-
-        session.createDocument(params, new ObjectIdImpl(parent.getId()), null, VersioningState.NONE);
     }
 
     /**
@@ -551,4 +496,32 @@ System.out.println("ParentId=" + parentId);
         return res;
     }
 
+    /**
+     * Creates content stream using JCR node.
+     *
+     * @param document JCR node representation
+     * @return CMIS content stream object
+     */
+    private ContentStream getContentStream(Document document) {
+        //pickup node properties
+        Document props = document.getDocument("properties").getDocument(JcrLexicon.Namespace.URI);
+
+        //extract binary value and content
+        Binary value = props.getBinary("data");
+
+        if (value == null) {
+            return null;
+        }
+
+        byte[] content = value.getBytes();
+
+        //wrap with input stream
+        ByteArrayInputStream bin = new ByteArrayInputStream(content);
+        bin.reset();
+
+        //create content stream
+        ContentStreamImpl contentStream = new ContentStreamImpl("", BigInteger.valueOf(content.length), "", bin);
+
+        return contentStream;
+    }
 }

@@ -57,5 +57,7 @@ public class CmisLexicon {
     public static final Name LAST_MODIFIED_BY = new BasicName(Namespace.URI, "lastModifiedBy");
     public static final Name LAST_MODIFICATION_DATE = new BasicName(Namespace.URI, "lastModificationDate");
 
+    public static final Name DATA = new BasicName(Namespace.URI, "data");
+
 
 }

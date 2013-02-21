@@ -53,4 +53,4 @@
     -cmis:productVersion (string)
 
 [cmis:document] > cmis:object
-    -jcr:data (binary)
+    -cmis:data (binary)

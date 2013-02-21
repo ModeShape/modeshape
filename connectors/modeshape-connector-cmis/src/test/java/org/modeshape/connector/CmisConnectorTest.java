@@ -263,7 +263,7 @@ public class CmisConnectorTest extends AbstractConnectorTest {
         bin.reset();
 
         ValueFactory valueFactory = getSession().getValueFactory();
-        node1.setProperty("jcr:data", valueFactory.createBinary(bin));
+        node1.setProperty("cmis:data", valueFactory.createBinary(bin));
 
 //        Node node2 = node.addNode("org", "cmis:folder");
         getSession().save();
