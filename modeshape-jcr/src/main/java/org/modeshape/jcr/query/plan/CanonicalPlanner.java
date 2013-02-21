@@ -312,7 +312,7 @@ public class CanonicalPlanner implements Planner {
         // Build up the map of aliases for the properties used in the criteria ...
         Map<String, String> propertyNameByAlias = new HashMap<String, String>();
         for (Column column : columns) {
-            if (!column.getColumnName().equals(column.getPropertyName())) {
+            if (column.getColumnName() != null && !column.getColumnName().equals(column.getPropertyName())) {
                 propertyNameByAlias.put(column.getColumnName(), column.getPropertyName());
             }
         }
