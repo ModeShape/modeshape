@@ -46,9 +46,9 @@ public class DocumentImpl extends CmisObjectImpl implements Document {
         
         this.parent = parent;
         this.repository = repository;
-        properties.add(new PropertyImpl(PropertyType.STRING,
+        properties.put("cmis:baseTypeId", new PropertyImpl(PropertyType.STRING,
                 "cmis:baseTypeId", "Base Type Id", "cmis:baseTypeId", "cmis:baseTypeId", "cmis:document"));
-        properties.add(new PropertyImpl(PropertyType.STRING,
+        properties.put("cmis:objectTypeId", new PropertyImpl(PropertyType.STRING,
                 "cmis:objectTypeId", "Object Type Id", "cmis:objectTypeId", "cmis:objectTypeId", "cmis:document"));
     }
 

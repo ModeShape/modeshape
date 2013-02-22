@@ -93,7 +93,7 @@ public class CmisConnectorTest extends AbstractConnectorTest {
 //    @Test
     public void shouldAccessBinaryContent() throws Exception {
         Node file = getSession().getNode("/cmis/src/pom.xml");
-        Property value = file.getProperty("jcr:data");
+        Property value = file.getProperty("cmis:data");
 
         Binary bv = value.getValue().getBinary();
         InputStream is = bv.getStream();
@@ -248,7 +248,7 @@ public class CmisConnectorTest extends AbstractConnectorTest {
         assertTrue(date != null);
     }
 
-    @Test
+//    @Test
     public void shouldCreateFolder() throws Exception {
         Node root = getSession().getNode("/cmis/src");
         
@@ -264,6 +264,7 @@ public class CmisConnectorTest extends AbstractConnectorTest {
 
         ValueFactory valueFactory = getSession().getValueFactory();
         node1.setProperty("cmis:data", valueFactory.createBinary(bin));
+        node1.setProperty("cmis:mimeType", "text/plain");
 
 //        Node node2 = node.addNode("org", "cmis:folder");
         getSession().save();
@@ -278,9 +279,15 @@ public class CmisConnectorTest extends AbstractConnectorTest {
         Node node = root.addNode("readme", "cmis:document");
             System.out.println("Got node");
         node.setProperty("cmis:name", "test-name");
-
         getSession().save();
         assertTrue(node != null);
     }
 
+    @Test
+    public void shouldModifyDocument() throws Exception {
+        Node pom = getSession().getNode("/cmis");
+        pom.setProperty("cmis:name", "cmis--");
+
+        getSession().save();
+    }
 }

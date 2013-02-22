@@ -45,11 +45,13 @@ import org.apache.chemistry.opencmis.commons.enums.VersioningState;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.Document.Field;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.federation.spi.Connector;
 import org.modeshape.jcr.federation.spi.DocumentChanges;
+import org.modeshape.jcr.federation.spi.DocumentChanges.PropertyChanges;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
 import org.modeshape.jcr.value.*;
 
@@ -87,6 +89,8 @@ public class CmisConnector extends Connector {
     //path to node definition file
     private String nodeDefinitionFile = CMIS_CND_PATH;
 
+    private PropertyConvertor propertyConvertor = new PropertyConvertor();
+    
     public CmisConnector() {
         super();
     }
@@ -144,11 +148,7 @@ public class CmisConnector extends Connector {
 
         //converting CMIS object to JCR node
         switch (cmisObject.getBaseTypeId()) {
-            case CMIS_FOLDER : {
-                Document doc = folderNode(cmisObject);
-                System.out.println(doc);
-                return doc;
-            }
+            case CMIS_FOLDER :   return folderNode(cmisObject);
             case CMIS_DOCUMENT : return documentNode(cmisObject);
         }
 
@@ -157,7 +157,6 @@ public class CmisConnector extends Connector {
 
     @Override
     public String getDocumentId(String path) {
-        System.out.println("----->Get document ID for path " + path);
         return session.getObjectByPath(path).getId();
     }
 
@@ -189,7 +188,11 @@ public class CmisConnector extends Connector {
 
         //pickup node properties
         Document props = document.getDocument("properties").getDocument(JcrLexicon.Namespace.URI);
-        
+
+        Iterator<Field> list = document.fields().iterator();
+        while (list.hasNext()) {
+            System.out.println("----> " + list.next());
+        }
         switch (cmisObject.getBaseTypeId()) {
             case CMIS_FOLDER :
                 break;
@@ -206,6 +209,35 @@ public class CmisConnector extends Connector {
 
     @Override
     public void updateDocument(DocumentChanges delta) {
+        System.out.println("--- UPDATE DOCUMENT---\n" + delta.getDocument());
+        Document node = delta.getDocument();
+        String id = delta.getDocumentId();
+
+        CmisObject cmisObject = session.getObject(id);
+        if (cmisObject == null) {
+            //unknown object
+            return;
+        }
+
+        Document props = delta.getDocument().getDocument("properties");
+        HashMap<String, Object> updateProperties = new HashMap();
+
+        System.out.println("Cmis object=" + cmisObject);
+        PropertyChanges changes = delta.getPropertyChanges();
+
+        Set<Name> changed = changes.getChanged();
+        for (Name n : changed) {
+            String jcrName = n.getLocalName();
+            Document jcrValues = props.getDocument(n.getNamespaceUri());
+
+            String cmisPropertyName = propertyConvertor.cmisName(n);
+            Property cmisProperty = cmisObject.getProperty(cmisPropertyName);
+
+            List<Object> values = propertyConvertor.cmisValues(cmisProperty, jcrName, jcrValues);
+            updateProperties.put(cmisPropertyName, values);
+
+            cmisObject.updateProperties(updateProperties);
+        }
     }
 
     @Override
@@ -242,7 +274,6 @@ public class CmisConnector extends Connector {
             params.put(PropertyIds.PATH, path);
 
             String id = parent.createDocument(params, null, VersioningState.NONE).getId();
-            System.out.println("Created document with id = " + id);
             return id;
         }
 
@@ -506,7 +537,12 @@ public class CmisConnector extends Connector {
      */
     private ContentStream getContentStream(Document document) {
         //pickup node properties
-        Document props = document.getDocument("properties").getDocument(JcrLexicon.Namespace.URI);
+        Document props = document.getDocument("properties").getDocument(CmisLexicon.Namespace.URI);
+
+        Iterator<Field> list = props.fields().iterator();
+        while (list.hasNext()) {
+            System.out.println("===> " + list.next());
+        }
 
         //extract binary value and content
         Binary value = props.getBinary("data");

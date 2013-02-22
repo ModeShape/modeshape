@@ -136,4 +136,7 @@ public class PropertyImpl implements Property {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    public void setValue(Object value) {
+        this.values = new Object[]{value};
+    }
 }

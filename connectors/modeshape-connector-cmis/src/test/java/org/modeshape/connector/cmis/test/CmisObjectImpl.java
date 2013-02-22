@@ -25,10 +25,7 @@ package org.modeshape.connector.cmis.test;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import org.apache.chemistry.opencmis.client.api.*;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
 import org.apache.chemistry.opencmis.commons.data.Ace;
@@ -46,7 +43,7 @@ import org.apache.chemistry.opencmis.commons.enums.PropertyType;
  */
 public class CmisObjectImpl implements CmisObject {
 
-    protected ArrayList<Property<?>> properties = new ArrayList();
+    protected HashMap<String, Property<?>> properties = new HashMap();
     private MessageDigest md;
 
     public CmisObjectImpl(Map<String, ?> params) {
@@ -67,23 +64,23 @@ public class CmisObjectImpl implements CmisObject {
 
         GregorianCalendar now = new GregorianCalendar();
 
-        properties.add(new PropertyImpl(PropertyType.ID,
+        properties.put("cmis:objectId", new PropertyImpl(PropertyType.ID,
                 "cmis:objectId", "Object Id", "cmis:objectId", "cmis:objectId", id));
-        properties.add(new PropertyImpl(PropertyType.STRING,
+        properties.put("cmis:path", new PropertyImpl(PropertyType.STRING,
                 "cmis:path", "Path", "cmis:path", "cmis:path", path));
-        properties.add(new PropertyImpl(PropertyType.STRING,
+        properties.put("cmis:name", new PropertyImpl(PropertyType.STRING,
                 "cmis:name", "Name", "cmis:name", "cmis:name", name));
 //        properties.add(new PropertyImpl(PropertyType.STRING,
 //                "cmis:baseTypeId", "Base Type Id", "cmis:baseTypeId", "cmis:baseTypeId", baseTypeId));
 //        properties.add(new PropertyImpl(PropertyType.STRING,
 //                "cmis:objectTypeId", "Object Type Id", "cmis:objectTypeId", "cmis:objectTypeId", objectTypeId));
-        properties.add(new PropertyImpl(PropertyType.STRING,
+        properties.put("cmis:createdBy", new PropertyImpl(PropertyType.STRING,
                 "cmis:createdBy", "Created By", "cmis:createdBy", "cmis:createdBy", createdBy));
-        properties.add(new PropertyImpl(PropertyType.STRING,
+        properties.put("cmis:lastModifiedBy", new PropertyImpl(PropertyType.STRING,
                 "cmis:lastModifiedBy", "Last Modified By", "cmis:lastModifiedBy", "cmis:lastModifiedBy", createdBy));
-        properties.add(new PropertyImpl(PropertyType.DATETIME,
+        properties.put("cmis:creationDate", new PropertyImpl(PropertyType.DATETIME,
                 "cmis:creationDate", "Creation Date", "cmis:creationDate", "cmis:creationDate", now));
-        properties.add(new PropertyImpl(PropertyType.DATETIME,
+        properties.put("cmis:lastModificationDate", new PropertyImpl(PropertyType.DATETIME,
                 "cmis:lastModificationDate", "Last Modification Date", "cmis:lastModificationDate", "cmis:lastModificationDate", now));
     }
 
@@ -108,8 +105,13 @@ public class CmisObjectImpl implements CmisObject {
     }
 
     @Override
-    public CmisObject updateProperties(Map<String, ?> map) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public CmisObject updateProperties(Map<String, ?> properties) {
+        Set<String> names = properties.keySet();
+        for (String name : names) {
+            PropertyImpl p = (PropertyImpl) this.properties.get(name);
+            p.setValue(properties.get(name));
+        }
+        return this;
     }
 
     @Override
@@ -187,17 +189,14 @@ public class CmisObjectImpl implements CmisObject {
 
     @Override
     public List<Property<?>> getProperties() {
-        return properties;
+        ArrayList<Property<?>> list = new ArrayList();
+        list.addAll(properties.values());
+        return list;
     }
 
     @Override
     public <T> Property<T> getProperty(String id) {
-        for (Property property : properties) {
-            if (property.getId().equals(id)) {
-                return property;
-            }
-        }
-        return null;
+        return (Property<T>) properties.get(id);
     }
 
     @Override

@@ -48,11 +48,11 @@ public class FolderImpl extends CmisObjectImpl implements Folder {
         this.repository = repository;
 
         String parentId = (String) params.get(PropertyIds.PARENT_ID);
-        properties.add(new PropertyImpl(PropertyType.STRING,
+        properties.put("cmis:baseTypeId", new PropertyImpl(PropertyType.STRING,
                 "cmis:baseTypeId", "Base Type Id", "cmis:baseTypeId", "cmis:baseTypeId", "cmis:folder"));
-        properties.add(new PropertyImpl(PropertyType.STRING,
+        properties.put("cmis:objectTypeId", new PropertyImpl(PropertyType.STRING,
                 "cmis:objectTypeId", "Object Type Id", "cmis:objectTypeId", "cmis:objectTypeId", "cmis:folder"));
-        properties.add(new PropertyImpl(PropertyType.STRING,
+        properties.put("cmis:parentId", new PropertyImpl(PropertyType.STRING,
                 "cmis:parentId", "Patent Id", "cmis:parentId", "cmis:parentId", parentId));
 
         repository.map.put(this.getId(), this);

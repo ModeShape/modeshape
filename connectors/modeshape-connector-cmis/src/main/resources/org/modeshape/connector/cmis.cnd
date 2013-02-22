@@ -54,3 +54,5 @@
 
 [cmis:document] > cmis:object
     -cmis:data (binary)
+    -cmis:mimeType (string)
+    -cmis:fileName (string)
