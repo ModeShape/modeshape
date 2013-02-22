@@ -353,17 +353,7 @@ public class WritableSessionCache extends AbstractSessionCache {
             lock.lock();
 
             // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
-            if (preSaveOperation != null) {
-                SaveContext saveContext = new BasicSaveContext(context());
-                for (MutableCachedNode node : this.changedNodes.values()) {
-                    if (node == REMOVED) {
-                        continue;
-                    }
-                    checkNodeNotRemovedByAnotherTransaction(node);
-                    preSaveOperation.process(node, saveContext);
-
-                }
-            }
+            runPreSaveBeforeTransaction(preSaveOperation);
 
             final int numNodes = this.changedNodes.size();
 
@@ -376,6 +366,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // Get a monitor via the transaction ...
                     final Monitor monitor = txn.createMonitor();
                     try {
+                        //Lock the nodes in Infinispan
+                        lockAndPurgeCache(changedNodesInOrder);
+
+                        //process after locking
+                        runPreSaveAfterLocking(preSaveOperation);
+
                         // Now persist the changes ...
                         events = persistChanges(this.changedNodesInOrder, monitor);
                         clearModifiedState();
@@ -385,7 +381,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         --repeat;
                         Thread.sleep(PAUSE_TIME_BEFORE_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT);
                         continue;
-                    } catch (RuntimeException e) {
+                    } catch (Exception e) {
                         // Some error occurred (likely within our code) ...
                         txn.rollback();
                         throw e;
@@ -444,6 +440,33 @@ public class WritableSessionCache extends AbstractSessionCache {
         txns.updateCache(workspaceCache, events, txn);
     }
 
+    private void runPreSaveBeforeTransaction( PreSave preSaveOperation ) throws Exception {
+        if (preSaveOperation != null) {
+            SaveContext saveContext = new BasicSaveContext(context());
+            for (MutableCachedNode node : this.changedNodes.values()) {
+                if (node == REMOVED) {
+                    continue;
+                }
+                checkNodeNotRemovedByAnotherTransaction(node);
+                preSaveOperation.process(node, saveContext);
+
+            }
+        }
+    }
+
+    private void runPreSaveAfterLocking( PreSave preSaveOperation ) throws Exception {
+        if (preSaveOperation != null) {
+            SaveContext saveContext = new BasicSaveContext(context());
+            for (MutableCachedNode node : this.changedNodes.values()) {
+                //only process existing nodes that have not been removed
+                if (node == REMOVED || node.isNew()) {
+                    continue;
+                }
+                preSaveOperation.processAfterLocking(node, saveContext);
+            }
+        }
+    }
+
     protected void clearState() {
         // The changes have been made, so create a new map (we're using the keys from the current map) ...
         this.changedNodes = new HashMap<NodeKey, SessionNode>();
@@ -491,16 +514,7 @@ public class WritableSessionCache extends AbstractSessionCache {
             thatLock.lock();
 
             // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
-            if (preSaveOperation != null) {
-                SaveContext saveContext = new BasicSaveContext(context());
-                for (MutableCachedNode node : this.changedNodes.values()) {
-                    if (node == REMOVED) {
-                        continue;
-                    }
-                    checkNodeNotRemovedByAnotherTransaction(node);
-                    preSaveOperation.process(node, saveContext);
-                }
-            }
+            runPreSaveBeforeTransaction(preSaveOperation);
 
             final int numNodes = this.changedNodes.size() + that.changedNodes.size();
 
@@ -513,6 +527,13 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // Get a monitor via the transaction ...
                     final Monitor monitor = txn.createMonitor();
                     try {
+                        //Lock the nodes in Infinispan
+                        lockAndPurgeCache(this.changedNodesInOrder);
+                        that.lockAndPurgeCache(that.changedNodesInOrder);
+
+                        //process after locking
+                        runPreSaveAfterLocking(preSaveOperation);
+
                         // Now persist the changes ...
                         events1 = persistChanges(this.changedNodesInOrder, monitor);
                         events2 = that.persistChanges(that.changedNodesInOrder, monitor);
@@ -524,7 +545,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         --repeat;
                         Thread.sleep(PAUSE_TIME_BEFORE_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT);
                         continue;
-                    } catch (RuntimeException e) {
+                    } catch (Exception e) {
                         // Some error occurred (likely within our code) ...
                         txn.rollback();
                         throw e;
@@ -664,18 +685,35 @@ public class WritableSessionCache extends AbstractSessionCache {
                     final Monitor monitor = txn.createMonitor();
 
                     try {
+                        //Lock the nodes in Infinispan
+                        lockAndPurgeCache(savedNodesInOrder);
+                        that.lockAndPurgeCache(that.changedNodesInOrder);
+
+                        //process after locking
+                        // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
+                        if (preSaveOperation != null) {
+                            SaveContext saveContext = new BasicSaveContext(context());
+                            for (MutableCachedNode node : this.changedNodes.values()) {
+                                if (node == REMOVED || !toBeSaved.contains(node.getKey())) {
+                                    continue;
+                                }
+                                preSaveOperation.processAfterLocking(node, saveContext);
+                            }
+                        }
+
                         // Now persist the changes ...
                         events1 = persistChanges(savedNodesInOrder, monitor);
                         events2 = that.persistChanges(that.changedNodesInOrder, monitor);
-                        clearModifiedState(savedNodesInOrder);
-                        clearModifiedState();
+
+                        this.clearModifiedState(savedNodesInOrder);
+                        that.clearModifiedState();
                     } catch (org.infinispan.util.concurrent.TimeoutException e) {
                         txn.rollback();
                         if (repeat <= 0) throw new TimeoutException(e.getMessage(), e);
                         --repeat;
                         Thread.sleep(PAUSE_TIME_BEFORE_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT);
                         continue;
-                    } catch (RuntimeException e) {
+                    } catch (Exception e) {
                         // Some error occurred (likely within our code) ...
                         txn.rollback();
                         throw e;
@@ -777,24 +815,6 @@ public class WritableSessionCache extends AbstractSessionCache {
 
         PathCache sessionPaths = new PathCache(this);
         PathCache workspacePaths = new PathCache(workspaceCache);
-
-        if (documentStore.updatesRequirePreparing()) {
-            // Try to acquire from the DocumentStore locks for all the nodes that we're going to change ...
-            Set<String> keysToLock = new HashSet<String>();
-            for (NodeKey key : changedNodesInOrder) {
-                SessionNode node = changedNodes.get(key);
-                if (node != REMOVED && !node.isNew()) {
-                    String keyStr = key.toString();
-                    keysToLock.add(keyStr);
-                }
-            }
-            if (!documentStore.prepareDocumentsForUpdate(keysToLock)) {
-                // try again ...
-                if (!documentStore.prepareDocumentsForUpdate(keysToLock)) {
-                    throw new org.infinispan.util.concurrent.TimeoutException("Unable to acquire storage locks: " + keysToLock);
-                }
-            }
-        }
 
         Set<NodeKey> removedNodes = null;
         Set<BinaryKey> unusedBinaryKeys = new HashSet<BinaryKey>();
@@ -1152,6 +1172,34 @@ public class WritableSessionCache extends AbstractSessionCache {
         changes.setChangedNodes(changedNodes.keySet()); // don't need to make a copy
         changes.freeze(userId, userData, timestamp);
         return changes;
+    }
+
+    private void lockAndPurgeCache( Iterable<NodeKey> changedNodesInOrder ) {
+        DocumentStore documentStore = workspaceCache().documentStore();
+
+        if (documentStore.updatesRequirePreparing()) {
+            LOGGER.debug("Locking nodes in Infinispan");
+            // Try to acquire from the DocumentStore locks for all the nodes that we're going to change ...
+            Set<String> keysToLock = new HashSet<String>();
+
+            for (NodeKey key : changedNodesInOrder) {
+                SessionNode node = changedNodes.get(key);
+                if (node != REMOVED && !node.isNew()) {
+                    String keyStr = key.toString();
+                    keysToLock.add(keyStr);
+                }
+            }
+            if (!documentStore.prepareDocumentsForUpdate(keysToLock)) {
+                // try again ...
+                if (!documentStore.prepareDocumentsForUpdate(keysToLock)) {
+                    throw new org.infinispan.util.concurrent.TimeoutException("Unable to acquire storage locks: " + keysToLock);
+                }
+            }
+            //we need to purge those keys from the ws cache, otherwise we risk leaking changes, given that the WS cache is global
+            workspaceCache().purge(changedNodesInOrder);
+        } else {
+            LOGGER.debug("Infinispan is not configured with pessimistic locks, no nodes will be locked");
+        }
     }
 
     protected SessionNode add( SessionNode newNode ) {

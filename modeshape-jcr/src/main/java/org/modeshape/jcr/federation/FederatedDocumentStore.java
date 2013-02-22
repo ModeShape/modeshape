@@ -42,6 +42,7 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.Connectors;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
@@ -148,7 +149,7 @@ public class FederatedDocumentStore implements DocumentStore {
                 checkConnectorIsWritable(connector);
                 EditableDocument editableDocument = replaceNodeKeysWithDocumentIds(document);
                 String documentId = documentIdFromNodeKey(key);
-                SessionNode.NodeChanges nodeChanges = sessionNode.getNodeChanges();
+                MutableCachedNode.NodeChanges nodeChanges = sessionNode.getNodeChanges();
                 DocumentChanges documentChanges = createDocumentChanges(nodeChanges,
                                                                         connector.getSourceName(),
                                                                         editableDocument,
@@ -158,7 +159,7 @@ public class FederatedDocumentStore implements DocumentStore {
         }
     }
 
-    private DocumentChanges createDocumentChanges( SessionNode.NodeChanges nodeChanges,
+    private DocumentChanges createDocumentChanges( MutableCachedNode.NodeChanges nodeChanges,
                                                    String sourceName,
                                                    EditableDocument editableDocument,
                                                    String documentId ) {

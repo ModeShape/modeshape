@@ -163,6 +163,12 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         return sourceKey;
     }
 
+    final void purge(Iterable<NodeKey> nodeKeys) {
+        for (NodeKey nodeKey : nodeKeys) {
+            this.nodesByKey.remove(nodeKey);
+        }
+    }
+
     @Override
     public NodeKey getRootKey() {
         checkNotClosed();

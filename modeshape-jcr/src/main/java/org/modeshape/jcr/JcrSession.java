@@ -75,6 +75,7 @@ import org.modeshape.jcr.api.monitor.DurationMetric;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
+import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
 import org.modeshape.jcr.cache.DocumentNotFoundException;
 import org.modeshape.jcr.cache.MutableCachedNode;
@@ -1858,6 +1859,48 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                 // and create this value by simply concatenating the SHA-1 hash of each BINARY value ...
                 String etagValue = node.getEtag(cache);
                 node.setProperty(cache, propertyFactory.create(JcrLexicon.ETAG, etagValue));
+            }
+        }
+
+        @Override
+        public void processAfterLocking( MutableCachedNode modifiedNode,
+                                         SaveContext context ) throws RepositoryException {
+            MutableCachedNode.NodeChanges changes = modifiedNode.getNodeChanges();
+
+            Set<Name> childrenNames = new HashSet<Name>(changes.appendedChildren().values());
+            childrenNames.addAll(changes.renamedChildren().values());
+
+            if (!childrenNames.isEmpty()) {
+                //look at the information that was already persisted to determine whether some other thread has already created
+                //a child with the same name
+                NodeCache wsCache = repository().workspaceCache(workspaceName());
+                CachedNode persistentNode = wsCache.getNode(modifiedNode.getKey());
+                AbstractJcrNode modifiedNodeJcr = jcrNodes.get(modifiedNode.getKey());
+                assert modifiedNodeJcr != null;
+
+                //process appended children
+                for (Name childName : childrenNames) {
+                    ChildReferences persistedChildReferences = persistentNode.getChildReferences(wsCache);
+                    int existingChildrenWithSameName = persistedChildReferences.getChildCount(childName);
+                    if (existingChildrenWithSameName == 0) {
+                        continue;
+                    }
+                    JcrNodeDefinition childNodeDefinition = nodeTypeCapabilities.findChildNodeDefinition(modifiedNodeJcr.getPrimaryTypeName(),
+                                                                                                         modifiedNodeJcr.getMixinTypeNames(),
+                                                                                                         childName,
+                                                                                                         null,
+                                                                                                         existingChildrenWithSameName + 1,
+                                                                                                         true);
+                    if (childNodeDefinition == null) {
+                        //we weren't able to find a definition which allows SNS for this name, but we need to make sure that the node
+                        //that already exists (persisted) isn't the one that's being changed
+                        NodeKey persistedChildKey = persistedChildReferences.getChild(childName).getKey();
+                        if (!changes.appendedChildren().containsKey(persistedChildKey) && !changes.renamedChildren().containsKey(persistedChildKey)) {
+                            //SNS are not allowed and there's already a child with this name throw ItemExistsException per 7.1.4 of 1.0.1 spec
+                            throw new ItemExistsException(JcrI18n.noSnsDefinitionForNode.text(childName, workspaceName()));
+                        }
+                    }
+                }
             }
         }
     }
