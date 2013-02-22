@@ -23,9 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -33,12 +30,12 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import javax.jcr.ItemExistsException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -47,15 +44,15 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrTools;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 public class ConcurrentWriteTest extends SingleUseAbstractTest {
 
     @Override
     @Before
     public void beforeEach() throws Exception {
-        // super.beforeEach();
-        // FileUtil.delete("target/persistent_repository");
-        //
         startRepositoryWithConfiguration(getClass().getClassLoader()
                                                    .getResourceAsStream("config/repo-config-concurrent-tests.json"));
         tools = new JcrTools();
@@ -64,17 +61,8 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
         repository.runningState().txnManager().setTransactionTimeout(500);
     }
 
-    @After
-    @Override
-    public void afterEach() throws Exception {
-        super.afterEach();
-        // FileUtil.delete("target/persistent_repository");
-    }
-
     /**
      * Create a session, obtain the root node, and close the session. Do this 500x using 16 threads.
-     * 
-     * @throws Exception
      */
     @Test
     public void shouldAllowMultipleThreadsToConcurrentlyGetRootNode() throws Exception {
@@ -89,8 +77,6 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
     /**
      * Create a session, add a single node under the root, and close the session. Do this twice using 2 threads. Then verify that
      * there are 2 children under the root (except for the "/jcr:system" node).
-     * 
-     * @throws Exception
      */
     @FixFor( "MODE-1734" )
     @Test
@@ -104,8 +90,6 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
     /**
      * Create a session, add a single node under the root, and close the session. Do this 500x using 16 threads. Then verify that
      * there are 500 children under the root (except for the "/jcr:system" node).
-     * 
-     * @throws Exception
      */
     @FixFor( "MODE-1734" )
     @Test
@@ -144,7 +128,6 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
     @FixFor( "MODE-1739" )
     @Test
     public void shouldAllowMultipleThreadsToConcurrentlyModifySameNodesInDifferentOrder() throws Exception {
-        print = true;
         // Create several nodes right under the root ...
         final int numNodes = 3;
         runOnce(new CreateSubgraph("/", "node", numNodes, 2), false);
@@ -181,6 +164,40 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
         runConcurrently(numThreads, numThreads, operation);
 
         verify(new NumberOfChildren(0, "node"));
+    }
+
+    @FixFor( "MODE-1821" )
+    @Test
+    public void shouldFailIfSNSAreNotSupported() throws Exception {
+        session.workspace().getNodeTypeManager().registerNodeTypes(resourceStream("cnd/no_sns.cnd"), true);
+
+        Node testRoot = session.getRootNode().addNode("/testRoot", "test:nodeWithoutSNS");
+        testRoot.addNode("childA", "nt:unstructured");
+        session.save();
+
+        try {
+            testRoot.addNode("childA", "nt:unstructured");
+            fail("Same name sibling are not supported, an exception should've been thrown");
+        } catch (ItemExistsException ex) {
+            // this is expected since this is not allowed.
+        }
+
+        // Now run two threads that are timed very carefully ...
+        int numThreads = 2;
+        final CyclicBarrier barrier = new CyclicBarrier(numThreads);
+        Operation operation = new Operation() {
+            @Override
+            public void run( Session session ) throws Exception {
+                Node testRoot = session.getNode("/testRoot");
+                testRoot.addNode("childB", "nt:unstructured");
+                barrier.await();
+                // one of the saves should fail but it doesn't
+                session.save();
+            }
+        };
+
+        run(2, numThreads, 1, operation);
+        verify(new NumberOfChildren(2, "testRoot"));
     }
 
     /**
@@ -449,28 +466,28 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
         Thread[] threads = new Thread[numberOfConcurrentClients];
         for (int i = 0; i != numberOfConcurrentClients; ++i) {
             sessions[i] = repository.login();
-            final int index = i;
-            final String threadName = "RepoClient" + (index + 1);
+            final String threadName = "RepoClient" + (i + 1);
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        // printMessage("Initializing thread '" + threadName + '"');
+                        printMessage("Initializing thread '" + threadName + '"');
 
                         // Block until all threads are ready to start ...
                         startLatch.await();
 
-                        // printMessage("Starting thread '" + threadName + '"');
+                        printMessage("Starting thread '" + threadName + '"');
 
                         // Perform the operation as many times as requested ...
                         int repeatCount = 1;
                         while (true) {
                             int operationNumber = actualOperationCount.getAndIncrement();
+
                             if (operationNumber > totalNumberOfOperations) break;
 
                             ++repeatCount;
                             Session session = null;
-                            // printMessage("Running operation " + repeatCount + " in thread '" + threadName + '"');
+                            printMessage("Running operation " + repeatCount + " in thread '" + threadName + '"');
                             try {
                                 // Create the session ...
                                 session = repository.login();
@@ -494,7 +511,7 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
                         e.printStackTrace();
                     } finally {
                         // Thread is done, so count it down ...
-                        // printMessage("Completing thread '" + threadName + '"');
+                        printMessage("Completing thread '" + threadName + '"');
                         completionLatch.countDown();
                     }
                 }
@@ -529,7 +546,8 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
         assertThat(actualOperationCount.get() > totalNumberOfOperations, is(true));
 
         // Verify there are no errors ...
-        if (problems.size() != numberOfErrorsExpected) {
+        int problemsCount = problems.size();
+        if (problemsCount != numberOfErrorsExpected) {
             if (numberOfConcurrentClients == 1) {
                 // Just one thread, so rethrow the exception ...
                 Throwable t = problems.getFirstException();
@@ -540,6 +558,8 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
                     throw (Error)t;
                 }
                 throw (Exception)t;
+            } else if (problemsCount == 0 && numberOfErrorsExpected > 0) {
+                fail(numberOfErrorsExpected + " errors expected, but none occurred");
             }
             // Otherwise, multiple clients so log the set of them ...
             fail(problems.toString());

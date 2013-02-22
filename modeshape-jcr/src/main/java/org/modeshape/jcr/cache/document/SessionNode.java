@@ -1194,12 +1194,8 @@ public class SessionNode implements MutableCachedNode {
         return result;
     }
 
-    /**
-     * Returns an object encapsulating all the different changes that this session node contains.
-     * 
-     * @return a {@code non-null} {@link NodeChanges} object.
-     */
     @SuppressWarnings( "synthetic-access" )
+    @Override
     public NodeChanges getNodeChanges() {
         return new NodeChanges();
     }
@@ -1318,38 +1314,26 @@ public class SessionNode implements MutableCachedNode {
      * Value object which contains an "abbreviated" view of the changes that this session node has registered in its internal
      * state.
      */
-    public class NodeChanges {
+    private class NodeChanges implements MutableCachedNode.NodeChanges {
         private NodeChanges() {
             // this is not mean to be created from the outside
         }
 
-        /**
-         * Returns a set with the names of the properties that have changed. This includes new/modified properties.
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<Name> changedPropertyNames() {
             Set<Name> result = new HashSet<Name>();
             result.addAll(changedProperties().keySet());
             return result;
         }
 
-        /**
-         * Returns a set with the names of the properties that have been removed.
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<Name> removedPropertyNames() {
             Set<Name> result = new HashSet<Name>();
             result.addAll(changedProperties().keySet());
             return result;
         }
 
-        /**
-         * Returns a set with the names of the mixins that have been added.
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<Name> addedMixins() {
             Set<Name> result = new HashSet<Name>();
             MixinChanges mixinChanges = mixinChanges(false);
@@ -1357,14 +1341,9 @@ public class SessionNode implements MutableCachedNode {
                 result.addAll(mixinChanges.getAdded());
             }
             return result;
-
         }
 
-        /**
-         * Returns a set with the names of the mixins that have been removed.
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<Name> removedMixins() {
             Set<Name> result = new HashSet<Name>();
             MixinChanges mixinChanges = mixinChanges(false);
@@ -1372,14 +1351,9 @@ public class SessionNode implements MutableCachedNode {
                 result.addAll(mixinChanges.getRemoved());
             }
             return result;
-
         }
 
-        /**
-         * Returns the [childKey, childName] pairs of the children that have been appended (at the end).
-         * 
-         * @return a {@code non-null} Map
-         */
+        @Override
         public LinkedHashMap<NodeKey, Name> appendedChildren() {
             LinkedHashMap<NodeKey, Name> result = new LinkedHashMap<NodeKey, Name>();
             MutableChildReferences appendedChildReferences = appended(false);
@@ -1391,34 +1365,21 @@ public class SessionNode implements MutableCachedNode {
             return result;
         }
 
-        /**
-         * Returns the set of children that have been removed
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<NodeKey> removedChildren() {
             Set<NodeKey> result = new HashSet<NodeKey>();
             result.addAll(changedChildren().getRemovals());
             return result;
         }
 
-        /**
-         * Returns the [childKey, childName] pairs of the children that have been renamed.
-         * 
-         * @return a {@code non-null} Map
-         */
+        @Override
         public Map<NodeKey, Name> renamedChildren() {
             Map<NodeKey, Name> result = new HashMap<NodeKey, Name>();
             result.putAll(changedChildren().getNewNames());
             return result;
         }
 
-        /**
-         * Returns the [insertBeforeChildKey, [childKey, childName]] structure of the children that been inserted before another
-         * existing child. This is normally caused due to reorderings
-         * 
-         * @return a {@code non-null} Map
-         */
+        @Override
         public Map<NodeKey, LinkedHashMap<NodeKey, Name>> childrenInsertedBefore() {
             Map<NodeKey, LinkedHashMap<NodeKey, Name>> result = new HashMap<NodeKey, LinkedHashMap<NodeKey, Name>>();
 
@@ -1436,11 +1397,7 @@ public class SessionNode implements MutableCachedNode {
             return result;
         }
 
-        /**
-         * Returns the set of parents that have been added
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<NodeKey> addedParents() {
             Set<NodeKey> result = new HashSet<NodeKey>();
             if (additionalParents() != null) {
@@ -1449,11 +1406,7 @@ public class SessionNode implements MutableCachedNode {
             return result;
         }
 
-        /**
-         * Returns the set of parents that have been removed
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<NodeKey> removedParents() {
             Set<NodeKey> result = new HashSet<NodeKey>();
             if (additionalParents() != null) {
@@ -1462,20 +1415,12 @@ public class SessionNode implements MutableCachedNode {
             return result;
         }
 
-        /**
-         * Returns the node key of the new primary parent, in case it has changed.
-         * 
-         * @return either the {@link NodeKey} of the new primary parent or {@code null}
-         */
+        @Override
         public NodeKey newPrimaryParent() {
             return newParent();
         }
 
-        /**
-         * Returns a set of node keys with the weak referrers that have been added.
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<NodeKey> addedWeakReferrers() {
             Set<NodeKey> result = new HashSet<NodeKey>();
             ReferrerChanges referrerChanges = referrerChanges(false);
@@ -1485,11 +1430,7 @@ public class SessionNode implements MutableCachedNode {
             return result;
         }
 
-        /**
-         * Returns a set of node keys with the weak referrers that have been removed.
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<NodeKey> removedWeakReferrers() {
             Set<NodeKey> result = new HashSet<NodeKey>();
             ReferrerChanges referrerChanges = referrerChanges(false);
@@ -1499,11 +1440,7 @@ public class SessionNode implements MutableCachedNode {
             return result;
         }
 
-        /**
-         * Returns a set of node keys with the strong referrers that have been added.
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<NodeKey> addedStrongReferrers() {
             Set<NodeKey> result = new HashSet<NodeKey>();
             ReferrerChanges referrerChanges = referrerChanges(false);
@@ -1513,11 +1450,7 @@ public class SessionNode implements MutableCachedNode {
             return result;
         }
 
-        /**
-         * Returns a set of node keys with the strong referrers that have been removed.
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<NodeKey> removedStrongReferrers() {
             Set<NodeKey> result = new HashSet<NodeKey>();
             ReferrerChanges referrerChanges = referrerChanges(false);
