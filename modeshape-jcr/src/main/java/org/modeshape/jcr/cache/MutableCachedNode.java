@@ -24,6 +24,7 @@
 package org.modeshape.jcr.cache;
 
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import org.modeshape.jcr.value.Name;
@@ -345,6 +346,7 @@ public interface MutableCachedNode extends CachedNode {
      * Returns a set with the keys of the children which have been removed for this node.
      * 
      * @return a <code>Set&lt;{@link NodeKey}></code>, never null
+     * @deprecated use {@link org.modeshape.jcr.cache.MutableCachedNode.NodeChanges#removedChildren()}
      */
     public Set<NodeKey> removedChildren();
 
@@ -368,4 +370,122 @@ public interface MutableCachedNode extends CachedNode {
      * @param queryable a {@code boolean}.
      */
     public void setQueryable(boolean queryable);
+
+    /**
+     * Returns an object encapsulating all the different changes that this session node contains.
+     *
+     * @return a {@code non-null} {@link NodeChanges} object.
+     */
+    public NodeChanges getNodeChanges();
+
+    /**
+     * Interface which exposes all the changes that have occurred on a {@link MutableCachedNode} instance
+     */
+    public interface NodeChanges {
+        /**
+         * Returns a set with the names of the properties that have changed. This includes new/modified properties.
+         *
+         * @return a {@code non-null} Set
+         */
+        Set<Name> changedPropertyNames();
+
+        /**
+         * Returns a set with the names of the properties that have been removed.
+         *
+         * @return a {@code non-null} Set
+         */
+        public Set<Name> removedPropertyNames();
+
+        /**
+         * Returns a set with the names of the mixins that have been added.
+         *
+         * @return a {@code non-null} Set
+         */
+        public Set<Name> addedMixins();
+        /**
+         * Returns a set with the names of the mixins that have been removed.
+         *
+         * @return a {@code non-null} Set
+         */
+        public Set<Name> removedMixins();
+
+        /**
+         * Returns the [childKey, childName] pairs of the children that have been appended (at the end).
+         *
+         * @return a {@code non-null} Map
+         */
+        public LinkedHashMap<NodeKey, Name> appendedChildren();
+
+        /**
+         * Returns the set of children that have been removed
+         *
+         * @return a {@code non-null} Set
+         */
+        public Set<NodeKey> removedChildren();
+
+        /**
+         * Returns the [childKey, childName] pairs of the children that have been renamed, where "childName" represents the new
+         * name after the rename.
+         *
+         * @return a {@code non-null} Map
+         */
+        public Map<NodeKey, Name> renamedChildren();
+
+        /**
+         * Returns the [insertBeforeChildKey, [childKey, childName]] structure of the children that been inserted before another
+         * existing child. This is normally caused due to reorderings
+         *
+         * @return a {@code non-null} Map
+         */
+        public Map<NodeKey, LinkedHashMap<NodeKey, Name>> childrenInsertedBefore();
+
+        /**
+         * Returns the set of parents that have been added
+         *
+         * @return a {@code non-null} Set
+         */
+        public Set<NodeKey> addedParents();
+
+        /**
+         * Returns the set of parents that have been removed
+         *
+         * @return a {@code non-null} Set
+         */
+        public Set<NodeKey> removedParents();
+
+        /**
+         * Returns the node key of the new primary parent, in case it has changed.
+         *
+         * @return either the {@link NodeKey} of the new primary parent or {@code null}
+         */
+        public NodeKey newPrimaryParent();
+
+        /**
+         * Returns a set of node keys with the weak referrers that have been added.
+         *
+         * @return a {@code non-null} Set
+         */
+        public Set<NodeKey> addedWeakReferrers();
+
+        /**
+         * Returns a set of node keys with the weak referrers that have been removed.
+         *
+         * @return a {@code non-null} Set
+         */
+        public Set<NodeKey> removedWeakReferrers();
+
+        /**
+         * Returns a set of node keys with the strong referrers that have been added.
+         *
+         * @return a {@code non-null} Set
+         */
+        public Set<NodeKey> addedStrongReferrers();
+
+        /**
+         * Returns a set of node keys with the strong referrers that have been removed.
+         *
+         * @return a {@code non-null} Set
+         */
+        public Set<NodeKey> removedStrongReferrers();
+    }
 }
