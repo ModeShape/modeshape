@@ -35,7 +35,8 @@ import javax.jcr.NamespaceRegistry;
 import org.apache.chemistry.opencmis.client.api.*;
 import org.apache.chemistry.opencmis.client.api.Property;
 import org.apache.chemistry.opencmis.client.api.Session;
-import org.apache.chemistry.opencmis.client.runtime.ObjectIdImpl;
+import org.apache.chemistry.opencmis.client.bindings.spi.StandardAuthenticationProvider;
+import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
 import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
@@ -54,6 +55,7 @@ import org.modeshape.jcr.federation.spi.DocumentChanges;
 import org.modeshape.jcr.federation.spi.DocumentChanges.PropertyChanges;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
 import org.modeshape.jcr.value.*;
+import org.w3c.dom.Element;
 
 /**
  *
@@ -121,11 +123,15 @@ public class CmisConnector extends Connector {
         parameter.put(SessionParameter.WEBSERVICES_VERSIONING_SERVICE, versioningService);
         parameter.put(SessionParameter.REPOSITORY_ID, repositoryId);
 
-        CmisFactory.Mode runMode = mode == null ?
-                CmisFactory.Mode.SERVICE :
-                CmisFactory.Mode.TEST;
-
-        session = new CmisFactory().session(runMode, parameter);
+        SessionFactoryImpl factory = SessionFactoryImpl.newInstance();
+        session = factory.createSession(parameter, null,
+                new StandardAuthenticationProvider() {
+                    @Override
+                    public Element getSOAPHeaders(Object portObject) {
+                        //Place headers here
+                        return super.getSOAPHeaders(portObject);
+                    }
+                }, null);
         
         // Register the repository-specific node types ...
         InputStream cndStream = getClass().getClassLoader().getResourceAsStream(nodeDefinitionFile);
@@ -233,8 +239,8 @@ public class CmisConnector extends Connector {
             String cmisPropertyName = propertyConvertor.cmisName(n);
             Property cmisProperty = cmisObject.getProperty(cmisPropertyName);
 
-            List<Object> values = propertyConvertor.cmisValues(cmisProperty, jcrName, jcrValues);
-            updateProperties.put(cmisPropertyName, values);
+            Object value = propertyConvertor.cmisValue(cmisProperty, jcrName, jcrValues);
+            updateProperties.put(cmisPropertyName, value);
 
             cmisObject.updateProperties(updateProperties);
         }
