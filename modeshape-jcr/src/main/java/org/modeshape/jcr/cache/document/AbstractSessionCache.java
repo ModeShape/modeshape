@@ -28,8 +28,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.UUID;
+import javax.transaction.SystemException;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
+import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
@@ -37,6 +40,7 @@ import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionEnvironment;
+import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
@@ -68,7 +72,8 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
         }
     }
 
-    protected final WorkspaceCache workspaceCache;
+    private final WorkspaceCache sharedWorkspaceCache;
+    private WorkspaceCache workspaceCache;
     private final NameFactory nameFactory;
     private final PathFactory pathFactory;
     private final Path rootPath;
@@ -77,15 +82,40 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
     private ExecutionContext context;
 
     protected AbstractSessionCache( ExecutionContext context,
-                                    WorkspaceCache workspaceCache,
+                                    WorkspaceCache sharedWorkspaceCache,
                                     SessionEnvironment sessionContext ) {
         this.context = context;
-        this.workspaceCache = workspaceCache;
+        this.sharedWorkspaceCache = sharedWorkspaceCache;
+        this.workspaceCache = sharedWorkspaceCache;
         ValueFactories factories = this.context.getValueFactories();
         this.nameFactory = factories.getNameFactory();
         this.pathFactory = factories.getPathFactory();
         this.rootPath = this.pathFactory.createRootPath();
         this.sessionContext = sessionContext;
+        assert this.sessionContext != null;
+        useTransactionalCacheIfRequired();
+    }
+
+    protected abstract Logger logger();
+
+    protected void useTransactionalCacheIfRequired() {
+        try {
+            Transactions transactions = sessionContext.getTransactions();
+            if (transactions != null && transactions.isCurrentlyInTransaction()) {
+                workspaceCache = new TransactionalWorkspaceCache(sharedWorkspaceCache);
+            } else {
+                workspaceCache = this.sharedWorkspaceCache;
+            }
+        } catch (SystemException e) {
+            logger().error(e,
+                           JcrI18n.errorDeterminingCurrentTransactionAssumingNone,
+                           workspaceCache.getWorkspaceName(),
+                           e.getMessage());
+        }
+    }
+
+    protected final String workspaceName() {
+        return workspaceCache.getWorkspaceName();
     }
 
     @Override
@@ -116,10 +146,6 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
 
     final Path rootPath() {
         return rootPath;
-    }
-
-    final SessionEnvironment sessionContext() {
-        return sessionContext;
     }
 
     @Override
@@ -204,5 +230,25 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
     public Iterator<NodeKey> getAllNodeKeysAtAndBelow( NodeKey startingKey ) {
         return new NodeCacheIterator(this, startingKey);
     }
+
+    @Override
+    public final void clear( CachedNode node ) {
+        doClear(node);
+        if (workspaceCache != sharedWorkspaceCache && workspaceCache instanceof TransactionalWorkspaceCache) {
+            ((TransactionalWorkspaceCache)workspaceCache).clear();
+        }
+    }
+
+    @Override
+    public final void clear() {
+        doClear();
+        if (workspaceCache != sharedWorkspaceCache && workspaceCache instanceof TransactionalWorkspaceCache) {
+            ((TransactionalWorkspaceCache)workspaceCache).clear();
+        }
+    }
+
+    protected abstract void doClear( CachedNode node );
+
+    protected abstract void doClear();
 
 }

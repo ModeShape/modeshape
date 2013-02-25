@@ -734,8 +734,8 @@ public class SessionNode implements MutableCachedNode {
 
     private void updateReferences( SessionCache cache,
                                    Name propertyName,
-                                   SessionCache systemCache) {
-        //first try to determine if there's old reference property with the same name so that old references can be removed
+                                   SessionCache systemCache ) {
+        // first try to determine if there's old reference property with the same name so that old references can be removed
         boolean oldPropertyWasReference = false;
         List<Reference> referencesToRemove = new ArrayList<Reference>();
         if (!isNew()) {
@@ -751,7 +751,7 @@ public class SessionNode implements MutableCachedNode {
             }
         }
 
-        //if the updated property is a reference, determine which are the references that need updating
+        // if the updated property is a reference, determine which are the references that need updating
         boolean updatedPropertyIsReference = false;
         List<Reference> referencesToAdd = new ArrayList<Reference>();
         Property property = changedProperties.get(propertyName);
@@ -759,19 +759,20 @@ public class SessionNode implements MutableCachedNode {
             updatedPropertyIsReference = true;
             for (Object referenceObject : property.getValuesAsArray()) {
                 assert referenceObject instanceof Reference;
-                Reference updatedReference = (Reference) referenceObject;
+                Reference updatedReference = (Reference)referenceObject;
                 if (referencesToRemove.contains(updatedReference)) {
-                    //the reference is already present on a property with the same name, so this is a no-op for that reference
-                    //therefore we remove it from the list of references that will be removed
+                    // the reference is already present on a property with the same name, so this is a no-op for that reference
+                    // therefore we remove it from the list of references that will be removed
                     referencesToRemove.remove(updatedReference);
                 } else {
-                    //this is a new reference (either via key or type)
+                    // this is a new reference (either via key or type)
                     referencesToAdd.add(updatedReference);
                 }
             }
         }
 
-        //if an existing reference property was just updated with the same value, it is a no-op so we should just remove it from the list of changed properties
+        // if an existing reference property was just updated with the same value, it is a no-op so we should just remove it from
+        // the list of changed properties
         if (referencesToRemove.isEmpty() && referencesToAdd.isEmpty() && oldPropertyWasReference && updatedPropertyIsReference) {
             changedProperties.remove(propertyName);
             return;
@@ -801,14 +802,13 @@ public class SessionNode implements MutableCachedNode {
                                          Iterator<?> referenceValuesIterator,
                                          boolean add ) {
 
-
         boolean isFrozenNode = JcrNtLexicon.FROZEN_NODE.equals(this.getPrimaryType(cache));
 
         while (referenceValuesIterator.hasNext()) {
             Object value = referenceValuesIterator.next();
             assert value instanceof Reference;
 
-            Reference reference = (Reference) value;
+            Reference reference = (Reference)value;
             NodeKey referredKey = nodeKeyFromReference(reference);
             boolean isWeak = reference.isWeak();
 
@@ -818,7 +818,8 @@ public class SessionNode implements MutableCachedNode {
             }
 
             SessionNode referredNode = null;
-            //first search for a referred node in the cache of the current session and if nothing is found, look in the system session
+            // first search for a referred node in the cache of the current session and if nothing is found, look in the system
+            // session
             if (cache.getNode(referredKey) != null) {
                 referredNode = writableSession(cache).mutable(referredKey);
             } else if (systemCache != null && systemCache.getNode(referredKey) != null) {
@@ -838,13 +839,13 @@ public class SessionNode implements MutableCachedNode {
         }
     }
 
-    private NodeKey nodeKeyFromReference(Reference reference) {
+    private NodeKey nodeKeyFromReference( Reference reference ) {
         if (reference instanceof NodeKeyReference) {
-           return  ((NodeKeyReference)reference).getNodeKey();
+            return ((NodeKeyReference)reference).getNodeKey();
         } else if (reference instanceof StringReference) {
             return new NodeKey(reference.getString());
         } else if (reference instanceof UuidReference) {
-            UuidReference uuidReference = (UuidReference) reference;
+            UuidReference uuidReference = (UuidReference)reference;
             return getKey().withId(uuidReference.getString());
         }
         throw new IllegalArgumentException("Unknown reference type: " + reference.getClass().getSimpleName());
@@ -1114,8 +1115,16 @@ public class SessionNode implements MutableCachedNode {
         // We need a mutable node in the session for the child, so that we can find changes in the parent ...
         cache.mutable(key);
 
-        // Now perform the rename ...
-        changedChildren.renameTo(key, newName);
+        // If the node was previously appended ...
+        MutableChildReferences appended = this.appended.get();
+        if (appended != null && appended.hasChild(key)) {
+            // Just remove and re-add with the new name ...
+            appended.remove(key);
+            appended.append(key, newName);
+        } else {
+            // Now perform the rename ...
+            changedChildren.renameTo(key, newName);
+        }
     }
 
     @Override
@@ -1207,7 +1216,7 @@ public class SessionNode implements MutableCachedNode {
             return isQueryable;
         }
         CachedNode persistedNode = nodeInWorkspace(session(cache));
-        //if the node does not exist yet, it is queryable by default
+        // if the node does not exist yet, it is queryable by default
         return persistedNode == null || persistedNode.isQueryable(cache);
     }
 

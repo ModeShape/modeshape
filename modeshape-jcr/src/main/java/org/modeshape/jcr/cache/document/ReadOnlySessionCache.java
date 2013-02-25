@@ -26,6 +26,7 @@ package org.modeshape.jcr.cache.document;
 import java.util.Collections;
 import java.util.Set;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeKey;
@@ -38,6 +39,8 @@ import org.modeshape.jcr.cache.SessionEnvironment;
 @ThreadSafe
 public class ReadOnlySessionCache extends AbstractSessionCache {
 
+    private static final Logger LOGGER = Logger.getLogger(ReadOnlySessionCache.class);
+
     public ReadOnlySessionCache( ExecutionContext context,
                                  WorkspaceCache workspaceCache,
                                  SessionEnvironment sessionContext ) {
@@ -45,8 +48,8 @@ public class ReadOnlySessionCache extends AbstractSessionCache {
     }
 
     @Override
-    public void clear() {
-        // do nothing, as we don't want to clear the shared workspace
+    protected Logger logger() {
+        return LOGGER;
     }
 
     @Override
@@ -65,7 +68,12 @@ public class ReadOnlySessionCache extends AbstractSessionCache {
     }
 
     @Override
-    public void clear( CachedNode node ) {
+    protected void doClear() {
+        // do nothing, as we don't want to clear the shared workspace
+    }
+
+    @Override
+    protected void doClear( CachedNode node ) {
         // do nothing
     }
 
@@ -110,10 +118,7 @@ public class ReadOnlySessionCache extends AbstractSessionCache {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Session ")
-          .append(context().getId())
-          .append(" (readonly) to workspace '")
-          .append(workspaceCache.getWorkspaceName());
+        sb.append("Session ").append(context().getId()).append(" (readonly) to workspace '").append(workspaceName());
         return sb.toString();
     }
 
