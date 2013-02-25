@@ -25,8 +25,10 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
+import java.io.InputStream;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -34,12 +36,15 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Session;
+import javax.jcr.version.VersionManager;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
+import javax.transaction.TransactionManager;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 
 public class TransactionsTest extends SingleUseAbstractTest {
 
@@ -61,6 +66,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
         session.save();
     }
 
+    @FixFor( "MODE-1819" )
     @Test
     public void shouldBeAbleToMoveNodeWithinUserTransaction() throws Exception {
         startTransaction();
@@ -68,11 +74,13 @@ public class TransactionsTest extends SingleUseAbstractTest {
         commitTransaction();
     }
 
+    @FixFor( "MODE-1819" )
     @Test
     public void shouldBeAbleToMoveNodeOutsideOfUserTransaction() throws Exception {
         moveDocument("childX");
     }
 
+    @FixFor( "MODE-1819" )
     @Test
     public void shouldBeAbleToUseSeparateSessionsWithinSingleUserTransaction() throws Exception {
         // We'll use separate threads, but we want to have them both do something specific at a given time,
@@ -146,18 +154,88 @@ public class TransactionsTest extends SingleUseAbstractTest {
         session3.logout();
     }
 
+    @Test
+    public void shouldBeAbleToVersionOutsideOfUserTransaction() throws Exception {
+        VersionManager vm = session.getWorkspace().getVersionManager();
+
+        Node node = session.getRootNode().addNode("Test3");
+        node.addMixin("mix:versionable");
+        node.setProperty("name", "lalalal");
+        node.setProperty("code", "lalalal");
+        session.save();
+        vm.checkin(node.getPath());
+    }
+
+    @Test
+    public void shouldBeAbleToVersionWithinUserTransactionAndDefaultTransactionManager() throws Exception {
+        startTransaction();
+        VersionManager vm = session.getWorkspace().getVersionManager();
+
+        Node node = session.getRootNode().addNode("Test3");
+        node.addMixin("mix:versionable");
+        node.setProperty("name", "lalalal");
+        node.setProperty("code", "lalalal");
+        session.save();
+        vm.checkin(node.getPath());
+        commitTransaction();
+    }
+
+    @Test
+    public void shouldBeAbleToVersionWithinUserTransactionAndJBossTransactionManager() throws Exception {
+        // Start the repository using the JBoss Transactions transaction manager ...
+        InputStream config = getClass().getClassLoader().getResourceAsStream("config/repo-config-inmemory-jbosstxn.json");
+        assertThat(config, is(notNullValue()));
+        startRepositoryWithConfiguration(config);
+
+        startTransaction();
+        VersionManager vm = session.getWorkspace().getVersionManager();
+
+        Node node = session.getRootNode().addNode("Test3");
+        node.addMixin("mix:versionable");
+        node.setProperty("name", "lalalal");
+        node.setProperty("code", "lalalal");
+        session.save();
+        vm.checkin(node.getPath());
+        commitTransaction();
+    }
+
+    @Test
+    public void shouldBeAbleToVersionWithinUserTransactionAndAtomikosTransactionManager() throws Exception {
+        // Start the repository using the JBoss Transactions transaction manager ...
+        InputStream config = getClass().getClassLoader().getResourceAsStream("config/repo-config-inmemory-atomikos.json");
+        assertThat(config, is(notNullValue()));
+        startRepositoryWithConfiguration(config);
+
+        startTransaction();
+        VersionManager vm = session.getWorkspace().getVersionManager();
+
+        Node node = session.getRootNode().addNode("Test3");
+        node.addMixin("mix:versionable");
+        node.setProperty("name", "lalalal");
+        node.setProperty("code", "lalalal");
+        session.save();
+        vm.checkin(node.getPath());
+        commitTransaction();
+    }
+
     protected void startTransaction() throws NotSupportedException, SystemException {
-        session.getRepository().transactionManager().begin();
+        TransactionManager txnMgr = transactionManager();
+        txnMgr.begin();
     }
 
     protected void commitTransaction()
         throws SystemException, SecurityException, IllegalStateException, RollbackException, HeuristicMixedException,
         HeuristicRollbackException {
-        session.getRepository().transactionManager().commit();
+        TransactionManager txnMgr = transactionManager();
+        txnMgr.commit();
     }
 
     protected void rollbackTransaction() throws SystemException, SecurityException, IllegalStateException {
         session.getRepository().transactionManager().rollback();
+    }
+
+    protected TransactionManager transactionManager() {
+        return session.getRepository().transactionManager();
     }
 
     public void moveDocument( String nodeName ) throws Exception {

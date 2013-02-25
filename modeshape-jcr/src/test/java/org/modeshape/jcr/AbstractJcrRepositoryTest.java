@@ -478,8 +478,7 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
 
     protected void assertChildrenInclude( String errorMessage,
                                           Node parentNode,
-                                          String... minimalChildNamesWithSns
-                                        ) throws RepositoryException {
+                                          String... minimalChildNamesWithSns ) throws RepositoryException {
         Set<String> childNames = new HashSet<String>();
         childNames.addAll(Arrays.asList(minimalChildNamesWithSns));
 
