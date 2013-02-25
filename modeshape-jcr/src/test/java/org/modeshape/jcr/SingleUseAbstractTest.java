@@ -116,6 +116,10 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
         return session;
     }
 
+    protected Session newSession() throws RepositoryException {
+        return repository.login();
+    }
+
     protected Session jcrSession() {
         return session;
     }

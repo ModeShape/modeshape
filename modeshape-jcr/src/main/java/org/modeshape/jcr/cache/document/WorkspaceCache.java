@@ -87,6 +87,24 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         this.nodesByKey = cache;
     }
 
+    protected WorkspaceCache( WorkspaceCache original,
+                              ConcurrentMap<NodeKey, CachedNode> cache,
+                              ChangeSetListener changeSetListener ) {
+        this.context = original.context;
+        this.documentStore = original.documentStore;
+        this.changeSetListener = changeSetListener;
+        this.translator = original.translator;
+        this.rootKey = original.rootKey;
+        this.childReferenceForRoot = original.childReferenceForRoot;
+        this.repositoryKey = original.repositoryKey;
+        this.workspaceName = original.workspaceName;
+        this.workspaceKey = original.workspaceKey;
+        this.sourceKey = original.sourceKey;
+        this.pathFactory = original.pathFactory;
+        this.nameFactory = original.nameFactory;
+        this.nodesByKey = cache;
+    }
+
     public void setMinimumStringLengthForBinaryStorage( long largeValueSize ) {
         assert largeValueSize > -1;
         this.translator.setMinimumStringLengthForBinaryStorage(largeValueSize);
@@ -163,7 +181,7 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         return sourceKey;
     }
 
-    final void purge(Iterable<NodeKey> nodeKeys) {
+    final void purge( Iterable<NodeKey> nodeKeys ) {
         for (NodeKey nodeKey : nodeKeys) {
             this.nodesByKey.remove(nodeKey);
         }
