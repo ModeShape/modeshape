@@ -132,6 +132,11 @@ public class WritableSessionCache extends AbstractSessionCache {
     }
 
     @Override
+    protected Logger logger() {
+        return LOGGER;
+    }
+
+    @Override
     public CachedNode getNode( NodeKey key ) {
         CachedNode sessionNode = null;
         Lock lock = this.lock.readLock();
@@ -188,7 +193,7 @@ public class WritableSessionCache extends AbstractSessionCache {
     }
 
     @Override
-    public void clear() {
+    protected void doClear() {
         Lock lock = this.lock.writeLock();
         try {
             lock.lock();
@@ -200,7 +205,7 @@ public class WritableSessionCache extends AbstractSessionCache {
     }
 
     @Override
-    public void clear( CachedNode node ) {
+    protected void doClear( CachedNode node ) {
         final Path nodePath = node.getPath(this);
         Lock lock = this.lock.writeLock();
         try {
@@ -259,6 +264,7 @@ public class WritableSessionCache extends AbstractSessionCache {
     public Set<NodeKey> getChangedNodeKeysAtOrBelow( CachedNode srcNode ) {
         CheckArg.isNotNull(srcNode, "srcNode");
         final Path sourcePath = srcNode.getPath(this);
+        WorkspaceCache workspaceCache = workspaceCache();
 
         // Create a path cache so that we don't recompute the path for the same node more than once ...
         AllPathsCache allPathsCache = new AllPathsCache(this, workspaceCache, context()) {
@@ -374,7 +380,6 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                         // Now persist the changes ...
                         events = persistChanges(this.changedNodesInOrder, monitor);
-                        clearModifiedState();
                     } catch (org.infinispan.util.concurrent.TimeoutException e) {
                         txn.rollback();
                         if (repeat <= 0) throw new TimeoutException(e.getMessage(), e);
@@ -395,7 +400,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                             if (changes != null && monitor != null) {
                                 monitor.recordChanged(changes.changedNodes().size());
                             }
-                            clearState();
                         }
                     });
 
@@ -403,6 +407,8 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                     // Commit the transaction ...
                     txn.commit();
+
+                    clearState();
 
                 } catch (NotSupportedException err) {
                     // No nested transactions are supported ...
@@ -437,7 +443,7 @@ public class WritableSessionCache extends AbstractSessionCache {
             lock.unlock();
         }
 
-        txns.updateCache(workspaceCache, events, txn);
+        txns.updateCache(workspaceCache(), events, txn);
     }
 
     private void runPreSaveBeforeTransaction( PreSave preSaveOperation ) throws Exception {
@@ -462,7 +468,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 if (node == REMOVED || node.isNew()) {
                     continue;
                 }
-                preSaveOperation.processAfterLocking(node, saveContext, workspaceCache);
+                preSaveOperation.processAfterLocking(node, saveContext, workspaceCache());
             }
         }
     }
@@ -473,6 +479,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         this.referrerChangesForRemovedNodes.clear();
         this.changedNodesInOrder.clear();
         this.replacedNodes = null;
+        this.useTransactionalCacheIfRequired();
     }
 
     protected void clearState( Iterable<NodeKey> savedNodesInOrder ) {
@@ -484,17 +491,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 this.replacedNodes.remove(savedNode);
             }
         }
-    }
-
-    protected void clearModifiedState() {
-        this.changedNodesInOrder.clear();
-    }
-
-    protected void clearModifiedState( Iterable<NodeKey> savedNodesInOrder ) {
-        // The changes have been made, so remove the changes from this session's map ..
-        for (NodeKey savedNode : savedNodesInOrder) {
-            this.changedNodesInOrder.remove(savedNode);
-        }
+        this.useTransactionalCacheIfRequired();
     }
 
     @Override
@@ -537,8 +534,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // Now persist the changes ...
                         events1 = persistChanges(this.changedNodesInOrder, monitor);
                         events2 = that.persistChanges(that.changedNodesInOrder, monitor);
-                        this.clearModifiedState();
-                        that.clearModifiedState();
                     } catch (org.infinispan.util.concurrent.TimeoutException e) {
                         txn.rollback();
                         if (repeat <= 0) throw new TimeoutException(e.getMessage(), e);
@@ -565,8 +560,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                                     monitor.recordChanged(changes2.changedNodes().size());
                                 }
                             }
-                            clearState();
-                            that.clearState();
                         }
                     });
 
@@ -574,6 +567,9 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                     // Commit the transaction ...
                     txn.commit();
+
+                    this.clearState();
+                    that.clearState();
 
                 } catch (NotSupportedException err) {
                     // No nested transactions are supported ...
@@ -614,14 +610,14 @@ public class WritableSessionCache extends AbstractSessionCache {
 
         // TODO: Events ... these events should be combined, but cannot each ChangeSet only has a single workspace
         // Notify the workspaces of the changes made. This is done outside of our lock but still before the save returns ...
-        txns.updateCache(this.workspaceCache, events1, txn);
-        txns.updateCache(that.workspaceCache, events2, txn);
+        txns.updateCache(this.workspaceCache(), events1, txn);
+        txns.updateCache(that.workspaceCache(), events2, txn);
     }
 
     private void checkNodeNotRemovedByAnotherTransaction( MutableCachedNode node ) {
         String keyString = node.getKey().toString();
         // if the node is not new and also missing from the document, another transaction has deleted it
-        if (!node.isNew() && !workspaceCache.documentStore().containsKey(keyString)) {
+        if (!node.isNew() && !workspaceCache().documentStore().containsKey(keyString)) {
             throw new DocumentNotFoundException(keyString);
         }
     }
@@ -697,7 +693,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                                 if (node == REMOVED || !toBeSaved.contains(node.getKey())) {
                                     continue;
                                 }
-                                preSaveOperation.processAfterLocking(node, saveContext, workspaceCache);
+                                preSaveOperation.processAfterLocking(node, saveContext, workspaceCache());
                             }
                         }
 
@@ -705,8 +701,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                         events1 = persistChanges(savedNodesInOrder, monitor);
                         events2 = that.persistChanges(that.changedNodesInOrder, monitor);
 
-                        this.clearModifiedState(savedNodesInOrder);
-                        that.clearModifiedState();
                     } catch (org.infinispan.util.concurrent.TimeoutException e) {
                         txn.rollback();
                         if (repeat <= 0) throw new TimeoutException(e.getMessage(), e);
@@ -733,8 +727,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                                     monitor.recordChanged(changes2.changedNodes().size());
                                 }
                             }
-                            clearState(savedNodesInOrder);
-                            that.clearState();
                         }
                     });
 
@@ -742,6 +734,9 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                     // Commit the transaction ...
                     txn.commit();
+
+                    clearState(savedNodesInOrder);
+                    that.clearState();
 
                 } catch (NotSupportedException err) {
                     // No nested transactions are supported ...
@@ -781,8 +776,8 @@ public class WritableSessionCache extends AbstractSessionCache {
         }
 
         // TODO: Events ... these events should be combined, but cannot each ChangeSet only has a single workspace
-        txns.updateCache(this.workspaceCache, events1, txn);
-        txns.updateCache(that.workspaceCache, events2, txn);
+        txns.updateCache(this.workspaceCache(), events1, txn);
+        txns.updateCache(that.workspaceCache(), events2, txn);
     }
 
     /**
@@ -808,6 +803,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         String repositoryKey = workspaceCache().getRepositoryKey();
         String processKey = workspaceCache().getProcessKey();
         RecordingChanges changes = new RecordingChanges(processKey, repositoryKey, workspaceName);
+        WorkspaceCache workspaceCache = workspaceCache();
 
         // Get the documentStore ...
         DocumentStore documentStore = workspaceCache.documentStore();
@@ -1334,7 +1330,7 @@ public class WritableSessionCache extends AbstractSessionCache {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         NamespaceRegistry reg = context().getNamespaceRegistry();
-        sb.append("Session ").append(context().getId()).append(" to workspace '").append(workspaceCache.getWorkspaceName());
+        sb.append("Session ").append(context().getId()).append(" to workspace '").append(workspaceName());
         for (NodeKey key : changedNodesInOrder) {
             SessionNode changes = changedNodes.get(key);
             if (changes == null) {

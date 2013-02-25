@@ -21,26 +21,34 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.cache.document;
+package org.modeshape.transaction.lookup;
 
-import org.modeshape.jcr.ExecutionContext;
-import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.cache.SessionEnvironment;
-import org.modeshape.jcr.txn.Transactions;
+import java.util.Properties;
+import javax.transaction.TransactionManager;
+import org.infinispan.transaction.lookup.TransactionManagerLookup;
+import com.atomikos.icatch.config.UserTransactionServiceImp;
+import com.atomikos.icatch.jta.UserTransactionManager;
 
 /**
- * Tests that operate against a {@link ReadOnlySessionCache}.
+ * Used only for testing ModeShape/Infinispan with Atomikos.
  */
-public class ReadOnlySessionCacheTest extends AbstractSessionCacheTest {
+public class AtomikosStandaloneJTAManagerLookup implements TransactionManagerLookup {
+
+    private static final TransactionManager INSTANCE;
+    private static final UserTransactionServiceImp SERVICE;
+
+    static {
+        Properties props = new Properties();
+        props.setProperty("com.atomikos.icatch.log_base_dir", "target/atomikos/log");
+        props.setProperty("com.atomikos.icatch.output_dir", "target/atomikos/out");
+        SERVICE = new UserTransactionServiceImp(props);
+        SERVICE.init();
+
+        INSTANCE = new UserTransactionManager();
+    }
 
     @Override
-    protected SessionCache createSessionCache( ExecutionContext context,
-                                               WorkspaceCache cache ) {
-        return new ReadOnlySessionCache(context, workspaceCache, new SessionEnvironment() {
-            @Override
-            public Transactions getTransactions() {
-                return null;
-            }
-        });
+    public TransactionManager getTransactionManager() throws Exception {
+        return INSTANCE;
     }
 }
