@@ -1829,7 +1829,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                 // remove the current node
                 allChildren.remove(node.getKey());
                 // remove all the keys of the nodes which are removed
-                allChildren.removeAll(node.removedChildren());
+                allChildren.removeAll(node.getNodeChanges().removedChildren());
                 Set<Name> childrenNames = new HashSet<Name>();
 
                 for (NodeKey childKey : allChildren) {
@@ -1864,39 +1864,47 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
         @Override
         public void processAfterLocking( MutableCachedNode modifiedNode,
-                                         SaveContext context ) throws RepositoryException {
+                                         SaveContext context,
+                                         NodeCache persistentNodeCache ) throws RepositoryException {
+            // We actually can avoid this altogether if certain conditions are met ...
+            final Name primaryType = modifiedNode.getPrimaryType(cache);
+            final Set<Name> mixinTypes = modifiedNode.getMixinTypes(cache);
+            if (!nodeTypeCapabilities.disallowsSameNameSiblings(primaryType, mixinTypes)) return;
+
             MutableCachedNode.NodeChanges changes = modifiedNode.getNodeChanges();
+            Map<NodeKey, Name> appendedChildren = changes.appendedChildren();
+            Map<NodeKey, Name> renamedChildren = changes.renamedChildren();
+            if (!appendedChildren.isEmpty() || !renamedChildren.isEmpty()) {
 
-            Set<Name> childrenNames = new HashSet<Name>(changes.appendedChildren().values());
-            childrenNames.addAll(changes.renamedChildren().values());
+                Set<Name> appendedOrRenamedChildrenNames = new HashSet<Name>(appendedChildren.values());
+                appendedOrRenamedChildrenNames.addAll(renamedChildren.values());
+                assert appendedOrRenamedChildrenNames.isEmpty() == false;
 
-            if (!childrenNames.isEmpty()) {
-                //look at the information that was already persisted to determine whether some other thread has already created
-                //a child with the same name
-                NodeCache wsCache = repository().workspaceCache(workspaceName());
-                CachedNode persistentNode = wsCache.getNode(modifiedNode.getKey());
-                AbstractJcrNode modifiedNodeJcr = jcrNodes.get(modifiedNode.getKey());
-                assert modifiedNodeJcr != null;
+                // look at the information that was already persisted to determine whether some other thread has already
+                // created a child with the same name
+                CachedNode persistentNode = persistentNodeCache.getNode(modifiedNode.getKey());
 
-                //process appended children
-                for (Name childName : childrenNames) {
-                    ChildReferences persistedChildReferences = persistentNode.getChildReferences(wsCache);
+                // process appended children
+                for (Name childName : appendedOrRenamedChildrenNames) {
+                    ChildReferences persistedChildReferences = persistentNode.getChildReferences(persistentNodeCache);
                     int existingChildrenWithSameName = persistedChildReferences.getChildCount(childName);
                     if (existingChildrenWithSameName == 0) {
                         continue;
                     }
-                    JcrNodeDefinition childNodeDefinition = nodeTypeCapabilities.findChildNodeDefinition(modifiedNodeJcr.getPrimaryTypeName(),
-                                                                                                         modifiedNodeJcr.getMixinTypeNames(),
+                    JcrNodeDefinition childNodeDefinition = nodeTypeCapabilities.findChildNodeDefinition(primaryType,
+                                                                                                         mixinTypes,
                                                                                                          childName,
                                                                                                          null,
                                                                                                          existingChildrenWithSameName + 1,
                                                                                                          true);
                     if (childNodeDefinition == null) {
-                        //we weren't able to find a definition which allows SNS for this name, but we need to make sure that the node
-                        //that already exists (persisted) isn't the one that's being changed
+                        // we weren't able to find a definition which allows SNS for this name, but we need to make sure that
+                        // the node that already exists (persisted) isn't the one that's being changed
                         NodeKey persistedChildKey = persistedChildReferences.getChild(childName).getKey();
-                        if (!changes.appendedChildren().containsKey(persistedChildKey) && !changes.renamedChildren().containsKey(persistedChildKey)) {
-                            //SNS are not allowed and there's already a child with this name throw ItemExistsException per 7.1.4 of 1.0.1 spec
+                        if (!changes.appendedChildren().containsKey(persistedChildKey)
+                            && !changes.renamedChildren().containsKey(persistedChildKey)) {
+                            // SNS are not allowed and there's already a child with this name throw ItemExistsException per
+                            // 7.1.4 of 1.0.1 spec
                             throw new ItemExistsException(JcrI18n.noSnsDefinitionForNode.text(childName, workspaceName()));
                         }
                     }

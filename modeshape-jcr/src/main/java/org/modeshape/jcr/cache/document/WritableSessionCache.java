@@ -366,10 +366,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // Get a monitor via the transaction ...
                     final Monitor monitor = txn.createMonitor();
                     try {
-                        //Lock the nodes in Infinispan
+                        // Lock the nodes in Infinispan
                         lockAndPurgeCache(changedNodesInOrder);
 
-                        //process after locking
+                        // process after locking
                         runPreSaveAfterLocking(preSaveOperation);
 
                         // Now persist the changes ...
@@ -458,11 +458,11 @@ public class WritableSessionCache extends AbstractSessionCache {
         if (preSaveOperation != null) {
             SaveContext saveContext = new BasicSaveContext(context());
             for (MutableCachedNode node : this.changedNodes.values()) {
-                //only process existing nodes that have not been removed
+                // only process existing nodes that have not been removed
                 if (node == REMOVED || node.isNew()) {
                     continue;
                 }
-                preSaveOperation.processAfterLocking(node, saveContext);
+                preSaveOperation.processAfterLocking(node, saveContext, workspaceCache);
             }
         }
     }
@@ -527,11 +527,11 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // Get a monitor via the transaction ...
                     final Monitor monitor = txn.createMonitor();
                     try {
-                        //Lock the nodes in Infinispan
+                        // Lock the nodes in Infinispan
                         lockAndPurgeCache(this.changedNodesInOrder);
                         that.lockAndPurgeCache(that.changedNodesInOrder);
 
-                        //process after locking
+                        // process after locking
                         runPreSaveAfterLocking(preSaveOperation);
 
                         // Now persist the changes ...
@@ -685,11 +685,11 @@ public class WritableSessionCache extends AbstractSessionCache {
                     final Monitor monitor = txn.createMonitor();
 
                     try {
-                        //Lock the nodes in Infinispan
+                        // Lock the nodes in Infinispan
                         lockAndPurgeCache(savedNodesInOrder);
                         that.lockAndPurgeCache(that.changedNodesInOrder);
 
-                        //process after locking
+                        // process after locking
                         // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
                         if (preSaveOperation != null) {
                             SaveContext saveContext = new BasicSaveContext(context());
@@ -697,7 +697,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                                 if (node == REMOVED || !toBeSaved.contains(node.getKey())) {
                                     continue;
                                 }
-                                preSaveOperation.processAfterLocking(node, saveContext);
+                                preSaveOperation.processAfterLocking(node, saveContext, workspaceCache);
                             }
                         }
 
@@ -1195,7 +1195,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     throw new org.infinispan.util.concurrent.TimeoutException("Unable to acquire storage locks: " + keysToLock);
                 }
             }
-            //we need to purge those keys from the ws cache, otherwise we risk leaking changes, given that the WS cache is global
+            // we need to purge those keys from the ws cache, otherwise we risk leaking changes, given that the WS cache is global
             workspaceCache().purge(changedNodesInOrder);
         } else {
             LOGGER.debug("Infinispan is not configured with pessimistic locks, no nodes will be locked");

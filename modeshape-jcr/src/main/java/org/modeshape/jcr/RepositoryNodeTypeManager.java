@@ -499,9 +499,11 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
                 // Make sure the nodes have primary types that are either already registered, or pending registration ...
                 validateTypes(typesPendingRegistration);
 
-                //Validate each of types that should be registered
+                // Validate each of types that should be registered
                 for (JcrNodeType typePendingRegistration : typesPendingRegistration) {
-                    nodeTypes.validate(typePendingRegistration, Arrays.asList(typePendingRegistration.getDeclaredSupertypes()), typesPendingRegistration);
+                    nodeTypes.validate(typePendingRegistration,
+                                       Arrays.asList(typePendingRegistration.getDeclaredSupertypes()),
+                                       typesPendingRegistration);
                 }
 
                 SystemContent system = null;
@@ -531,15 +533,14 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         return typesPendingRegistration;
     }
 
-    private void validateTypes( List<JcrNodeType> typesPendingRegistration) throws RepositoryException {
+    private void validateTypes( List<JcrNodeType> typesPendingRegistration ) throws RepositoryException {
         NodeTypes nodeTypes = this.nodeTypesCache;
 
         for (JcrNodeType nodeType : typesPendingRegistration) {
             for (JcrNodeDefinition nodeDef : nodeType.getDeclaredChildNodeDefinitions()) {
                 Name[] requiredPrimaryTypeNames = nodeDef.requiredPrimaryTypeNames();
                 for (Name primaryTypeName : requiredPrimaryTypeNames) {
-                    JcrNodeType requiredPrimaryType = nodeTypes.findTypeInMapOrList(primaryTypeName,
-                                                                                    typesPendingRegistration);
+                    JcrNodeType requiredPrimaryType = nodeTypes.findTypeInMapOrList(primaryTypeName, typesPendingRegistration);
                     if (requiredPrimaryType == null) {
                         String msg = JcrI18n.invalidPrimaryTypeName.text(primaryTypeName, nodeType.getName());
                         throw new RepositoryException(msg);
@@ -783,6 +784,14 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
          */
         private final Set<Name> versionableNodeTypeNames = new HashSet<Name>();
         /**
+         * The set of names for the node types that have child node definitions that allow same name siblings for every
+         * combination. In other words, given any valid child, there will always be a satisfying child node definition that allows
+         * same name siblings. For example, 'nt:unstructured' contains residual child node definitions that allow and disallow
+         * same name siblings, so 'nt:unstructured' will always be in this set. If a node type is not in this set, then nodes of
+         * this type must be checked for children to ensure the children satisfy the child node definitions.
+         */
+        private final Set<Name> nodeTypeNamesThatAllowSameNameSiblings = new HashSet<Name>();
+        /**
          * The map of mandatory (and perhaps auto-created) property definitions for a node type keyed by the name of the node
          * type. See {@link #hasMandatoryPropertyDefinitions}
          */
@@ -841,6 +850,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
                     if (name.equals(JcrNtLexicon.UNSTRUCTURED)) {
                         ntUnstructured = nodeType;
+                        nodeTypeNamesThatAllowSameNameSiblings.add(name);
                     }
 
                     boolean fullyDefined = true;
@@ -875,7 +885,11 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
                             // fullDefined = false;
                         }
                     }
-                    for (JcrNodeDefinition childDefn : nodeType.allChildNodeDefinitions()) {
+                    Collection<JcrNodeDefinition> allChildNodeDefinitions = nodeType.allChildNodeDefinitions();
+                    boolean allowsResidualWithSameNameSiblings = false;
+                    boolean allowsOnlySameNameSiblings = true;
+                    boolean mixinWithNoChildNodeDefinitions = nodeType.isMixin() && allChildNodeDefinitions.isEmpty();
+                    for (JcrNodeDefinition childDefn : allChildNodeDefinitions) {
                         if (childDefn.isMandatory() && !childDefn.isProtected()) {
                             mandatoryChildrenNodeTypes.put(name, childDefn);
                             fullyDefined = false;
@@ -885,6 +899,18 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
                             // This isn't used in the pre-save operations, since auto-created items should be set on node creation
                             // fullDefined = false;
                         }
+                        if (childDefn.allowsSameNameSiblings()) {
+                            if (childDefn.isResidual() && !childDefn.hasRequiredPrimaryTypes()) {
+                                allowsResidualWithSameNameSiblings = true;
+                            }
+                        } else {
+                            // same name siblings are not allowed ...
+                            allowsOnlySameNameSiblings = false;
+                        }
+                    }
+                    if (!nodeType.isAbstract()
+                        && (allowsResidualWithSameNameSiblings || allowsOnlySameNameSiblings || mixinWithNoChildNodeDefinitions)) {
+                        nodeTypeNamesThatAllowSameNameSiblings.add(name);
                     }
 
                     if (fullyDefined) {
@@ -1044,6 +1070,15 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
             if (etagNodeTypeNames.contains(primaryType)) return true;
             for (Name mixinType : mixinTypes) {
                 if (etagNodeTypeNames.contains(mixinType)) return true;
+            }
+            return false;
+        }
+
+        public boolean disallowsSameNameSiblings( Name primaryType,
+                                                  Set<Name> mixinTypes ) {
+            if (!nodeTypeNamesThatAllowSameNameSiblings.contains(primaryType)) return true;
+            for (Name mixinType : mixinTypes) {
+                if (!nodeTypeNamesThatAllowSameNameSiblings.contains(mixinType)) return true;
             }
             return false;
         }
@@ -2421,7 +2456,6 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
          * @param nodeType the node type to attempt to validate
          * @param supertypes the names of the supertypes of the node type
          * @param pendingTypes the list of types previously registered in this batch but not yet committed to the repository
-         *
          * @throws RepositoryException if the given node type template is not valid
          */
         protected void validate( JcrNodeType nodeType,
@@ -2496,8 +2530,10 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         private void validateChildNodeDefinition( JcrNodeDefinition childNodeDefinition,
                                                   List<Name> supertypes,
                                                   List<JcrNodeType> pendingTypes ) throws RepositoryException {
-            if (childNodeDefinition.isAutoCreated() && !childNodeDefinition.isProtected() && childNodeDefinition.defaultPrimaryTypeName() == null) {
-                throw new InvalidNodeTypeDefinitionException(JcrI18n.autocreatedNodesNeedDefaults.text(childNodeDefinition.getName()));
+            if (childNodeDefinition.isAutoCreated() && !childNodeDefinition.isProtected()
+                && childNodeDefinition.defaultPrimaryTypeName() == null) {
+                throw new InvalidNodeTypeDefinitionException(
+                                                             JcrI18n.autocreatedNodesNeedDefaults.text(childNodeDefinition.getName()));
             }
             boolean residual = JcrNodeType.RESIDUAL_ITEM_NAME.equals(childNodeDefinition.getName());
             if (childNodeDefinition.isMandatory() && residual) {
@@ -2512,19 +2548,24 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
             Name childNodeName = context.getValueFactories().getNameFactory().create(childNodeDefinition.getName());
             childNodeName = childNodeName == null ? JcrNodeType.RESIDUAL_NAME : childNodeName;
 
-            List<JcrNodeDefinition> childNodesInAncestors = findChildNodeDefinitions(supertypes, childNodeName, NodeCardinality.ANY, pendingTypes);
+            List<JcrNodeDefinition> childNodesInAncestors = findChildNodeDefinitions(supertypes,
+                                                                                     childNodeName,
+                                                                                     NodeCardinality.ANY,
+                                                                                     pendingTypes);
 
             for (JcrNodeDefinition childNodeFromAncestor : childNodesInAncestors) {
                 if (childNodeFromAncestor.isProtected()) {
-                    throw new InvalidNodeTypeDefinitionException(JcrI18n.cannotOverrideProtectedDefinition.text(
-                            childNodeFromAncestor.getDeclaringNodeType().getName(),
-                            "child node"));
+                    throw new InvalidNodeTypeDefinitionException(
+                                                                 JcrI18n.cannotOverrideProtectedDefinition.text(childNodeFromAncestor.getDeclaringNodeType()
+                                                                                                                                     .getName(),
+                                                                                                                "child node"));
                 }
 
                 if (childNodeFromAncestor.isMandatory() && !childNodeDefinition.isMandatory()) {
-                    throw new InvalidNodeTypeDefinitionException(JcrI18n.cannotMakeMandatoryDefinitionOptional.text(
-                            childNodeFromAncestor.getDeclaringNodeType().getName(),
-                            "child node"));
+                    throw new InvalidNodeTypeDefinitionException(
+                                                                 JcrI18n.cannotMakeMandatoryDefinitionOptional.text(childNodeFromAncestor.getDeclaringNodeType()
+                                                                                                                                         .getName(),
+                                                                                                                    "child node"));
 
                 }
 
@@ -2545,7 +2586,8 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
                     for (Name name : childNodeDefinition.requiredPrimaryTypeNames()) {
                         JcrNodeType childNodePrimaryType = findTypeInMapOrList(name, pendingTypes);
 
-                        if (childNodePrimaryType != null && childNodePrimaryType.isNodeType(requiredPrimaryTypeFromAncestor.getName())) {
+                        if (childNodePrimaryType != null
+                            && childNodePrimaryType.isNodeType(requiredPrimaryTypeFromAncestor.getName())) {
                             found = true;
                             break;
                         }
@@ -2604,41 +2646,41 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
             }
 
             Value[] defaultValues = propertyDefinition.getDefaultValues();
-            if (propertyDefinition.isAutoCreated() && !propertyDefinition.isProtected() && (defaultValues == null || defaultValues.length == 0)) {
+            if (propertyDefinition.isAutoCreated() && !propertyDefinition.isProtected()
+                && (defaultValues == null || defaultValues.length == 0)) {
                 throw new InvalidNodeTypeDefinitionException(
                                                              JcrI18n.autocreatedPropertyNeedsDefault.text(propertyDefinition.getName(),
                                                                                                           propertyDefinition.getDeclaringNodeType()
-                                                                                                              .getName()));
+                                                                                                                            .getName()));
             }
 
             if (!propertyDefinition.isMultiple() && (defaultValues != null && defaultValues.length > 1)) {
                 throw new InvalidNodeTypeDefinitionException(
                                                              JcrI18n.singleValuedPropertyNeedsSingleValuedDefault.text(propertyDefinition.getName(),
                                                                                                                        propertyDefinition.getDeclaringNodeType()
-                                                                                                                           .getName()));
+                                                                                                                                         .getName()));
             }
 
             Name propName = context.getValueFactories().getNameFactory().create(propertyDefinition.getName());
             propName = propName == null ? JcrNodeType.RESIDUAL_NAME : propName;
 
             List<JcrPropertyDefinition> propertyDefinitionsFromAncestors = findPropertyDefinitions(supertypes,
-                                                                            propName,
-                                                                            propertyDefinition.isMultiple() ? PropertyCardinality.MULTI_VALUED_ONLY : PropertyCardinality.SINGLE_VALUED_ONLY,
-                                                                            pendingTypes);
+                                                                                                   propName,
+                                                                                                   propertyDefinition.isMultiple() ? PropertyCardinality.MULTI_VALUED_ONLY : PropertyCardinality.SINGLE_VALUED_ONLY,
+                                                                                                   pendingTypes);
 
             for (JcrPropertyDefinition propertyDefinitionFromAncestor : propertyDefinitionsFromAncestors) {
                 if (propertyDefinitionFromAncestor.isProtected()) {
                     throw new InvalidNodeTypeDefinitionException(
-                                                                 JcrI18n.cannotOverrideProtectedDefinition.text(
-                                                                         propertyDefinitionFromAncestor.getDeclaringNodeType()
-                                                                                 .getName(),
-                                                                         "property"));
+                                                                 JcrI18n.cannotOverrideProtectedDefinition.text(propertyDefinitionFromAncestor.getDeclaringNodeType()
+                                                                                                                                              .getName(),
+                                                                                                                "property"));
                 }
 
                 if (propertyDefinitionFromAncestor.isMandatory() && !propertyDefinition.isMandatory()) {
                     throw new InvalidNodeTypeDefinitionException(
                                                                  JcrI18n.cannotMakeMandatoryDefinitionOptional.text(propertyDefinitionFromAncestor.getDeclaringNodeType()
-                                                                                                                            .getName(),
+                                                                                                                                                  .getName(),
                                                                                                                     "property"));
 
                 }
@@ -2647,19 +2689,21 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
                 // than
                 // the old
                 if (propertyDefinitionFromAncestor.getValueConstraints() != null
-                    && !Arrays.equals(propertyDefinitionFromAncestor.getValueConstraints(), propertyDefinition.getValueConstraints())) {
+                    && !Arrays.equals(propertyDefinitionFromAncestor.getValueConstraints(),
+                                      propertyDefinition.getValueConstraints())) {
                     throw new InvalidNodeTypeDefinitionException(
                                                                  JcrI18n.constraintsChangedInSubtype.text(propName,
                                                                                                           propertyDefinitionFromAncestor.getDeclaringNodeType()
-                                                                                                                  .getName()));
+                                                                                                                                        .getName()));
                 }
 
-                if (!isAlwaysSafeConversion(propertyDefinition.getRequiredType(), propertyDefinitionFromAncestor.getRequiredType())) {
+                if (!isAlwaysSafeConversion(propertyDefinition.getRequiredType(),
+                                            propertyDefinitionFromAncestor.getRequiredType())) {
                     throw new InvalidNodeTypeDefinitionException(
                                                                  JcrI18n.cannotRedefineProperty.text(propName,
                                                                                                      PropertyType.nameFromValue(propertyDefinition.getRequiredType()),
                                                                                                      propertyDefinitionFromAncestor.getDeclaringNodeType()
-                                                                                                             .getName(),
+                                                                                                                                   .getName(),
                                                                                                      PropertyType.nameFromValue(propertyDefinitionFromAncestor.getRequiredType())));
 
                 }
