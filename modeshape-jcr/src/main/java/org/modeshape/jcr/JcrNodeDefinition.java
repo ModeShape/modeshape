@@ -131,6 +131,15 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
     }
 
     /**
+     * Get whether this child node definition has restrictions on the primary type of the children.
+     * 
+     * @return true if there is 1 or more required primary types, or false if there are none
+     */
+    public boolean hasRequiredPrimaryTypes() {
+        return id.hasRequiredPrimaryTypes();
+    }
+
+    /**
      * @return the name of the default primary type for this definition; may be null
      */
     final Name defaultPrimaryTypeName() {
