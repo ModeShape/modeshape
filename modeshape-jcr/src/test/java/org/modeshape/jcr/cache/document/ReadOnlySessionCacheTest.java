@@ -25,6 +25,8 @@ package org.modeshape.jcr.cache.document;
 
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.SessionEnvironment;
+import org.modeshape.jcr.txn.Transactions;
 
 /**
  * Tests that operate against a {@link ReadOnlySessionCache}.
@@ -34,6 +36,11 @@ public class ReadOnlySessionCacheTest extends AbstractSessionCacheTest {
     @Override
     protected SessionCache createSessionCache( ExecutionContext context,
                                                WorkspaceCache cache ) {
-        return new ReadOnlySessionCache(context, workspaceCache, null);
+        return new ReadOnlySessionCache(context, workspaceCache, new SessionEnvironment() {
+            @Override
+            public Transactions getTransactions() {
+                return null;
+            }
+        });
     }
 }
