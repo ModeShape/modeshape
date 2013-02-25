@@ -23,6 +23,9 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -44,9 +47,6 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrTools;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 public class ConcurrentWriteTest extends SingleUseAbstractTest {
 
@@ -63,6 +63,8 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
 
     /**
      * Create a session, obtain the root node, and close the session. Do this 500x using 16 threads.
+     * 
+     * @throws Exception
      */
     @Test
     public void shouldAllowMultipleThreadsToConcurrentlyGetRootNode() throws Exception {
@@ -77,6 +79,8 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
     /**
      * Create a session, add a single node under the root, and close the session. Do this twice using 2 threads. Then verify that
      * there are 2 children under the root (except for the "/jcr:system" node).
+     * 
+     * @throws Exception
      */
     @FixFor( "MODE-1734" )
     @Test
@@ -90,6 +94,8 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
     /**
      * Create a session, add a single node under the root, and close the session. Do this 500x using 16 threads. Then verify that
      * there are 500 children under the root (except for the "/jcr:system" node).
+     * 
+     * @throws Exception
      */
     @FixFor( "MODE-1734" )
     @Test

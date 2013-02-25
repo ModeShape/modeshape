@@ -96,17 +96,17 @@ public interface MutableCachedNode extends CachedNode {
                       Property property );
 
     /**
-     * Sets a property of type reference in the case when there's an active system cache and the property is a reference
-     * towards a transient node from the system cache.
-     *
+     * Sets a property of type reference in the case when there's an active system cache and the property is a reference towards a
+     * transient node from the system cache.
+     * 
      * @param cache the cache to which this node belongs; may not be null
      * @param property the property; may not be null
      * @param systemCache an existing system cache which contains transient nodes towards which the property points.
      * @throws NodeNotFoundException if this node no longer exists
      */
-    void setReference(SessionCache cache,
-                      Property property,
-                      SessionCache systemCache);
+    void setReference( SessionCache cache,
+                       Property property,
+                       SessionCache systemCache );
 
     /**
      * Set the given property only if it has not been set previously and therefore appear as changed.
@@ -348,6 +348,7 @@ public interface MutableCachedNode extends CachedNode {
      * @return a <code>Set&lt;{@link NodeKey}></code>, never null
      * @deprecated use {@link org.modeshape.jcr.cache.MutableCachedNode.NodeChanges#removedChildren()}
      */
+    @Deprecated
     public Set<NodeKey> removedChildren();
 
     /**
@@ -366,14 +367,14 @@ public interface MutableCachedNode extends CachedNode {
 
     /**
      * Sets a flag indicating if this node should be queryable or not.
-     *
+     * 
      * @param queryable a {@code boolean}.
      */
-    public void setQueryable(boolean queryable);
+    public void setQueryable( boolean queryable );
 
     /**
      * Returns an object encapsulating all the different changes that this session node contains.
-     *
+     * 
      * @return a {@code non-null} {@link NodeChanges} object.
      */
     public NodeChanges getNodeChanges();
@@ -384,41 +385,42 @@ public interface MutableCachedNode extends CachedNode {
     public interface NodeChanges {
         /**
          * Returns a set with the names of the properties that have changed. This includes new/modified properties.
-         *
+         * 
          * @return a {@code non-null} Set
          */
         Set<Name> changedPropertyNames();
 
         /**
          * Returns a set with the names of the properties that have been removed.
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<Name> removedPropertyNames();
 
         /**
          * Returns a set with the names of the mixins that have been added.
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<Name> addedMixins();
+
         /**
          * Returns a set with the names of the mixins that have been removed.
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<Name> removedMixins();
 
         /**
          * Returns the [childKey, childName] pairs of the children that have been appended (at the end).
-         *
+         * 
          * @return a {@code non-null} Map
          */
         public LinkedHashMap<NodeKey, Name> appendedChildren();
 
         /**
          * Returns the set of children that have been removed
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<NodeKey> removedChildren();
@@ -426,7 +428,7 @@ public interface MutableCachedNode extends CachedNode {
         /**
          * Returns the [childKey, childName] pairs of the children that have been renamed, where "childName" represents the new
          * name after the rename.
-         *
+         * 
          * @return a {@code non-null} Map
          */
         public Map<NodeKey, Name> renamedChildren();
@@ -434,56 +436,56 @@ public interface MutableCachedNode extends CachedNode {
         /**
          * Returns the [insertBeforeChildKey, [childKey, childName]] structure of the children that been inserted before another
          * existing child. This is normally caused due to reorderings
-         *
+         * 
          * @return a {@code non-null} Map
          */
         public Map<NodeKey, LinkedHashMap<NodeKey, Name>> childrenInsertedBefore();
 
         /**
          * Returns the set of parents that have been added
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<NodeKey> addedParents();
 
         /**
          * Returns the set of parents that have been removed
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<NodeKey> removedParents();
 
         /**
          * Returns the node key of the new primary parent, in case it has changed.
-         *
+         * 
          * @return either the {@link NodeKey} of the new primary parent or {@code null}
          */
         public NodeKey newPrimaryParent();
 
         /**
          * Returns a set of node keys with the weak referrers that have been added.
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<NodeKey> addedWeakReferrers();
 
         /**
          * Returns a set of node keys with the weak referrers that have been removed.
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<NodeKey> removedWeakReferrers();
 
         /**
          * Returns a set of node keys with the strong referrers that have been added.
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<NodeKey> addedStrongReferrers();
 
         /**
          * Returns a set of node keys with the strong referrers that have been removed.
-         *
+         * 
          * @return a {@code non-null} Set
          */
         public Set<NodeKey> removedStrongReferrers();

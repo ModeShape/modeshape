@@ -23,6 +23,9 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
@@ -34,9 +37,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.value.NamespaceRegistry;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
 
 public class RepositoryNodeTypeManagerTest extends AbstractTransactionalTest {
 
@@ -118,9 +118,7 @@ public class RepositoryNodeTypeManagerTest extends AbstractTransactionalTest {
         nodeTypeManager().registerNodeTypes(cndStream, true);
     }
 
-
     private JcrNodeTypeManager nodeTypeManager() throws RepositoryException {
         return (JcrNodeTypeManager)session.getWorkspace().getNodeTypeManager();
     }
-
 }
