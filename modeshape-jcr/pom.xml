@@ -216,6 +216,18 @@
             <groupId>org.picketbox</groupId>
             <artifactId>picketbox-bare</artifactId>
         </dependency>
+
+        <!--
+            Atomikos Transaction Manager (for testing only)
+        -->
+        <dependency>
+            <groupId>com.atomikos</groupId>
+            <artifactId>transactions</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.atomikos</groupId>
+            <artifactId>transactions-jta</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <resources>

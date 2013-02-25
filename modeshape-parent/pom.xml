@@ -253,6 +253,7 @@
         <jackrabbit.jcr.tck.version>2.5.1</jackrabbit.jcr.tck.version>
         <jackrabbit.lucene.version>3.6.0</jackrabbit.lucene.version>
         <jbossjta.version>4.16.2.Final</jbossjta.version>
+        <atomikos.version>3.8.0</atomikos.version>
         <picketbox.version>4.0.7.Final</picketbox.version>
         <byteman.version>1.5.1</byteman.version>
         <lucene.version>3.5.0</lucene.version>
@@ -1814,6 +1815,23 @@
             <version>${version.org.jboss.ironjacamar}</version>
             <scope>test</scope>
         </dependency>
+
+
+            <!--
+                Atomikos Transaction Manager (for testing only)
+            -->
+            <dependency>
+                <groupId>com.atomikos</groupId>
+                <artifactId>transactions</artifactId>
+                <version>${atomikos.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.atomikos</groupId>
+                <artifactId>transactions-jta</artifactId>
+                <version>${atomikos.version}</version>
+                <scope>test</scope>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>
