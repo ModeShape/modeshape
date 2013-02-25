@@ -24,6 +24,13 @@
 
 package org.modeshape.web.jcr.rest.output;
 
+import java.io.BufferedOutputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
+import java.util.Collection;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
@@ -35,12 +42,6 @@ import org.codehaus.jettison.json.JSONException;
 import org.jboss.resteasy.spi.WriterException;
 import org.jboss.resteasy.util.Types;
 import org.modeshape.web.jcr.rest.model.JSONAble;
-import java.io.BufferedOutputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
-import java.util.Collection;
 
 /**
  * Implementation of {@link MessageBodyWriter} which writes a {@link JSONAble} or a {@link Collection Collection<JSONAble>} instances to
@@ -114,9 +115,14 @@ public class JSONBodyWriter implements MessageBodyWriter<Object> {
             throw new WriterException(e);
         }
 
-        PrintWriter printWriter = new PrintWriter(new BufferedOutputStream(entityStream));
-        printWriter.write(content);
-        printWriter.flush();
+        try {
+            PrintStream ps = new PrintStream(new BufferedOutputStream(entityStream), true, "UTF-8");
+            String contentTypeHeader = mediaType.toString() + ";charset=utf-8";
+            httpHeaders.putSingle("Content-Type", contentTypeHeader);
+            ps.print(content);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected String getString( JSONAble jsonAble ) throws JSONException {

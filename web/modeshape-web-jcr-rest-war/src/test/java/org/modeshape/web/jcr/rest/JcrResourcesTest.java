@@ -721,6 +721,10 @@ public class JcrResourcesTest {
             return this;
         }
 
+        protected String getContentTypeHeader() {
+            return connection.getHeaderField("Content-Type");
+        }
+
         protected Response submit() throws IOException {
             // just trigger the request, ignore the result
             connection.getResponseCode();
@@ -762,7 +766,8 @@ public class JcrResourcesTest {
         }
 
         protected Response isJSON() throws Exception {
-            return hasHeader("Content-Type", MediaType.APPLICATION_JSON);
+            assertTrue(getContentTypeHeader().toLowerCase().contains(MediaType.APPLICATION_JSON.toLowerCase()));
+            return this;
         }
 
         protected Response isJSONObjectLikeFile( String pathToExpectedJSON ) throws Exception {
