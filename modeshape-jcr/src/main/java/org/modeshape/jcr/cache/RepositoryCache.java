@@ -113,6 +113,7 @@ public class RepositoryCache implements Observable {
     private final String systemWorkspaceName;
     private final Logger logger;
     private final SessionEnvironment sessionContext;
+    private final String processKey;
     private final boolean createdSystemContent;
     private final CacheContainer workspaceCacheManager;
     private volatile boolean initializingRepository = false;
@@ -130,6 +131,7 @@ public class RepositoryCache implements Observable {
         this.minimumStringLengthForBinaryStorage.set(configuration.getBinaryStorage().getMinimumStringSize());
         this.translator = new DocumentTranslator(this.context, this.documentStore, this.minimumStringLengthForBinaryStorage.get());
         this.sessionContext = sessionContext;
+        this.processKey = context.getProcessId();
         this.workspaceCacheManager = workspaceCacheContainer;
         this.logger = Logger.getLogger(getClass());
         this.rootNodeId = RepositoryConfiguration.ROOT_NODE_ID;
@@ -253,6 +255,10 @@ public class RepositoryCache implements Observable {
 
         // set the local source key in the document store
         this.documentStore.setLocalSourceKey(this.sourceKey);
+    }
+
+    protected final String processKey() {
+        return processKey;
     }
 
     protected Name name( String name ) {
@@ -519,12 +525,14 @@ public class RepositoryCache implements Observable {
             if (changeSet == null || !getKey().equals(changeSet.getRepositoryKey())) {
                 return;
             }
+            boolean isLocalEvent = processKey().equals(changeSet.getProcessKey());
             String workspaceName = changeSet.getWorkspaceName();
             if (workspaceName != null) {
                 for (WorkspaceCache cache : workspaces()) {
-                    if (!cache.getWorkspaceName().equalsIgnoreCase(workspaceName)) {
-                        // the workspace which triggered the event should've already processed the changeset, so we don't want to
-                        // do it
+                    if (!isLocalEvent || !cache.getWorkspaceName().equalsIgnoreCase(workspaceName)) {
+                        // If the event did not originate in this process, we always process it. Otherwise, it did originate
+                        // in this process and the workspace that triggered the event should've already processed the
+                        // changeset (and we don't want to do it again)...
                         cache.notify(changeSet);
                     }
                 }

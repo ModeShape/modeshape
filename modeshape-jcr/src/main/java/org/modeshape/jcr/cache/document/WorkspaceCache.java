@@ -30,6 +30,7 @@ import org.infinispan.api.BasicCache;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.cache.CachedNode;
@@ -48,6 +49,8 @@ import org.modeshape.jcr.value.PathFactory;
  * single {@link Document}. The nodes in this cache represent the actual, unmodified values.
  */
 public class WorkspaceCache implements DocumentCache, ChangeSetListener {
+
+    protected static final Logger LOGGER = Logger.getLogger(WorkspaceCache.class);
 
     private final DocumentTranslator translator;
     private final ExecutionContext context;
@@ -199,8 +202,14 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         CachedNode node = nodesByKey.get(key);
         if (node == null) {
             // Load the node from the database ...
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Node '{0}' is not found in the '{1}' workspace cache; looking in store", key, workspaceName);
+            }
             Document doc = documentFor(key);
             if (doc != null) {
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("Materialized document '{0}' in '{1}' workspace from store: {2}", key, workspaceName, doc);
+                }
                 // Create a new node and put into this cache ...
                 CachedNode newNode = new LazyCachedNode(key, doc);
                 Integer cacheTtlSeconds = translator().getCacheTtlSeconds(doc);
@@ -248,10 +257,16 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
     }
 
     @Override
-    public void notify( ChangeSet changeSet ) {
+    public void notify( ChangeSet changes ) {
         if (!closed) {
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Cache for workspace '{0}' received {1} changes from remote sessions: {2}",
+                             workspaceName,
+                             changes.size(),
+                             changes);
+            }
             // Clear this workspace's cached nodes (iteratively is okay since it's a ConcurrentMap) ...
-            for (NodeKey key : changeSet.changedNodes()) {
+            for (NodeKey key : changes.changedNodes()) {
                 if (closed) break;
                 nodesByKey.remove(key);
             }
@@ -266,6 +281,12 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
      */
     public void changed( ChangeSet changes ) {
         checkNotClosed();
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Cache for workspace '{0}' received {1} changes from local sessions: {2}",
+                         workspaceName,
+                         changes.size(),
+                         changes);
+        }
         // Clear this workspace's cached nodes (iteratively is okay since it's a ConcurrentMap) ...
         for (NodeKey key : changes.changedNodes()) {
             if (closed) break;
