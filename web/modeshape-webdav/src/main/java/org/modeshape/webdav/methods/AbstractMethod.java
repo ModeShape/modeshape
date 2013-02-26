@@ -154,19 +154,25 @@ public abstract class AbstractMethod implements IMethodExecutor {
             if ((result == null) || (result.equals(""))) {
                 result = "/";
             }
-            return (result);
+            return encodedResult(result);
         }
 
         // No, extract the desired path directly from the request
         String result = request.getPathInfo();
-        // if (result == null) {
-        // result = request.getServletPath();
-        // }
+
         if ((result == null) || (result.equals(""))) {
             result = "/";
         }
-        return (result);
+        //always convert to UTF-8
+        return encodedResult(result);
+    }
 
+    private String encodedResult( String result ) {
+        try {
+            return new String(result.getBytes(), "UTF-8");
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
     }
 
     /**
