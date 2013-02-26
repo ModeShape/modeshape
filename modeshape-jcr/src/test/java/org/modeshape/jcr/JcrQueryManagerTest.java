@@ -186,7 +186,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     }
 
     protected static String[] searchColumnNames() {
-        return new String[] {};
+        return new String[] {"jcr:score"};
     }
 
     private boolean print;
@@ -916,19 +916,19 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertRow(result).has("car:model", "Prius").and("car:msrp", "$21,500").and("car:year", 2008);
     }
 
-    @FixFor ( "MODE-1824" )
+    @FixFor( "MODE-1824" )
     @Test
     public void shouldBeAbleToExecuteQueryWithTwoColumns() throws RepositoryException {
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         QueryObjectModelFactory factory = queryManager.getQOMFactory();
         Selector car1Selector = factory.selector("car:Car", "car1");
         Selector car2Selector = factory.selector("car:Car", "car2");
-        Join join = factory.join(car1Selector, car2Selector, QueryObjectModelConstants.JCR_JOIN_TYPE_INNER,
-            factory.equiJoinCondition("car1", "car:maker", "car2", "car:maker"));
-        Column[] columns = new Column[]{
-            factory.column("car1", "car:maker", "maker"),
-            factory.column("car2", "car:model", "model")
-        };
+        Join join = factory.join(car1Selector,
+                                 car2Selector,
+                                 QueryObjectModelConstants.JCR_JOIN_TYPE_INNER,
+                                 factory.equiJoinCondition("car1", "car:maker", "car2", "car:maker"));
+        Column[] columns = new Column[] {factory.column("car1", "car:maker", "maker"),
+            factory.column("car2", "car:model", "model")};
         Query query = factory.createQuery(join, null, null, columns);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
@@ -968,22 +968,22 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertRow(result).has("car:model", "Prius").and("car.car:msrp", "$21,500").and("car.car:year", 2008);
     }
 
-    @FixFor ( "MODE-1825" )
+    @FixFor( "MODE-1825" )
     @Test
     public void shouldBeAbleToExecuteQueryForAllColumns() throws RepositoryException {
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         QueryObjectModelFactory factory = queryManager.getQOMFactory();
         Selector car1Selector = factory.selector("car:Car", "car1");
         Selector car2Selector = factory.selector("car:Car", "car2");
-        Join join = factory.join(car1Selector, car2Selector, QueryObjectModelConstants.JCR_JOIN_TYPE_INNER,
-                factory.equiJoinCondition("car1", "car:maker", "car2", "car:maker"));
-        Column[] columns = new Column[]{
-                factory.column("car1", null, null)
-        };
+        Join join = factory.join(car1Selector,
+                                 car2Selector,
+                                 QueryObjectModelConstants.JCR_JOIN_TYPE_INNER,
+                                 factory.equiJoinCondition("car1", "car:maker", "car2", "car:maker"));
+        Column[] columns = new Column[] {factory.column("car1", null, null)};
         Constraint constraint = factory.comparison(factory.propertyValue("car1", "car:maker"),
-                QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO,
-                factory.literal(session.getValueFactory().createValue("Toyota")));
-        Ordering[] orderings = new Ordering[]{factory.descending(factory.propertyValue("car1", "car:year"))};
+                                                   QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO,
+                                                   factory.literal(session.getValueFactory().createValue("Toyota")));
+        Ordering[] orderings = new Ordering[] {factory.descending(factory.propertyValue("car1", "car:year"))};
         Query query = factory.createQuery(join, constraint, orderings, columns);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
@@ -1745,7 +1745,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
-    @Ignore
     @FixFor( "MODE-1418" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithSelectorAndOneProperty()
@@ -1759,7 +1758,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResults(query, result, 1L);
     }
 
-    @Ignore
     @FixFor( "MODE-1418" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithSelectorAndAllProperties()
@@ -1773,12 +1771,37 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResults(query, result, 1L);
     }
 
-    @Ignore
     @FixFor( "MODE-1418" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchWithNoSelectorAndOneProperty()
         throws RepositoryException {
         String sql = "select [jcr:path] from [nt:unstructured] as n where contains(something,'cat wearing')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+    }
+
+    @Ignore
+    @FixFor( "MODE-1829" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchUsingLeadingWildcard() throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, '*earing')";
+        // String sql = "select [jcr:path] from [nt:unstructured] as n where n.[something] LIKE '*earing*'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+    }
+
+    @FixFor( "MODE-1829" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchUsingTrailingWildcard() throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, 'wea*')";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         // print = true;
@@ -1833,7 +1856,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     // Full-text Search Queries
     // ----------------------------------------------------------------------------------------------------------------
 
-    @Ignore
     @FixFor( "MODE-1418" )
     @Test
     public void shouldBeAbleToCreateAndExecuteFullTextSearchQueryOfPhrase() throws RepositoryException {
@@ -1846,7 +1868,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, searchColumnNames());
     }
 
-    @Ignore
     @FixFor( "MODE-905" )
     @Test
     public void shouldBeAbleToCreateAndExecuteFullTextSearchQuery() throws RepositoryException {
@@ -1859,7 +1880,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, searchColumnNames());
     }
 
-    @Ignore
     @FixFor( "MODE-905" )
     @Test
     public void shouldBeAbleToCreateAndExecuteFullTextSearchQueryWithName() throws RepositoryException {
@@ -2444,7 +2464,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
-    @Ignore
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithContainsCriteria() throws RepositoryException {
@@ -2452,17 +2471,16 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 2);
+        assertResults(query, result, 1);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
-    @Ignore
     @SuppressWarnings( "deprecation" )
     @Test
-    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteria() throws RepositoryException {
+    public void shouldBeAbleToExecuteXPathQueryWithContainsCriteriaAndPluralWord() throws RepositoryException {
         Query query = session.getWorkspace()
                              .getQueryManager()
-                             .createQuery("/jcr:root//*[jcr:contains(., '\"liter V 12\"')]", Query.XPATH);
+                             .createQuery("/jcr:root//*[jcr:contains(., 'liters')]", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -2470,7 +2488,19 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
-    @Ignore
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteria() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("/jcr:root//*[jcr:contains(., '\"liters V 12\"')]", Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1);
+        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+    }
+
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphen() throws RepositoryException {
@@ -2484,22 +2514,20 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
-    @Ignore
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndNumberAndWildcard()
         throws RepositoryException {
         Query query = session.getWorkspace()
                              .getQueryManager()
-                             .createQuery("/jcr:root//*[jcr:contains(., '\"5-s*\"')]", Query.XPATH);
+                             .createQuery("/jcr:root//*[jcr:contains(., '\"spee*\"')]", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1);
+        assertResults(query, result, 2);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
-    @Ignore
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndNoWildcard() throws RepositoryException {
@@ -2513,7 +2541,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
-    @Ignore
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndNoWildcard() throws RepositoryException {
@@ -2527,7 +2554,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
-    @Ignore
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndWildcard() throws RepositoryException {
@@ -2541,7 +2567,20 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
-    @Ignore
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndLeadingWildcard()
+        throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("/jcr:root//*[jcr:contains(., '\"*avy duty\"')]", Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1);
+        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+    }
+
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndWildcard() throws RepositoryException {
@@ -2570,14 +2609,13 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
-    @Ignore
     @FixFor( "MODE-790" )
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithCompoundCriteria() throws Exception {
         Query query = session.getWorkspace()
                              .getQueryManager()
-                             .createQuery("/jcr:root/Cars//element(*,car:Car)[@car:year='2008' and jcr:contains(., '\"liter V 12\"')]",
+                             .createQuery("/jcr:root/Cars//element(*,car:Car)[@car:year='2008' and jcr:contains(., '\"liters V 12\"')]",
                                           Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
@@ -2586,6 +2624,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResults(query, result, 1);
         assertResultsHaveColumns(result,
                                  "jcr:primaryType",
+                                 "jcr:mixinTypes",
                                  "jcr:path",
                                  "jcr:score",
                                  "jcr:created",
