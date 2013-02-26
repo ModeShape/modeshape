@@ -27,6 +27,8 @@ import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -723,6 +725,28 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         } finally {
             session2.logout();
         }
+    }
+
+    @FixFor( "MODE-1828" )
+    @Test
+    public void shouldAllowNodeTypeChangeAfterWrite() throws Exception {
+        session = createSession();
+        session.workspace().getNodeTypeManager().registerNodeTypes(getClass().getResourceAsStream("/cnd/nodeTypeChange-initial.cnd"), true);
+
+        Node testRoot = session.getRootNode().addNode("/testRoot", "test:nodeTypeA");
+        testRoot.setProperty("fieldA", "foo");
+        session.save();
+
+        session.workspace().getNodeTypeManager().registerNodeTypes(getClass().getResourceAsStream("/cnd/nodeTypeChange-next.cnd"), true);
+
+        testRoot = session.getNode("/testRoot");
+        assertEquals("foo", testRoot.getProperty("fieldA").getString());
+        testRoot.setProperty("fieldB", "bar");
+        session.save();
+
+        testRoot = session.getNode("/testRoot");
+        assertEquals("foo", testRoot.getProperty("fieldA").getString());
+        assertEquals("bar", testRoot.getProperty("fieldB").getString());
     }
 
     @FixFor( "MODE-1525" )

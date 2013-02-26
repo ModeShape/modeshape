@@ -962,6 +962,9 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
         protected NodeTypes with( Collection<JcrNodeType> addedNodeTypes ) {
             if (addedNodeTypes.isEmpty()) return this;
             Collection<JcrNodeType> nodeTypes = new HashSet<JcrNodeType>(this.nodeTypes.values());
+            // if there are updated node types, remove them first (hashcode is based on name alone),
+            // else addAll() will ignore the changes.
+            nodeTypes.removeAll(addedNodeTypes);
             nodeTypes.addAll(addedNodeTypes);
             return new NodeTypes(this.context, nodeTypes, getVersion() + 1);
         }
