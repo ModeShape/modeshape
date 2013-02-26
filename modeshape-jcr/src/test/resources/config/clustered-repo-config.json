@@ -6,9 +6,10 @@
         "allowCreation" : true
     },
     "storage" : {
-        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
+        "cacheName" : "repo_cache",
+        "cacheConfiguration" : "config/clustered-repo-config-ispn.xml",
     },
     "clustering" : {
-        "clusterName" : "modeshape"
+        "clusterName" : "modeshape-cluster"
     }
 }
