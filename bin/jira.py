@@ -182,7 +182,7 @@ Thank you very much,
 
   def __get_release_info_from_jira(self):
     request_url = "%sjira/rest/api/2/project/%s" % (self.jira_url,self.project_key)
-    # print "Request URL = %s" % (request_url)
+    print "Request URL = %s" % (request_url)
     # make the REST request ...
     socket = urllib.urlopen(request_url)
     json_response = socket.read()
@@ -242,17 +242,17 @@ Thank you very much,
     version_id = self.version_info['id']
     project_id = self.project_info['id']
     request_url = "%sConfigureReport.jspa?versions=%s&ctype=R&ctype=A&ctype=C&ccompany=A&selectedProjectId=%s&reportKey=org.jboss.labs.jira.plugin.patch-contributions-report-plugin:involvedInReleaseReport&Next=Next" % (self.jira_url,version_id,project_id)
-    # print "*** JIRA contributions request: %s" % request_url
+    print "*** JIRA contributions request: %s" % request_url
     # make the HTML request ...
     socket = urllib.urlopen(request_url)
     html_response = socket.read()
     socket.close()
-    # print html_response
+    print html_response
     # Parse the HTML to extract the contribution information ...
     contribution_exp = re.compile('\<th\scolspan="2">(.*?)</th>')
     href_exp = re.compile('href=\"(.*?)"')
     td_exp = re.compile('\<td.*?\>(.*?)\<')
-    name_exp = re.compile('\<td\>(.*?)\s(.*?)\<')
+    name_exp = re.compile('\<td\>(.*?)(\s(.*?))?\<')
     issue_exp = re.compile('\<a\shref=\"(.*?)"\>(.*?)\<')
     self.contributor_roles = list()
     lines = html_response.splitlines()
@@ -273,9 +273,13 @@ Thank you very much,
               # get the name of the user ...
               line = it.next()
               m = name_exp.search(line)
+              # print "m = %s %s" % (m.group(1),m.group(2))
               user_info['firstName'] = m.group(1)
-              user_info['lastName'] = m.group(2)
-              user_info['name'] = "%s %s" % (user_info['firstName'],user_info['lastName'])
+              if ( m.group(2) ) :
+                user_info['lastName'] = m.group(2)
+                user_info['name'] = "%s %s" % (user_info['firstName'],user_info['lastName'])
+              else:
+                user_info['name'] = "%s" % (user_info['firstName'])
               # get the email address for the user ...
               line = it.next()
               email = td_exp.search(line).group(1)
@@ -319,12 +323,12 @@ def main():
   project_key = 'MODE'
   project_name = 'ModeShape'
   project_id = '12310930'
-  version = '3.0.0.Alpha1'
+  version = '3.1.3.Final'
   jira = Jira(jira_url,project_key,project_id,project_name,version)
   jira.fetch_release_info()
   contributor_emails = jira.get_contributor_emails()
-  #print contributor_emails
-  #html_content = jira.get_contribution_html("joe.smith@bcc_bogus.com")
+  print contributor_emails
+  html_content = jira.get_contribution_html("joe.smith@bcc_bogus.com")
   #print html_content
   #print jira.get_release_notes_in_markdown()
   #print jira.project_info()
