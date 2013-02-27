@@ -1,6 +1,6 @@
 # Release Notes for ModeShape &version;
 
-The ModeShape &version; release is the second patch release for the 
+The ModeShape &version; release is the third patch release for the 
 second stable release of our new architecture. We hope you enjoy it!
 
 ## What's new
@@ -12,7 +12,7 @@ ModeShape 2's JCR-related features. ModeShape 3 has complete integration with JB
 allowing deployed components to simply lookup and use repositories managed by ModeShape's 
 service.
 
-This release is a bug-fix release that includes two dozen fixes (see below for details).
+This release is a bug-fix release that includes nearly a dozen fixes (see below for details).
 
 
 ## Features
