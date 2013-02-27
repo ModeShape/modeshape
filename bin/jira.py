@@ -182,7 +182,7 @@ Thank you very much,
 
   def __get_release_info_from_jira(self):
     request_url = "%sjira/rest/api/2/project/%s" % (self.jira_url,self.project_key)
-    print "Request URL = %s" % (request_url)
+    # print "Request URL = %s" % (request_url)
     # make the REST request ...
     socket = urllib.urlopen(request_url)
     json_response = socket.read()
@@ -242,12 +242,12 @@ Thank you very much,
     version_id = self.version_info['id']
     project_id = self.project_info['id']
     request_url = "%sConfigureReport.jspa?versions=%s&ctype=R&ctype=A&ctype=C&ccompany=A&selectedProjectId=%s&reportKey=org.jboss.labs.jira.plugin.patch-contributions-report-plugin:involvedInReleaseReport&Next=Next" % (self.jira_url,version_id,project_id)
-    print "*** JIRA contributions request: %s" % request_url
+    # print "*** JIRA contributions request: %s" % request_url
     # make the HTML request ...
     socket = urllib.urlopen(request_url)
     html_response = socket.read()
     socket.close()
-    print html_response
+    # print html_response
     # Parse the HTML to extract the contribution information ...
     contribution_exp = re.compile('\<th\scolspan="2">(.*?)</th>')
     href_exp = re.compile('href=\"(.*?)"')
