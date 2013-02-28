@@ -8,11 +8,11 @@
         <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
     </global>
 
-    <namedCache name="restoreRepository">
+    <namedCache name="persistentRepository">
         <transaction
                 transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
                 transactionMode="TRANSACTIONAL"
-                lockingMode="OPTIMISTIC"/>
+                lockingMode="PESSIMISTIC"/>
         <loaders
                 passivation="false"
                 shared="false"
@@ -22,8 +22,9 @@
                     fetchPersistentState="false"
                     purgeOnStartup="false">
                 <properties>
-                    <property name="location" value="target/backupArea/restoreRepo/store"/>
+                    <property name="location" value="target/persistent_repository/store"/>
                 </properties>
+                <async enabled="true" threadPoolSize="10" />
             </loader>
         </loaders>
     </namedCache>

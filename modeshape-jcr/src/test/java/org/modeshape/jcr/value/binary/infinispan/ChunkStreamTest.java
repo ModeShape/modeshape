@@ -80,12 +80,12 @@ public class ChunkStreamTest {
     public void before(){
         // blob
         blobCache = cacheManager.getCache("ChunkStreamTest");
+        blobCache.start();
     }
 
     @After
     public void after(){
         cacheManager.getCache("ChunkStreamTest").stop();
-        cacheManager.removeCache("ChunkStreamTest");
     }
 
     @Test

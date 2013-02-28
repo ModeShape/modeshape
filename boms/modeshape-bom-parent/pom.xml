@@ -52,15 +52,15 @@
         <!-- Versions of non-ModeShape dependencies -->
         <jcr.version>2.0</jcr.version>
         <joda.time.version>1.6.2</joda.time.version>
-        <infinispan.version>5.1.2.FINAL</infinispan.version>
+        <infinispan.version>5.2.1.FINAL</infinispan.version>
         <c3p0.version>0.9.1.2</c3p0.version>  <!-- same as the one used by Infinispan's JDBC cache store -->
-        <jgroups.version>3.0.6.Final</jgroups.version> <!-- same as the one used by Infinispan -->
-        <hibernate.search.version>4.1.1.Final</hibernate.search.version>
+        <jgroups.version>3.2.7.Final</jgroups.version> <!-- same as the one used by Infinispan -->
+        <hibernate.search.version>4.2.0.Final</hibernate.search.version>
         <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
         <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
-        <lucene.version>3.5.0</lucene.version>
+        <lucene.version>3.6.2</lucene.version>
         <lucene.regex.version>3.0.3</lucene.regex.version>
-        <lucene.regex.jakarta.version>1.4</lucene.regex.jakarta.version>
+
         <jbossjta.version>4.16.2.Final</jbossjta.version>
         <picketbox.version>4.0.7.Final</picketbox.version>
         <resteasy.version>2.3.2.Final</resteasy.version>
@@ -91,11 +91,11 @@
         <eclipse.emf.ecorexmi.version>2.4.1</eclipse.emf.ecorexmi.version>
 
         <!-- Versions of JBoss AS dependencies -->
-        <jbossas-version>7.1.1.Final</jbossas-version>
+        <jbossas-version>7.2.0.Final</jbossas-version>
         <!--jbossas-version>7.2.0.Alpha1-SNAPSHOT</jbossas-version-->
         <javax.connector-api.version>1.5</javax.connector-api.version>
         <javax.jta.version>1.1</javax.jta.version>
-        <jbossas7.assembly.descriptor.version>71</jbossas7.assembly.descriptor.version>
+        <jbossas7.assembly.descriptor.version>72</jbossas7.assembly.descriptor.version>
         <javax.servlet.version>2.5</javax.servlet.version>
 
         <!-- Versions of non-ModeShape dependencies used for logging -->

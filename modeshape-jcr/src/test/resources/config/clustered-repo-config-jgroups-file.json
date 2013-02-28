@@ -8,6 +8,9 @@
     "storage" : {
         "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
     },
+    "query" : {
+        "enabled" : false
+    },
     "clustering" : {
         "clusterName" : "modeshape",
         "channelConfiguration" : "config/jgroups-test-config.xml"
