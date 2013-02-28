@@ -21,7 +21,19 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+
 package org.modeshape.cmis;
+
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.jcr.Credentials;
+import javax.jcr.Session;
+import javax.jcr.SimpleCredentials;
 
 import org.apache.chemistry.opencmis.commons.data.Acl;
 import org.apache.chemistry.opencmis.commons.data.AllowableActions;
@@ -41,17 +53,13 @@ import org.apache.chemistry.opencmis.commons.definitions.TypeDefinitionList;
 import org.apache.chemistry.opencmis.commons.enums.IncludeRelationships;
 import org.apache.chemistry.opencmis.commons.enums.UnfileObject;
 import org.apache.chemistry.opencmis.commons.enums.VersioningState;
+import org.apache.chemistry.opencmis.commons.exceptions.CmisInvalidArgumentException;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisRuntimeException;
 import org.apache.chemistry.opencmis.commons.impl.server.AbstractCmisService;
 import org.apache.chemistry.opencmis.commons.server.CallContext;
 import org.apache.chemistry.opencmis.commons.spi.Holder;
-
-import javax.jcr.Credentials;
-import javax.jcr.Session;
-import javax.jcr.SimpleCredentials;
-import java.math.BigInteger;
-import java.util.*;
 import org.apache.chemistry.opencmis.jcr.JcrRepository;
+import org.modeshape.common.util.CheckArg;
 
 /**
  * JCR service implementation.
@@ -96,7 +104,7 @@ public class JcrService extends AbstractCmisService {
 
     @Override
     public List<RepositoryInfo> getRepositoryInfos(ExtensionsData extension) {
-        ArrayList<RepositoryInfo> info = new ArrayList();
+        ArrayList<RepositoryInfo> info = new ArrayList<RepositoryInfo>();
         Set<String> IDs = jcrRepositories.keySet();
         for (String Id : IDs) {
             JcrRepository repo = jcrRepositories.get(Id);
@@ -367,15 +375,51 @@ public class JcrService extends AbstractCmisService {
     }
 
     private JcrRepository jcrRepository(String repositoryId) {
-        return jcrRepositories.get(name(repositoryId));
+        String name = name(repositoryId);
+        JcrRepository repo = jcrRepositories.get(name);
+        if (repo == null) {
+            throw new CmisInvalidArgumentException(
+                    "Repository lookup failed for \"" + repositoryId +
+                            "\" (using name \"" + name + "\")");
+        }
+        return repo;
     }
 
     private String name(String repositoryId) {
-        return repositoryId.indexOf(":") > 0 ? repositoryId.substring(0, repositoryId.indexOf(":")) : repositoryId;
+        CheckArg.isNotNull(repositoryId, "repositoryId"); // if can be user-supplied, or 'assert repositoryId != null' if not user supplied
+        repositoryId = repositoryId.trim();
+        String[] parts = repositoryId.split(":", 2);
+        int numParts = parts.length;
+
+        if (numParts > 1) {
+            return parts[0].trim(); // may be blank
+        }
+        return repositoryId;
     }
 
+    /**
+     * 
+     * @param repositoryId The repositoryId
+     * @return The workspace. This method should not return null. 
+     * If {@code repositoryId} is a single word (i.e. not colon-separated), then 
+     * {@link #name(String)} and {@link #workspace(String)} should return  
+     * {@code repositoryId}.
+     * The short form is used when only repository is configured. 
+     * This is for compliance with Apache Chemistry.
+     */
     private String workspace(String repositoryId) {
-        return repositoryId.indexOf(":") > 0 ? null : repositoryId.substring(repositoryId.indexOf(":"), repositoryId.length());
-    }
+        CheckArg.isNotNull(repositoryId, "repositoryId"); // if can be user-supplied, or 'assert repositoryId != null' if not user supplied
+        repositoryId = repositoryId.trim();
+        String[] parts = repositoryId.split(":");
+        int numParts = parts.length;
 
+        if (numParts > 1) {
+            // Just take the second part
+            return parts[1].trim(); // may be blank
+        }
+        if (repositoryId.endsWith(":")) {
+            return "";
+        }
+        return repositoryId;
+    }
 }
