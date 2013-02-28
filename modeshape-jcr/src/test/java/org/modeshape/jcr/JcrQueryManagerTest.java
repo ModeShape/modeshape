@@ -991,6 +991,21 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResults(query, result, 9L);
     }
 
+    @FixFor ( "MODE-1833" )
+    @Test
+    public void shouldBeAbleToQueryAllColumnsOnSimpleType() throws RepositoryException, IOException {
+        registerNodeTypes("cnd/validType.cnd");
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        QueryObjectModelFactory factory = queryManager.getQOMFactory();
+        Query query = factory.createQuery(factory.selector("modetest:simpleType", "type1"),
+                                          null, null,
+                                          new Column[]{factory.column("type1", null, null)});
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 0L);
+    }
+
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllUnstructuredNodes() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:unstructured]", Query.JCR_SQL2);

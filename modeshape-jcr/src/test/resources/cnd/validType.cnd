@@ -11,3 +11,7 @@
 + modetest:namespace (mode:namespace) = mode:namespace protected version
 - * (string) = 'foo' version < 'foo', 'bar', 'baz'
 
+[modetest:simpleType]
+- fieldA (STRING)
+- fieldB (STRING)
+
