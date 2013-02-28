@@ -332,10 +332,10 @@
         <!--
             JBOSS AS 7.1.1.Final
         -->
-        <jbossas-version>7.1.1.Final</jbossas-version>
+        <jbossas-version>7.2.0.Final</jbossas-version>
         <javax.connector-api.version>1.5</javax.connector-api.version>
         <javax.jta.version>1.1</javax.jta.version>
-        <jbossas7.assembly.descriptor.version>71</jbossas7.assembly.descriptor.version>
+        <jbossas7.assembly.descriptor.version>72</jbossas7.assembly.descriptor.version>
 
         <!--
             JBOSS AS 7.2

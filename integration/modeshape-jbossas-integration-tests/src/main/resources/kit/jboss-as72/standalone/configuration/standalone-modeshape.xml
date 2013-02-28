@@ -21,12 +21,12 @@
         <extension module="org.jboss.as.remoting"/>
         <extension module="org.jboss.as.sar"/>
         <extension module="org.jboss.as.security"/>
+        <extension module="org.modeshape"/>
         <extension module="org.jboss.as.threads"/>
         <extension module="org.jboss.as.transactions"/>
         <extension module="org.jboss.as.web"/>
         <extension module="org.jboss.as.webservices"/>
         <extension module="org.jboss.as.weld"/>
-        <extension module="org.modeshape"/>
     </extensions>
     <management>
         <security-realms>
@@ -109,7 +109,7 @@
                     </security>
                 </datasource>
 
-                <datasource jndi-name="java:/datasources/ModeShapeDS" pool-name="ModeShapeDS" enabled="true" use-java-context="true">
+                <datasource jndi-name="java:/datasources/ModeShapeDS" enabled="true" use-java-context="true" pool-name="ModeShapeDS">
                     <connection-url>jdbc:jcr:jndi:jcr?repositoryName=artifacts</connection-url>
                     <driver>modeshape</driver>
                     <connection-property name="workspace">extra</connection-property>
@@ -118,6 +118,16 @@
                         <password>admin</password>
                     </security>
                 </datasource>
+
+                <datasource jndi-name="java:jboss/datasources/ModeshapeJDBCStoreDS" pool-name="ModeshapeJDBCStoreDS" enabled="true" use-java-context="true">
+                    <connection-url>jdbc:h2:mem:modeshapeJDBCStoreS;DB_CLOSE_DELAY=-1</connection-url>
+                    <driver>h2</driver>
+                    <security>
+                        <user-name>sa</user-name>
+                        <password>sa</password>
+                    </security>
+                </datasource>
+
                 <drivers>
                     <driver name="h2" module="com.h2database.h2">
                         <xa-datasource-class>org.h2.jdbcx.JdbcDataSource</xa-datasource-class>
@@ -194,13 +204,66 @@
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store relative-to="jboss.server.data.dir" path="modeshape/store/sample" passivation="false" purge="false"/>
+                    <file-store passivation="false" path="modeshape/store/sample" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
                 <local-cache name="artifacts">
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store relative-to="jboss.server.data.dir" path="modeshape/store/artifacts" passivation="false" purge="false"/>
+                    <file-store passivation="false" path="modeshape/store/artifacts" relative-to="jboss.server.data.dir" purge="false"/>
+                </local-cache>
+                <local-cache name="preconfiguredRepository">
+                    <!-- ModeShape requires transactions -->
+                    <transaction mode="NON_XA"/>
+                    <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
+                    <file-store passivation="false" path="modeshape/store/preconfiguredRepository" relative-to="jboss.server.data.dir" purge="false"/>
+                </local-cache>
+                <local-cache name="federatedRepository">
+                    <!-- ModeShape requires transactions -->
+                    <transaction mode="NON_XA"/>
+                </local-cache>
+                <local-cache name="noQueryRepository">
+                    <!-- ModeShape requires transactions -->
+                    <transaction mode="NON_XA"/>
+                    <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
+                    <file-store passivation="false" path="modeshape/store/noQueryRepository" relative-to="jboss.server.data.dir" purge="false"/>
+                </local-cache>
+                <!--ModeShape using JDBC persistence-->
+                <local-cache name="jdbcRepository">
+                    <transaction mode="NON_XA"/>
+                    <string-keyed-jdbc-store datasource="java:jboss/datasources/ModeshapeJDBCStoreDS" shared="false" preload="false" passivation="false" purge="false">
+                        <write-behind flush-lock-timeout="1" modification-queue-size="1024" shutdown-timeout="25000" thread-pool-size="1"/>
+                        <property name="databaseType">H2</property>
+                        <string-keyed-table prefix="JDG_MC_SK">
+                            <id-column name="id" type="VARCHAR(200)"/>
+                            <data-column name="datum" type="BYTEA"/>
+                            <timestamp-column name="version" type="BIGINT"/>
+                        </string-keyed-table>
+                    </string-keyed-jdbc-store>
+                </local-cache>
+            </cache-container>
+            <cache-container name="binary-cache-container" default-cache="binary-fs">
+                <local-cache name="binary-fs">
+                    <transaction mode="NON_XA"/>
+                    <file-store passivation="false" path="modeshape/binary-store/ispn-data" relative-to="jboss.server.data.dir" purge="false"/>
+                </local-cache>
+                <local-cache name="binary-fs-meta">
+                    <transaction mode="NON_XA"/>
+                    <file-store passivation="false" path="modeshape/binary-store/ispn-meta" relative-to="jboss.server.data.dir" purge="false"/>
+                </local-cache>
+            </cache-container>
+            <cache-container name="index-cache-container" default-cache="index-data">
+                <local-cache name="index-data" batching="true">
+                    <transaction mode="NON_XA"/>
+                    <file-store passivation="false" path="modeshape/index-cache-container" relative-to="jboss.server.data.dir" purge="false"/>
+                </local-cache>
+            </cache-container>
+            <!--Sample workspace cache container which should really be used only in special cases, when the provided default is not enough-->
+            <cache-container name="ws-cache-container" default-cache="ws-cache">
+                <local-cache name="ws-cache">
+                    <transaction mode="NON_XA"/>
+                    <eviction strategy="LRU" max-entries="100"/>
+                    <expiration lifespan="10000" interval="1000" max-idle="5000"/>
                 </local-cache>
             </cache-container>
         </subsystem>
@@ -288,6 +351,52 @@
                 <text-extractors>
                     <text-extractor name="tika-extractor" classname="tika" module="org.modeshape.extractor.tika"/>
                 </text-extractors>
+                <cache-binary-storage data-cache-name="binary-fs" metadata-cache-name="binary-fs-meta" cache-container="binary-cache-container"/>
+            </repository>
+            <repository name="preconfiguredRepository">
+                <indexing rebuild-upon-startup="never"/>
+                <workspaces cache-container="ws-cache-container">
+                    <workspace name="default"/>
+                    <workspace name="other"/>
+                    <workspace name="extra">
+                        <initial-content>initial-content-custom.xml</initial-content>
+                    </workspace>
+                    <workspace name="empty">
+                        <initial-content/>
+                    </workspace>
+                    <!--Defines a default initial content which will be imported in all the workspaces which don't have smth configured-->
+                    <initial-content>initial-content-default.xml</initial-content>
+                </workspaces>
+                <node-types>
+                    <node-type>custom.cnd</node-type>
+                </node-types>
+                <cache-index-storage cache-container="index-cache-container" data-cache-name="index-data"/>
+                <indexing analyzer-classname="org.apache.lucene.analysis.standard.ClassicAnalyzer"/>
+            </repository>
+            <repository name="federatedRepository">
+                <!--Turn off initial indexing for performance reasons-->
+                <indexing rebuild-upon-startup="never" rebuild-upon-startup-include-system-content="false" rebuild-upon-startup-mode="sync"/>
+                <workspaces allow-workspace-creation="true" default-workspace="default">
+                    <workspace name="default"/>
+                    <workspace name="other"/>
+                </workspaces>
+                <external-sources>
+                    <source name="filesystem" classname="org.modeshape.connector.filesystem.FileSystemConnector"
+                            directoryPath="${rootDirectoryPath}" cacheTtlSeconds="1" readonly="true">
+                        <projection>default:/projection1 => /</projection>
+                        <projection>other:/projection1 => /</projection>
+                    </source>
+                    <source name="git" classname="org.modeshape.connector.git.GitConnector" module="org.modeshape.connector.git"
+                            directoryPath="${gitRepositoryRootPath}" remoteName="upstream,origin" cacheTtlSeconds="1" readonly="true"
+                            queryableBranches="master,2.x"/>
+                </external-sources>
+            </repository>
+            <repository name="noQueryRepository" enable-queries="false" />
+            <repository name="jdbcRepository">
+                <workspaces allow-workspace-creation="true" default-workspace="default">
+                    <workspace name="default"/>
+                    <initial-content>initial-content-default.xml</initial-content>
+                </workspaces>
             </repository>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>
