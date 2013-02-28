@@ -32,7 +32,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Repository;
-import javax.transaction.TransactionManager;
 import org.infinispan.Cache;
 import org.infinispan.manager.CacheContainer;
 import org.modeshape.common.logging.Logger;
@@ -77,14 +76,7 @@ public class TestingUtil {
         try {
             if (repository.getState() != State.RUNNING) return Collections.emptySet();
             // Rollback any open transactions ...
-            TransactionManager txnMgr = repository.runningState().txnManager();
-            if (txnMgr != null && txnMgr.getTransaction() != null) {
-                try {
-                    txnMgr.rollback();
-                } catch (Throwable t) {
-                   log.warn(t, JcrI18n.errorKillingRepository, repository.getName(), t.getMessage());
-                }
-            }
+            org.infinispan.test.TestingUtil.killTransaction(repository.runningState().txnManager());
 
             // Then get the caches (which we'll kill after we shutdown the repository) ...
             Collection<Cache<?, ?>> caches = repository.caches();

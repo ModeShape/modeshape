@@ -6,7 +6,6 @@
     <FD/>
     <VERIFY_SUSPECT timeout='1500'/>
     <pbcast.NAKACK retransmit_timeout='600,1200,2400,4800' discard_delivered_msgs='true' use_mcast_xmit='false'/>
-    <UNICAST timeout='600,1200,2400'/>
     <pbcast.STABLE desired_avg_gossip='20000' max_bytes='400000'/>
     <FRAG frag_size='8192'/>
     <pbcast.GMS join_timeout='5000' print_local_addr='true'/>
