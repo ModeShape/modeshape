@@ -493,7 +493,8 @@ public class CanonicalPlanner implements Planner {
                         }
                     }
                     boolean validateColumnExistance = context.getHints().validateColumnExistance && !table.hasExtraColumns();
-                    if (table.getColumn(columnName) == null && validateColumnExistance && !"*".equals(columnName)) {
+                    boolean columnNameIsWildcard = columnName == null || "*".equals(columnName);
+                    if (!columnNameIsWildcard && table.getColumn(columnName) == null && validateColumnExistance) {
                         context.getProblems().addError(GraphI18n.columnDoesNotExistOnTable, columnName, tableName);
                     }
                 }
