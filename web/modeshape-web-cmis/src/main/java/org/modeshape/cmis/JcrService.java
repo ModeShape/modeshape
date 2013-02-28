@@ -371,7 +371,7 @@ public class JcrService extends AbstractCmisService {
     }
 
     private String name(String repositoryId) {
-        return repositoryId.indexOf(":") < 0 ? repositoryId.substring(0, repositoryId.indexOf(":")) : repositoryId;
+        return repositoryId.indexOf(":") > 0 ? repositoryId.substring(0, repositoryId.indexOf(":")) : repositoryId;
     }
 
     private String workspace(String repositoryId) {
