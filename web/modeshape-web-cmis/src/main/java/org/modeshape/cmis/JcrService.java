@@ -374,8 +374,19 @@ public class JcrService extends AbstractCmisService {
         return repositoryId.indexOf(":") > 0 ? repositoryId.substring(0, repositoryId.indexOf(":")) : repositoryId;
     }
 
+    /**
+     * 
+     * @param repositoryId The repositoryId
+     * @return The workspace. This method should not return null. 
+     * If {@code repositoryId} is a single word (i.e. not colon-separated), then 
+     * {@link #name(String)} and {@link #workspace(String)} should return  
+     * {@code repositoryId}.
+     * The short form is used when only repository is configured. 
+     * This is for compliance with Apache Chemistry.
+     */
     private String workspace(String repositoryId) {
-        return repositoryId.indexOf(":") > 0 ? null : repositoryId.substring(repositoryId.indexOf(":"), repositoryId.length());
+        return repositoryId.indexOf(":") < 0 ? repositoryId : repositoryId
+                .substring(repositoryId.indexOf(":"), repositoryId.length());
     }
 
 }
