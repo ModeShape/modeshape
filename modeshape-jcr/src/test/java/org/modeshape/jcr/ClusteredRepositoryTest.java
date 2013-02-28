@@ -107,8 +107,13 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
     @Test
     @FixFor( "MODE-1701" )
     public void shouldStartRepositoryWithJGroupsXMLConfigurationFile() throws Exception {
-        JcrRepository repository = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config-jgroups-file.json");
-        assertEquals(ModeShapeEngine.State.RUNNING, repository.getState());
+        JcrRepository repository = null;
+        try {
+            repository = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config-jgroups-file.json");
+            assertEquals(ModeShapeEngine.State.RUNNING, repository.getState());
+        } finally {
+            TestingUtil.killRepository(repository);
+        }
     }
 
     @Test( expected = RepositoryException.class )

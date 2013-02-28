@@ -256,24 +256,19 @@
         <atomikos.version>3.8.0</atomikos.version>
         <picketbox.version>4.0.7.Final</picketbox.version>
         <byteman.version>1.5.1</byteman.version>
-        <lucene.version>3.5.0</lucene.version>
-        <lucene.module.slot>3.5</lucene.module.slot>
+        <lucene.version>3.6.2</lucene.version>
         <lucene.regex.version>3.0.3</lucene.regex.version>
-        <lucene.regex.jakarta.version>1.4</lucene.regex.jakarta.version>
+
         <!-- These versions of Hibernate Search transitive dependencies are used in creating the Hibernate Search AS7 module.
-             When changing the version of Hiberate Search version, update these and the 
-             'deploy/jbossas/kit/jboss-as7/modules/org/hibernate/search/engine/main/module.xml' file. Note that Hibernate Search
-             forcibly overrides the Jackson libraries -->
-        <hibernate.search.version>4.1.1.Final</hibernate.search.version>
-        <hibernate.search.avro.version>1.5.1</hibernate.search.avro.version>
+             When changing the version of Hiberate Search version, update these
+             Note that Hibernate Search forcibly overrides the Jackson libraries -->
+        <hibernate.search.version>4.2.0.Final</hibernate.search.version>
         <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
         <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
-        <hibernate.search.paranamer.version>2.3</hibernate.search.paranamer.version>
-        <hibernate.search.snappy.version>1.0.1-rc3</hibernate.search.snappy.version>
-        <hibernate.search.module.slot>4.1</hibernate.search.module.slot>
-        <infinispan.version>5.1.2.FINAL</infinispan.version>
+
+        <infinispan.version>5.2.1.Final</infinispan.version>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
-        <jgroups.version>3.0.6.Final</jgroups.version>
+        <jgroups.version>3.2.7.Final</jgroups.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <jboss.logging.version>3.1.0.CR2</jboss.logging.version>
 
@@ -455,16 +450,6 @@
                 <dataSource.url>jdbc:h2:mem:${project.build.directory}/db/h2/modeshape</dataSource.url>
                 <dataSource.username>sa</dataSource.username>
                 <dataSource.password/>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>ispn515</id>
-            <properties>
-                <!--The following versions are also used by AS7.2-->
-                <infinispan.version>5.1.5.FINAL</infinispan.version>
-                <jgroups.version>3.1.0.Final</jgroups.version>
-                <jboss.logging.version>3.1.0.GA</jboss.logging.version>
             </properties>
         </profile>
         
@@ -912,6 +897,7 @@
                 <artifactId>infinispan-lucene-directory</artifactId>
                 <version>${infinispan.version}</version>
             </dependency>
+
             <!--
                 JGroups is used for the changes bus, but it's optional. Most of the times though, this will be in the classpath
                 because of ISPN.
@@ -964,6 +950,7 @@
                 <artifactId>hibernate-search-infinispan</artifactId>
                 <version>${hibernate.search.version}</version>
             </dependency>
+
             <dependency>
               <!--
               To force testing of Apache Avro integration with the version of Jackson used in AS 7.1

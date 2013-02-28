@@ -32,6 +32,7 @@ import org.apache.lucene.util.Version;
 import org.hibernate.annotations.common.reflection.ReflectionManager;
 import org.hibernate.search.cfg.SearchMapping;
 import org.hibernate.search.cfg.spi.SearchConfiguration;
+import org.hibernate.search.cfg.spi.SearchConfigurationBase;
 import org.hibernate.search.impl.SimpleInitializer;
 import org.hibernate.search.spi.InstanceInitializer;
 import org.hibernate.search.spi.ServiceProvider;
@@ -40,7 +41,7 @@ import org.modeshape.common.logging.Logger;
 /**
  * The Hibernate Search {@link SearchConfiguration} implementation that specifies how Hibernate Search should be configured.
  */
-public abstract class LuceneSearchConfiguration implements SearchConfiguration {
+public abstract class LuceneSearchConfiguration extends SearchConfigurationBase {
 
     protected static final String HIBERNATE_PROPERTY_PREFIX = "hibernate.search.";
     protected static final String DEFAULT_INDEX = "default.";

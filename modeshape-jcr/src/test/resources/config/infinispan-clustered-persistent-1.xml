@@ -3,6 +3,7 @@
   xmlns="urn:infinispan:config:5.1">
 
   <global>
+    <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
     <transport clusterName="modeshape-cluster">
       <properties>
         <property name="configurationFile" value="config/jgroups-test-config.xml" />

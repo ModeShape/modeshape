@@ -39,6 +39,7 @@ public class InfinispanTestUtil {
             ClusteringHelper.bindJGroupsToLocalAddress();
         }
         GlobalConfigurationBuilder globalConfigurationBuilder = new GlobalConfigurationBuilder();
+        globalConfigurationBuilder.globalJmxStatistics().allowDuplicateDomains(true);
         if (networked) {
             globalConfigurationBuilder.transport().defaultTransport();
         } else {

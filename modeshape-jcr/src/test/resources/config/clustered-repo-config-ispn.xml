@@ -3,7 +3,7 @@
 
     <global>
         <!-- Defines the global settings shared by all caches -->
-        <globalJmxStatistics enabled="false"/>
+        <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
 
         <transport clusterName="modeshape-cluster">
           <!-- Use the property below to point to a specific JGroups configuration file on your classpath -->
