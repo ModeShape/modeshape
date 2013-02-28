@@ -370,12 +370,36 @@ public class JcrService extends AbstractCmisService {
         return jcrRepositories.get(name(repositoryId));
     }
 
+    /**
+     * Computes the name of the repository from the repositoryId parameter.
+     *
+     * Repository name is used to identify the repository instance.
+     * In general form repositoryId contains combination of the repository name
+     * and the workspace name. If JcrService refers to only one repository the
+     * repositoryId might have only workspace name and that workspace name is
+     * used for as repository name as well.
+     *
+     * @param repositoryId the composite repositoryId
+     * @return the name of the repository .
+     */
     private String name(String repositoryId) {
         return repositoryId.indexOf(":") > 0 ? repositoryId.substring(0, repositoryId.indexOf(":")) : repositoryId;
     }
 
+    /**
+     * Computes the workspace name from the repositoryId parameter.
+     *
+     * Repository name is used to identify the repository instance.
+     * In general form repositoryId contains combination of the repository name
+     * and the workspace name. If JcrService refers to only one repository the
+     * repositoryId might have only workspace name and that workspace name is
+     * used for as repository name as well.
+     *
+     * @param repositoryId the composite repositoryId
+     * @return the name of the workspace.
+     */
     private String workspace(String repositoryId) {
-        return repositoryId.indexOf(":") > 0 ? null : repositoryId.substring(repositoryId.indexOf(":"), repositoryId.length());
+        return repositoryId.indexOf(":") > 0 ? repositoryId.substring(repositoryId.indexOf(":") + 1, repositoryId.length()) : repositoryId;
     }
 
 }
