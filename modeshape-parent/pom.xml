@@ -234,8 +234,10 @@
         <jpaSource.rootNodeUuid/>
         <jpaSource.showSql>false</jpaSource.showSql>
         <metadata.collectorClassName>org.modeshape.connector.meta.jdbc.JdbcMetadataCollector</metadata.collectorClassName>
-        <jgroups.preferIpv4>false</jgroups.preferIpv4>
-        <jgroups.preferIpv6>false</jgroups.preferIpv6>
+
+        <!--By default, we use whatever the underlying machine supports. However, certain sub-modules may change this -->
+        <preferIpv4>false</preferIpv4>
+        <preferIpv6>false</preferIpv6>
         <debug.argline/>
         <!--
           Global dependency version information
@@ -299,7 +301,7 @@
         <wsdl4j.version>1.6.2</wsdl4j.version>
         <bson4jackson.version>1.1.2</bson4jackson.version>
         <mongo.driver.version>2.7.3</mongo.driver.version>
-        <embedmongo.version>1.25</embedmongo.version>
+        <embedmongo.version>1.28</embedmongo.version>
         <json.simple.version>1.1</json.simple.version>
         <logback.version>0.9.29</logback.version>
         <jgit.version>2.1.0.201209190230-r</jgit.version>
@@ -381,19 +383,25 @@
             <id>preferIpv4</id>
             <activation>
                 <property>
-                    <name>!preferIpv6</name>
+                    <name>preferIpv4</name>
                 </property>
             </activation>
             <properties>
-                <jgroups.preferIpv4>true</jgroups.preferIpv4>
-                <jgroups.preferIpv6>false</jgroups.preferIpv6>
+                <preferIpv4>false</preferIpv4>
+                <preferIpv6>true</preferIpv6>
             </properties>
         </profile>
+
         <profile>
             <id>preferIpv6</id>
+            <activation>
+                <property>
+                    <name>preferIpv6</name>
+                </property>
+            </activation>
             <properties>
-                <jgroups.preferIpv4>false</jgroups.preferIpv4>
-                <jgroups.preferIpv6>true</jgroups.preferIpv6>
+                <preferIpv4>false</preferIpv4>
+                <preferIpv6>true</preferIpv6>
             </properties>
         </profile>
 
@@ -627,11 +635,11 @@
                         </property>
                         <property>
                             <name>java.net.preferIPv4Stack</name>
-                            <value>${jgroups.preferIpv4}</value>
+                            <value>${preferIpv4}</value>
                         </property>
                         <property>
                             <name>java.net.preferIPv6Addresses</name>
-                            <value>${jgroups.preferIpv6}</value>
+                            <value>${preferIpv6}</value>
                         </property>
                     </systemProperties>
                     <argLine>-Xmx1024M ${debug.argline} -XX:MaxPermSize=256M</argLine>

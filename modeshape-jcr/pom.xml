@@ -229,11 +229,6 @@
             <artifactId>transactions-jta</artifactId>
         </dependency>
     </dependencies>
-    <properties>
-        <!--Force Ipv6, because JGroups seems to be a lot faster with it -->
-        <preferIpv4>false</preferIpv4>
-        <preferIpv6>true</preferIpv6>
-    </properties>
     <build>
         <resources>
             <resource>
@@ -330,6 +325,20 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>ipv6_if_windows</id>
+            <activation>
+                <os>
+                    <family>Windows</family>
+                </os>
+            </activation>
+            <properties>
+                <!--Force Ipv6, because JGroups seems to be a lot faster with it on Windows-->
+                <preferIpv4>false</preferIpv4>
+                <preferIpv6>true</preferIpv6>
+            </properties>
         </profile>
     </profiles>
 </project>

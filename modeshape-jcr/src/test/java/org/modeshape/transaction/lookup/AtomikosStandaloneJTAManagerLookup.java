@@ -24,6 +24,7 @@
 package org.modeshape.transaction.lookup;
 
 import java.util.Properties;
+import java.util.UUID;
 import javax.transaction.TransactionManager;
 import org.infinispan.transaction.lookup.TransactionManagerLookup;
 import com.atomikos.icatch.config.UserTransactionServiceImp;
@@ -41,6 +42,8 @@ public class AtomikosStandaloneJTAManagerLookup implements TransactionManagerLoo
         Properties props = new Properties();
         props.setProperty("com.atomikos.icatch.log_base_dir", "target/atomikos/log");
         props.setProperty("com.atomikos.icatch.output_dir", "target/atomikos/out");
+        //we need to set the next property, or Atomikos will not run in using IPv6
+        props.setProperty("com.atomikos.icatch.tm_unique_name", UUID.randomUUID().toString());
         SERVICE = new UserTransactionServiceImp(props);
         SERVICE.init();
 

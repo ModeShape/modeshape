@@ -347,6 +347,7 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         when(repositoryConfiguration.isEnabled()).thenReturn(true);
         when(repositoryConfiguration.getClusterName()).thenReturn(clusterName);
         when(repositoryConfiguration.getChannelProviderClassName()).thenReturn(DefaultChannelProvider.class.getName());
+        when(repositoryConfiguration.getChannelConfiguration()).thenReturn("config/jgroups-test-config.xml");
         return repositoryConfiguration;
     }
 }
