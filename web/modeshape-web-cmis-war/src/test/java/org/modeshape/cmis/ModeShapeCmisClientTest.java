@@ -1,20 +1,7 @@
 package org.modeshape.cmis;
 
-import com.googlecode.sardine.DavResource;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import org.junit.Test;
-import org.modeshape.common.util.StringUtil;
-import com.googlecode.sardine.Sardine;
-import com.googlecode.sardine.SardineFactory;
-import com.googlecode.sardine.util.SardineException;
-import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
 import org.apache.chemistry.opencmis.client.api.Folder;
 import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.bindings.spi.StandardAuthenticationProvider;
@@ -22,6 +9,7 @@ import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
 import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
 import org.junit.Before;
+import org.junit.Test;
 import org.w3c.dom.Element;
 
 /**
@@ -45,15 +33,15 @@ public class ModeShapeCmisClientTest  {
 
         // connection settings
         parameter.put(SessionParameter.BINDING_TYPE, BindingType.WEBSERVICES.value());
-        parameter.put(SessionParameter.WEBSERVICES_ACL_SERVICE, "http://localhost:8090/modeshape-cmis/services/ACLService?wsdl");
-        parameter.put(SessionParameter.WEBSERVICES_DISCOVERY_SERVICE, "http://localhost:8090/modeshape-cmis/services/DiscoveryService?wsdl");
-        parameter.put(SessionParameter.WEBSERVICES_MULTIFILING_SERVICE, "http://localhost:8090/modeshape-cmis/services/MultiFilingService?wsdl");
-        parameter.put(SessionParameter.WEBSERVICES_NAVIGATION_SERVICE, "http://localhost:8090/modeshape-cmis/services/NavigationService?wsdl");
-        parameter.put(SessionParameter.WEBSERVICES_OBJECT_SERVICE, "http://localhost:8090/modeshape-cmis/services/ObjectService?wsdl");
-        parameter.put(SessionParameter.WEBSERVICES_POLICY_SERVICE, "http://localhost:8090/modeshape-cmis/services/PolicyService?wsdl");
-        parameter.put(SessionParameter.WEBSERVICES_RELATIONSHIP_SERVICE, "http://localhost:8090/modeshape-cmis/services/RelationshipService?wsdl");
-        parameter.put(SessionParameter.WEBSERVICES_REPOSITORY_SERVICE, "http://localhost:8090/modeshape-cmis/services/RepositoryService?wsdl");
-        parameter.put(SessionParameter.WEBSERVICES_VERSIONING_SERVICE, "http://localhost:8090/modeshape-cmis/services/VersioningService?wsdl");
+        parameter.put(SessionParameter.WEBSERVICES_ACL_SERVICE, serviceUrl("ACLService?wsdl"));
+        parameter.put(SessionParameter.WEBSERVICES_DISCOVERY_SERVICE, serviceUrl("/DiscoveryService?wsdl"));
+        parameter.put(SessionParameter.WEBSERVICES_MULTIFILING_SERVICE, serviceUrl("MultiFilingService?wsdl"));
+        parameter.put(SessionParameter.WEBSERVICES_NAVIGATION_SERVICE, serviceUrl("NavigationService?wsdl"));
+        parameter.put(SessionParameter.WEBSERVICES_OBJECT_SERVICE, serviceUrl("ObjectService?wsdl"));
+        parameter.put(SessionParameter.WEBSERVICES_POLICY_SERVICE, serviceUrl("/PolicyService?wsdl"));
+        parameter.put(SessionParameter.WEBSERVICES_RELATIONSHIP_SERVICE, serviceUrl("RelationshipService?wsdl"));
+        parameter.put(SessionParameter.WEBSERVICES_REPOSITORY_SERVICE, serviceUrl("RepositoryService?wsdl"));
+        parameter.put(SessionParameter.WEBSERVICES_VERSIONING_SERVICE, serviceUrl("VersioningService?wsdl"));
 
         parameter.put(SessionParameter.REPOSITORY_ID, "cmis_repo:default");
 
@@ -65,7 +53,6 @@ public class ModeShapeCmisClientTest  {
                 //Place headers here
                 return super.getSOAPHeaders(portObject);
             }
-         ;
         }, null);
     }
 
@@ -75,5 +62,7 @@ public class ModeShapeCmisClientTest  {
         System.out.println("Root: " + root);
     }
 
-
+    private String serviceUrl(String serviceMethod) {
+        return  "http://localhost:8090/modeshape-cmis/services/" +  serviceMethod;
+    }
 }

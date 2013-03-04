@@ -14,6 +14,8 @@
   <url>http://www.modeshape.org</url>
   <properties>
     <arquillian.suspend>n</arquillian.suspend>
+      <!--//TODO author=Horia Chiorean date=3/4/13 description=Arquillian servlet runner seems to not work with Ipv6 -->
+      <preferIpv4>true</preferIpv4>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -206,10 +208,11 @@
           <type>pom</type>
           <scope>provided</scope>
         </dependency>
-        <dependency>
-          <groupId>org.jboss.as</groupId>
-          <artifactId>jboss-as-arquillian-container-managed</artifactId>
-        </dependency>
+          <dependency>
+              <groupId>org.jboss.as</groupId>
+              <artifactId>jboss-as-arquillian-container-managed</artifactId>
+              <version>${jbossas-version}</version>
+          </dependency>
       </dependencies>
       <build>
         <plugins>

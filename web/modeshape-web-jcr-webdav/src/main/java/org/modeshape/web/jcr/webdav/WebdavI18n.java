@@ -39,6 +39,7 @@ public final class WebdavI18n {
     public static I18n requiredParameterMissing;
     public static I18n cannotCreateRepository;
     public static I18n cannotCreateWorkspaceInRepository;
+    public static I18n cannotGetRepositorySession;
 
     static {
         try {

@@ -66,19 +66,23 @@ public class MongodbBinaryStoreTest extends AbstractBinaryStoreTest {
         RuntimeConfig config = RuntimeConfig.getInstance(LOGGER);
         MongodStarter runtime = MongodStarter.getInstance(config);
         int freeServerPort = Network.getFreeServerPort();
-        mongodExecutable = runtime.prepare(new MongodConfig(Version.Main.V2_0, freeServerPort,
+        mongodExecutable = runtime.prepare(new MongodConfig(Version.Main.V2_3, freeServerPort,
                                                                              Network.localhostIsIPv6()));
         mongodProcess = mongodExecutable.start();
 
-        binaryStore = new MongodbBinaryStore(Network.getLocalHost().getHostAddress(), freeServerPort, "test-" + UUID.randomUUID());
+        binaryStore = new MongodbBinaryStore("localhost", freeServerPort, "test-" + UUID.randomUUID());
         binaryStore.start();
     }
 
     @AfterClass
     public static void tearDownClass() throws Exception {
-        binaryStore.shutdown();
-        mongodExecutable.stop();
-        mongodProcess.stop();
+        try {
+            binaryStore.shutdown();
+            mongodExecutable.stop();
+            mongodProcess.stop();
+        } catch (Exception e) {
+            //ignore
+        }
     }
 
     @Override
