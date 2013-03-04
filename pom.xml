@@ -82,7 +82,7 @@
 			    as some of the integration tests rely upon the distributions
 			  -->
 				<module>modeshape-distribution</module>
-				<!--<module>integration</module>-->
+				<module>integration</module>
 			</modules>
 		</profile>
 		
@@ -108,7 +108,7 @@
                 <module>modeshape-client</module>
                 <module>demos</module>
                 <module>modeshape-distribution</module>
-                <!--<module>integration</module>-->
+                <module>integration</module>
             </modules>
         </profile>
 		

@@ -371,26 +371,15 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                     // Get a monitor via the transaction ...
                     final Monitor monitor = txn.createMonitor();
-                    try {
-                        // Lock the nodes in Infinispan
-                        lockAndPurgeCache(changedNodesInOrder);
 
-                        // process after locking
-                        runPreSaveAfterLocking(preSaveOperation);
+                    // Lock the nodes in Infinispan
+                    lockAndPurgeCache(changedNodesInOrder);
 
-                        // Now persist the changes ...
-                        events = persistChanges(this.changedNodesInOrder, monitor);
-                    } catch (org.infinispan.util.concurrent.TimeoutException e) {
-                        txn.rollback();
-                        if (repeat <= 0) throw new TimeoutException(e.getMessage(), e);
-                        --repeat;
-                        Thread.sleep(PAUSE_TIME_BEFORE_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT);
-                        continue;
-                    } catch (Exception e) {
-                        // Some error occurred (likely within our code) ...
-                        txn.rollback();
-                        throw e;
-                    }
+                    // process after locking
+                    runPreSaveAfterLocking(preSaveOperation);
+
+                    // Now persist the changes ...
+                    events = persistChanges(this.changedNodesInOrder, monitor);
 
                     // Register a handler that will execute upon successful commit of the transaction (whever that happens) ...
                     final ChangeSet changes = events;
@@ -410,6 +399,16 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                     clearState();
 
+                } catch (org.infinispan.util.concurrent.TimeoutException e) {
+                    if (txn != null) {
+                        txn.rollback();
+                    }
+                    if (repeat <= 0) {
+                        throw new TimeoutException(e.getMessage(), e);
+                    }
+                    --repeat;
+                    Thread.sleep(PAUSE_TIME_BEFORE_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT);
+                    continue;
                 } catch (NotSupportedException err) {
                     // No nested transactions are supported ...
                     return;
@@ -423,12 +422,21 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // Couldn't be committed, but the txn is already rolled back ...
                     return;
                 } catch (HeuristicMixedException err) {
+                    // Rollback has occurred ...
+                    return;
                 } catch (HeuristicRollbackException err) {
                     // Rollback has occurred ...
                     return;
                 } catch (SystemException err) {
                     // System failed unexpectedly ...
                     throw new SystemFailureException(err);
+                } catch (Throwable t) {
+                    //any other exception/error we should rollback
+                    if (txn != null) {
+                        txn.rollback();
+                    }
+                    //let the exception bubble up
+                    throw t;
                 }
 
                 // If we've made it this far, we should never repeat ...
@@ -437,8 +445,8 @@ public class WritableSessionCache extends AbstractSessionCache {
 
         } catch (RuntimeException e) {
             throw e;
-        } catch (Exception e) {
-            throw new WrappedException(e);
+        } catch (Throwable t) {
+            throw new WrappedException(t);
         } finally {
             lock.unlock();
         }

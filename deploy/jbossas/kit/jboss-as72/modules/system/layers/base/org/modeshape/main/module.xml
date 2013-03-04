@@ -23,26 +23,34 @@
   -->
 <module xmlns="urn:jboss:module:1.1" name="org.modeshape">
     <resources>
-        <resource-root path="modeshape-jcr-${project.version}.jar" />
-        <resource-root path="conf" />
-        <resource-root path="res" />
-        <resource-root path="modeshape-jbossas-subsystem-${project.version}.jar" />
-        <resource-root path="modeshape-schematic-${project.version}.jar" />
+        <resource-root path="modeshape-jcr-${project.version}.jar"/>
+        <resource-root path="conf"/>
+        <resource-root path="res"/>
+        <resource-root path="modeshape-jbossas-subsystem-${project.version}.jar"/>
+        <resource-root path="modeshape-schematic-${project.version}.jar"/>
     </resources>
 
-   <dependencies>
-       <!--The sequencers aren't listed here because they are loaded from the ModuleLoader API -->
+    <dependencies>
+        <!--The sequencers aren't listed here because they are loaded from the ModuleLoader API -->
         <module name="org.modeshape.jcr.api" export="true"/>
         <module name="org.modeshape.common" export="true"/>
 
         <!-- ModeShape JCR dependencies (must export Infinispan so that our stored classes can be loaded )-->
         <module name="org.infinispan" export="true"/>
-        <module name="org.joda.time" />
-        <module name="org.jgroups" />
+        <!--
+             Include the JDBC and Remote modules because in AS7.2, the ModeShape ISPN cache container will use the "module"
+             attribute, meaning Infinispan will be loaded using ModeShape's class loader. If we don't export these modules,
+             declaring JDBC or Remote caches within ModeShape's cache container would not be possible.
+        -->
+        <module name="org.infinispan.cachestore.jdbc" export="true"/>
+        <module name="org.infinispan.cachestore.remote" export="true"/>
+
+        <module name="org.joda.time"/>
+        <module name="org.jgroups"/>
         <module name="org.apache.tika" slot="${tika.version}" services="import"/>
         <module name="org.apache.lucene" slot="3.6.2"/>
         <module name="org.hibernate.search.engine" export="true"/>
-       <!-- For naming ... -->
+        <!-- For naming ... -->
         <module name="javax.api" export="true"/>
         <module name="org.jboss.as.naming"/>
         <!-- For security provider ... -->
@@ -54,7 +62,7 @@
         <module name="org.jboss.as.controller"/>
         <module name="org.jboss.staxmapper"/>
         <module name="org.jboss.modules"/>
-        <module name="org.jboss.msc" />
+        <module name="org.jboss.msc"/>
         <module name="org.jboss.as.server"/>
     </dependencies>
 
