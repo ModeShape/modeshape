@@ -12,6 +12,6 @@
         <transaction
                 transactionManagerLookupClass="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"
                 transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
+                lockingMode="OPTIMISTIC"/>
     </namedCache>
 </infinispan>
