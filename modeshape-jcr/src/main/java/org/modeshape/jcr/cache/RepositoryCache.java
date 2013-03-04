@@ -392,6 +392,7 @@ public class RepositoryCache implements Observable {
             // we'll need to read the entry if one was inserted between 'containsKey' and 'putIfAbsent' ...
         }
         if (entry != null) {
+            // There was an existing document ...
             Document doc = entry.getContentAsDocument();
             Property prop = translator.getProperty(doc, name("workspaces"));
             if (prop != null && !prop.isEmpty() && !update) {
@@ -405,11 +406,17 @@ public class RepositoryCache implements Observable {
                 this.workspaceNames.retainAll(workspaceNames);
             } else {
                 // Set the property ...
-                EditableDocument editable = entry.editDocumentContent();
-                PropertyFactory propFactory = context.getPropertyFactory();
-                translator.setProperty(editable, propFactory.create(name("workspaces"), workspaceNames), null);
-                // we need to update local the cache immediately, so the changes are persisted
-                documentStore.localStore().replace(systemMetadataKeyStr, editable);
+                try {
+                    Transaction txn = sessionContext.getTransactions().begin();
+                    EditableDocument editable = entry.editDocumentContent();
+                    PropertyFactory propFactory = context.getPropertyFactory();
+                    translator.setProperty(editable, propFactory.create(name("workspaces"), workspaceNames), null);
+                    // we need to update local the cache immediately, so the changes are persisted
+                    documentStore.localStore().replace(systemMetadataKeyStr, editable);
+                    txn.commit();
+                } catch (Exception err) {
+                    throw new SystemFailureException(JcrI18n.errorUpdatingWorkspaceNames.text(name, err.getMessage()));
+                }
             }
         }
     }

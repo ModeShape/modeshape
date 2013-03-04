@@ -166,6 +166,50 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
         assertThat(session2.getRootNode(), is(notNullValue()));
     }
 
+    @FixFor( "MODE-1834" )
+    @Test
+    public void shouldAllowCreatingNewWorkspacesByDefaultWhenUsingTransactionManagerWithOptimisticLocking() throws Exception {
+        RepositoryConfiguration config = RepositoryConfiguration.read("config/repo-config-inmemory-jbosstxn-optimistic.json");
+        JcrRepository repository = new JcrRepository(config);
+        repository.start();
+
+        // Verify the workspace does not exist yet ...
+        try {
+            repository.login("new-workspace");
+        } catch (NoSuchWorkspaceException e) {
+            // expected
+        }
+        JcrSession session1 = repository.login();
+        assertThat(session1.getRootNode(), is(notNullValue()));
+        session1.getWorkspace().createWorkspace("new-workspace");
+
+        // Now create a session to that workspace ...
+        JcrSession session2 = repository.login("new-workspace");
+        assertThat(session2.getRootNode(), is(notNullValue()));
+    }
+
+    @FixFor( "MODE-1834" )
+    @Test
+    public void shouldAllowCreatingNewWorkspacesByDefaultWhenUsingTransactionManagerWithPessimisticLocking() throws Exception {
+        RepositoryConfiguration config = RepositoryConfiguration.read("config/repo-config-inmemory-jbosstxn.json");
+        JcrRepository repository = new JcrRepository(config);
+        repository.start();
+
+        // Verify the workspace does not exist yet ...
+        try {
+            repository.login("new-workspace");
+        } catch (NoSuchWorkspaceException e) {
+            // expected
+        }
+        JcrSession session1 = repository.login();
+        assertThat(session1.getRootNode(), is(notNullValue()));
+        session1.getWorkspace().createWorkspace("new-workspace");
+
+        // Now create a session to that workspace ...
+        JcrSession session2 = repository.login("new-workspace");
+        assertThat(session2.getRootNode(), is(notNullValue()));
+    }
+
     @Test
     public void shouldAllowDestroyingWorkspacesByDefault() throws Exception {
         // Verify the workspace does not exist yet ...
@@ -731,13 +775,17 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
     @Test
     public void shouldAllowNodeTypeChangeAfterWrite() throws Exception {
         session = createSession();
-        session.workspace().getNodeTypeManager().registerNodeTypes(getClass().getResourceAsStream("/cnd/nodeTypeChange-initial.cnd"), true);
+        session.workspace()
+               .getNodeTypeManager()
+               .registerNodeTypes(getClass().getResourceAsStream("/cnd/nodeTypeChange-initial.cnd"), true);
 
         Node testRoot = session.getRootNode().addNode("/testRoot", "test:nodeTypeA");
         testRoot.setProperty("fieldA", "foo");
         session.save();
 
-        session.workspace().getNodeTypeManager().registerNodeTypes(getClass().getResourceAsStream("/cnd/nodeTypeChange-next.cnd"), true);
+        session.workspace()
+               .getNodeTypeManager()
+               .registerNodeTypes(getClass().getResourceAsStream("/cnd/nodeTypeChange-next.cnd"), true);
 
         testRoot = session.getNode("/testRoot");
         assertEquals("foo", testRoot.getProperty("fieldA").getString());
