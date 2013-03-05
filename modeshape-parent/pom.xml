@@ -321,7 +321,7 @@
         <eclipse.emf.ecore.version>2.4.2</eclipse.emf.ecore.version>
         <eclipse.emf.ecorechange.version>2.2.3</eclipse.emf.ecorechange.version>
         <eclipse.emf.ecorexmi.version>2.4.1</eclipse.emf.ecorexmi.version>
-        <tika.version>1.2</tika.version>
+        <tika.version>1.3</tika.version>
 
         <!--WebDAV servlet-->
         <jmock.version>2.4.0</jmock.version>

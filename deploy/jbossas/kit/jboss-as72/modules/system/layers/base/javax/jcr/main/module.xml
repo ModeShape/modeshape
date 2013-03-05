@@ -21,7 +21,7 @@
   ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
-<module xmlns="urn:jboss:module:1.1" name="javax.jcr">
+<module xmlns="urn:jboss:module:1.2" name="javax.jcr">
 
   <dependencies>
     <module name="javax.api" export="true"/>

@@ -68,7 +68,7 @@
         <httpclient.version>4.1.2</httpclient.version>
         <mongo.driver.version>2.7.3</mongo.driver.version>
         <embedmongo.version>1.25</embedmongo.version>
-        <tika.version>1.2</tika.version>
+        <tika.version>1.3</tika.version>
         <javaassist.version>3.11.0.GA</javaassist.version>
         <jaudiotagger.version>2.0.3</jaudiotagger.version>
         <poi.version>3.8</poi.version>
