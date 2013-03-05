@@ -431,11 +431,11 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // System failed unexpectedly ...
                     throw new SystemFailureException(err);
                 } catch (Throwable t) {
-                    //any other exception/error we should rollback
+                    // any other exception/error we should rollback
                     if (txn != null) {
                         txn.rollback();
                     }
-                    //let the exception bubble up
+                    // let the exception bubble up
                     throw t;
                 }
 
@@ -1363,12 +1363,23 @@ public class WritableSessionCache extends AbstractSessionCache {
                                   String sourceName,
                                   String externalPath,
                                   String alias ) {
-        // register the node in the changes, so it can be saved later
-        mutable(nodeKey);
-        DocumentStore documentStore = workspaceCache().documentStore();
-        EditableDocument document = documentStore.get(nodeKey.toString()).editDocumentContent();
-        DocumentTranslator translator = workspaceCache().translator();
-        translator.addFederatedSegment(document, nodeKey.toString(), sourceName, externalPath, alias);
+        MutableCachedNode node = mutable(nodeKey);
+        try {
+            Transaction txn = txns.begin();
+            // register the node in the changes, so it can be saved later
+            DocumentStore documentStore = workspaceCache().documentStore();
+            EditableDocument document = documentStore.get(nodeKey.toString()).editDocumentContent();
+            DocumentTranslator translator = workspaceCache().translator();
+            translator.addFederatedSegment(document, nodeKey.toString(), sourceName, externalPath, alias);
+            txn.commit();
+        } catch (Exception err) {
+            throw new SystemFailureException(JcrI18n.errorStoringProjection.text(workspaceName(),
+                                                                                 node.getPath(this),
+                                                                                 sourceName,
+                                                                                 externalPath,
+                                                                                 alias,
+                                                                                 err.getMessage()));
+        }
     }
 
     /**
@@ -1379,11 +1390,20 @@ public class WritableSessionCache extends AbstractSessionCache {
      */
     public void removeProjection( NodeKey federatedNodeKey,
                                   NodeKey externalNodeKey ) {
-        // register the node in the changes, so it can be saved later
-        mutable(federatedNodeKey);
-        DocumentStore documentStore = workspaceCache().documentStore();
-        EditableDocument federatedDocument = documentStore.get(federatedNodeKey.toString()).editDocumentContent();
-        DocumentTranslator translator = workspaceCache().translator();
-        translator.removeFederatedSegments(federatedDocument, externalNodeKey.toString());
+        MutableCachedNode node = mutable(federatedNodeKey);
+        try {
+            Transaction txn = txns.begin();
+            // register the node in the changes, so it can be saved later
+            DocumentStore documentStore = workspaceCache().documentStore();
+            EditableDocument federatedDocument = documentStore.get(federatedNodeKey.toString()).editDocumentContent();
+            DocumentTranslator translator = workspaceCache().translator();
+            translator.removeFederatedSegments(federatedDocument, externalNodeKey.toString());
+            txn.commit();
+        } catch (Exception err) {
+            throw new SystemFailureException(JcrI18n.errorRemovingProjection.text(workspaceName(),
+                                                                                  node.getPath(this),
+                                                                                  externalNodeKey,
+                                                                                  err.getMessage()));
+        }
     }
 }
