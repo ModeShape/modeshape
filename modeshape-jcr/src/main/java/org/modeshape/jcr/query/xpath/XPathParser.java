@@ -466,8 +466,8 @@ public class XPathParser {
             do {
                 args.add(collapse(parseExprSingle(tokens)));
             } while (tokens.canConsume(","));
-            tokens.consume(")");
         }
+        tokens.consume(")");
         return new FunctionCall(name, args);
     }
 
@@ -696,8 +696,17 @@ public class XPathParser {
             else if (tokens.canConsume("descending")) order = Order.DESCENDING;
             return new OrderBySpec(order, scoreFunction);
         }
-        throw new ParsingException(tokens.nextPosition(),
-                                   "Expected either 'jcr:score(tableName)' or '@<propertyName>' but found " + tokens.consume());
+
+        PathExpression path = this.parsePathExpr(tokens);
+        Order order = Order.ASCENDING;
+        if (tokens.canConsume("ascending")) {
+            order = Order.ASCENDING;
+        } else if (tokens.canConsume("descending")) {
+            order = Order.DESCENDING;
+        }
+        return new OrderBySpec(order, path);
+//        throw new ParsingException(tokens.nextPosition(),
+//                                   "Expected either 'jcr:score(tableName)' or '@<propertyName>' but found " + tokens.consume());
     }
 
     /**
