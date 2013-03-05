@@ -290,8 +290,8 @@
         <javax.servlet.version>2.5</javax.servlet.version>
         <javax.jacc.version>1.0.0.Final</javax.jacc.version>
         <jboss.seam.version>2.2.2.Final</jboss.seam.version>
-        <resteasy.version>2.3.2.Final</resteasy.version>
-        <jettison.version>1.1</jettison.version>
+        <resteasy.version>2.3.5.Final</resteasy.version>
+        <jettison.version>1.3.1</jettison.version>
         <httpclient.version>4.1.2</httpclient.version>
         <sardine.version>146</sardine.version>
         <javaassist.version>3.11.0.GA</javaassist.version>
