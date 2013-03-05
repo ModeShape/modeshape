@@ -22,7 +22,7 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<module xmlns="urn:jboss:module:1.1" name="org.hibernate.search.engine" slot="main">
+<module xmlns="urn:jboss:module:1.2" name="org.hibernate.search.engine" slot="main">
     <resources>
         <resource-root path="hibernate-search-engine-4.2.0.Final.jar" />
         <resource-root path="hibernate-search-infinispan-4.2.0.Final.jar" />

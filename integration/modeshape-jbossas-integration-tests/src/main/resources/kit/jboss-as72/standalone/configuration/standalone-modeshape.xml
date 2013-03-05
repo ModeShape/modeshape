@@ -242,7 +242,7 @@
                     </string-keyed-jdbc-store>
                 </local-cache>
             </cache-container>
-            <cache-container name="binary-cache-container" default-cache="binary-fs">
+            <cache-container name="binary-cache-container" default-cache="binary-fs" module="org.modeshape">
                 <local-cache name="binary-fs">
                     <transaction mode="NON_XA"/>
                     <file-store passivation="false" path="modeshape/binary-store/ispn-data" relative-to="jboss.server.data.dir" purge="false"/>
@@ -252,14 +252,14 @@
                     <file-store passivation="false" path="modeshape/binary-store/ispn-meta" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
             </cache-container>
-            <cache-container name="index-cache-container" default-cache="index-data">
+            <cache-container name="index-cache-container" default-cache="index-data" module="org.modeshape">
                 <local-cache name="index-data" batching="true">
                     <transaction mode="NON_XA"/>
                     <file-store passivation="false" path="modeshape/index-cache-container" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
             </cache-container>
             <!--Sample workspace cache container which should really be used only in special cases, when the provided default is not enough-->
-            <cache-container name="ws-cache-container" default-cache="ws-cache">
+            <cache-container name="ws-cache-container" default-cache="ws-cache" module="org.modeshape">
                 <local-cache name="ws-cache">
                     <transaction mode="NON_XA"/>
                     <eviction strategy="LRU" max-entries="100"/>
