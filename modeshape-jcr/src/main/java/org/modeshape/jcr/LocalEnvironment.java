@@ -207,29 +207,87 @@ public class LocalEnvironment implements Environment {
         if (container == null) {
             // The default Infinispan configuration is in-memory, local and non-clustered.
             // But we need a transaction manager, so use the generic TM which is a good default ...
-            Configuration config = createDefaultConfiguration();
-            GlobalConfiguration global = createGlobalConfiguration();
+            ConfigurationBuilder config = createDefaultConfigurationBuilder();
+            GlobalConfigurationBuilder global = createGlobalConfigurationBuilder();
             container = createContainer(global, config);
         }
         return container;
     }
 
-    protected Configuration createDefaultConfiguration() {
+    /**
+     * Create the default configuration.
+     * 
+     * @return the default cache configuration.
+     */
+    protected ConfigurationBuilder createDefaultConfigurationBuilder() {
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.transaction().transactionMode(TransactionMode.TRANSACTIONAL);
         configurationBuilder.transaction().transactionManagerLookup(transactionManagerLookupInstance());
         configurationBuilder.transaction().lockingMode(LockingMode.PESSIMISTIC);
-        return configurationBuilder.build();
+        return configurationBuilder;
     }
 
-    protected GlobalConfiguration createGlobalConfiguration() {
+    /**
+     * Create the global configuration.
+     * 
+     * @return the global configuration.
+     */
+    protected GlobalConfigurationBuilder createGlobalConfigurationBuilder() {
         GlobalConfigurationBuilder global = new GlobalConfigurationBuilder();
         global.globalJmxStatistics().allowDuplicateDomains(true);
         // TODO author=Horia Chiorean date=7/26/12 description=MODE-1524 - Currently we don't use advanced externalizers
         // global = global.fluent().serialization().addAdvancedExternalizer(Schematic.externalizers()).build();
-        return global.build();
+        return global;
     }
 
+    /**
+     * Create a cache container using the supplied configurations.
+     * 
+     * @param globalConfigurationBuilder the global configuration builder
+     * @param configurationBuilder the default cache configuration builder
+     * @return the cache container
+     */
+    protected CacheContainer createContainer( GlobalConfigurationBuilder globalConfigurationBuilder,
+                                              ConfigurationBuilder configurationBuilder ) {
+        GlobalConfiguration globalConfiguration = globalConfigurationBuilder.build();
+        Configuration configuration = configurationBuilder.build();
+        logger.debug("Starting cache manager with global configuration \n{0}\nand default configuration:\n{1}",
+                     globalConfiguration,
+                     configuration);
+        return new DefaultCacheManager(globalConfiguration, configuration);
+    }
+
+    /**
+     * Create the default configuration.
+     * 
+     * @return the default cache configuration.
+     * @deprecated see {@link #createDefaultConfigurationBuilder()}
+     */
+    @Deprecated
+    protected Configuration createDefaultConfiguration() {
+        return createDefaultConfigurationBuilder().build();
+    }
+
+    /**
+     * Create the global configuration.
+     * 
+     * @return the global configuration.
+     * @deprecated see {@link #createGlobalConfigurationBuilder()}
+     */
+    @Deprecated
+    protected GlobalConfiguration createGlobalConfiguration() {
+        return createGlobalConfigurationBuilder().build();
+    }
+
+    /**
+     * Create a cache container using the supplied configurations.
+     * 
+     * @param globalConfiguration the global configuration
+     * @param configuration the default cache configuration
+     * @return the cache container
+     * @deprecated use {@link #createContainer(GlobalConfigurationBuilder, ConfigurationBuilder)} instead
+     */
+    @Deprecated
     protected CacheContainer createContainer( GlobalConfiguration globalConfiguration,
                                               Configuration configuration ) {
         logger.debug("Starting cache manager with global configuration \n{0}\nand default configuration:\n{1}",

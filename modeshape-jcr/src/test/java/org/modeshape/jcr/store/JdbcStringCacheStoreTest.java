@@ -24,13 +24,12 @@
 package org.modeshape.jcr.store;
 
 import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.cache.LoaderConfigurationBuilder;
-import org.infinispan.loaders.jdbc.stringbased.JdbcStringBasedCacheStore;
+import org.infinispan.loaders.jdbc.configuration.JdbcBinaryCacheStoreConfigurationBuilder;
 import org.junit.Ignore;
 
 /**
- * Currently ignored because of the time required to run it.
- * //TODO author=Horia Chiorean date=9/12/12 description=If they are ever enabled, c3p0 needs to be added as a test dependency
+ * Currently ignored because of the time required to run it. //TODO author=Horia Chiorean date=9/12/12 description=If they are
+ * ever enabled, c3p0 needs to be added as a test dependency
  */
 @Ignore
 public class JdbcStringCacheStoreTest extends InMemoryTest {
@@ -44,22 +43,24 @@ public class JdbcStringCacheStoreTest extends InMemoryTest {
     }
 
     @Override
-    public void applyLoaderConfiguration(ConfigurationBuilder configurationBuilder) {
-        LoaderConfigurationBuilder lb = configurationBuilder.loaders().addCacheLoader().cacheLoader(new JdbcStringBasedCacheStore());
-        lb.addProperty("dropTableOnExit", "true")
-                .addProperty("createTableOnStart", "true")
-                .addProperty("connectionFactoryClass", "org.infinispan.loaders.jdbc.connectionfactory.PooledConnectionFactory")
-                .addProperty("connectionUrl", dataSourceConfig.getUrl() + "/string_based_db;DB_CLOSE_DELAY=1")
-                .addProperty("driverClass", dataSourceConfig.getDriverClassName())
-                .addProperty("userName", dataSourceConfig.getUsername())
-                //.addProperty("databaseType", databaseType)
-                .addProperty("stringsTableNamePrefix", "ISPN_STRING_TABLE")
-                .addProperty("idColumnName", "ID_COLUMN")
-                .addProperty("idColumnType", "VARCHAR(255)")
-                .addProperty("timestampColumnName", "TIMESTAMP_COLUMN")
-                .addProperty("timestampColumnType", "BIGINT")
-                .addProperty("dataColumnName", "DATA_COLUMN")
-                .addProperty("dataColumnType", "BINARY");
+    public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
+        JdbcBinaryCacheStoreConfigurationBuilder builder = new JdbcBinaryCacheStoreConfigurationBuilder(
+                                                                                                        configurationBuilder.loaders());
+        builder.purgeOnStartup(true);
+        builder.table()
+               .createOnStart(true)
+               .dropOnExit(true)
+               .idColumnName("ID_COLUMN")
+               .idColumnType("VARCHAR(255)")
+               .timestampColumnName("TIMESTAMP_COLUMN")
+               .timestampColumnType("BIGINT")
+               .dataColumnName("DATA_COLUMN")
+               .dataColumnType("BINARY")
+               .connectionPool()
+               .connectionUrl(dataSourceConfig.getUrl() + "/string_based_db;DB_CLOSE_DELAY=1")
+               .driverClass(dataSourceConfig.getDriverClassName())
+               .username(dataSourceConfig.getUsername());
+        configurationBuilder.loaders().addStore(builder);
     }
 
 }

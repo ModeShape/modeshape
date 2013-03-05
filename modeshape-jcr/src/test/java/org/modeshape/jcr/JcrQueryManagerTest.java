@@ -994,7 +994,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     @FixFor ( "MODE-1833" )
     @Test
-    public void shouldBeAbleToQueryAllColumnsOnSimpleType() throws RepositoryException, IOException {
+    public void shouldBeAbleToQueryAllColumnsOnSimpleType() throws RepositoryException {
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         QueryObjectModelFactory factory = queryManager.getQOMFactory();
         Query query = factory.createQuery(factory.selector("modetest:simpleType", "type1"),
