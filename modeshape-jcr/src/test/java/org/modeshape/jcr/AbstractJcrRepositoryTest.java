@@ -41,6 +41,7 @@ import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
+import org.junit.Assume;
 import org.junit.Before;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.StringUtil;
@@ -49,6 +50,24 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 
 public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTest {
+
+    /**
+     * The value of the "skipLongRunningTests" system property. To use in long-running unit tests that don't have to
+     * be run during developer builds, simply include the following line as the first line in the tests:
+     *
+     * <pre>
+     *    thisLongRunningTestCanBeSkipped();
+     * </pre>
+     */
+    private static final boolean SKIP_LONG_RUNNING_TESTS = Boolean.getBoolean("skipLongRunningTests");
+
+    /**
+     * Signal that the test is long running and can be skipped when the "skipLongRunningTests" environment property
+     * is set to "true".
+     */
+    protected void thisLongRunningTestCanBeSkipped() {
+        Assume.assumeTrue(!SKIP_LONG_RUNNING_TESTS);
+    }
 
     protected boolean print;
 

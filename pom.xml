@@ -59,6 +59,7 @@
 	</properties>
 
 	<profiles>
+
 		<!-- 
 		  This profile is used to run the build plus the JCR TCK tests
 			and must be activated manually, as in "mvn ... -Pjcr-tck ..."

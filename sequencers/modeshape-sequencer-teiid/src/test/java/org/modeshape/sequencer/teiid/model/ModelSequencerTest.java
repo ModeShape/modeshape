@@ -623,6 +623,8 @@ public class ModelSequencerTest extends AbstractSequencerTest {
 
     @Test
     public void shouldNotSequenceXmlDocumentModelForEmployees() throws Exception {
+        thisLongRunningTestCanBeSkipped();
+
         createNodeWithContentFromFile("EmpDoc.xmi", "model/QuickEmployees/EmpDoc.xmi");
         Node outputNode = getOutputNode(this.rootNode, "models/EmpDoc.xmi");
         assertNull(outputNode);
