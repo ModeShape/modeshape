@@ -42,13 +42,19 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.TestRule;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
+import org.modeshape.junit.SkipLongRunningRule;
 
 public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTest {
+
+    @Rule
+    public TestRule skipLongRunningRule = new SkipLongRunningRule();
 
     protected boolean print;
 
