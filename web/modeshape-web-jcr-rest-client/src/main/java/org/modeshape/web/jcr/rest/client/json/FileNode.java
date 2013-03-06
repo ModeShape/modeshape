@@ -43,6 +43,8 @@ import org.modeshape.web.jcr.rest.client.domain.Workspace;
 @Immutable
 public final class FileNode extends JsonNode {
 
+    private static final long serialVersionUID = 1L;
+
     // ===========================================================================================================================
     // Fields
     // ===========================================================================================================================

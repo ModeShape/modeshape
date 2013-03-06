@@ -29,15 +29,21 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
 /**
- * JUnit rule that inspects the presence of the {@link SkipLongRunning} annotation either on a test method or on a test suite.
- * If it finds the annotation, it will only run the test method/suite if the system property {@code skipLongRunningTests}
- * has the value {@code true}
- *
+ * JUnit rule that inspects the presence of the {@link SkipLongRunning} annotation either on a test method or on a test suite. If
+ * it finds the annotation, it will only run the test method/suite if the system property {@code skipLongRunningTests} has the
+ * value {@code true}
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class SkipLongRunningRule implements TestRule {
 
-    private static final Statement EMPTY_STATEMENT = new EmptyStatement();
+    private static final Statement EMPTY_STATEMENT = new Statement() {
+        @Override
+        public void evaluate() throws Throwable {
+            // do nothing, this is the equivalent of an empty test
+        }
+    };
+
     private static final String SKIP_LONG_RUNNING_PROPERTY = "skipLongRunningTests";
 
     @Override
@@ -46,7 +52,7 @@ public class SkipLongRunningRule implements TestRule {
         SkipLongRunning ignoreIfLongRunning = description.getAnnotation(SkipLongRunning.class);
         if (ignoreIfLongRunning == null) {
             if (description.isTest()) {
-                //search for the annotation on the test suite class
+                // search for the annotation on the test suite class
                 Class<?> testClass = description.getTestClass();
                 if (!testClass.isAnnotationPresent(SkipLongRunning.class)) {
                     return base;
@@ -62,13 +68,5 @@ public class SkipLongRunningRule implements TestRule {
         }
 
         return base;
-    }
-
-
-    private static class EmptyStatement extends Statement {
-        @Override
-        public void evaluate() throws Throwable {
-            //do nothing, this is the equivalent of an empty test
-        }
     }
 }

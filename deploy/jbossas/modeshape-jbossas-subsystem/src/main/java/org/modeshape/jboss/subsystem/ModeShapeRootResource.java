@@ -23,12 +23,10 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIBE;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.registry.OperationEntry;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
@@ -44,13 +42,8 @@ public class ModeShapeRootResource extends SimpleResourceDefinition {
     @Override
     public void registerOperations( ManagementResourceRegistration resourceRegistration ) {
         super.registerOperations(resourceRegistration);
-        // TODO: AS7.2 Use this next line in AS7.2 (but it doesn't work in 7.1.1!) ...
-        // resourceRegistration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION,
-        // GenericSubsystemDescribeHandler.INSTANCE);
-        resourceRegistration.registerOperationHandler(DESCRIBE,
+        resourceRegistration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION,
                                                       GenericSubsystemDescribeHandler.INSTANCE,
-                                                      GenericSubsystemDescribeHandler.INSTANCE,
-                                                      false,
-                                                      OperationEntry.EntryType.PRIVATE);
+                                                      false);
     }
 }
