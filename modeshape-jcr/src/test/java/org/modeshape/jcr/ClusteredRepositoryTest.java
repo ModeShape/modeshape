@@ -45,6 +45,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.api.observation.Event;
 
@@ -155,6 +156,8 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
             session1.logout();
             session2.logout();
         } finally {
+            Logger.getLogger(getClass())
+                  .debug("Killing repositories in shouldStartClusterWithReplicatedCachePersistedToSeparateAreasForEachProcess");
             TestingUtil.killRepositories(repository1, repository2);
             FileUtil.delete("target/clustered");
         }

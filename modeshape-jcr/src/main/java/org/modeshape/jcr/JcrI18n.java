@@ -465,6 +465,8 @@ public final class JcrI18n {
     public static I18n invalidProjectionPath;
     public static I18n invalidProjectionExpression;
     public static I18n projectedPathPointsTowardsInternalNode;
+    public static I18n errorStoringProjection;
+    public static I18n errorRemovingProjection;
 
     public static I18n reindexMissingNoIndexesExist;
     public static I18n noReindex;

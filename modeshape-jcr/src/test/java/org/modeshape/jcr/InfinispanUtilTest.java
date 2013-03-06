@@ -23,23 +23,20 @@
  */
 package org.modeshape.jcr;
 
+import static junit.framework.Assert.fail;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.cache.LoaderConfigurationBuilder;
-import org.infinispan.loaders.file.FileCacheStore;
 import org.infinispan.manager.DefaultCacheManager;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.value.binary.infinispan.InfinispanTestUtil;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
-import static junit.framework.Assert.fail;
 
 public class InfinispanUtilTest {
 
@@ -62,10 +59,11 @@ public class InfinispanUtilTest {
         DIST = configurationBuilder.build();
 
         // store config
+        File dir = new File(System.getProperty("java.io.tmpdir"), "InfinispanLocalBinaryStoreWithPersistenceTest");
+        if (dir.exists()) FileUtil.delete(dir);
+        dir.mkdirs();
         configurationBuilder.loaders().shared(true);
-        LoaderConfigurationBuilder loaderBuilder = configurationBuilder.loaders().addCacheLoader().cacheLoader(new FileCacheStore());
-        loaderBuilder.addProperty("location", new File(System.getProperty("java.io.tmpdir"), "InfinispanTestUtil").getAbsolutePath());
-        loaderBuilder.purgeOnStartup(true);
+        configurationBuilder.loaders().addFileCacheStore().purgeOnStartup(true).location(dir.getAbsolutePath());
 
         configurationBuilder.clustering().cacheMode(CacheMode.LOCAL);
         LOCAL_STORE = configurationBuilder.build();
@@ -89,7 +87,8 @@ public class InfinispanUtilTest {
         org.infinispan.test.TestingUtil.recursiveFileRemove(new File(System.getProperty("java.io.tmpdir"), "InfinispanTestUtil"));
     }
 
-    private void checkSequence(InfinispanUtil.Sequence<String> sequence, String... expected) throws Exception {
+    private void checkSequence( InfinispanUtil.Sequence<String> sequence,
+                                String... expected ) throws Exception {
         int index = 0;
         List<String> keys = new ArrayList<String>(expected.length);
         while (true) {
@@ -100,17 +99,17 @@ public class InfinispanUtilTest {
             keys.add(key);
         }
 
-        if(keys.size() != expected.length){
-            fail("Sequence contains wrong elements. Expected: "+expected.length+" Contained: "+index);
+        if (keys.size() != expected.length) {
+            fail("Sequence contains wrong elements. Expected: " + expected.length + " Contained: " + index);
         }
-        for(String key : expected){
-            if(!keys.contains(key)){
-                fail("Missing key in sequence: "+key);
+        for (String key : expected) {
+            if (!keys.contains(key)) {
+                fail("Missing key in sequence: " + key);
             }
         }
     }
 
-    private void standardTest(String cacheName) throws Exception {
+    private void standardTest( String cacheName ) throws Exception {
         Cache<String, String> cache = cacheManager.getCache(cacheName);
         cache.put("Foo", "Bar");
 

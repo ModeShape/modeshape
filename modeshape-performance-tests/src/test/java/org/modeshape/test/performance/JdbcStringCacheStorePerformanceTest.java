@@ -23,10 +23,9 @@
  */
 package org.modeshape.test.performance;
 
-import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.cache.LoaderConfigurationBuilder;
-import org.infinispan.loaders.jdbc.stringbased.JdbcStringBasedCacheStore;
 import java.io.File;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.loaders.jdbc.configuration.JdbcStringBasedCacheStoreConfigurationBuilder;
 
 public class JdbcStringCacheStorePerformanceTest extends InMemoryPerformanceTest {
 
@@ -39,22 +38,23 @@ public class JdbcStringCacheStorePerformanceTest extends InMemoryPerformanceTest
     }
 
     @Override
-    public void applyLoaderConfiguration(ConfigurationBuilder configurationBuilder) {
-        LoaderConfigurationBuilder lb = configurationBuilder.loaders().addCacheLoader().cacheLoader(
-                new JdbcStringBasedCacheStore());
-        lb.addProperty("dropTableOnExit", "true")
-          .addProperty("createTableOnStart", "true")
-          .addProperty("connectionFactoryClass", "org.infinispan.loaders.jdbc.connectionfactory.PooledConnectionFactory")
-          .addProperty("connectionUrl", "jdbc:h2:file:" + dbDir.getAbsolutePath() + "/string_based_db;DB_CLOSE_DELAY=1")
-//          .addProperty("connectionUrl", "jdbc:h2:mem:string_based_db;DB_CLOSE_DELAY=-1")
-          .addProperty("driverClass", "org.h2.Driver")
-          .addProperty("userName", "sa")
-          .addProperty("stringsTableNamePrefix", "ISPN_STRING_TABLE")
-          .addProperty("idColumnName", "ID_COLUMN")
-          .addProperty("idColumnType", "VARCHAR(255)")
-          .addProperty("timestampColumnName", "TIMESTAMP_COLUMN")
-          .addProperty("timestampColumnType", "BIGINT")
-          .addProperty("dataColumnName", "DATA_COLUMN")
-          .addProperty("dataColumnType", "BINARY");
+    public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
+        JdbcStringBasedCacheStoreConfigurationBuilder builder = new JdbcStringBasedCacheStoreConfigurationBuilder(
+                                                                                                                  configurationBuilder.loaders());
+        builder.purgeOnStartup(true);
+        builder.table()
+               .createOnStart(true)
+               .dropOnExit(false)
+               .idColumnName("ID_COLUMN")
+               .idColumnType("VARCHAR(255)")
+               .timestampColumnName("TIMESTAMP_COLUMN")
+               .timestampColumnType("BIGINT")
+               .dataColumnName("DATA_COLUMN")
+               .dataColumnType("BINARY")
+               .connectionPool()
+               .connectionUrl("jdbc:h2:file:" + dbDir.getAbsolutePath() + "/string_based_db;DB_CLOSE_DELAY=1")
+               .driverClass("org.h2.Driver")
+               .username("sa");
+        configurationBuilder.loaders().addStore(builder);
     }
 }

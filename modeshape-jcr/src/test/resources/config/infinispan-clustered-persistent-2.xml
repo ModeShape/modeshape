@@ -4,8 +4,8 @@
             xmlns="urn:infinispan:config:5.2">
 
   <global>
-      <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
-      <transport clusterName="modeshape-cluster">
+    <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
+    <transport clusterName="modeshape-cluster">
       <properties>
         <property name="configurationFile" value="config/jgroups-test-config.xml" />
       </properties>
@@ -28,7 +28,7 @@
              preload="false">
       <loader class="org.infinispan.loaders.file.FileCacheStore" 
               fetchPersistentState="true" 
-              purgeOnStartup="false">
+              purgeOnStartup="true">
         <properties>
           <property name="location" value="target/clustered/repository_2/store" />
         </properties>
