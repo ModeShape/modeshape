@@ -228,6 +228,12 @@
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
                     <file-store passivation="false" path="modeshape/store/noQueryRepository" relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
+                <local-cache name="infinispanRepository">
+                    <!-- ModeShape requires transactions -->
+                    <transaction mode="NON_XA"/>
+                    <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
+                    <file-store passivation="false" path="modeshape/store/infinispanRepository" relative-to="jboss.server.data.dir" purge="false"/>
+                </local-cache>
                 <!--ModeShape using JDBC persistence-->
                 <local-cache name="jdbcRepository">
                     <transaction mode="NON_XA"/>
@@ -351,11 +357,10 @@
                 <text-extractors>
                     <text-extractor name="tika-extractor" classname="tika" module="org.modeshape.extractor.tika"/>
                 </text-extractors>
-                <cache-binary-storage data-cache-name="binary-fs" metadata-cache-name="binary-fs-meta" cache-container="binary-cache-container"/>
             </repository>
             <repository name="preconfiguredRepository">
                 <indexing rebuild-upon-startup="never"/>
-                <workspaces cache-container="ws-cache-container">
+                <workspaces>
                     <workspace name="default"/>
                     <workspace name="other"/>
                     <workspace name="extra">
@@ -370,8 +375,6 @@
                 <node-types>
                     <node-type>custom.cnd</node-type>
                 </node-types>
-                <cache-index-storage cache-container="index-cache-container" data-cache-name="index-data"/>
-                <indexing analyzer-classname="org.apache.lucene.analysis.standard.ClassicAnalyzer"/>
             </repository>
             <repository name="federatedRepository">
                 <!--Turn off initial indexing for performance reasons-->
@@ -397,6 +400,14 @@
                     <workspace name="default"/>
                     <initial-content>initial-content-default.xml</initial-content>
                 </workspaces>
+            </repository>
+            <repository name="infinispanRepository">
+                <workspaces cache-container="ws-cache-container">
+                    <workspace name="default"/>
+                </workspaces>
+                <cache-binary-storage data-cache-name="binary-fs" metadata-cache-name="binary-fs-meta" cache-container="binary-cache-container"/>
+                <cache-index-storage cache-container="index-cache-container" data-cache-name="index-data"/>
+                <indexing analyzer-classname="org.apache.lucene.analysis.standard.ClassicAnalyzer"/>
             </repository>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>
