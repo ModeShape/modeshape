@@ -42,6 +42,7 @@ import org.junit.Test;
 import org.modeshape.jcr.JcrMixLexicon;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
+import org.modeshape.junit.SkipLongRunning;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
 import org.modeshape.sequencer.teiid.lexicon.JdbcLexicon;
 import org.modeshape.sequencer.teiid.lexicon.ModelExtensionDefinitionLexicon;
@@ -622,6 +623,7 @@ public class ModelSequencerTest extends AbstractSequencerTest {
     }
 
     @Test
+    @SkipLongRunning
     public void shouldNotSequenceXmlDocumentModelForEmployees() throws Exception {
         createNodeWithContentFromFile("EmpDoc.xmi", "model/QuickEmployees/EmpDoc.xmi");
         Node outputNode = getOutputNode(this.rootNode, "models/EmpDoc.xmi");
