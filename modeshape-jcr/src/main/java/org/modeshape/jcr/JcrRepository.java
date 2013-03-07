@@ -121,6 +121,7 @@ import org.modeshape.jcr.cache.change.WorkspaceAdded;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
+import org.modeshape.jcr.cache.document.TransactionalWorkspaceCaches;
 import org.modeshape.jcr.federation.FederatedDocumentStore;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetectors;
@@ -1746,14 +1747,21 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     protected static class RepositorySessionEnvironment implements SessionEnvironment {
         private final Transactions transactions;
+        private final TransactionalWorkspaceCaches transactionalWorkspaceCacheFactory;
 
         protected RepositorySessionEnvironment( Transactions transactions ) {
             this.transactions = transactions;
+            this.transactionalWorkspaceCacheFactory = new TransactionalWorkspaceCaches(transactions);
         }
 
         @Override
         public Transactions getTransactions() {
             return transactions;
+        }
+
+        @Override
+        public TransactionalWorkspaceCaches getTransactionalWorkspaceCacheFactory() {
+            return transactionalWorkspaceCacheFactory;
         }
     }
 

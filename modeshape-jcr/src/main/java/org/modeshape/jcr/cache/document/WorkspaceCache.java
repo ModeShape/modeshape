@@ -297,6 +297,11 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         if (changeSetListener != null) changeSetListener.notify(changes);
     }
 
+    @Override
+    public NodeCache unwrap() {
+        return this;
+    }
+
     protected final void checkNotClosed() {
         if (closed) {
             throw new WorkspaceNotFoundException(JcrI18n.workspaceHasBeenDeleted.text(getWorkspaceName()));

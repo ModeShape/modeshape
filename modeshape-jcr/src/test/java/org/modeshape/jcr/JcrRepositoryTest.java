@@ -754,9 +754,9 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
             Thread.sleep(100L);
             assertThat(listener.getActualEventCount(), is(0));
 
-            // The nodes still exist in the session, since 'refresh' hasn't been called ...
-            assertThat(session.getRootNode().hasNode("txnNode1"), is(true));
-            assertThat(session.getRootNode().hasNode("txnNode2"), is(true));
+            // The nodes does not exist in the session because the session was saved and those changes were rolled back ...
+            assertThat(session.getRootNode().hasNode("txnNode1"), is(false));
+            assertThat(session.getRootNode().hasNode("txnNode2"), is(false));
             session.refresh(false);
             assertThat(session.getRootNode().hasNode("txnNode1"), is(false));
             assertThat(session.getRootNode().hasNode("txnNode2"), is(false));

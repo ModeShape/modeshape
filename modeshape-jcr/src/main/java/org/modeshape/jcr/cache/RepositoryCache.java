@@ -668,6 +668,7 @@ public class RepositoryCache implements Observable {
         if (removed != null) {
             try {
                 removed.signalDeleted();
+                sessionContext.getTransactionalWorkspaceCacheFactory().remove(name);
             } finally {
                 if (workspaceCacheManager instanceof EmbeddedCacheManager) {
                     ((EmbeddedCacheManager)workspaceCacheManager).removeCache(cacheNameForWorkspace(name));

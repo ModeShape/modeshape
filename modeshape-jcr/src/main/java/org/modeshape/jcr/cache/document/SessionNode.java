@@ -253,15 +253,15 @@ public class SessionNode implements MutableCachedNode {
     }
 
     protected final WritableSessionCache writableSession( NodeCache cache ) {
-        return (WritableSessionCache)cache;
+        return (WritableSessionCache)cache.unwrap();
     }
 
     protected final AbstractSessionCache session( NodeCache cache ) {
-        return (AbstractSessionCache)cache;
+        return (AbstractSessionCache)cache.unwrap();
     }
 
     protected final WorkspaceCache workspace( NodeCache cache ) {
-        return ((DocumentCache)cache).workspaceCache();
+        return ((DocumentCache)cache.unwrap()).workspaceCache();
     }
 
     /**

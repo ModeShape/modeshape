@@ -26,6 +26,7 @@ package org.modeshape.jcr.cache;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
+import org.modeshape.jcr.cache.document.TransactionalWorkspaceCaches;
 import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
@@ -42,6 +43,13 @@ public interface SessionEnvironment {
      * @return the transactions object
      */
     Transactions getTransactions();
+
+    /**
+     * Get the factory used to obtain the transactional workspace caches.
+     * 
+     * @return the factory; never null
+     */
+    TransactionalWorkspaceCaches getTransactionalWorkspaceCacheFactory();
 
     public static interface Monitor {
         /**

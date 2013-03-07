@@ -101,6 +101,15 @@ public abstract class Transactions {
     }
 
     /**
+     * Get the transaction manager.
+     * 
+     * @return the transaction manager
+     */
+    public TransactionManager getTransactionManager() {
+        return txnMgr;
+    }
+
+    /**
      * Starts a new transaction if one does not already exist, and associate it with the calling thread.
      * 
      * @return the ModeShape transaction

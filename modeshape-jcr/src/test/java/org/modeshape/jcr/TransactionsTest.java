@@ -85,7 +85,8 @@ public class TransactionsTest extends SingleUseAbstractTest {
     public void shouldBeAbleToUseSeparateSessionsWithinSingleUserTransaction() throws Exception {
         // We'll use separate threads, but we want to have them both do something specific at a given time,
         // so we'll use a barrier ...
-        final CyclicBarrier barrier = new CyclicBarrier(2);
+        final CyclicBarrier barrier1 = new CyclicBarrier(2);
+        final CyclicBarrier barrier2 = new CyclicBarrier(2);
 
         // The path at which we expect to find a node ...
         final String path = "/childY/grandChildZ";
@@ -99,7 +100,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
                 // Wait till we both get to the barrier ...
                 Session session = null;
                 try {
-                    barrier.await(20, TimeUnit.SECONDS);
+                    barrier1.await(20, TimeUnit.SECONDS);
 
                     // Create a second session, which should NOT see the persisted-but-not-committed changes ...
                     session = newSession();
@@ -109,7 +110,11 @@ public class TransactionsTest extends SingleUseAbstractTest {
                 } catch (Exception err) {
                     separateThreadException.set(err);
                 } finally {
-                    if (session != null) session.logout();
+                    try {
+                        barrier2.await();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         };
@@ -131,14 +136,16 @@ public class TransactionsTest extends SingleUseAbstractTest {
         Node grandChild1 = session.getNode(path);
         assertThat(grandChild.isSame(grandChild1), is(true));
 
-        // Sync up with the other thread ...
-        barrier.await();
-
         // Create a second session, which should see the persisted-but-not-committed changes ...
         Session session2 = newSession();
         Node grandChild2 = session2.getNode(path);
         assertThat(grandChild.isSame(grandChild2), is(true));
         session2.logout();
+
+        // Sync up with the other thread ...
+        barrier1.await();
+        // Await while the other thread does its work and looks for the node ...
+        barrier2.await(20, TimeUnit.SECONDS);
 
         // Commit the transaction ...
         commitTransaction();
@@ -180,6 +187,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
         commitTransaction();
     }
 
+    @FixFor( "MODE-1822" )
     @Test
     public void shouldBeAbleToVersionWithinUserTransactionAndJBossTransactionManager() throws Exception {
         // Start the repository using the JBoss Transactions transaction manager ...
@@ -187,18 +195,128 @@ public class TransactionsTest extends SingleUseAbstractTest {
         assertThat(config, is(notNullValue()));
         startRepositoryWithConfiguration(config);
 
+        // print = true;
         startTransaction();
         VersionManager vm = session.getWorkspace().getVersionManager();
 
+        printMessage("Looking for root node");
         Node node = session.getRootNode().addNode("Test3");
         node.addMixin("mix:versionable");
         node.setProperty("name", "lalalal");
         node.setProperty("code", "lalalal");
+        printMessage("Saving new node at " + node.getPath());
         session.save();
         vm.checkin(node.getPath());
+
+        printMessage("Checked in " + node.getPath());
+
+        for (int i = 0; i != 2; ++i) {
+            // Check it back out before we commit ...
+            node = session.getRootNode().getNode("Test3");
+            printMessage("Checking out " + node.getPath());
+            vm.checkout(node.getPath());
+
+            // Make some more changes ...
+            node.setProperty("code", "fa-lalalal");
+            printMessage("Saving changes to " + node.getPath());
+            session.save();
+
+            // Check it back in ...
+            printMessage("Checking in " + node.getPath());
+            vm.checkin(node.getPath());
+        }
+
         commitTransaction();
     }
 
+    @FixFor( "MODE-1822" )
+    @Test
+    public void shouldBeAbleToVersionWithinSequentialUserTransactionsAndJBossTransactionManager() throws Exception {
+        // Start the repository using the JBoss Transactions transaction manager ...
+        InputStream config = getClass().getClassLoader().getResourceAsStream("config/repo-config-inmemory-jbosstxn.json");
+        assertThat(config, is(notNullValue()));
+        startRepositoryWithConfiguration(config);
+
+        // print = true;
+        startTransaction();
+        VersionManager vm = session.getWorkspace().getVersionManager();
+
+        printMessage("Looking for root node");
+        Node node = session.getRootNode().addNode("Test3");
+        node.addMixin("mix:versionable");
+        node.setProperty("name", "lalalal");
+        node.setProperty("code", "lalalal");
+        printMessage("Saving new node at " + node.getPath());
+        session.save();
+        vm.checkin(node.getPath());
+        commitTransaction();
+
+        printMessage("Checked in " + node.getPath());
+
+        for (int i = 0; i != 2; ++i) {
+            // Check it back out before we commit ...
+            node = session.getRootNode().getNode("Test3");
+            printMessage("Checking out " + node.getPath());
+            vm.checkout(node.getPath());
+
+            // Make some more changes ...
+            startTransaction();
+            node.setProperty("code", "fa-lalalal");
+            printMessage("Saving changes to " + node.getPath());
+            session.save();
+
+            // Check it back in ...
+            printMessage("Checking in " + node.getPath());
+            vm.checkin(node.getPath());
+            commitTransaction();
+        }
+    }
+
+    @FixFor( "MODE-1822" )
+    @Test
+    public void shouldBeAbleToVersionWithinImmediatelySequentialUserTransactionsAndJBossTransactionManager() throws Exception {
+        // Start the repository using the JBoss Transactions transaction manager ...
+        InputStream config = getClass().getClassLoader().getResourceAsStream("config/repo-config-inmemory-jbosstxn.json");
+        assertThat(config, is(notNullValue()));
+        startRepositoryWithConfiguration(config);
+
+        // print = true;
+        startTransaction();
+        VersionManager vm = session.getWorkspace().getVersionManager();
+
+        printMessage("Looking for root node");
+        Node node = session.getRootNode().addNode("Test3");
+        node.addMixin("mix:versionable");
+        node.setProperty("name", "lalalal");
+        node.setProperty("code", "lalalal");
+        printMessage("Saving new node at " + node.getPath());
+        session.save();
+        vm.checkin(node.getPath());
+        commitTransaction();
+
+        printMessage("Checked in " + node.getPath());
+
+        for (int i = 0; i != 2; ++i) {
+            startTransaction();
+            // Check it back out before we change anything ...
+            printMessage("Checking out " + node.getPath());
+            vm.checkout(node.getPath());
+            printMessage("Checked out " + node.getPath());
+
+            // Make some more changes ...
+            node = session.getRootNode().getNode("Test3");
+            node.setProperty("code", "fa-lalalal");
+            printMessage("Saving changes to " + node.getPath());
+            session.save();
+
+            // Check it back in ...
+            printMessage("Checking in " + node.getPath());
+            vm.checkin(node.getPath());
+            commitTransaction();
+        }
+    }
+
+    @FixFor( "MODE-1822" )
     @Test
     public void shouldBeAbleToVersionWithinUserTransactionAndAtomikosTransactionManager() throws Exception {
         // Start the repository using the JBoss Transactions transaction manager ...
@@ -218,8 +336,17 @@ public class TransactionsTest extends SingleUseAbstractTest {
         commitTransaction();
     }
 
+    @SuppressWarnings( "unused" )
     protected void startTransaction() throws NotSupportedException, SystemException {
         TransactionManager txnMgr = transactionManager();
+        // Change this to true if/when debugging ...
+        if (true) {
+            try {
+                txnMgr.setTransactionTimeout(1000);
+            } catch (Exception e) {
+                // ignore
+            }
+        }
         txnMgr.begin();
     }
 

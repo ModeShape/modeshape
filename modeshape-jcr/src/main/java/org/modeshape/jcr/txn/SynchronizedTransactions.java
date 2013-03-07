@@ -38,6 +38,7 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionEnvironment.Monitor;
 import org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory;
 import org.modeshape.jcr.cache.change.ChangeSet;
+import org.modeshape.jcr.cache.document.TransactionalWorkspaceCache;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
@@ -86,6 +87,11 @@ public final class SynchronizedTransactions extends Transactions {
                 // Capture the changes so they can be applied if and only if the transaction is committed succesfully ...
                 SynchronizedTransaction synched = (SynchronizedTransaction)transaction;
                 synched.addUpdate(new WorkspaceUpdates(workspace, changes));
+                // Also, if we're in a transaction then the workspace should be a TransactionalWorkspaceCache, in which case
+                // we should also immediately notify the workspace of the changes ...
+                if (workspace instanceof TransactionalWorkspaceCache) {
+                    ((TransactionalWorkspaceCache)workspace).changedWithinTransaction(changes);
+                }
             } else if (transaction instanceof RollbackOnlyTransaction) {
                 // The transaction has been marked for rollback only, so no need to even capture these changes because
                 // no changes will ever escape the Session ...

@@ -48,7 +48,7 @@ import org.modeshape.jcr.cache.change.ChangeSet;
  * nodes from the document store.
  * </p>
  */
-class TransactionalWorkspaceCache extends WorkspaceCache {
+public class TransactionalWorkspaceCache extends WorkspaceCache {
 
     private final WorkspaceCache sharedWorkspaceCache;
 
@@ -63,6 +63,11 @@ class TransactionalWorkspaceCache extends WorkspaceCache {
         // Delegate to the shared ...
         sharedWorkspaceCache.changed(changes);
         // And then handle it ourselves ...
+        super.changed(changes);
+    }
+
+    public void changedWithinTransaction( ChangeSet changes ) {
+        // Handle it ourselves ...
         super.changed(changes);
     }
 

@@ -28,7 +28,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.UUID;
+import javax.transaction.RollbackException;
+import javax.transaction.Status;
+import javax.transaction.Synchronization;
 import javax.transaction.SystemException;
+import javax.transaction.Transaction;
+import javax.transaction.TransactionManager;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
@@ -93,25 +98,74 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
         this.rootPath = this.pathFactory.createRootPath();
         this.sessionContext = sessionContext;
         assert this.sessionContext != null;
-        useTransactionalCacheIfRequired();
+        checkForTransaction();
     }
 
     protected abstract Logger logger();
 
-    protected void useTransactionalCacheIfRequired() {
+    /**
+     * Signal that this session cache should check for an existing transaction and use the appropriate workspace cache. If there
+     * is a (new to this session) transaction, then this session will use a transaction-specific workspace cache (shared by other
+     * sessions participating in the same transaction), and upon completion of the transaction the session will switch back to the
+     * shared workspace cache.
+     */
+    @Override
+    public void checkForTransaction() {
         try {
             Transactions transactions = sessionContext.getTransactions();
-            if (transactions != null && transactions.isCurrentlyInTransaction()) {
-                workspaceCache = new TransactionalWorkspaceCache(sharedWorkspaceCache);
-            } else {
-                workspaceCache = this.sharedWorkspaceCache;
+            if (transactions == null) return;
+            TransactionManager txnMgr = transactions.getTransactionManager();
+            if (txnMgr == null) return;
+            Transaction txn = txnMgr.getTransaction();
+            if (txn != null) {
+                workspaceCache = sessionContext.getTransactionalWorkspaceCacheFactory()
+                                               .getTransactionalWorkspaceCache(sharedWorkspaceCache);
+                // Register a synchronization to reset this workspace cache when the transaction completes ...
+                if (txn.getStatus() == Status.STATUS_ACTIVE) {
+                    // This is an active transaction, so upon completion of the transaction this session needs
+                    // to know to no longer use the transaction-specific workspace cache and to instead start
+                    // using the shared workspace cache again.
+                    txn.registerSynchronization(new Synchronization() {
+
+                        @Override
+                        public void beforeCompletion() {
+                            // do nothing ...
+                        }
+
+                        @Override
+                        public void afterCompletion( int status ) {
+                            // Tell the session that the transaction has completed ...
+                            completeTransaction();
+                        }
+                    });
+                }
+            } else if (workspaceCache == null || workspaceCache != sharedWorkspaceCache) {
+                workspaceCache = sharedWorkspaceCache;
             }
         } catch (SystemException e) {
             logger().error(e,
                            JcrI18n.errorDeterminingCurrentTransactionAssumingNone,
                            workspaceCache.getWorkspaceName(),
                            e.getMessage());
+        } catch (RollbackException e) {
+            logger().error(e,
+                           JcrI18n.errorDeterminingCurrentTransactionAssumingNone,
+                           workspaceCache.getWorkspaceName(),
+                           e.getMessage());
         }
+    }
+
+    /**
+     * Signal that the transaction that was active and in which this session participated has completed and that this session
+     * should no longer use a transaction-specific workspace cache.
+     */
+    protected void completeTransaction() {
+        workspaceCache = sharedWorkspaceCache;
+    }
+
+    @Override
+    public final SessionCache unwrap() {
+        return this;
     }
 
     protected final String workspaceName() {

@@ -74,9 +74,18 @@ public abstract class AbstractSessionCacheTest extends AbstractNodeCacheTest {
             }
         };
         return new SessionEnvironment() {
+            private final Transactions transactions = new NoClientTransactions(monitorFactory, txnMgr);
+            private final TransactionalWorkspaceCaches transactionalWorkspaceCacheFactory = new TransactionalWorkspaceCaches(
+                                                                                                                             transactions);
+
             @Override
             public Transactions getTransactions() {
-                return new NoClientTransactions(monitorFactory, txnMgr);
+                return transactions;
+            }
+
+            @Override
+            public TransactionalWorkspaceCaches getTransactionalWorkspaceCacheFactory() {
+                return transactionalWorkspaceCacheFactory;
             }
         };
     }

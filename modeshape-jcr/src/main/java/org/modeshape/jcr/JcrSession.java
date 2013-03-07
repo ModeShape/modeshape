@@ -85,6 +85,7 @@ import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionCache.SaveContext;
+import org.modeshape.jcr.cache.SessionCacheWrapper;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.WrappedException;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
@@ -308,7 +309,11 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     }
 
     final SessionCache createSystemCache( boolean readOnly ) {
-        return repository.createSystemSession(context, readOnly);
+        // This method returns a SessionCache used by various Session-owned components that can automatically
+        // save system content. This session should be notified when such activities happen.
+        SessionCache systemCache = repository.createSystemSession(context, readOnly);
+        return readOnly ? systemCache : new SystemSessionCache(systemCache);
+
     }
 
     final JcrNodeTypeManager nodeTypeManager() {
@@ -356,7 +361,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     }
 
     final SessionCache spawnSessionCache( boolean readOnly ) {
-        return repository().repositoryCache().createSession(context(), workspaceName(), readOnly);
+        SessionCache cache = repository().repositoryCache().createSession(context(), workspaceName(), readOnly);
+        return readOnly ? cache : new SystemSessionCache(cache);
     }
 
     final void addContextData( String key,
@@ -1912,4 +1918,39 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             }
         }
     }
+
+    protected class SystemSessionCache extends SessionCacheWrapper {
+        protected SystemSessionCache( SessionCache delegate ) {
+            super(delegate);
+        }
+
+        @Override
+        public void save() {
+            super.save();
+            signalSaveOfSystemChanges();
+        }
+
+        @Override
+        public void save( SessionCache otherSession,
+                          PreSave preSaveOperation ) {
+            super.save(otherSession, preSaveOperation);
+            signalSaveOfSystemChanges();
+        }
+
+        @Override
+        public void save( Set<NodeKey> toBeSaved,
+                          SessionCache otherSession,
+                          PreSave preSaveOperation ) {
+            super.save(toBeSaved, otherSession, preSaveOperation);
+            signalSaveOfSystemChanges();
+        }
+
+        /**
+         * This method can be called by workspace-write methods, which (if a transaction has started after this session was
+         * created) can persist changes (via their SessionCache.save())
+         */
+        private void signalSaveOfSystemChanges() {
+            cache().checkForTransaction();
+        }
+    };
 }

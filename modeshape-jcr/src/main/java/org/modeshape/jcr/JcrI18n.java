@@ -404,6 +404,7 @@ public final class JcrI18n {
     public static I18n failedWhileRollingBackDestroyToRuntimeError;
     public static I18n unexpectedException;
     public static I18n errorDeterminingCurrentTransactionAssumingNone;
+    public static I18n errorWhileRollingBackActiveTransactionUsingWorkspaceThatIsBeingDeleted;
 
     public static I18n configurationError;
     public static I18n configurationWarning;

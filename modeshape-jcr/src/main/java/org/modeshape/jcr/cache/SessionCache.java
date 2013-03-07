@@ -266,4 +266,13 @@ public interface SessionCache extends NodeCache {
      */
     public NodeKey createNodeKey( String sourceName,
                                   String identifier );
+
+    /**
+     * Check whether this session is running within a transaction. This is commonly called by components that change persistent
+     * state. Such persistent state might not be noticed by this session cache.
+     */
+    public void checkForTransaction();
+
+    @Override
+    public SessionCache unwrap();
 }

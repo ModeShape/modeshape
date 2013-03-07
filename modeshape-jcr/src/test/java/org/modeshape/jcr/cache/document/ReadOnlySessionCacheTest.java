@@ -37,6 +37,13 @@ public class ReadOnlySessionCacheTest extends AbstractSessionCacheTest {
     protected SessionCache createSessionCache( ExecutionContext context,
                                                WorkspaceCache cache ) {
         return new ReadOnlySessionCache(context, workspaceCache, new SessionEnvironment() {
+            private final TransactionalWorkspaceCaches transactionalWorkspaceCacheFactory = new TransactionalWorkspaceCaches(null);
+
+            @Override
+            public TransactionalWorkspaceCaches getTransactionalWorkspaceCacheFactory() {
+                return transactionalWorkspaceCacheFactory;
+            }
+
             @Override
             public Transactions getTransactions() {
                 return null;
