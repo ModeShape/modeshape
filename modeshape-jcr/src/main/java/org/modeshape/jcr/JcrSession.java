@@ -1952,5 +1952,5 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         private void signalSaveOfSystemChanges() {
             cache().checkForTransaction();
         }
-    };
+    }
 }

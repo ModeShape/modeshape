@@ -336,7 +336,6 @@ public class TransactionsTest extends SingleUseAbstractTest {
         commitTransaction();
     }
 
-    @SuppressWarnings( "unused" )
     protected void startTransaction() throws NotSupportedException, SystemException {
         TransactionManager txnMgr = transactionManager();
         // Change this to true if/when debugging ...
