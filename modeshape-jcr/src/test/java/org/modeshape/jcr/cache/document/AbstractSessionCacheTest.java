@@ -57,13 +57,15 @@ public abstract class AbstractSessionCacheTest extends AbstractNodeCacheTest {
         DocumentTranslator translator = new DocumentTranslator(context, documentStore, 100L);
         workspaceCache = new WorkspaceCache(context, "repo", "ws", documentStore, translator, ROOT_KEY_WS1, nodeCache, listener);
         loadJsonDocuments(resource(resourceNameForWorkspaceContentDocument()));
-        session1 = createSessionCache(context, workspaceCache);
-        session2 = createSessionCache(context, workspaceCache);
+        SessionEnvironment sessionEnv = createSessionContext();
+        session1 = createSessionCache(context, workspaceCache, sessionEnv);
+        session2 = createSessionCache(context, workspaceCache, sessionEnv);
         return session1;
     }
 
     protected abstract SessionCache createSessionCache( ExecutionContext context,
-                                                        WorkspaceCache cache );
+                                                        WorkspaceCache cache,
+                                                        SessionEnvironment sessionEnv );
 
     protected SessionEnvironment createSessionContext() {
         final TransactionManager txnMgr = txnManager();
