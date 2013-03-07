@@ -335,7 +335,7 @@ public class DoCopy extends AbstractMethod {
         }
 
         // Remove url encoding from destination
-        destinationPath = RequestUtil.URLDecode(destinationPath, "UTF8");
+        destinationPath = RequestUtil.URLDecode(destinationPath, "UTF-8");
 
         int protocolIndex = destinationPath.indexOf("://");
         if (protocolIndex >= 0) {
