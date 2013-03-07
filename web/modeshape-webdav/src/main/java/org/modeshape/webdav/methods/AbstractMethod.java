@@ -154,7 +154,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
             if ((result == null) || (result.equals(""))) {
                 result = "/";
             }
-            return encodedResult(result);
+            return result;
         }
 
         // No, extract the desired path directly from the request
@@ -163,17 +163,9 @@ public abstract class AbstractMethod implements IMethodExecutor {
         if ((result == null) || (result.equals(""))) {
             result = "/";
         }
-        //always convert to UTF-8
-        return encodedResult(result);
+        return result;
     }
 
-    private String encodedResult( String result ) {
-        try {
-            return new String(result.getBytes(), "UTF-8");
-        } catch (Exception e){
-            throw new RuntimeException(e);
-        }
-    }
 
     /**
      * creates the parent path from the given path by removing the last '/' and everything after that

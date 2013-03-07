@@ -69,7 +69,7 @@ public class URLEncoder {
         ByteArrayOutputStream buf = new ByteArrayOutputStream(maxBytesPerChar);
         OutputStreamWriter writer = null;
         try {
-            writer = new OutputStreamWriter(buf, "UTF8");
+            writer = new OutputStreamWriter(buf, "UTF-8");
         } catch (Exception e) {
             LOG.error(e, new TextI18n("Error in encode <" + path + ">"));
             writer = new OutputStreamWriter(buf);
