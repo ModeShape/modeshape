@@ -85,7 +85,7 @@ public class LazyCachedNode implements CachedNode, Serializable {
     }
 
     protected final WorkspaceCache workspaceCache( NodeCache cache ) {
-        return ((DocumentCache)cache).workspaceCache();
+        return ((DocumentCache)cache.unwrap()).workspaceCache();
     }
 
     /**

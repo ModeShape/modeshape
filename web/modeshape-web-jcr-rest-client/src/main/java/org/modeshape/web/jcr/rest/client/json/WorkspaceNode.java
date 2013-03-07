@@ -32,6 +32,8 @@ import org.modeshape.web.jcr.rest.client.domain.Workspace;
  */
 public class WorkspaceNode extends JsonNode {
 
+    private static final long serialVersionUID = 1L;
+
     // ===========================================================================================================================
     // Fields
     // ===========================================================================================================================

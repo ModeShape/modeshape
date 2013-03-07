@@ -42,6 +42,8 @@ import org.modeshape.web.jcr.rest.client.domain.Server;
  */
 public final class ServerNode extends JsonNode {
 
+    private static final long serialVersionUID = 1L;
+
     // ===========================================================================================================================
     // Fields
     // ===========================================================================================================================

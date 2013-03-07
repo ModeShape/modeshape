@@ -487,7 +487,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         this.referrerChangesForRemovedNodes.clear();
         this.changedNodesInOrder.clear();
         this.replacedNodes = null;
-        this.useTransactionalCacheIfRequired();
+        this.checkForTransaction();
     }
 
     protected void clearState( Iterable<NodeKey> savedNodesInOrder ) {
@@ -499,7 +499,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 this.replacedNodes.remove(savedNode);
             }
         }
-        this.useTransactionalCacheIfRequired();
+        this.checkForTransaction();
     }
 
     @Override
@@ -507,7 +507,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                       PreSave preSaveOperation ) {
 
         // Try getting locks on both sessions ...
-        final WritableSessionCache that = (WritableSessionCache)other;
+        final WritableSessionCache that = (WritableSessionCache)other.unwrap();
         Lock thisLock = this.lock.writeLock();
         Lock thatLock = that.lock.writeLock();
 
@@ -650,7 +650,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                       PreSave preSaveOperation ) {
 
         // Try getting locks on both sessions ...
-        final WritableSessionCache that = (WritableSessionCache)other;
+        final WritableSessionCache that = (WritableSessionCache)other.unwrap();
         Lock thisLock = this.lock.writeLock();
         Lock thatLock = that.lock.writeLock();
 

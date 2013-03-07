@@ -1395,6 +1395,39 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     }
 
+    @FixFor( "MODE-1822" )
+    public void testShouldBeAbleToVersionWithinUserTransactionAndJBossTransactionManager() throws Exception {
+        session = getHelper().getReadWriteSession();
+        print = true;
+
+        VersionManager vm = session.getWorkspace().getVersionManager();
+
+        Node node = session.getRootNode().addNode("Test3");
+        node.addMixin("mix:versionable");
+        node.setProperty("name", "lalalal");
+        node.setProperty("code", "lalalal");
+        session.save();
+        vm.checkin(node.getPath());
+
+        print("Checked in " + node.getPath());
+
+        for (int i = 0; i != 2; ++i) {
+            // Check it back out before we commit ...
+            node = session.getRootNode().getNode("Test3");
+            print("Checking out " + node.getPath());
+            vm.checkout(node.getPath());
+
+            // Make some more changes ...
+            node.setProperty("code", "fa-lalalal");
+            print("Saving changes to " + node.getPath());
+            session.save();
+
+            // Check it back in ...
+            print("Checking in " + node.getPath());
+            vm.checkin(node.getPath());
+        }
+    }
+
     @FixFor( "MODE-720" )
     @SuppressWarnings( "unchecked" )
     public void testShouldBeAbleToReferToUnsavedReferenceNode() throws Exception {

@@ -77,4 +77,11 @@ public interface NodeCache {
      * @return an iterator over all the cache's node keys; never null
      */
     Iterator<NodeKey> getAllNodeKeysAtAndBelow( NodeKey startingKey );
+
+    /**
+     * Unwrap this instance.
+     * 
+     * @return the unwrapped SessionCache instance, or this object if there is no wrapper.
+     */
+    NodeCache unwrap();
 }
