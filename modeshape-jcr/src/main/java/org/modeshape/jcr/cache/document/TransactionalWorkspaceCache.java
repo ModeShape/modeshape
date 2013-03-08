@@ -24,10 +24,13 @@
 package org.modeshape.jcr.cache.document;
 
 import java.util.concurrent.ConcurrentHashMap;
+import javax.transaction.Transaction;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.change.ChangeSet;
+import org.modeshape.jcr.cache.document.TransactionalWorkspaceCaches.OnEachTransactionalCache;
+import org.modeshape.jcr.txn.SynchronizedTransactions;
 
 /**
  * A special WorkspaceCache implementation that should be used by sessions running within user transactions.
@@ -51,22 +54,58 @@ import org.modeshape.jcr.cache.change.ChangeSet;
 public class TransactionalWorkspaceCache extends WorkspaceCache {
 
     private final WorkspaceCache sharedWorkspaceCache;
+    private final TransactionalWorkspaceCaches cacheManager;
+    private final Transaction txn;
 
-    protected TransactionalWorkspaceCache( WorkspaceCache sharedWorkspaceCache ) {
+    protected TransactionalWorkspaceCache( WorkspaceCache sharedWorkspaceCache,
+                                           TransactionalWorkspaceCaches cacheManager,
+                                           Transaction txn ) {
         // Use a new in-memory map for the transactional cache ...
         super(sharedWorkspaceCache, new ConcurrentHashMap<NodeKey, CachedNode>(), null);
         this.sharedWorkspaceCache = sharedWorkspaceCache;
+        this.txn = txn;
+        this.cacheManager = cacheManager;
     }
 
     @Override
     public void changed( ChangeSet changes ) {
         // Delegate to the shared ...
         sharedWorkspaceCache.changed(changes);
-        // And then handle it ourselves ...
-        super.changed(changes);
+        // And then delegate so that all transactional workspace caches are notified ...
+        changedWithinTransaction(changes);
     }
 
-    public void changedWithinTransaction( ChangeSet changes ) {
+    /**
+     * Signal that this transaction-specific workspace cache needs to reflect recent changes that have been persisted but not yet
+     * committed. Generally, the transactional workspace cache will clear any cached nodes that were included in the change set
+     * 
+     * @param changes the changes that were persisted but not yet committed
+     * @see SynchronizedTransactions#updateCache(WorkspaceCache, ChangeSet, org.modeshape.jcr.txn.Transactions.Transaction)
+     */
+    public void changedWithinTransaction( final ChangeSet changes ) {
+        cacheManager.onAllWorkspacesInTransaction(txn, new OnEachTransactionalCache() {
+            @Override
+            public void execute( TransactionalWorkspaceCache cache ) {
+                cache.internalChangedWithinTransaction(changes);
+            }
+        });
+    }
+
+    @Override
+    public void clear() {
+        cacheManager.onAllWorkspacesInTransaction(txn, new OnEachTransactionalCache() {
+            @Override
+            public void execute( TransactionalWorkspaceCache cache ) {
+                cache.internalClear();
+            }
+        });
+    }
+
+    void internalClear() {
+        super.clear();
+    }
+
+    void internalChangedWithinTransaction( ChangeSet changes ) {
         // Handle it ourselves ...
         super.changed(changes);
     }
