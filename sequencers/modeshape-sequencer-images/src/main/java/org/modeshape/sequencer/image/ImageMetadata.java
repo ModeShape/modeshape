@@ -187,6 +187,13 @@ public class ImageMetadata {
     /** Return value of {@link #getFormat()} for PSD streams. */
     public static final int FORMAT_PSD = 10;
 
+    /**
+     * The names of the MIME types for all supported file formats. The FORMAT_xyz int constants can be used as index values for
+     * this array.
+     */
+    static final String[] MIME_TYPE_STRINGS = {"image/jpeg", "image/gif", "image/png", "image/bmp", "image/pcx",
+            "image/iff", "image/ras", "image/x-portable-bitmap", "image/x-portable-graymap", "image/x-portable-pixmap", "image/psd"};
+
     /*
      * public static final int COLOR_TYPE_UNKNOWN = -1; public static final int COLOR_TYPE_TRUECOLOR_RGB = 0; public static final
      * int COLOR_TYPE_PALETTED = 1; public static final int COLOR_TYPE_GRAYSCALE= 2; public static final int
@@ -197,13 +204,6 @@ public class ImageMetadata {
      * The names of all supported file formats. The FORMAT_xyz int constants can be used as index values for this array.
      */
     private static final String[] FORMAT_NAMES = {"JPEG", "GIF", "PNG", "BMP", "PCX", "IFF", "RAS", "PBM", "PGM", "PPM", "PSD"};
-
-    /**
-     * The names of the MIME types for all supported file formats. The FORMAT_xyz int constants can be used as index values for
-     * this array.
-     */
-    private static final String[] MIME_TYPE_STRINGS = {"image/jpeg", "image/gif", "image/png", "image/bmp", "image/pcx",
-        "image/iff", "image/ras", "image/x-portable-bitmap", "image/x-portable-graymap", "image/x-portable-pixmap", "image/psd"};
 
     private int width;
     private int height;
