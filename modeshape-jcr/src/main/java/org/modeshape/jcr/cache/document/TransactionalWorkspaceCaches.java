@@ -71,7 +71,6 @@ public class TransactionalWorkspaceCaches {
 
             TransactionalWorkspaceCache cache = workspaceCachesForTransaction.get(workspaceName);
             if (cache != null) {
-                cache.clear();
                 return cache;
             }
 
@@ -109,9 +108,40 @@ public class TransactionalWorkspaceCaches {
         transactionalCachesByTransaction.remove(txn);
     }
 
+    /**
+     * Invoke the supplied operation on each of the transactional workspace caches associated with the supplied transaction.
+     * 
+     * @param txn the transaction; may not be null
+     * @param operation the operation to call on each {@link TransactionalWorkspaceCache} in the given transaction; may not be
+     *        null
+     */
+    synchronized void onAllWorkspacesInTransaction( final Transaction txn,
+                                                    final OnEachTransactionalCache operation ) {
+        assert operation != null;
+        assert txn != null;
+        Map<String, TransactionalWorkspaceCache> cachesForTxn = transactionalCachesByTransaction.get(txn);
+        if (cachesForTxn != null) {
+            for (TransactionalWorkspaceCache cache : cachesForTxn.values()) {
+                if (cache != null) operation.execute(cache);
+            }
+        }
+    }
+
+    /**
+     * See #onAllWorkspacesInTransaction
+     */
+    static interface OnEachTransactionalCache {
+        /**
+         * Invoke the operation on the supplied cache
+         * 
+         * @param cache the transactional workspace cache; never null
+         */
+        void execute( TransactionalWorkspaceCache cache );
+    }
+
     protected TransactionalWorkspaceCache createCache( WorkspaceCache sharedWorkspaceCache,
                                                        final Transaction txn ) throws SystemException, RollbackException {
-        final TransactionalWorkspaceCache cache = new TransactionalWorkspaceCache(sharedWorkspaceCache);
+        final TransactionalWorkspaceCache cache = new TransactionalWorkspaceCache(sharedWorkspaceCache, this, txn);
         txn.registerSynchronization(new Synchronization() {
 
             @Override
