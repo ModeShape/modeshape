@@ -31,11 +31,12 @@ import org.jgroups.ChannelListener;
 import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
+import org.jgroups.blocks.MessageDispatcher;
 import org.jgroups.util.Util;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
@@ -93,6 +94,11 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
      */
     private Channel channel;
 
+    /**
+     * The JGroups message dispatcher that will handle the receiving of messages and membership changes.
+     */
+    private MessageDispatcher messageDispatcher;
+
     public ClusteredRepositoryChangeBus( RepositoryConfiguration.Clustering clusteringConfiguration,
                                          ChangeBus delegate ) {
         CheckArg.isNotNull(clusteringConfiguration, "clusteringConfiguration");
@@ -119,11 +125,17 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         // Add a listener through which we'll know what's going on within the cluster ...
         channel.addChannelListener(listener);
 
-        // Set the receiver through which we'll receive all of the changes ...
-        channel.setReceiver(receiver);
-
         // Now connect to the cluster ...
         channel.connect(clusterName);
+
+        // Create the message dispatcher that will handle all JGroups messages.
+        if (messageDispatcher != null) {
+            // stop the previous message dispatcher.
+            messageDispatcher.stop();
+            messageDispatcher.setMembershipListener(null);
+            messageDispatcher.setMessageListener(null);
+        }
+        messageDispatcher = new MessageDispatcher(channel, receiver, receiver);
 
         // start the delegate
         delegate.start();
@@ -176,6 +188,15 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
                 channel = null;
                 // Now that we're not receiving any more messages, shut down the delegate
                 delegate.shutdown();
+            }
+        }
+        if (messageDispatcher != null) {
+            try {
+                messageDispatcher.stop();
+                messageDispatcher.setMessageListener(null);
+                messageDispatcher.setMembershipListener(null);
+            } finally {
+                messageDispatcher = null;
             }
         }
     }
@@ -276,6 +297,11 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         @Override
         public void block() {
             isOpen.set(false);
+        }
+
+        @Override
+        public void unblock() {
+            isOpen.set(true);
         }
 
         @Override
