@@ -24,6 +24,11 @@
 
 package org.modeshape.jcr.bus;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jgroups.Address;
 import org.jgroups.Channel;
@@ -45,7 +50,7 @@ import org.modeshape.jcr.clustering.ChannelProvider;
 /**
  * Implementation of a {@link ChangeBus} which can run in a cluster, via JGroups. This bus wraps around another bus, to which it
  * delegates all "local" processing of events.
- * 
+ *
  * @author Horia Chiorean
  */
 @ThreadSafe
@@ -99,6 +104,11 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
      */
     private MessageDispatcher messageDispatcher;
 
+    /**
+     * Executor service to execute and deserialize JGroups incoming messages.
+     */
+    private ExecutorService executor;
+
     public ClusteredRepositoryChangeBus( RepositoryConfiguration.Clustering clusteringConfiguration,
                                          ChangeBus delegate ) {
         CheckArg.isNotNull(clusteringConfiguration, "clusteringConfiguration");
@@ -107,6 +117,16 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         this.clusteringConfiguration = clusteringConfiguration;
         assert clusteringConfiguration.isEnabled();
         this.delegate = delegate;
+
+        final ClassLoader classLoader = getContextClassLoader();
+        this.executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setContextClassLoader(classLoader);
+                return t;
+            }
+        });
     }
 
     @Override
@@ -167,11 +187,21 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
 
     /**
      * Return whether this bus has been {@link #start() started} and not yet {@link #shutdown() shut down}.
-     * 
+     *
      * @return true if {@link #start()} has been called but {@link #shutdown()} has not, or false otherwise
      */
     public boolean isStarted() {
         return channel != null;
+    }
+
+    private static ClassLoader getContextClassLoader() {
+        PrivilegedAction<ClassLoader> action = new PrivilegedAction<ClassLoader>() {
+            @Override
+            public ClassLoader run() {
+                return Thread.currentThread().getContextClassLoader();
+            }
+        };
+        return AccessController.doPrivileged(action);
     }
 
     @Override
@@ -305,22 +335,28 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         }
 
         @Override
-        public void receive( Message message ) {
+        public void receive( final Message message ) {
             if (!hasObservers()) {
                 return;
             }
-            // We have at least one observer ...
-            try {
-                // Deserialize the changes ...
-                ChangeSet changes = deserialize(message.getBuffer());
-                // and broadcast them
-                delegate.notify(changes);
-                logReceivedOperation(changes);
-            } catch (Exception e) {
-                // Something went wrong here (this should not happen) ...
-                String msg = BusI18n.errorDeserializingChanges.text(clusteringConfiguration.getClusterName());
-                throw new SystemFailureException(msg, e);
-            }
+            executor.submit(new Runnable() {
+
+                @Override
+                public void run() {
+                    // We have at least one observer ...
+                    try {
+                        // Deserialize the changes ...
+                        ChangeSet changes = deserialize(message.getBuffer());
+                        // and broadcast them
+                        delegate.notify(changes);
+                        logReceivedOperation(changes);
+                    } catch (Exception e) {
+                        // Something went wrong here (this should not happen) ...
+                        String msg = BusI18n.errorDeserializingChanges.text(clusteringConfiguration.getClusterName());
+                        throw new SystemFailureException(msg, e);
+                    }
+                }
+            });
         }
 
         @Override
