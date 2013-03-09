@@ -24,6 +24,7 @@
 
 package org.modeshape.jcr.bus;
 
+import java.lang.ref.WeakReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.ExecutorService;
@@ -105,6 +106,11 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
     private MessageDispatcher messageDispatcher;
 
     /**
+     * The class loader to use when processing JGroups messages.
+     */
+    private WeakReference<ClassLoader> classLoader;
+
+    /**
      * Executor service to execute and deserialize JGroups incoming messages.
      */
     private ExecutorService executor;
@@ -117,16 +123,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         this.clusteringConfiguration = clusteringConfiguration;
         assert clusteringConfiguration.isEnabled();
         this.delegate = delegate;
-
-        final ClassLoader classLoader = getContextClassLoader();
-        this.executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setContextClassLoader(classLoader);
-                return t;
-            }
-        });
+        this.classLoader = new WeakReference<ClassLoader>(getContextClassLoader());
     }
 
     @Override
@@ -147,6 +144,20 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
 
         // Now connect to the cluster ...
         channel.connect(clusterName);
+
+        if (executor != null) {
+            executor.shutdown();
+        }
+        // Setup the executor.
+        executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                if (classLoader.get() != null)
+                    t.setContextClassLoader(classLoader.get());
+                return t;
+            }
+        });
 
         // Create the message dispatcher that will handle all JGroups messages.
         if (messageDispatcher != null) {
@@ -228,6 +239,9 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
             } finally {
                 messageDispatcher = null;
             }
+        }
+        if (executor != null) {
+            executor.shutdown();
         }
     }
 
