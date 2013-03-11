@@ -40,6 +40,7 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -2955,6 +2956,63 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
         // We should now find the newly-added nodes ...
         assertNodesAreFound(queryString, Query.JCR_SQL2, "/jcr:system", "/Cars", "/Other", "/NodeB", "/node1", "/node2");
+    }
+
+    @Test
+    public void testOrderByWithAliases() throws Exception {
+        //fill the repository with test data
+        Node src = session.getRootNode().addNode("src", "nt:folder");
+
+        //add node f1 with child jcr:content
+        Node f1 = src.addNode("f1", "nt:file");
+        f1.addMixin("mix:simpleVersionable");
+        Node content1 = f1.addNode("jcr:content", "nt:resource");
+        content1.setProperty("jcr:data", session.getValueFactory().createBinary("Node f1".getBytes()));
+
+        //save and slip a bit to have difference in time of node creation.
+        session.save();
+        Thread.currentThread().sleep(1000);
+        
+        //add node f2 with child jcr:content
+        Node f2 = src.addNode("f2", "nt:file");
+        f2.addMixin("mix:simpleVersionable");
+        Node content2 = f2.addNode("jcr:content", "nt:resource");
+        content2.setProperty("jcr:data", session.getValueFactory().createBinary("Node f2".getBytes()));
+
+        session.save();
+        
+        System.out.println("-------------------- MyQueryTest---------------------");
+
+        String descOrder = "SELECT [nt:file].[jcr:created] FROM [nt:file] INNER JOIN [nt:base] AS content ON ISCHILDNODE(content,[nt:file]) WHERE ([nt:file].[jcr:mixinTypes] = 'mix:simpleVersionable' AND NAME([nt:file]) LIKE 'f%') ORDER BY content.[jcr:created] DESC";
+        String ascOrder = "SELECT [nt:file].[jcr:created] FROM [nt:file] INNER JOIN [nt:base] AS content ON ISCHILDNODE(content,[nt:file]) WHERE ([nt:file].[jcr:mixinTypes] = 'mix:simpleVersionable' AND NAME([nt:file]) LIKE 'f%') ORDER BY content.[jcr:created] ASC";
+
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        Query query = queryManager.createQuery(descOrder, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+
+        //checking first query
+        RowIterator it = result.getRows();
+        assertEquals(2, it.getSize());
+
+        Node n1 = it.nextRow().getNode();
+        Node n2 = it.nextRow().getNode();
+
+        assertEquals("f2", n1.getName());
+        assertEquals("f1", n2.getName());
+
+        //the same request with other order
+        query = queryManager.createQuery(ascOrder, Query.JCR_SQL2);
+        result = query.execute();
+
+        //checking second query
+        it = result.getRows();
+        assertEquals(2, it.getSize());
+
+        n1 = it.nextRow().getNode();
+        n2 = it.nextRow().getNode();
+
+        assertEquals("f1", n1.getName());
+        assertEquals("f2", n2.getName());
     }
 
     private void assertNodesAreFound( String queryString,
