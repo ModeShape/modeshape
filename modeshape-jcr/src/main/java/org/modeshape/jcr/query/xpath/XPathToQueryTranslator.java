@@ -618,11 +618,6 @@ public class XPathToQueryTranslator {
                     throw new InvalidQueryException(query, "The 'jcr:like' function requires two parameters; therefore '"
                                                            + predicate + "' is not valid");
                 }
-//                if (!(param1 instanceof AttributeNameTest)) {
-//                    throw new InvalidQueryException(query,
-//                                                    "The first parameter of 'jcr:like' must be an property reference with the '@' symbol; therefore '"
-//                                                    + predicate + "' is not valid");
-//                }
                 if (!(param2 instanceof Literal)) {
                     throw new InvalidQueryException(query, "The second parameter of 'jcr:like' must be a literal; therefore '"
                                                            + predicate + "' is not valid");
