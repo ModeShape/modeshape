@@ -47,10 +47,17 @@ public class SortValuesComponent extends DelegatingComponent {
     private final Comparator<Object[]> sortingComparator;
 
     public SortValuesComponent( ProcessingComponent delegate,
-                                List<Ordering> orderings,
+                                List<Ordering> orderings, 
                                 Map<SelectorName, SelectorName> sourceNamesByAlias ) {
         super(delegate);
         this.sortingComparator = createSortComparator(delegate.getContext(), delegate.getColumns(), orderings, sourceNamesByAlias);
+    }
+
+    public SortValuesComponent( ProcessingComponent delegate,
+                                List<Ordering> orderings, QueryResultColumns columns,
+                                Map<SelectorName, SelectorName> sourceNamesByAlias ) {
+        super(delegate);
+        this.sortingComparator = createSortComparator(delegate.getContext(), columns, orderings, sourceNamesByAlias);
     }
 
     /**
