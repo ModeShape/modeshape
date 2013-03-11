@@ -273,7 +273,7 @@ public class XPathToQueryTranslator {
                         operandBuilder.propertyValue(tableName, attribute.toString());
                         builder.select(tableName + "." + attribute.toString());
                     }
-                } else {
+                } else if (spec.getScoreFunction() != null) {
                     // This order-by is defined by a "jcr:score" function ...
                     FunctionCall scoreFunction = spec.getScoreFunction();
                     assert scoreFunction != null;
@@ -287,6 +287,22 @@ public class XPathToQueryTranslator {
                         }
                     }
                     operandBuilder.fullTextSearchScore(nameOfTableToScore);
+                } else {
+                    PathExpression axes = spec.getPath();
+                    List<StepExpression> axesSteps = axes.getSteps();
+
+                    if (axesSteps.size() != 2) {
+                        throw new InvalidQueryException("Only child axis supported in ORDER BY clause");
+                    }
+
+                    NameTest childNode = (NameTest) ((AxisStep)axesSteps.get(0)).getNodeTest();
+                    String alias = childNode.getLocalTest();
+
+                    NameTest attribute = ((AttributeNameTest) ((AxisStep)axesSteps.get(1)).getNodeTest()).getNameTest();
+
+                    builder.select(tableName + "." + attribute.toString());
+                    builder.join("nt:base as " + alias).onChildNode(tableName, alias);
+                    operandBuilder.propertyValue(alias, attribute.toString());
                 }
             }
             orderByBuilder.end();
@@ -575,6 +591,8 @@ public class XPathToQueryTranslator {
 
                     }
                     where.fullTextSearchScore(scoreTableName).is(operator, value);
+                } else if (functionName.matches("fn", "name")) {
+                    where.nodeName(tableName);
                 } else {
                     throw new InvalidQueryException(query,
                                                     "Only the 'jcr:score' function is allowed in a comparison predicate; therefore '"
@@ -600,18 +618,18 @@ public class XPathToQueryTranslator {
                     throw new InvalidQueryException(query, "The 'jcr:like' function requires two parameters; therefore '"
                                                            + predicate + "' is not valid");
                 }
-                if (!(param1 instanceof AttributeNameTest)) {
-                    throw new InvalidQueryException(query,
-                                                    "The first parameter of 'jcr:like' must be an property reference with the '@' symbol; therefore '"
-                                                    + predicate + "' is not valid");
-                }
                 if (!(param2 instanceof Literal)) {
                     throw new InvalidQueryException(query, "The second parameter of 'jcr:like' must be a literal; therefore '"
                                                            + predicate + "' is not valid");
                 }
-                NameTest attributeName = ((AttributeNameTest)param1).getNameTest();
                 String value = ((Literal)param2).getValue();
-                where.propertyValue(tableName, nameFrom(attributeName)).isLike(value);
+
+                if (param1 instanceof FunctionCall) {
+                    where.nodeName(tableName).isLike(value);
+                } else if (param1 instanceof AttributeNameTest) {
+                    NameTest attributeName = ((AttributeNameTest)param1).getNameTest();
+                    where.propertyValue(tableName, nameFrom(attributeName)).isLike(value);
+                }
             } else if (functionName.matches("jcr", "contains")) {
                 if (parameters.size() != 2) {
                     throw new InvalidQueryException(query, "The 'jcr:contains' function requires two parameters; therefore '"
