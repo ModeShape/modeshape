@@ -40,7 +40,6 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -349,7 +348,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         if (print /*|| result.getNodes().getSize() != numberOfResults || result.getRows().getSize() != numberOfResults*/) {
             System.out.println();
             System.out.println(query);
-            System.out.println(" plan -> " + ((JcrQueryResult)result).getPlan());
+            System.out.println(" plan -> " + ((org.modeshape.jcr.api.query.QueryResult)result).getPlan());
             System.out.println(result);
         }
         if (result.getSelectorNames().length == 1) {
@@ -622,7 +621,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     @FixFor( "MODE-1095" )
     @Test
-    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinCriteriaOnColumnsNotInSelect() throws RepositoryException {
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinCriteriaOnColumnsInSelect() throws RepositoryException {
         String sql = "SELECT x.*, y.* FROM [nt:unstructured] AS x INNER JOIN [nt:unstructured] AS y ON x.somethingElse = y.propC ORDER BY x.propC";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
@@ -634,6 +633,21 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Row row1 = rows.nextRow();
         assertThat(row1.getNode("x").getPath(), is("/Other/NodeA"));
         assertThat(row1.getNode("y").getPath(), is("/Other/NodeA[2]"));
+    }
+
+    @FixFor( {"MODE-1095", "MODE-1680"} )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithJoinCriteriaOnColumnsNotInSelect() throws RepositoryException {
+        String sql = "SELECT y.* FROM [nt:unstructured] AS x INNER JOIN [nt:unstructured] AS y ON x.somethingElse = y.propC ORDER BY x.propC";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1);
+        assertResultsHaveColumns(result, allOf(allColumnNames("y")));
+        RowIterator rows = result.getRows();
+        Row row1 = rows.nextRow();
+        assertThat(row1.getNode().getPath(), is("/Other/NodeA[2]"));
     }
 
     @FixFor( "MODE-1055" )
@@ -993,14 +1007,15 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResults(query, result, 9L);
     }
 
-    @FixFor ( "MODE-1833" )
+    @FixFor( "MODE-1833" )
     @Test
     public void shouldBeAbleToQueryAllColumnsOnSimpleType() throws RepositoryException {
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         QueryObjectModelFactory factory = queryManager.getQOMFactory();
         Query query = factory.createQuery(factory.selector("modetest:simpleType", "type1"),
-                                          null, null,
-                                          new Column[]{factory.column("type1", null, null)});
+                                          null,
+                                          null,
+                                          new Column[] {factory.column("type1", null, null)});
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -2973,39 +2988,42 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertNodesAreFound(queryString, Query.JCR_SQL2, "/jcr:system", "/Cars", "/Other", "/NodeB", "/node1", "/node2");
     }
 
+    @SuppressWarnings( "deprecation" )
+    @FixFor( "MODE-1680" )
     @Test
     public void testOrderByWithAliases() throws Exception {
-        //fill the repository with test data
+        // fill the repository with test data
         Node src = session.getRootNode().addNode("src", "nt:folder");
 
-        //add node f1 with child jcr:content
+        // add node f1 with child jcr:content
         Node f1 = src.addNode("f1", "nt:file");
         f1.addMixin("mix:simpleVersionable");
         Node content1 = f1.addNode("jcr:content", "nt:resource");
         content1.setProperty("jcr:data", session.getValueFactory().createBinary("Node f1".getBytes()));
 
-        //save and slip a bit to have difference in time of node creation.
+        // save and slip a bit to have difference in time of node creation.
         session.save();
-        Thread.currentThread().sleep(1000);
-        
-        //add node f2 with child jcr:content
+        Thread.sleep(1000);
+
+        // add node f2 with child jcr:content
         Node f2 = src.addNode("f2", "nt:file");
         f2.addMixin("mix:simpleVersionable");
         Node content2 = f2.addNode("jcr:content", "nt:resource");
         content2.setProperty("jcr:data", session.getValueFactory().createBinary("Node f2".getBytes()));
 
         session.save();
-        
-        System.out.println("-------------------- MyQueryTest---------------------");
 
-        String descOrder = "SELECT [nt:file].[jcr:created] FROM [nt:file] INNER JOIN [nt:base] AS content ON ISCHILDNODE(content,[nt:file]) WHERE ([nt:file].[jcr:mixinTypes] = 'mix:simpleVersionable' AND NAME([nt:file]) LIKE 'f%') ORDER BY content.[jcr:created] DESC";
-        String ascOrder = "SELECT [nt:file].[jcr:created] FROM [nt:file] INNER JOIN [nt:base] AS content ON ISCHILDNODE(content,[nt:file]) WHERE ([nt:file].[jcr:mixinTypes] = 'mix:simpleVersionable' AND NAME([nt:file]) LIKE 'f%') ORDER BY content.[jcr:created] ASC";
+        // print = true;
+        printMessage("-------------------- MyQueryTest---------------------");
+
+        String descOrder = "SELECT [nt:file].[jcr:created] FROM [nt:file] INNER JOIN [nt:base] AS content ON ISCHILDNODE(content,[nt:file]) WHERE ([nt:file].[jcr:mixinTypes] = 'mix:simpleVersionable' AND NAME([nt:file]) LIKE 'f%') ORDER BY content.[jcr:lastModified] DESC";
+        String ascOrder = "SELECT [nt:file].[jcr:created] FROM [nt:file] INNER JOIN [nt:base] AS content ON ISCHILDNODE(content,[nt:file]) WHERE ([nt:file].[jcr:mixinTypes] = 'mix:simpleVersionable' AND NAME([nt:file]) LIKE 'f%') ORDER BY content.[jcr:lastModified] ASC";
 
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         Query query = queryManager.createQuery(descOrder, Query.JCR_SQL2);
         QueryResult result = query.execute();
 
-        //checking first query
+        // checking first query
         RowIterator it = result.getRows();
         assertEquals(2, it.getSize());
 
@@ -3015,11 +3033,40 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertEquals("f2", n1.getName());
         assertEquals("f1", n2.getName());
 
-        //the same request with other order
+        // the same request with other order
         query = queryManager.createQuery(ascOrder, Query.JCR_SQL2);
         result = query.execute();
 
-        //checking second query
+        // checking second query
+        it = result.getRows();
+        assertEquals(2, it.getSize());
+
+        n1 = it.nextRow().getNode();
+        n2 = it.nextRow().getNode();
+
+        assertEquals("f1", n1.getName());
+        assertEquals("f2", n2.getName());
+
+        // Try the XPath query ...
+        String descOrderX = "/jcr:root//element(*,nt:file)[(@jcr:mixinTypes = 'mix:simpleVersionable')] order by jcr:content/@jcr:lastModified descending";
+        String ascOrderX = "/jcr:root//element(*,nt:file)[(@jcr:mixinTypes = 'mix:simpleVersionable')] order by jcr:content/@jcr:lastModified ascending";
+        query = queryManager.createQuery(descOrderX, Query.XPATH);
+        result = query.execute();
+        // checking first query
+        it = result.getRows();
+        assertEquals(2, it.getSize());
+
+        n1 = it.nextRow().getNode();
+        n2 = it.nextRow().getNode();
+
+        assertEquals("f2", n1.getName());
+        assertEquals("f1", n2.getName());
+
+        // the same request with other order
+        query = queryManager.createQuery(ascOrderX, Query.XPATH);
+        result = query.execute();
+
+        // checking second query
         it = result.getRows();
         assertEquals(2, it.getSize());
 

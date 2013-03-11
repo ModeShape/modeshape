@@ -320,22 +320,6 @@ public abstract class QueryProcessor<ProcessingContextType> implements Processor
             case SORT:
                 // Create the component under the SORT ...
                 assert node.getChildCount() == 1;
-
-                List<PlanNode> project = node.findAllAtOrBelow(Type.PROJECT);
-                assert project != null;
-
-                ArrayList<Column> allColumns = new ArrayList();
-                for (PlanNode p : project) {
-                    allColumns.addAll(p.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class));
-                }
-
-                ArrayList<String> ctypes = new ArrayList();
-                for (PlanNode p : project) {
-                    ctypes.addAll(p.getPropertyAsList(Property.PROJECT_COLUMN_TYPES, String.class));
-                }
-
-                QueryResultColumns orderColumns = new QueryResultColumns(allColumns, ctypes, context.getHints().hasFullTextSearch);
-
                 ProcessingComponent sortDelegate = createComponent(originalQuery,
                                                                    context,
                                                                    node.getFirstChild(),
@@ -359,7 +343,7 @@ public abstract class QueryProcessor<ProcessingContextType> implements Processor
                             if (alias != null) sourceNamesByAlias.put(alias, name);
                         }
                         // Now create the sorting component ...
-                        component = new SortValuesComponent(sortDelegate, orderings, orderColumns, sourceNamesByAlias);
+                        component = new SortValuesComponent(sortDelegate, orderings, sourceNamesByAlias);
                     } else {
                         // Order by the location(s) because it's before a merge-join ...
                         component = new SortLocationsComponent(sortDelegate);
