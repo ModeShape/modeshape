@@ -698,6 +698,34 @@ public class XPathParser {
         }
 
         PathExpression path = this.parsePathExpr(tokens);
+
+        if (!path.isRelative()) {
+            throw new ParsingException(tokens.nextPosition(),
+                    "Expected either 'jcr:score(tableName)', '@<propertyName>', "
+                    + "or '<childName>/@<propertyOnChild>' but absolute path was found "
+                    + tokens.consume());
+        }
+
+        List<StepExpression> steps = path.getSteps();
+        if (steps.size() != 2) {
+            throw new ParsingException(tokens.nextPosition(),
+                    "Expected either 'jcr:score(tableName)', '@<propertyName>', "
+                    + "or '<childName>/@<propertyOnChild>' but was found "
+                    + tokens.consume());
+        }
+
+        if (!(((AxisStep)steps.get(0)).getNodeTest() instanceof NameTest)) {
+            throw new ParsingException(tokens.nextPosition(),
+                    "Expected '<childName>/@<propertyOnChild>' but was found "
+                    + tokens.consume());
+        }
+
+        if (!(((AxisStep)steps.get(1)).getNodeTest() instanceof AttributeNameTest)) {
+            throw new ParsingException(tokens.nextPosition(),
+                    "Expected '<childName>/@<propertyOnChild>' but was found "
+                    + tokens.consume());
+        }
+
         Order order = Order.ASCENDING;
         if (tokens.canConsume("ascending")) {
             order = Order.ASCENDING;
@@ -705,8 +733,6 @@ public class XPathParser {
             order = Order.DESCENDING;
         }
         return new OrderBySpec(order, path);
-//        throw new ParsingException(tokens.nextPosition(),
-//                                   "Expected either 'jcr:score(tableName)' or '@<propertyName>' but found " + tokens.consume());
     }
 
     /**
