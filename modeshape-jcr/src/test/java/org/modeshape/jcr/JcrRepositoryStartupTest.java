@@ -25,12 +25,18 @@ package org.modeshape.jcr;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.File;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
@@ -125,7 +131,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @Test
     public void shouldNotImportInitialContentIfWorkspaceContentsChanged() throws Exception {
         // remove the ISPN local data, so we always start fresh
-        FileUtil.delete("target/persistent_repository_initial_content/store");
+        FileUtil.delete("target/persistent_repository_initial_content");
 
         String repositoryConfigFile = "config/repo-config-persistent-cache-initial-content.json";
         startRunStop(new RepositoryOperation() {
@@ -313,5 +319,42 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 return null;
             }
         }, repositoryConfigFile);
+    }
+
+    @Test
+    @FixFor( "MODE-1844" )
+    public void shouldNotRemainInInconsistentStateIfErrorsOccurOnStartup() throws Exception {
+        FileUtil.delete("target/persistent_repository_initial_content");
+        //try and start with a config that will produce an exception
+        String repositoryConfigFile = "config/invalid-repo-config-persistent-initial-content.json";
+        try {
+            startRunStop(new RepositoryOperation() {
+                @Override
+                public Void call() throws Exception {
+                    return null;
+                }
+            }, repositoryConfigFile);
+            fail("Expected a repository exception");
+        } catch (RepositoryException e) {
+            //expected
+        }
+
+        final CountDownLatch restartLatch = new CountDownLatch(1);
+        Callable<Void> restartRunnable = new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                startRunStop(new RepositoryOperation() {
+                    @Override
+                    public Void call() throws Exception {
+                        restartLatch.countDown();
+                        return null;
+                    }
+                }, "config/repo-config-persistent-cache-initial-content.json");
+                return null;
+            }
+        };
+        Executors.newSingleThreadExecutor().submit(restartRunnable);
+        //wait the repo to restart or fail
+        assertTrue("Repository did not restart in the expected amount of time", restartLatch.await(1, TimeUnit.MINUTES));
     }
 }

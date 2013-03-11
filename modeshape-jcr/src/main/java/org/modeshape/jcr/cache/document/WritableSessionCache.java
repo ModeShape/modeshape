@@ -1378,7 +1378,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                                                                                  sourceName,
                                                                                  externalPath,
                                                                                  alias,
-                                                                                 err.getMessage()));
+                                                                                 err.getMessage()), err);
         }
     }
 
@@ -1403,7 +1403,7 @@ public class WritableSessionCache extends AbstractSessionCache {
             throw new SystemFailureException(JcrI18n.errorRemovingProjection.text(workspaceName(),
                                                                                   node.getPath(this),
                                                                                   externalNodeKey,
-                                                                                  err.getMessage()));
+                                                                                  err.getMessage()), err);
         }
     }
 }
