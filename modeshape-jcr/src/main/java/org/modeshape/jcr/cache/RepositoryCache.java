@@ -257,6 +257,24 @@ public class RepositoryCache implements Observable {
         this.documentStore.setLocalSourceKey(this.sourceKey);
     }
 
+    /**
+     * Removes the repository info document, in case the repository has not yet been initialized (as indicated by the presence of
+     * the #REPOSITORY_INITIALIZED_AT_FIELD_NAME field). This should only be used during repository startup, in case an unexpected
+     * error occurs.
+     */
+    public final void rollbackRepositoryInfo() {
+        SchematicEntry repositoryInfoEntry = this.documentStore.localStore().get(REPOSITORY_INFO_KEY);
+        if (repositoryInfoEntry != null) {
+            Document repoInfoDoc = repositoryInfoEntry.getContentAsDocument();
+            //we should only remove the repository info if it wasn't initialized successfully previously
+            //in a cluster, it may happen that another node finished initialization while this node crashed (in which case we
+            //should not remove the entry)
+            if (!repoInfoDoc.containsField(REPOSITORY_INITIALIZED_AT_FIELD_NAME)) {
+                this.documentStore.localStore().remove(REPOSITORY_INFO_KEY);
+            }
+        }
+    }
+
     protected final String processKey() {
         return processKey;
     }

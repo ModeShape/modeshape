@@ -1,0 +1,24 @@
+{
+    "name" : "Persistent Repository With Initial Content",
+    "storage" : {
+        "cacheName" : "persistentRepositoryInitialContent",
+        "cacheConfiguration" : "config/infinispan-persistent-initial-content.xml"
+    },
+    "workspaces" : {
+        "predefined" : ["ws1"],
+        "default" : "default",
+        "allowCreation" : true,
+        "initialContent" : {
+            "ws1" : "xmlImport/docWithInvalidCharacters.xml"
+        }
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    },
+    "query" : {
+        "enabled" : false
+    }
+}
