@@ -1733,7 +1733,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                        boolean separateThreadForSystemWorkspace ) {
             RepositoryChangeBus standaloneBus = new RepositoryChangeBus(executor, systemWorkspaceName,
                                                                         separateThreadForSystemWorkspace);
-            return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration, standaloneBus) : standaloneBus;
+            return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration,
+                                                                                          standaloneBus) : standaloneBus;
         }
 
         void suspendExistingUserTransaction() throws SystemException {
