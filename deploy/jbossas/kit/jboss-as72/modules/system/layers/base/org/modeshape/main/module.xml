@@ -54,7 +54,7 @@
         <module name="javax.api" export="true"/>
         <module name="org.jboss.as.naming"/>
         <!-- For clustering ... -->
-        <module name="org.jboss.as.clustering.jgroups"/>
+        <module name="org.jboss.as.clustering.jgroups" optional="true"/>
         <!-- For security provider ... -->
         <module name="javax.servlet.api"/>
         <module name="javax.resource.api"/>
