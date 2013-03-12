@@ -1041,7 +1041,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                     // Create the event bus
                     this.changeDispatchingQueue = this.context().getCachedTreadPool("modeshape-event-dispatcher");
-                    this.changeBus = createBus(config.getClustering(), this.changeDispatchingQueue, systemWorkspaceName(), false);
+                    this.changeBus = createBus(config.getClustering(), this.changeDispatchingQueue, systemWorkspaceName(), false,
+                                               JcrRepository.class.getClassLoader());
                     this.changeBus.start();
 
                     // Set up the repository cache ...
@@ -1726,10 +1727,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected ChangeBus createBus( RepositoryConfiguration.Clustering clusteringConfiguration,
                                        ExecutorService executor,
                                        String systemWorkspaceName,
-                                       boolean separateThreadForSystemWorkspace ) {
+                                       boolean separateThreadForSystemWorkspace,
+                                       ClassLoader deserializationClassLoader) {
             RepositoryChangeBus standaloneBus = new RepositoryChangeBus(executor, systemWorkspaceName,
                                                                         separateThreadForSystemWorkspace);
-            return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration, standaloneBus) : standaloneBus;
+            return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration,
+                                                                                          deserializationClassLoader,
+                                                                                          standaloneBus) : standaloneBus;
         }
 
         void suspendExistingUserTransaction() throws SystemException, NotSupportedException {

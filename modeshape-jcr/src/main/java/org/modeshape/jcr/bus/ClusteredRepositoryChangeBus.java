@@ -24,6 +24,13 @@
 
 package org.modeshape.jcr.bus;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jgroups.Address;
 import org.jgroups.Channel;
@@ -31,11 +38,10 @@ import org.jgroups.ChannelListener;
 import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
-import org.jgroups.util.Util;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
@@ -44,7 +50,7 @@ import org.modeshape.jcr.clustering.ChannelProvider;
 /**
  * Implementation of a {@link ChangeBus} which can run in a cluster, via JGroups. This bus wraps around another bus, to which it
  * delegates all "local" processing of events.
- * 
+ *
  * @author Horia Chiorean
  */
 @ThreadSafe
@@ -84,6 +90,11 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
     protected final RepositoryConfiguration.Clustering clusteringConfiguration;
 
     /**
+     * Class loader to use for deserialization.
+     */
+    protected final ClassLoader deserializationClassLoader;
+
+    /**
      * The JGroups channel to which all {@link #notify(ChangeSet) change notifications} will be sent and from which all changes
      * will be received and sent to the observers.
      * <p>
@@ -94,6 +105,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
     private Channel channel;
 
     public ClusteredRepositoryChangeBus( RepositoryConfiguration.Clustering clusteringConfiguration,
+                                         ClassLoader deserializationClassLoader,
                                          ChangeBus delegate ) {
         CheckArg.isNotNull(clusteringConfiguration, "clusteringConfiguration");
         CheckArg.isNotNull(delegate, "delegate");
@@ -101,6 +113,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         this.clusteringConfiguration = clusteringConfiguration;
         assert clusteringConfiguration.isEnabled();
         this.delegate = delegate;
+        this.deserializationClassLoader = deserializationClassLoader;
     }
 
     @Override
@@ -155,7 +168,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
 
     /**
      * Return whether this bus has been {@link #start() started} and not yet {@link #shutdown() shut down}.
-     * 
+     *
      * @return true if {@link #start()} has been called but {@link #shutdown()} has not, or false otherwise
      */
     public boolean isStarted() {
@@ -263,12 +276,20 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         return delegate.unregister(observer);
     }
 
-    protected static byte[] serialize( ChangeSet changes ) throws Exception {
-        return Util.objectToByteBuffer(changes);
+    protected byte[] serialize( ChangeSet changes ) throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ObjectOutputStream stream = new ObjectOutputStream(output);
+        stream.writeObject(changes);
+        stream.close();
+        return output.toByteArray();
     }
 
-    protected static ChangeSet deserialize( byte[] data ) throws Exception {
-        return (ChangeSet)Util.objectFromByteBuffer(data);
+    protected ChangeSet deserialize( byte[] data ) throws Exception {
+        ObjectInputStreamWithClassLoader input = new ObjectInputStreamWithClassLoader(
+                new ByteArrayInputStream(data), deserializationClassLoader);
+        ChangeSet toReturn = (ChangeSet) input.readObject();
+        input.close();
+        return toReturn;
     }
 
     protected final class Receiver extends ReceiverAdapter {
@@ -279,11 +300,11 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         }
 
         @Override
-        public void receive( Message message ) {
+        public void receive( final Message message ) {
             if (!hasObservers()) {
                 return;
             }
-            // We have at least one observer ...
+            // We have at least one
             try {
                 // Deserialize the changes ...
                 ChangeSet changes = deserialize(message.getBuffer());
@@ -333,6 +354,31 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         @Override
         public void channelDisconnected( Channel channel ) {
             isOpen.set(false);
+        }
+    }
+
+    /**
+     * ObjectInputStream extention that allows a different class loader to be used when resolving types.
+     */
+    protected final class ObjectInputStreamWithClassLoader extends ObjectInputStream {
+
+        private final ClassLoader cl;
+
+        public ObjectInputStreamWithClassLoader(InputStream in, ClassLoader cl) throws IOException {
+            super(in);
+            this.cl = cl;
+        }
+
+        @Override
+        protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
+            if (cl == null) {
+                return super.resolveClass(desc);
+            }
+            try {
+                return Class.forName(desc.getName(), false, cl);
+            } catch (ClassNotFoundException ex) {
+                return super.resolveClass(desc);
+            }
         }
     }
 }
