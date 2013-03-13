@@ -65,7 +65,6 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.NoInitialContextException;
 import javax.security.auth.login.LoginContext;
-import javax.transaction.NotSupportedException;
 import javax.transaction.Status;
 import javax.transaction.Synchronization;
 import javax.transaction.SystemException;
@@ -363,11 +362,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
             return state;
         } catch (Exception e) {
-            //we should set the state to NOT_RUNNING regardless of the error/exception that occurs
+            // we should set the state to NOT_RUNNING regardless of the error/exception that occurs
             this.state.set(State.NOT_RUNNING);
             throw e;
-        }
-        finally {
+        } finally {
             stateLock.unlock();
         }
     }
@@ -1047,8 +1045,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     // Set up the repository cache ...
                     final SessionEnvironment sessionEnv = new RepositorySessionEnvironment(this.transactions);
                     CacheContainer workspaceCacheContainer = this.config.getWorkspaceContentCacheContainer();
-                    this.cache = new RepositoryCache(context, documentStore, config, systemContentInitializer, sessionEnv, changeBus,
-                                                     workspaceCacheContainer);
+                    this.cache = new RepositoryCache(context, documentStore, config, systemContentInitializer, sessionEnv,
+                                                     changeBus, workspaceCacheContainer);
 
                     // Set up the node type manager ...
                     this.nodeTypes = new RepositoryNodeTypeManager(this, true, true);
@@ -1139,7 +1137,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     String indexThreadPoolName = config.getQuery().getThreadPoolName();
                     this.indexingExecutor = this.context.getThreadPool(indexThreadPoolName);
                     this.queryParsers = new QueryParsers(new JcrSql2QueryParser(), new XPathQueryParser(),
-                                                         new FullTextSearchParser(), new JcrSqlQueryParser(), new JcrQomQueryParser());
+                                                         new FullTextSearchParser(), new JcrSqlQueryParser(),
+                                                         new JcrQomQueryParser());
                 }
                 QuerySystem query = config.getQuery();
                 if (query.queriesEnabled()) {
@@ -1147,8 +1146,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     Properties backendProps = query.getIndexingBackendProperties();
                     Properties indexingProps = query.getIndexingProperties();
                     Properties indexStorageProps = query.getIndexStorageProperties();
-                    this.repositoryQueryManager = new RepositoryQueryManager(this, config.getQuery(), indexingExecutor, backendProps,
-                                                                             indexingProps, indexStorageProps);
+                    this.repositoryQueryManager = new RepositoryQueryManager(this, config.getQuery(), indexingExecutor,
+                                                                             backendProps, indexingProps, indexStorageProps);
                     this.indexRebuildOptions = query.getIndexRebuildOptions();
                 } else {
                     this.repositoryQueryManager = new RepositoryDisabledQueryManager(this, config.getQuery());
@@ -1187,13 +1186,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // Set up the node types importer
                 this.nodeTypesImporter = new NodeTypesImporter(config.getNodeTypes(), this);
             } catch (Throwable t) {
-                //remove the document that was written as part of the initialization procedure
+                // remove the document that was written as part of the initialization procedure
                 if (cache != null) {
                     cache.rollbackRepositoryInfo();
                 }
-                //resume any user transaction that may have been suspended earlier
+                // resume any user transaction that may have been suspended earlier
                 resumeExistingUserTransaction();
-                throw (t instanceof Exception) ? (Exception) t : new RuntimeException(t);
+                throw (t instanceof Exception) ? (Exception)t : new RuntimeException(t);
             }
         }
 
@@ -1214,10 +1213,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         /**
-         * Performs the steps required after the running state has been created and before a repository is considered "initialized"
-         *
+         * Performs the steps required after the running state has been created and before a repository is considered
+         * "initialized"
+         * 
          * @throws Exception if anything goes wrong in this phase. If it does, the transaction used for startup should be rolled
-         * back
+         *         back
          */
         protected final void completeInitialization() throws Exception {
             try {
@@ -1229,7 +1229,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.nodeTypesImporter.importNodeTypes();
 
                 if (repositoryCache().isInitializingRepository()) {
-                    // import initial content for each of the workspaces (this has to be done after the running state has "started"
+                    // import initial content for each of the workspaces (this has to be done after the running state has
+                    // "started"
                     this.cache.runSystemOneTimeInitializationOperation(new Callable<Void>() {
                         @Override
                         public Void call() throws Exception {
@@ -1244,18 +1245,19 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // connectors must be initialized after initial content because that can have an influence on projections
                 this.connectors.initialize();
 
-                // Now record in the content that we're finished initializing the repository. This will commit the startup transaction
+                // Now record in the content that we're finished initializing the repository. This will commit the startup
+                // transaction
                 repositoryCache().completeInitialization();
             } catch (Throwable t) {
                 this.cache.rollbackRepositoryInfo();
                 resumeExistingUserTransaction();
-                throw t instanceof  Exception ? (Exception) t : new RuntimeException(t);
+                throw t instanceof Exception ? (Exception)t : new RuntimeException(t);
             }
         }
 
         /**
-         * Perform any initialization code that requires the repository to be in a running state. The repository has been considered
-         * started up.
+         * Perform any initialization code that requires the repository to be in a running state. The repository has been
+         * considered started up.
          * 
          * @throws Exception if there is a problem during this phase.
          */
@@ -1290,7 +1292,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     }
                 }
 
-                // Register the background processes. Do this last since we want the repository running before these are started ...
+                // Register the background processes. Do this last since we want the repository running before these are started
+                // ...
                 GarbageCollection gcConfig = config.getGarbageCollection();
                 String threadPoolName = gcConfig.getThreadPoolName();
                 long binaryGcInitialTime = determineInitialDelay(gcConfig.getInitialTimeExpression());
@@ -1302,7 +1305,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                                                              lockSweepIntervalInMinutes,
                                                                              lockSweepIntervalInMinutes,
                                                                              TimeUnit.MINUTES));
-                gcProcesses.add(garbageCollectionService.scheduleAtFixedRate(new BinaryValueGarbageCollectionTask(JcrRepository.this),
+                gcProcesses.add(garbageCollectionService.scheduleAtFixedRate(new BinaryValueGarbageCollectionTask(
+                                                                                                                  JcrRepository.this),
                                                                              binaryGcInitialTime,
                                                                              binaryGcInterval,
                                                                              TimeUnit.HOURS));
@@ -1732,7 +1736,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration, standaloneBus) : standaloneBus;
         }
 
-        void suspendExistingUserTransaction() throws SystemException, NotSupportedException {
+        void suspendExistingUserTransaction() throws SystemException {
             // suspend any potential existing transaction, so that the initialization is "atomic"
             this.existingUserTransaction = this.transactions.suspend();
         }
