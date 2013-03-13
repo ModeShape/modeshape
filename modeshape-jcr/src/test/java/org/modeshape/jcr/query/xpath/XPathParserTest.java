@@ -35,6 +35,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.TokenStream;
 import org.modeshape.common.text.TokenStream.Tokenizer;
@@ -86,6 +87,12 @@ public class XPathParserTest {
     @After
     public void afterEach() {
         parser = null;
+    }
+
+    @FixFor("MODE-1680")
+    @Test
+    public void shoudlParse() {
+        assertParsable("/jcr:root//element(*,nt:file)[(@jcr:mixinTypes = 'mix:simpleVersionable') and jcr:like(fn:name(), 'a%')]order by @jcr:created ascending");
     }
 
     @Test

@@ -398,6 +398,13 @@ public class XPathToQueryTranslatorTest {
                    isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE (nodeSet1.[jcr:primaryType] = 'mgnl:content' AND CONTAINS(nodeSet1.*,'paragraph'))"));
     }
 
+    @FixFor("MODE-1680")
+    @Test
+    public void shouldTranslateOrderByClauseWithChildAxis() {
+        assertThat(xpath("/jcr:root//element(*,nt:file)[(@jcr:mixinTypes = 'mix:simpleVersionable') and jcr:like(fn:name(), 'a%')]order by jcr:content/@jcr:created ascending"),
+                   isSql("SELECT [nt:file].[jcr:created] FROM [nt:file] INNER JOIN [nt:base] AS content ON ISCHILDNODE(content,[nt:file]) WHERE ([nt:file].[jcr:mixinTypes] = 'mix:simpleVersionable' AND NAME([nt:file]) LIKE 'a%') ORDER BY content.[jcr:created] ASC"));
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // utility methods
     // ----------------------------------------------------------------------------------------------------------------
