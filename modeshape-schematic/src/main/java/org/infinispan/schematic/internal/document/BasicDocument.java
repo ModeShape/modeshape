@@ -365,7 +365,9 @@ public class BasicDocument extends LinkedHashMap<String, Object> implements Muta
         if (object != this) {
             // Prevent going through BasicBsonObject.unmodifiableView if we can ...
             Map<String, ?> original = object instanceof BasicDocument ? (BasicDocument)object : object.toMap();
-            super.putAll(original);
+            for (Map.Entry<String, ?> entry : original.entrySet()) {
+                put(entry.getKey(), unwrap(entry.getValue()));
+            }
         }
     }
 
@@ -501,6 +503,16 @@ public class BasicDocument extends LinkedHashMap<String, Object> implements Muta
     @Override
     public Document withVariablesReplacedWithSystemProperties() {
         return with(new SystemPropertiesTransformer());
+    }
+
+    protected Object unwrap( Object value ) {
+        if (value instanceof DocumentEditor) {
+            return unwrap(((DocumentEditor)value).unwrap());
+        }
+        if (value instanceof ArrayEditor) {
+            return unwrap(((ArrayEditor)value).unwrap());
+        }
+        return value;
     }
 
 }
