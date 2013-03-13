@@ -28,6 +28,7 @@ import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.api.Namespaced;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
@@ -37,7 +38,7 @@ import org.modeshape.jcr.value.Path;
  * The abstract base class for all {@link Item} implementations.
  */
 @ThreadSafe
-abstract class AbstractJcrItem implements Item {
+abstract class AbstractJcrItem implements Item, Namespaced {
 
     protected final JcrSession session;
 
