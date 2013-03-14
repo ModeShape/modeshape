@@ -400,12 +400,11 @@ public class JcrService extends AbstractCmisService {
     /**
      * 
      * @param repositoryId The repositoryId
-     * @return The workspace. This method should not return null. 
+     * @return The workspace.
      * If {@code repositoryId} is a single word (i.e. not colon-separated), then 
-     * {@link #name(String)} and {@link #workspace(String)} should return  
-     * {@code repositoryId}.
-     * The short form is used when only repository is configured. 
-     * This is for compliance with Apache Chemistry.
+     * it is assumed that the {@code repositoryId} argument only represents the 
+     * repository name and this method will return {@code null} for the 
+     * workspace.
      */
     private String workspace(String repositoryId) {
         CheckArg.isNotNull(repositoryId, "repositoryId"); // if can be user-supplied, or 'assert repositoryId != null' if not user supplied
@@ -417,9 +416,6 @@ public class JcrService extends AbstractCmisService {
             // Just take the second part
             return parts[1].trim(); // may be blank
         }
-        if (repositoryId.endsWith(":")) {
-            return "";
-        }
-        return repositoryId;
+        return null;
     }
 }

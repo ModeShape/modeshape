@@ -4,6 +4,7 @@ package org.modeshape.cmis;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.util.HashMap;
@@ -18,10 +19,12 @@ import org.junit.Test;
 public class JcrServiceTest {
 
     /**
-     * Ensure that {@link JcrService#workspace(String) returns the workspace
-     * for both the short and long form repository ids.
+     * Ensure that {@link JcrService#workspace(String)} returns the workspace
+     * for the long form repository ids (e.g. "repositoryName:workspace") and
+     * {@code null} for the short form (e.g. "repositoryName").
      * 
-     * For example, "foo" should return "foo", and "foo:bar" should return "bar".
+     * For example, "foo" should return {@code null}, and "foo:bar" should 
+     * return "bar".
      */
     @Test
     public void testWorkspace() {
@@ -36,13 +39,13 @@ public class JcrServiceTest {
         js.setCallContext(mock(CallContext.class));
 
         js.login("foo");
-        verify(mockRepo).login(any(Credentials.class), eq("foo"));
+        verify(mockRepo).login(null, null);
+
+        js.login("foo:");
+        verify(mockRepo, times(2)).login(null, null);
 
         js.login("foo:bar");
         verify(mockRepo).login(any(Credentials.class), eq("bar"));
-
-        js.login("baz:");
-        verify(mockRepo).login(any(Credentials.class), eq(""));
 
         js.login(":quux");
         verify(mockRepo).login(any(Credentials.class), eq("quux"));
