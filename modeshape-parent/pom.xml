@@ -353,9 +353,6 @@
         <jboss-javaee-6.0-with-tools.version>1.0.4.Final-redhat-1</jboss-javaee-6.0-with-tools.version>
         <jboss-as-arquillian-container-managed.version>7.2.0.Final</jboss-as-arquillian-container-managed.version>
 
-        <!--Url where the artifacts that make up an EAP release are found -->
-        <eap.maven.repository.url>http://maven.repository.redhat.com/techpreview/eap6/6.1.0.Alpha1/maven-repository</eap.maven.repository.url>
-
         <!--
             RHQ
         -->
@@ -1839,19 +1836,4 @@
             </plugin>
         </plugins>
     </reporting>
-
-    <repositories>
-        <!--This is a non-standard repository, where EAP/AS components artifacts are located-->
-        <repository>
-            <id>eap6</id>
-            <name>EAP components repository</name>
-            <url>${eap.maven.repository.url}</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 </project>
