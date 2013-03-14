@@ -48,9 +48,13 @@ BTW, that '-s settings.xml' argument uses the 'settings.xml' file in our codebas
 
 Normally, during a normal "$ mvn clean install" build, the EAP kit is not built and therefore only the JBoss Maven repository would suffice.
 However, if you are interested in building & contributing to the EAP kit as well, you need to make sure the second Maven repository is active.
-For building the kit itself, you need to activate either the "integration" or the "assembly" Maven profiles:
+You can then run the following command (instead of the earlier command) to build all modules, including the EAP kit, using our "integration" profile:
 
-   $ mvn clean install -s settings.xml -DskipTests -Pintegration
+    $ mvn clean install -s settings.xml -Pintegration
+
+To build everything, including the EAP kit, our JavaDoc, and our other assemblies, use the "assembly" profile instead:
+
+    $ mvn clean install -s settings.xml -Passembly
 
 As an alternative to always passing the "-s settings.xml" parameter, you can modify your local ~/.m2/settings.xml file and add the above mentioned repositories, making sure they are active by default during a build.
 
