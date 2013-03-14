@@ -108,7 +108,7 @@ public class JcrService extends AbstractCmisService {
         Set<String> IDs = jcrRepositories.keySet();
         for (String Id : IDs) {
             JcrRepository repo = jcrRepositories.get(Id);
-            info.addAll(repo.getRepositoryInfos(login(name(Id))));
+            info.addAll(repo.getRepositoryInfos(login(Id)));
         }
         return info;
     }
