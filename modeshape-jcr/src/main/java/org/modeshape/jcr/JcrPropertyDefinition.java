@@ -26,7 +26,9 @@ package org.modeshape.jcr;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
@@ -44,6 +46,7 @@ import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.StringFactory;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.jcr.value.ValueFormatException;
@@ -481,6 +484,56 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         }
     }
 
+    /**
+     * Determine if the constraints on this definition are as-constrained or more-constrained than those on the supplied
+     * definition.
+     * 
+     * @param other the property definition to compare; may not be null
+     * @param context the execution context used to parse any values within the constraints
+     * @return true if this property definition is as-constrained or more-constrained, or false otherwise
+     */
+    boolean isAsOrMoreConstrainedThan( PropertyDefinition other,
+                                       ExecutionContext context ) {
+        String[] otherConstraints = other.getValueConstraints();
+        if (otherConstraints == null || otherConstraints.length == 0) {
+            // The ancestor's definition is less constrained, so it's okay even if this definition has no constraints ...
+            return true;
+        }
+        String[] constraints = this.getValueConstraints();
+        if (constraints == null || constraints.length == 0) {
+            // This definition has no constraints, while the ancestor does have them ...
+            return false;
+        }
+        // There are constraints on both, so make sure they have the same types ...
+        int type = this.getRequiredType();
+        int otherType = other.getRequiredType();
+        if (type == otherType && type != PropertyType.UNDEFINED) {
+            ConstraintChecker thisChecker = createChecker(context, type, constraints);
+            ConstraintChecker thatChecker = createChecker(context, otherType, otherConstraints);
+            return thisChecker.isAsOrMoreConstrainedThan(thatChecker);
+        }
+        // We can only compare constraint literals, and we can only expect that every constraint literal in this
+        // definition can be found in the other defintion (which can have more than this one) ...
+        Set<String> thatLiterals = new HashSet<String>();
+        for (String literal : otherConstraints) {
+            thatLiterals.add(literal);
+        }
+        for (String literal : constraints) {
+            if (!thatLiterals.contains(literal)) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Get a constraint checker that can be used to compare constraints.
+     * 
+     * @param context the execution context; may not be null
+     * @return the constraint checker; never null
+     */
+    ConstraintChecker getConstraintChecker( ExecutionContext context ) {
+        return createChecker(context, getRequiredType(), getValueConstraints());
+    }
+
     @Override
     public int hashCode() {
         return getId().toString().hashCode();
@@ -525,14 +578,22 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
          */
         public abstract boolean matches( Value value,
                                          JcrSession session );
+
+        public abstract boolean isAsOrMoreConstrainedThan( ConstraintChecker other );
     }
 
-    private interface Range<T> {
+    private interface Range<T extends Comparable<T>> {
         boolean accepts( T value );
 
-        Comparable<T> getMinimum();
+        T getMinimum();
 
-        Comparable<T> getMaximum();
+        T getMaximum();
+
+        boolean within( Range<T> other );
+
+        boolean includesLowerValue();
+
+        boolean includesUpperValue();
     }
 
     /**
@@ -560,7 +621,12 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
         protected abstract ValueFactory<T> getValueFactory( ValueFactories valueFactories );
 
-        protected abstract Comparable<T> parseValue( String s );
+        protected abstract T parseValue( String s );
+
+        @Override
+        public String toString() {
+            return constraints.toString();
+        }
 
         @SuppressWarnings( "unchecked" )
         protected T getMinimum() {
@@ -569,7 +635,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                 Comparable<T> minimum = null;
                 // Go through the value constraints and see which one is the minimum value ...
                 for (Range<T> range : constraints) {
-                    T rangeMin = (T)range.getMinimum();
+                    T rangeMin = range.getMinimum();
                     if (rangeMin == null) continue;
                     if (minimum == null) {
                         minimum = rangeMin;
@@ -589,7 +655,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                 Comparable<T> maximum = null;
                 // Go through the value constraints and see which one is the minimum value ...
                 for (Range<T> range : constraints) {
-                    T rangeMax = (T)range.getMaximum();
+                    T rangeMax = range.getMaximum();
                     if (rangeMax == null) continue;
                     if (maximum == null) {
                         maximum = rangeMax;
@@ -609,7 +675,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
          * @param valueConstraint the individual value constraint to be parsed into a {@link Range}.
          * @return a range that accepts values which match the given value constraint.
          */
-        private Range<T> parseValueConstraint( String valueConstraint ) {
+        private Range<T> parseValueConstraint( final String valueConstraint ) {
             assert valueConstraint != null;
 
             final boolean includeLower = valueConstraint.charAt(0) == '[';
@@ -620,8 +686,8 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             String rval = commaInd < valueConstraint.length() - 2 ? valueConstraint.substring(commaInd + 1,
                                                                                               valueConstraint.length() - 1) : null;
 
-            final Comparable<T> lower = lval == null ? null : parseValue(lval.trim());
-            final Comparable<T> upper = rval == null ? null : parseValue(rval.trim());
+            final T lower = lval == null ? null : parseValue(lval.trim());
+            final T upper = rval == null ? null : parseValue(rval.trim());
 
             return new Range<T>() {
                 @Override
@@ -636,13 +702,60 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                 }
 
                 @Override
-                public Comparable<T> getMaximum() {
+                public String toString() {
+                    return valueConstraint;
+                }
+
+                @Override
+                public T getMaximum() {
                     return upper;
                 }
 
                 @Override
-                public Comparable<T> getMinimum() {
+                public T getMinimum() {
                     return lower;
+                }
+
+                @Override
+                public boolean includesLowerValue() {
+                    return includeLower;
+                }
+
+                @Override
+                public boolean includesUpperValue() {
+                    return includeUpper;
+                }
+
+                @Override
+                public boolean within( Range<T> other ) {
+                    T otherMin = other.getMinimum();
+                    if (lower == null) {
+                        if (otherMin != null) return false;
+                        // Neither has a lower value (i.e., both null) so okay
+                    } else if (otherMin != null) {
+                        // Both have a non-null lower value ...
+                        if (includeLower == other.includesLowerValue() || other.includesLowerValue()) {
+                            if (lower.compareTo(otherMin) < 0) return false;
+                        } else {
+                            assert includeLower && !other.includesLowerValue();
+                            if (lower.compareTo(otherMin) <= 0) return false;
+                        }
+                    }
+
+                    T otherMax = other.getMaximum();
+                    if (upper == null) {
+                        if (otherMax != null) return false;
+                        // Neither has an upper value (i.e., both null) so okay
+                    } else if (otherMax != null) {
+                        // Both have a non-null upper value ...
+                        if (includeUpper == other.includesUpperValue() || other.includesUpperValue()) {
+                            if (upper.compareTo(otherMax) > 0) return false;
+                        } else {
+                            assert includeUpper && !other.includesUpperValue();
+                            if (upper.compareTo(otherMax) >= 0) return false;
+                        }
+                    }
+                    return true;
                 }
             };
         }
@@ -658,6 +771,25 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                 }
             }
             return false;
+        }
+
+        @SuppressWarnings( "unchecked" )
+        @Override
+        public boolean isAsOrMoreConstrainedThan( ConstraintChecker other ) {
+            if (!other.getClass().equals(this.getClass())) return false;
+            RangeConstraintChecker<T> that = (RangeConstraintChecker<T>)other;
+            // Each of the ranges must be within one other range ...
+            for (Range<T> thisRange : this.constraints) {
+                boolean found = false;
+                for (Range<T> thatRange : that.constraints) {
+                    if (thisRange.within(thatRange)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) return false;
+            }
+            return true;
         }
     }
 
@@ -708,7 +840,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         }
 
         @Override
-        protected Comparable<Long> parseValue( String s ) {
+        protected Long parseValue( String s ) {
             return Long.parseLong(s);
         }
     }
@@ -732,7 +864,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         }
 
         @Override
-        protected Comparable<DateTime> parseValue( String s ) {
+        protected DateTime parseValue( String s ) {
             return new JodaDateTime(s.trim());
         }
     }
@@ -756,7 +888,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         }
 
         @Override
-        protected Comparable<Double> parseValue( String s ) {
+        protected Double parseValue( String s ) {
             return Double.parseDouble(s);
         }
     }
@@ -780,7 +912,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         }
 
         @Override
-        protected Comparable<BigDecimal> parseValue( String s ) {
+        protected BigDecimal parseValue( String s ) {
             return new BigDecimal(s);
         }
     }
@@ -788,10 +920,11 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
     @Immutable
     private static class ReferenceConstraintChecker implements ConstraintChecker {
         private final Name[] constraints;
+        ExecutionContext context;
 
         protected ReferenceConstraintChecker( String[] valueConstraints,
                                               ExecutionContext context ) {
-            // this.context = context;
+            this.context = context;
 
             NameFactory factory = context.getValueFactories().getNameFactory();
 
@@ -805,6 +938,11 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         @Override
         public int getType() {
             return PropertyType.REFERENCE;
+        }
+
+        @Override
+        public String toString() {
+            return asString(constraints, context);
         }
 
         @Override
@@ -837,15 +975,33 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
             return false;
         }
+
+        @Override
+        public boolean isAsOrMoreConstrainedThan( ConstraintChecker other ) {
+            if (!other.getClass().equals(this.getClass())) return false;
+            ReferenceConstraintChecker that = (ReferenceConstraintChecker)other;
+            // Compute the set of names from 'that' ...
+            Set<Name> thatNames = new HashSet<Name>();
+            for (Name name : that.constraints) {
+                thatNames.add(name);
+            }
+            // Every name in this must be found in that (but 'that' can have more) ...
+            for (Name name : this.constraints) {
+                if (!thatNames.contains(name)) return false;
+            }
+            return true;
+        }
     }
 
     @Immutable
     private static class NameConstraintChecker implements ConstraintChecker {
         private final Name[] constraints;
         private final ValueFactory<Name> valueFactory;
+        private final ExecutionContext context;
 
         protected NameConstraintChecker( String[] valueConstraints,
                                          ExecutionContext context ) {
+            this.context = context;
             this.valueFactory = context.getValueFactories().getNameFactory();
 
             constraints = new Name[valueConstraints.length];
@@ -853,6 +1009,11 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             for (int i = 0; i < valueConstraints.length; i++) {
                 constraints[i] = valueFactory.create(valueConstraints[i]);
             }
+        }
+
+        @Override
+        public String toString() {
+            return asString(constraints, context);
         }
 
         @Override
@@ -877,10 +1038,27 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
             return false;
         }
+
+        @Override
+        public boolean isAsOrMoreConstrainedThan( ConstraintChecker other ) {
+            if (!other.getClass().equals(this.getClass())) return false;
+            NameConstraintChecker that = (NameConstraintChecker)other;
+            // Compute the set of names from 'that' ...
+            Set<Name> thatNames = new HashSet<Name>();
+            for (Name name : that.constraints) {
+                thatNames.add(name);
+            }
+            // Every name in this must be found in that (but 'that' can have more) ...
+            for (Name name : this.constraints) {
+                if (!thatNames.contains(name)) return false;
+            }
+            return true;
+        }
     }
 
     @Immutable
     private static class StringConstraintChecker implements ConstraintChecker {
+        private final Set<String> expressions = new HashSet<String>();
         private final Pattern[] constraints;
         private ValueFactory<String> valueFactory;
 
@@ -890,7 +1068,9 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             this.valueFactory = context.getValueFactories().getStringFactory();
 
             for (int i = 0; i < valueConstraints.length; i++) {
-                constraints[i] = Pattern.compile(valueConstraints[i]);
+                String expr = valueConstraints[i];
+                constraints[i] = Pattern.compile(expr);
+                expressions.add(expr);
             }
         }
 
@@ -914,6 +1094,17 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
             return false;
         }
+
+        @Override
+        public boolean isAsOrMoreConstrainedThan( ConstraintChecker other ) {
+            if (!other.getClass().equals(this.getClass())) return false;
+            StringConstraintChecker that = (StringConstraintChecker)other;
+            // Every regex in this must be found in that (but 'that' can have more) ...
+            for (String expression : this.expressions) {
+                if (!that.expressions.contains(expression)) return false;
+            }
+            return true;
+        }
     }
 
     @Immutable
@@ -930,6 +1121,11 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         @Override
         public int getType() {
             return PropertyType.PATH;
+        }
+
+        @Override
+        public String toString() {
+            return constraints.toString();
         }
 
         @Override
@@ -951,7 +1147,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             value = value.getNormalizedPath();
 
             for (int i = 0; i < constraints.length; i++) {
-                boolean matchesDescendants = constraints[i].endsWith("*");
+                boolean matchesDescendants = constraints[i].endsWith("/*");
                 String pathStr = constraints[i];
                 if (matchesDescendants) pathStr = pathStr.substring(0, pathStr.length() - 2);
                 Path constraintPath = repoPathFactory.create(pathStr);
@@ -966,6 +1162,61 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
             return false;
         }
+
+        @Override
+        public boolean isAsOrMoreConstrainedThan( ConstraintChecker other ) {
+            if (!other.getClass().equals(this.getClass())) return false;
+            PathConstraintChecker that = (PathConstraintChecker)other;
+            // We only need the main path factory, since all paths are defined in node types ...
+            PathFactory pathFactory = context.getValueFactories().getPathFactory();
+            Set<Path> thatWildcardPaths = new HashSet<Path>();
+            Set<Path> thatExactPaths = new HashSet<Path>();
+            for (String constraint : that.constraints) {
+                boolean matchesDescendants = constraint.endsWith("/*");
+                if (matchesDescendants) {
+                    String pathStr = constraint.substring(0, constraint.length() - 2);
+                    Path path = pathFactory.create(pathStr);
+                    thatWildcardPaths.add(path);
+                } else {
+                    Path path = pathFactory.create(constraint);
+                    thatExactPaths.add(path);
+                }
+            }
+            // Every path in this must be equal to or a descendant of a path in that ...
+            for (String constraint : this.constraints) {
+                Path path = pathFactory.create(constraint);
+                boolean matched = false;
+                // Check the exact match paths first ...
+                if (thatExactPaths.contains(path)) {
+                    matched = true;
+                }
+                if (!matched) {
+                    // Now check the wildcard paths ...
+                    for (Path thatPath : thatWildcardPaths) {
+                        if (path.isAtOrBelow(thatPath)) {
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (!matched) return false;
+                }
+            }
+            return true;
+        }
+    }
+
+    protected static String asString( Object[] values,
+                                      ExecutionContext context ) {
+        if (values.length == 0) return "[]";
+        StringFactory strings = context.getValueFactories().getStringFactory();
+        StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        sb.append(strings.create(values[0]));
+        for (int i = 1; i != values.length; ++i) {
+            sb.append(',');
+            sb.append(strings.create(values[0]));
+        }
+        return sb.toString();
     }
 
 }

@@ -41,10 +41,13 @@ import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.nodetype.PropertyDefinitionTemplate;
+import javax.jcr.version.OnParentVersionAction;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
+import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 
@@ -633,5 +636,117 @@ public class JcrPropertyDefinitionTest extends MultiUseAbstractTest {
         Value value = session.getValueFactory().createValue(session.getRootNode().getNode("a"));
 
         assertThat(satisfiesConstraints(prop, new Value[] {value}), is(false));
+    }
+
+    @FixFor( "MODE-1857" )
+    @Test
+    public void shouldBeMoreConstrainedWithBinaryConstraints() throws Exception {
+        assertMoreConstrained(TestLexicon.CONSTRAINED_BINARY, "[,4]");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_BINARY, "[,4)");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_BINARY, "[0,2]");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_BINARY, "(10,20)");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_BINARY, "(30,40)");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_BINARY, "[31,40]");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_BINARY, "[31,32)");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_BINARY, "(50,]");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_BINARY, "[51,]");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_BINARY, "[53,99]");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_BINARY, "(52,99)");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_BINARY, "[,4)", "(10,20)", "[51,]");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_BINARY, "[10, 20)", "(30,40]", "[50,]");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_BINARY, EXPECTED_BINARY_CONSTRAINTS); // as-constrained
+        // "[,5)", "[10, 20)", "(30,40]", "[50,]"
+        assertNotMoreConstrained(TestLexicon.CONSTRAINED_BINARY, "[,5]");
+        assertNotMoreConstrained(TestLexicon.CONSTRAINED_BINARY, "[10,20]");
+        assertNotMoreConstrained(TestLexicon.CONSTRAINED_BINARY, "[30,40]");
+        assertNotMoreConstrained(TestLexicon.CONSTRAINED_BINARY, "[,]");
+    }
+
+    @FixFor( "MODE-1857" )
+    @Test
+    public void shouldBeMoreConstrainedWithDoubleConstraints() throws Exception {
+        assertMoreConstrained(TestLexicon.CONSTRAINED_DOUBLE, "[,4.99999]");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_DOUBLE, "[3,5)");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_DOUBLE, "(10.1,20.2)");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_DOUBLE, "[30.31,40.399999]");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_DOUBLE, "(50.51,]");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_DOUBLE, "[50.51,]");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_DOUBLE, EXPECTED_DOUBLE_CONSTRAINTS); // as-constrained
+        // "[,5.0)", "[10.1, 20.2)", "(30.3,40.4]", "[50.5,]"
+        assertNotMoreConstrained(TestLexicon.CONSTRAINED_DOUBLE, "[,5.0]");
+        assertNotMoreConstrained(TestLexicon.CONSTRAINED_DOUBLE, "[10.0,20]");
+    }
+
+    @FixFor( "MODE-1857" )
+    @Test
+    public void shouldBeMoreConstrainedWithNameConstraints() throws Exception {
+        assertMoreConstrained(TestLexicon.CONSTRAINED_NAME, EXPECTED_NAME_CONSTRAINTS[0]);
+        assertMoreConstrained(TestLexicon.CONSTRAINED_NAME, EXPECTED_NAME_CONSTRAINTS[1]);
+        assertMoreConstrained(TestLexicon.CONSTRAINED_NAME, EXPECTED_NAME_CONSTRAINTS); // as-constrained
+        // "jcr:system", "modetest:constrainedType"
+        assertNotMoreConstrained(TestLexicon.CONSTRAINED_NAME, EXPECTED_NAME_CONSTRAINTS[0] + "x");
+        assertNotMoreConstrained(TestLexicon.CONSTRAINED_NAME, "");
+    }
+
+    @FixFor( "MODE-1857" )
+    @Test
+    public void shouldBeMoreConstrainedWithPathConstraints() throws Exception {
+        assertMoreConstrained(TestLexicon.CONSTRAINED_PATH, "/jcr:system");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_PATH, "/jcr:system/jcr:namespaces");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_PATH, "/a/b/c");
+        assertMoreConstrained(TestLexicon.CONSTRAINED_PATH, EXPECTED_PATH_CONSTRAINTS[0]);
+        assertMoreConstrained(TestLexicon.CONSTRAINED_PATH, EXPECTED_PATH_CONSTRAINTS[1]);
+        assertMoreConstrained(TestLexicon.CONSTRAINED_PATH, EXPECTED_PATH_CONSTRAINTS[2]);
+        assertMoreConstrained(TestLexicon.CONSTRAINED_PATH, EXPECTED_PATH_CONSTRAINTS); // as-constrained
+        // "/jcr:system/*", "b", "/a/b/c"
+        assertNotMoreConstrained(TestLexicon.CONSTRAINED_PATH, "/");
+        assertNotMoreConstrained(TestLexicon.CONSTRAINED_PATH, "/jcr:somethingelse");
+        assertNotMoreConstrained(TestLexicon.CONSTRAINED_PATH, "b/c/d");
+        assertNotMoreConstrained(TestLexicon.CONSTRAINED_PATH, "/a/b/c/d");
+    }
+
+    @FixFor( "MODE-1857" )
+    @Test
+    public void shouldBeMoreConstrainedWithStringConstraints() throws Exception {
+        assertMoreConstrained(TestLexicon.CONSTRAINED_STRING, EXPECTED_STRING_CONSTRAINTS[0]);
+        assertMoreConstrained(TestLexicon.CONSTRAINED_STRING, EXPECTED_STRING_CONSTRAINTS[1]);
+        assertMoreConstrained(TestLexicon.CONSTRAINED_STRING, EXPECTED_STRING_CONSTRAINTS); // as-constrained
+        assertNotMoreConstrained(TestLexicon.CONSTRAINED_STRING, EXPECTED_STRING_CONSTRAINTS[0] + "x");
+        assertNotMoreConstrained(TestLexicon.CONSTRAINED_STRING, "");
+    }
+
+    protected void assertMoreConstrained( Name defnName,
+                                          String... constraints ) throws Exception {
+        NodeType constrainedType = validateTypeDefinition();
+        JcrPropertyDefinition prop = propertyDefinitionFor(constrainedType, defnName);
+        JcrPropertyDefinition test = constraintDefinition(prop.getRequiredType(), constraints);
+        assertThat(test.isAsOrMoreConstrainedThan(prop, context), is(true));
+    }
+
+    protected void assertNotMoreConstrained( Name defnName,
+                                             String... constraints ) throws Exception {
+        NodeType constrainedType = validateTypeDefinition();
+        JcrPropertyDefinition prop = propertyDefinitionFor(constrainedType, defnName);
+        JcrPropertyDefinition test = constraintDefinition(prop.getRequiredType(), constraints);
+        assertThat(test.isAsOrMoreConstrainedThan(prop, context), is(false));
+    }
+
+    protected JcrPropertyDefinition constraintDefinition( int type,
+                                                          String... constraints ) throws Exception {
+        JcrNodeType nodeType = (JcrNodeType)validateTypeDefinition();
+        // Most of these don't matter ...
+        NodeKey protoKey = new NodeKey("somethingElseEntirely");
+        Name name = context.getValueFactories().getNameFactory().create("dynTestProp");
+        int opv = OnParentVersionAction.COPY;
+        boolean auto = false;
+        boolean man = false;
+        boolean prot = false;
+        JcrValue[] defVals = null;
+        boolean mult = false;
+        boolean fts = false;
+        boolean queryOrd = false;
+        String[] queryOps = {};
+        return new JcrPropertyDefinition(context, nodeType, protoKey, name, opv, auto, man, prot, defVals, type, constraints,
+                                         mult, fts, queryOrd, queryOps);
     }
 }
