@@ -2316,6 +2316,17 @@ public class RepositoryConfiguration {
             Channel channel = env.getChannel(getClusterName());
             return channel;
         }
+
+        /**
+         * Return the class loader to use when deserializing JGroups messages. This is necessary since in JBossAS, the
+         * JGroups module will invoke callbacks to modeshape with its own thread which cannot deserialize modeshape
+         * classes.
+         *
+         * @return The class loader to use in deserialization.
+         */
+        public ClassLoader getJGroupsDeserializationClassLoader() {
+            return environment.getJGroupsDeserializationClassLoader();
+        }
     }
 
     protected List<Component> readComponents( Document doc,

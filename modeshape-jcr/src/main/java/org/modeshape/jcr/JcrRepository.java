@@ -1039,8 +1039,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                     // Create the event bus
                     this.changeDispatchingQueue = this.context().getCachedTreadPool("modeshape-event-dispatcher");
-                    this.changeBus = createBus(config.getClustering(), this.changeDispatchingQueue, systemWorkspaceName(), false,
-                                               JcrRepository.class.getClassLoader());
+                    this.changeBus = createBus(config.getClustering(), this.changeDispatchingQueue, systemWorkspaceName(), false);
                     this.changeBus.start();
 
                     // Set up the repository cache ...
@@ -1731,12 +1730,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected ChangeBus createBus( RepositoryConfiguration.Clustering clusteringConfiguration,
                                        ExecutorService executor,
                                        String systemWorkspaceName,
-                                       boolean separateThreadForSystemWorkspace,
-                                       ClassLoader deserializationClassLoader) {
+                                       boolean separateThreadForSystemWorkspace ) {
             RepositoryChangeBus standaloneBus = new RepositoryChangeBus(executor, systemWorkspaceName,
                                                                         separateThreadForSystemWorkspace);
             return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration,
-                                                                                          deserializationClassLoader,
                                                                                           standaloneBus) : standaloneBus;
         }
 

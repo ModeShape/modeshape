@@ -68,6 +68,13 @@ public interface Environment {
                                 String... classpathEntries );
 
     /**
+     * Get the Classloader to use when deserializing messages from JGroups.
+     *
+     * @return the classloader to use when deserializing messages from JGroups.
+     */
+    ClassLoader getJGroupsDeserializationClassLoader();
+
+    /**
      * Shutdown this environment, allowing it to reclaim any resources.
      */
     void shutdown();
