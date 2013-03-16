@@ -2688,12 +2688,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
                 }
 
-                // TODO: It would be nice if we could allow modification of constraints if the new constraints were more strict
-                // than
-                // the old
-                if (propertyDefinitionFromAncestor.getValueConstraints() != null
-                    && !Arrays.equals(propertyDefinitionFromAncestor.getValueConstraints(),
-                                      propertyDefinition.getValueConstraints())) {
+                if (!propertyDefinition.isAsOrMoreConstrainedThan(propertyDefinitionFromAncestor, context)) {
                     throw new InvalidNodeTypeDefinitionException(
                                                                  JcrI18n.constraintsChangedInSubtype.text(propName,
                                                                                                           propertyDefinitionFromAncestor.getDeclaringNodeType()

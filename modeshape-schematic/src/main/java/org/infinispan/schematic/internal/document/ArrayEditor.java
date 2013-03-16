@@ -370,7 +370,6 @@ public class ArrayEditor implements EditableArray {
     @Override
     public EditableDocument setDocument( String name,
                                          Document document ) {
-        if (document instanceof DocumentEditor) document = ((DocumentEditor)document).unwrap();
         setValue(name, document);
         return editable(document, indexFrom(name));
     }
@@ -534,28 +533,28 @@ public class ArrayEditor implements EditableArray {
 
     protected Object doSetValue( int index,
                                  Object value ) {
-        value = unwrap(value);
+        value = Utility.unwrap(value);
         return array.setValue(index, value);
     }
 
     protected int doAddValue( Object value ) {
-        value = unwrap(value);
+        value = Utility.unwrap(value);
         return array.addValue(value);
     }
 
     protected void doAddValue( int index,
                                Object value ) {
-        value = unwrap(value);
+        value = Utility.unwrap(value);
         array.addValue(index, value);
     }
 
     protected boolean doAddValueIfAbsent( Object value ) {
-        value = unwrap(value);
+        value = Utility.unwrap(value);
         return array.addValueIfAbsent(value);
     }
 
     protected boolean doRemoveValue( Object value ) {
-        value = unwrap(value);
+        value = Utility.unwrap(value);
         return array.removeValue(value);
     }
 
@@ -564,20 +563,28 @@ public class ArrayEditor implements EditableArray {
     }
 
     protected boolean doAddAll( Collection<? extends Object> c ) {
-        return array.addAllValues(c);
+        if (c == null || c.isEmpty()) return false;
+        for (Object value : c) {
+            doAddValue(value);
+        }
+        return true;
     }
 
     protected boolean doAddAll( int index,
                                 Collection<? extends Object> c ) {
-        return array.addAllValues(index, c);
+        if (c == null || c.isEmpty()) return false;
+        for (Object value : c) {
+            doAddValue(value);
+        }
+        return true;
     }
 
     protected List<Entry> doRemoveAll( Collection<?> c ) {
-        return array.removeAllValues(c);
+        return array.removeAllValues(Utility.unwrapValues(c));
     }
 
     protected List<Entry> doRetainAll( Collection<?> c ) {
-        return array.retainAllValues(c);
+        return array.retainAllValues(Utility.unwrapValues(c));
     }
 
     protected void doClear() {
@@ -623,30 +630,6 @@ public class ArrayEditor implements EditableArray {
     protected EditableArray createEditableSublist( MutableArray array,
                                                    DocumentValueFactory factory ) {
         return new ArrayEditor(array, factory);
-    }
-
-    public static Array unwrap( Array array ) {
-        if (array instanceof ArrayEditor) {
-            return unwrap(((ArrayEditor)array).unwrap());
-        }
-        return array;
-    }
-
-    public static Document unwrap( Document document ) {
-        if (document instanceof DocumentEditor) {
-            return unwrap(((DocumentEditor)document).unwrap());
-        }
-        return document;
-    }
-
-    public static Object unwrap( Object value ) {
-        if (value instanceof DocumentEditor) {
-            return unwrap(((DocumentEditor)value).unwrap());
-        }
-        if (value instanceof ArrayEditor) {
-            return unwrap(((ArrayEditor)value).unwrap());
-        }
-        return value;
     }
 
     @Override

@@ -752,11 +752,11 @@ public class DocumentTranslator {
             Set<NodeKey> removals = changedChildren.getRemovals();
             Map<NodeKey, Name> newNames = changedChildren.getNewNames();
             while (doc != null) {
-                //we need to clean up projections
+                // we need to clean up projections
                 if (isFederatedDocument(doc) && !removals.isEmpty()) {
                     Set<String> removalsStrings = new HashSet<String>();
                     for (NodeKey key : removals) {
-                        //only when we're dealing with a foreign key do we need to do this
+                        // only when we're dealing with a foreign key do we need to do this
                         if (!key.toString().startsWith(documentStore.getLocalSourceKey())) {
                             removalsStrings.add(key.toString());
                         }
@@ -810,28 +810,19 @@ public class DocumentTranslator {
             }
             // Just append the new children to the end of the last document; we can use an asynchronous process
             // to adjust/optimize the number of children in each block ...
-            EditableArray lastChildren = lastDoc.getArray(CHILDREN);
-            if (lastChildren == null) {
-                lastChildren = lastDoc.setArray(CHILDREN);
-            }
+            EditableArray lastChildren = lastDoc.getOrCreateArray(CHILDREN);
             for (ChildReference ref : appended) {
                 lastChildren.add(fromChildReference(ref));
             }
 
             if (lastDoc != document) {
                 // We've written to at least one other document, so update the block size ...
-                EditableDocument lastDocInfo = lastDoc.getDocument(CHILDREN_INFO);
-                if (lastDocInfo == null) {
-                    lastDocInfo = lastDoc.setDocument(CHILDREN_INFO);
-                }
+                EditableDocument lastDocInfo = lastDoc.getOrCreateDocument(CHILDREN_INFO);
                 lastDocInfo.setNumber(BLOCK_SIZE, lastChildren.size());
             }
 
             // And update the total size and last block on the starting document ...
-            EditableDocument childInfo = document.getDocument(CHILDREN_INFO);
-            if (childInfo == null) {
-                childInfo = document.setDocument(CHILDREN_INFO);
-            }
+            EditableDocument childInfo = document.getOrCreateDocument(CHILDREN_INFO);
             newTotalSize += appended.size();
             childInfo.setNumber(COUNT, newTotalSize);
 
@@ -848,7 +839,7 @@ public class DocumentTranslator {
                                    Map<NodeKey, Name> newNames ) {
         List<?> children = document.getArray(CHILDREN);
         if (children == null) {
-            //a federated document can have an empty children array
+            // a federated document can have an empty children array
             return 0;
         }
         EditableArray newChildren = Schematic.newArray(children.size());
@@ -1188,7 +1179,9 @@ public class DocumentTranslator {
         }
         if (value instanceof ExternalBinaryValue) {
             ExternalBinaryValue externalBinaryValue = (ExternalBinaryValue)value;
-            return Schematic.newDocument(EXTERNAL_BINARY_ID_FIELD, externalBinaryValue.getId(), SOURCE_NAME_FIELD,
+            return Schematic.newDocument(EXTERNAL_BINARY_ID_FIELD,
+                                         externalBinaryValue.getId(),
+                                         SOURCE_NAME_FIELD,
                                          externalBinaryValue.getSourceName());
         }
         if (value instanceof org.modeshape.jcr.value.BinaryValue) {
@@ -1708,12 +1701,12 @@ public class DocumentTranslator {
         return hasProperty(doc, JcrLexicon.LOCK_OWNER) || hasProperty(doc, JcrLexicon.LOCK_IS_DEEP);
     }
 
-    protected boolean isFederatedDocument(Document document) {
+    protected boolean isFederatedDocument( Document document ) {
         return document.containsField(FEDERATED_SEGMENTS);
     }
 
     protected void removeFederatedSegments( EditableDocument federatedDocument,
-                                            Set<String> externalNodeKeys) {
+                                            Set<String> externalNodeKeys ) {
         EditableArray federatedSegments = federatedDocument.getArray(FEDERATED_SEGMENTS);
         assert federatedSegments != null;
         for (int i = 0; i < federatedSegments.size(); i++) {
@@ -1730,22 +1723,23 @@ public class DocumentTranslator {
     }
 
     protected void removeFederatedSegments( EditableDocument federatedDocument,
-                                            String... externalNodeKeys) {
+                                            String... externalNodeKeys ) {
         removeFederatedSegments(federatedDocument, new HashSet<String>(Arrays.asList(externalNodeKeys)));
     }
 
-    protected boolean isQueryable(Document document) {
-        //all documents are considered queryable by default
+    protected boolean isQueryable( Document document ) {
+        // all documents are considered queryable by default
         return document.getBoolean(QUERYABLE_FIELD, true);
     }
 
     /**
      * Marks the given document as queryable, by setting a flag.
-     *
+     * 
      * @param document a {@link EditableDocument} instance; never null
      * @param queryable a boolean which indicates whether the document should be queryable or not.
      */
-    public void setQueryable(EditableDocument document, boolean queryable) {
+    public void setQueryable( EditableDocument document,
+                              boolean queryable ) {
         document.set(QUERYABLE_FIELD, queryable);
     }
 
@@ -1756,7 +1750,7 @@ public class DocumentTranslator {
      * @param document a {@code non-null} {@link EditableDocument} representing the document of a local node to which the
      *        federated segment should be appended.
      * @param documentKey a {@code non-null} {@link String} representing the key of the document. This is passed from the outside
-     * as the document may not have a {@link DocumentTranslator#KEY} property (e.g. root node)
+     *        as the document may not have a {@link DocumentTranslator#KEY} property (e.g. root node)
      * @param sourceName a {@code non-null} string, the name of the source where {@code externalPath} will be resolved
      * @param externalPath a {@code non-null} string the location in the external source which points to an external node
      * @param alias an optional string representing the name under which the federated segment will be linked. In effect, this
@@ -1784,7 +1778,7 @@ public class DocumentTranslator {
         }
 
         if (StringUtil.isBlank(projectionAlias)) {
-            //we cannot create an external projection without a valid alias
+            // we cannot create an external projection without a valid alias
             return;
         }
 

@@ -259,6 +259,16 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
     }
 
     @Override
+    public String getLocalName() {
+        return name.getLocalName();
+    }
+
+    @Override
+    public String getNamespaceURI() {
+        return name.getNamespaceUri();
+    }
+
+    @Override
     public final boolean isModified() {
         try {
             checkSession();

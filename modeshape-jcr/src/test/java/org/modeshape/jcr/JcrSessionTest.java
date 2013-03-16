@@ -69,6 +69,7 @@ import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.api.JcrTools;
+import org.modeshape.jcr.api.Namespaced;
 import org.modeshape.jcr.value.Path;
 
 public class JcrSessionTest extends SingleUseAbstractTest {
@@ -1029,6 +1030,44 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         session.save();
         assertThat(contentNode.hasProperty("jcr:mimeType"), is(false));
         assertThat(contentNode.hasProperty("jcr:data"), is(true));
+    }
+
+    @FixFor( "MODE-1855" )
+    @Test
+    public void shouldGetLocalNameAndNamespaceUriFromRootNode() throws Exception {
+        assertLocalNameAndNamespace(session.getRootNode(), "", "");
+    }
+
+    @FixFor( "MODE-1855" )
+    @Test
+    public void shouldGetLocalNameAndNamespaceUriFromNodeAndPropertyObjects() throws Exception {
+        // Add a node under which we'll do our work ...
+        Node node1 = session.getRootNode().addNode("node1");
+        session.save();
+        assertLocalNameAndNamespace(node1, "node1", "");
+
+        // Add another SNS node under which we'll do our work ...
+        Node node1a = session.getRootNode().addNode("node1");
+        session.save();
+        assertThat(node1a.getIndex(), is(2));
+        assertLocalNameAndNamespace(node1a, "node1", ""); // no SNS index in local name!
+
+        // Upload a file
+        JcrTools tools = new JcrTools();
+        tools.uploadFile(session, "/node1/simple.json", getResourceFile("data/simple.json"));
+        Node fileNode = node1.getNode("simple.json");
+        Node contentNode = fileNode.getNode("jcr:content");
+
+        assertLocalNameAndNamespace(fileNode, "simple.json", "");
+        assertLocalNameAndNamespace(contentNode, "content", "jcr");
+    }
+
+    protected void assertLocalNameAndNamespace( Item item,
+                                                String expectedLocalName,
+                                                String namespacePrefix ) throws RepositoryException {
+        Namespaced nsed = (Namespaced)item;
+        assertThat(nsed.getLocalName(), is(expectedLocalName));
+        assertThat(nsed.getNamespaceURI(), is(session.getNamespaceURI(namespacePrefix)));
     }
 
     protected InputStream getResourceFile( String path ) {

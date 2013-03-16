@@ -332,17 +332,26 @@
         <chemistry.version>0.7.0</chemistry.version>
 
         <!--
-            JBOSS AS 7.1.1.Final
+            JBOSS AS/EAP constants
         -->
-        <jbossas-version>7.2.0.Final</jbossas-version>
+
+        <!--Version of the artifacts (API) needed by the AS7 subsystem and provided as part of EAP-->
+        <jbossas-version>7.2.0.Alpha1-redhat-4</jbossas-version>
+        <!--Properties which must be used when installing locally an EAP ZIP distribution -->
+        <jboss.eap.groupId>org.jboss.as</jboss.eap.groupId>
+        <jboss.eap.artifactId>jboss-eap</jboss.eap.artifactId>
+        <jboss.eap.version>6.1.0.Alpha1</jboss.eap.version>
+        <jboss.eap.root.folder>jboss-eap-6.1</jboss.eap.root.folder>
+
+        <!-- The id of the maven distribution which is building the current kit -->
+        <jboss.eap.distribution.id>jbosseap-61-dist</jboss.eap.distribution.id>
+
         <javax.connector-api.version>1.5</javax.connector-api.version>
         <javax.jta.version>1.1</javax.jta.version>
-        <jbossas7.assembly.descriptor.version>72</jbossas7.assembly.descriptor.version>
 
-        <!--
-            JBOSS AS 7.2
-        -->
-        <!--jbossas-version>7.2.0.Alpha1-SNAPSHOT</jbossas-version-->
+        <!--Versions used by the integration/kit tests an -->
+        <jboss-javaee-6.0-with-tools.version>1.0.4.Final-redhat-1</jboss-javaee-6.0-with-tools.version>
+        <jboss-as-arquillian-container-managed.version>7.2.0.Final</jboss-as-arquillian-container-managed.version>
 
         <!--
             RHQ
@@ -1827,5 +1836,4 @@
             </plugin>
         </plugins>
     </reporting>
-
 </project>

@@ -1,6 +1,6 @@
 <!--This script builds a zip for ModeShape server Installation -->
 <assembly>
-	<id>jbossas-72-dist</id>
+	<id>jbosseap-61-dist</id>
 	<formats>
 		<format>zip</format>
 	</formats>
@@ -9,7 +9,7 @@
 
 	<fileSets>
         <!--
-            //TODO author=Horia Chiorean date=2/28/13 description=MODE-1838 - This should change after HSearch provides a 7.2 kit
+            //TODO author=Horia Chiorean date=2/28/13 description=MODE-1838 - This should change after HSearch provides an EAP kit
             This must be done first, so that we're able to ovewrite files with the one from our kit.
         -->
         <fileSet>
@@ -22,7 +22,7 @@
 
 		<!-- The files for the kit -->
 		<fileSet>
-			<directory>../deploy/jbossas/kit/jboss-as72</directory>
+			<directory>../deploy/jbossas/kit/jboss-eap61</directory>
 			<outputDirectory>/</outputDirectory>
 			<filtered>true</filtered>
 		</fileSet>
@@ -279,7 +279,7 @@
 
         <!-- Module for Hibernate Search (Engine) -->
         <!--
-            //TODO author=Horia Chiorean date=2/28/13 description=MODE-1838 - This should change after HSearch provides a 7.2 kit
+            //TODO author=Horia Chiorean date=2/28/13 description=MODE-1838 - This should change after HSearch provides an EAP kit
         -->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>

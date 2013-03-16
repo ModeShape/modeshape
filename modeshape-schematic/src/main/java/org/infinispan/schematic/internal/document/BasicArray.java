@@ -695,13 +695,21 @@ public class BasicArray implements MutableArray {
 
     @Override
     public boolean addAllValues( Collection<?> values ) {
-        return this.values.addAll(values);
+        if (values == null || values.isEmpty()) return false;
+        for (Object value : values) {
+            this.values.add(unwrap(value));
+        }
+        return true;
     }
 
     @Override
     public boolean addAllValues( int index,
                                  Collection<?> values ) {
-        return this.values.addAll(index, values);
+        if (values == null || values.isEmpty()) return false;
+        for (Object value : values) {
+            this.values.add(index, unwrap(value));
+        }
+        return true;
     }
 
     @Override
@@ -796,17 +804,17 @@ public class BasicArray implements MutableArray {
                                 Object value ) {
         final int size = size();
         if (index == size) {
-            values.add(value);
+            values.add(unwrap(value));
             return value;
         }
-        return values.set(index, value); // may throw IndexOutOfBoundsException
+        return values.set(index, unwrap(value)); // may throw IndexOutOfBoundsException
     }
 
     @Override
     public void putAll( Document object ) {
         if (object instanceof BasicArray) {
             BasicArray that = (BasicArray)object;
-            this.values.addAll(that.values);
+            addAll(that.values);
         }
     }
 
@@ -822,7 +830,7 @@ public class BasicArray implements MutableArray {
 
         // Now add them in increasing order ...
         for (IndexEntry entry : sortableEntries) {
-            put(entry.index, entry.value);
+            put(entry.index, unwrap(entry.value));
         }
     }
 
