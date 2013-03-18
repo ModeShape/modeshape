@@ -90,11 +90,6 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
     protected final RepositoryConfiguration.Clustering clusteringConfiguration;
 
     /**
-     * Class loader to use for deserialization.
-     */
-    protected final ClassLoader deserializationClassLoader;
-
-    /**
      * The JGroups channel to which all {@link #notify(ChangeSet) change notifications} will be sent and from which all changes
      * will be received and sent to the observers.
      * <p>
@@ -105,7 +100,6 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
     private Channel channel;
 
     public ClusteredRepositoryChangeBus( RepositoryConfiguration.Clustering clusteringConfiguration,
-                                         ClassLoader deserializationClassLoader,
                                          ChangeBus delegate ) {
         CheckArg.isNotNull(clusteringConfiguration, "clusteringConfiguration");
         CheckArg.isNotNull(delegate, "delegate");
@@ -113,7 +107,6 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         this.clusteringConfiguration = clusteringConfiguration;
         assert clusteringConfiguration.isEnabled();
         this.delegate = delegate;
-        this.deserializationClassLoader = deserializationClassLoader;
     }
 
     @Override
@@ -286,7 +279,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
 
     protected ChangeSet deserialize( byte[] data ) throws Exception {
         ObjectInputStreamWithClassLoader input = new ObjectInputStreamWithClassLoader(
-                new ByteArrayInputStream(data), deserializationClassLoader);
+                new ByteArrayInputStream(data), getClass().getClassLoader());
         ChangeSet toReturn = (ChangeSet) input.readObject();
         input.close();
         return toReturn;

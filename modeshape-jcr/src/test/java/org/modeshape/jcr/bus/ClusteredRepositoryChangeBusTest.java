@@ -340,7 +340,6 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
 
     private ClusteredRepositoryChangeBus startNewBus( String name) throws Exception {
         ClusteredRepositoryChangeBus bus = new ClusteredRepositoryChangeBus(createClusteringConfiguration(name),
-                                                                            null,
                                                                             super.createRepositoryChangeBus());
         bus.start();
         buses.add(bus);
