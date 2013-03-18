@@ -48,6 +48,7 @@ public enum Element {
     PROPERTY("property"),
     RAM_INDEX_STORAGE("ram-index-storage"),
     REPOSITORY("repository"),
+    WEBAPP("webapp"),
     SEQUENCER("sequencer"),
     SEQUENCERS("sequencers"),
     TEXT_EXTRACTORS("text-extractors"),

@@ -120,6 +120,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         parse(readResource("modeshape-index-rebuilding-config.xml"));
     }
 
+    @Test
+    public void testOutputPersistenceOfConfigurationWithWebapps() throws Exception {
+        parse(readResource("modeshape-webapp-config.xml"));
+    }
+
     /* // todo replace with dmr format not json
     @Test
     public void testOutputPersistence() throws Exception {
