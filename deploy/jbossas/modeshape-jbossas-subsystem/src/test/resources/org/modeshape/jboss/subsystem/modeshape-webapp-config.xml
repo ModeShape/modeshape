@@ -1,0 +1,9 @@
+<subsystem xmlns="urn:jboss:domain:modeshape:1.0">
+  <webapp name="app1"/>
+  <webapp name="app2" exploded="true" auto-deploy="true"/>
+  <webapp name="app3" exploded="false" auto-deploy="false"/>
+  <repository name="sample" />
+</subsystem>
+
+
+                            

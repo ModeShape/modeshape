@@ -15,13 +15,38 @@
 
   <xs:complexType name="subsystem">
     <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="webapp" type="webapp">
+          <xs:annotation>
+              <xs:documentation>Defines an embedded web application.</xs:documentation>
+          </xs:annotation>
+      </xs:element>
       <xs:element name="repository" type="repository">
         <xs:annotation>
-          <xs:documentation>Defines an embedded cache container.</xs:documentation>
+          <xs:documentation>Defines an embedded repository.</xs:documentation>
         </xs:annotation>
       </xs:element>
     </xs:choice>
   </xs:complexType>
+
+ <xs:complexType name="webapp">
+     <xs:attribute name="name" type="xs:string" use="required">
+         <xs:annotation>
+             <xs:documentation>The name of the web application that is located in the ModeShape's main module, under the deployments directory</xs:documentation>
+         </xs:annotation>
+     </xs:attribute>
+
+     <xs:attribute name="exploded" type="xs:boolean" use="optional" default="true">
+         <xs:annotation>
+             <xs:documentation>Indicates if the web application is exploded or not</xs:documentation>
+         </xs:annotation>
+     </xs:attribute>
+
+     <xs:attribute name="auto-deploy" type="xs:boolean" use="optional" default="true">
+         <xs:annotation>
+             <xs:documentation>Indicates if the web application should be auto deployed when the ModeShape subsystem starts up</xs:documentation>
+         </xs:annotation>
+     </xs:attribute>
+ </xs:complexType>
 
   <xs:complexType name="repository">
 

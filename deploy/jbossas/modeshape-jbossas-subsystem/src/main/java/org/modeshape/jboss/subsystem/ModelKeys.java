@@ -29,6 +29,7 @@ package org.modeshape.jboss.subsystem;
 public class ModelKeys {
 
     static final String REPOSITORY = "repository";
+    static final String WEBAPP = "webapp";
 
     static final String ACCESS_TYPE = "access-type";
     static final String ALLOW_WORKSPACE_CREATION = "allow-workspace-creation";
@@ -143,4 +144,7 @@ public class ModelKeys {
     static final String CACHE_TTL_SECONDS = "cacheTtlSeconds";
     static final String QUERYABLE = "queryable";
     static final String READONLY = "readonly";
+
+    static final String EXPLODED = "exploded";
+    static final String AUTO_DEPLOY = "auto-deploy";
 }

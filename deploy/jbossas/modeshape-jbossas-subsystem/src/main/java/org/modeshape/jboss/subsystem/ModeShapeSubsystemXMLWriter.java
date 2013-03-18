@@ -48,13 +48,33 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         context.startSubsystemElement(Namespace.CURRENT.getUri(), false);
         ModelNode model = context.getModelNode();
         if (model.isDefined()) {
-            for (Property entry : model.get(ModelKeys.REPOSITORY).asPropertyList()) {
-                String repositoryName = entry.getName();
-                ModelNode repository = entry.getValue();
-                writeRepositoryConfiguration(writer, repository, repositoryName);
+            if (model.hasDefined(ModelKeys.REPOSITORY)) {
+                for (Property entry : model.get(ModelKeys.REPOSITORY).asPropertyList()) {
+                    String repositoryName = entry.getName();
+                    ModelNode repository = entry.getValue();
+                    writeRepositoryConfiguration(writer, repository, repositoryName);
+                }
+            }
+
+            if (model.hasDefined(ModelKeys.WEBAPP)) {
+                for (Property entry : model.get(ModelKeys.WEBAPP).asPropertyList()) {
+                    String webappName = entry.getName();
+                    ModelNode webapp = entry.getValue();
+                    writeWebAppConfiguration(writer,  webapp, webappName);
+                }
             }
         }
         writer.writeEndElement(); // End of subsystem element
+    }
+
+    private void writeWebAppConfiguration( XMLExtendedStreamWriter writer,
+                                               ModelNode webapp,
+                                               String repositoryName ) throws XMLStreamException {
+        writer.writeStartElement(Element.WEBAPP.getLocalName());
+        writer.writeAttribute(Attribute.NAME.getLocalName(), repositoryName);
+        ModelAttributes.EXPLODED.marshallAsAttribute(webapp, false, writer);
+        ModelAttributes.AUTO_DEPLOY.marshallAsAttribute(webapp, false, writer);
+        writer.writeEndElement();
     }
 
     private void writeRepositoryConfiguration( XMLExtendedStreamWriter writer,

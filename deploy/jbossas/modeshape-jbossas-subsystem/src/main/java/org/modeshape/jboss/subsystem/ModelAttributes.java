@@ -792,7 +792,22 @@ public class ModelAttributes {
                                                                                                                                                                                FieldName.USE_ANONYMOUS_ON_FAILED_LOGINS)
                                                                                                                                         .build();
 
+    public static final SimpleAttributeDefinition EXPLODED = new MappedAttributeDefinitionBuilder(ModelKeys.EXPLODED, ModelType.BOOLEAN)
+                                                                                                  .setXmlName(Attribute.EXPLODED.getLocalName())
+                                                                                                  .setAllowExpression(false)
+                                                                                                  .setAllowNull(true)
+                                                                                                  .setDefaultValue(new ModelNode().set(true))
+                                                                                                  .build();
+
+    public static final SimpleAttributeDefinition AUTO_DEPLOY = new MappedAttributeDefinitionBuilder(ModelKeys.AUTO_DEPLOY, ModelType.BOOLEAN)
+                                                                                                  .setXmlName(Attribute.AUTO_DEPLOY.getLocalName())
+                                                                                                  .setAllowExpression(false)
+                                                                                                  .setAllowNull(true)
+                                                                                                  .setDefaultValue(new ModelNode().set(true))
+                                                                                                  .build();
     public static final AttributeDefinition[] SUBSYSTEM_ATTRIBUTES = {};
+
+    public static final AttributeDefinition[] WEBAPP_ATTRIBUTES = {EXPLODED, AUTO_DEPLOY};
 
     public static final AttributeDefinition[] REPOSITORY_ATTRIBUTES = {CACHE_NAME, CACHE_CONTAINER, JNDI_NAME, ENABLE_MONITORING,
         ENABLE_QUERIES, SECURITY_DOMAIN, ANONYMOUS_ROLES, ANONYMOUS_USERNAME, USE_ANONYMOUS_IF_AUTH_FAILED, NODE_TYPES,

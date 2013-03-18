@@ -93,7 +93,9 @@ public enum Attribute {
     WORKSPACE_NAMES("workspace-names"),
     CACHE_TTL_SECONDS("cacheTtlSeconds"),
     QUERYABLE("queryable"),
-    READONLY("readonly");
+    READONLY("readonly"),
+    EXPLODED("exploded"),
+    AUTO_DEPLOY("auto-deploy");
 
     private final String name;
 

@@ -45,6 +45,7 @@ public class ModeShapeExtension implements Extension {
 
     private static final String RESOURCE_NAME = ModeShapeExtension.class.getPackage().getName() + ".LocalDescriptions";
     static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
+    static final PathElement WEBAPP_PATH = PathElement.pathElement(ModelKeys.WEBAPP);
     static final PathElement REPOSITORY_PATH = PathElement.pathElement(ModelKeys.REPOSITORY);
     static final PathElement SEQUENCER_PATH = PathElement.pathElement(ModelKeys.SEQUENCER);
     static final PathElement SOURCE_PATH = PathElement.pathElement(ModelKeys.SOURCE);
@@ -93,6 +94,10 @@ public class ModeShapeExtension implements Extension {
         registration.registerXMLElementWriter(new ModeShapeSubsystemXMLWriter());
         // ModeShape system, with children repositories.
         final ManagementResourceRegistration modeShapeSubsystem = registration.registerSubsystemModel(ModeShapeRootResource.INSTANCE);
+
+        //Webapp submodel
+        modeShapeSubsystem.registerSubModel(ModeShapeWebAppResource.INSTANCE);
+
         // Repository submodel
         final ManagementResourceRegistration repositorySubmodel = modeShapeSubsystem.registerSubModel(ModeShapeRepositoryResource.INSTANCE);
 
