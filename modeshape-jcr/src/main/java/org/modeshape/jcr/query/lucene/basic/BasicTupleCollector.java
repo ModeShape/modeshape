@@ -190,6 +190,7 @@ public class BasicTupleCollector extends TupleCollector {
 
         // Every tuple has the location ...
         if (node != null) {
+            // The node was found in the cache/store ...
             try {
                 Path path = lastWorkspacePathCache.getPath(node);
                 Location location = new Location(path, key);
@@ -223,6 +224,7 @@ public class BasicTupleCollector extends TupleCollector {
                 tuples.add(tuple);
                 return score;
             } catch (NodeNotFoundException e) {
+                // The node was removed while we're trying to read it, so just ignore this error and return 0.0f
             }
         }
         return 0.0f;

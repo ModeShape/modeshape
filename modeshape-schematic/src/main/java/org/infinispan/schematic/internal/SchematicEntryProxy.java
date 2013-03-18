@@ -133,6 +133,7 @@ public class SchematicEntryProxy extends AutoBatchSupport implements SchematicEn
      * returns the persisted and available entry.
      * 
      * @return the literal entry
+     * @throws IllegalStateException if the entry no longer exists ...
      */
     private SchematicEntryLiteral getDeltaValueForRead() {
         SchematicEntryLiteral value = toValue(context.getCache().get(key));
