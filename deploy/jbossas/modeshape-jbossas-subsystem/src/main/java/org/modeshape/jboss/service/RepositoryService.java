@@ -68,7 +68,6 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     public static final String CONTENT_CONTAINER_NAME = "content";
     public static final String BINARY_STORAGE_CONTAINER_NAME = "binaries";
     public static final String WORKSPACES_CONTAINER_NAME = "workspaces";
-    public static final String MODESHAPE_MODULE = "org.modeshape";
 
     private static final Logger LOG = Logger.getLogger(RepositoryService.class.getPackage().getName());
 
@@ -152,18 +151,6 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
         }
 
         return delegatingLoaders.isEmpty() ? currentLoader : new DelegatingClassLoader(currentLoader, delegatingLoaders);
-    }
-
-    @Override
-    public ClassLoader getJGroupsDeserializationClassLoader() {
-        try {
-            return moduleLoader().loadModule(ModuleIdentifier.create(MODESHAPE_MODULE)).getClassLoader();
-        } catch (ModuleLoadException e) {
-            LOG.warnv("Cannot obtain module class loader with identifier: {0}, " +
-                              "will use getClass().getClassLoader() instead", MODESHAPE_MODULE);
-            // use a best effort default.
-            return getClass().getClassLoader();
-        }
     }
 
     @Override

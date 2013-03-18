@@ -175,11 +175,6 @@ public class LocalEnvironment implements Environment {
         return delegatesList.isEmpty() ? currentLoader : new DelegatingClassLoader(currentLoader, delegatesList);
     }
 
-    @Override
-    public ClassLoader getJGroupsDeserializationClassLoader() {
-        return getClass().getClassLoader();
-    }
-
     protected void shutdown( CacheContainer container ) {
         container.stop();
     }

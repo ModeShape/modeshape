@@ -105,6 +105,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
     private Channel channel;
 
     public ClusteredRepositoryChangeBus( RepositoryConfiguration.Clustering clusteringConfiguration,
+                                         ClassLoader deserializationClassLoader,
                                          ChangeBus delegate ) {
         CheckArg.isNotNull(clusteringConfiguration, "clusteringConfiguration");
         CheckArg.isNotNull(delegate, "delegate");
@@ -112,7 +113,7 @@ public final class ClusteredRepositoryChangeBus implements ChangeBus {
         this.clusteringConfiguration = clusteringConfiguration;
         assert clusteringConfiguration.isEnabled();
         this.delegate = delegate;
-        this.deserializationClassLoader = clusteringConfiguration.getJGroupsDeserializationClassLoader();
+        this.deserializationClassLoader = deserializationClassLoader;
     }
 
     @Override
