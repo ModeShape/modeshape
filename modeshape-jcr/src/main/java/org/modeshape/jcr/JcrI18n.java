@@ -473,6 +473,8 @@ public final class JcrI18n {
     public static I18n noReindex;
     public static I18n reindexAll;
 
+    public static I18n errorCreatingDatabaseTable;
+
     static {
         try {
             I18n.initialize(JcrI18n.class);
