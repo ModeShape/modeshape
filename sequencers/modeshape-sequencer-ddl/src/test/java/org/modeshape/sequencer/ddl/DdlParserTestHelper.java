@@ -23,10 +23,12 @@
  */
 package org.modeshape.sequencer.ddl;
 
+import static org.junit.matchers.JUnitMatchers.hasItem;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
+import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.sequencer.ddl.node.AstNode;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -74,7 +76,8 @@ public class DdlParserTestHelper implements DdlConstants {
         this.printToConsole = printToConsole;
     }
 
-    public boolean hasMixinType( AstNode node, String mixinType ) {
+    public boolean hasMixinType( AstNode node,
+                                 String mixinType ) {
         return node.getMixins().contains(mixinType);
     }
 
@@ -91,7 +94,7 @@ public class DdlParserTestHelper implements DdlConstants {
                 in = new BufferedReader(new InputStreamReader(getClass().getClassLoader().getResourceAsStream(filePath)));
                 int ch = in.read();
                 while (ch > -1) {
-                    sb.append((char) ch);
+                    sb.append((char)ch);
                     ch = in.read();
                 }
             } catch (Exception e) {
@@ -106,6 +109,12 @@ public class DdlParserTestHelper implements DdlConstants {
             }
         }
         return sb.toString();
+    }
+
+    protected DdlTokenStream getTokens( final String content ) {
+        final DdlTokenStream tokens = new DdlTokenStream(content, DdlTokenStream.ddlTokenizer(false), false);
+        tokens.start();
+        return tokens;
     }
 
     public void printUnknownStatements( StandardDdlParser parser,
@@ -149,4 +158,17 @@ public class DdlParserTestHelper implements DdlConstants {
             assertThat(rootNode.getChildCount(), is(childCount));
         }
     }
+
+    protected void assertMixinType( final AstNode node,
+                                    final String expectedMixinType ) {
+        assertThat(node.getMixins(), hasItem(expectedMixinType));
+    }
+
+    protected void assertProperty( final AstNode node,
+                                   final String name,
+                                   final Object expectedValue ) {
+        Object actualValue = node.getProperty(name);
+        assertThat(actualValue, is(expectedValue));
+    }
+
 }

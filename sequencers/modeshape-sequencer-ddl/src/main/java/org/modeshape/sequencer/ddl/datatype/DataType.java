@@ -29,10 +29,15 @@ import org.modeshape.sequencer.ddl.DdlConstants;
  * A representation of SQL data types.
  */
 public class DataType {
+
+    public static final long DEFAULT_LENGTH = -1;
+    public static final int DEFAULT_PRECISION = -1;
+    public static final int DEFAULT_SCALE = -1;
+
     private String name;
-    private long length = -1;
-    private int precision = -1;
-    private int scale = -1;
+    private long length = DEFAULT_LENGTH;
+    private int precision = DEFAULT_PRECISION;
+    private int scale = DEFAULT_SCALE;
 
     /**
      * The statement source.

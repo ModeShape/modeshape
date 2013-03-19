@@ -1,0 +1,150 @@
+<identifier>
+
+foo => foo
+"foo" => foo
+'foo' => foo
+foo.bar => foo.bar
+"foo"."bar" => foo.bar
+'foo'.'bar' => foo.bar
+REST:name => http://teiid.org/rest:name (done after a SET NAMESPACE)
+
+<create table>
+
+CREATE FOREIGN TABLE FOO ???
+CREATE VIRTUAL VIEW FOO ???
+CREATE VIEW FOO ???
+
+<create procedure>
+
+CREATE VIRTUAL FUNCTION FOO ???
+CREATE VIRTUAL PROCEDURE FOO ???
+CREATE FOREIGN FUNCTION FOO ???
+CREATE FOREIGN PROCEDURE FOO ???
+CREATE FUNCTION FOO ???
+CREATE PROCEDURE FOO ???
+
+<option namespace>
+
+SET NAMESPACE 'http://teiid.org/rest' AS REST
+SET NAMESPACE "http://teiid.org/rest" AS REST
+SET NAMESPACE 'http://teiid.org/rest' AS 'REST'
+SET NAMESPACE 'http://teiid.org/rest' AS "REST"
+
+<create trigger>
+
+CREATE TRIGGER ON G1 INSTEAD OF UPDATE AS FOR EACH ROW BEGIN UPDATE x SET foo = 'bar'; END
+CREATE TRIGGER ON G1 INSTEAD OF UPDATE AS FOR EACH ROW BEGIN UPDATE x SET foo = 'bar'; insert into g1 (e1, e2) values (2, 'hammer'); END
+
+CREATE TRIGGER ON G1 INSTEAD OF INSERT AS FOR EACH ROW BEGIN insert into g1 (e1, e2) values (1, 'trig'); END
+CREATE TRIGGER ON G1 INSTEAD OF INSERT AS FOR EACH ROW BEGIN insert into g1 (e1, e2) values (1, 'sledge'); insert into g1 (e1, e2) values (2, 'hammer'); END
+
+CREATE TRIGGER ON G1 INSTEAD OF DELETE AS FOR EACH ROW BEGIN DELETE FROM x WHERE foo = 'bar'; END
+CREATE TRIGGER ON G1 INSTEAD OF DELETE AS FOR EACH ROW BEGIN DELETE FROM x WHERE foo = 'bar'; DELETE FROM x WHERE bar = 'foo'; END
+
+<options clause>
+
+OPTIONS  (  'key'  ''  ) => option not added
+OPTIONS  (  'key'  'value'  )
+OPTIONS  (  'key'  '+1.234'  )
+OPTIONS  (  'key'  '-0.987'  )
+OPTIONS  (  'key'  '`value`'  ) => value keeps the single quotes
+OPTIONS  (  'key'  '`accounts`.`ACCOUNT`'  ) => value keeps the sing quotes
+OPTIONS  (  'key'  'accounts.ACCOUNT'  )
+OPTIONS  (  'key'  'TRUE'  )
+OPTIONS  (  'a'  'value'  ,  'b'  '+1.234'  ,  'c'  '-0.987'  ,  'd'  '`value`'  ,  'e'  '`accounts`.`ACCOUNT`'  ,  'f'  'accounts.ACCOUNT'  ,  'g' 'TRUE')
+OPTIONS  (  'a'  ''  ,  'b'  '+1.234'  ,  'c'  '-0.987'  ,  'd'  ''  ,  'e'  '`accounts`.`ACCOUNT`'  ,  'f'  'accounts.ACCOUNT'  ,  'g' '' )
+
+<alter options list>
+
+OPTIONS  (  ADD  updatable  true  )
+OPTIONS  (  SET  updatable  true  )
+OPTIONS  (  DROP  updatable  )
+OPTIONS  (  ADD  sledge  foo  ,  SET  hammer  bar  ,  DROP  elvis  ,  DROP  costello  )
+
+<alter column options>
+
+ALTER COLUMN mycolumn OPTIONS (ADD updatable true)
+ALTER  mycolumn  OPTIONS  (  ADD  updatable  true  )
+ALTER  PARAMETER  mycolumn  OPTIONS  (  ADD  updatable  true  )
+
+<alter options>
+
+ALTER  TABLE  foo  OPTIONS  (  ADD  cardinality  100  )
+ALTER  TABLE  foo  ALTER  COLUMN  bar  OPTIONS  (  ADD  cardinality  100  )
+ALTER  FOREIGN  TABLE  foo  OPTIONS  (  ADD  cardinality  100  )
+ALTER  FOREIGN  TABLE  foo  ALTER  COLUMN  bar  OPTIONS  (  ADD  cardinality  100  )
+ALTER  VIRTUAL  TABLE  foo  OPTIONS  (  ADD  cardinality  100  )
+ALTER  VIRTUAL  TABLE  foo  ALTER  COLUMN  bar  OPTIONS  (  ADD  cardinality  100  )
+ALTER  VIEW  foo  OPTIONS  (  ADD  cardinality  100  )
+ALTER  VIEW  foo  ALTER  COLUMN  bar  OPTIONS  (  ADD  cardinality  100  )
+ALTER  FOREIGN  VIEW  foo  OPTIONS  (  ADD  cardinality  100  )
+ALTER  FOREIGN  VIEW  foo  ALTER  COLUMN  bar  OPTIONS  (  ADD  cardinality  100  )
+ALTER  VIRTUAL  VIEW  foo  OPTIONS  (  ADD  cardinality  100  )
+ALTER  VIRTUAL  VIEW  foo  ALTER  COLUMN  bar  OPTIONS  (  ADD  cardinality  100  )
+ALTER  PROCEDURE  foo  OPTIONS  (  ADD  cardinality  100  )
+ALTER  PROCEDURE  foo  ALTER  COLUMN  bar  OPTIONS  (  ADD  cardinality  100  )
+ALTER  FOREIGN  PROCEDURE  foo  OPTIONS  (  ADD  cardinality  100  )
+ALTER  FOREIGN  PROCEDURE  foo  ALTER  COLUMN  bar  OPTIONS  (  ADD  cardinality  100  )
+ALTER  VIRTUAL  PROCEDURE  foo  OPTIONS  (  ADD  cardinality  100  )
+ALTER  VIRTUAL  PROCEDURE  foo  ALTER  COLUMN  bar  OPTIONS  (  ADD  cardinality  100  )
+
+<query expression>
+
+WITH X (Y, Z) AS (SELECT 1, 2)
+
+<table element>
+
+symbol string
+price bigdecimal
+company_name   varchar(256)
+ACCOUNT_ID long NOT NULL DEFAULT '0' OPTIONS (ANNOTATION '', NAMEINSOURCE '`ACCOUNT_ID`', NATIVE_TYPE 'INT')
+SSN string(10) OPTIONS (ANNOTATION '', NAMEINSOURCE '`SSN`', NATIVE_TYPE 'CHAR')
+STATUS string(10) OPTIONS (ANNOTATION '', NAMEINSOURCE '`STATUS`', NATIVE_TYPE 'CHAR')
+TYPE string(10) OPTIONS (ANNOTATION '', NAMEINSOURCE '`TYPE`', NATIVE_TYPE 'CHAR')
+DATEOPENED timestamp NOT NULL DEFAULT 'CURRENT_TIMESTAMP' OPTIONS (ANNOTATION '', NAMEINSOURCE '`DATEOPENED`', NATIVE_TYPE 'TIMESTAMP')
+DATECLOSED timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' OPTIONS (ANNOTATION '', NAMEINSOURCE '`DATECLOSED`', NATIVE_TYPE 'TIMESTAMP')
+KEY STRING(9) PRIMARY KEY
+KEY STRING(9) INDEX
+KEY STRING(9) UNIQUE INDEX
+KEY STRING(9) UNIQUE AUTO_INCREMENT INDEX
+
+==================== DATA TYPES =====================
+
+BIGDECIMAL
+BIGDECIMAL(9)
+BIGDECIMAL(9,3)
+BIGINTEGER
+BIGINTEGER(50)
+BIGINT
+BLOB
+BLOB(50)
+BOOLEAN
+BYTE
+CHAR
+CHAR(50)
+CLOB
+CLOB(50)
+DATE
+DECIMAL
+DECIMAL(9)
+DECIMAL(9,3)
+DOUBLE
+FLOAT
+INTEGER
+LONG
+OBJECT
+REAL
+SHORT
+SMALLINT
+STRING
+STRING(50)
+TIME
+TIMESTAMP
+TINYINT
+VARBINARY
+VARBINARY(50)
+VARCHAR
+VARCHAR(50)
+XML
+
+

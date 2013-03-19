@@ -83,6 +83,8 @@ public interface DdlConstants {
     public static final String TABLE = "TABLE";
     public static final String UNIQUE = "UNIQUE";
     public static final String VIEW = "VIEW";
+    public static final String NOT = "NOT";
+    public static final String NULL = "NULL";
 
     public static final String MISSING_TERMINATOR_NODE_LITERAL = "missingTerminator";
 

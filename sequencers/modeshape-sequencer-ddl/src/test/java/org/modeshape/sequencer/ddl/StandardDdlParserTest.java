@@ -60,14 +60,6 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         parser = null;
     }
 
-    private DdlTokenStream getTokens( String content ) {
-        DdlTokenStream tokens = new DdlTokenStream(content, DdlTokenStream.ddlTokenizer(true), false);
-
-        tokens.start();
-
-        return tokens;
-    }
-
     private void printNodeChildren( AstNode node ) {
         if (isPrintToConsole()) {
             int count = 1;
@@ -315,7 +307,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
     @Test
     public void shoudParseUntilTerminated() {
         printTest("shoudParseUntilTerminated()");
-        String prefix = " ( COL_SUM, COL_DIFF ) AS SELECT COMM + BONUS, COMM - BONUS FROM SAMP.EMPLOYEE";
+        String prefix = "( COL_SUM, COL_DIFF ) AS SELECT COMM + BONUS, COMM - BONUS FROM SAMP.EMPLOYEE";
         String content = prefix + "; CREATE TABLE someName";
         DdlTokenStream tokens = getTokens(content);
 
@@ -344,7 +336,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         assertTrue(column.getProperty(DATATYPE_PRECISION) == null);
         assertEquals("NOT NULL", column.getProperty(NULLABLE));
         assertEquals(DEFAULT_ID_LITERAL, column.getProperty(DEFAULT_OPTION));
-        assertEquals("'12345'", column.getProperty(DEFAULT_VALUE));
+        assertEquals("12345", column.getProperty(DEFAULT_VALUE));
 
         tableNode.removeAllChildren();
 

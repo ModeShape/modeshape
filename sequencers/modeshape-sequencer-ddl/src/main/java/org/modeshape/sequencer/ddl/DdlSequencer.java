@@ -78,6 +78,7 @@ public class DdlSequencer extends Sequencer {
 
     private String[] parserGrammars = DEFAULT_GRAMMARS.toArray(new String[DEFAULT_GRAMMARS.size()]);
     private URL[] classpath = DEFAULT_CLASSPATH;
+    private final Map<AstNode, Node> nodeMap = new HashMap<AstNode, Node>();
 
     /**
      * Get the names of the grammars that should be considered during processing. The grammar names may be the case-insensitive
@@ -176,6 +177,7 @@ public class DdlSequencer extends Sequencer {
         registerNodeTypes("dialect/derby/DerbyDdl.cnd", nodeTypeManager, true);
         registerNodeTypes("dialect/oracle/OracleDdl.cnd", nodeTypeManager, true);
         registerNodeTypes("dialect/postgres/PostgresDdl.cnd", nodeTypeManager, true);
+        registerNodeTypes("dialect/teiid/TeiidDdl.cnd", nodeTypeManager, true);
     }
 
     @Override
@@ -184,6 +186,9 @@ public class DdlSequencer extends Sequencer {
                             Context context ) throws Exception {
         Binary ddlContent = inputProperty.getBinary();
         CheckArg.isNotNull(ddlContent, "ddl content binary value");
+
+        // make sure node map is empty
+        this.nodeMap.clear();
 
         // Look at the input path to get the name of the input node (or it's parent if it's "jcr:content") ...
         String fileName = getNameOfDdlContent(inputProperty);
@@ -238,6 +243,7 @@ public class DdlSequencer extends Sequencer {
                                     AstNode astNode ) throws RepositoryException {
         String relativePath = astNode.getAbsolutePath().substring(1);
         Node sequenceNode = parent.addNode(relativePath, astNode.getPrimaryType());
+        this.nodeMap.put(astNode, sequenceNode);
         for (String mixin : astNode.getMixins()) {
             sequenceNode.addMixin(mixin);
         }
@@ -247,7 +253,7 @@ public class DdlSequencer extends Sequencer {
     }
 
     private List<Value> convertToPropertyValues( Object objectValue,
-                                                 ValueFactory valueFactory ) {
+                                                 ValueFactory valueFactory ) throws RepositoryException {
         List<Value> result = new ArrayList<Value>();
         if (objectValue instanceof Collection) {
             @SuppressWarnings( "unchecked" )
@@ -266,10 +272,16 @@ public class DdlSequencer extends Sequencer {
             result.add(valueFactory.createValue((Double)objectValue));
         } else if (objectValue instanceof Float) {
             result.add(valueFactory.createValue((Float)objectValue));
+        } else if (objectValue instanceof AstNode) {
+            result.add(valueFactory.createValue(getNode((AstNode)objectValue)));
         } else {
             result.add(valueFactory.createValue(objectValue.toString()));
         }
         return result;
+    }
+
+    private Node getNode(final AstNode node) {
+        return this.nodeMap.get(node);
     }
 
     private String getNameOfDdlContent( Property inputProperty ) throws RepositoryException {
