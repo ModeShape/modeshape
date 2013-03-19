@@ -259,7 +259,27 @@
                 <version>${version.resources.plugin}</version>
                 <executions>
                     <execution>
-                        <id>copy-test-profile</id>
+                        <id>overwrite-modules</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/${jboss.eap.root.folder}/${jboss.eap.modules.location}</outputDirectory>
+                            <overwrite>true</overwrite>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/resources/kit/jboss-eap61</directory>
+                                    <filtering>false</filtering>
+                                    <excludes>
+                                        <exclude>standalone/**</exclude>
+                                    </excludes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>overwrite-configuration</id>
                         <phase>process-test-classes</phase>
                         <goals>
                             <goal>copy-resources</goal>
@@ -272,7 +292,7 @@
                                     <directory>src/main/resources/kit/jboss-eap61</directory>
                                     <filtering>false</filtering>
                                     <includes>
-                                        <include>**/*.*</include>
+                                        <include>standalone/**</include>
                                     </includes>
                                 </resource>
                             </resources>
