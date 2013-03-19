@@ -63,6 +63,8 @@ import javax.jcr.nodetype.NodeDefinitionTemplate;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
+import javax.jcr.observation.EventIterator;
+import javax.jcr.observation.EventListener;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.modeshape.common.FixFor;
@@ -70,6 +72,7 @@ import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.Namespaced;
+import org.modeshape.jcr.api.observation.Event;
 import org.modeshape.jcr.value.Path;
 
 public class JcrSessionTest extends SingleUseAbstractTest {
@@ -1060,6 +1063,57 @@ public class JcrSessionTest extends SingleUseAbstractTest {
 
         assertLocalNameAndNamespace(fileNode, "simple.json", "");
         assertLocalNameAndNamespace(contentNode, "content", "jcr");
+    }
+
+    @FixFor( "MODE-1856" )
+    @Test
+    public void shouldNotIndexNoOpChanges() throws Exception {
+        // Add a node under which we'll do our work ...
+        Node node1 = session.getRootNode().addNode("node1");
+        session.save();
+
+        // Register the listener
+        PropertyListener listener = new PropertyListener();
+        session.getWorkspace()
+               .getObservationManager()
+               .addEventListener(listener, Event.PROPERTY_ADDED | Event.PROPERTY_CHANGED | Event.PROPERTY_REMOVED, null, // node1.getPath(),
+                                 true,
+                                 null,
+                                 null,
+                                 false);
+
+        // Now, add a property and remove the property, then save ...
+        node1.setProperty("unchanged", "new value");
+        node1.getProperty("unchanged").remove();
+        session.save();
+
+        Thread.sleep(500L);
+        assertThat(listener.adds, is(0));
+        assertThat(listener.removes, is(0));
+        assertThat(listener.changes, is(0));
+    }
+
+    protected static class PropertyListener implements EventListener {
+        protected int adds, removes, changes;
+
+        @Override
+        public void onEvent( EventIterator events ) {
+            System.out.println("CALLED");
+            while (events.hasNext()) {
+                javax.jcr.observation.Event event = events.nextEvent();
+                switch (event.getType()) {
+                    case Event.PROPERTY_ADDED:
+                        ++adds;
+                        break;
+                    case Event.PROPERTY_CHANGED:
+                        ++changes;
+                        break;
+                    case Event.PROPERTY_REMOVED:
+                        ++removes;
+                        break;
+                }
+            }
+        }
     }
 
     protected void assertLocalNameAndNamespace( Item item,

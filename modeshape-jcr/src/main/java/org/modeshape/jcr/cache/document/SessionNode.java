@@ -892,17 +892,34 @@ public class SessionNode implements MutableCachedNode {
                                 Name name ) {
         writableSession(cache).assertInSession(this);
         changedProperties.remove(name);
-        if (!isNew) removedProperties.put(name, name);
+        if (!isNew) {
+            // Determine if the existing node already contained this property ...
+            AbstractSessionCache session = session(cache);
+            CachedNode raw = nodeInWorkspace(session);
+            if (raw.hasProperty(name, cache)) {
+                removedProperties.put(name, name);
+            }
+        }
         updateReferences(cache, name, null);
     }
 
     @Override
     public void removeAllProperties( SessionCache cache ) {
         writableSession(cache).assertInSession(this);
+        CachedNode raw = null;
         for (Iterator<Property> propertyIterator = getProperties(cache); propertyIterator.hasNext();) {
             Name name = propertyIterator.next().getName();
             changedProperties.remove(name);
-            if (!isNew) removedProperties.put(name, name);
+            if (!isNew) {
+                // Determine if the existing node already contained this property ...
+                if (raw == null) {
+                    AbstractSessionCache session = session(cache);
+                    raw = nodeInWorkspace(session);
+                }
+                if (raw.hasProperty(name, cache)) {
+                    removedProperties.put(name, name);
+                }
+            }
             updateReferences(cache, name, null);
         }
     }
