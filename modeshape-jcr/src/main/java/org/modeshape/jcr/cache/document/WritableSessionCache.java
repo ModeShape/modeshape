@@ -1073,7 +1073,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                     boolean isExternal = !workspaceCache().getRootKey()
                                                           .getSourceKey()
                                                           .equalsIgnoreCase(node.getKey().getSourceKey());
-                    boolean externalNodeChanged = isExternal && node.hasChanges();
+                    boolean hasChanges = node.hasChanges();
+                    boolean externalNodeChanged = isExternal && hasChanges;
                     if (externalNodeChanged) {
                         // in the case of external nodes, only if there are changes should the update be called
                         documentStore.updateDocument(keyStr, doc, node);
@@ -1086,7 +1087,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // when linking/un-linking nodes (e.g. shareable node or jcr:system) this condition will be false.
                     // the downside of this is that there may be cases (e.g. back references when working with versions) in which
                     // we might loose information from the indexes
-                    if (monitor != null && queryable && (isSameWorkspace || externalNodeChanged)) {
+                    if (monitor != null && queryable && ((isSameWorkspace && hasChanges) || externalNodeChanged)) {
                         // Get the primary and mixin type names; even though we're passing in the session, the two properties
                         // should be there and shouldn't require a looking in the cache...
                         Name primaryType = node.getPrimaryType(this);
