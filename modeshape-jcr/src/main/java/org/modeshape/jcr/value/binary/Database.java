@@ -579,6 +579,7 @@ public class Database {
      * @throws BinaryStoreException
      */
     public static InputStream asStream( ResultSet rs ) throws BinaryStoreException {
+        boolean error = false;
         try {
             boolean hasRaw = rs.first();
             if (!hasRaw) {
@@ -586,7 +587,18 @@ public class Database {
             }
             return rs.getBinaryStream(1);
         } catch (SQLException e) {
+            error = true;
             throw new BinaryStoreException(e);
+        } catch (RuntimeException e) {
+            error = true;
+            throw e;
+        } finally {
+            // Always close the result set ...
+            try {
+                rs.close();
+            } catch (SQLException e) {
+                if (!error) throw new BinaryStoreException(e);
+            }
         }
     }
 
@@ -598,6 +610,7 @@ public class Database {
      * @throws BinaryStoreException
      */
     public static String asString( ResultSet rs ) throws BinaryStoreException {
+        boolean error = false;
         try {
             boolean hasRaw = rs.first();
             if (!hasRaw) {
@@ -605,7 +618,18 @@ public class Database {
             }
             return rs.getString(1);
         } catch (SQLException e) {
+            error = true;
             throw new BinaryStoreException(e);
+        } catch (RuntimeException e) {
+            error = true;
+            throw e;
+        } finally {
+            // Always close the result set ...
+            try {
+                rs.close();
+            } catch (SQLException e) {
+                if (!error) throw new BinaryStoreException(e);
+            }
         }
     }
 
@@ -617,13 +641,25 @@ public class Database {
      * @throws BinaryStoreException
      */
     public static List<String> asStringList( ResultSet rs ) throws BinaryStoreException {
+        boolean error = false;
         List<String> result = new ArrayList<String>();
         try {
             while (rs.next()) {
                 result.add(rs.getString(1));
             }
         } catch (SQLException e) {
+            error = true;
             throw new BinaryStoreException(e);
+        } catch (RuntimeException e) {
+            error = true;
+            throw e;
+        } finally {
+            // Always close the result set ...
+            try {
+                rs.close();
+            } catch (SQLException e) {
+                if (!error) throw new BinaryStoreException(e);
+            }
         }
         return result;
     }
