@@ -25,8 +25,6 @@
 package org.modeshape.jcr.bus;
 
 import static org.hamcrest.core.Is.is;
-import org.jboss.marshalling.Marshalling;
-import org.jboss.marshalling.MarshallingConfiguration;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertThat;
 import org.junit.BeforeClass;
@@ -39,7 +37,6 @@ import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.clustering.DefaultChannelProvider;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
 
 /**
  * Unit test for {@link ClusteredRepositoryChangeBus}
