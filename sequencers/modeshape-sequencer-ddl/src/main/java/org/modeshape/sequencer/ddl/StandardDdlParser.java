@@ -150,9 +150,16 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     protected void computeScore( DdlTokenStream tokens,
                                  DdlParserScorer scorer ) {
         while (tokens.hasNext()) {
-            if (tokens.isNextKeyWord()) {
-                scorer.scoreStatements(1);
+            int score = tokens.computeNextStatementStartKeywordCount();
+
+            if ((score == 0) && tokens.isNextKeyWord()) {
+                score = 1;
             }
+
+            if (score != 0) {
+                scorer.scoreStatements(score);
+            }
+
             tokens.consume();
         }
     }
@@ -2461,42 +2468,33 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * @throws ParsingException
      */
     protected String parseUntilTerminator( DdlTokenStream tokens ) throws ParsingException {
-        StringBuffer sb = new StringBuffer();
-        if (doUseTerminator()) {
-            boolean lastTokenWasPeriod = false;
-            while (tokens.hasNext() && !tokens.matches(DdlTokenizer.STATEMENT_KEY) && !isTerminator(tokens)) {
-                String thisToken = tokens.consume();
-                boolean thisTokenIsPeriod = thisToken.equals(PERIOD);
-                boolean thisTokenIsComma = thisToken.equals(COMMA);
-                if (lastTokenWasPeriod || thisTokenIsPeriod || thisTokenIsComma) {
-                    sb.append(thisToken);
-                } else {
-                    sb.append(SPACE).append(thisToken);
-                }
-                if (thisTokenIsPeriod) {
-                    lastTokenWasPeriod = true;
-                } else {
-                    lastTokenWasPeriod = false;
-                }
+        final StringBuffer sb = new StringBuffer();
+        boolean lastTokenWasPeriod = false;
+        Position prevPosition = (tokens.hasNext() ? tokens.nextPosition() : Position.EMPTY_CONTENT_POSITION);
+        String prevToken = "";
+
+        while (tokens.hasNext() && !tokens.matches(DdlTokenizer.STATEMENT_KEY) && ((doUseTerminator() && !isTerminator(tokens)) || !doUseTerminator())) {
+            final Position currPosition = tokens.nextPosition();
+            final String thisToken = tokens.consume();
+            final boolean thisTokenIsPeriod = thisToken.equals(PERIOD);
+            final boolean thisTokenIsComma = thisToken.equals(COMMA);
+
+            if (lastTokenWasPeriod || thisTokenIsPeriod || thisTokenIsComma) {
+                sb.append(thisToken);
+            } else if ((currPosition.getIndexInContent() - prevPosition.getIndexInContent() - prevToken.length()) > 0) {
+                sb.append(SPACE).append(thisToken);
+            } else {
+                sb.append(thisToken);
             }
-        } else {
-            // parse until next statement
-            boolean lastTokenWasPeriod = false;
-            while (tokens.hasNext() && !tokens.matches(DdlTokenizer.STATEMENT_KEY)) {
-                String thisToken = tokens.consume();
-                boolean thisTokenIsPeriod = thisToken.equals(PERIOD);
-                boolean thisTokenIsComma = thisToken.equals(COMMA);
-                if (lastTokenWasPeriod || thisTokenIsPeriod || thisTokenIsComma) {
-                    sb.append(thisToken);
-                } else {
-                    sb.append(SPACE).append(thisToken);
-                }
-                if (thisTokenIsPeriod) {
-                    lastTokenWasPeriod = true;
-                } else {
-                    lastTokenWasPeriod = false;
-                }
+
+            if (thisTokenIsPeriod) {
+                lastTokenWasPeriod = true;
+            } else {
+                lastTokenWasPeriod = false;
             }
+
+            prevToken = thisToken;
+            prevPosition = currPosition;
         }
 
         return sb.toString();
@@ -2513,22 +2511,32 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      */
     protected String parseUntilTerminatorIgnoreEmbeddedStatements( DdlTokenStream tokens ) throws ParsingException {
         StringBuffer sb = new StringBuffer();
-
         boolean lastTokenWasPeriod = false;
+        Position prevPosition = Position.EMPTY_CONTENT_POSITION;
+        String prevToken = "";
+
         while (tokens.hasNext() && !isTerminator(tokens)) {
+            final Position currPosition = tokens.nextPosition();
             String thisToken = tokens.consume();
             boolean thisTokenIsPeriod = thisToken.equals(PERIOD);
             boolean thisTokenIsComma = thisToken.equals(COMMA);
+
             if (lastTokenWasPeriod || thisTokenIsPeriod || thisTokenIsComma) {
                 sb.append(thisToken);
-            } else {
+            } else if ((currPosition.getIndexInContent() - prevPosition.getIndexInContent() - prevToken.length()) > 0) {
                 sb.append(SPACE).append(thisToken);
+            } else {
+                sb.append(thisToken);
             }
+
             if (thisTokenIsPeriod) {
                 lastTokenWasPeriod = true;
             } else {
                 lastTokenWasPeriod = false;
             }
+
+            prevToken = thisToken;
+            prevPosition = currPosition;
         }
 
         return sb.toString();
@@ -2653,11 +2661,10 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             String optionID;
             int precision = -1;
 
-            if (tokens.canConsume("CURRENT_DATE")) {
-
+            if (tokens.canConsume("CURRENT_DATE") || tokens.canConsume("'CURRENT_DATE'")) {
                 optionID = DEFAULT_ID_DATETIME;
                 defaultValue = "CURRENT_DATE";
-            } else if (tokens.canConsume("CURRENT_TIME")) {
+            } else if (tokens.canConsume("CURRENT_TIME") || tokens.canConsume("'CURRENT_TIME'")) {
                 optionID = DEFAULT_ID_DATETIME;
                 defaultValue = "CURRENT_TIME";
                 if (tokens.canConsume(L_PAREN)) {
@@ -2665,7 +2672,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                     precision = integer(tokens.consume());
                     tokens.canConsume(R_PAREN);
                 }
-            } else if (tokens.canConsume("CURRENT_TIMESTAMP")) {
+            } else if (tokens.canConsume("CURRENT_TIMESTAMP") || tokens.canConsume("'CURRENT_TIMESTAMP'")) {
                 optionID = DEFAULT_ID_DATETIME;
                 defaultValue = "CURRENT_TIMESTAMP";
                 if (tokens.canConsume(L_PAREN)) {
@@ -2673,19 +2680,19 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                     precision = integer(tokens.consume());
                     tokens.canConsume(R_PAREN);
                 }
-            } else if (tokens.canConsume("USER")) {
+            } else if (tokens.canConsume("USER") || tokens.canConsume("'USER'")) {
                 optionID = DEFAULT_ID_USER;
                 defaultValue = "USER";
-            } else if (tokens.canConsume("CURRENT_USER")) {
+            } else if (tokens.canConsume("CURRENT_USER") || tokens.canConsume("'CURRENT_USER'")) {
                 optionID = DEFAULT_ID_CURRENT_USER;
                 defaultValue = "CURRENT_USER";
-            } else if (tokens.canConsume("SESSION_USER")) {
+            } else if (tokens.canConsume("SESSION_USER") || tokens.canConsume("'SESSION_USER'")) {
                 optionID = DEFAULT_ID_SESSION_USER;
                 defaultValue = "SESSION_USER";
-            } else if (tokens.canConsume("SYSTEM_USER")) {
+            } else if (tokens.canConsume("SYSTEM_USER") || tokens.canConsume("'SYSTEM_USER'")) {
                 optionID = DEFAULT_ID_SYSTEM_USER;
                 defaultValue = "SYSTEM_USER";
-            } else if (tokens.canConsume("NULL")) {
+            } else if (tokens.canConsume("NULL") || tokens.canConsume("NULL")) {
                 optionID = DEFAULT_ID_NULL;
                 defaultValue = "NULL";
             } else if (tokens.canConsume(L_PAREN)) {
@@ -2697,6 +2704,16 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                 optionID = DEFAULT_ID_LITERAL;
                 // Assume default was EMPTY or ''
                 defaultValue = tokens.consume();
+
+                // strip quotes if necessary
+                if (defaultValue.startsWith("'") && defaultValue.endsWith("'")) {
+                    if (defaultValue.length() > 2) {
+                        defaultValue = defaultValue.substring(1, defaultValue.lastIndexOf('\''));
+                    } else {
+                        defaultValue = "";
+                    }
+                }
+
                 // NOTE: default value could be a Real number as well as an integer, so
                 // 1000.00 is valid
                 if (tokens.canConsume(".")) {

@@ -77,6 +77,32 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
     }
 
     /**
+     * @param mixin the mixin being added (cannot be <code>null</code> or empty)
+     * @return <code>true</code> if mixin was added
+     */
+    public boolean addMixin(final String mixin) {
+        CheckArg.isNotEmpty(mixin, "mixin");
+        final List<String> mixins = getMixins();
+
+        if (!mixins.contains(mixin)) {
+            if (mixins.add(mixin)) {
+                setProperty(JcrConstants.JCR_MIXIN_TYPES, mixins);
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param mixin the mixin to look for (cannot be <code>null</code> or empty)
+     * @return <code>true</code> if the node has the specified mixin
+     */
+    public boolean hasMixin( final String mixin ) {
+        CheckArg.isNotEmpty(mixin, "mixin");
+        return getMixins().contains(mixin);
+    }
+
+    /**
      * Get the name of the node.
      * 
      * @return the node's name; never null
@@ -346,6 +372,28 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
     }
 
     /**
+     * @param name the name of the child being requested (cannot be <code>null</code> or empty)
+     * @return a collection of children with the specified name (never <code>null</code> but can be empty)
+     */
+    public List<AstNode> childrenWithName( final String name ) {
+        CheckArg.isNotEmpty(name, "name");
+
+        if (this.children.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        final List<AstNode> matches = new ArrayList<AstNode>();
+
+        for (final AstNode kid : this.children) {
+            if (name.equals(kid.getName())) {
+                matches.add(kid);
+            }
+        }
+
+        return matches;
+    }
+
+    /**
      * Get the child at the supplied index.
      * 
      * @param index the index
@@ -475,6 +523,22 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
      */
     public List<AstNode> getChildren() {
         return childrenView;
+    }
+
+    /**
+     * @param mixin the mixin to match children with (cannot be <code>null</code> or empty)
+     * @return the children having the specified mixin (never <code>null</code>)
+     */
+    public List<AstNode> getChildren( final String mixin ) {
+        final List<AstNode> result = new ArrayList<AstNode>();
+
+        for (final AstNode kid : getChildren()) {
+            if (kid.getMixins().contains(mixin)) {
+                result.add(kid);
+            }
+        }
+
+        return result;
     }
 
     /**

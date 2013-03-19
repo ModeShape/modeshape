@@ -99,6 +99,20 @@ public abstract class AbstractDdlSequencerTest extends AbstractSequencerTest {
         return child;
     }
 
+    protected Node sequenceDdl( String ddlFile,
+                                final int waitTimeSeconds) throws Exception {
+        String fileName = ddlFile.substring(ddlFile.lastIndexOf("/") + 1);
+        createNodeWithContentFromFile(fileName, ddlFile);
+        Node outputNode = getOutputNode(rootNode, "ddl/" + fileName, waitTimeSeconds);
+
+        assertNotNull(outputNode);
+        assertThat(outputNode.getNodes().getSize(), is(1l));
+
+        Node statementsNode = outputNode.getNode(STATEMENTS_CONTAINER);
+        assertNotNull(statementsNode);
+        return statementsNode;
+    }
+
     protected Node sequenceDdl( String ddlFile ) throws Exception {
         String fileName = ddlFile.substring(ddlFile.lastIndexOf("/") + 1);
         createNodeWithContentFromFile(fileName, ddlFile);

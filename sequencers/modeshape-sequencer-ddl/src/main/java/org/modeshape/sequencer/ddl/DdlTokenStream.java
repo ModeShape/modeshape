@@ -192,15 +192,15 @@ public class DdlTokenStream extends TokenStream {
     /**
      * Method to determine if next tokens match a registered statement start phrase.
      * 
-     * @return true if next tokens match a registered statement start phrase
+     * @return number of keywords in matched registered statement start phrase or zero if not matched
      */
-    public boolean isNextStatementStart() {
-        boolean result = false;
+    public int computeNextStatementStartKeywordCount() {
+        int result = 0;
 
         if (isNextKeyWord()) {
             for (String[] nextStmtStart : registeredStatementStartPhrases) {
                 if (this.matches(nextStmtStart)) {
-                    return true;
+                    return nextStmtStart.length;
                 }
             }
         }
