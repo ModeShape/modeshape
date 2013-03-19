@@ -153,14 +153,14 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
             // check unused content
             if (this.contentExists(key, UNUSED)) {
                 PreparedStatement sql = database.restoreContentSQL(key);
-                Database.execute(sql);
+                Database.execute(sql); // doesn't produce a result set
                 return new StoredBinaryValue(this, key, temp.getSize());
             }
 
             // store content
             try {
                 PreparedStatement sql = database.insertContentSQL(key, temp.getStream());
-                Database.execute(sql);
+                Database.execute(sql); // doesn't produce a result set
 
                 return new StoredBinaryValue(this, key, temp.getSize());
             } catch (Exception e) {
@@ -175,7 +175,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     @Override
     public InputStream getInputStream( BinaryKey key ) throws BinaryStoreException {
         ResultSet rs = Database.executeQuery(database.retrieveContentSQL(key, true));
-        InputStream inputStream = Database.asStream(rs);
+        InputStream inputStream = Database.asStream(rs); // closes result set
         if (inputStream == null) {
             try {
                 throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database.getConnection().getCatalog()));
@@ -190,7 +190,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     public void markAsUnused( Iterable<BinaryKey> keys ) throws BinaryStoreException {
         for (BinaryKey key : keys) {
             PreparedStatement sql = database.markUnusedSQL(key);
-            Database.executeUpdate(sql);
+            Database.executeUpdate(sql); // doesn't produce a result set
         }
     }
 
@@ -200,14 +200,14 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         // compute usage deadline (in past)
         long deadline = now() - unit.toMillis(minimumAge);
         PreparedStatement sql = database.removeExpiredContentSQL(deadline);
-        Database.execute(sql);
+        Database.execute(sql); // doesn't produce a result set
     }
 
     @Override
     protected String getStoredMimeType( BinaryValue source ) throws BinaryStoreException {
         checkContentExists(source);
         ResultSet rs = Database.executeQuery(database.retrieveMimeTypeSQL(source.getKey()));
-        return Database.asString(rs);
+        return Database.asString(rs); // closes result set
     }
 
     private void checkContentExists( BinaryValue source ) throws BinaryStoreException {
@@ -225,21 +225,21 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     protected void storeMimeType( BinaryValue source,
                                   String mimeType ) throws BinaryStoreException {
         PreparedStatement sql = database.updateMimeTypeSQL(source.getKey(), mimeType);
-        Database.executeUpdate(sql);
+        Database.executeUpdate(sql); // doesn't produce a result set
     }
 
     @Override
     public String getExtractedText( BinaryValue source ) throws BinaryStoreException {
         checkContentExists(source);
         ResultSet rs = Database.executeQuery(database.retrieveExtTextSQL(source.getKey()));
-        return Database.asString(rs);
+        return Database.asString(rs); // closes result set
     }
 
     @Override
     public void storeExtractedText( BinaryValue source,
                                     String extractedText ) throws BinaryStoreException {
         PreparedStatement sql = database.updateExtTextSQL(source.getKey(), extractedText);
-        Database.executeUpdate(sql);
+        Database.executeUpdate(sql); // doesn't produce a result set
     }
 
     @Override
@@ -270,7 +270,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         Set<BinaryKey> keys = new HashSet<BinaryKey>();
         try {
             PreparedStatement sql = database.retrieveBinaryKeys(keys);
-            List<String> keysString = Database.asStringList(Database.executeQuery(sql));
+            List<String> keysString = Database.asStringList(Database.executeQuery(sql)); // closes result set
 
             Set<BinaryKey> binaryKeys = new HashSet<BinaryKey>(keysString.size());
             for (String keyString : keysString) {
@@ -300,11 +300,26 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
      */
     private boolean contentExists( BinaryKey key,
                                    boolean alive ) throws BinaryStoreException {
+        ResultSet rs = null;
+        boolean error = false;
         try {
-            ResultSet rs = Database.executeQuery(database.retrieveContentSQL(key, alive));
+            rs = Database.executeQuery(database.retrieveContentSQL(key, alive));
             return rs.next();
         } catch (SQLException e) {
+            error = true;
             throw new BinaryStoreException(e);
+        } catch (RuntimeException e) {
+            error = true;
+            throw e;
+        } finally {
+            if (rs != null) {
+                // Always close the result set ...
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    if (!error) throw new BinaryStoreException(e);
+                }
+            }
         }
     }
 
