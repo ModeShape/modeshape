@@ -343,6 +343,9 @@
         <jboss.eap.version>6.1.0.Alpha1</jboss.eap.version>
         <jboss.eap.root.folder>jboss-eap-6.1</jboss.eap.root.folder>
 
+        <!--The root folder under EAP/AS where the ModeShape & related modules should be placed-->
+        <jboss.eap.modules.location>modules</jboss.eap.modules.location>
+
         <!-- The id of the maven distribution which is building the current kit -->
         <jboss.eap.distribution.id>jbosseap-61-dist</jboss.eap.distribution.id>
 

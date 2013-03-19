@@ -14,17 +14,30 @@
         -->
         <fileSet>
             <directory>${project.build.directory}/hsearch-71-kit/modules</directory>
-            <outputDirectory>modules/system/layers/base/</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}</outputDirectory>
             <excludes>
                 <exclude>**/hibernate/search/**/module.xml</exclude>
             </excludes>
         </fileSet>
 
-		<!-- The files for the kit -->
+		<!-- The modules part of the kit -->
+		<fileSet>
+			<directory>../deploy/jbossas/kit/jboss-eap61</directory>
+			<outputDirectory>${jboss.eap.modules.location}</outputDirectory>
+            <excludes>
+                <exclude>standalone/**</exclude>
+            </excludes>
+            <filtered>true</filtered>
+		</fileSet>
+
+		<!-- The configuration part -->
 		<fileSet>
 			<directory>../deploy/jbossas/kit/jboss-eap61</directory>
 			<outputDirectory>/</outputDirectory>
-			<filtered>true</filtered>
+            <includes>
+                <include>standalone/**</include>
+            </includes>
+            <filtered>true</filtered>
 		</fileSet>
 
 		<!-- ModeShape subsystem XSD(s) -->
@@ -39,19 +52,19 @@
 	  <!-- Deployment for the ModeShape RESTful service WAR (as an exploded directory) -->
 		<fileSet>
 			<directory>../deploy/jbossas/modeshape-jbossas-web-rest-war/target/modeshape-jbossas-web-rest-war-${project.version}</directory>
-		    <outputDirectory>modules/system/layers/base/org/modeshape/main/deployments/modeshape-rest.war</outputDirectory>
+		    <outputDirectory>${jboss.eap.modules.location}/org/modeshape/main/deployments/modeshape-rest.war</outputDirectory>
 		</fileSet>
 
         <!-- Deployment for the ModeShape WebDAV service WAR (as an exploded directory) -->
         <fileSet>
             <directory>../deploy/jbossas/modeshape-jbossas-web-webdav-war/target/modeshape-jbossas-web-webdav-war-${project.version}</directory>
-            <outputDirectory>modules/system/layers/base/org/modeshape/main/deployments/modeshape-webdav.war</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/main/deployments/modeshape-webdav.war</outputDirectory>
         </fileSet>
 
         <!-- Deployment for the ModeShape CMIS service WAR (as an exploded directory) -->
         <fileSet>
             <directory>../deploy/jbossas/modeshape-jbossas-cmis-war/target/modeshape-jbossas-cmis-war-${project.version}</directory>
-            <outputDirectory>modules/system/layers/base/org/modeshape/main/deployments/modeshape-cmis.war</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/main/deployments/modeshape-cmis.war</outputDirectory>
         </fileSet>
     </fileSets>
 	
@@ -60,7 +73,7 @@
 		<!-- Module for the standard JCR API -->
 		<dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/javax/jcr/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/javax/jcr/main</outputDirectory>
 			<includes>
 				<include>javax.jcr:jcr</include>
 			</includes>
@@ -70,7 +83,7 @@
 		<!-- Module for the ModeShape API (extension of the JCR API) -->
 		<dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/modeshape/jcr/api/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/jcr/api/main</outputDirectory>
 			<includes>
 				<include>org.modeshape:modeshape-jcr-api:jar</include>
 			</includes>
@@ -80,7 +93,7 @@
         <!--Commons module-->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/modeshape/common/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/common/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-common:jar</include>
             </includes>
@@ -90,7 +103,7 @@
         <!-- Module for the ModeShape engine (and dependencies) -->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/modeshape/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-jcr:jar</include>
                 <include>org.modeshape:modeshape-jbossas-subsystem:jar</include>
@@ -102,7 +115,7 @@
         <!-- Module for Tika (self-contained) -->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/apache/tika/${tika.version}</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/apache/tika/${tika.version}</outputDirectory>
             <includes>
                 <include>org.apache.tika:*:jar</include>
                 <include>org.apache.commons:commons-compress:jar</include>
@@ -132,7 +145,7 @@
         <!--Connectors-->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/modeshape/connector/git/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/connector/git/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-connector-git:jar</include>
                 <include>org.eclipse.jgit:org.eclipse.jgit:jar</include>
@@ -143,7 +156,7 @@
         <!--Sequencers-->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/modeshape/sequencer/ddl/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/sequencer/ddl/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-sequencer-ddl:jar</include>
             </includes>
@@ -151,7 +164,7 @@
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/modeshape/sequencer/image/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/sequencer/image/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-sequencer-images:jar</include>
             </includes>
@@ -159,7 +172,7 @@
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/modeshape/sequencer/java/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/sequencer/java/main</outputDirectory>
             <useTransitiveDependencies>true</useTransitiveDependencies>
             <includes>
                 <include>org.modeshape:modeshape-sequencer-java:jar</include>
@@ -179,7 +192,7 @@
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/modeshape/sequencer/mp3/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/sequencer/mp3/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-sequencer-mp3:jar</include>
                 <include>org:jaudiotagger:jar</include>
@@ -188,7 +201,7 @@
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/modeshape/sequencer/msoffice/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/sequencer/msoffice/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-sequencer-msoffice:jar</include>
                 <include>org.apache*:poi:jar</include>
@@ -198,14 +211,14 @@
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/modeshape/sequencer/sramp/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/sequencer/sramp/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-sequencer-sramp:jar</include>
             </includes>
         </dependencySet>
 
         <dependencySet>
-            <outputDirectory>modules/system/layers/base/org/modeshape/sequencer/teiid/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/sequencer/teiid/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-sequencer-teiid:jar</include>
                 <include>com.beust:jcommander:jar</include>
@@ -214,7 +227,7 @@
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/modeshape/sequencer/text/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/sequencer/text/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-sequencer-text:jar</include>
             </includes>
@@ -222,7 +235,7 @@
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/modeshape/sequencer/wsdl/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/sequencer/wsdl/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-sequencer-wsdl:jar</include>
                 <include>wsdl4j:wsdl4j:jar</include>
@@ -231,7 +244,7 @@
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/modeshape/sequencer/xml/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/sequencer/xml/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-sequencer-xml:jar</include>
             </includes>
@@ -239,7 +252,7 @@
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/modeshape/sequencer/xsd/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/sequencer/xsd/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-sequencer-xsd:jar</include>
                 <include>org.eclipse*:xsd:jar:${eclipse.xsd.version}</include>
@@ -252,7 +265,7 @@
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/modeshape/sequencer/zip/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/sequencer/zip/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-sequencer-zip:jar</include>
             </includes>
@@ -260,7 +273,7 @@
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/modeshape/extractor/tika/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/extractor/tika/main</outputDirectory>
             <useTransitiveDependencies>true</useTransitiveDependencies>
             <includes>
                 <include>org.modeshape:modeshape-extractor-tika:jar</include>
@@ -270,7 +283,7 @@
 		<!-- Module for the ModeShape JDBC driver -->
 		<dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/modeshape/jdbc/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/jdbc/main</outputDirectory>
 			<includes>
 				<include>org.modeshape:modeshape-jdbc-local:jar</include>
 			</includes>
@@ -283,7 +296,7 @@
         -->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/system/layers/base/org/hibernate/search/engine/main</outputDirectory>
+            <outputDirectory>${jboss.eap.modules.location}/org/hibernate/search/engine/main</outputDirectory>
             <unpack>false</unpack>
             <useTransitiveFiltering>true</useTransitiveFiltering>
             <includes>
