@@ -67,11 +67,32 @@ public interface MutableCachedNode extends CachedNode {
                                 Name propertyName );
 
     /**
-     * Return whether this node has changes.
+     * Return whether this node has changes, including property-related changes and other changes not related to properties. This
+     * is equivalent to calling <code>hasNonPropertyChanges() || hasPropertyChanges()</code>.
      * 
      * @return true if this node has changes, or false otherwise
+     * @see #hasNonPropertyChanges()
+     * @see #hasPropertyChanges()
      */
     boolean hasChanges();
+
+    /**
+     * Return whether this node has changes unrelated to properties.
+     * 
+     * @return true if this node has changes unrelated to properties, or false otherwise
+     * @see #hasChanges()
+     * @see #hasPropertyChanges()
+     */
+    boolean hasNonPropertyChanges();
+
+    /**
+     * Return whether this node has changes in the properties.
+     * 
+     * @return true if this node has added, removed, or changed properties, or false otherwise
+     * @see #hasChanges()
+     * @see #hasNonPropertyChanges()
+     */
+    boolean hasPropertyChanges();
 
     /**
      * Lock this node.
