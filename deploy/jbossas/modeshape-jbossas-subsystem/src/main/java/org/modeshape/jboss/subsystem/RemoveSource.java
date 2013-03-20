@@ -23,11 +23,11 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import java.util.Arrays;
+import java.util.List;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
-import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceName;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
@@ -36,35 +36,18 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
  *
  * @author Horia Chiorean
  */
-public class RemoveSource extends AbstractRemoveStepHandler {
+class RemoveSource extends AbstractModeShapeRemoveStepHandler {
 
     static final RemoveSource INSTANCE = new RemoveSource();
-
-    private static final Logger LOGGER = Logger.getLogger(RemoveSource.class.getPackage().getName());
 
     private RemoveSource() {
     }
 
     @Override
-    protected void performRuntime( OperationContext context,
-                                   ModelNode operation,
-                                   ModelNode model ) {
-        // Get the service addresses ...
+    List<ServiceName> servicesToRemove( ModelNode operation,
+                                        ModelNode model ) {
         final PathAddress serviceAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
-        // Get the repository name ...
         final String sourceName = serviceAddress.getLastElement().getValue();
-        final String repositoryName = serviceAddress.getElement(1).getValue();
-        // Remove the service ...
-        final ServiceName serviceName = ModeShapeServiceNames.sourceServiceName(repositoryName, sourceName);
-        context.removeService(serviceName);
-
-        LOGGER.debugf("sequencer '%s' removed for repository '%s'", sourceName, repositoryName);
-    }
-
-    @Override
-    protected void recoverServices( OperationContext context,
-                                    ModelNode operation,
-                                    ModelNode model ) {
-        //TODO author=Horia Chiorean date=12/27/12 description=Re-add service
+        return Arrays.asList(ModeShapeServiceNames.sourceServiceName(repositoryName(operation), sourceName));
     }
 }

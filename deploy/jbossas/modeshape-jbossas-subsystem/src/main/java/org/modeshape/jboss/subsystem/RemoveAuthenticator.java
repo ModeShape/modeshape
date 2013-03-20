@@ -23,43 +23,29 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import org.jboss.as.controller.AbstractRemoveStepHandler;
-import org.jboss.as.controller.OperationContext;
+import java.util.Arrays;
+import java.util.List;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceName;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
-class RemoveAuthenticator extends AbstractRemoveStepHandler {
+class RemoveAuthenticator extends AbstractModeShapeRemoveStepHandler {
 
-    private static final Logger log = Logger.getLogger(RemoveAuthenticator.class.getPackage().getName());
-
-    public static final RemoveAuthenticator INSTANCE = new RemoveAuthenticator();
+    static final RemoveAuthenticator INSTANCE = new RemoveAuthenticator();
 
     private RemoveAuthenticator() {
     }
 
     @Override
-    protected void performRuntime( OperationContext context,
-                                   ModelNode operation,
-                                   ModelNode model ) {
+    List<ServiceName> servicesToRemove( ModelNode operation,
+                                        ModelNode model ) {
         // Get the service addresses ...
         final PathAddress serviceAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
         // Get the repository name ...
         final String authenticatorName = serviceAddress.getLastElement().getValue();
         final String repositoryName = serviceAddress.getElement(1).getValue();
-        // Remove the service ...
-        final ServiceName serviceName = ModeShapeServiceNames.authenticatorServiceName(repositoryName, authenticatorName);
-        context.removeService(serviceName);
 
-        log.debugf("authenticator '%s' removed for repository '%s'", authenticatorName, repositoryName);
-    }
-
-    @Override
-    protected void recoverServices( OperationContext context,
-                                    ModelNode operation,
-                                    ModelNode model ) {
-        // TODO: RE-ADD SERVICES
+        return Arrays.asList(ModeShapeServiceNames.authenticatorServiceName(repositoryName, authenticatorName));
     }
 }
