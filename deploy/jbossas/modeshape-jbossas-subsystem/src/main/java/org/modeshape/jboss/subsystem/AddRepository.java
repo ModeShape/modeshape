@@ -65,11 +65,10 @@ import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
 public class AddRepository extends AbstractAddStepHandler {
 
-    private static final org.jboss.logging.Logger LOG = org.jboss.logging.Logger.getLogger(AddRepository.class.getPackage()
-                                                                                                              .getName());
-
     public static final AddRepository INSTANCE = new AddRepository();
 
+    private static final org.jboss.logging.Logger LOG = org.jboss.logging.Logger.getLogger(AddRepository.class.getPackage()
+                                                                                                              .getName());
     private AddRepository() {
     }
 
@@ -223,8 +222,9 @@ public class AddRepository extends AbstractAddStepHandler {
 
         // Set up the JNDI binder service ...
         final ReferenceFactoryService<JcrRepository> referenceFactoryService = new ReferenceFactoryService<JcrRepository>();
-        final ServiceName referenceFactoryServiceName = repositoryServiceName.append("reference-factory");
-        final ServiceBuilder<?> referenceBuilder = target.addService(referenceFactoryServiceName, referenceFactoryService);
+        ServiceName referenceFactoryServiceName = ModeShapeServiceNames.referenceFactoryServiceName(repositoryName);
+        final ServiceBuilder<?> referenceBuilder = target.addService(referenceFactoryServiceName,
+                                                                     referenceFactoryService);
         referenceBuilder.addDependency(repositoryServiceName, JcrRepository.class, referenceFactoryService.getInjector());
         referenceBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
