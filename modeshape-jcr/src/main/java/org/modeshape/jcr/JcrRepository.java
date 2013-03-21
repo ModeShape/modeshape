@@ -1788,46 +1788,21 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         @Override
         public Monitor createMonitor() {
-            final Transaction txn = currentTransaction();
-            final RepositoryStatistics statistics = this.runningState.statistics();
             final RepositoryNodeTypeManager nodeTypeManager = this.runningState.nodeTypeManager();
             final RepositoryQueryManager queryManager = this.runningState.queryManager();
             if (nodeTypeManager == null || queryManager == null) {
-                // Happens only when the repository's initial content is being initialized,
-                // so return a monitor that captures statistics but does not index ...
-                return new Monitor() {
-                    @Override
-                    public void recordChanged( long changedNodesCount ) {
-                        // ValueMetric.SESSION_SAVES are tracked in JcrSession.save() ...
-                        statistics.increment(ValueMetric.NODE_CHANGES, changedNodesCount);
-                    }
-
-                    @Override
-                    public void recordAdd( String workspace,
-                                           NodeKey key,
-                                           org.modeshape.jcr.value.Path path,
-                                           Name primaryType,
-                                           Set<Name> mixinTypes,
-                                           Collection<Property> properties ) {
-                    }
-
-                    @Override
-                    public void recordRemove( String workspace,
-                                              Iterable<NodeKey> keys ) {
-                    }
-
-                    @Override
-                    public void recordUpdate( String workspace,
-                                              NodeKey key,
-                                              org.modeshape.jcr.value.Path path,
-                                              Name primaryType,
-                                              Set<Name> mixinTypes,
-                                              Iterator<Property> properties ) {
-                    }
-                };
+                //query isn't enabled most likely, so we'll only record statistics
+                return statisticsMonitor();
             }
+            return indexingMonitor(nodeTypeManager, queryManager);
+        }
+
+        private Monitor indexingMonitor( RepositoryNodeTypeManager nodeTypeManager,
+                                         RepositoryQueryManager queryManager ) {
             final NodeTypeSchemata schemata = nodeTypeManager.getRepositorySchemata();
             final QueryIndexing indexes = queryManager.getIndexes();
+            //a transaction will be returned only if it exists and is in ACTIVE status
+            final Transaction txn = currentTransaction();
             final TransactionContext txnCtx = new TransactionContext() {
                 @Override
                 public Object getTransactionIdentifier() {
@@ -1857,7 +1832,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 @Override
                 public void recordChanged( long changedNodesCount ) {
                     // ValueMetric.SESSION_SAVES are tracked in JcrSession.save() ...
-                    statistics.increment(ValueMetric.NODE_CHANGES, changedNodesCount);
+                    runningState.statistics.increment(ValueMetric.NODE_CHANGES, changedNodesCount);
                 }
 
                 @Override
@@ -1884,6 +1859,41 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 public void recordRemove( String workspace,
                                           Iterable<NodeKey> keys ) {
                     indexes.removeFromIndex(workspace, keys, txnCtx);
+                }
+            };
+        }
+
+        private Monitor statisticsMonitor() {
+            // Happens only when the repository's initial content is being initialized,
+            // so return a monitor that captures statistics but does not index ...
+            return new Monitor() {
+                @Override
+                public void recordChanged( long changedNodesCount ) {
+                    // ValueMetric.SESSION_SAVES are tracked in JcrSession.save() ...
+                    runningState.statistics.increment(ValueMetric.NODE_CHANGES, changedNodesCount);
+                }
+
+                @Override
+                public void recordAdd( String workspace,
+                                       NodeKey key,
+                                       org.modeshape.jcr.value.Path path,
+                                       Name primaryType,
+                                       Set<Name> mixinTypes,
+                                       Collection<Property> properties ) {
+                }
+
+                @Override
+                public void recordRemove( String workspace,
+                                          Iterable<NodeKey> keys ) {
+                }
+
+                @Override
+                public void recordUpdate( String workspace,
+                                          NodeKey key,
+                                          org.modeshape.jcr.value.Path path,
+                                          Name primaryType,
+                                          Set<Name> mixinTypes,
+                                          Iterator<Property> properties ) {
                 }
             };
         }
