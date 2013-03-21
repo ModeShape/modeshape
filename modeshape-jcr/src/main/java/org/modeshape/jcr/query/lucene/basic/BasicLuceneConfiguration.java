@@ -26,6 +26,7 @@ package org.modeshape.jcr.query.lucene.basic;
 import java.io.File;
 import java.util.Properties;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.hibernate.search.Environment;
 import org.hibernate.search.backend.impl.jgroups.JGroupsChannelProvider;
 import org.hibernate.search.cfg.spi.SearchConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration;
@@ -157,11 +158,11 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
             // Hibernate Search defaults to StandardAnalyzer, which is also our default. But there's an issue loading
             // the class when running in AS7, because ConfigContext uses org.hibernate.annotations.common.util.ReflectHelper,
             // which apparently uses the Hibernate module's classpath (which does not contain the Lucene library).
-            setProperty("hibernate.search.analyzer", analyzer);
+            setProperty(Environment.ANALYZER_CLASS, analyzer);
         }
-        setProperty("hibernate.search.similarity", similarity);
-        setProperty("hibernate.search.worker.batch_size", batchSize);
-        setProperty("hibernate.search.lucene_version", indexFormat);
+        setProperty(Environment.SIMILARITY_CLASS, similarity);
+        setProperty(Environment.QUEUEINGPROCESSOR_BATCHSIZE, batchSize);
+        setProperty(Environment.LUCENE_MATCH_VERSION, indexFormat);
         setProperty("hibernate.search.reader.strategy", readerStrategy);
         setProperty("hibernate.search.default.worker.execution", mode); // sync or async
         setProperty("hibernate.search.default.worker.thread_pool.size", asyncThreadPoolSize);

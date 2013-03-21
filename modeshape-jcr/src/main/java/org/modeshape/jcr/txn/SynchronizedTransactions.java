@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
 import javax.transaction.Status;
@@ -106,8 +107,8 @@ public final class SynchronizedTransactions extends Transactions {
     protected class SynchronizedTransaction extends BaseTransaction {
 
         private final Synchronization synchronization;
-        private final AccumulatingMonitor monitor;
         private final List<WorkspaceUpdates> updates = new LinkedList<WorkspaceUpdates>();
+        private final SynchronizedMonitor monitor;
         private boolean finished = false;
 
         protected SynchronizedTransaction( TransactionManager txnMgr ) throws SystemException, RollbackException {
@@ -134,19 +135,14 @@ public final class SynchronizedTransactions extends Transactions {
                     }
                 }
             };
+            this.monitor = new SynchronizedMonitor(newMonitor());
             txnMgr.getTransaction().registerSynchronization(synchronization);
-            this.monitor = new AccumulatingMonitor();
         }
 
         protected void addUpdate( WorkspaceUpdates updates ) {
             assert updates != null;
             assert !finished;
             this.updates.add(updates);
-        }
-
-        @Override
-        public Monitor createMonitor() {
-            return this.monitor;
         }
 
         @Override
@@ -167,14 +163,19 @@ public final class SynchronizedTransactions extends Transactions {
             // Execute the functions
             executeFunctions();
 
-            // Forward the accumulated monitoring calls (e.g., indexing updates) ...
-            monitor.forward(newMonitor());
+            //Update the statistics about the changed number of nodes
+            monitor.dispatchRecordedChanges();
 
             // Apply the updates, and do AFTER the monitor is updated ...
             for (WorkspaceUpdates update : updates) {
                 update.apply();
             }
             finished = true;
+        }
+
+        @Override
+        public Monitor createMonitor() {
+           return this.monitor;
         }
     }
 
@@ -219,10 +220,13 @@ public final class SynchronizedTransactions extends Transactions {
         }
     }
 
-    protected static final class AccumulatingMonitor implements Monitor {
-        private final List<Call> calls = new LinkedList<Call>();
+    protected static final class SynchronizedMonitor implements Monitor {
+        private final Monitor delegate;
+        private final AtomicLong changesCount;
 
-        protected AccumulatingMonitor() {
+        protected SynchronizedMonitor( Monitor delegate ) {
+            this.delegate = delegate;
+            this.changesCount = new AtomicLong(0);
         }
 
         @Override
@@ -232,18 +236,7 @@ public final class SynchronizedTransactions extends Transactions {
                                Name primaryType,
                                Set<Name> mixinTypes,
                                Collection<Property> properties ) {
-            calls.add(new AddCall(workspace, key, path, primaryType, mixinTypes, properties));
-        }
-
-        @Override
-        public void recordChanged( long changedNodesCount ) {
-            calls.add(new ChangedCall(changedNodesCount));
-        }
-
-        @Override
-        public void recordRemove( String workspace,
-                                  Iterable<NodeKey> keys ) {
-            calls.add(new RemoveCall(workspace, keys));
+            delegate.recordAdd(workspace, key, path, primaryType, mixinTypes, properties);
         }
 
         @Override
@@ -253,103 +246,22 @@ public final class SynchronizedTransactions extends Transactions {
                                   Name primaryType,
                                   Set<Name> mixinTypes,
                                   Iterator<Property> properties ) {
-            calls.add(new UpdateCall(workspace, key, path, primaryType, mixinTypes, properties));
-        }
-
-        protected void forward( Monitor delegate ) {
-            for (Call call : calls) {
-                call.send(delegate);
-            }
-            calls.clear();
-        }
-    }
-
-    protected static interface Call {
-        void send( Monitor monitor );
-    }
-
-    protected static final class AddCall implements Call {
-        private final String workspace;
-        private final NodeKey key;
-        private final Path path;
-        private final Name primaryType;
-        private final Set<Name> mixinTypes;
-        private final Collection<Property> properties;
-
-        protected AddCall( String workspace,
-                           NodeKey key,
-                           Path path,
-                           Name primaryType,
-                           Set<Name> mixinTypes,
-                           Collection<Property> properties ) {
-            this.workspace = workspace;
-            this.key = key;
-            this.path = path;
-            this.primaryType = primaryType;
-            this.mixinTypes = mixinTypes;
-            this.properties = properties;
+            delegate.recordUpdate(workspace, key, path, primaryType, mixinTypes, properties);
         }
 
         @Override
-        public void send( Monitor monitor ) {
-            monitor.recordAdd(workspace, key, path, primaryType, mixinTypes, properties);
-        }
-    }
-
-    protected static final class UpdateCall implements Call {
-        private final String workspace;
-        private final NodeKey key;
-        private final Path path;
-        private final Name primaryType;
-        private final Set<Name> mixinTypes;
-        private final Iterator<Property> properties;
-
-        protected UpdateCall( String workspace,
-                              NodeKey key,
-                              Path path,
-                              Name primaryType,
-                              Set<Name> mixinTypes,
-                              Iterator<Property> properties ) {
-            this.workspace = workspace;
-            this.key = key;
-            this.path = path;
-            this.primaryType = primaryType;
-            this.mixinTypes = mixinTypes;
-            this.properties = properties;
+        public void recordRemove( String workspace,
+                                  Iterable<NodeKey> keys ) {
+            delegate.recordRemove(workspace, keys);
         }
 
         @Override
-        public void send( Monitor monitor ) {
-            monitor.recordUpdate(workspace, key, path, primaryType, mixinTypes, properties);
-        }
-    }
-
-    protected static final class RemoveCall implements Call {
-        private final String workspace;
-        private final Iterable<NodeKey> keys;
-
-        protected RemoveCall( String workspace,
-                              Iterable<NodeKey> keys ) {
-            this.workspace = workspace;
-            this.keys = keys;
+        public void recordChanged( long changedNodesCount ) {
+            changesCount.getAndAdd(changedNodesCount);
         }
 
-        @Override
-        public void send( Monitor monitor ) {
-            monitor.recordRemove(workspace, keys);
-        }
-    }
-
-    protected static final class ChangedCall implements Call {
-        private final long count;
-
-        protected ChangedCall( long count ) {
-            this.count = count;
-        }
-
-        @Override
-        public void send( Monitor monitor ) {
-            monitor.recordChanged(count);
+        protected void dispatchRecordedChanges() {
+            delegate.recordChanged(changesCount.get());
         }
     }
 }
