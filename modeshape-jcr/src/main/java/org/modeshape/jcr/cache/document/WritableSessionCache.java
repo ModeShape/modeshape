@@ -917,23 +917,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 }
 
                 // As we go through the removed and changed properties, we want to keep track of whether there are any
-                // effective modifications to the persisted properties. The 'node' instances merely track
-                // the modifications requested by the client via the Session, so the 'node.hasChanges()' or
-                // 'node.hasPropertyChanges()' methods only return whether changes were made transiently via the session.
-                // In order to know whether these requests really affect the persisted state, we need to compare
-                // these requested modifications to the actual persisted state (before modifications).
-                // The next two blocks will determine this, and we'll use the 'hasPropertyChanges' later on in this
-                // method to determine whether this node should be indexed (e.g., updated in the index).
-                // When requested property modifications do not affect the persisted state, then we may not need
-                // to update the indexes (which can be expensive). See MODE-1856 for more details.
-                //
-                // When we're checking the changed properties (second block below), we're using a slight optimization
-                // to prevent comparing all old (persisted) Property instance to the new (transient) Property instance:
-                // if the already are changes to properties, then we actually don't need to compare the old and new
-                // Property objects (since the outcome will not affect the value of the 'hasPropertyChanges' variable).
-                // However, this may result in the Session generating some events for no-op changes to properties.
-                // This is acceptable, given the noticeably improved performance of not having to compare all Property
-                // instances. Again, see MODE-1856 for details.
+                // effective modifications to the persisted properties.
                 boolean hasPropertyChanges = false;
 
                 // Save the removed properties ...
@@ -977,6 +961,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                             // in correct indexing behavior, but the compromise is that some no-op property changes will
                             // result in a PROPERTY_CHANGE event. To remove all potential no-op PROPERTY CHANGE events,
                             // simply remove the 'hasPropertyChanges||' in the above condition.
+                            // See MODE-1856 for details.
 
                             // the property was changed and is actually different than the persisted property ...
                             changes.propertyChanged(key, newPath, prop, oldProperty);
