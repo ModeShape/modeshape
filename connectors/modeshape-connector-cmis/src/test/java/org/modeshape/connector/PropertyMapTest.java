@@ -21,25 +21,53 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.connector.cmis.test;
+package org.modeshape.connector;
 
-import org.apache.chemistry.opencmis.client.api.ObjectId;
+import org.junit.*;
+import static org.junit.Assert.*;
 
 /**
  *
  * @author kulikov
  */
-public class ObjectIdImpl implements ObjectId {
+public class PropertyMapTest {
 
-    private String id;
+    private PropertyMap pmap = new PropertyMap(null);
 
-    public ObjectIdImpl(String id) {
-        this.id = id;
-    }
-    
-    @Override
-    public String getId() {
-        return id;
+    public PropertyMapTest() {
     }
 
+    @BeforeClass
+    public static void setUpClass() throws Exception {
+    }
+
+    @AfterClass
+    public static void tearDownClass() throws Exception {
+    }
+
+    @Before
+    public void setUp() {
+    }
+
+    @After
+    public void tearDown() {
+    }
+
+    /**
+     * Test of findJcrName method, of class PropertyMap.
+     */
+    @Test
+    public void testFindJcrName() {
+        assertEquals("jcr:uuid", pmap.findJcrName("cmis:objectId"));
+        assertEquals("cmis:custom", pmap.findJcrName("cmis:custom"));
+    }
+
+    /**
+     * Test of findCmisName method, of class PropertyMap.
+     */
+    @Test
+    public void testFindCmisName() {
+        assertEquals("cmis:objectId", pmap.findCmisName("jcr:uuid"));
+        assertEquals("jcr:custom", pmap.findCmisName("jcr:custom"));
+    }
 }

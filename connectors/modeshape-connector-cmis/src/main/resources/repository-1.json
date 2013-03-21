@@ -11,14 +11,6 @@
             "useOnFailedLogin" : false
         }
     },
-    "externalSources" : {
-        "cmis" : {
-            "classname" : "org.modeshape.connector.CmisConnector",
-            "cacheTtlSeconds" : 5,
-            "aclService" : "http://localhost:8080/modeshape-cmis/services/ACLService?wsdl",
-            "projections" : [ "default:/cmis => /" ]
-        }
-    },
     "storage" : {
         "cacheName" : "persistentRepository",
         "cacheConfiguration" : "infinispan-federation-persistent.xml"

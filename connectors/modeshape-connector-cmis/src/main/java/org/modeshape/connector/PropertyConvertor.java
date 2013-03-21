@@ -23,14 +23,13 @@
  */
 package org.modeshape.connector;
 
-import java.math.BigDecimal;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.GregorianCalendar;
-import java.util.List;
 import org.apache.chemistry.opencmis.client.api.Property;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.jcr.value.Name;
+
+import java.math.BigDecimal;
+import java.net.URI;
+import java.util.GregorianCalendar;
 
 /**
  * Provides conversations between CMIS and JCR properties and values.
@@ -53,47 +52,39 @@ public class PropertyConvertor {
      * accordance to the CMIS property definition.
      *
      * @param property CMIS property definition object
-     * @param jcrName the name of the property used by JCR
+     * @param jcrName  the name of the property used by JCR
      * @param document JCR text representation of the value(s)
      * @return Value as java object.
      */
-    public List<Object> cmisValues(Property property, String jcrName, Document document) {
-        ArrayList values = new ArrayList();
+    public Object cmisValue(Property property, String jcrName, Document document) {
         if (property.isMultiValued()) {
 
         }
 
         switch (property.getType()) {
-            case STRING :
-                values.add(document.getString(jcrName));
-                break;
-            case BOOLEAN :
-                values.add(document.getBoolean(jcrName));
-                break;
-            case DECIMAL :
-                values.add(BigDecimal.valueOf(document.getLong(jcrName)));
-                break;
-            case INTEGER :
-                values.add(document.getInteger(jcrName));
-                break;
-            case DATETIME :
+            case STRING:
+                return document.getString(jcrName);
+            case BOOLEAN:
+                return document.getBoolean(jcrName);
+            case DECIMAL:
+                return BigDecimal.valueOf(document.getLong(jcrName));
+            case INTEGER:
+                return document.getInteger(jcrName);
+            case DATETIME:
                 //FIXME
-                values.add(new GregorianCalendar());
-                break;
-            case URI :
+                return new GregorianCalendar();
+            case URI:
                 try {
-                    values.add(new URI(document.getString(jcrName)));
+                    return new URI(document.getString(jcrName));
                 } catch (Exception e) {
                 }
                 break;
-            case ID :
-                values.add(document.getString(jcrName));
-                break;
-            case HTML :
-                values.add(document.getString(jcrName));
-                break;
+            case ID:
+                return document.getString(jcrName);
+            case HTML:
+                return document.getString(jcrName);
         }
-        
-        return values;
+
+        return null;
     }
 }
