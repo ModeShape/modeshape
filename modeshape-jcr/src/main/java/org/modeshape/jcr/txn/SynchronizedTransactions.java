@@ -23,19 +23,27 @@
  */
 package org.modeshape.jcr.txn;
 
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
 import javax.transaction.Status;
 import javax.transaction.Synchronization;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
+import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionEnvironment.Monitor;
 import org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.document.TransactionalWorkspaceCache;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.Property;
 
 /**
  * An implementation of {@link Transactions} that will attempt to register a {@link Synchronization} with the current transaction.
@@ -100,6 +108,7 @@ public final class SynchronizedTransactions extends Transactions {
 
         private final Synchronization synchronization;
         private final List<WorkspaceUpdates> updates = new LinkedList<WorkspaceUpdates>();
+        private final SynchronizedMonitor monitor;
         private boolean finished = false;
 
         protected SynchronizedTransaction( TransactionManager txnMgr ) throws SystemException, RollbackException {
@@ -126,6 +135,7 @@ public final class SynchronizedTransactions extends Transactions {
                     }
                 }
             };
+            this.monitor = new SynchronizedMonitor(newMonitor());
             txnMgr.getTransaction().registerSynchronization(synchronization);
         }
 
@@ -153,11 +163,19 @@ public final class SynchronizedTransactions extends Transactions {
             // Execute the functions
             executeFunctions();
 
+            //Update the statistics about the changed number of nodes
+            monitor.dispatchRecordedChanges();
+
             // Apply the updates, and do AFTER the monitor is updated ...
             for (WorkspaceUpdates update : updates) {
                 update.apply();
             }
             finished = true;
+        }
+
+        @Override
+        public Monitor createMonitor() {
+           return this.monitor;
         }
     }
 
@@ -199,6 +217,51 @@ public final class SynchronizedTransactions extends Transactions {
 
         protected void apply() {
             workspace.changed(changes);
+        }
+    }
+
+    protected static final class SynchronizedMonitor implements Monitor {
+        private final Monitor delegate;
+        private final AtomicLong changesCount;
+
+        protected SynchronizedMonitor( Monitor delegate ) {
+            this.delegate = delegate;
+            this.changesCount = new AtomicLong(0);
+        }
+
+        @Override
+        public void recordAdd( String workspace,
+                               NodeKey key,
+                               Path path,
+                               Name primaryType,
+                               Set<Name> mixinTypes,
+                               Collection<Property> properties ) {
+            delegate.recordAdd(workspace, key, path, primaryType, mixinTypes, properties);
+        }
+
+        @Override
+        public void recordUpdate( String workspace,
+                                  NodeKey key,
+                                  Path path,
+                                  Name primaryType,
+                                  Set<Name> mixinTypes,
+                                  Iterator<Property> properties ) {
+            delegate.recordUpdate(workspace, key, path, primaryType, mixinTypes, properties);
+        }
+
+        @Override
+        public void recordRemove( String workspace,
+                                  Iterable<NodeKey> keys ) {
+            delegate.recordRemove(workspace, keys);
+        }
+
+        @Override
+        public void recordChanged( long changedNodesCount ) {
+            changesCount.getAndAdd(changedNodesCount);
+        }
+
+        protected void dispatchRecordedChanges() {
+            delegate.recordChanged(changesCount.get());
         }
     }
 }
