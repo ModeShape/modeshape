@@ -1279,14 +1279,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                             break;
                         }
                         case NEVER: {
-                            Set<NodeKey> existingIndexes = queryManager().getIndexes().indexedNodes();
-                            if (existingIndexes.isEmpty()) {
-                                logger.info(JcrI18n.noReindex, getName());
-                            } else {
-                                logger.debug("Index rebuild option is 'never' for repository {0} so nothing will be re-indexed. The existing indexed node are: {1}",
-                                             name(),
-                                             existingIndexes);
-                            }
+                            logger.info(JcrI18n.noReindex, getName());
                             break;
                         }
                     }
