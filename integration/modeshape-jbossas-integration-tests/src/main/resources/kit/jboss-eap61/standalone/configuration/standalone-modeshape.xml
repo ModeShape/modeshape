@@ -247,6 +247,19 @@
                         </string-keyed-table>
                     </string-keyed-jdbc-store>
                 </local-cache>
+                <local-cache name="jdbcRepositoryWithEviction">
+                    <transaction mode="NON_XA" locking="PESSIMISTIC"/>
+                    <eviction strategy="LRU" max-entries="100"/>
+                    <string-keyed-jdbc-store datasource="java:jboss/datasources/ModeshapeJDBCStoreDS" shared="false" preload="false" passivation="false" purge="false">
+                        <write-behind flush-lock-timeout="1" modification-queue-size="1024" shutdown-timeout="25000" thread-pool-size="1"/>
+                        <property name="databaseType">H2</property>
+                        <string-keyed-table prefix="JDG_MC_SK">
+                            <id-column name="id" type="VARCHAR(200)"/>
+                            <data-column name="datum" type="BYTEA"/>
+                            <timestamp-column name="version" type="BIGINT"/>
+                        </string-keyed-table>
+                    </string-keyed-jdbc-store>
+                </local-cache>
             </cache-container>
             <cache-container name="binary-cache-container" default-cache="binary-fs" module="org.modeshape">
                 <local-cache name="binary-fs">
@@ -401,6 +414,12 @@
             </repository>
             <repository name="noQueryRepository" enable-queries="false" />
             <repository name="jdbcRepository">
+                <workspaces allow-workspace-creation="true" default-workspace="default">
+                    <workspace name="default"/>
+                    <initial-content>initial-content-default.xml</initial-content>
+                </workspaces>
+            </repository>
+            <repository name="jdbcRepositoryWithEviction">
                 <workspaces allow-workspace-creation="true" default-workspace="default">
                     <workspace name="default"/>
                     <initial-content>initial-content-default.xml</initial-content>
