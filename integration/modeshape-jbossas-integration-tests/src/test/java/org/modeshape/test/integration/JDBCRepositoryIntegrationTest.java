@@ -27,6 +27,7 @@ package org.modeshape.test.integration;
 import java.io.File;
 import javax.annotation.Resource;
 import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -35,6 +36,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.modeshape.common.FixFor;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -47,7 +49,10 @@ import static org.junit.Assert.assertNotNull;
 public class JDBCRepositoryIntegrationTest {
 
     @Resource( mappedName = "/jcr/jdbcRepository" )
-    private Repository repository;
+    private Repository repositoryWithoutEviction;
+
+    @Resource( mappedName = "/jcr/jdbcRepositoryWithEviction" )
+    private Repository repositoryWithEviction;
 
     @Deployment
     public static WebArchive createDeployment() {
@@ -58,21 +63,35 @@ public class JDBCRepositoryIntegrationTest {
     }
 
     @Test
-    public void shouldPersistDataInJDBC() throws Exception {
+    public void shouldPersistDataInJDBCWithoutEviction() throws Exception {
+        assertDataPersisted(repositoryWithoutEviction);
+    }
+
+    @Test
+    @FixFor( "MODE-1842" )
+    public void shouldPersistDataInJDBCWithEviction() throws Exception {
+        assertDataPersisted(repositoryWithEviction);
+    }
+
+    private void assertDataPersisted( Repository repository ) throws RepositoryException {
         assertNotNull(repository);
         Session session = repository.login();
-        //check predefined content was imported
-        assertNotNull(session.getNode("/files"));
-        assertNotNull(session.getNode("/cars"));
+        try {
+            //check predefined content was imported
+            assertNotNull(session.getNode("/files"));
+            assertNotNull(session.getNode("/cars"));
 
-        //add a node and check it can be queried
-        session.getRootNode().addNode("testNode");
-        session.save();
+            //add a node and check it can be queried
+            session.getRootNode().addNode("testNode");
+            session.save();
 
-        Query query = session.getWorkspace()
-                             .getQueryManager()
-                             .createQuery("select [jcr:path] FROM [nt:base] WHERE [jcr:name] LIKE '%testNode%'",
-                                          Query.JCR_SQL2);
-        assertEquals(1, query.execute().getNodes().getSize());
+            Query query = session.getWorkspace()
+                                 .getQueryManager()
+                                 .createQuery("select [jcr:path] FROM [nt:base] WHERE [jcr:name] LIKE '%testNode%'",
+                                              Query.JCR_SQL2);
+            assertEquals(1, query.execute().getNodes().getSize());
+        } finally {
+            session.logout();
+        }
     }
 }
