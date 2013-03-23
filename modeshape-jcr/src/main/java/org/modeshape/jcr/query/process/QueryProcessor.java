@@ -46,6 +46,7 @@ import org.modeshape.jcr.query.model.SameNodeJoinCondition;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.SetQuery.Operation;
 import org.modeshape.jcr.query.plan.JoinAlgorithm;
+import org.modeshape.jcr.query.plan.PlanHints;
 import org.modeshape.jcr.query.plan.PlanNode;
 import org.modeshape.jcr.query.plan.PlanNode.Property;
 import org.modeshape.jcr.query.plan.PlanNode.Type;
@@ -212,8 +213,17 @@ public abstract class QueryProcessor<ProcessingContextType> implements Processor
                 Columns leftColumns = createColumnsFor(leftPlan, columns);
                 Columns rightColumns = createColumnsFor(rightPlan, columns);
 
-                ProcessingComponent left = createComponent(originalQuery, context, leftPlan, leftColumns, processingContext);
-                ProcessingComponent right = createComponent(originalQuery, context, rightPlan, rightColumns, processingContext);
+                // Query context for the join (must remove isExists condition).
+                QueryContext joinQueryContext = context;
+                if (context.getHints().isExistsQuery) {
+                    // must not push down a LIMIT 1 condition to joins.
+                    PlanHints joinPlanHints = context.getHints().clone();
+                    joinPlanHints.isExistsQuery = false;
+                    joinQueryContext = context.with(joinPlanHints);
+                }
+
+                ProcessingComponent left = createComponent(originalQuery, joinQueryContext, leftPlan, leftColumns, processingContext);
+                ProcessingComponent right = createComponent(originalQuery, joinQueryContext, rightPlan, rightColumns, processingContext);
                 // Create the join component ...
                 JoinAlgorithm algorithm = node.getProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.class);
                 JoinType joinType = node.getProperty(Property.JOIN_TYPE, JoinType.class);
