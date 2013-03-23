@@ -15,3 +15,12 @@
 - fieldA (STRING)
 - fieldB (STRING)
 
+[modetest:child]
+- modetest:childField (STRING)
+
+[modetest:intermediate]
++ * (modetest:child) = modetest:child
+
+[modetest:parent]
+- modetest:parentField (STRING) nofulltext
++ modetest:folder (modetest:intermediate) = modetest:intermediate autocreated
