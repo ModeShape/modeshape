@@ -952,24 +952,19 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResults(query, result, 21L);
     }
 
-    @FixFor( "MODE-XXXX" )
+    @FixFor( "MODE-1865" )
     @Test
     public void shouldBeAbleToQueryWithLimit1() throws RepositoryException {
-        Node parent = session.getRootNode().addNode("qwer", "modetest:parent");
-        parent.setProperty("modetest:parentField", 5L);
-        Node intermediate = parent.getNode("modetest:folder");
-        Node child = intermediate.addNode("asdf");
-        child.setProperty("modetest:childField", "foo");
-        child = intermediate.addNode("asdf2");
-        child.setProperty("modetest:childField", "foo");
-
-        parent = session.getRootNode().addNode("qwer2", "modetest:parent");
-        parent.setProperty("modetest:parentField", 5L);
-        intermediate = parent.getNode("modetest:folder");
-        child = intermediate.addNode("asdf");
-        child.setProperty("modetest:childField", "foo");
-        child = intermediate.addNode("asdf2");
-        child.setProperty("modetest:childField", "bar");
+        Node parent, child, intermediate;
+        // this loop makes it much more likely that the actual row to be found is lost since doc ids are assigned at
+        // random.
+        for (int i = 0; i < 100; i++) {
+            parent = session.getRootNode().addNode("qwer" + i, "modetest:parent");
+            parent.setProperty("modetest:parentField", 5L);
+            intermediate = parent.getNode("modetest:folder");
+            child = intermediate.addNode("asdf");
+            child.setProperty("modetest:childField", i == 99 ? "bar" : "foo");
+        }
 
         session.save();
         QueryManager queryManager = session.getWorkspace().getQueryManager();
@@ -989,18 +984,11 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
                                                                 QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO,
                                                                 factory.literal(session.getValueFactory().createValue("bar"))));
         Query query = factory.createQuery(join, constraint, null, columns);
-        query.setLimit(2);
+        query.setLimit(1);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1);
-
-        query = factory.createQuery(join, constraint, null, columns);
-        query.setLimit(1);
-        assertThat(query, is(notNullValue()));
-        result = query.execute();
-        assertThat(result, is(notNullValue()));
-        assertResults(query, result, 1L);
     }
 
     @Test
