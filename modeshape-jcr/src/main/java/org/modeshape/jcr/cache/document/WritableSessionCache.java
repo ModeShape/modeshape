@@ -916,6 +916,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                     }
                 }
 
+                // As we go through the removed and changed properties, we want to keep track of whether there are any
+                // effective modifications to the persisted properties.
+                boolean hasPropertyChanges = false;
+
                 // Save the removed properties ...
                 Set<Name> removedProperties = node.removedProperties();
                 if (!removedProperties.isEmpty()) {
@@ -928,6 +932,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                         if (oldProperty != null) {
                             // the property was removed ...
                             changes.propertyRemoved(key, newPath, oldProperty);
+                            // and we know that there are modifications to the properties ...
+                            hasPropertyChanges = true;
                         }
                     }
                 }
@@ -946,9 +952,20 @@ public class WritableSessionCache extends AbstractSessionCache {
                         if (oldProperty == null) {
                             // the property was created ...
                             changes.propertyAdded(key, newPath, prop);
-                        } else {
-                            // the property was changed ...
+                            // and we know that there are modifications to the properties ...
+                            hasPropertyChanges = true;
+                        } else if (hasPropertyChanges || !oldProperty.equals(prop)) {
+                            // The 'hasPropertyChanges ||' in the above condition is what gives us the "slight optimization"
+                            // mentioned in the longer comment above. This is noticeably more efficient (since the
+                            // '!oldProperty.equals(prop)' has to be called for only some of the changes) and does result
+                            // in correct indexing behavior, but the compromise is that some no-op property changes will
+                            // result in a PROPERTY_CHANGE event. To remove all potential no-op PROPERTY CHANGE events,
+                            // simply remove the 'hasPropertyChanges||' in the above condition.
+                            // See MODE-1856 for details.
+
+                            // the property was changed and is actually different than the persisted property ...
                             changes.propertyChanged(key, newPath, prop, oldProperty);
+                            hasPropertyChanges = true;
                         }
                     }
                 }
@@ -1073,7 +1090,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     boolean isExternal = !workspaceCache().getRootKey()
                                                           .getSourceKey()
                                                           .equalsIgnoreCase(node.getKey().getSourceKey());
-                    boolean hasChanges = node.hasChanges();
+                    boolean hasChanges = hasPropertyChanges || node.hasNonPropertyChanges();
                     boolean externalNodeChanged = isExternal && hasChanges;
                     if (externalNodeChanged) {
                         // in the case of external nodes, only if there are changes should the update be called

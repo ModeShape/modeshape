@@ -155,10 +155,13 @@ public class SessionNode implements MutableCachedNode {
 
     @Override
     public boolean hasChanges() {
+        return hasPropertyChanges() || hasNonPropertyChanges();
+    }
+
+    @Override
+    public boolean hasNonPropertyChanges() {
         if (isNew) return true;
         if (newParent != null) return true;
-        if (!changedProperties.isEmpty()) return true;
-        if (!removedProperties.isEmpty()) return true;
         ChangedChildren changedChildren = changedChildren();
         if (changedChildren != null && !changedChildren.isEmpty()) return true;
         MutableChildReferences childRefChanges = appended(false);
@@ -167,6 +170,14 @@ public class SessionNode implements MutableCachedNode {
         if (additionalParents != null && !additionalParents.isEmpty()) return true;
         ReferrerChanges referrerChanges = referrerChanges(false);
         if (referrerChanges != null && !referrerChanges.isEmpty()) return true;
+        return false;
+    }
+
+    @Override
+    public boolean hasPropertyChanges() {
+        if (isNew) return true;
+        if (!changedProperties.isEmpty()) return true;
+        if (!removedProperties.isEmpty()) return true;
         return false;
     }
 
