@@ -426,7 +426,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                         ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_MODE.parseAndSetParameter(attrValue, repository, reader);
                         break;
                     case REBUILD_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT:
-                        ModelAttributes.REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT.parseAndSetParameter(attrValue,
+                        ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT.parseAndSetParameter(attrValue,
                                                                                                          repository,
                                                                                                          reader);
                         break;
