@@ -95,6 +95,16 @@ public interface MutableCachedNode extends CachedNode {
     boolean hasPropertyChanges();
 
     /**
+     * Return whether this node has any changes that affect the indexes.
+     *
+     * @return true if this node has added, removed, changed properties, a new parent or if it is new.
+     * @see #hasChanges()
+     * @see #hasNonPropertyChanges()
+     * @see #hasPropertyChanges()
+     */
+    boolean hasIndexRelatedChanges();
+
+    /**
      * Lock this node.
      * 
      * @param sessionScoped true if the lock should be limited in scope to the lifetime of the session, or false otherwise
