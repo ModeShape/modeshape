@@ -383,7 +383,7 @@ public class AddRepository extends AbstractAddStepHandler {
         }
 
         if (model.hasDefined(ModelKeys.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT)) {
-            boolean rebuildIncludeSystemContent = ModelAttributes.REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT.resolveModelAttribute(context,
+            boolean rebuildIncludeSystemContent = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT.resolveModelAttribute(context,
                                                                                                                                     model)
                                                                                                              .asBoolean();
             rebuildIndexingOptions.setBoolean(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT, rebuildIncludeSystemContent);

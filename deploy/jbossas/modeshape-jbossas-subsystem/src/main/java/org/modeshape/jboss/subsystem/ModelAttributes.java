@@ -656,8 +656,8 @@ public class ModelAttributes {
                                                                                                                                                                               FieldName.REBUILD_WHEN)
                                                                                                                                        .build();
 
-    public static final SimpleAttributeDefinition REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT = new MappedAttributeDefinitionBuilder(
-                                                                                                                                     ModelKeys.REBUILD_INDEXES_UPON_STARTUP_MODE,
+    public static final SimpleAttributeDefinition REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT = new MappedAttributeDefinitionBuilder(
+                                                                                                                                     ModelKeys.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT,
                                                                                                                                      ModelType.BOOLEAN).setXmlName(Attribute.REBUILD_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT.getLocalName())
                                                                                                                                                        .setAllowExpression(false)
                                                                                                                                                        .setAllowNull(true)
@@ -670,7 +670,7 @@ public class ModelAttributes {
                                                                                                                                                        .build();
 
     public static final SimpleAttributeDefinition REBUILD_INDEXES_UPON_STARTUP_MODE = new MappedAttributeDefinitionBuilder(
-                                                                                                                           ModelKeys.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT,
+                                                                                                                           ModelKeys.REBUILD_INDEXES_UPON_STARTUP_MODE,
                                                                                                                            ModelType.STRING).setXmlName(Attribute.REBUILD_UPON_STARTUP_MODE.getLocalName())
                                                                                                                                             .setAllowExpression(true)
                                                                                                                                             .setAllowNull(true)
@@ -814,8 +814,8 @@ public class ModelAttributes {
         DEFAULT_WORKSPACE, PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, WORKSPACES_CACHE_CONTAINER,
         DEFAULT_INITIAL_CONTENT, WORKSPACES_INITIAL_CONTENT, MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE, THREAD_POOL, BATCH_SIZE,
         READER_STRATEGY, MODE, SYSTEM_CONTENT_MODE, ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME,
-        ANALYZER_MODULE, REBUILD_INDEXES_UPON_STARTUP, CLUSTER_NAME, CLUSTER_STACK, GARBAGE_COLLECTION_THREAD_POOL,
-        GARBAGE_COLLECTION_INITIAL_TIME, GARBAGE_COLLECTION_INTERVAL};
+        ANALYZER_MODULE, REBUILD_INDEXES_UPON_STARTUP, REBUILD_INDEXES_UPON_STARTUP_MODE, REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT,
+        CLUSTER_STACK, GARBAGE_COLLECTION_THREAD_POOL, GARBAGE_COLLECTION_INITIAL_TIME, GARBAGE_COLLECTION_INTERVAL};
 
     public static final AttributeDefinition[] RAM_INDEX_STORAGE_ATTRIBUTES = {INDEX_STORAGE_TYPE,};
 

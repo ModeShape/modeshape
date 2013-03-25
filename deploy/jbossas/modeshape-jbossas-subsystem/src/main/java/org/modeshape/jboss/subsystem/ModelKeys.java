@@ -86,9 +86,9 @@ public class ModelKeys {
     static final String PREDEFINED_WORKSPACE_NAMES = "predefined-workspace-names";
     static final String QUEUE_JNDI_NAME = "queue-jndi-name";
     static final String READER_STRATEGY = "indexing-reader-strategy";
-    static final String REBUILD_INDEXES_UPON_STARTUP = "rebuild-indexes-upon-startup";
-    static final String REBUILD_INDEXES_UPON_STARTUP_MODE = "rebuild-indexes-upon-startup-mode";
-    static final String REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT = "rebuild-indexes-upon-startup-include-system-content";
+    static final String REBUILD_INDEXES_UPON_STARTUP = "rebuild-upon-startup";
+    static final String REBUILD_INDEXES_UPON_STARTUP_MODE = "rebuild-upon-startup-mode";
+    static final String REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT = "rebuild-upon-startup-include-system-content";
     static final String REFRESH_PERIOD = "refresh-period";
     static final String RELATIVE_TO = "relative-to";
     static final String RETRY_INITIALIZE_PERIOD = "retry-initialize-period";
