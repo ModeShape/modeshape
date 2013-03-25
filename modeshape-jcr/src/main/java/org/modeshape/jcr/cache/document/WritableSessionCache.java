@@ -1090,8 +1090,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     boolean isExternal = !workspaceCache().getRootKey()
                                                           .getSourceKey()
                                                           .equalsIgnoreCase(node.getKey().getSourceKey());
-                    boolean hasChanges = hasPropertyChanges || node.hasNonPropertyChanges();
-                    boolean externalNodeChanged = isExternal && hasChanges;
+                    boolean externalNodeChanged = isExternal && (hasPropertyChanges || node.hasNonPropertyChanges());
                     if (externalNodeChanged) {
                         // in the case of external nodes, only if there are changes should the update be called
                         documentStore.updateDocument(keyStr, doc, node);
@@ -1099,12 +1098,16 @@ public class WritableSessionCache extends AbstractSessionCache {
                     boolean isSameWorkspace = workspaceCache().getWorkspaceKey()
                                                               .equalsIgnoreCase(node.getKey().getWorkspaceKey());
 
-                    // only update the indexes if the node we're working with is in the same workspace as the current workspace or
+                    // only update the indexes if the node we're working with is in the same workspace as the current workspace
+                    // and has index related changes
+                    // or
                     // if it's an external node (even without changes, because that's how projections will appear)
                     // when linking/un-linking nodes (e.g. shareable node or jcr:system) this condition will be false.
                     // the downside of this is that there may be cases (e.g. back references when working with versions) in which
                     // we might loose information from the indexes
-                    if (monitor != null && queryable && ((isSameWorkspace && hasChanges) || externalNodeChanged)) {
+                    boolean shouldUpdateIndexes = (isSameWorkspace && (hasPropertyChanges || node.hasIndexRelatedChanges())) ||
+                                                  externalNodeChanged;
+                    if (monitor != null && queryable && shouldUpdateIndexes) {
                         // Get the primary and mixin type names; even though we're passing in the session, the two properties
                         // should be there and shouldn't require a looking in the cache...
                         Name primaryType = node.getPrimaryType(this);

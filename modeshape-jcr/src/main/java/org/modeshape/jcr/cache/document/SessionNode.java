@@ -182,6 +182,15 @@ public class SessionNode implements MutableCachedNode {
     }
 
     @Override
+    public boolean hasIndexRelatedChanges() {
+        if (isNew) return true;
+        if (newParent != null) return true;
+        ChangedAdditionalParents additionalParents = additionalParents();
+        if (additionalParents != null && !additionalParents.isEmpty()) return true;
+        return hasPropertyChanges();
+    }
+
+    @Override
     public void lock( boolean sessionScoped ) {
         this.lockChange = sessionScoped ? LockChange.LOCK_FOR_SESSION : LockChange.LOCK_FOR_NON_SESSION;
     }
