@@ -24,8 +24,13 @@
 
 package org.modeshape.test.integration;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.InputStream;
+import java.util.Random;
 import javax.annotation.Resource;
+import javax.jcr.Binary;
+import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -37,6 +42,10 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.jcr.JcrRepository;
+import org.modeshape.jcr.api.JcrTools;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -53,6 +62,9 @@ public class JDBCRepositoryIntegrationTest {
 
     @Resource( mappedName = "/jcr/jdbcRepositoryWithEviction" )
     private Repository repositoryWithEviction;
+
+    @Resource (mappedName =  "/jcr/binaryJDBCRepository")
+    private Repository repositoryWithBinaryJDBCStore;
 
     @Deployment
     public static WebArchive createDeployment() {
@@ -91,6 +103,36 @@ public class JDBCRepositoryIntegrationTest {
                                               Query.JCR_SQL2);
             assertEquals(1, query.execute().getNodes().getSize());
         } finally {
+            session.logout();
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-1676" )
+    public void shouldPersistBinaryDataInJDBCStore() throws Exception {
+        JcrTools tools = new JcrTools();
+        assertNotNull(repositoryWithBinaryJDBCStore);
+
+        long minimumBinarySize = ((JcrRepository) repositoryWithBinaryJDBCStore).getConfiguration().getBinaryStorage().getMinimumBinarySizeInBytes();
+        long binarySize = minimumBinarySize + 1;
+
+        Session session = repositoryWithBinaryJDBCStore.login();
+        InputStream binaryValueStream = null;
+        try {
+            byte[] content = new byte[(int)binarySize];
+            new Random().nextBytes(content);
+            tools.uploadFile(session, "folder/file", new ByteArrayInputStream(content));
+            session.save();
+
+            Node nodeWithBinaryContent = session.getNode("/folder/file/jcr:content");
+            Binary binaryValue = nodeWithBinaryContent.getProperty("jcr:data").getBinary();
+            binaryValueStream = binaryValue.getStream();
+            byte[] retrievedContent = IoUtil.readBytes(binaryValueStream);
+            assertArrayEquals(content, retrievedContent);
+        } finally {
+            if (binaryValueStream != null) {
+                binaryValueStream.close();
+            }
             session.logout();
         }
     }
