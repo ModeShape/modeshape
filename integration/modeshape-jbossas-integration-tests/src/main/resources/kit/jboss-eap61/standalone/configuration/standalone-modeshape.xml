@@ -120,7 +120,16 @@
                 </datasource>
 
                 <datasource jndi-name="java:jboss/datasources/ModeshapeJDBCStoreDS" pool-name="ModeshapeJDBCStoreDS" enabled="true" use-java-context="true">
-                    <connection-url>jdbc:h2:mem:modeshapeJDBCStoreS;DB_CLOSE_DELAY=-1</connection-url>
+                    <connection-url>jdbc:h2:mem:modeshapeJDBCStore;DB_CLOSE_DELAY=-1</connection-url>
+                    <driver>h2</driver>
+                    <security>
+                        <user-name>sa</user-name>
+                        <password>sa</password>
+                    </security>
+                </datasource>
+
+                <datasource jndi-name="java:jboss/datasources/ModeshapeBinaryStoreDS" pool-name="ModeshapeBinaryStoreDS" enabled="true" use-java-context="true">
+                    <connection-url>jdbc:h2:mem:modeshapeJModeshapeBinaryStore;DB_CLOSE_DELAY=-1</connection-url>
                     <driver>h2</driver>
                     <security>
                         <user-name>sa</user-name>
@@ -260,6 +269,9 @@
                         </string-keyed-table>
                     </string-keyed-jdbc-store>
                 </local-cache>
+                <local-cache name="binaryJDBCRepository">
+                    <transaction mode="NON_XA"/>
+                </local-cache>
             </cache-container>
             <cache-container name="binary-cache-container" default-cache="binary-fs" module="org.modeshape">
                 <local-cache name="binary-fs">
@@ -275,6 +287,34 @@
                 <local-cache name="index-data" batching="true">
                     <transaction mode="NON_XA"/>
                     <file-store passivation="false" path="modeshape/index-cache-container" relative-to="jboss.server.data.dir" purge="false"/>
+                </local-cache>
+            </cache-container>
+            <cache-container name="jdbc-binary-cache-container">
+                <local-cache name="binaryJDBCRepository-binary-data">
+                    <transaction mode="NON_XA"/>
+                    <eviction strategy="LIRS" max-entries="5"/>
+                    <string-keyed-jdbc-store datasource="jboss/datasources/ModeshapeBinaryStoreDS" passivation="false" purge="false">
+                        <property name="databaseType">H2</property>
+                        <property name="createTableOnStart">true</property>
+                        <string-keyed-table prefix="stringbased">
+                            <id-column name="id" type="VARCHAR(200)"/>
+                            <data-column name="datum" type="BYTEA"/>
+                            <timestamp-column name="version" type="BIGINT"/>
+                        </string-keyed-table>
+                    </string-keyed-jdbc-store>
+                </local-cache>
+                <local-cache name="binaryJDBCRepository-binary-metadata">
+                    <transaction mode="NON_XA"/>
+                    <eviction strategy="LIRS" max-entries="2000"/>
+                    <string-keyed-jdbc-store datasource="jboss/datasources/ModeshapeBinaryStoreDS" passivation="false" purge="false">
+                        <property name="databaseType">H2</property>
+                        <property name="createTableOnStart">true</property>
+                        <string-keyed-table prefix="stringbased">
+                            <id-column name="id" type="VARCHAR(200)"/>
+                            <data-column name="datum" type="BYTEA"/>
+                            <timestamp-column name="version" type="BIGINT"/>
+                        </string-keyed-table>
+                    </string-keyed-jdbc-store>
                 </local-cache>
             </cache-container>
             <!--Sample workspace cache container which should really be used only in special cases, when the provided default is not enough-->
@@ -432,6 +472,9 @@
                 <cache-binary-storage data-cache-name="binary-fs" metadata-cache-name="binary-fs-meta" cache-container="binary-cache-container"/>
                 <cache-index-storage cache-container="index-cache-container" data-cache-name="index-data"/>
                 <indexing analyzer-classname="org.apache.lucene.analysis.standard.ClassicAnalyzer"/>
+            </repository>
+            <repository name="binaryJDBCRepository" enable-queries="false">
+                <cache-binary-storage cache-container="jdbc-binary-cache-container"/>
             </repository>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>
