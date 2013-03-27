@@ -1231,7 +1231,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 if (repositoryCache().isInitializingRepository()) {
                     // import initial content for each of the workspaces (this has to be done after the running state has
                     // "started"
-                    this.cache.runSystemOneTimeInitializationOperation(new Callable<Void>() {
+                    this.cache.runOneTimeSystemInitializationOperation(new Callable<Void>() {
                         @Override
                         public Void call() throws Exception {
                             for (String workspaceName : repositoryCache().getWorkspaceNames()) {

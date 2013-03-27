@@ -114,7 +114,6 @@ public class RepositoryCache implements Observable {
     private final Logger logger;
     private final SessionEnvironment sessionContext;
     private final String processKey;
-    private final boolean createdSystemContent;
     private final CacheContainer workspaceCacheManager;
     private volatile boolean initializingRepository = false;
 
@@ -246,9 +245,7 @@ public class RepositoryCache implements Observable {
             if (systemRef == null) {
                 throw new SystemFailureException(JcrI18n.unableToInitializeSystemWorkspace.text(name));
             }
-            this.createdSystemContent = true;
         } else {
-            this.createdSystemContent = false;
             logger.debug("Found existing '{0}' workspace in repository '{1}'", systemWorkspaceName, name);
         }
         this.systemKey = systemRef.getKey();
@@ -390,10 +387,6 @@ public class RepositoryCache implements Observable {
         return minimumStringLengthForBinaryStorage.get();
     }
 
-    public boolean createdSystemContent() {
-        return createdSystemContent;
-    }
-
     protected void refreshWorkspaces( boolean update ) {
         // Read the node document ...
         DocumentTranslator translator = new DocumentTranslator(context, documentStore, minimumStringLengthForBinaryStorage.get());
@@ -441,99 +434,34 @@ public class RepositoryCache implements Observable {
 
     /**
      * Executes the given operation only once, when the repository is created for the first time, using child node under
-     * jcr:system as a global "lock". This should make the operation "cluster-friendly", where only the first node in the cluster
-     * gets to execute the operation.
+     * jcr:system as a global "lock". In a cluster, this should only be run by the node which performs the initialization.
      * 
      * @param initOperation a {@code non-null} {@link Callable} instance
      * @throws Exception if anything unexpected occurs, clients are expected to handle this
      */
-    public void runSystemOneTimeInitializationOperation( Callable<Void> initOperation ) throws Exception {
+    public void runOneTimeSystemInitializationOperation( Callable<Void> initOperation ) throws Exception {
+        if (!isInitializingRepository()) {
+            //we should only perform this operation if this is the node (in a cluster) that's initializing the repository
+            return;
+        }
+
         SessionCache systemSession = createSession(context, systemWorkspaceName, false);
         MutableCachedNode systemNode = getSystemNode(systemSession);
 
         // look for the node which acts as a "global monitor"
         ChildReference repositoryReference = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.REPOSITORY);
         if (repositoryReference != null) {
-            // should normally happen only in a clustered environment, when another node has committed/created the node
-            CachedNode repositoryNode = systemSession.getNode(repositoryReference.getKey());
-            Property statusProperty = repositoryNode.getProperty(ModeShapeLexicon.INITIALIZATION_STATE, systemSession);
-            // if the node exists, the property should be there
-            assert statusProperty != null;
-            while (!ModeShapeLexicon.InitializationState.FINISHED.toString().equals(statusProperty.getFirstValue().toString())) {
-                // some other node is executing the synchronized initialization so wait for it to finish
-                LOGGER.debug("Waiting for another node to perform the initialization");
-                Thread.sleep(500l);
-                repositoryNode = systemSession.getNode(repositoryReference.getKey());
-                statusProperty = repositoryNode.getProperty(ModeShapeLexicon.INITIALIZATION_STATE, systemSession);
-            }
-        } else {
-            PropertyFactory propertyFactory = context.getPropertyFactory();
-
-            // try to add the node and the status property to started
-            // if another node is doing the same thing and none have committed yet, one of them will fail when the session.save
-            // is committed, because there can be only one child of this type below jcr:system
-            Property statusProperty = null;
-            MutableCachedNode syncNode = null;
-            try {
-                Property primaryType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.REPOSITORY);
-                statusProperty = propertyFactory.create(ModeShapeLexicon.INITIALIZATION_STATE,
-                                                        ModeShapeLexicon.InitializationState.STARTED.toString());
-                syncNode = systemNode.createChild(systemSession,
-                                                  systemNode.getKey().withId("mode:synchronizedInitialization"),
-                                                  ModeShapeLexicon.REPOSITORY,
-                                                  primaryType,
-                                                  statusProperty);
-                systemSession.save();
-            } catch (Exception e) {
-                // an exception here should mean there's a DB conflict and another process has already managed to initialize
-                LOGGER.warn(e, JcrI18n.errorDuringInitialInitialization);
-                return;
-            }
-
-            try {
-                // execute the operation
-                // NOTE: this should always complete and ideally take a short amount of time. Otherwise, if this were to block all
-                // the other nodes in a cluster would block
-                initOperation.call();
-            } finally {
-                // set the status to finished so that other nodes aren't blocked. If something failed, it should be logged from
-                // the outside
-                statusProperty = propertyFactory.create(ModeShapeLexicon.INITIALIZATION_STATE,
-                                                        ModeShapeLexicon.InitializationState.FINISHED.toString());
-                NodeKey repositoryNodeKey = systemNode.getChildReferences(systemSession)
-                                                      .getChild(ModeShapeLexicon.REPOSITORY)
-                                                      .getKey();
-                syncNode = systemSession.mutable(repositoryNodeKey);
-                syncNode.setProperty(systemSession, statusProperty);
-                systemSession.save();
-            }
-        }
-    }
-
-    /**
-     * Runs a refresh operation, if and only if the one time initialization operation has finished successfully.
-     * 
-     * @param refreshOperation a {@code non-null} {@link Callable} instance
-     * @throws Exception if anything unexpected occurs, clients are expected to handle this
-     * @see RepositoryCache#runSystemOneTimeInitializationOperation(java.util.concurrent.Callable)
-     */
-    public void runSystemRefreshOperation( Callable<Void> refreshOperation ) throws Exception {
-        SessionCache systemSession = createSession(context, systemWorkspaceName, false);
-        MutableCachedNode systemNode = getSystemNode(systemSession);
-
-        ChildReference repositoryReference = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.REPOSITORY);
-        if (repositoryReference == null) {
-            // refresh operations are only performed after the one time initialization has succeeded
+            //the presence of the repository node indicates that the operation has been run on this repository
             return;
         }
-        CachedNode repositoryNode = systemSession.getNode(repositoryReference.getKey());
-        Property statusProperty = repositoryNode.getProperty(ModeShapeLexicon.INITIALIZATION_STATE, systemSession);
-        assert statusProperty != null;
-        if (ModeShapeLexicon.InitializationState.FINISHED.name().equals(statusProperty.getString())) {
-            refreshOperation.call();
-        } else {
-            LOGGER.debug("One time initialization not finished yet, ignoring refresh");
-        }
+
+        initOperation.call();
+        Property primaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.REPOSITORY);
+        systemNode.createChild(systemSession,
+                               systemNode.getKey().withId("mode:repository"),
+                               ModeShapeLexicon.REPOSITORY,
+                               primaryType);
+        systemSession.save();
     }
 
     private MutableCachedNode getSystemNode( SessionCache systemSession ) {
