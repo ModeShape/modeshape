@@ -23,28 +23,46 @@
  */
 package org.modeshape.connector;
 
-import java.io.InputStream;
-import javax.jcr.RepositoryException;
-import org.apache.chemistry.opencmis.commons.data.ContentStream;
-import org.modeshape.jcr.mimetype.MimeTypeDetector;
-import org.modeshape.jcr.value.binary.ExternalBinaryValue;
-
 /**
+ * Implements identifier of the object.
+ *
+ * This identifier carries unique object identifier and how this object should be
+ * reflected. For example 
  *
  * @author kulikov
  */
-public class CmisBinaryValue extends ExternalBinaryValue {
-    private static final long serialVersionUID = 1L;
-    private ContentStream contentStream;
+public class ObjectId {
+    public enum Type {REPOSITORY, CONTENT, OBJECT}
 
-    public CmisBinaryValue(String id, String name, ContentStream contentStream, MimeTypeDetector mimeTypeDetector) {
-        super(id, name, contentStream.getLength(), name, mimeTypeDetector);
-        this.contentStream = contentStream;
+    private Type type;
+    private String id;
+
+    public Type getType() {
+        return type;
     }
 
-    @Override
-    public InputStream getStream() throws RepositoryException {
-        return contentStream.getStream();
+    public String getIdentifier() {
+        return id;
+    }
+    
+    protected ObjectId(Type type, String id) {
+        this.type = type;
+        this.id = id;
     }
 
+    public static ObjectId valueOf(String uuid) {
+        int p = uuid.indexOf("/");
+        if (p < 0) {
+            return new ObjectId(Type.OBJECT, uuid);
+        }
+        String ident = uuid.substring(0, p);
+        String type = uuid.substring(p + 1);
+
+        return new ObjectId(Type.valueOf(type.toUpperCase()), ident);
+    }
+
+    public static String toString(Type type, String id) {
+        return type == Type.OBJECT? id : id + "/" + type.toString();
+    }
+    
 }

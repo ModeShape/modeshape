@@ -39,7 +39,7 @@ import org.modeshape.jcr.value.ValueFactory;
  *
  * @author kulikov
  */
-public class PropertyMap {
+public class Properties {
     private final static String[] map = new String[] {
         "cmis:objectId = jcr:uuid",
         "cmis:createdBy = jcr:createdBy",
@@ -51,7 +51,7 @@ public class PropertyMap {
     private ValueFactories valueFactories;
     private ArrayList<Relation> list = new ArrayList();
 
-    public PropertyMap(ValueFactories valueFactories) {
+    public Properties(ValueFactories valueFactories) {
         this.valueFactories = valueFactories;
         for (int i = 0; i < map.length; i++) {
            String[] tokens = map[i].split("=");

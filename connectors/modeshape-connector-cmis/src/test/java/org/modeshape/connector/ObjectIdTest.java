@@ -30,11 +30,9 @@ import static org.junit.Assert.*;
  *
  * @author kulikov
  */
-public class PropertyMapTest {
+public class ObjectIdTest {
 
-    private Properties pmap = new Properties(null);
-
-    public PropertyMapTest() {
+    public ObjectIdTest() {
     }
 
     @BeforeClass
@@ -54,20 +52,33 @@ public class PropertyMapTest {
     }
 
     /**
-     * Test of findJcrName method, of class PropertyMap.
+     * Test of valueOf method, of class ObjectId.
      */
     @Test
-    public void testFindJcrName() {
-        assertEquals("jcr:uuid", pmap.findJcrName("cmis:objectId"));
-        assertEquals("cmis:custom", pmap.findJcrName("cmis:custom"));
+    public void testContentType() {
+        String uuid = "1234-5678--76fs/content";
+        ObjectId ID = ObjectId.valueOf(uuid);
+
+        assertEquals(ObjectId.Type.CONTENT, ID.getType());
+        assertEquals("1234-5678--76fs", ID.getIdentifier());
     }
 
-    /**
-     * Test of findCmisName method, of class PropertyMap.
-     */
     @Test
-    public void testFindCmisName() {
-        assertEquals("cmis:objectId", pmap.findCmisName("jcr:uuid"));
-        assertEquals("jcr:custom", pmap.findCmisName("jcr:custom"));
+    public void testRepository() {
+        String uuid = "/repository";
+        ObjectId ID = ObjectId.valueOf(uuid);
+
+        assertEquals(ObjectId.Type.REPOSITORY, ID.getType());
     }
+
+    @Test
+    public void testObjectType() {
+        String uuid = "1234-5678--76fs";
+        ObjectId ID = ObjectId.valueOf(uuid);
+
+        assertEquals(ObjectId.Type.OBJECT, ID.getType());
+        assertEquals("1234-5678--76fs", ID.getIdentifier());
+    }
+
+
 }
