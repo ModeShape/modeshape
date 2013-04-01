@@ -38,28 +38,8 @@ public class CmisLexicon {
         public static final String URI = "http://www.modeshape.org/cmis/1.0";
         public static final String PREFIX = "cmis";
     }
-
-    public static final Name OBJECT_ID = new BasicName(Namespace.URI, "objectId");
-
     public static final Name REPOSITORY = new BasicName(Namespace.URI, "repository");
-
-    public static final Name FOLDER = new BasicName(Namespace.URI, "folder");
-    public static final Name DOCUMENT = new BasicName(Namespace.URI, "document");
-    public static final Name POLICY = new BasicName(Namespace.URI, "policy");
-    public static final Name RELATIONSHIP = new BasicName(Namespace.URI, "relationship");
-
     public static final Name VENDOR_NAME = new BasicName(Namespace.URI, "vendorName");
     public static final Name PRODUCT_NAME = new BasicName(Namespace.URI, "productName");
     public static final Name PRODUCT_VERSION = new BasicName(Namespace.URI, "productVersion");
-
-    public static final Name CREATED_BY = new BasicName(Namespace.URI, "createdBy");
-    public static final Name CREATION_DATE = new BasicName(Namespace.URI, "creationDate");
-    public static final Name LAST_MODIFIED_BY = new BasicName(Namespace.URI, "lastModifiedBy");
-    public static final Name LAST_MODIFICATION_DATE = new BasicName(Namespace.URI, "lastModificationDate");
-
-    public static final Name DATA = new BasicName(Namespace.URI, "data");
-
-    public static final Name MIME_TYPE = new BasicName(Namespace.URI, "mimeType");
-    public static final Name FILE_NAME = new BasicName(Namespace.URI, "fileName");
-
 }

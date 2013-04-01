@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.*;
-import javax.jcr.RepositoryException;
+import javax.jcr.*;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.nodetype.*;
 import org.apache.chemistry.opencmis.client.api.*;
@@ -43,6 +43,7 @@ import org.apache.chemistry.opencmis.commons.data.RepositoryInfo;
 import org.apache.chemistry.opencmis.commons.definitions.PropertyDefinition;
 import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
+import org.apache.chemistry.opencmis.commons.enums.PropertyType;
 import org.apache.chemistry.opencmis.commons.enums.VersioningState;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
 import org.infinispan.schematic.document.Binary;
@@ -154,12 +155,25 @@ public class CmisConnector extends Connector {
 
     @Override
     public boolean removeDocument(String id) {
-        CmisObject object = session.getObject(id);
-        if (object == null) {
-            return false;
+        ObjectId objectId = ObjectId.valueOf(id);
+        switch (objectId.getType()) {
+            case REPOSITORY :
+                return false;
+            case CONTENT :
+                org.apache.chemistry.opencmis.client.api.Document doc =
+                (org.apache.chemistry.opencmis.client.api.Document) session.getObject(objectId.getIdentifier());
+                doc.deleteContentStream();
+                return true;
+            case OBJECT:
+                CmisObject object = session.getObject(objectId.getIdentifier());
+                if (object == null) {
+                    return false;
+                }
+                object.delete(true);
+                return true;
+            default:
+                return false;
         }
-        object.delete(true);
-        return true;
     }
 
     @Override
@@ -177,6 +191,21 @@ public class CmisConnector extends Connector {
 
     @Override
     public void storeDocument(Document document) {
+        ObjectId objectId = ObjectId.valueOf(document.getString("key"));
+        switch (objectId.getType()) {
+            case REPOSITORY :
+                return;
+            case CONTENT :
+                ContentStream stream = jcrBinaryContent(document);
+                CmisObject cmisObject = session.getObject(objectId.getIdentifier());
+                if (stream != null && cmisObject != null) {
+                    ((org.apache.chemistry.opencmis.client.api.Document)cmisObject).setContentStream(stream, true);
+                }
+                break;
+            case OBJECT :
+                break;
+        }
+
         //find object
         String key = document.getString("key");
         CmisObject cmisObject = session.getObject(key);
@@ -190,9 +219,7 @@ public class CmisConnector extends Connector {
         Document props = document.getDocument("properties").getDocument(JcrLexicon.Namespace.URI);
 
         Iterator<Field> list = document.fields().iterator();
-        while (list.hasNext()) {
-            System.out.println("----> " + list.next());
-        }
+
         switch (cmisObject.getBaseTypeId()) {
             case CMIS_FOLDER :
                 break;
@@ -209,7 +236,7 @@ public class CmisConnector extends Connector {
 
     @Override
     public void updateDocument(DocumentChanges delta) {
-        System.out.println("--- UPDATE DOCUMENT---\n" + delta.getDocument());
+
         Document node = delta.getDocument();
         String id = delta.getDocumentId();
 
@@ -222,7 +249,6 @@ public class CmisConnector extends Connector {
         Document props = delta.getDocument().getDocument("properties");
         HashMap<String, Object> updateProperties = new HashMap();
 
-        System.out.println("Cmis object=" + cmisObject);
         PropertyChanges changes = delta.getPropertyChanges();
 
         Set<Name> changed = changes.getChanged();
@@ -250,18 +276,10 @@ public class CmisConnector extends Connector {
         HashMap<String, Object> params = new HashMap();
 
         if (primaryType.getLocalName().equals(NodeType.NT_FOLDER)) {
-        }
-
-        if (primaryType.getLocalName().equals(NodeType.NT_FILE)) {
-        }
-
-        //Creating CMIS folder
-        if (primaryType.equals(CmisLexicon.FOLDER)) {
             Folder parent = (Folder) session.getObject(parentId);
             String path = parent.getPath() + "/" + name.getLocalName();
-
             //minimal set of parameters
-            params.put(PropertyIds.OBJECT_TYPE_ID,  "cmis:folder");
+            params.put(PropertyIds.OBJECT_TYPE_ID, BaseTypeId.CMIS_FOLDER.value());
             params.put(PropertyIds.NAME, name.getLocalName());
             params.put(PropertyIds.PATH, path);
 
@@ -269,13 +287,11 @@ public class CmisConnector extends Connector {
             return folder.getId();
         }
 
-        //Creating CMIS document
-        if (primaryType.equals(CmisLexicon.DOCUMENT)) {
+        if (primaryType.getLocalName().equals(NodeType.NT_FILE)) {
             Folder parent = (Folder) session.getObject(parentId);
             String path = parent.getPath() + "/" + name.getLocalName();
-
             //minimal set of parameters
-            params.put(PropertyIds.OBJECT_TYPE_ID,  "cmis:document");
+            params.put(PropertyIds.OBJECT_TYPE_ID, BaseTypeId.CMIS_DOCUMENT.value());
             params.put(PropertyIds.NAME, name.getLocalName());
             params.put(PropertyIds.PATH, path);
 
@@ -390,7 +406,7 @@ public class CmisConnector extends Connector {
             InputStream is = doc.getContentStream().getStream();
             BinaryValue content = factories.getBinaryFactory().create(is);
             writer.addProperty(JcrConstants.JCR_DATA, content);
-            writer.addProperty(CmisLexicon.MIME_TYPE, doc.getContentStream().getMimeType());
+            writer.addProperty(JcrConstants.JCR_MIME_TYPE, doc.getContentStream().getMimeType());
         }
 
         return writer.document();
@@ -456,9 +472,6 @@ public class CmisConnector extends Connector {
         Document props = document.getDocument("properties").getDocument(CmisLexicon.Namespace.URI);
 
         Iterator<Field> list = props.fields().iterator();
-        while (list.hasNext()) {
-            System.out.println("===> " + list.next());
-        }
 
         //extract binary value and content
         Binary value = props.getBinary("data");
@@ -527,6 +540,10 @@ public class CmisConnector extends Connector {
             PropertyDefinition pd = props.get(name);
             PropertyDefinitionTemplate pt = typeManager.createPropertyDefinitionTemplate();
 
+
+            //Do we need to map types?
+            pt.setRequiredType(getJcrType(pd.getPropertyType()));
+
             pt.setAutoCreated(false);
             pt.setAvailableQueryOperators(new String[]{});
             pt.setName(name);
@@ -540,6 +557,27 @@ public class CmisConnector extends Connector {
         typeManager.registerNodeTypes(nodeDefs, true);
     }
 
+    private int getJcrType(PropertyType propertyType) {
+        switch (propertyType){
+            case BOOLEAN:
+                return javax.jcr.PropertyType.BOOLEAN;
+            case DATETIME:
+                return javax.jcr.PropertyType.DATE;
+            case DECIMAL:
+                return javax.jcr.PropertyType.DECIMAL;
+            case HTML:
+                return javax.jcr.PropertyType.STRING;
+            case INTEGER:
+                return javax.jcr.PropertyType.LONG;
+            case URI:
+                return javax.jcr.PropertyType.URI;
+            case ID:
+                return javax.jcr.PropertyType.STRING;
+            default:
+                return javax.jcr.PropertyType.UNDEFINED;
+        }
+    }
+
     /**
      * Determines supertypes for the given CMIS type in terms of JCR.
      *
@@ -548,11 +586,11 @@ public class CmisConnector extends Connector {
      */
     private String[] superTypes(ObjectType cmisType) {
         if (cmisType.getBaseTypeId() == BaseTypeId.CMIS_FOLDER) {
-            return new String[] {"nt:folder"};
+            return new String[] {JcrConstants.NT_FOLDER};
         }
 
         if (cmisType.getBaseTypeId() == BaseTypeId.CMIS_DOCUMENT) {
-            return new String[] {"nt:file"};
+            return new String[] {JcrConstants.NT_FILE};
         }
 
         return new String[]{cmisType.getParentType().getLocalName()};
@@ -574,7 +612,7 @@ public class CmisConnector extends Connector {
         type.setMixin(true);
         type.setOrderableChildNodes(true);
         type.setQueryable(true);
-        type.setDeclaredSuperTypeNames(new String[]{"nt:folder"});
+        type.setDeclaredSuperTypeNames(new String[]{JcrConstants.NT_FOLDER});
 
         PropertyDefinitionTemplate vendorName = typeManager.createPropertyDefinitionTemplate();
         vendorName.setAutoCreated(false);
