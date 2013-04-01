@@ -62,6 +62,7 @@ import org.w3c.dom.Element;
 /**
  *
  * @author kulikov
+ * @author Ivan Vasyliev
  */
 public class CmisConnector extends Connector {
 
