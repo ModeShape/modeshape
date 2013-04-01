@@ -543,7 +543,7 @@ public class CmisConnector extends Connector {
 
 
             //Do we need to map types?
-            pt.setRequiredType(getJcrType(pd.getPropertyType()));
+            pt.setRequiredType(properties.getJcrType(pd.getPropertyType()));
 
             pt.setAutoCreated(false);
             pt.setAvailableQueryOperators(new String[]{});
@@ -556,27 +556,6 @@ public class CmisConnector extends Connector {
         //register type
         NodeTypeDefinition[] nodeDefs = new NodeTypeDefinition[] {type};
         typeManager.registerNodeTypes(nodeDefs, true);
-    }
-
-    private int getJcrType(PropertyType propertyType) {
-        switch (propertyType){
-            case BOOLEAN:
-                return javax.jcr.PropertyType.BOOLEAN;
-            case DATETIME:
-                return javax.jcr.PropertyType.DATE;
-            case DECIMAL:
-                return javax.jcr.PropertyType.DECIMAL;
-            case HTML:
-                return javax.jcr.PropertyType.STRING;
-            case INTEGER:
-                return javax.jcr.PropertyType.LONG;
-            case URI:
-                return javax.jcr.PropertyType.URI;
-            case ID:
-                return javax.jcr.PropertyType.STRING;
-            default:
-                return javax.jcr.PropertyType.UNDEFINED;
-        }
     }
 
     /**

@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
 import org.apache.chemistry.opencmis.client.api.Property;
+import org.apache.chemistry.opencmis.commons.enums.PropertyType;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.value.ValueFactories;
@@ -75,6 +76,27 @@ public class Properties {
             }
         }
         return jcrName;
+    }
+
+    public int getJcrType(PropertyType propertyType) {
+        switch (propertyType){
+            case BOOLEAN:
+                return javax.jcr.PropertyType.BOOLEAN;
+            case DATETIME:
+                return javax.jcr.PropertyType.DATE;
+            case DECIMAL:
+                return javax.jcr.PropertyType.DECIMAL;
+            case HTML:
+                return javax.jcr.PropertyType.STRING;
+            case INTEGER:
+                return javax.jcr.PropertyType.LONG;
+            case URI:
+                return javax.jcr.PropertyType.URI;
+            case ID:
+                return javax.jcr.PropertyType.STRING;
+            default:
+                return javax.jcr.PropertyType.UNDEFINED;
+        }
     }
 
     public Object cmisValue(Property property, String jcrName, Document document) {
