@@ -23,17 +23,7 @@
  */
 package org.modeshape.connector;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.util.*;
-import javax.jcr.*;
-import javax.jcr.NamespaceRegistry;
-import javax.jcr.nodetype.*;
 import org.apache.chemistry.opencmis.client.api.*;
-import org.apache.chemistry.opencmis.client.api.Property;
-import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.bindings.spi.StandardAuthenticationProvider;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
@@ -43,7 +33,6 @@ import org.apache.chemistry.opencmis.commons.data.RepositoryInfo;
 import org.apache.chemistry.opencmis.commons.definitions.PropertyDefinition;
 import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
-import org.apache.chemistry.opencmis.commons.enums.PropertyType;
 import org.apache.chemistry.opencmis.commons.enums.VersioningState;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
 import org.infinispan.schematic.document.Binary;
@@ -56,11 +45,21 @@ import org.modeshape.jcr.federation.spi.Connector;
 import org.modeshape.jcr.federation.spi.DocumentChanges;
 import org.modeshape.jcr.federation.spi.DocumentChanges.PropertyChanges;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
-import org.modeshape.jcr.value.*;
+import org.modeshape.jcr.value.BinaryValue;
+import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.ValueFactories;
 import org.w3c.dom.Element;
 
+import javax.jcr.NamespaceRegistry;
+import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.util.*;
+
 /**
- *
  * @author kulikov
  * @author Ivan Vasyliev
  */
@@ -69,10 +68,8 @@ public class CmisConnector extends Connector {
     //path and id for the repository node
     private static final String REPOSITORY_ID = "repository";
     private static final String REPOSITORY_NODE_NAME = "repository";
-
     private Session session;
     private ValueFactories factories;
-
     //binding parameters
     private String aclService;
     private String discoveryService;
@@ -83,10 +80,11 @@ public class CmisConnector extends Connector {
     private String relationshipService;
     private String repositoryService;
     private String versioningService;
-
     //repository id
     private String repositoryId;
     private Properties properties;
+    private Map<String, NodeType> folderTypes;
+    private Map<String, NodeType> fileTypes;
 
     public CmisConnector() {
         super();
@@ -94,11 +92,12 @@ public class CmisConnector extends Connector {
 
     @Override
     public void initialize(NamespaceRegistry registry,
-            NodeTypeManager nodeTypeManager) throws RepositoryException, IOException {
+                           NodeTypeManager nodeTypeManager) throws RepositoryException, IOException {
         super.initialize(registry, nodeTypeManager);
+
         this.factories = getContext().getValueFactories();
         properties = new Properties(getContext().getValueFactories());
-        
+
         // default factory implementation
         Map<String, String> parameter = new HashMap<String, String>();
 
@@ -128,23 +127,36 @@ public class CmisConnector extends Connector {
                         return super.getSOAPHeaders(portObject);
                     }
                 }, null);
-        
+
         registry.registerNamespace(CmisLexicon.Namespace.PREFIX, CmisLexicon.Namespace.URI);
-        importTypes(session.getTypeDescendants(null, Integer.MAX_VALUE, true), nodeTypeManager);
+        importTypes(session.getTypeDescendants(null, Integer.MAX_VALUE, true), nodeTypeManager, registry);
         registerRepositoryInfoType(nodeTypeManager);
+
+        folderTypes = new HashMap<String, NodeType>();
+        NodeTypeIterator folders = nodeTypeManager.getNodeType(NodeType.NT_FOLDER).getSubtypes();
+        while (folders.hasNext()) {
+            NodeType type = (NodeType) folders.next();
+            folderTypes.put(type.getName(), type);
+        }
+        NodeTypeIterator files = nodeTypeManager.getNodeType(NodeType.NT_FILE).getSubtypes();
+        fileTypes = new HashMap<String, NodeType>();
+        while (files.hasNext()) {
+            NodeType type = (NodeType) files.next();
+            fileTypes.put(type.getName(), type);
+        }
     }
 
     @Override
     public Document getDocumentById(String id) {
         ObjectId objectId = ObjectId.valueOf(id);
         switch (objectId.getType()) {
-            case REPOSITORY :
+            case REPOSITORY:
                 return cmisRepository();
-            case CONTENT :
+            case CONTENT:
                 return cmisContent(objectId.getIdentifier());
             case OBJECT:
                 return cmisObject(objectId.getIdentifier());
-            default :
+            default:
                 return null;
         }
     }
@@ -181,11 +193,11 @@ public class CmisConnector extends Connector {
     public boolean hasDocument(String id) {
         ObjectId objectId = ObjectId.valueOf(id);
         switch (objectId.getType()) {
-            case REPOSITORY :
+            case REPOSITORY:
                 return true;
-            case CONTENT :
+            case CONTENT:
                 return session.getObject(objectId.getIdentifier()) != null;
-            default :
+            default:
                 return session.getObject(id) != null;
         }
     }
@@ -222,13 +234,13 @@ public class CmisConnector extends Connector {
         Iterator<Field> list = document.fields().iterator();
 
         switch (cmisObject.getBaseTypeId()) {
-            case CMIS_FOLDER :
+            case CMIS_FOLDER:
                 break;
             case CMIS_DOCUMENT:
                 //store binary content
                 ContentStream stream = jcrBinaryContent(document);
                 if (stream != null) {
-                    ((org.apache.chemistry.opencmis.client.api.Document)cmisObject).setContentStream(stream, true);
+                    ((org.apache.chemistry.opencmis.client.api.Document) cmisObject).setContentStream(stream, true);
                 }
                 break;
         }
@@ -276,7 +288,7 @@ public class CmisConnector extends Connector {
     public String newDocumentId(String parentId, Name name, Name primaryType) {
         HashMap<String, Object> params = new HashMap();
 
-        if (primaryType.getLocalName().equals(NodeType.NT_FOLDER)) {
+        if (primaryType.toString().equals(NodeType.NT_FOLDER) || folderTypes.containsKey(primaryType.toString())) {
             Folder parent = (Folder) session.getObject(parentId);
             String path = parent.getPath() + "/" + name.getLocalName();
             //minimal set of parameters
@@ -284,22 +296,41 @@ public class CmisConnector extends Connector {
             params.put(PropertyIds.NAME, name.getLocalName());
             params.put(PropertyIds.PATH, path);
 
-            Folder folder = parent.createFolder(params);
-            return folder.getId();
+            if (folderTypes.containsKey(primaryType.toString())) {
+                for (javax.jcr.nodetype.PropertyDefinition prop : folderTypes.get(primaryType.toString()).getPropertyDefinitions()) {
+                    if (prop.isMandatory()) {
+                        //TODO: Fill proper random value per each possible type
+                        params.put(prop.getName(), new Object());
+                    }
+                }
+            }
+            return  parent.createFolder(params).getId();
         }
 
-        if (primaryType.getLocalName().equals(NodeType.NT_FILE)) {
+        if (primaryType.toString().equals(NodeType.NT_FILE) || fileTypes.containsKey(primaryType.toString())) {
             Folder parent = (Folder) session.getObject(parentId);
             String path = parent.getPath() + "/" + name.getLocalName();
             //minimal set of parameters
             params.put(PropertyIds.OBJECT_TYPE_ID, BaseTypeId.CMIS_DOCUMENT.value());
             params.put(PropertyIds.NAME, name.getLocalName());
-            params.put(PropertyIds.PATH, path);
+            //params.put(PropertyIds.PARENT_ID, path);
 
-            String id = parent.createDocument(params, null, VersioningState.NONE).getId();
-            return id;
+            if (fileTypes.containsKey(primaryType.toString())) {
+                for (javax.jcr.nodetype.PropertyDefinition prop : fileTypes.get(primaryType.toString()).getPropertyDefinitions()) {
+                    if (prop.isMandatory()) {
+                        //TODO: Fill proper random value per each possible type
+                        params.put(prop.getName(), new Object());
+                    }
+                }
+            }
+            //TODO: check capabilities, in case of versioning supported - create new version
+            //session.getRepositoryInfo().getCapabilities().getChangesCapability().
+            return parent.createDocument(params, null, VersioningState.NONE).getId();
         }
 
+        if (primaryType.toString().equals(NodeType.NT_RESOURCE)) {
+            return parentId;
+        }
         return null;
     }
 
@@ -331,7 +362,7 @@ public class CmisConnector extends Connector {
 
     /**
      * Translates CMIS folder object to JCR node
-     * 
+     *
      * @param cmisObject CMIS folder object
      * @return JCR node document.
      */
@@ -347,12 +378,13 @@ public class CmisConnector extends Connector {
         }
 
         writer.setParent(folder.getParentId());
+        //TODO: Is this required?
         writer.addMixinType(NodeType.MIX_CREATED);
         writer.addMixinType(NodeType.MIX_LAST_MODIFIED);
         writer.addMixinType(NodeType.MIX_REFERENCEABLE);
 
         cmisProperties(folder, writer);
-        cmisChildren((Folder)folder, writer);
+        cmisChildren(folder, writer);
 
         //append repository information to the root node
         if (folder.isRootFolder()) {
@@ -364,7 +396,7 @@ public class CmisConnector extends Connector {
 
     /**
      * Translates cmis document object to JCR node.
-     * 
+     *
      * @param cmisObject cmis document node
      * @return JCR node document.
      */
@@ -380,13 +412,26 @@ public class CmisConnector extends Connector {
             writer.setPrimaryType(objectType.getId());
         }
 
+        /*
+
+        + myFile  (jcr:primaryType=nt:file,
+           |        jcr:created=<date>,
+           |        jcr:createdBy=<username>)
+           + jcr:content  (jcr:primaryType=nt:resource,
+                           jcr:lastModified=<date>,
+                           jcr:lastModifiedBy=<username>,
+                           jcr:mimeType=<mimeType>,
+                           jcr:encoding=<null>,
+                           jcr:data=<binary-content>)
+        */
+        //TODO: Is this required?
         writer.addMixinType(NodeType.MIX_CREATED);
         writer.addMixinType(NodeType.MIX_LAST_MODIFIED);
         writer.addMixinType(NodeType.MIX_REFERENCEABLE);
 
         cmisProperties(doc, writer);
         writer.addChild(ObjectId.toString(ObjectId.Type.CONTENT, doc.getId()), JcrConstants.JCR_CONTENT);
-        
+
         return writer.document();
     }
 
@@ -400,9 +445,9 @@ public class CmisConnector extends Connector {
         DocumentWriter writer = newDocument(ObjectId.toString(ObjectId.Type.CONTENT, id));
 
         org.apache.chemistry.opencmis.client.api.Document doc =
-                (org.apache.chemistry.opencmis.client.api.Document)session.getObject(id);
+                (org.apache.chemistry.opencmis.client.api.Document) session.getObject(id);
         writer.setPrimaryType(NodeType.NT_RESOURCE);
-        
+
         if (doc.getContentStream() != null) {
             InputStream is = doc.getContentStream().getStream();
             BinaryValue content = factories.getBinaryFactory().create(is);
@@ -428,10 +473,9 @@ public class CmisConnector extends Connector {
         }
     }
 
-
     /**
      * Converts CMIS folder children to JCR node children
-     * 
+     *
      * @param folder CMIS folder
      * @param writer JCR node representation
      */
@@ -444,7 +488,7 @@ public class CmisConnector extends Connector {
 
     /**
      * Translates CMIS repository information into Node.
-     * 
+     *
      * @return node document.
      */
     private Document cmisRepository() {
@@ -458,7 +502,7 @@ public class CmisConnector extends Connector {
         writer.addProperty(CmisLexicon.VENDOR_NAME, info.getVendorName());
         writer.addProperty(CmisLexicon.PRODUCT_NAME, info.getProductName());
         writer.addProperty(CmisLexicon.PRODUCT_VERSION, info.getProductVersion());
-        
+
         return writer.document();
     }
 
@@ -498,29 +542,34 @@ public class CmisConnector extends Connector {
     /**
      * Import CMIS types to JCR repository.
      *
-     * @param types CMIS types
+     * @param types       CMIS types
      * @param typeManager JCR type manager
+     * @param registry
      */
-    private void importTypes(List<Tree<ObjectType>> types, NodeTypeManager typeManager) throws RepositoryException {
+    private void importTypes(List<Tree<ObjectType>> types, NodeTypeManager typeManager, NamespaceRegistry registry) throws RepositoryException {
         for (int i = 0; i < types.size(); i++) {
             Tree<ObjectType> tree = types.get(i);
-            importType(tree.getItem(), typeManager);
-            importTypes(tree.getChildren(), typeManager);
+            importType(tree.getItem(), typeManager, registry);
+            importTypes(tree.getChildren(), typeManager, registry);
         }
     }
 
     /**
      * Import given CMIS type to the JCR repository.
      *
-     * @param cmisType cmis object type
+     * @param cmisType    cmis object type
      * @param typeManager JCR type manager/
+     * @param registry
      */
-    public void importType(ObjectType cmisType, NodeTypeManager typeManager) throws RepositoryException {
+    public void importType(ObjectType cmisType, NodeTypeManager typeManager, NamespaceRegistry registry) throws RepositoryException {
         //skip base types because we are going to
         //map base types directly
         if (cmisType.isBaseType()) {
             return;
         }
+
+        //TODO: get namespace information and register
+        //registry.registerNamespace(cmisType.getLocalNamespace(), cmisType.getLocalNamespace());
 
         //create node type template
         NodeTypeTemplate type = typeManager.createNodeTypeTemplate();
@@ -540,21 +589,16 @@ public class CmisConnector extends Connector {
         for (String name : names) {
             PropertyDefinition pd = props.get(name);
             PropertyDefinitionTemplate pt = typeManager.createPropertyDefinitionTemplate();
-
-
-            //Do we need to map types?
             pt.setRequiredType(properties.getJcrType(pd.getPropertyType()));
-
             pt.setAutoCreated(false);
             pt.setAvailableQueryOperators(new String[]{});
             pt.setName(name);
             pt.setMandatory(pd.isRequired());
-
             type.getPropertyDefinitionTemplates().add(pt);
         }
 
         //register type
-        NodeTypeDefinition[] nodeDefs = new NodeTypeDefinition[] {type};
+        NodeTypeDefinition[] nodeDefs = new NodeTypeDefinition[]{type};
         typeManager.registerNodeTypes(nodeDefs, true);
     }
 
@@ -573,7 +617,7 @@ public class CmisConnector extends Connector {
             return new String[] {JcrConstants.NT_FILE};
         }
 
-        return new String[]{cmisType.getParentType().getLocalName()};
+        return new String[]{cmisType.getParentType().getId()};
     }
 
     /**
@@ -616,7 +660,7 @@ public class CmisConnector extends Connector {
         type.getPropertyDefinitionTemplates().add(productVersion);
 
         //register type
-        NodeTypeDefinition[] nodeDefs = new NodeTypeDefinition[] {type};
+        NodeTypeDefinition[] nodeDefs = new NodeTypeDefinition[]{type};
         typeManager.registerNodeTypes(nodeDefs, true);
     }
 }
