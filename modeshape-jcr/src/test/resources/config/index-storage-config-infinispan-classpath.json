@@ -1,0 +1,13 @@
+{
+    "name" : "ISPNIndexingRepo",
+    "storage" : {
+        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
+    },
+    "query" : {
+        "indexStorage" : {
+            "type" : "infinispan",
+            "cacheConfiguration" : "config/infinispan-indexing.xml",
+            "chunkSizeInBytes" : 1024
+        }
+    }
+}

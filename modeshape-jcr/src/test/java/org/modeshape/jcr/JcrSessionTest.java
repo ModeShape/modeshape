@@ -65,6 +65,8 @@ import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryResult;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.modeshape.common.FixFor;
@@ -1091,6 +1093,19 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         assertThat(listener.adds, is(0));
         assertThat(listener.removes, is(0));
         assertThat(listener.changes, is(0));
+    }
+
+
+    @FixFor( "MODE-1870")
+    @Test
+    public void shouldAllowInfinispanIndexStorageUsingClasspathConfiguration() throws Exception {
+        startRepositoryWithConfiguration(resourceStream("config/index-storage-config-infinispan-classpath.json"));
+        session.getRootNode().addNode("node1");
+        session.save();
+
+        JcrQueryManager queryManager = session.getWorkspace().getQueryManager();
+        QueryResult result = queryManager.createQuery("select [jcr:path] from [nt:unstructured] as n where n.[jcr:path] = '/node1'", Query.JCR_SQL2).execute();
+        assertEquals(1, result.getNodes().getSize());
     }
 
     protected static class PropertyListener implements EventListener {
