@@ -106,6 +106,7 @@ public final class PlanHints implements Serializable, Cloneable {
         sb.append(", hasOptionalJoin=").append(hasOptionalJoin);
         sb.append(", hasFullTextSearch=").append(hasFullTextSearch);
         sb.append(", hasSubqueries=").append(hasSubqueries);
+        sb.append(", isExistsQuery=").append(isExistsQuery);
         sb.append(", showPlan=").append(showPlan);
         sb.append(", validateColumnExistance=").append(validateColumnExistance);
         sb.append(", includeSystemContent=").append(includeSystemContent);
@@ -126,6 +127,8 @@ public final class PlanHints implements Serializable, Cloneable {
         clone.hasLimit = this.hasLimit;
         clone.hasOptionalJoin = this.hasOptionalJoin;
         clone.hasFullTextSearch = this.hasFullTextSearch;
+        clone.hasSubqueries = this.hasSubqueries;
+        clone.isExistsQuery = this.isExistsQuery;
         clone.showPlan = this.showPlan;
         clone.validateColumnExistance = this.validateColumnExistance;
         clone.includeSystemContent = this.includeSystemContent;
