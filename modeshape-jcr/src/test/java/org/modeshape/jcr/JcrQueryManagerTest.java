@@ -952,6 +952,45 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResults(query, result, 21L);
     }
 
+    @FixFor( "MODE-1865" )
+    @Test
+    public void shouldBeAbleToQueryWithLimit1() throws RepositoryException, Exception {
+        Node top = session.getRootNode().addNode("top");
+        for (int i = 0; i != 10; ++i) {
+            Node parent = top.addNode("qwer" + i, "modetest:parent");
+            parent.setProperty("modetest:parentField", 5L);
+            Node intermediate = parent.getNode("modetest:folder");
+            Node child = intermediate.addNode("asdf");
+            child.setProperty("modetest:childField", i % 2 == 0 ? "bar" : "foo");
+        }
+
+        try {
+            session.save();
+            Thread.sleep(100L);
+            String sql = "SELECT p.* AS parent FROM [modetest:parent] AS p INNER JOIN [modetest:child] AS c ON ISDESCENDANTNODE(c,p) WHERE p.[modetest:parentField] = CAST('5' AS LONG) AND c.[modetest:childField] = 'bar'";
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            QueryResult result = query.execute();
+            assertThat(result, is(notNullValue()));
+            assertResults(query, result, 5);
+
+            // Try again but with LIMIT 1 (via method)...
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            query.setLimit(1L);
+            result = query.execute();
+            assertThat(result, is(notNullValue()));
+            assertResults(query, result, 1);
+
+            // Try again but with LIMIT 1 (via statement)...
+            query = session.getWorkspace().getQueryManager().createQuery(sql + " LIMIT 1", Query.JCR_SQL2);
+            result = query.execute();
+            assertThat(result, is(notNullValue()));
+            assertResults(query, result, 1);
+        } finally {
+            top.remove();
+            session.save();
+        }
+    }
+
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarsUnderHybridWithOrderBy() throws RepositoryException {
         Query query = session.getWorkspace()

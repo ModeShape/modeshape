@@ -46,6 +46,7 @@ import org.modeshape.jcr.query.model.SameNodeJoinCondition;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.SetQuery.Operation;
 import org.modeshape.jcr.query.plan.JoinAlgorithm;
+import org.modeshape.jcr.query.plan.PlanHints;
 import org.modeshape.jcr.query.plan.PlanNode;
 import org.modeshape.jcr.query.plan.PlanNode.Property;
 import org.modeshape.jcr.query.plan.PlanNode.Type;
@@ -212,8 +213,25 @@ public abstract class QueryProcessor<ProcessingContextType> implements Processor
                 Columns leftColumns = createColumnsFor(leftPlan, columns);
                 Columns rightColumns = createColumnsFor(rightPlan, columns);
 
-                ProcessingComponent left = createComponent(originalQuery, context, leftPlan, leftColumns, processingContext);
-                ProcessingComponent right = createComponent(originalQuery, context, rightPlan, rightColumns, processingContext);
+                // Query context for the join (must remove isExists condition).
+                QueryContext joinQueryContext = context;
+                if (context.getHints().isExistsQuery) {
+                    // must not push down a LIMIT 1 condition to joins.
+                    PlanHints joinPlanHints = context.getHints().clone();
+                    joinPlanHints.isExistsQuery = false;
+                    joinQueryContext = context.with(joinPlanHints);
+                }
+
+                ProcessingComponent left = createComponent(originalQuery,
+                                                           joinQueryContext,
+                                                           leftPlan,
+                                                           leftColumns,
+                                                           processingContext);
+                ProcessingComponent right = createComponent(originalQuery,
+                                                            joinQueryContext,
+                                                            rightPlan,
+                                                            rightColumns,
+                                                            processingContext);
                 // Create the join component ...
                 JoinAlgorithm algorithm = node.getProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.class);
                 JoinType joinType = node.getProperty(Property.JOIN_TYPE, JoinType.class);
@@ -254,19 +272,14 @@ public abstract class QueryProcessor<ProcessingContextType> implements Processor
                                                                node.getFirstChild(),
                                                                columns,
                                                                processingContext);
-                if (context.getHints().isExistsQuery && supportsPushDownExistConstraints()) {
-                    // This gets handled by the access query ...
-                    component = delegate;
-                } else {
-                    // Then create the limit component ...
-                    Integer rowLimit = node.getProperty(Property.LIMIT_COUNT, Integer.class);
-                    Integer offset = node.getProperty(Property.LIMIT_OFFSET, Integer.class);
-                    Limit limit = Limit.NONE;
-                    if (rowLimit != null) limit = limit.withRowLimit(rowLimit.intValue());
-                    if (offset != null) limit = limit.withOffset(offset.intValue());
-                    // And wrap the delegate
-                    component = new LimitComponent(delegate, limit);
-                }
+                // Then create the limit component ...
+                Integer rowLimit = node.getProperty(Property.LIMIT_COUNT, Integer.class);
+                Integer offset = node.getProperty(Property.LIMIT_OFFSET, Integer.class);
+                Limit limit = Limit.NONE;
+                if (rowLimit != null) limit = limit.withRowLimit(rowLimit.intValue());
+                if (offset != null) limit = limit.withOffset(offset.intValue());
+                // And wrap the delegate
+                if (!limit.isUnlimited()) component = new LimitComponent(delegate, limit);
                 break;
             case NULL:
                 component = new NoResultsComponent(context, columns);
