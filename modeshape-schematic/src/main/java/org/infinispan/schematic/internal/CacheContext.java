@@ -144,8 +144,8 @@ final class CacheContext {
      * @return true if the {@link Delta} implementation contains only differences, or false if it contains the whole document.
      */
     public boolean isDeltaContainingChangesEnabled() {
-        //TODO author=Horia Chiorean date=3/28/13 description=This should always return true. See https://issues.jboss.org/browse/ISPN-2974
-        return cache.getEvictionManager() == null || !cache.getEvictionManager().isEnabled();
+        //TODO author=Horia Chiorean date=4/2/13 description=See https://issues.jboss.org/browse/MODE-1875 for more information
+        return false;
     }
 
     /**
