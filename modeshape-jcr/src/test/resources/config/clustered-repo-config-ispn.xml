@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="urn:infinispan:config:5.2
+            http://www.infinispan.org/schemas/infinispan-config-5.2.xsd"
+            xmlns="urn:infinispan:config:5.2">
+
+    <global>
+        <!-- Defines the global settings shared by all caches -->
+        <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
+
+        <transport clusterName="modeshape-cluster">
+          <!-- Use the property below to point to a specific JGroups configuration file on your classpath -->
+          <properties>
+             <property name="configurationFile" value="jgroups-tcp.xml" />
+          </properties>
+        </transport>
+    </global>
+
+    <namedCache name="repo_cache">
+        <clustering mode="replication">
+            <stateTransfer fetchInMemoryState="true" timeout="20000" />
+            <sync />
+        </clustering>
+        <locking isolationLevel="READ_COMMITTED" writeSkewCheck="false" lockAcquisitionTimeout="4000"/>
+        <transaction transactionMode="TRANSACTIONAL" lockingMode="PESSIMISTIC" />
+    </namedCache>
+
+</infinispan>

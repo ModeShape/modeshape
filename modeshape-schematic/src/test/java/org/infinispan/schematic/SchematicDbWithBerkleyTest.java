@@ -2,9 +2,8 @@ package org.infinispan.schematic;
 
 import java.io.File;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.cache.LoaderConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
-import org.infinispan.loaders.bdbje.BdbjeCacheStore;
+import org.infinispan.loaders.bdbje.configuration.BdbjeCacheStoreConfigurationBuilder;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
@@ -27,8 +26,10 @@ public class SchematicDbWithBerkleyTest extends AbstractSchematicDbTest {
         configurationBuilder.invocationBatching().enable().transaction()
         // .lockingMode(LockingMode.PESSIMISTIC)
                             .transactionManagerLookup(new DummyTransactionManagerLookup());
-        LoaderConfigurationBuilder lb = configurationBuilder.loaders().addCacheLoader().cacheLoader(new BdbjeCacheStore());
-        lb.addProperty("location", dbDir.getAbsolutePath());
+        configurationBuilder.loaders()
+                            .addStore(BdbjeCacheStoreConfigurationBuilder.class)
+                            .location(dbDir.getAbsolutePath())
+                            .purgeOnStartup(true);
 
         cm = TestCacheManagerFactory.createClusteredCacheManager(globalConfigurationBuilder, configurationBuilder);
         tm = cm.getCache().getAdvancedCache().getTransactionManager();

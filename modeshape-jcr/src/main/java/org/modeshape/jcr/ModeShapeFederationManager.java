@@ -28,12 +28,13 @@ import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.federation.FederationManager;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.document.WritableSessionCache;
 import org.modeshape.jcr.value.Path;
 
 /**
  * Implementation of the {@link FederationManager} interface.
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class ModeShapeFederationManager implements FederationManager {
@@ -51,9 +52,9 @@ public class ModeShapeFederationManager implements FederationManager {
                                   String alias ) throws RepositoryException {
         NodeKey key = session.getNode(absNodePath).key();
 
-        WritableSessionCache internalSession = (WritableSessionCache)session.spawnSessionCache(false);
-        internalSession.createProjection(key, sourceName, externalPath, alias);
-        internalSession.save();
+        SessionCache writer = session.spawnSessionCache(false);
+        ((WritableSessionCache)writer.unwrap()).createProjection(key, sourceName, externalPath, alias);
+        writer.save();
     }
 
     @Override
@@ -68,8 +69,8 @@ public class ModeShapeFederationManager implements FederationManager {
         NodeKey federatedNodeKey = session.getNode(path.getParent().getString()).key();
         NodeKey externalNodeKey = session.getNode(path.getString()).key();
 
-        WritableSessionCache internalSession = (WritableSessionCache)session.spawnSessionCache(false);
-        internalSession.removeProjection(federatedNodeKey, externalNodeKey);
-        internalSession.save();
+        SessionCache writer = session.spawnSessionCache(false);
+        ((WritableSessionCache)writer.unwrap()).removeProjection(federatedNodeKey, externalNodeKey);
+        writer.save();
     }
 }

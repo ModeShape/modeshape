@@ -355,7 +355,7 @@ class RepositoryQueryManager {
 
             // Look up the node and find the path ...
             node = cache.getNode(key);
-            if (!node.isQueryable(cache)) {
+            if (node == null || !node.isQueryable(cache)) {
                 continue;
             }
             nodePath = paths.getPath(node);

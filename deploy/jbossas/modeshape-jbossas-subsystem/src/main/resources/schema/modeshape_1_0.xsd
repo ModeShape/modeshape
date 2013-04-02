@@ -15,13 +15,38 @@
 
   <xs:complexType name="subsystem">
     <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="webapp" type="webapp">
+          <xs:annotation>
+              <xs:documentation>Defines an embedded web application.</xs:documentation>
+          </xs:annotation>
+      </xs:element>
       <xs:element name="repository" type="repository">
         <xs:annotation>
-          <xs:documentation>Defines an embedded cache container.</xs:documentation>
+          <xs:documentation>Defines an embedded repository.</xs:documentation>
         </xs:annotation>
       </xs:element>
     </xs:choice>
   </xs:complexType>
+
+ <xs:complexType name="webapp">
+     <xs:attribute name="name" type="xs:string" use="required">
+         <xs:annotation>
+             <xs:documentation>The name of the web application that is located in the ModeShape's main module, under the deployments directory</xs:documentation>
+         </xs:annotation>
+     </xs:attribute>
+
+     <xs:attribute name="exploded" type="xs:boolean" use="optional" default="true">
+         <xs:annotation>
+             <xs:documentation>Indicates if the web application is exploded or not</xs:documentation>
+         </xs:annotation>
+     </xs:attribute>
+
+     <xs:attribute name="auto-deploy" type="xs:boolean" use="optional" default="true">
+         <xs:annotation>
+             <xs:documentation>Indicates if the web application should be auto deployed when the ModeShape subsystem starts up</xs:documentation>
+         </xs:annotation>
+     </xs:attribute>
+ </xs:complexType>
 
   <xs:complexType name="repository">
 
@@ -215,6 +240,31 @@
     <xs:attribute name="cluster-name" type="xs:string" >
       <xs:annotation>
         <xs:documentation>Defines the name of the communication channel used by this and other clustered repositories</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="garbage-collection-thread-pool" type="xs:string" use="optional" default="modeshape-gc">
+      <xs:annotation>
+        <xs:documentation>Name of the thread pool that should be used for background garbage collection 
+          and recovery of unused storage space. Garbage collection can be relatively expensive, and is
+          only necessary to recover unused persistent storage space (of binary values). Therefore,
+          it is recommended to be done at most once per day during less-used time periods.
+          Thread pools are named globally within a single ModeShape subsystem, and by default all
+          repositories use the same thread pool for sequencing and indexing.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="garbage-collection-initial-time" type="garbage-collection-initial-time-type" use="optional" default="00:00">
+      <xs:annotation>
+        <xs:documentation>The local time that the first garbage collection process should be run. 
+          Garbage collection may be relatively expensive, as it involves scanning all persisted content, 
+          so it's recommended that this be done durign off hours if possible. The format is "hh:mm", or
+          two-digit hours and two-digit minutes. By default, the value is "00:00" garbage 
+          collection is run at midnight (local time) after the repository is started.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="garbage-collection-interval" type="xs:int" use="optional" default="24">
+      <xs:annotation>
+        <xs:documentation>The number of hours between garbage collection runs. 
+          By default the interval is 24 hours (meaning it runs once per day).</xs:documentation>
       </xs:annotation>
     </xs:attribute>
   </xs:complexType>
@@ -837,6 +887,11 @@
       <xs:enumeration value="native" />
       <xs:enumeration value="single" />
       <xs:enumeration value="none" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="garbage-collection-initial-time-type">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(([0-1]\d)|([2][0-3])):[0-5]\d" />
     </xs:restriction>
   </xs:simpleType>
     <xs:simpleType name="roleNames">

@@ -30,6 +30,7 @@ import org.infinispan.api.BasicCache;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.cache.CachedNode;
@@ -48,6 +49,8 @@ import org.modeshape.jcr.value.PathFactory;
  * single {@link Document}. The nodes in this cache represent the actual, unmodified values.
  */
 public class WorkspaceCache implements DocumentCache, ChangeSetListener {
+
+    protected static final Logger LOGGER = Logger.getLogger(WorkspaceCache.class);
 
     private final DocumentTranslator translator;
     private final ExecutionContext context;
@@ -84,6 +87,24 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         this.sourceKey = rootKey.getSourceKey();
         this.pathFactory = context.getValueFactories().getPathFactory();
         this.nameFactory = context.getValueFactories().getNameFactory();
+        this.nodesByKey = cache;
+    }
+
+    protected WorkspaceCache( WorkspaceCache original,
+                              ConcurrentMap<NodeKey, CachedNode> cache,
+                              ChangeSetListener changeSetListener ) {
+        this.context = original.context;
+        this.documentStore = original.documentStore;
+        this.changeSetListener = changeSetListener;
+        this.translator = original.translator;
+        this.rootKey = original.rootKey;
+        this.childReferenceForRoot = original.childReferenceForRoot;
+        this.repositoryKey = original.repositoryKey;
+        this.workspaceName = original.workspaceName;
+        this.workspaceKey = original.workspaceKey;
+        this.sourceKey = original.sourceKey;
+        this.pathFactory = original.pathFactory;
+        this.nameFactory = original.nameFactory;
         this.nodesByKey = cache;
     }
 
@@ -144,7 +165,13 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
             // There is no such node ...
             return null;
         }
-        return entry.getContentAsDocument();
+        try {
+            return entry.getContentAsDocument();
+        } catch (IllegalStateException e) {
+            LOGGER.debug("The document '{0}' was concurrently removed; returning null.", key);
+            // The document was already removed
+            return null;
+        }
     }
 
     final Document blockFor( String key ) {
@@ -163,6 +190,12 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         return sourceKey;
     }
 
+    final void purge( Iterable<NodeKey> nodeKeys ) {
+        for (NodeKey nodeKey : nodeKeys) {
+            this.nodesByKey.remove(nodeKey);
+        }
+    }
+
     @Override
     public NodeKey getRootKey() {
         checkNotClosed();
@@ -175,8 +208,14 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
         CachedNode node = nodesByKey.get(key);
         if (node == null) {
             // Load the node from the database ...
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Node '{0}' is not found in the '{1}' workspace cache; looking in store", key, workspaceName);
+            }
             Document doc = documentFor(key);
             if (doc != null) {
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("Materialized document '{0}' in '{1}' workspace from store: {2}", key, workspaceName, doc);
+                }
                 // Create a new node and put into this cache ...
                 CachedNode newNode = new LazyCachedNode(key, doc);
                 Integer cacheTtlSeconds = translator().getCacheTtlSeconds(doc);
@@ -224,10 +263,16 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
     }
 
     @Override
-    public void notify( ChangeSet changeSet ) {
+    public void notify( ChangeSet changes ) {
         if (!closed) {
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Cache for workspace '{0}' received {1} changes from remote sessions: {2}",
+                             workspaceName,
+                             changes.size(),
+                             changes);
+            }
             // Clear this workspace's cached nodes (iteratively is okay since it's a ConcurrentMap) ...
-            for (NodeKey key : changeSet.changedNodes()) {
+            for (NodeKey key : changes.changedNodes()) {
                 if (closed) break;
                 nodesByKey.remove(key);
             }
@@ -242,6 +287,12 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
      */
     public void changed( ChangeSet changes ) {
         checkNotClosed();
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Cache for workspace '{0}' received {1} changes from local sessions: {2}",
+                         workspaceName,
+                         changes.size(),
+                         changes);
+        }
         // Clear this workspace's cached nodes (iteratively is okay since it's a ConcurrentMap) ...
         for (NodeKey key : changes.changedNodes()) {
             if (closed) break;
@@ -250,6 +301,11 @@ public class WorkspaceCache implements DocumentCache, ChangeSetListener {
 
         // Notify the listener ...
         if (changeSetListener != null) changeSetListener.notify(changes);
+    }
+
+    @Override
+    public NodeCache unwrap() {
+        return this;
     }
 
     protected final void checkNotClosed() {

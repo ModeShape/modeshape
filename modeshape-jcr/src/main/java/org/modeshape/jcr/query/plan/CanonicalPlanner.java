@@ -312,7 +312,7 @@ public class CanonicalPlanner implements Planner {
         // Build up the map of aliases for the properties used in the criteria ...
         Map<String, String> propertyNameByAlias = new HashMap<String, String>();
         for (Column column : columns) {
-            if (!column.getColumnName().equals(column.getPropertyName())) {
+            if (column.getColumnName() != null && !column.getColumnName().equals(column.getPropertyName())) {
                 propertyNameByAlias.put(column.getColumnName(), column.getPropertyName());
             }
         }
@@ -493,7 +493,8 @@ public class CanonicalPlanner implements Planner {
                         }
                     }
                     boolean validateColumnExistance = context.getHints().validateColumnExistance && !table.hasExtraColumns();
-                    if (table.getColumn(columnName) == null && validateColumnExistance && !"*".equals(columnName)) {
+                    boolean columnNameIsWildcard = columnName == null || "*".equals(columnName);
+                    if (!columnNameIsWildcard && table.getColumn(columnName) == null && validateColumnExistance) {
                         context.getProblems().addError(GraphI18n.columnDoesNotExistOnTable, columnName, tableName);
                     }
                 }

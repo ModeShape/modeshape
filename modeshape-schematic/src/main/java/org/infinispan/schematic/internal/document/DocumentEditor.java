@@ -132,17 +132,17 @@ public class DocumentEditor implements EditableDocument {
 
     public Object put( String name,
                        Object value ) {
-        return document.put(name, value);
+        return doSetValue(name, value);
     }
 
     @Override
     public void putAll( Document object ) {
-        document.putAll(object);
+        doSetAllValues(object);
     }
 
     @Override
     public void putAll( Map<? extends String, ? extends Object> map ) {
-        document.putAll(map);
+        doSetAllValues(map);
     }
 
     @Override
@@ -547,7 +547,7 @@ public class DocumentEditor implements EditableDocument {
         if (value == null) {
             value = Null.getInstance();
         } else {
-            value = unwrap(value);
+            value = Utility.unwrap(value);
         }
         return document.put(name, value);
     }
@@ -565,9 +565,34 @@ public class DocumentEditor implements EditableDocument {
         if (value == null) {
             value = Null.getInstance();
         } else {
-            value = unwrap(value);
+            value = Utility.unwrap(value);
         }
         return document.put(name, value);
+    }
+
+    /**
+     * The method that does the actual setting for all of the {@link #putAll(Document)} method. This method may be overridden by
+     * subclasses when additional work needs to be performed during this operation.
+     * 
+     * @param values the document containing the fields to be added
+     */
+    protected void doSetAllValues( Document values ) {
+        if (values != null) {
+            values = Utility.unwrap(values);
+            document.putAll(values);
+        }
+    }
+
+    /**
+     * The method that does the actual setting for all of the {@link #putAll(Map)} method. This method may be overridden by
+     * subclasses when additional work needs to be performed during this operation.
+     * 
+     * @param values the map containing the fields to be added
+     */
+    protected void doSetAllValues( Map<? extends String, ? extends Object> values ) {
+        if (values != null) {
+            document.putAll(Utility.unwrapValues(values));
+        }
     }
 
     protected EditableDocument editable( Document doc,
@@ -598,30 +623,6 @@ public class DocumentEditor implements EditableDocument {
                                                  String fieldName,
                                                  DocumentValueFactory factory ) {
         return new ArrayEditor(array, factory);
-    }
-
-    public static Array unwrap( Array array ) {
-        if (array instanceof ArrayEditor) {
-            return unwrap(((ArrayEditor)array).unwrap());
-        }
-        return array;
-    }
-
-    public static Document unwrap( Document document ) {
-        if (document instanceof DocumentEditor) {
-            return unwrap(((DocumentEditor)document).unwrap());
-        }
-        return document;
-    }
-
-    public static Object unwrap( Object value ) {
-        if (value instanceof DocumentEditor) {
-            return unwrap(((DocumentEditor)value).unwrap());
-        }
-        if (value instanceof ArrayEditor) {
-            return unwrap(((ArrayEditor)value).unwrap());
-        }
-        return value;
     }
 
     @Override

@@ -541,7 +541,8 @@ public class Validator extends AbstractVisitor {
         if (column == null) {
             // Maybe the supplied property name is really an alias ...
             column = this.columnsByAlias.get(propertyName);
-            if (column == null && !"*".equals(propertyName) && columnIsRequired && !table.hasExtraColumns()) {
+            boolean propertyNameIsWildcard = propertyName == null || "*".equals(propertyName);
+            if (column == null && !propertyNameIsWildcard && columnIsRequired && !table.hasExtraColumns()) {
                 problems.addError(GraphI18n.columnDoesNotExistOnTable, propertyName, selectorName.name());
             }
         }

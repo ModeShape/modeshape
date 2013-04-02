@@ -23,58 +23,35 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import org.jboss.as.controller.AbstractRemoveStepHandler;
-import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.PathAddress;
+import java.util.ArrayList;
+import java.util.List;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceName;
 
-class RemoveIndexStorage extends AbstractRemoveStepHandler {
+class RemoveIndexStorage extends AbstractModeShapeRemoveStepHandler {
 
-    protected static final Logger log = Logger.getLogger(RemoveIndexStorage.class.getPackage().getName());
-
-    public static final RemoveIndexStorage INSTANCE = new RemoveIndexStorage();
+    static final RemoveIndexStorage INSTANCE = new RemoveIndexStorage();
 
     private RemoveIndexStorage() {
     }
 
     @Override
-    protected void performRuntime( OperationContext context,
-                                   ModelNode operation,
-                                   ModelNode model ) {
-        // Get the service addresses ...
-        final PathAddress serviceAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
-        // Get the repository name ...
-        final String repositoryName = serviceAddress.getElement(1).getValue();
-        final ServiceName serviceName = ModeShapeServiceNames.indexStorageServiceName(repositoryName);
-
-        // Simply remove all services started by any/all of the Add*IndexStorage operations ...
-        context.removeService(serviceName);
+    List<ServiceName> servicesToRemove( ModelNode operation,
+                                        ModelNode model ) {
+        String repositoryName = repositoryName(operation);
+        List<ServiceName> servicesToRemove = new ArrayList<ServiceName>();
+        servicesToRemove.add(ModeShapeServiceNames.indexStorageServiceName(repositoryName));
 
         // Now see if we need to remove the path service ...
         if (model.has(ModelKeys.RELATIVE_TO)
-            && model.get(ModelKeys.RELATIVE_TO).asString().contains(AddLocalFileSystemIndexStorage.DATA_DIR_VARIABLE)) {
-            // The binaries were stored in the data directory, so we need to remove the path service ...
-            ServiceName dirServiceName = ModeShapeServiceNames.indexStorageDirectoryServiceName(repositoryName);
-            context.removeService(dirServiceName);
+                && model.get(ModelKeys.RELATIVE_TO).asString().contains(AddLocalFileSystemIndexStorage.DATA_DIR_VARIABLE)) {
+            servicesToRemove.add(ModeShapeServiceNames.indexStorageDirectoryServiceName(repositoryName));
         }
         if (model.has(ModelKeys.SOURCE_RELATIVE_TO)
-            && model.get(ModelKeys.SOURCE_RELATIVE_TO).asString().contains(AddLocalFileSystemIndexStorage.DATA_DIR_VARIABLE)) {
-            // The binaries were stored in the data directory, so we need to remove the path service ...
-            ServiceName dirServiceName = ModeShapeServiceNames.indexStorageDirectoryServiceName(repositoryName);
-            context.removeService(dirServiceName);
+                && model.get(ModelKeys.SOURCE_RELATIVE_TO).asString().contains(AddLocalFileSystemIndexStorage.DATA_DIR_VARIABLE)) {
+            servicesToRemove.add(ModeShapeServiceNames.indexSourceStorageDirectoryServiceName(repositoryName));
         }
 
-        String service = serviceAddress.getLastElement().getValue();
-        log.debugf("index storage '%s' removed for repository '%s'", service, repositoryName);
-    }
-
-    @Override
-    protected void recoverServices( OperationContext context,
-                                    ModelNode operation,
-                                    ModelNode model ) {
-        // TODO: RE-ADD SERVICES
+        return servicesToRemove;
     }
 }

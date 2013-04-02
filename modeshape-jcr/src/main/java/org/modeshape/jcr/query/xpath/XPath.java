@@ -1114,6 +1114,7 @@ public class XPath {
         private final Order order;
         private final FunctionCall scoreFunction;
         private final NameTest attributeName;
+        private final PathExpression path;
 
         public OrderBySpec( Order order,
                             FunctionCall scoreFunction ) {
@@ -1122,6 +1123,7 @@ public class XPath {
             this.order = order;
             this.scoreFunction = scoreFunction;
             this.attributeName = null;
+            this.path = null;
         }
 
         public OrderBySpec( Order order,
@@ -1131,6 +1133,23 @@ public class XPath {
             this.order = order;
             this.scoreFunction = null;
             this.attributeName = attributeName;
+            this.path = null;
+        }
+
+        public OrderBySpec(Order order, PathExpression path) {
+            this.order = order;
+            this.scoreFunction = null;
+            this.attributeName = null;
+            this.path = path;
+        }
+
+        /**
+         * Gets child axis for this order specification.
+         *
+         * @return child axis node or null if order is defined by an attribute or score function.
+         */
+        public PathExpression getPath() {
+            return path;
         }
 
         /**

@@ -32,9 +32,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Repository;
-import javax.transaction.TransactionManager;
 import org.infinispan.Cache;
 import org.infinispan.manager.CacheContainer;
+import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.ModeShapeEngine.State;
@@ -57,9 +57,20 @@ public class TestingUtil {
     }
 
     public static void killRepositories( Iterable<Repository> repositories ) {
+        boolean killedAtLeastOne = false;
         for (Repository repository : repositories) {
             if (repository instanceof JcrRepository) {
+                if (killedAtLeastOne) {
+                    // We need to wait for a few seconds before we shut down the other repositories, since they're
+                    // probably clustered, and the second one needs to be updated after the first one shuts down ...
+                    try {
+                        Thread.sleep(1000L);
+                    } catch (Exception e) {
+                        throw new SystemFailureException(e);
+                    }
+                }
                 killRepository((JcrRepository)repository);
+                killedAtLeastOne = true;
             }
         }
     }
@@ -77,14 +88,7 @@ public class TestingUtil {
         try {
             if (repository.getState() != State.RUNNING) return Collections.emptySet();
             // Rollback any open transactions ...
-            TransactionManager txnMgr = repository.runningState().txnManager();
-            if (txnMgr != null && txnMgr.getTransaction() != null) {
-                try {
-                    txnMgr.rollback();
-                } catch (Throwable t) {
-                   log.warn(t, JcrI18n.errorKillingRepository, repository.getName(), t.getMessage());
-                }
-            }
+            org.infinispan.test.TestingUtil.killTransaction(repository.runningState().txnManager());
 
             // Then get the caches (which we'll kill after we shutdown the repository) ...
             Collection<Cache<?, ?>> caches = repository.caches();
@@ -133,7 +137,7 @@ public class TestingUtil {
         }
     }
 
-    public static JcrRepository startRepositoryWithConfig(String configFile) throws Exception {
+    public static JcrRepository startRepositoryWithConfig( String configFile ) throws Exception {
         URL configUrl = TestingUtil.class.getClassLoader().getResource(configFile);
         RepositoryConfiguration config = RepositoryConfiguration.read(configUrl);
         JcrRepository repository = null;

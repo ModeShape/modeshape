@@ -336,7 +336,8 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
     }
 
     private ClusteredRepositoryChangeBus startNewBus( String name) throws Exception {
-        ClusteredRepositoryChangeBus bus = new ClusteredRepositoryChangeBus(createClusteringConfiguration(name), super.createRepositoryChangeBus());
+        ClusteredRepositoryChangeBus bus = new ClusteredRepositoryChangeBus(createClusteringConfiguration(name),
+                                                                            super.createRepositoryChangeBus());
         bus.start();
         buses.add(bus);
         return bus;
@@ -347,6 +348,7 @@ public class ClusteredRepositoryChangeBusTest extends RepositoryChangeBusTest {
         when(repositoryConfiguration.isEnabled()).thenReturn(true);
         when(repositoryConfiguration.getClusterName()).thenReturn(clusterName);
         when(repositoryConfiguration.getChannelProviderClassName()).thenReturn(DefaultChannelProvider.class.getName());
+        when(repositoryConfiguration.getChannelConfiguration()).thenReturn("config/jgroups-test-config.xml");
         return repositoryConfiguration;
     }
 }

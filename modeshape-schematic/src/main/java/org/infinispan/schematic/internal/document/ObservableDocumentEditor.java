@@ -21,6 +21,8 @@
  */
 package org.infinispan.schematic.internal.document;
 
+import java.util.Map;
+import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Path;
@@ -59,6 +61,24 @@ public class ObservableDocumentEditor extends DocumentEditor {
         Object oldValue = super.doSetValue(name, value);
         observer.addOperation(new PutIfAbsentOperation(path, name, copy(value)));
         return oldValue;
+    }
+
+    @Override
+    protected void doSetAllValues( Document values ) {
+        if (values != null && !values.isEmpty()) {
+            for (Field field : values.fields()) {
+                doSetValue(field.getName(), field.getValue());
+            }
+        }
+    }
+
+    @Override
+    protected void doSetAllValues( Map<? extends String, ? extends Object> values ) {
+        if (values != null && !values.isEmpty()) {
+            for (Map.Entry<? extends String, ? extends Object> entry : values.entrySet()) {
+                doSetValue(entry.getKey(), entry.getValue());
+            }
+        }
     }
 
     @Override

@@ -216,6 +216,18 @@
             <groupId>org.picketbox</groupId>
             <artifactId>picketbox-bare</artifactId>
         </dependency>
+
+        <!--
+            Atomikos Transaction Manager (for testing only)
+        -->
+        <dependency>
+            <groupId>com.atomikos</groupId>
+            <artifactId>transactions</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.atomikos</groupId>
+            <artifactId>transactions-jta</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <resources>
@@ -279,10 +291,6 @@
                                         of the form "package#method". One per line. For example:
                                         org.apache.jackrabbit.test.api.ShareableNodeTest#testModifyDescendantAndSave
                                         -->
-                                        <!-- See https://issues.apache.org/jira/browse/JCR-3493 -->
-                                        org.apache.jackrabbit.test.api.query.qom.EquiJoinConditionTest#testRightOuterJoin1
-                                        <!-- See https://issues.apache.org/jira/browse/JCR-3493 -->
-                                        org.apache.jackrabbit.test.api.query.qom.EquiJoinConditionTest#testLeftOuterJoin2
                                     </value>
                                 </property>
                             </systemProperties>
@@ -313,6 +321,20 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>ipv6_if_windows</id>
+            <activation>
+                <os>
+                    <family>Windows</family>
+                </os>
+            </activation>
+            <properties>
+                <!--Force Ipv6, because JGroups seems to be a lot faster with it on Windows-->
+                <preferIpv4>false</preferIpv4>
+                <preferIpv6>true</preferIpv6>
+            </properties>
         </profile>
     </profiles>
 </project>

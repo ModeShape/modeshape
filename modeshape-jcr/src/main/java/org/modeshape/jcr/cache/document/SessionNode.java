@@ -253,15 +253,15 @@ public class SessionNode implements MutableCachedNode {
     }
 
     protected final WritableSessionCache writableSession( NodeCache cache ) {
-        return (WritableSessionCache)cache;
+        return (WritableSessionCache)cache.unwrap();
     }
 
     protected final AbstractSessionCache session( NodeCache cache ) {
-        return (AbstractSessionCache)cache;
+        return (AbstractSessionCache)cache.unwrap();
     }
 
     protected final WorkspaceCache workspace( NodeCache cache ) {
-        return ((DocumentCache)cache).workspaceCache();
+        return ((DocumentCache)cache.unwrap()).workspaceCache();
     }
 
     /**
@@ -734,8 +734,8 @@ public class SessionNode implements MutableCachedNode {
 
     private void updateReferences( SessionCache cache,
                                    Name propertyName,
-                                   SessionCache systemCache) {
-        //first try to determine if there's old reference property with the same name so that old references can be removed
+                                   SessionCache systemCache ) {
+        // first try to determine if there's old reference property with the same name so that old references can be removed
         boolean oldPropertyWasReference = false;
         List<Reference> referencesToRemove = new ArrayList<Reference>();
         if (!isNew()) {
@@ -751,7 +751,7 @@ public class SessionNode implements MutableCachedNode {
             }
         }
 
-        //if the updated property is a reference, determine which are the references that need updating
+        // if the updated property is a reference, determine which are the references that need updating
         boolean updatedPropertyIsReference = false;
         List<Reference> referencesToAdd = new ArrayList<Reference>();
         Property property = changedProperties.get(propertyName);
@@ -759,19 +759,20 @@ public class SessionNode implements MutableCachedNode {
             updatedPropertyIsReference = true;
             for (Object referenceObject : property.getValuesAsArray()) {
                 assert referenceObject instanceof Reference;
-                Reference updatedReference = (Reference) referenceObject;
+                Reference updatedReference = (Reference)referenceObject;
                 if (referencesToRemove.contains(updatedReference)) {
-                    //the reference is already present on a property with the same name, so this is a no-op for that reference
-                    //therefore we remove it from the list of references that will be removed
+                    // the reference is already present on a property with the same name, so this is a no-op for that reference
+                    // therefore we remove it from the list of references that will be removed
                     referencesToRemove.remove(updatedReference);
                 } else {
-                    //this is a new reference (either via key or type)
+                    // this is a new reference (either via key or type)
                     referencesToAdd.add(updatedReference);
                 }
             }
         }
 
-        //if an existing reference property was just updated with the same value, it is a no-op so we should just remove it from the list of changed properties
+        // if an existing reference property was just updated with the same value, it is a no-op so we should just remove it from
+        // the list of changed properties
         if (referencesToRemove.isEmpty() && referencesToAdd.isEmpty() && oldPropertyWasReference && updatedPropertyIsReference) {
             changedProperties.remove(propertyName);
             return;
@@ -801,14 +802,13 @@ public class SessionNode implements MutableCachedNode {
                                          Iterator<?> referenceValuesIterator,
                                          boolean add ) {
 
-
         boolean isFrozenNode = JcrNtLexicon.FROZEN_NODE.equals(this.getPrimaryType(cache));
 
         while (referenceValuesIterator.hasNext()) {
             Object value = referenceValuesIterator.next();
             assert value instanceof Reference;
 
-            Reference reference = (Reference) value;
+            Reference reference = (Reference)value;
             NodeKey referredKey = nodeKeyFromReference(reference);
             boolean isWeak = reference.isWeak();
 
@@ -818,7 +818,8 @@ public class SessionNode implements MutableCachedNode {
             }
 
             SessionNode referredNode = null;
-            //first search for a referred node in the cache of the current session and if nothing is found, look in the system session
+            // first search for a referred node in the cache of the current session and if nothing is found, look in the system
+            // session
             if (cache.getNode(referredKey) != null) {
                 referredNode = writableSession(cache).mutable(referredKey);
             } else if (systemCache != null && systemCache.getNode(referredKey) != null) {
@@ -838,13 +839,13 @@ public class SessionNode implements MutableCachedNode {
         }
     }
 
-    private NodeKey nodeKeyFromReference(Reference reference) {
+    private NodeKey nodeKeyFromReference( Reference reference ) {
         if (reference instanceof NodeKeyReference) {
-           return  ((NodeKeyReference)reference).getNodeKey();
+            return ((NodeKeyReference)reference).getNodeKey();
         } else if (reference instanceof StringReference) {
             return new NodeKey(reference.getString());
         } else if (reference instanceof UuidReference) {
-            UuidReference uuidReference = (UuidReference) reference;
+            UuidReference uuidReference = (UuidReference)reference;
             return getKey().withId(uuidReference.getString());
         }
         throw new IllegalArgumentException("Unknown reference type: " + reference.getClass().getSimpleName());
@@ -891,17 +892,34 @@ public class SessionNode implements MutableCachedNode {
                                 Name name ) {
         writableSession(cache).assertInSession(this);
         changedProperties.remove(name);
-        if (!isNew) removedProperties.put(name, name);
+        if (!isNew) {
+            // Determine if the existing node already contained this property ...
+            AbstractSessionCache session = session(cache);
+            CachedNode raw = nodeInWorkspace(session);
+            if (raw.hasProperty(name, cache)) {
+                removedProperties.put(name, name);
+            }
+        }
         updateReferences(cache, name, null);
     }
 
     @Override
     public void removeAllProperties( SessionCache cache ) {
         writableSession(cache).assertInSession(this);
+        CachedNode raw = null;
         for (Iterator<Property> propertyIterator = getProperties(cache); propertyIterator.hasNext();) {
             Name name = propertyIterator.next().getName();
             changedProperties.remove(name);
-            if (!isNew) removedProperties.put(name, name);
+            if (!isNew) {
+                // Determine if the existing node already contained this property ...
+                if (raw == null) {
+                    AbstractSessionCache session = session(cache);
+                    raw = nodeInWorkspace(session);
+                }
+                if (raw.hasProperty(name, cache)) {
+                    removedProperties.put(name, name);
+                }
+            }
             updateReferences(cache, name, null);
         }
     }
@@ -1114,8 +1132,16 @@ public class SessionNode implements MutableCachedNode {
         // We need a mutable node in the session for the child, so that we can find changes in the parent ...
         cache.mutable(key);
 
-        // Now perform the rename ...
-        changedChildren.renameTo(key, newName);
+        // If the node was previously appended ...
+        MutableChildReferences appended = this.appended.get();
+        if (appended != null && appended.hasChild(key)) {
+            // Just remove and re-add with the new name ...
+            appended.remove(key);
+            appended.append(key, newName);
+        } else {
+            // Now perform the rename ...
+            changedChildren.renameTo(key, newName);
+        }
     }
 
     @Override
@@ -1194,12 +1220,8 @@ public class SessionNode implements MutableCachedNode {
         return result;
     }
 
-    /**
-     * Returns an object encapsulating all the different changes that this session node contains.
-     * 
-     * @return a {@code non-null} {@link NodeChanges} object.
-     */
     @SuppressWarnings( "synthetic-access" )
+    @Override
     public NodeChanges getNodeChanges() {
         return new NodeChanges();
     }
@@ -1211,7 +1233,7 @@ public class SessionNode implements MutableCachedNode {
             return isQueryable;
         }
         CachedNode persistedNode = nodeInWorkspace(session(cache));
-        //if the node does not exist yet, it is queryable by default
+        // if the node does not exist yet, it is queryable by default
         return persistedNode == null || persistedNode.isQueryable(cache);
     }
 
@@ -1318,38 +1340,26 @@ public class SessionNode implements MutableCachedNode {
      * Value object which contains an "abbreviated" view of the changes that this session node has registered in its internal
      * state.
      */
-    public class NodeChanges {
+    private class NodeChanges implements MutableCachedNode.NodeChanges {
         private NodeChanges() {
             // this is not mean to be created from the outside
         }
 
-        /**
-         * Returns a set with the names of the properties that have changed. This includes new/modified properties.
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<Name> changedPropertyNames() {
             Set<Name> result = new HashSet<Name>();
             result.addAll(changedProperties().keySet());
             return result;
         }
 
-        /**
-         * Returns a set with the names of the properties that have been removed.
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<Name> removedPropertyNames() {
             Set<Name> result = new HashSet<Name>();
             result.addAll(changedProperties().keySet());
             return result;
         }
 
-        /**
-         * Returns a set with the names of the mixins that have been added.
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<Name> addedMixins() {
             Set<Name> result = new HashSet<Name>();
             MixinChanges mixinChanges = mixinChanges(false);
@@ -1357,14 +1367,9 @@ public class SessionNode implements MutableCachedNode {
                 result.addAll(mixinChanges.getAdded());
             }
             return result;
-
         }
 
-        /**
-         * Returns a set with the names of the mixins that have been removed.
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<Name> removedMixins() {
             Set<Name> result = new HashSet<Name>();
             MixinChanges mixinChanges = mixinChanges(false);
@@ -1372,14 +1377,9 @@ public class SessionNode implements MutableCachedNode {
                 result.addAll(mixinChanges.getRemoved());
             }
             return result;
-
         }
 
-        /**
-         * Returns the [childKey, childName] pairs of the children that have been appended (at the end).
-         * 
-         * @return a {@code non-null} Map
-         */
+        @Override
         public LinkedHashMap<NodeKey, Name> appendedChildren() {
             LinkedHashMap<NodeKey, Name> result = new LinkedHashMap<NodeKey, Name>();
             MutableChildReferences appendedChildReferences = appended(false);
@@ -1391,34 +1391,21 @@ public class SessionNode implements MutableCachedNode {
             return result;
         }
 
-        /**
-         * Returns the set of children that have been removed
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<NodeKey> removedChildren() {
             Set<NodeKey> result = new HashSet<NodeKey>();
             result.addAll(changedChildren().getRemovals());
             return result;
         }
 
-        /**
-         * Returns the [childKey, childName] pairs of the children that have been renamed.
-         * 
-         * @return a {@code non-null} Map
-         */
+        @Override
         public Map<NodeKey, Name> renamedChildren() {
             Map<NodeKey, Name> result = new HashMap<NodeKey, Name>();
             result.putAll(changedChildren().getNewNames());
             return result;
         }
 
-        /**
-         * Returns the [insertBeforeChildKey, [childKey, childName]] structure of the children that been inserted before another
-         * existing child. This is normally caused due to reorderings
-         * 
-         * @return a {@code non-null} Map
-         */
+        @Override
         public Map<NodeKey, LinkedHashMap<NodeKey, Name>> childrenInsertedBefore() {
             Map<NodeKey, LinkedHashMap<NodeKey, Name>> result = new HashMap<NodeKey, LinkedHashMap<NodeKey, Name>>();
 
@@ -1436,11 +1423,7 @@ public class SessionNode implements MutableCachedNode {
             return result;
         }
 
-        /**
-         * Returns the set of parents that have been added
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<NodeKey> addedParents() {
             Set<NodeKey> result = new HashSet<NodeKey>();
             if (additionalParents() != null) {
@@ -1449,11 +1432,7 @@ public class SessionNode implements MutableCachedNode {
             return result;
         }
 
-        /**
-         * Returns the set of parents that have been removed
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<NodeKey> removedParents() {
             Set<NodeKey> result = new HashSet<NodeKey>();
             if (additionalParents() != null) {
@@ -1462,20 +1441,12 @@ public class SessionNode implements MutableCachedNode {
             return result;
         }
 
-        /**
-         * Returns the node key of the new primary parent, in case it has changed.
-         * 
-         * @return either the {@link NodeKey} of the new primary parent or {@code null}
-         */
+        @Override
         public NodeKey newPrimaryParent() {
             return newParent();
         }
 
-        /**
-         * Returns a set of node keys with the weak referrers that have been added.
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<NodeKey> addedWeakReferrers() {
             Set<NodeKey> result = new HashSet<NodeKey>();
             ReferrerChanges referrerChanges = referrerChanges(false);
@@ -1485,11 +1456,7 @@ public class SessionNode implements MutableCachedNode {
             return result;
         }
 
-        /**
-         * Returns a set of node keys with the weak referrers that have been removed.
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<NodeKey> removedWeakReferrers() {
             Set<NodeKey> result = new HashSet<NodeKey>();
             ReferrerChanges referrerChanges = referrerChanges(false);
@@ -1499,11 +1466,7 @@ public class SessionNode implements MutableCachedNode {
             return result;
         }
 
-        /**
-         * Returns a set of node keys with the strong referrers that have been added.
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<NodeKey> addedStrongReferrers() {
             Set<NodeKey> result = new HashSet<NodeKey>();
             ReferrerChanges referrerChanges = referrerChanges(false);
@@ -1513,11 +1476,7 @@ public class SessionNode implements MutableCachedNode {
             return result;
         }
 
-        /**
-         * Returns a set of node keys with the strong referrers that have been removed.
-         * 
-         * @return a {@code non-null} Set
-         */
+        @Override
         public Set<NodeKey> removedStrongReferrers() {
             Set<NodeKey> result = new HashSet<NodeKey>();
             ReferrerChanges referrerChanges = referrerChanges(false);

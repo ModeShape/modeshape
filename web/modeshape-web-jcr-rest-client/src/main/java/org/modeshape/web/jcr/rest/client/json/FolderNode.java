@@ -24,8 +24,8 @@
 package org.modeshape.web.jcr.rest.client.json;
 
 import java.net.URL;
-import org.modeshape.common.annotation.Immutable;
 import org.codehaus.jettison.json.JSONObject;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.web.jcr.rest.client.IJcrConstants;
 import org.modeshape.web.jcr.rest.client.domain.Workspace;
 
@@ -35,6 +35,8 @@ import org.modeshape.web.jcr.rest.client.domain.Workspace;
  */
 @Immutable
 public final class FolderNode extends JsonNode {
+
+    private static final long serialVersionUID = 1L;
 
     // ===========================================================================================================================
     // Fields
@@ -57,8 +59,8 @@ public final class FolderNode extends JsonNode {
     public FolderNode( Workspace workspace,
                        String fullPath ) throws Exception {
         super(fullPath);
-    	assert workspace != null;
-    	assert fullPath != null;
+        assert workspace != null;
+        assert fullPath != null;
 
         this.workspace = workspace;
 

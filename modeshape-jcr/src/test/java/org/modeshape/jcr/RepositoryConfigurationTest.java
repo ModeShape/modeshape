@@ -188,6 +188,11 @@ public class RepositoryConfigurationTest {
     }
 
     @Test
+    public void shouldSuccessfullyValidateConfigurationWithGarbageCollection() {
+        assertValid("config/repo-config-garbage-collection.json");
+    }
+
+    @Test
     public void shouldAlwaysReturnNonNullSecurityComponent() {
         RepositoryConfiguration config = new RepositoryConfiguration("repoName");
         assertThat(config.getSecurity(), is(notNullValue()));

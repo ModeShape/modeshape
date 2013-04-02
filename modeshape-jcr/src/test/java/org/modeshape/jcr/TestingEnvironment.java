@@ -25,9 +25,7 @@ package org.modeshape.jcr;
 
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.cache.LegacyConfigurationAdaptor;
-import org.infinispan.configuration.global.GlobalConfiguration;
-import org.infinispan.configuration.global.LegacyGlobalConfigurationAdaptor;
+import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.test.TestingUtil;
 import org.infinispan.test.fwk.TestCacheManagerFactory;
@@ -46,11 +44,12 @@ public class TestingEnvironment extends LocalEnvironment {
         this(null, DummyTransactionManagerLookup.class);
     }
 
-    public TestingEnvironment(CustomLoaderTest customLoaderTest ) {
+    public TestingEnvironment( CustomLoaderTest customLoaderTest ) {
         this(customLoaderTest, DummyTransactionManagerLookup.class);
     }
 
-    public TestingEnvironment(CustomLoaderTest customLoaderTest, Class<? extends TransactionManagerLookup> transactionManagerLookup) {
+    public TestingEnvironment( CustomLoaderTest customLoaderTest,
+                               Class<? extends TransactionManagerLookup> transactionManagerLookup ) {
         super(transactionManagerLookup);
         this.customLoaderTest = customLoaderTest;
     }
@@ -65,16 +64,15 @@ public class TestingEnvironment extends LocalEnvironment {
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.transaction().transactionMode(TransactionMode.TRANSACTIONAL);
         configurationBuilder.transaction().transactionManagerLookup(transactionManagerLookupInstance());
-        if(customLoaderTest != null) {
+        if (customLoaderTest != null) {
             customLoaderTest.applyLoaderConfiguration(configurationBuilder);
         }
         return configurationBuilder.build();
     }
 
     @Override
-    protected CacheContainer createContainer( GlobalConfiguration globalConfiguration,
-                                              Configuration configuration ) {
-        return TestCacheManagerFactory.createCacheManager(LegacyGlobalConfigurationAdaptor.adapt(globalConfiguration),
-                                                          LegacyConfigurationAdaptor.adapt(configuration));
+    protected CacheContainer createContainer( GlobalConfigurationBuilder globalConfigurationBuilder,
+                                              ConfigurationBuilder configurationBuilder ) {
+        return TestCacheManagerFactory.createCacheManager(globalConfigurationBuilder, configurationBuilder);
     }
 }

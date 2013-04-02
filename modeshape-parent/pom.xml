@@ -234,8 +234,10 @@
         <jpaSource.rootNodeUuid/>
         <jpaSource.showSql>false</jpaSource.showSql>
         <metadata.collectorClassName>org.modeshape.connector.meta.jdbc.JdbcMetadataCollector</metadata.collectorClassName>
-        <jgroups.preferIpv4>false</jgroups.preferIpv4>
-        <jgroups.preferIpv6>false</jgroups.preferIpv6>
+
+        <!--By default, we use whatever the underlying machine supports. However, certain sub-modules may change this -->
+        <preferIpv4>false</preferIpv4>
+        <preferIpv6>false</preferIpv6>
         <debug.argline/>
         <!--
           Global dependency version information
@@ -250,29 +252,25 @@
         <slf4j.log4j.version>1.6.1</slf4j.log4j.version>
         <log4j.version>1.2.16</log4j.version>
         <jcr.version>2.0</jcr.version>
-        <jackrabbit.jcr.tck.version>2.5.1</jackrabbit.jcr.tck.version>
+        <jackrabbit.jcr.tck.version>2.6.0</jackrabbit.jcr.tck.version>
         <jackrabbit.lucene.version>3.6.0</jackrabbit.lucene.version>
         <jbossjta.version>4.16.2.Final</jbossjta.version>
+        <atomikos.version>3.8.0</atomikos.version>
         <picketbox.version>4.0.7.Final</picketbox.version>
         <byteman.version>1.5.1</byteman.version>
-        <lucene.version>3.5.0</lucene.version>
-        <lucene.module.slot>3.5</lucene.module.slot>
+        <lucene.version>3.6.2</lucene.version>
         <lucene.regex.version>3.0.3</lucene.regex.version>
-        <lucene.regex.jakarta.version>1.4</lucene.regex.jakarta.version>
+
         <!-- These versions of Hibernate Search transitive dependencies are used in creating the Hibernate Search AS7 module.
-             When changing the version of Hiberate Search version, update these and the 
-             'deploy/jbossas/kit/jboss-as7/modules/org/hibernate/search/engine/main/module.xml' file. Note that Hibernate Search
-             forcibly overrides the Jackson libraries -->
-        <hibernate.search.version>4.1.1.Final</hibernate.search.version>
-        <hibernate.search.avro.version>1.5.1</hibernate.search.avro.version>
+             When changing the version of Hiberate Search version, update these
+             Note that Hibernate Search forcibly overrides the Jackson libraries -->
+        <hibernate.search.version>4.2.0.Final</hibernate.search.version>
         <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
         <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
-        <hibernate.search.paranamer.version>2.3</hibernate.search.paranamer.version>
-        <hibernate.search.snappy.version>1.0.1-rc3</hibernate.search.snappy.version>
-        <hibernate.search.module.slot>4.1</hibernate.search.module.slot>
-        <infinispan.version>5.1.2.FINAL</infinispan.version>
+
+        <infinispan.version>5.2.1.Final</infinispan.version>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
-        <jgroups.version>3.0.6.Final</jgroups.version>
+        <jgroups.version>3.2.7.Final</jgroups.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <jboss.logging.version>3.1.0.CR2</jboss.logging.version>
 
@@ -292,8 +290,8 @@
         <javax.servlet.version>2.5</javax.servlet.version>
         <javax.jacc.version>1.0.0.Final</javax.jacc.version>
         <jboss.seam.version>2.2.2.Final</jboss.seam.version>
-        <resteasy.version>2.3.2.Final</resteasy.version>
-        <jettison.version>1.1</jettison.version>
+        <resteasy.version>2.3.5.Final</resteasy.version>
+        <jettison.version>1.3.1</jettison.version>
         <httpclient.version>4.1.2</httpclient.version>
         <sardine.version>146</sardine.version>
         <javaassist.version>3.11.0.GA</javaassist.version>
@@ -303,7 +301,7 @@
         <wsdl4j.version>1.6.2</wsdl4j.version>
         <bson4jackson.version>1.1.2</bson4jackson.version>
         <mongo.driver.version>2.7.3</mongo.driver.version>
-        <embedmongo.version>1.25</embedmongo.version>
+        <embedmongo.version>1.28</embedmongo.version>
         <json.simple.version>1.1</json.simple.version>
         <logback.version>0.9.29</logback.version>
         <jgit.version>2.1.0.201209190230-r</jgit.version>
@@ -323,7 +321,7 @@
         <eclipse.emf.ecore.version>2.4.2</eclipse.emf.ecore.version>
         <eclipse.emf.ecorechange.version>2.2.3</eclipse.emf.ecorechange.version>
         <eclipse.emf.ecorexmi.version>2.4.1</eclipse.emf.ecorexmi.version>
-        <tika.version>1.2</tika.version>
+        <tika.version>1.3</tika.version>
 
         <!--WebDAV servlet-->
         <jmock.version>2.4.0</jmock.version>
@@ -334,17 +332,29 @@
         <chemistry.version>0.7.0</chemistry.version>
 
         <!--
-            JBOSS AS 7.1.1.Final
+            JBOSS AS/EAP constants
         -->
-        <jbossas-version>7.1.1.Final</jbossas-version>
+
+        <!--Version of the artifacts (API) needed by the AS7 subsystem and provided as part of EAP-->
+        <jbossas-version>7.2.0.Alpha1-redhat-4</jbossas-version>
+        <!--Properties which must be used when installing locally an EAP ZIP distribution -->
+        <jboss.eap.groupId>org.jboss.as</jboss.eap.groupId>
+        <jboss.eap.artifactId>jboss-eap</jboss.eap.artifactId>
+        <jboss.eap.version>6.1.0.Alpha1</jboss.eap.version>
+        <jboss.eap.root.folder>jboss-eap-6.1</jboss.eap.root.folder>
+
+        <!--The root folder under EAP/AS where the ModeShape & related modules should be placed-->
+        <jboss.eap.modules.location>modules</jboss.eap.modules.location>
+
+        <!-- The id of the maven distribution which is building the current kit -->
+        <jboss.eap.distribution.id>jbosseap-61-dist</jboss.eap.distribution.id>
+
         <javax.connector-api.version>1.5</javax.connector-api.version>
         <javax.jta.version>1.1</javax.jta.version>
-        <jbossas7.assembly.descriptor.version>71</jbossas7.assembly.descriptor.version>
 
-        <!--
-            JBOSS AS 7.2
-        -->
-        <!--jbossas-version>7.2.0.Alpha1-SNAPSHOT</jbossas-version-->
+        <!--Versions used by the integration/kit tests an -->
+        <jboss-javaee-6.0-with-tools.version>1.0.4.Final-redhat-1</jboss-javaee-6.0-with-tools.version>
+        <jboss-as-arquillian-container-managed.version>7.2.0.Final</jboss-as-arquillian-container-managed.version>
 
         <!--
             RHQ
@@ -368,8 +378,11 @@
         <!--The name of the modeshape-client artifact used by tools-->
         <client.artifactId>modeshape-client</client.artifactId>
 
-	<!-- IronJacamar container -->
+	   <!-- IronJacamar container -->
         <version.org.jboss.ironjacamar>1.0.13.Final</version.org.jboss.ironjacamar>
+
+        <!--Skip long running tests by default-->
+        <skipLongRunningTests>true</skipLongRunningTests>
     </properties>
 
     <profiles>
@@ -386,19 +399,25 @@
             <id>preferIpv4</id>
             <activation>
                 <property>
-                    <name>!preferIpv6</name>
+                    <name>preferIpv4</name>
                 </property>
             </activation>
             <properties>
-                <jgroups.preferIpv4>true</jgroups.preferIpv4>
-                <jgroups.preferIpv6>false</jgroups.preferIpv6>
+                <preferIpv4>false</preferIpv4>
+                <preferIpv6>true</preferIpv6>
             </properties>
         </profile>
+
         <profile>
             <id>preferIpv6</id>
+            <activation>
+                <property>
+                    <name>preferIpv6</name>
+                </property>
+            </activation>
             <properties>
-                <jgroups.preferIpv4>false</jgroups.preferIpv4>
-                <jgroups.preferIpv6>true</jgroups.preferIpv6>
+                <preferIpv4>false</preferIpv4>
+                <preferIpv6>true</preferIpv6>
             </properties>
         </profile>
 
@@ -458,24 +477,18 @@
             </properties>
         </profile>
 
+        <!--These profiles must have the same ID as the ones from the root pom-->
         <profile>
-            <id>ispn515</id>
+            <id>assembly</id>
             <properties>
-                <!--The following versions are also used by AS7.2-->
-                <infinispan.version>5.1.5.FINAL</infinispan.version>
-                <jgroups.version>3.1.0.Final</jgroups.version>
-                <jboss.logging.version>3.1.0.GA</jboss.logging.version>
+                <skipLongRunningTests>false</skipLongRunningTests>
             </properties>
         </profile>
-        
+
         <profile>
-            <id>as72</id>
+            <id>performance</id>
             <properties>
-                <jbossas-version>7.2.0.Alpha1-SNAPSHOT</jbossas-version>
-                <infinispan.version>5.1.5.FINAL</infinispan.version>
-                <jgroups.version>3.1.0.Final</jgroups.version>
-                <jboss.logging.version>3.1.2.GA</jboss.logging.version>
-                <jbossas7.assembly.descriptor.version>72</jbossas7.assembly.descriptor.version>
+                <skipLongRunningTests>false</skipLongRunningTests>
             </properties>
         </profile>
     </profiles>
@@ -642,11 +655,15 @@
                         </property>
                         <property>
                             <name>java.net.preferIPv4Stack</name>
-                            <value>${jgroups.preferIpv4}</value>
+                            <value>${preferIpv4}</value>
                         </property>
                         <property>
                             <name>java.net.preferIPv6Addresses</name>
-                            <value>${jgroups.preferIpv6}</value>
+                            <value>${preferIpv6}</value>
+                        </property>
+                        <property>
+                            <name>skipLongRunningTests</name>
+                            <value>${skipLongRunningTests}</value>
                         </property>
                     </systemProperties>
                     <argLine>-Xmx1024M ${debug.argline} -XX:MaxPermSize=256M</argLine>
@@ -912,6 +929,7 @@
                 <artifactId>infinispan-lucene-directory</artifactId>
                 <version>${infinispan.version}</version>
             </dependency>
+
             <!--
                 JGroups is used for the changes bus, but it's optional. Most of the times though, this will be in the classpath
                 because of ISPN.
@@ -964,6 +982,7 @@
                 <artifactId>hibernate-search-infinispan</artifactId>
                 <version>${hibernate.search.version}</version>
             </dependency>
+
             <dependency>
               <!--
               To force testing of Apache Avro integration with the version of Jackson used in AS 7.1
@@ -1695,18 +1714,6 @@
                 <scope>provided</scope>
             </dependency>
 
-            <!--dependency>
-                <groupId>org.jboss</groupId>
-                <artifactId>jboss-common-core</artifactId>
-                <version>${jboss.common.core.version}</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.logging</groupId>
-                        <artifactId>jboss-logging-spi</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency-->
             <dependency>
                 <groupId>org.jboss.as</groupId>
                 <artifactId>jboss-as-controller</artifactId>
@@ -1731,18 +1738,6 @@
                 <version>${jbossas-version}</version>
                 <scope>test</scope>
             </dependency>
-            <!--dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-xjc</artifactId>
-                <version>${xjc.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.xml.bind</groupId>
-                        <artifactId>jaxb-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency-->
-
             <dependency>
                 <groupId>org.jboss.ironjacamar</groupId>
                 <artifactId>ironjacamar-depchain</artifactId>
@@ -1823,6 +1818,23 @@
             <scope>test</scope>
         </dependency>
 
+
+            <!--
+                Atomikos Transaction Manager (for testing only)
+            -->
+            <dependency>
+                <groupId>com.atomikos</groupId>
+                <artifactId>transactions</artifactId>
+                <version>${atomikos.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.atomikos</groupId>
+                <artifactId>transactions-jta</artifactId>
+                <version>${atomikos.version}</version>
+                <scope>test</scope>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -1835,5 +1847,4 @@
             </plugin>
         </plugins>
     </reporting>
-
 </project>

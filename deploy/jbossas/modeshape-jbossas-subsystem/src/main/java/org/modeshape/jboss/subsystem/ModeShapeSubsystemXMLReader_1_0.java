@@ -58,6 +58,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         requireNoAttributes(reader);
 
         final List<ModelNode> repositories = new ArrayList<ModelNode>();
+        final List<ModelNode> webapps = new ArrayList<ModelNode>();
 
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             if (reader.isStartElement()) {
@@ -69,6 +70,10 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                             case REPOSITORY:
                                 parseRepository(reader, subsystem, repositories);
                                 break;
+                            case WEBAPP: {
+                                parseWebApp(reader, subsystem, webapps);
+                                break;
+                            }
                             default:
                                 throw ParseUtils.unexpectedElement(reader);
                         }
@@ -79,8 +84,44 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
             }
         }
 
+        list.addAll(webapps);
         list.addAll(repositories);
+    }
 
+    private void parseWebApp( final XMLExtendedStreamReader reader,
+                              final ModelNode address,
+                              final List<ModelNode> webapps ) throws XMLStreamException {
+        final ModelNode webappAddress = address.clone();
+        final ModelNode webapp = Util.getEmptyOperation(ModelDescriptionConstants.ADD, webappAddress);
+
+        String webappName = null;
+        for (int i = 0; i < reader.getAttributeCount(); i++) {
+            String attrName = reader.getAttributeLocalName(i);
+            String attrValue = reader.getAttributeValue(i);
+            Attribute attribute = Attribute.forName(attrName);
+            switch (attribute) {
+                case NAME: {
+                    webappName = attrValue;
+                    webappAddress.add(ModelKeys.WEBAPP, webappName);
+                    webappAddress.protect();
+                    webapp.get(OP).set(ADD);
+                    webapp.get(OP_ADDR).set(webappAddress);
+                    webapps.add(webapp);
+                    break;
+                }
+                case EXPLODED: {
+                    ModelAttributes.EXPLODED.parseAndSetParameter(attrValue, webapp, reader);
+                    break;
+                }
+                case AUTO_DEPLOY: {
+                    ModelAttributes.AUTO_DEPLOY.parseAndSetParameter(attrValue, webapp, reader);
+                    break;
+                }
+                default:
+                    throw ParseUtils.unexpectedAttribute(reader, i);
+            }
+        }
+        requireNoElements(reader);
     }
 
     private void parseRepository( final XMLExtendedStreamReader reader,
@@ -99,7 +140,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                 switch (attribute) {
                     case NAME:
                         repositoryName = attrValue;
-                        repositoryAddress.add("repository", attrValue); //$NON-NLS-1$
+                        repositoryAddress.add(ModelKeys.REPOSITORY, attrValue); //$NON-NLS-1$
                         repositoryAddress.protect();
                         repository.get(OP).set(ADD);
                         repository.get(OP_ADDR).set(repositoryAddress);
@@ -139,6 +180,15 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                         break;
                     case CLUSTER_NAME:
                         ModelAttributes.CLUSTER_NAME.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case GARBAGE_COLLECTION_THREAD_POOL:
+                        ModelAttributes.GARBAGE_COLLECTION_THREAD_POOL.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case GARBAGE_COLLECTION_INITIAL_TIME:
+                        ModelAttributes.GARBAGE_COLLECTION_INITIAL_TIME.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case GARBAGE_COLLECTION_INTERVAL:
+                        ModelAttributes.GARBAGE_COLLECTION_INTERVAL.parseAndSetParameter(attrValue, repository, reader);
                         break;
                     default:
                         throw ParseUtils.unexpectedAttribute(reader, i);
@@ -376,7 +426,9 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                         ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_MODE.parseAndSetParameter(attrValue, repository, reader);
                         break;
                     case REBUILD_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT:
-                        ModelAttributes.REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT.parseAndSetParameter(attrValue, repository, reader);
+                        ModelAttributes.REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT.parseAndSetParameter(attrValue,
+                                                                                                         repository,
+                                                                                                         reader);
                         break;
                     case THREAD_POOL:
                         ModelAttributes.THREAD_POOL.parseAndSetParameter(attrValue, repository, reader);
@@ -1046,9 +1098,9 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         }
 
         externalSource.get(OP_ADDR)
-                 .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-                 .add(ModelKeys.REPOSITORY, repositoryName)
-                 .add(ModelKeys.SOURCE, name);
+                      .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                      .add(ModelKeys.REPOSITORY, repositoryName)
+                      .add(ModelKeys.SOURCE, name);
     }
 
     private List<ModelNode> parseTextExtracting( final XMLExtendedStreamReader reader,

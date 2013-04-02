@@ -70,6 +70,23 @@ public interface SessionCache extends NodeCache {
          */
         void process( MutableCachedNode modifiedOrNewNode,
                       SaveContext context ) throws Exception;
+
+        /**
+         * Process the supplied existing node prior to saving the changes but only after the entry corresponding to the key of the
+         * node has been locked in Infinispan. Note that locking in Infinispan does not occur always, but only if the
+         * {@link org.infinispan.transaction.LockingMode#PESSIMISTIC} flag is enabled. This method should be implemented as
+         * optimal as possible and should only be needed in multi-threaded scenarios where concurrent modifications may break
+         * consistency.
+         * 
+         * @param modifiedNode the mutable node that was changed in this session; never null
+         * @param context the context of the save operation; never null
+         * @param persistentNodeCache the node cache from which the persistent representation of the nodes can be obtained; never
+         *        null
+         * @throws Exception if there is a problem during the processing
+         */
+        void processAfterLocking( MutableCachedNode modifiedNode,
+                                  SaveContext context,
+                                  NodeCache persistentNodeCache ) throws Exception;
     }
 
     /**
@@ -249,4 +266,13 @@ public interface SessionCache extends NodeCache {
      */
     public NodeKey createNodeKey( String sourceName,
                                   String identifier );
+
+    /**
+     * Check whether this session is running within a transaction. This is commonly called by components that change persistent
+     * state. Such persistent state might not be noticed by this session cache.
+     */
+    public void checkForTransaction();
+
+    @Override
+    public SessionCache unwrap();
 }

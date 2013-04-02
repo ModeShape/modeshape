@@ -75,6 +75,7 @@ import org.modeshape.jcr.api.monitor.DurationMetric;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
+import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
 import org.modeshape.jcr.cache.DocumentNotFoundException;
 import org.modeshape.jcr.cache.MutableCachedNode;
@@ -84,6 +85,7 @@ import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SessionCache.SaveContext;
+import org.modeshape.jcr.cache.SessionCacheWrapper;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.WrappedException;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
@@ -307,7 +309,11 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     }
 
     final SessionCache createSystemCache( boolean readOnly ) {
-        return repository.createSystemSession(context, readOnly);
+        // This method returns a SessionCache used by various Session-owned components that can automatically
+        // save system content. This session should be notified when such activities happen.
+        SessionCache systemCache = repository.createSystemSession(context, readOnly);
+        return readOnly ? systemCache : new SystemSessionCache(systemCache);
+
     }
 
     final JcrNodeTypeManager nodeTypeManager() {
@@ -355,7 +361,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     }
 
     final SessionCache spawnSessionCache( boolean readOnly ) {
-        return repository().repositoryCache().createSession(context(), workspaceName(), readOnly);
+        SessionCache cache = repository().repositoryCache().createSession(context(), workspaceName(), readOnly);
+        return readOnly ? cache : new SystemSessionCache(cache);
     }
 
     final void addContextData( String key,
@@ -1828,7 +1835,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                 // remove the current node
                 allChildren.remove(node.getKey());
                 // remove all the keys of the nodes which are removed
-                allChildren.removeAll(node.removedChildren());
+                allChildren.removeAll(node.getNodeChanges().removedChildren());
                 Set<Name> childrenNames = new HashSet<Name>();
 
                 for (NodeKey childKey : allChildren) {
@@ -1859,6 +1866,91 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                 String etagValue = node.getEtag(cache);
                 node.setProperty(cache, propertyFactory.create(JcrLexicon.ETAG, etagValue));
             }
+        }
+
+        @Override
+        public void processAfterLocking( MutableCachedNode modifiedNode,
+                                         SaveContext context,
+                                         NodeCache persistentNodeCache ) throws RepositoryException {
+            // We actually can avoid this altogether if certain conditions are met ...
+            final Name primaryType = modifiedNode.getPrimaryType(cache);
+            final Set<Name> mixinTypes = modifiedNode.getMixinTypes(cache);
+            if (!nodeTypeCapabilities.disallowsSameNameSiblings(primaryType, mixinTypes)) return;
+
+            MutableCachedNode.NodeChanges changes = modifiedNode.getNodeChanges();
+            Map<NodeKey, Name> appendedChildren = changes.appendedChildren();
+            Map<NodeKey, Name> renamedChildren = changes.renamedChildren();
+            if (!appendedChildren.isEmpty() || !renamedChildren.isEmpty()) {
+
+                Set<Name> appendedOrRenamedChildrenNames = new HashSet<Name>(appendedChildren.values());
+                appendedOrRenamedChildrenNames.addAll(renamedChildren.values());
+                assert appendedOrRenamedChildrenNames.isEmpty() == false;
+
+                // look at the information that was already persisted to determine whether some other thread has already
+                // created a child with the same name
+                CachedNode persistentNode = persistentNodeCache.getNode(modifiedNode.getKey());
+
+                // process appended children
+                for (Name childName : appendedOrRenamedChildrenNames) {
+                    ChildReferences persistedChildReferences = persistentNode.getChildReferences(persistentNodeCache);
+                    int existingChildrenWithSameName = persistedChildReferences.getChildCount(childName);
+                    if (existingChildrenWithSameName == 0) {
+                        continue;
+                    }
+                    JcrNodeDefinition childNodeDefinition = nodeTypeCapabilities.findChildNodeDefinition(primaryType,
+                                                                                                         mixinTypes,
+                                                                                                         childName,
+                                                                                                         null,
+                                                                                                         existingChildrenWithSameName + 1,
+                                                                                                         true);
+                    if (childNodeDefinition == null) {
+                        // we weren't able to find a definition which allows SNS for this name, but we need to make sure that
+                        // the node that already exists (persisted) isn't the one that's being changed
+                        NodeKey persistedChildKey = persistedChildReferences.getChild(childName).getKey();
+                        if (!changes.appendedChildren().containsKey(persistedChildKey)
+                            && !changes.renamedChildren().containsKey(persistedChildKey)) {
+                            // SNS are not allowed and there's already a child with this name throw ItemExistsException per
+                            // 7.1.4 of 1.0.1 spec
+                            throw new ItemExistsException(JcrI18n.noSnsDefinitionForNode.text(childName, workspaceName()));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    protected class SystemSessionCache extends SessionCacheWrapper {
+        protected SystemSessionCache( SessionCache delegate ) {
+            super(delegate);
+        }
+
+        @Override
+        public void save() {
+            super.save();
+            signalSaveOfSystemChanges();
+        }
+
+        @Override
+        public void save( SessionCache otherSession,
+                          PreSave preSaveOperation ) {
+            super.save(otherSession, preSaveOperation);
+            signalSaveOfSystemChanges();
+        }
+
+        @Override
+        public void save( Set<NodeKey> toBeSaved,
+                          SessionCache otherSession,
+                          PreSave preSaveOperation ) {
+            super.save(toBeSaved, otherSession, preSaveOperation);
+            signalSaveOfSystemChanges();
+        }
+
+        /**
+         * This method can be called by workspace-write methods, which (if a transaction has started after this session was
+         * created) can persist changes (via their SessionCache.save())
+         */
+        private void signalSaveOfSystemChanges() {
+            cache().checkForTransaction();
         }
     }
 }

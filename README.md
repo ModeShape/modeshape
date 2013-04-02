@@ -41,7 +41,22 @@ Then, we use Maven 3.x to build our software. The following command compiles all
 
 	$ mvn clean install -s settings.xml
 
-BTW, that '-s settings.xml' argument uses the 'settings.xml' file in our codebase, which is set up to use the JBoss Maven repository. 
+BTW, that '-s settings.xml' argument uses the 'settings.xml' file in our codebase, which is set up to use 2 Maven repositories:
+
+     The JBoss Maven repository - is the main repository, where most of the required artifacts are located
+     The JBoss EAP Techpreview repository - is an additional repository which contains the artifacts necessary for building ModeShape's EAP kit.
+
+Normally, during a normal "$ mvn clean install" build, the EAP kit is not built and therefore only the JBoss Maven repository would suffice.
+However, if you are interested in building & contributing to the EAP kit as well, you need to make sure the second Maven repository is active.
+You can then run the following command (instead of the earlier command) to build all modules, including the EAP kit, using our "integration" profile:
+
+    $ mvn clean install -s settings.xml -Pintegration
+
+To build everything, including the EAP kit, our JavaDoc, and our other assemblies, use the "assembly" profile instead:
+
+    $ mvn clean install -s settings.xml -Passembly
+
+As an alternative to always passing the "-s settings.xml" parameter, you can modify your local ~/.m2/settings.xml file and add the above mentioned repositories, making sure they are active by default during a build.
 
 That command takes a while -- we do have over 12K unit tests. So if need be, your builds can skip the tests:
 

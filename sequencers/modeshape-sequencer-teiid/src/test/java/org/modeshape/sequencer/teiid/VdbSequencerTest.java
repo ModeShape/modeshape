@@ -34,6 +34,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.Value;
 import org.junit.Test;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
+import org.modeshape.junit.SkipLongRunning;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
 import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
@@ -424,6 +425,7 @@ public class VdbSequencerTest extends AbstractSequencerTest {
     }
 
     @Test
+    @SkipLongRunning
     public void shouldSequenceVdbBqtVdb() throws Exception {
         createNodeWithContentFromFile("vdb/BqtVdb.vdb", "vdb/BqtVdb.vdb");
         Node outputNode = getOutputNode(this.rootNode, "vdbs/BqtVdb.vdb", 60);

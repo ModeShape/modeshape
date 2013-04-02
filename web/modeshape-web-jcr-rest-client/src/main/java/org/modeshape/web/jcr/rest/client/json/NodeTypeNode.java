@@ -34,9 +34,9 @@ import java.util.Map;
 import java.util.Set;
 import javax.jcr.PropertyType;
 import javax.jcr.version.OnParentVersionAction;
-import org.modeshape.common.annotation.Immutable;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.web.jcr.rest.client.domain.ChildNodeDefinition;
 import org.modeshape.web.jcr.rest.client.domain.NodeType;
@@ -53,6 +53,8 @@ import org.modeshape.web.jcr.rest.client.domain.Workspace;
  */
 @Immutable
 public final class NodeTypeNode extends JsonNode {
+
+    private static final long serialVersionUID = 1L;
 
     protected static final String NODE_TYPES_PATH = "jcr:system/jcr:nodeTypes";
     protected static final int NODE_TYPE_DEPTH = 5;

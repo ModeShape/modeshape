@@ -114,26 +114,12 @@ public class ModeShapeEngine implements Repositories {
             ThreadFactory cronThreadFactory = new NamedThreadFactory("modeshape-cron");
             cronStarterService = new ScheduledThreadPoolExecutor(1, cronThreadFactory);
 
-            // Add a Cron job that cleans up each repository ...
-            cronStarterService.scheduleAtFixedRate(new GarbageCollectionTask(), RepositoryConfiguration.GARBAGE_COLLECTION_SWEEP_PERIOD,
-                                     RepositoryConfiguration.GARBAGE_COLLECTION_SWEEP_PERIOD, TimeUnit.MILLISECONDS);
-
             state = State.RUNNING;
         } catch (RuntimeException e) {
             state = State.NOT_RUNNING;
             throw e;
         } finally {
             lock.unlock();
-        }
-    }
-
-    protected class GarbageCollectionTask implements Runnable {
-        @Override
-        public void run() {
-            for (JcrRepository repository : repositories()) {
-                // Okay to call, even if not running ...
-                repository.cleanUp();
-            }
         }
     }
 
@@ -613,7 +599,7 @@ public class ModeShapeEngine implements Repositories {
             } catch (Exception e) {
                 throw new ConfigurationException(problems, JcrI18n.repositoryConfigurationIsNotValid.text(repositoryName,
                                                                                                           e.getMessage()), e);
-            } 
+            }
             return new ImmediateFuture<JcrRepository>(repository);
             //
             // // Create an initializer that will start the repository ...

@@ -23,20 +23,21 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
+import javax.jcr.nodetype.ConstraintViolationException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.value.NamespaceRegistry;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
 
 public class RepositoryNodeTypeManagerTest extends AbstractTransactionalTest {
 
@@ -44,7 +45,7 @@ public class RepositoryNodeTypeManagerTest extends AbstractTransactionalTest {
     private JcrRepository repository;
     private ExecutionContext context;
     private RepositoryNodeTypeManager repoTypeManager;
-    private Session session;
+    private JcrSession session;
 
     @Before
     public void beforeEach() throws Exception {
@@ -118,9 +119,61 @@ public class RepositoryNodeTypeManagerTest extends AbstractTransactionalTest {
         nodeTypeManager().registerNodeTypes(cndStream, true);
     }
 
+    @Test
+    @FixFor( "MODE-1857" )
+    public void shouldAllowOverridingOfPropertyDefinitions() throws Exception {
+        InputStream cnd = getClass().getClassLoader().getResourceAsStream("cnd/overridingPropertyDefinition.cnd");
+        assertThat(cnd, is(notNullValue()));
+        session.getWorkspace().getNodeTypeManager().registerNodeTypes(cnd, true);
 
-    private JcrNodeTypeManager nodeTypeManager() throws RepositoryException {
-        return (JcrNodeTypeManager)session.getWorkspace().getNodeTypeManager();
+        Node car = session.getRootNode().addNode("car", "car");
+        car.setProperty("engine", "4CYL");
+        Node cycle = session.getRootNode().addNode("cycle", "motorcycle");
+        cycle.setProperty("engine", "2CYL");
+        session.save();
+
+        try {
+            car.setProperty("engine", "2CYL");
+            fail("Should not have allowed setting the 'engine' property on a node of type 'car' to \"2CYL\"");
+        } catch (ConstraintViolationException e) {
+            // expected ...
+        }
+        try {
+            cycle.setProperty("engine", "4CYL");
+            fail("Should not have allowed setting the 'engine' property on a node of type 'car' to \"2CYL\"");
+        } catch (ConstraintViolationException e) {
+            // expected ...
+        }
     }
 
+    @Test
+    @FixFor( "MODE-1857" )
+    public void shouldAllowOverridingOfPropertyDefinitionsWithResidualDefinitions() throws Exception {
+        InputStream cnd = getClass().getClassLoader().getResourceAsStream("cnd/overridingPropertyDefinitionWithResidual.cnd");
+        assertThat(cnd, is(notNullValue()));
+        session.getWorkspace().getNodeTypeManager().registerNodeTypes(cnd, true);
+
+        Node car = session.getRootNode().addNode("car", "car");
+        car.setProperty("engine", "4CYL");
+        Node cycle = session.getRootNode().addNode("cycle", "motorcycle");
+        cycle.setProperty("engine", "2CYL");
+        session.save();
+
+        try {
+            car.setProperty("engine", "2CYL");
+            fail("Should not have allowed setting the 'engine' property on a node of type 'car' to \"2CYL\"");
+        } catch (ConstraintViolationException e) {
+            // expected ...
+        }
+        try {
+            cycle.setProperty("engine", "4CYL");
+            fail("Should not have allowed setting the 'engine' property on a node of type 'car' to \"2CYL\"");
+        } catch (ConstraintViolationException e) {
+            // expected ...
+        }
+    }
+
+    private JcrNodeTypeManager nodeTypeManager() throws RepositoryException {
+        return session.getWorkspace().getNodeTypeManager();
+    }
 }

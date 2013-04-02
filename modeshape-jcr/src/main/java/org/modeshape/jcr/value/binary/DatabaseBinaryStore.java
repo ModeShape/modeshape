@@ -44,6 +44,47 @@ import org.modeshape.jcr.value.BinaryValue;
 
 /**
  * A {@link BinaryStore} implementation that uses a database for persisting binary values.
+ * <p>
+ * This binary store implementation establishes a connection to the specified database and then attempts to determine which type
+ * of database is being used. ModeShape is aware of the following database types:
+ * <ul>
+ * <li><code>mysql</code></li>
+ * <li><code>postgres</code></li>
+ * <li><code>derby</code></li>
+ * <li><code>hsql</code></li>
+ * <li><code>h2</code></li>
+ * <li><code>sqlite</code></li>
+ * <li><code>db2</code></li>
+ * <li><code>db2_390</code></li>
+ * <li><code>informix</code></li>
+ * <li><code>interbase</code></li>
+ * <li><code>firebird</code></li>
+ * <li><code>sqlserver</code></li>
+ * <li><code>access</code></li>
+ * <li><code>oracle</code></li>
+ * <li><code>sybase</code></li>
+ * </ul>
+ * This binary store implementation then uses DDL and DML statements to create the table(s) if not already existing and to perform
+ * the various operations required of a binary store. ModeShape can use database-specific statements, although a default set of
+ * SQL-99 statements are used as a fallback.
+ * </p>
+ * <p>
+ * These statements are read from a property file named "<code>binary_store_{type}_database.properties</code>", where where "
+ * <code>{type}</code>" is one of the above-mentioned database type strings. These properties files are expected to be found on
+ * the classpath directly under "org/modeshape/jcr/database". If the corresponding file is not found on the classpath, then the "
+ * <code>binary_store_default_database.properties</code>" file provided by ModeShape is used.
+ * </p>
+ * <p>
+ * ModeShape provides out-of-the-box database-specific files for several of the DBMSes that are popular within the open source
+ * community. The properties files for the other database types are not provided (though the ModeShape community will gladly
+ * incorporate them if you wish to make them available to us); in such cases, simply copy one of the provided properties files
+ * (e.g., "<code>binary_store_default_database.properties</code>" is often a good start) and customize it for your particular
+ * DBMS, naming it according to the pattern described above and including it on the classpath.
+ * </p>
+ * <p>
+ * Note that this mechanism can also be used to override the statements that ModeShape does provide out-of-the-box. In such cases,
+ * be sure to place the file on the classpath before the ModeShape JARs so that your file will be discovered first.
+ * </p>
  */
 @ThreadSafe
 public class DatabaseBinaryStore extends AbstractBinaryStore {
@@ -112,14 +153,14 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
             // check unused content
             if (this.contentExists(key, UNUSED)) {
                 PreparedStatement sql = database.restoreContentSQL(key);
-                Database.execute(sql);
+                Database.execute(sql); // doesn't produce a result set
                 return new StoredBinaryValue(this, key, temp.getSize());
             }
 
             // store content
             try {
                 PreparedStatement sql = database.insertContentSQL(key, temp.getStream());
-                Database.execute(sql);
+                Database.execute(sql); // doesn't produce a result set
 
                 return new StoredBinaryValue(this, key, temp.getSize());
             } catch (Exception e) {
@@ -134,10 +175,10 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     @Override
     public InputStream getInputStream( BinaryKey key ) throws BinaryStoreException {
         ResultSet rs = Database.executeQuery(database.retrieveContentSQL(key, true));
-        InputStream inputStream = Database.asStream(rs);
+        InputStream inputStream = Database.asStream(rs); // closes result set
         if (inputStream == null) {
             try {
-                throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database.connection.getCatalog()));
+                throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database.getConnection().getCatalog()));
             } catch (SQLException e) {
                 logger.debug(e, "Unable to retrieve db information");
             }
@@ -149,7 +190,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     public void markAsUnused( Iterable<BinaryKey> keys ) throws BinaryStoreException {
         for (BinaryKey key : keys) {
             PreparedStatement sql = database.markUnusedSQL(key);
-            Database.executeUpdate(sql);
+            Database.executeUpdate(sql); // doesn't produce a result set
         }
     }
 
@@ -159,21 +200,21 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         // compute usage deadline (in past)
         long deadline = now() - unit.toMillis(minimumAge);
         PreparedStatement sql = database.removeExpiredContentSQL(deadline);
-        Database.execute(sql);
+        Database.execute(sql); // doesn't produce a result set
     }
 
     @Override
     protected String getStoredMimeType( BinaryValue source ) throws BinaryStoreException {
         checkContentExists(source);
         ResultSet rs = Database.executeQuery(database.retrieveMimeTypeSQL(source.getKey()));
-        return Database.asString(rs);
+        return Database.asString(rs); // closes result set
     }
 
     private void checkContentExists( BinaryValue source ) throws BinaryStoreException {
         if (!contentExists(source.getKey(), true)) {
             try {
-                throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(source.getKey(),
-                                                                                    database.connection.getCatalog()));
+                throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(source.getKey(), database.getConnection()
+                                                                                                             .getCatalog()));
             } catch (SQLException e) {
                 logger.debug("Cannot get catalog information", e);
             }
@@ -184,21 +225,21 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     protected void storeMimeType( BinaryValue source,
                                   String mimeType ) throws BinaryStoreException {
         PreparedStatement sql = database.updateMimeTypeSQL(source.getKey(), mimeType);
-        Database.executeUpdate(sql);
+        Database.executeUpdate(sql); // doesn't produce a result set
     }
 
     @Override
     public String getExtractedText( BinaryValue source ) throws BinaryStoreException {
         checkContentExists(source);
         ResultSet rs = Database.executeQuery(database.retrieveExtTextSQL(source.getKey()));
-        return Database.asString(rs);
+        return Database.asString(rs); // closes result set
     }
 
     @Override
     public void storeExtractedText( BinaryValue source,
                                     String extractedText ) throws BinaryStoreException {
         PreparedStatement sql = database.updateExtTextSQL(source.getKey(), extractedText);
-        Database.executeUpdate(sql);
+        Database.executeUpdate(sql); // doesn't produce a result set
     }
 
     @Override
@@ -210,14 +251,11 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
                                                                                                                                                        username,
                                                                                                                                                        password);
 
-            // TODO: here we are making decision which kind of database we will talk to.
-            // Right now, we just have one kind of utility, and no specializations for specific databases
-            // DatabaseMetaData metaData = connection.getMetaData();
+            // Create the database helper that behaves differently based upon the type of database
             database = new Database(connection);
 
-            if (!database.tableExists()) {
-                database.createTable();
-            }
+            // Initialize the helper and database, creating the database table if it is missing ...
+            database.initialize();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -232,7 +270,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         Set<BinaryKey> keys = new HashSet<BinaryKey>();
         try {
             PreparedStatement sql = database.retrieveBinaryKeys(keys);
-            List<String> keysString = Database.asStringList(Database.executeQuery(sql));
+            List<String> keysString = Database.asStringList(Database.executeQuery(sql)); // closes result set
 
             Set<BinaryKey> binaryKeys = new HashSet<BinaryKey>(keysString.size());
             for (String keyString : keysString) {
@@ -262,11 +300,26 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
      */
     private boolean contentExists( BinaryKey key,
                                    boolean alive ) throws BinaryStoreException {
+        ResultSet rs = null;
+        boolean error = false;
         try {
-            ResultSet rs = Database.executeQuery(database.retrieveContentSQL(key, alive));
+            rs = Database.executeQuery(database.retrieveContentSQL(key, alive));
             return rs.next();
         } catch (SQLException e) {
+            error = true;
             throw new BinaryStoreException(e);
+        } catch (RuntimeException e) {
+            error = true;
+            throw e;
+        } finally {
+            if (rs != null) {
+                // Always close the result set ...
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    if (!error) throw new BinaryStoreException(e);
+                }
+            }
         }
     }
 

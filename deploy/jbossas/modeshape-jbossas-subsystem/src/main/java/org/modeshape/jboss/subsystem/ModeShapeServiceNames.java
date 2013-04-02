@@ -60,27 +60,30 @@ public class ModeShapeServiceNames {
     /**
      * Obtain the name of the service for the {@link IndexStorage} for the given repository name
      * 
-     * @param name the repository name
+     * @param repositoryName the repository name
      * @return the service name
      */
-    public static ServiceName indexStorageServiceName( String name ) {
-        return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "indexes");
+    public static ServiceName indexStorageServiceName( String repositoryName ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "indexes");
     }
 
-    public static ServiceName indexStorageDirectoryServiceName( String name ) {
-        return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "indexes.dir");
+    public static ServiceName indexStorageDirectoryServiceName( String repositoryName ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "indexes.dir");
     }
 
-    public static ServiceName indexSourceStorageDirectoryServiceName( String name ) {
-        return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "indexes.source-dir");
+    public static ServiceName indexSourceStorageDirectoryServiceName( String repositoryName ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "indexes.source-dir");
     }
 
-    public static ServiceName binaryStorageServiceName( String name ) {
-        return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "binaries");
+    public static ServiceName binaryStorageServiceName( String repositoryName ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "binaries");
     }
 
-    public static ServiceName binaryStorageDirectoryServiceName( String name ) {
-        return ServiceName.of(ServiceName.JBOSS, "modeshape", name, "binaries.dir");
+    public static ServiceName binaryStorageDirectoryServiceName( String repositoryName ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "binaries.dir");
     }
 
+    public static ServiceName referenceFactoryServiceName( String repositoryName ) {
+        return repositoryServiceName(repositoryName).append("reference-factory");
+    }
 }

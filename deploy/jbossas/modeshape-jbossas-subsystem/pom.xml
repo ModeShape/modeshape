@@ -50,9 +50,6 @@
             <artifactId>infinispan-core</artifactId>
         </dependency>
 
-        <!--
-More compile dependencies (defined _after_ the JBoss AS7 artifacts and Infinispan)
--->
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-search-infinispan</artifactId>
@@ -62,9 +59,6 @@ More compile dependencies (defined _after_ the JBoss AS7 artifacts and Infinispa
             <artifactId>infinispan-lucene-directory</artifactId>
         </dependency>
 
-        <!--
-Testing (note the scope)
--->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

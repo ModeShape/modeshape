@@ -257,25 +257,27 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         assertTrue(date != null);
     }
 
-    //    //@Test
+    @Test
     public void shouldCreateFolder() throws Exception {
-        Node root = getSession().getNode("/cmis/src");
+        Node root = getSession().getNode("/cmis");
 
-        Node node = root.addNode("test", "cmis:folder");
-        node.setProperty("cmis:name", "test-name");
+        String name = "test"+System.currentTimeMillis();
+        Node node = root.addNode(name, "nt:folder");
+        assertTrue(name.equals(node.getName()));
+        //node.setProperty("name", "test-name");
 
-        root = getSession().getNode("/cmis/src");
-        Node node1 = root.addNode("test-1", "cmis:document");
+        root = getSession().getNode("/cmis/"+name);
+        Node node1 = root.addNode("test-1", "nt:file");
 
         byte[] content = "Hello World".getBytes();
         ByteArrayInputStream bin = new ByteArrayInputStream(content);
         bin.reset();
 
-        ValueFactory valueFactory = getSession().getValueFactory();
-        node1.setProperty("cmis:data", valueFactory.createBinary(bin));
-        node1.setProperty("cmis:mimeType", "text/plain");
+        Node contentNode = node1.addNode("jcr:content", "nt:resource");
+        Binary binary = session.getValueFactory().createBinary(bin);
+        contentNode.setProperty("jcr:data", binary);
+        contentNode.setProperty("jcr:lastModified",Calendar.getInstance());
 
-//        Node node2 = node.addNode("org", "cmis:folder");
         getSession().save();
         assertTrue(node != null);
 

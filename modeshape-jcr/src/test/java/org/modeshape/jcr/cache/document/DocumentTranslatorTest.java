@@ -39,6 +39,7 @@ import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.SessionEnvironment;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path.Segment;
 
@@ -46,8 +47,9 @@ public class DocumentTranslatorTest extends AbstractSessionCacheTest {
 
     @Override
     protected SessionCache createSessionCache( ExecutionContext context,
-                                               WorkspaceCache cache ) {
-        return new WritableSessionCache(context, workspaceCache, createSessionContext());
+                                               WorkspaceCache cache,
+                                               SessionEnvironment sessionEnv ) {
+        return new WritableSessionCache(context, workspaceCache, sessionEnv);
     }
 
     @Test
@@ -130,7 +132,7 @@ public class DocumentTranslatorTest extends AbstractSessionCacheTest {
         // Make it optimum to start out ...
         NodeKey key = nodeB.getKey();
         workspaceCache.translator().optimizeChildrenBlocks(key, null, 5, 2); // will merge into a single block ...
-        //Save the session, otherwise the database is inconsistent after the optimize operation
+        // Save the session, otherwise the database is inconsistent after the optimize operation
         session1.save();
         nodeB = check(session1).mutableNode("/childB");
         print(false);

@@ -118,13 +118,16 @@ public class DoGetTest extends AbstractWebDAVTest {
                 will(returnValue(Locale.GERMAN));
 
                 one(mockRes).setContentType("text/html");
-                one(mockRes).setCharacterEncoding("UTF8");
+                one(mockRes).setCharacterEncoding("UTF-8");
 
                 one(mockRes).getOutputStream();
                 will(returnValue(testingOutputStream));
 
                 one(mockStore).getChildrenNames(mockTransaction, "/foo/");
                 will(returnValue(new String[] {"AAA", "BBB"}));
+
+                exactly(2).of(mockReq).getRequestURL();
+                will(returnValue(new StringBuffer("http://localhost")));
 
                 one(mockStore).getStoredObject(mockTransaction, "/foo//AAA");
                 will(returnValue(aaa));

@@ -23,43 +23,27 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import org.jboss.as.controller.AbstractRemoveStepHandler;
-import org.jboss.as.controller.OperationContext;
+import java.util.Arrays;
+import java.util.List;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceName;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
-class RemoveTextExtractor extends AbstractRemoveStepHandler {
+class RemoveTextExtractor extends AbstractModeShapeRemoveStepHandler {
 
-    private static final Logger log = Logger.getLogger(RemoveTextExtractor.class.getPackage().getName());
-
-    public static final RemoveTextExtractor INSTANCE = new RemoveTextExtractor();
+    static final RemoveTextExtractor INSTANCE = new RemoveTextExtractor();
 
     private RemoveTextExtractor() {
     }
 
     @Override
-    protected void performRuntime( OperationContext context,
-                                   ModelNode operation,
-                                   ModelNode model ) {
+    List<ServiceName> servicesToRemove( ModelNode operation,
+                                        ModelNode model ) {
         // Get the service addresses ...
         final PathAddress serviceAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
         // Get the repository name ...
-        final String sequencerName = serviceAddress.getLastElement().getValue();
-        final String repositoryName = serviceAddress.getElement(1).getValue();
-        // Remove the service ...
-        final ServiceName serviceName = ModeShapeServiceNames.textExtractorServiceName(repositoryName, sequencerName);
-        context.removeService(serviceName);
-
-        log.debugf("extractor '%s' removed for repository '%s'", sequencerName, repositoryName);
-    }
-
-    @Override
-    protected void recoverServices( OperationContext context,
-                                    ModelNode operation,
-                                    ModelNode model ) {
-        // TODO: RE-ADD SERVICES
+        final String textExtractorName = serviceAddress.getLastElement().getValue();
+        return Arrays.asList(ModeShapeServiceNames.textExtractorServiceName(repositoryName(operation), textExtractorName));
     }
 }

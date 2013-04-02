@@ -268,13 +268,20 @@ public class RecordingChanges implements Changes, ChangeSet {
           .append(getTimestamp())
           .append(" with user data = ")
           .append(userData)
-          .append(" in repository ").append(repositoryKey)
-          .append(" and workspace ").append(workspaceName)
+          .append(" in repository ")
+          .append(repositoryKey)
+          .append(" and workspace ")
+          .append(workspaceName)
           .append("\n");
 
         for (Change change : this) {
             sb.append("  ").append(change).append("\n");
         }
+        sb.append("changed " + nodeKeys.size() + " nodes:\n");
+        for (NodeKey key : nodeKeys) {
+            sb.append("  ").append(key).append("\n");
+        }
+
         return sb.toString();
     }
 }

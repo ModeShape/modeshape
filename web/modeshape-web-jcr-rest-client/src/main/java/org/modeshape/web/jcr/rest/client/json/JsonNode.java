@@ -32,6 +32,8 @@ import org.codehaus.jettison.json.JSONObject;
  */
 public abstract class JsonNode extends JSONObject {
 
+    private static final long serialVersionUID = 1L;
+
     // ===========================================================================================================================
     // Fields
     // ===========================================================================================================================
@@ -49,7 +51,7 @@ public abstract class JsonNode extends JSONObject {
      * @param id the node identifier (never <code>null</code>)
      */
     protected JsonNode( String id ) {
-    	assert id != null;
+        assert id != null;
         this.id = id;
     }
 

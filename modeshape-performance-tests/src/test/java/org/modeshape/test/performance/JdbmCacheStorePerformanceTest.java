@@ -23,11 +23,10 @@
  */
 package org.modeshape.test.performance;
 
-import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.cache.LoaderConfigurationBuilder;
-import org.infinispan.loaders.jdbm.JdbmCacheStore;
-import org.modeshape.common.util.FileUtil;
 import java.io.File;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.loaders.jdbm.configuration.JdbmCacheStoreConfigurationBuilder;
+import org.modeshape.common.util.FileUtil;
 
 public class JdbmCacheStorePerformanceTest extends InMemoryPerformanceTest {
 
@@ -39,8 +38,10 @@ public class JdbmCacheStorePerformanceTest extends InMemoryPerformanceTest {
     }
 
     @Override
-    public void applyLoaderConfiguration(ConfigurationBuilder configurationBuilder) {
-        LoaderConfigurationBuilder lb = configurationBuilder.loaders().addCacheLoader().cacheLoader(new JdbmCacheStore());
-        lb.addProperty("location", dbDir.getAbsolutePath());
+    public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
+        JdbmCacheStoreConfigurationBuilder builder = new JdbmCacheStoreConfigurationBuilder(configurationBuilder.loaders());
+        builder.location(dbDir.getAbsolutePath());
+        builder.purgeOnStartup(true);
+        configurationBuilder.loaders().addStore(builder);
     }
 }

@@ -78,6 +78,7 @@ public class QueryResultColumns implements Columns {
     private List<String> tupleValueNames;
     private final Map<String, String> selectorNameByColumnName;
     private final Map<String, Integer> columnIndexByColumnName;
+    private final Map<String, String> columnTypeNameByColumnName;
     private final Map<String, Integer> locationIndexBySelectorName;
     private final Map<String, Integer> locationIndexByColumnName;
     private final Map<Integer, Integer> locationIndexByColumnIndex;
@@ -126,6 +127,7 @@ public class QueryResultColumns implements Columns {
         this.columns = columns != null ? Collections.<Column>unmodifiableList(columns) : NO_COLUMNS;
         this.columnTypes = columnTypes != null ? Collections.<String>unmodifiableList(columnTypes) : NO_TYPES;
         this.columnIndexByColumnName = new HashMap<String, Integer>();
+        this.columnTypeNameByColumnName = new HashMap<String, String>();
         Set<String> selectors = new HashSet<String>();
         final int columnCount = this.columns.size();
         this.locationIndexBySelectorName = new HashMap<String, Integer>();
@@ -167,6 +169,7 @@ public class QueryResultColumns implements Columns {
             propertyNameByColumnName.put(columnName, column.getPropertyName());
             selectorNameByColumnName.put(columnName, selectorName);
             columnIndexByColumnName.put(columnName, new Integer(i));
+            columnTypeNameByColumnName.put(columnName, this.columnTypes.get(i));
             locationIndexByColumnIndex.put(new Integer(i), selectorIndex);
             locationIndexByColumnName.put(columnName, selectorIndex);
             // Insert the entry by selector name and property name ...
@@ -204,6 +207,7 @@ public class QueryResultColumns implements Columns {
         assert columns != null;
         this.columns = Collections.unmodifiableList(columns);
         this.columnIndexByColumnName = new HashMap<String, Integer>();
+        this.columnTypeNameByColumnName = new HashMap<String, String>();
         this.locationIndexBySelectorName = new HashMap<String, Integer>();
         this.locationIndexByColumnIndex = new HashMap<Integer, Integer>();
         this.locationIndexByColumnName = new HashMap<String, Integer>();
@@ -246,10 +250,23 @@ public class QueryResultColumns implements Columns {
                     String columnNameWithSelector = column.selectorName() + "." + columnNameWithoutSelector;
                     columnIndex = wrappedAround.columnIndexForName(columnNameWithSelector);
                 }
+                // if column index is still null, lookup the column index by property name.
+                if (columnIndex == null) {
+                    columnNameWithoutSelector = column.getPropertyName();
+                    if (columnNameWithoutSelector.startsWith(selectorName + ".")
+                        && columnNameWithoutSelector.length() > (selectorName.length() + 1)) {
+                        columnNameWithoutSelector = columnNameWithoutSelector.substring(selectorName.length() + 1);
+                    }
+                    columnIndex = wrappedAround.columnIndexForName(columnNameWithoutSelector);
+                    if (columnIndex == null) {
+                        String columnNameWithSelector = column.selectorName() + "." + columnNameWithoutSelector;
+                        columnIndex = wrappedAround.columnIndexForName(columnNameWithSelector);
+                    }
+                }
             }
             assert columnIndex != null;
             columnIndexByColumnName.put(columnName, columnIndex);
-            String columnType = wrappedAround.getColumnTypes().get(columnIndex.intValue());
+            String columnType = wrappedAround.columnTypeNameByColumnName.get(columnName);
             types.add(columnType);
             Integer selectorIndex = new Integer(wrappedAround.getLocationIndex(selectorName));
             locationIndexBySelectorName.put(selectorName, selectorIndex);

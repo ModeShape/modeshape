@@ -56,6 +56,9 @@ public enum Attribute {
     DEFAULT_WORKSPACE("default-workspace"),
     ENABLE_MONITORING("enable-monitoring"),
     ENABLE_QUERIES("enable-queries"),
+    GARBAGE_COLLECTION_THREAD_POOL("garbage-collection-thread-pool"),
+    GARBAGE_COLLECTION_INITIAL_TIME("garbage-collection-initial-time"),
+    GARBAGE_COLLECTION_INTERVAL("garbage-collection-interval"),
     FORMAT("format"),
     JNDI_NAME("jndi-name"),
     LOCK_CACHE_NAME("lock-cache-name"),
@@ -90,7 +93,9 @@ public enum Attribute {
     WORKSPACE_NAMES("workspace-names"),
     CACHE_TTL_SECONDS("cacheTtlSeconds"),
     QUERYABLE("queryable"),
-    READONLY("readonly");
+    READONLY("readonly"),
+    EXPLODED("exploded"),
+    AUTO_DEPLOY("auto-deploy");
 
     private final String name;
 

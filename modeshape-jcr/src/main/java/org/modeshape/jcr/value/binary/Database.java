@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.value.binary;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -30,28 +31,67 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.value.BinaryKey;
 
 /**
  * Helper class for manipulation with database.
+ * <p>
+ * This class looks for database SQL statements in properties files named "<code>binary_store_{type}_database.properties</code>"
+ * located within the "org/modeshape/jcr/database" area of the classpath, where "<code>{type}</code>" is {@link #determineType()
+ * determined} from the connection, and matches one of the following:
+ * <ul>
+ * <li><code>mysql</code></li>
+ * <li><code>postgres</code></li>
+ * <li><code>derby</code></li>
+ * <li><code>hsql</code></li>
+ * <li><code>h2</code></li>
+ * <li><code>sqlite</code></li>
+ * <li><code>db2</code></li>
+ * <li><code>db2_390</code></li>
+ * <li><code>informix</code></li>
+ * <li><code>interbase</code></li>
+ * <li><code>firebird</code></li>
+ * <li><code>sqlserver</code></li>
+ * <li><code>access</code></li>
+ * <li><code>oracle</code></li>
+ * <li><code>sybase</code></li>
+ * </ul>
+ * If the corresponding file is not found on the classpath, then the "<code>binary_store_default_database.properties</code>" file
+ * is used.
+ * </p>
+ * <p>
+ * Each property file should contain the set of DDL and DML statements that are used by the binary store, and the
+ * database-specific file allows database-specific schemas and queries to be used. If the properties file that corresponds to the
+ * connection's database type is not found on the classpath, then the "<code>binary_store_default_database.properties</code>" file
+ * is used.
+ * </p>
+ * <p>
+ * ModeShape does not provide out-of-the-box properties files for each of the database types listed above. If you run into any
+ * problems, you can override the statements by providing a property file that matches the naming pattern described above, and by
+ * putting that file on the classpath. (If you want to override one of ModeShape's out-of-the-box properties files, then be sure
+ * to put your custom file first on the classpath.)
+ * </p>
  * 
  * @author kulikov
  */
 public class Database {
-    // connection to a database
-    protected final Connection connection;
-    // table name prefix
-    private String prefix;
 
-    protected Type databaseType;
+    private static final Logger LOGGER = Logger.getLogger(Database.class);
 
-    // SQLBuilder
-    private SQLBuilder sqlBuilder = new SQLBuilder();
-    private SQLType sqlType = new SQLType();
+    public static final String TABLE_NAME = "CONTENT_STORE";
 
-    public enum Type {
+    public static final String STATEMENTS_FILE_PATH = "org/modeshape/jcr/database/";
+    protected static final String STATEMENTS_FILE_PREFIX = "binary_store_";
+    protected static final String STATEMENTS_FILENAME_SUFFIX = "_database.properties";
+    protected static final String DEFAULT_STATEMENTS_FILE_PATH = STATEMENTS_FILE_PATH + STATEMENTS_FILE_PREFIX + "default"
+                                                                 + STATEMENTS_FILENAME_SUFFIX;
+
+    public static enum Type {
         MYSQL,
         POSTGRES,
         DERBY,
@@ -63,12 +103,29 @@ public class Database {
         INFORMIX,
         INTERBASE,
         FIREBIRD,
-        SQL_SERVER,
+        SQLSERVER,
         ACCESS,
         ORACLE,
         SYBASE,
         UNKNOWN;
     }
+
+    private final Connection connection;
+    private final Type databaseType;
+    private final String prefix;
+    private final String tableName;
+    private final Properties statements;
+    private PreparedStatement addContentSql;
+    private PreparedStatement getUsedContentSql;
+    private PreparedStatement getUnusedContentSql;
+    private PreparedStatement markUnusedSql;
+    private PreparedStatement markUsedSql;
+    private PreparedStatement removedExpiredSql;
+    private PreparedStatement getMimeType;
+    private PreparedStatement setMimeType;
+    private PreparedStatement getExtractedTextSql;
+    private PreparedStatement setExtractedTextSql;
+    private PreparedStatement getBinaryKeysSql;
 
     /**
      * Creates new instance of the database.
@@ -77,429 +134,120 @@ public class Database {
      * @throws BinaryStoreException if the database type cannot be determined
      */
     public Database( Connection connection ) throws BinaryStoreException {
+        this(connection, null, null);
+    }
+
+    /**
+     * Creates new instance of the database.
+     * 
+     * @param connection connection to a database
+     * @param type the type of database; may be null if the type is to be determined
+     * @param prefix the prefix for the table name; may be null or blank
+     * @throws BinaryStoreException if the database type cannot be determined
+     */
+    public Database( Connection connection,
+                     Type type,
+                     String prefix ) throws BinaryStoreException {
+        assert connection != null;
         this.connection = connection;
-        databaseType = determineType();
-    }
+        this.databaseType = type != null ? type : determineType();
+        this.prefix = prefix == null ? null : prefix.trim();
+        this.tableName = this.prefix != null && this.prefix.length() != 0 ? this.prefix + TABLE_NAME : TABLE_NAME;
+        LOGGER.debug("Discovered DBMS type for binary store as '{0}' on {1}", databaseType, connection);
 
-    /**
-     * Shows type of this database.
-     * 
-     * @return database type identifier.
-     */
-    public Type getDatabaseType() {
-        return databaseType;
-    }
-
-    /**
-     * Modifies database type.
-     * 
-     * @param databaseType new database type identifier.
-     */
-    protected void setDatabaseType( Type databaseType ) {
-        this.databaseType = databaseType;
-    }
-
-    /**
-     * Configures table name prefix.
-     * 
-     * @param prefix table name prefix.
-     */
-    public void setPrefix( String prefix ) {
-        this.prefix = prefix;
-    }
-
-    /**
-     * Convergence table name including prefix if configured.
-     * 
-     * @return table name.
-     */
-    private String tableName() {
-        return StringUtil.isBlank(prefix) ? "CONTENT_STORE" : prefix + "_CONTENT_STORE";
-    }
-
-    /**
-     * Current time.
-     * 
-     * @return current time in milliseconds
-     */
-    private long now() {
-        return new java.util.Date().getTime();
-    }
-
-    /**
-     * Create statement for store content.
-     * 
-     * @param key unique content identifier
-     * @param stream content to store
-     * @return SQL statement.
-     * @throws BinaryStoreException
-     */
-    public PreparedStatement insertContentSQL( BinaryKey key,
-                                               InputStream stream ) throws BinaryStoreException {
         try {
-            PreparedStatement sql = sqlBuilder.insert()
-                                              .into(tableName())
-                                              .columns("cid", "usage_time", "payload", "usage")
-                                              .values("?", "?", "?", "1")
-                                              .build();
-            sql.setString(1, key.toString());
-            sql.setTimestamp(2, new java.sql.Timestamp(now()));
-            sql.setBinaryStream(3, stream);
-            return sql;
-        } catch (SQLException e) {
-            throw new BinaryStoreException(e);
-        }
-    }
+            // Load the default statements ...
+            String statementsFilename = DEFAULT_STATEMENTS_FILE_PATH;
+            InputStream statementStream = getClass().getClassLoader().getResourceAsStream(statementsFilename);
+            Properties defaultStatements = new Properties();
+            try {
+                LOGGER.trace("Loading default statement from '{0}'", statementsFilename);
+                defaultStatements.load(statementStream);
+            } finally {
+                statementStream.close();
+            }
 
-    /**
-     * Generates SQL statement for content retrieve.
-     * 
-     * @param key content id
-     * @param inUse true if the binary given by the key is expected to be still be in use, or false if the binary can be no longer used
-     * @return executable SQL statement
-     * @throws BinaryStoreException
-     */
-    public PreparedStatement retrieveContentSQL( BinaryKey key, boolean inUse ) throws BinaryStoreException {
-        try {
-            PreparedStatement sql = sqlBuilder.select()
-                                              .columns("payload")
-                                              .from(tableName())
-                                              .where()
-                                              .condition("cid", sqlType.integer(), "=", "?")
-                                              .and()
-                                              .condition("usage", sqlType.integer(), "=", "?")
-                                              .build();
-            sql.setString(1, key.toString());
-            if (inUse) {
-                sql.setInt(2, 1);
+            // Look for type-specific statements ...
+            statementsFilename = STATEMENTS_FILE_PATH + STATEMENTS_FILE_PREFIX + databaseType.name().toLowerCase()
+                                 + STATEMENTS_FILENAME_SUFFIX;
+            statementStream = getClass().getClassLoader().getResourceAsStream(statementsFilename);
+            if (statementStream != null) {
+                // Try to read the type-specific statements ...
+                try {
+                    LOGGER.trace("Loading DBMS-specific statement from '{0}'", statementsFilename);
+                    statements = new Properties(defaultStatements);
+                    statements.load(statementStream);
+                } finally {
+                    statementStream.close();
+                }
             } else {
-                sql.setInt(2, 0);
+                // No type-specific statements, so just use the default statements ...
+                statements = defaultStatements;
+                LOGGER.trace("No DBMS-specific statement found in '{0}'", statementsFilename);
             }
-            return sql;
-        } catch (SQLException e) {
+
+        } catch (IOException e) {
             throw new BinaryStoreException(e);
         }
     }
 
     /**
-     * Generates SQL statement which marks content as not used.
+     * Prepare this instance and the underlying database for usage.
      * 
-     * @param key the content id.
-     * @return SQL statement.
-     * @throws BinaryStoreException
+     * @throws BinaryStoreException if there is a problem
      */
-    public PreparedStatement markUnusedSQL( BinaryKey key ) throws BinaryStoreException {
+    public void initialize() throws BinaryStoreException {
         try {
-            PreparedStatement sql = sqlBuilder.update(tableName())
-                                              .set("usage", "?")
-                                              .set("usage_time", "?")
-                                              .where()
-                                              .condition("cid", sqlType.integer(), "=", "?")
-                                              .build();
-            sql.setInt(1, 0);
-            sql.setTimestamp(2, new java.sql.Timestamp(now()));
-            sql.setString(3, key.toString());
-            return sql;
-        } catch (SQLException e) {
-            throw new BinaryStoreException(e);
-        }
-    }
-
-    /**
-     * Generates SQL statement which marks content as used.
-     *
-     * @param key the content id.
-     * @return SQL statement.
-     * @throws BinaryStoreException
-     */
-    public PreparedStatement restoreContentSQL( BinaryKey key ) throws BinaryStoreException {
-        try {
-            PreparedStatement sql = sqlBuilder.update(tableName())
-                                              .set("usage", "?")
-                                              .where()
-                                              .condition("cid", sqlType.integer(), "=", "?")
-                                              .build();
-            sql.setInt(1, 1);
-            sql.setString(2, key.toString());
-            return sql;
-        } catch (SQLException e) {
-            throw new BinaryStoreException(e);
-        }
-    }
-
-    /**
-     * Generates SQL statement which removes expired content.
-     * 
-     * @param deadline expire time
-     * @return SQL statement.
-     * @throws BinaryStoreException
-     */
-    public PreparedStatement removeExpiredContentSQL( long deadline ) throws BinaryStoreException {
-        try {
-            PreparedStatement sql = sqlBuilder.delete()
-                                              .from(tableName())
-                                              .where()
-                                              .condition("usage_time", sqlType.timestamp(), "<", "?")
-                                              .build();
-            sql.setTimestamp(1, new java.sql.Timestamp(deadline));
-            return sql;
-        } catch (SQLException e) {
-            throw new BinaryStoreException(e);
-        }
-    }
-
-    /**
-     * Generates SQL statement for mime type retrieve.
-     * 
-     * @param key content id
-     * @return SQL statement.
-     * @throws BinaryStoreException
-     */
-    public PreparedStatement retrieveMimeTypeSQL( BinaryKey key ) throws BinaryStoreException {
-        try {
-            PreparedStatement sql = sqlBuilder.select()
-                                              .columns("mime_type")
-                                              .from(tableName())
-                                              .where()
-                                              .condition("cid", sqlType.integer(), "=", "?")
-                                              .build();
-            sql.setString(1, key.toString());
-            return sql;
-        } catch (SQLException e) {
-            throw new BinaryStoreException(e);
-        }
-    }
-
-    /**
-     * Generates SQL statement which modifies mime type value.
-     * 
-     * @param key content id
-     * @param mimeType the new value for mime type
-     * @return SQL statement
-     * @throws BinaryStoreException
-     */
-    public PreparedStatement updateMimeTypeSQL( BinaryKey key,
-                                                String mimeType ) throws BinaryStoreException {
-        try {
-            PreparedStatement sql = sqlBuilder.update(tableName())
-                                              .set("mime_type", "?")
-                                              .where()
-                                              .condition("cid", sqlType.integer(), "=", "?")
-                                              .build();
-            sql.setString(1, mimeType);
-            sql.setString(2, key.toString());
-            return sql;
-        } catch (SQLException e) {
-            throw new BinaryStoreException(e);
-        }
-    }
-
-    /**
-     * Generate SQL statement which returns extracted text.
-     * 
-     * @param key content id
-     * @return SQL statement
-     * @throws BinaryStoreException
-     */
-    public PreparedStatement retrieveExtTextSQL( BinaryKey key ) throws BinaryStoreException {
-        try {
-            PreparedStatement sql = sqlBuilder.select()
-                                              .columns("ext_text")
-                                              .from(tableName())
-                                              .where()
-                                              .condition("cid", sqlType.integer(), "=", "?")
-                                              .build();
-            sql.setString(1, key.toString());
-            return sql;
-        } catch (SQLException e) {
-            throw new BinaryStoreException(e);
-        }
-    }
-
-    /**
-     * Generates SQL statement which updates extracted text field.
-     * 
-     * @param key content id
-     * @param text new value for the extracted text
-     * @return SQL statement
-     * @throws BinaryStoreException
-     */
-    public PreparedStatement updateExtTextSQL( BinaryKey key,
-                                               String text ) throws BinaryStoreException {
-        try {
-            PreparedStatement sql = sqlBuilder.update(tableName())
-                                              .set("ext_text", "?")
-                                              .where()
-                                              .condition("cid", sqlType.integer(), "=", "?")
-                                              .build();
-            sql.setString(1, text);
-            sql.setString(2, key.toString());
-            return sql;
-        } catch (SQLException e) {
-            throw new BinaryStoreException(e);
-        }
-    }
-
-    /**
-     * Generates SQL statement for retrieving the binary keys in the store.
-     * 
-     * @param keys the container into which the keys should be placed
-     * @return executable SQL statement
-     * @throws BinaryStoreException
-     */
-    public PreparedStatement retrieveBinaryKeys( Set<BinaryKey> keys ) throws BinaryStoreException {
-        try {
-            PreparedStatement sql = sqlBuilder.select()
-                                              .columns("cid")
-                                              .from(tableName())
-                                              .where()
-                                              .condition("usage", sqlType.integer(), "=", "1")
-                                              .build();
-            return sql;
-        } catch (SQLException e) {
-            throw new BinaryStoreException(e);
-        }
-    }
-
-    /**
-     * Executes specifies statement.
-     * 
-     * @param sql the statement to execute
-     * @throws BinaryStoreException
-     */
-    public static void execute( PreparedStatement sql ) throws BinaryStoreException {
-        try {
-            sql.execute();
-        } catch (SQLException e) {
-            throw new BinaryStoreException(e);
-        }
-    }
-
-    /**
-     * Runs SQL statement
-     * 
-     * @param sql SQL statement
-     * @return result of statement execution
-     * @throws BinaryStoreException
-     */
-    public static ResultSet executeQuery( PreparedStatement sql ) throws BinaryStoreException {
-        try {
-            return sql.executeQuery();
-        } catch (SQLException e) {
-            throw new BinaryStoreException(e);
-        }
-    }
-
-    /**
-     * Executes specifies update statement.
-     * 
-     * @param sql the statement to execute
-     * @throws BinaryStoreException
-     */
-    public static void executeUpdate( PreparedStatement sql ) throws BinaryStoreException {
-        try {
-            sql.executeUpdate();
-        } catch (SQLException e) {
-            throw new BinaryStoreException(e);
-        }
-    }
-
-    /**
-     * Provides access to query data
-     * 
-     * @param rs retrieved single value
-     * @return result as input stream.
-     * @throws BinaryStoreException
-     */
-    public static InputStream asStream( ResultSet rs ) throws BinaryStoreException {
-        try {
-            boolean hasRaw = rs.first();
-            if (!hasRaw) {
-                return null;
+            // First, prepare a statement to see if the table exists ...
+            boolean createTable = true;
+            try {
+                PreparedStatement exists = prepareStatement("table_exists_query");
+                LOGGER.trace("Running statement: {0}", exists);
+                exists.execute();
+                exists.close();
+                createTable = false;
+            } catch (SQLException e) {
+                // proceed to create the table ...
             }
-            return rs.getBinaryStream(1);
-        } catch (SQLException e) {
-            throw new BinaryStoreException(e);
-        }
-    }
 
-    /**
-     * Provides access to query data
-     * 
-     * @param rs retrieved query result
-     * @return result as string.
-     * @throws BinaryStoreException
-     */
-    public static String asString( ResultSet rs ) throws BinaryStoreException {
-        try {
-            boolean hasRaw = rs.first();
-            if (!hasRaw) {
-                return null;
+            if (createTable) {
+                LOGGER.debug("Unable to find existing table. Attempting to create '{0}' table in {1}", tableName, connection);
+                try {
+                    PreparedStatement create = prepareStatement("create_table");
+                    LOGGER.trace("Running statement: {0}", create);
+                    create.execute();
+                    create.close();
+                } catch (SQLException e) {
+                    String msg = JcrI18n.errorCreatingDatabaseTable.text(tableName, databaseType, connection, e.getMessage());
+                    throw new BinaryStoreException(msg);
+                }
             }
-            return rs.getString(1);
+
+            // Now prepare all of the SQL statements ...
+            addContentSql = prepareStatement("add_content");
+            getUsedContentSql = prepareStatement("get_used_content");
+            getUnusedContentSql = prepareStatement("get_unused_content");
+            markUnusedSql = prepareStatement("mark_unused");
+            markUsedSql = prepareStatement("mark_used");
+            removedExpiredSql = prepareStatement("remove_expired");
+            getMimeType = prepareStatement("get_mimetype");
+            setMimeType = prepareStatement("set_mimetype");
+            getExtractedTextSql = prepareStatement("get_extracted_text");
+            setExtractedTextSql = prepareStatement("set_extracted_text");
+            getBinaryKeysSql = prepareStatement("get_binary_keys");
         } catch (SQLException e) {
             throw new BinaryStoreException(e);
         }
     }
 
-    /**
-     * Provides access to query data
-     *
-     * @param rs retrieved query result
-     * @return result as string.
-     * @throws BinaryStoreException
-     */
-    public static List<String> asStringList( ResultSet rs ) throws BinaryStoreException {
-        List<String> result = new ArrayList<String>();
-        try {
-            while (rs.next()) {
-                result.add(rs.getString(1));
-            }
-        } catch (SQLException e) {
-            throw new BinaryStoreException(e);
-        }
-        return result;
+    protected PreparedStatement prepareStatement( String statementKey ) throws SQLException {
+        String statementString = statements.getProperty(statementKey);
+        statementString = StringUtil.createString(statementString, tableName);
+        LOGGER.trace("Preparing statement: {0}", statementString);
+        return connection.prepareStatement(statementString);
     }
 
-    /**
-     * Checks database for CONTENT_STORE table
-     * 
-     * @return true if table exists
-     * @throws BinaryStoreException
-     */
-    public boolean tableExists() throws BinaryStoreException {
-        try {
-            PreparedStatement sql = connection.prepareStatement("select count(*) from " + tableName());
-            Database.execute(sql);
-            return true;
-        } catch (SQLException e) {
-            return false;
-        }
-    }
-
-    /**
-     * Creates table for storage.
-     * 
-     * @throws BinaryStoreException
-     */
-    public void createTable() throws BinaryStoreException {
-        try {
-            PreparedStatement sql = connection.prepareStatement("create table " + tableName() + " (" + "cid "
-                                                                + sqlType.varchar(255) + " not null," + "mime_type "
-                                                                + sqlType.varchar(255) + ", " + "ext_text "
-                                                                + sqlType.varchar(1000) + "," + "usage " + sqlType.integer()
-                                                                + "," + "usage_time " + sqlType.timestamp() + "," + "payload "
-                                                                + sqlType.blob() + "," + "primary key(cid))");
-            Database.execute(sql);
-        } catch (Exception e) {
-            throw new BinaryStoreException(e);
-        }
-    }
-
-    private Type determineType() throws BinaryStoreException {
-        if (connection == null) {
-            return Type.UNKNOWN;
-        }
+    protected Type determineType() throws BinaryStoreException {
         try {
             String name = connection.getMetaData().getDatabaseProductName().toLowerCase();
             if (name.toLowerCase().contains("mysql")) {
@@ -523,7 +271,7 @@ public class Database {
             } else if (name.contains("firebird")) {
                 return Type.FIREBIRD;
             } else if (name.contains("sqlserver") || name.toLowerCase().contains("microsoft")) {
-                return Type.SQL_SERVER;
+                return Type.SQLSERVER;
             } else if (name.contains("access")) {
                 return Type.ACCESS;
             } else if (name.contains("oracle")) {
@@ -542,289 +290,378 @@ public class Database {
      */
     public void disconnect() {
         if (connection != null) {
+            boolean failed = false;
             try {
-                connection.close();
+                if (addContentSql != null) addContentSql.close();
+                if (getUsedContentSql != null) getUsedContentSql.close();
+                if (getUnusedContentSql != null) getUnusedContentSql.close();
+                if (markUnusedSql != null) markUnusedSql.close();
+                if (markUsedSql != null) markUsedSql.close();
+                if (removedExpiredSql != null) removedExpiredSql.close();
+                if (getMimeType != null) getMimeType.close();
+                if (setMimeType != null) setMimeType.close();
+                if (getExtractedTextSql != null) getExtractedTextSql.close();
+                if (setExtractedTextSql != null) setExtractedTextSql.close();
+                if (getBinaryKeysSql != null) getBinaryKeysSql.close();
             } catch (SQLException e) {
+                failed = true;
+                throw new RuntimeException(e);
+            } finally {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    if (!failed) throw new RuntimeException(e);
+                } finally {
+                    addContentSql = null;
+                    getUsedContentSql = null;
+                    getUnusedContentSql = null;
+                    markUnusedSql = null;
+                    markUsedSql = null;
+                    removedExpiredSql = null;
+                    getMimeType = null;
+                    setMimeType = null;
+                    getExtractedTextSql = null;
+                    setExtractedTextSql = null;
+                    getBinaryKeysSql = null;
+                }
             }
         }
     }
 
     /**
-     * Database specific SQL types
+     * The connection that this object is using.
+     * 
+     * @return the connection; never null
      */
-    private class SQLType {
+    public Connection getConnection() {
+        return connection;
+    }
 
-        protected SQLType() {
+    /**
+     * Shows type of this database.
+     * 
+     * @return database type identifier.
+     */
+    public Type getDatabaseType() {
+        return databaseType;
+    }
+
+    /**
+     * Current time.
+     * 
+     * @return current time in milliseconds
+     */
+    private long now() {
+        return new java.util.Date().getTime();
+    }
+
+    /**
+     * Create statement for store content.
+     * 
+     * @param key unique content identifier
+     * @param stream content to store
+     * @return SQL statement.
+     * @throws BinaryStoreException
+     */
+    public PreparedStatement insertContentSQL( BinaryKey key,
+                                               InputStream stream ) throws BinaryStoreException {
+        try {
+            addContentSql.setString(1, key.toString());
+            addContentSql.setTimestamp(2, new java.sql.Timestamp(now()));
+            addContentSql.setBinaryStream(3, stream);
+            return addContentSql;
+        } catch (SQLException e) {
+            throw new BinaryStoreException(e);
         }
+    }
 
-        /**
-         * Integer type.
-         * 
-         * @return integer type descriptor.
-         */
-        public String integer() {
-            return "INTEGER";
+    /**
+     * Generates SQL statement for content retrieve.
+     * 
+     * @param key content id
+     * @param inUse true if the binary given by the key is expected to be still be in use, or false if the binary can be no longer
+     *        used
+     * @return executable SQL statement
+     * @throws BinaryStoreException
+     */
+    public PreparedStatement retrieveContentSQL( BinaryKey key,
+                                                 boolean inUse ) throws BinaryStoreException {
+        try {
+            PreparedStatement sql = inUse ? getUsedContentSql : getUnusedContentSql;
+            sql.setString(1, key.toString());
+            return sql;
+        } catch (SQLException e) {
+            throw new BinaryStoreException(e);
         }
+    }
 
-        /**
-         * Timestamp type.
-         * 
-         * @return timestamp type descriptor.
-         */
-        public String timestamp() {
-            return "TIMESTAMP";
+    /**
+     * Generates SQL statement which marks content as not used.
+     * 
+     * @param key the content id.
+     * @return SQL statement.
+     * @throws BinaryStoreException
+     */
+    public PreparedStatement markUnusedSQL( BinaryKey key ) throws BinaryStoreException {
+        try {
+            markUnusedSql.setTimestamp(1, new java.sql.Timestamp(now()));
+            markUnusedSql.setString(2, key.toString());
+            return markUnusedSql;
+        } catch (SQLException e) {
+            throw new BinaryStoreException(e);
         }
+    }
 
-        /**
-         * BLOB type.
-         * 
-         * @return BLOB type descriptor.
-         */
-        protected String blob() {
-            switch (databaseType) {
-                case SQL_SERVER:
-                case SYBASE:
-                    return "IMAGE";
-                case HSQL:
-                    return "OBJECT";
-                default:
-                    return "BLOB";
+    /**
+     * Generates SQL statement which marks content as used.
+     * 
+     * @param key the content id.
+     * @return SQL statement.
+     * @throws BinaryStoreException
+     */
+    public PreparedStatement restoreContentSQL( BinaryKey key ) throws BinaryStoreException {
+        try {
+            markUsedSql.setString(1, key.toString());
+            return markUsedSql;
+        } catch (SQLException e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    /**
+     * Generates SQL statement which removes expired content.
+     * 
+     * @param deadline expire time
+     * @return SQL statement.
+     * @throws BinaryStoreException
+     */
+    public PreparedStatement removeExpiredContentSQL( long deadline ) throws BinaryStoreException {
+        try {
+            removedExpiredSql.setTimestamp(1, new java.sql.Timestamp(deadline));
+            return removedExpiredSql;
+        } catch (SQLException e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    /**
+     * Generates SQL statement for mime type retrieve.
+     * 
+     * @param key content id
+     * @return SQL statement.
+     * @throws BinaryStoreException
+     */
+    public PreparedStatement retrieveMimeTypeSQL( BinaryKey key ) throws BinaryStoreException {
+        try {
+            getMimeType.setString(1, key.toString());
+            return getMimeType;
+        } catch (SQLException e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    /**
+     * Generates SQL statement which modifies mime type value.
+     * 
+     * @param key content id
+     * @param mimeType the new value for mime type
+     * @return SQL statement
+     * @throws BinaryStoreException
+     */
+    public PreparedStatement updateMimeTypeSQL( BinaryKey key,
+                                                String mimeType ) throws BinaryStoreException {
+        try {
+            setMimeType.setString(1, mimeType);
+            setMimeType.setString(2, key.toString());
+            return setMimeType;
+        } catch (SQLException e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    /**
+     * Generate SQL statement which returns extracted text.
+     * 
+     * @param key content id
+     * @return SQL statement
+     * @throws BinaryStoreException
+     */
+    public PreparedStatement retrieveExtTextSQL( BinaryKey key ) throws BinaryStoreException {
+        try {
+            getExtractedTextSql.setString(1, key.toString());
+            return getExtractedTextSql;
+        } catch (SQLException e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    /**
+     * Generates SQL statement which updates extracted text field.
+     * 
+     * @param key content id
+     * @param text new value for the extracted text
+     * @return SQL statement
+     * @throws BinaryStoreException
+     */
+    public PreparedStatement updateExtTextSQL( BinaryKey key,
+                                               String text ) throws BinaryStoreException {
+        try {
+            setExtractedTextSql.setString(1, text);
+            setExtractedTextSql.setString(2, key.toString());
+            return setExtractedTextSql;
+        } catch (SQLException e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    /**
+     * Generates SQL statement for retrieving the binary keys in the store.
+     * 
+     * @param keys the container into which the keys should be placed
+     * @return executable SQL statement
+     * @throws BinaryStoreException
+     */
+    public PreparedStatement retrieveBinaryKeys( Set<BinaryKey> keys ) throws BinaryStoreException {
+        return getBinaryKeysSql;
+    }
+
+    /**
+     * Executes specifies statement.
+     * 
+     * @param sql the statement to execute
+     * @throws BinaryStoreException
+     */
+    public static void execute( PreparedStatement sql ) throws BinaryStoreException {
+        try {
+            LOGGER.trace("Running statement: {0}", sql);
+            sql.execute();
+        } catch (SQLException e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    /**
+     * Runs SQL statement
+     * 
+     * @param sql SQL statement
+     * @return result of statement execution
+     * @throws BinaryStoreException
+     */
+    public static ResultSet executeQuery( PreparedStatement sql ) throws BinaryStoreException {
+        try {
+            LOGGER.trace("Running statement: {0}", sql);
+            return sql.executeQuery();
+        } catch (SQLException e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    /**
+     * Executes specifies update statement.
+     * 
+     * @param sql the statement to execute
+     * @throws BinaryStoreException
+     */
+    public static void executeUpdate( PreparedStatement sql ) throws BinaryStoreException {
+        try {
+            LOGGER.trace("Running statement: {0}", sql);
+            sql.executeUpdate();
+        } catch (SQLException e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    /**
+     * Provides access to query data
+     * 
+     * @param rs retrieved single value
+     * @return result as input stream.
+     * @throws BinaryStoreException
+     */
+    public static InputStream asStream( ResultSet rs ) throws BinaryStoreException {
+        boolean error = false;
+        try {
+            boolean hasRaw = rs.first();
+            if (!hasRaw) {
+                return null;
             }
-        }
-
-        /**
-         * VARCHAR type.
-         * 
-         * @param size size in characters.
-         * @return VACRCHAR type descriptor.
-         */
-        protected String varchar( int size ) {
-            switch (databaseType) {
-                case ORACLE:
-                    return "VARCHAR2(" + size + ")";
-                default:
-                    return "VARCHAR(" + size + ")";
+            return rs.getBinaryStream(1);
+        } catch (SQLException e) {
+            error = true;
+            throw new BinaryStoreException(e);
+        } catch (RuntimeException e) {
+            error = true;
+            throw e;
+        } finally {
+            // Always close the result set ...
+            try {
+                rs.close();
+            } catch (SQLException e) {
+                if (!error) throw new BinaryStoreException(e);
             }
         }
     }
 
     /**
-     * Database specific SQL query builder.
+     * Provides access to query data
+     * 
+     * @param rs retrieved query result
+     * @return result as string.
+     * @throws BinaryStoreException
      */
-    public class SQLBuilder {
-        private boolean set = false;
-
-        // inner buffer for building sql string
-        private StringBuilder sql;
-
-        /**
-         * Generates prepared statement.
-         * 
-         * @return prepared statement
-         * @throws SQLException
-         */
-        public PreparedStatement build() throws SQLException {
-            return connection.prepareStatement(sql.toString());
-        }
-
-        /**
-         * Shows built statement as text.
-         * 
-         * @return build statement as text.
-         */
-        public String getSQL() {
-            return sql.toString();
-        }
-
-        /**
-         * Appends 'insert' keyword to the statement.
-         * 
-         * @return this builder instance.
-         */
-        public SQLBuilder insert() {
-            set = false;
-            sql = new StringBuilder();
-            sql.append("INSERT ");
-            return this;
-        }
-
-        /**
-         * Appends 'select' keyword to the statement.
-         * 
-         * @return this builder instance.
-         */
-        public SQLBuilder select() {
-            set = false;
-            sql = new StringBuilder();
-            sql.append("SELECT ");
-            return this;
-        }
-
-        /**
-         * Appends 'delete' keyword to the statement.
-         * 
-         * @return this builder instance.
-         */
-        public SQLBuilder delete() {
-            set = false;
-            sql = new StringBuilder();
-            sql.append("DELETE ");
-            return this;
-        }
-
-        /**
-         * Appends 'update' keyword with table name to the statement.
-         * 
-         * @param tableName the name of the table to update
-         * @return this builder instance.
-         */
-        public SQLBuilder update( String tableName ) {
-            set = false;
-            sql = new StringBuilder();
-            sql.append("UPDATE ");
-            sql.append(tableName);
-            return this;
-        }
-
-        /**
-         * Appends 'set' part.
-         * 
-         * @param col column name to update
-         * @param val new value
-         * @return this builder instance
-         */
-        public SQLBuilder set( String col,
-                               String val ) {
-            if (!set) {
-                sql.append(" SET ");
-                set = true;
-            } else {
-                sql.append(", ");
+    public static String asString( ResultSet rs ) throws BinaryStoreException {
+        boolean error = false;
+        try {
+            boolean hasRaw = rs.first();
+            if (!hasRaw) {
+                return null;
             }
-            sql.append(col);
-            sql.append("=");
-            sql.append(val);
-            return this;
-        }
-
-        /**
-         * Appends 'into 'keyword and open bracket to the statement.
-         * 
-         * @param tableName the name of the table; may not be null
-         * @return this builder instance.
-         */
-        public SQLBuilder into( String tableName ) {
-            sql.append("INTO ");
-            sql.append(tableName);
-            sql.append(" (");
-            return this;
-        }
-
-        /**
-         * Appends comma separated list of specified column names.
-         * 
-         * @param columns list of column names
-         * @return this builder instance.
-         */
-        public SQLBuilder columns( String... columns ) {
-            sql.append(columns[0]);
-
-            for (int i = 1; i < columns.length; i++) {
-                sql.append(", ");
-                sql.append(columns[i]);
+            return rs.getString(1);
+        } catch (SQLException e) {
+            error = true;
+            throw new BinaryStoreException(e);
+        } catch (RuntimeException e) {
+            error = true;
+            throw e;
+        } finally {
+            // Always close the result set ...
+            try {
+                rs.close();
+            } catch (SQLException e) {
+                if (!error) throw new BinaryStoreException(e);
             }
-
-            return this;
         }
+    }
 
-        /**
-         * Appends closed bracket and 'value(...)' of sql statement.
-         * 
-         * @param columns list of values
-         * @return this builder instance.
-         */
-
-        public SQLBuilder values( String... columns ) {
-            sql.append(") VALUES (");
-            sql.append(columns[0]);
-
-            for (int i = 1; i < columns.length; i++) {
-                sql.append(", ");
-                sql.append(columns[i]);
+    /**
+     * Provides access to query data
+     * 
+     * @param rs retrieved query result
+     * @return result as string.
+     * @throws BinaryStoreException
+     */
+    public static List<String> asStringList( ResultSet rs ) throws BinaryStoreException {
+        boolean error = false;
+        List<String> result = new ArrayList<String>();
+        try {
+            while (rs.next()) {
+                result.add(rs.getString(1));
             }
-
-            sql.append(")");
-            return this;
-        }
-
-        /**
-         * Appends 'from' keyword.
-         * 
-         * @param tableName the name of the table; may not be null
-         * @return this builder instance.
-         */
-        public SQLBuilder from( String tableName ) {
-            sql.append(" FROM ");
-            sql.append(tableName);
-            return this;
-        }
-
-        /**
-         * Appends 'where' keyword.
-         * 
-         * @return this builder instance.
-         */
-        public SQLBuilder where() {
-            sql.append(" WHERE ");
-            return this;
-        }
-
-        /**
-         * Appends 'and' keyword.
-         * 
-         * @return this builder instance.
-         */
-        public SQLBuilder and() {
-            sql.append(" AND ");
-            return this;
-        }
-
-        /**
-         * Builds database specific condition statement.
-         * 
-         * @param column column name used in left hand side of condition
-         * @param colType type of the column
-         * @param sign sign between lhs and rhs
-         * @param value right hand side of the condition
-         * @return this builder instance.
-         */
-        public SQLBuilder condition( String column,
-                                     String colType,
-                                     String sign,
-                                     String value ) {
-            sql.append(column);
-            sql.append(sign);
-            switch (databaseType) {
-                case SYBASE:
-                    sql.append("convert(");
-                    sql.append(colType);
-                    sql.append(",");
-                    sql.append(value);
-                    sql.append(")");
-                    break;
-                case POSTGRES:
-                    sql.append("cast(");
-                    sql.append(value);
-                    sql.append(" as ");
-                    sql.append(colType);
-                    sql.append(")");
-                    break;
-                default:
-                    sql.append(value);
+        } catch (SQLException e) {
+            error = true;
+            throw new BinaryStoreException(e);
+        } catch (RuntimeException e) {
+            error = true;
+            throw e;
+        } finally {
+            // Always close the result set ...
+            try {
+                rs.close();
+            } catch (SQLException e) {
+                if (!error) throw new BinaryStoreException(e);
             }
-            return this;
         }
-
+        return result;
     }
 
 }

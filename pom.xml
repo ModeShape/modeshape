@@ -42,10 +42,6 @@
           JCA Resource adapter
     	-->
     	<module>modeshape-jca</module> 
-        <!--
-          The JBoss AS7 subsystem needs the web components and (local) JDBC drivers.
-        -->
-        <module>deploy/jbossas</module>
 
         <!-- Finally the BOMs -->
         <module>boms/modeshape-bom-parent</module>
@@ -81,7 +77,11 @@
 			    Build the distribution before running the integration tests, 
 			    as some of the integration tests rely upon the distributions
 			  -->
-				<module>modeshape-distribution</module>
+                <!--
+                  The JBoss AS7 subsystem needs the web components and (local) JDBC drivers.
+                -->
+                <module>deploy/jbossas</module>
+                <module>modeshape-distribution</module>
 				<module>integration</module>
 			</modules>
 		</profile>
@@ -93,6 +93,10 @@
         <profile>
             <id>performance</id>
             <modules>
+                <!--
+                    The JBoss AS7 subsystem needs the web components and (local) JDBC drivers.
+                -->
+                <module>deploy/jbossas</module>
                 <module>modeshape-distribution</module>
                 <module>modeshape-performance-tests</module>
             </modules>
@@ -105,6 +109,10 @@
         <profile>
             <id>assembly</id>
             <modules>
+                <!--
+                   The JBoss AS7 subsystem needs the web components and (local) JDBC drivers.
+                 -->
+                <module>deploy/jbossas</module>
                 <module>modeshape-client</module>
                 <module>demos</module>
                 <module>modeshape-distribution</module>

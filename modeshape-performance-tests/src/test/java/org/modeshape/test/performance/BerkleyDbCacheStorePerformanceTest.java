@@ -23,15 +23,14 @@
  */
 package org.modeshape.test.performance;
 
+import java.io.File;
 import javax.jcr.Node;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.cache.LoaderConfigurationBuilder;
-import org.infinispan.loaders.bdbje.BdbjeCacheStore;
+import org.infinispan.loaders.bdbje.configuration.BdbjeCacheStoreConfigurationBuilder;
 import org.junit.Test;
 import org.modeshape.common.annotation.Performance;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.FileUtil;
-import java.io.File;
 
 public class BerkleyDbCacheStorePerformanceTest extends InMemoryPerformanceTest {
 
@@ -44,8 +43,10 @@ public class BerkleyDbCacheStorePerformanceTest extends InMemoryPerformanceTest 
 
     @Override
     public void applyLoaderConfiguration( ConfigurationBuilder configurationBuilder ) {
-        LoaderConfigurationBuilder lb = configurationBuilder.loaders().addCacheLoader().cacheLoader(new BdbjeCacheStore());
-        lb.addProperty("location", dbDir.getAbsolutePath());
+        BdbjeCacheStoreConfigurationBuilder builder = new BdbjeCacheStoreConfigurationBuilder(configurationBuilder.loaders());
+        builder.location(dbDir.getAbsolutePath());
+        builder.purgeOnStartup(true);
+        configurationBuilder.loaders().addStore(builder);
     }
 
     @Performance

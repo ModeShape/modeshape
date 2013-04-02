@@ -23,53 +23,33 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import org.jboss.as.controller.AbstractRemoveStepHandler;
-import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.PathAddress;
+import java.util.Arrays;
+import java.util.List;
 import org.jboss.as.naming.deployment.ContextNames;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceName;
 
-class RemoveRepository extends AbstractRemoveStepHandler {
+class RemoveRepository extends AbstractModeShapeRemoveStepHandler {
 
-    private static final Logger log = Logger.getLogger(RemoveRepository.class.getPackage().getName());
-
-    public static final RemoveRepository INSTANCE = new RemoveRepository();
+    static final RemoveRepository INSTANCE = new RemoveRepository();
 
     private RemoveRepository() {
     }
 
     @Override
-    protected void performRuntime( OperationContext context,
-                                   ModelNode operation,
-                                   ModelNode model ) {
-        // Get the service addresses ...
-        final PathAddress serviceAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
-        // Get the repository name ...
-        final String repositoryName = serviceAddress.getLastElement().getValue();
+    List<ServiceName> servicesToRemove( ModelNode operation,
+                                        ModelNode model ) {
+        String repositoryName = repositoryName(operation);
 
-        // Remove the JNDI binder service
         final String jndiName = ModeShapeJndiNames.jndiNameFrom(model, repositoryName);
         ContextNames.BindInfo bindInfo = ContextNames.bindInfoFor(jndiName);
-        context.removeService(bindInfo.getBinderServiceName());
 
-        // Remove the repository service ...
-        final ServiceName serviceName = ModeShapeServiceNames.repositoryServiceName(repositoryName);
-        context.removeService(serviceName);
-
-        // Remove the data path service added by the AddRepository ...
-        final ServiceName dataDirServiceName = ModeShapeServiceNames.dataDirectoryServiceName(repositoryName);
-        context.removeService(dataDirServiceName);
-
-        log.debugf("repository '%s' removed", repositoryName);
-    }
-
-    @Override
-    protected void recoverServices( OperationContext context,
-                                    ModelNode operation,
-                                    ModelNode model ) {
-        // TODO: RE-ADD SERVICES
+        return Arrays.asList(ModeShapeServiceNames.referenceFactoryServiceName(repositoryName),
+                             bindInfo.getBinderServiceName(),
+                             ModeShapeServiceNames.referenceFactoryServiceName(repositoryName),
+                             ModeShapeServiceNames.indexStorageServiceName(repositoryName),
+                             ModeShapeServiceNames.binaryStorageServiceName(repositoryName),
+                             ModeShapeServiceNames.repositoryServiceName(repositoryName),
+                             ModeShapeServiceNames.dataDirectoryServiceName(repositoryName));
     }
 }

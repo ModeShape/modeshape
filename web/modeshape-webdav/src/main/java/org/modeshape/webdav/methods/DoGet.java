@@ -115,7 +115,7 @@ public class DoGet extends DoHead {
                 // TODO some folder response (for browsers, DAV tools use propfind) in html?
                 DateFormat shortDF = getDateTimeFormat(req.getLocale());
                 resp.setContentType("text/html");
-                resp.setCharacterEncoding("UTF8");
+                resp.setCharacterEncoding("UTF-8");
                 OutputStream out = resp.getOutputStream();
                 String[] children = store.getChildrenNames(transaction, path);
                 // Make sure it's not null
@@ -142,14 +142,25 @@ public class DoGet extends DoHead {
                     childrenTemp.append("\">");
                     childrenTemp.append("<td>");
                     childrenTemp.append("<a href=\"");
-                    childrenTemp.append(child);
+
+                    StringBuffer childURL = req.getRequestURL();
+                    if (!(childURL.charAt(childURL.length() - 1) == '/')) {
+                        childURL.append("/");
+                    }
+
+                    //we need to URL encode the child, but just the special chars, UTF-8 encoding is done at the end of this method
+                    childURL.append(URL_ENCODER.encode(child));
+
                     StoredObject obj = store.getStoredObject(transaction, path + "/" + child);
                     if (obj == null) {
                         LOG.error(new TextI18n("Should not return null for " + path + "/" + child));
                     }
                     if (obj != null && obj.isFolder()) {
-                        childrenTemp.append("/");
+                        childURL.append("/");
                     }
+
+                    childrenTemp.append(childURL);
+
                     childrenTemp.append("\">");
                     childrenTemp.append(child);
                     childrenTemp.append("</a></td>");

@@ -1,0 +1,8 @@
+[vehicle] mixin abstract 
+- engine (STRING)
+
+[car] > nt:unstructured, vehicle
+- engine (STRING) mandatory < '4CYL', '6CYL', '8CYL'
+
+[motorcycle] > nt:unstructured, vehicle
+- engine (STRING) < '2CYL'

@@ -531,6 +531,10 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         return requestResolver;
     }
 
+    protected final Logger logger() {
+        return logger;
+    }
+
     /**
      * Implementation of the {@link ITransaction} interface that uses a {@link Session JCR session} to load and store webdav
      * content. The session also provides support for transactional access to the underlying store.
@@ -561,7 +565,12 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             SessionKey key = new SessionKey(repositoryName, workspaceName);
             Session result = sessions.get(key);
             if (result == null) {
-                result = RepositoryManager.getSession(request.getRequest(), repositoryName, workspaceName);
+                try {
+                    result = RepositoryManager.getSession(request.getRequest(), repositoryName, workspaceName);
+                } catch (RepositoryException e) {
+                    logger().error(e, WebdavI18n.cannotGetRepositorySession, repositoryName);
+                    throw e;
+                }
                 sessions.put(key, result);
             }
             return result;
@@ -627,6 +636,9 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                     try {
                         session = RepositoryManager.getSession(request.getRequest(), repositoryName, null);
                         return session.getWorkspace().getAccessibleWorkspaceNames();
+                    } catch (RepositoryException e) {
+                        logger().error(e, WebdavI18n.cannotGetRepositorySession, repositoryName);
+                        throw e;
                     } finally {
                         if (session != null) {
                             session.logout(); // always terminate this session!

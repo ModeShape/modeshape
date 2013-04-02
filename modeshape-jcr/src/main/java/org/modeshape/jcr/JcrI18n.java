@@ -198,6 +198,8 @@ public final class JcrI18n {
     public static I18n errorDuringInitialImport;
     public static I18n nodeTypesNotFoundInXml;
 
+    public static I18n invalidGarbageCollectionInitialTime;
+
     public static I18n failedToQueryForDerivedContent;
 
     public static I18n systemSourceNameOptionValueDoesNotReferenceExistingSource;
@@ -229,6 +231,7 @@ public final class JcrI18n {
     // New implementation
     public static I18n errorObtainingWorkspaceNames;
     public static I18n errorObtainingDefaultWorkspaceName;
+    public static I18n errorUpdatingWorkspaceNames;
     public static I18n workspaceNameIsInvalid;
     public static I18n errorVerifyingWorkspaceName;
 
@@ -400,6 +403,8 @@ public final class JcrI18n {
 
     public static I18n failedWhileRollingBackDestroyToRuntimeError;
     public static I18n unexpectedException;
+    public static I18n errorDeterminingCurrentTransactionAssumingNone;
+    public static I18n errorWhileRollingBackActiveTransactionUsingWorkspaceThatIsBeingDeleted;
 
     public static I18n configurationError;
     public static I18n configurationWarning;
@@ -461,10 +466,14 @@ public final class JcrI18n {
     public static I18n invalidProjectionPath;
     public static I18n invalidProjectionExpression;
     public static I18n projectedPathPointsTowardsInternalNode;
-    
+    public static I18n errorStoringProjection;
+    public static I18n errorRemovingProjection;
+
     public static I18n reindexMissingNoIndexesExist;
     public static I18n noReindex;
     public static I18n reindexAll;
+
+    public static I18n errorCreatingDatabaseTable;
 
     static {
         try {

@@ -154,20 +154,18 @@ public abstract class AbstractMethod implements IMethodExecutor {
             if ((result == null) || (result.equals(""))) {
                 result = "/";
             }
-            return (result);
+            return result;
         }
 
         // No, extract the desired path directly from the request
         String result = request.getPathInfo();
-        // if (result == null) {
-        // result = request.getServletPath();
-        // }
+
         if ((result == null) || (result.equals(""))) {
             result = "/";
         }
-        return (result);
-
+        return result;
     }
+
 
     /**
      * creates the parent path from the given path by removing the last '/' and everything after that

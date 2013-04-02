@@ -287,6 +287,16 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public final JcrSession getSession() {
         return session();
     }
+    
+    @Override
+    public String getLocalName() throws RepositoryException {
+        return name().getLocalName();
+    }
+    
+    @Override
+    public String getNamespaceURI() throws RepositoryException {
+        return name().getNamespaceUri();
+    }
 
     @Override
     public AbstractJcrProperty getProperty( String relativePath ) throws PathNotFoundException, RepositoryException {

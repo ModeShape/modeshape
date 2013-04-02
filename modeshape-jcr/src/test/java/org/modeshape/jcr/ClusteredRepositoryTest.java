@@ -29,11 +29,13 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.observation.EventIterator;
@@ -43,6 +45,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.api.observation.Event;
 
@@ -64,7 +67,7 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
     }
 
     @Test
-    @FixFor( "MODE-1618" )
+    @FixFor( {"MODE-1618", "MODE-2830"} )
     public void shouldPropagateNodeChangesInCluster() throws Exception {
         JcrRepository repository1 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config.json");
         JcrSession session1 = repository1.login();
@@ -81,6 +84,7 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
             String binary = "test string";
             testNode.setProperty("binaryProperty", session1.getValueFactory().createBinary(binary.getBytes()));
             session1.save();
+            final String testNodePath = testNode.getPath();
 
             listener.waitForEvents();
             List<String> paths = listener.getPaths();
@@ -88,6 +92,14 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
             assertTrue(paths.contains("/testNode"));
             assertTrue(paths.contains("/testNode/binaryProperty"));
             assertTrue(paths.contains("/testNode/jcr:primaryType"));
+
+            // check whether the node can be found in the second repository ...
+            try {
+                session2.refresh(false);
+                session2.getNode(testNodePath);
+            } catch (PathNotFoundException e) {
+                fail("Should have found the '/testNode' created in other repository in this repository: ");
+            }
         } finally {
             TestingUtil.killRepositories(repository1, repository2);
         }
@@ -96,8 +108,13 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
     @Test
     @FixFor( "MODE-1701" )
     public void shouldStartRepositoryWithJGroupsXMLConfigurationFile() throws Exception {
-        JcrRepository repository = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config-jgroups-file.json");
-        assertEquals(ModeShapeEngine.State.RUNNING, repository.getState());
+        JcrRepository repository = null;
+        try {
+            repository = TestingUtil.startRepositoryWithConfig("config/clustered-repo-config-jgroups-file.json");
+            assertEquals(ModeShapeEngine.State.RUNNING, repository.getState());
+        } finally {
+            TestingUtil.killRepository(repository);
+        }
     }
 
     @Test( expected = RepositoryException.class )
@@ -139,6 +156,8 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
             session1.logout();
             session2.logout();
         } finally {
+            Logger.getLogger(getClass())
+                  .debug("Killing repositories in shouldStartClusterWithReplicatedCachePersistedToSeparateAreasForEachProcess");
             TestingUtil.killRepositories(repository1, repository2);
             FileUtil.delete("target/clustered");
         }

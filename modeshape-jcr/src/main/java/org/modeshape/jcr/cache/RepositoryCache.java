@@ -113,6 +113,7 @@ public class RepositoryCache implements Observable {
     private final String systemWorkspaceName;
     private final Logger logger;
     private final SessionEnvironment sessionContext;
+    private final String processKey;
     private final boolean createdSystemContent;
     private final CacheContainer workspaceCacheManager;
     private volatile boolean initializingRepository = false;
@@ -130,6 +131,7 @@ public class RepositoryCache implements Observable {
         this.minimumStringLengthForBinaryStorage.set(configuration.getBinaryStorage().getMinimumStringSize());
         this.translator = new DocumentTranslator(this.context, this.documentStore, this.minimumStringLengthForBinaryStorage.get());
         this.sessionContext = sessionContext;
+        this.processKey = context.getProcessId();
         this.workspaceCacheManager = workspaceCacheContainer;
         this.logger = Logger.getLogger(getClass());
         this.rootNodeId = RepositoryConfiguration.ROOT_NODE_ID;
@@ -253,6 +255,28 @@ public class RepositoryCache implements Observable {
 
         // set the local source key in the document store
         this.documentStore.setLocalSourceKey(this.sourceKey);
+    }
+
+    /**
+     * Removes the repository info document, in case the repository has not yet been initialized (as indicated by the presence of
+     * the #REPOSITORY_INITIALIZED_AT_FIELD_NAME field). This should only be used during repository startup, in case an unexpected
+     * error occurs.
+     */
+    public final void rollbackRepositoryInfo() {
+        SchematicEntry repositoryInfoEntry = this.documentStore.localStore().get(REPOSITORY_INFO_KEY);
+        if (repositoryInfoEntry != null) {
+            Document repoInfoDoc = repositoryInfoEntry.getContentAsDocument();
+            //we should only remove the repository info if it wasn't initialized successfully previously
+            //in a cluster, it may happen that another node finished initialization while this node crashed (in which case we
+            //should not remove the entry)
+            if (!repoInfoDoc.containsField(REPOSITORY_INITIALIZED_AT_FIELD_NAME)) {
+                this.documentStore.localStore().remove(REPOSITORY_INFO_KEY);
+            }
+        }
+    }
+
+    protected final String processKey() {
+        return processKey;
     }
 
     protected Name name( String name ) {
@@ -386,6 +410,7 @@ public class RepositoryCache implements Observable {
             // we'll need to read the entry if one was inserted between 'containsKey' and 'putIfAbsent' ...
         }
         if (entry != null) {
+            // There was an existing document ...
             Document doc = entry.getContentAsDocument();
             Property prop = translator.getProperty(doc, name("workspaces"));
             if (prop != null && !prop.isEmpty() && !update) {
@@ -399,11 +424,17 @@ public class RepositoryCache implements Observable {
                 this.workspaceNames.retainAll(workspaceNames);
             } else {
                 // Set the property ...
-                EditableDocument editable = entry.editDocumentContent();
-                PropertyFactory propFactory = context.getPropertyFactory();
-                translator.setProperty(editable, propFactory.create(name("workspaces"), workspaceNames), null);
-                // we need to update local the cache immediately, so the changes are persisted
-                documentStore.localStore().replace(systemMetadataKeyStr, editable);
+                try {
+                    Transaction txn = sessionContext.getTransactions().begin();
+                    EditableDocument editable = entry.editDocumentContent();
+                    PropertyFactory propFactory = context.getPropertyFactory();
+                    translator.setProperty(editable, propFactory.create(name("workspaces"), workspaceNames), null);
+                    // we need to update local the cache immediately, so the changes are persisted
+                    documentStore.localStore().replace(systemMetadataKeyStr, editable);
+                    txn.commit();
+                } catch (Exception err) {
+                    throw new SystemFailureException(JcrI18n.errorUpdatingWorkspaceNames.text(name, err.getMessage()));
+                }
             }
         }
     }
@@ -519,12 +550,14 @@ public class RepositoryCache implements Observable {
             if (changeSet == null || !getKey().equals(changeSet.getRepositoryKey())) {
                 return;
             }
+            boolean isLocalEvent = processKey().equals(changeSet.getProcessKey());
             String workspaceName = changeSet.getWorkspaceName();
             if (workspaceName != null) {
                 for (WorkspaceCache cache : workspaces()) {
-                    if (!cache.getWorkspaceName().equalsIgnoreCase(workspaceName)) {
-                        // the workspace which triggered the event should've already processed the changeset, so we don't want to
-                        // do it
+                    if (!isLocalEvent || !cache.getWorkspaceName().equalsIgnoreCase(workspaceName)) {
+                        // If the event did not originate in this process, we always process it. Otherwise, it did originate
+                        // in this process and the workspace that triggered the event should've already processed the
+                        // changeset (and we don't want to do it again)...
                         cache.notify(changeSet);
                     }
                 }
@@ -653,6 +686,7 @@ public class RepositoryCache implements Observable {
         if (removed != null) {
             try {
                 removed.signalDeleted();
+                sessionContext.getTransactionalWorkspaceCacheFactory().remove(name);
             } finally {
                 if (workspaceCacheManager instanceof EmbeddedCacheManager) {
                     ((EmbeddedCacheManager)workspaceCacheManager).removeCache(cacheNameForWorkspace(name));

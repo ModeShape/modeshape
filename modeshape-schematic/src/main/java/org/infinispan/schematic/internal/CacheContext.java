@@ -26,12 +26,10 @@ package org.infinispan.schematic.internal;
 import java.util.EnumSet;
 import javax.transaction.TransactionManager;
 import org.infinispan.AdvancedCache;
-import org.infinispan.Version;
 import org.infinispan.atomic.Delta;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.context.Flag;
-import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionTable;
@@ -51,7 +49,6 @@ final class CacheContext {
     private final TransactionManager txnMgr;
     private final TransactionTable transactionTable;
     private final boolean explicitLockingEnabled;
-    private final boolean deltaConsistsOfChanges;
     private final boolean clustered;
 
     CacheContext( AdvancedCache<String, SchematicEntry> cache ) {
@@ -61,57 +58,17 @@ final class CacheContext {
         // We're clustered if the cache mode is not local ...
         this.clustered = config.clustering().cacheMode() != CacheMode.LOCAL;
 
-        // At this point, we're always going to create a Delta object that ships the entire document, because
-        // of problems we're having in ISPN 5.1.x. See MODE-1733 for details.
-        boolean deltaConsistsOfChanges = false;
-
-        Flag deltaWriteFlag = null;
-        short ispnVersionActual = Version.getVersionShort();
-        short ispnVersion520 = Version.encodeVersion(5, 2, 0);
-        if (ispnVersionActual >= ispnVersion520) {
-            // This flag was introduced in Infinispan 5.1.6.FINAL (see ISPN-2094), so we can only use this flag
-            // if we're using 5.1.6 or later. However, the state transfer functionality of DeltaAware doesn't seem
-            // to have been fixed until 5.2.0. See MODE-1733, MODE-1746, and MODE-1745 for details.
-            try {
-                deltaWriteFlag = Flag.valueOf("DELTA_WRITE");
-                deltaConsistsOfChanges = true;
-                LOGGER.debug("Found DELTA_WRITE flag");
-            } catch (IllegalArgumentException e) {
-                // okay, must not be able to find this flag leave deltaConsistsOfChanges as 'false'
-                LOGGER.debug("Failed to find DELTA_WRITE flag");
-            }
-        } else {
-            // This is before Infinispan 5.1.6.Final, so we can't actually use deltas. See MODE-1733 for details.
-            deltaConsistsOfChanges = false;
-            LOGGER.debug("No DELTA_WRITE flag available");
-        }
-
         EnumSet<Flag> flags = EnumSet.noneOf(Flag.class);
         flags.add(Flag.SKIP_REMOTE_LOOKUP);
-        if (deltaWriteFlag != null) {
-            // When passivation is enabled, cache loader needs to attempt to load
-            // the previous value in order to merge it if necessary, so mark atomic
-            // hash map writes as delta writes
-            LOGGER.debug("Passivation? " + config.loaders().passivation());
-            LOGGER.debug("Eviction? " + config.eviction().strategy());
-            LOGGER.debug("Clustering mode? " + config.clustering().cacheMode());
-            if (config.loaders().passivation() || config.eviction().strategy() != EvictionStrategy.NONE
-                || config.clustering().cacheMode() != CacheMode.LOCAL) {
-                // If we're passivating, evicting, or clustering, we need to use the DELTA_WRITE flag ...
-                flags.add(deltaWriteFlag);
-            } else {
-                flags.add(Flag.SKIP_CACHE_LOAD);
-            }
-        }
+        flags.add(Flag.DELTA_WRITE);
+        LOGGER.debug("Deltas will be used to serializing changes to documents in '" + cache.getName() + "'.");
+        LOGGER.debug("Passivation? " + config.loaders().passivation());
+        LOGGER.debug("Eviction? " + config.eviction().strategy());
+        LOGGER.debug("Clustering mode? " + config.clustering().cacheMode());
+
         LOGGER.debug("Using cache with flags " + flags + " during SchematicEntry updates");
         this.cacheForWriting = this.cache.withFlags(flags.toArray(new Flag[flags.size()]));
 
-        this.deltaConsistsOfChanges = deltaConsistsOfChanges;
-        if (this.isDeltaContainingChangesEnabled()) {
-            LOGGER.debug("Deltas will be used to serializing changes to documents in '" + cache.getName() + "'.");
-        } else {
-            LOGGER.debug("Deltas will NOT be used to serializing changes to documents in '" + cache.getName() + "'.");
-        }
         this.txnMgr = cache.getTransactionManager();
         this.transactionTable = cache.getComponentRegistry().getComponent(TransactionTable.class);
         LockingMode lockingMode = config.transaction().lockingMode();
@@ -187,7 +144,7 @@ final class CacheContext {
      * @return true if the {@link Delta} implementation contains only differences, or false if it contains the whole document.
      */
     public boolean isDeltaContainingChangesEnabled() {
-        return deltaConsistsOfChanges;
+        return true;
     }
 
     /**

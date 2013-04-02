@@ -25,6 +25,7 @@ package org.modeshape.jcr;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.security.AccessControlContext;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,6 +45,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -51,6 +53,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.regex.Matcher;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
@@ -64,6 +67,7 @@ import javax.naming.NoInitialContextException;
 import javax.security.auth.login.LoginContext;
 import javax.transaction.Status;
 import javax.transaction.Synchronization;
+import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import org.hibernate.search.backend.TransactionContext;
@@ -87,6 +91,7 @@ import org.modeshape.jcr.RepositoryConfiguration.AnonymousSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.BinaryStorage;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import org.modeshape.jcr.RepositoryConfiguration.GarbageCollection;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.QuerySystem;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
@@ -98,6 +103,7 @@ import org.modeshape.jcr.api.RepositoryManager;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.query.Query;
+import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.bus.ChangeBus;
 import org.modeshape.jcr.bus.ClusteredRepositoryChangeBus;
 import org.modeshape.jcr.bus.RepositoryChangeBus;
@@ -109,13 +115,9 @@ import org.modeshape.jcr.cache.SessionEnvironment;
 import org.modeshape.jcr.cache.SessionEnvironment.Monitor;
 import org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
-import org.modeshape.jcr.cache.change.Change;
-import org.modeshape.jcr.cache.change.ChangeSet;
-import org.modeshape.jcr.cache.change.ChangeSetListener;
-import org.modeshape.jcr.cache.change.WorkspaceAdded;
-import org.modeshape.jcr.cache.change.WorkspaceRemoved;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
+import org.modeshape.jcr.cache.document.TransactionalWorkspaceCaches;
 import org.modeshape.jcr.federation.FederatedDocumentStore;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetectors;
@@ -134,6 +136,7 @@ import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.txn.NoClientTransactions;
 import org.modeshape.jcr.txn.SynchronizedTransactions;
 import org.modeshape.jcr.txn.Transactions;
+import org.modeshape.jcr.value.DateTimeFactory;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Property;
@@ -332,7 +335,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.runningState.set(new RunningState(oldState, configChanges));
 
                 // Handle a few special cases that the running state doesn't really handle itself ...
-                if (!configChanges.storageChanged && configChanges.predefinedWorkspacesChanged) workspacesChanged();
+                if (!configChanges.storageChanged && configChanges.predefinedWorkspacesChanged) refreshWorkspaces();
                 if (configChanges.nameChanged) repositoryNameChanged();
             }
             logger.debug("Applied changes to '{0}' repository configuration: {1} --> {2}", repositoryName, changes, config);
@@ -353,24 +356,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.state.set(State.STARTING);
                 state = new RunningState();
                 this.runningState.compareAndSet(null, state);
-                workspacesChanged();
+                state.completeInitialization();
                 this.state.set(State.RUNNING);
                 state.postInitialize();
             }
             return state;
-        } catch (IOException e) {
-            // Only way to get exception is because we tried to create the running state (e.g., it was not running when we
-            // entered)
-            this.state.set(State.NOT_RUNNING);
-            throw e;
-        } catch (NamingException e) {
-            // Only way to get exception is because we tried to create the running state (e.g., it was not running when we
-            // entered)
-            this.state.set(State.NOT_RUNNING);
-            throw e;
-        } catch (RuntimeException e) {
-            // Only way to get exception is because we tried to create the running state (e.g., it was not running when we
-            // entered)
+        } catch (Exception e) {
+            // we should set the state to NOT_RUNNING regardless of the error/exception that occurs
             this.state.set(State.NOT_RUNNING);
             throw e;
         } finally {
@@ -581,8 +573,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @throws IllegalArgumentException if <code>credentials</code> is not <code>null</code> but:
      *         <ul>
      *         <li>provides neither a <code>getLoginContext()</code> nor a <code>getAccessControlContext()</code> method and is
@@ -850,7 +840,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return valueFor(valueFactories, PropertyType.BOOLEAN, value);
     }
 
-    protected void workspacesChanged() {
+    protected void refreshWorkspaces() {
         RunningState running = runningState();
         if (running != null) {
             Set<String> workspaceNames = running.repositoryCache().getWorkspaceNames();
@@ -866,19 +856,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     private void repositoryNameChanged() {
         descriptors.put(Repository.REPOSITORY_NAME, repositoryName());
-    }
-
-    /**
-     * Clean up the repository content's garbage.
-     * 
-     * @see ModeShapeEngine.GarbageCollectionTask#run()
-     */
-    void cleanUp() {
-        RunningState running = runningState.get();
-        if (running != null) {
-            running.cleanUpLocks();
-            running.cleanUpBinaryValues();
-        }
     }
 
     Collection<Cache<?, ?>> caches() {
@@ -898,33 +875,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return caches;
     }
 
-    protected class WorkspaceListener implements ChangeSetListener {
-        @Override
-        public void notify( ChangeSet changeSet ) {
-
-            if (changeSet == null || !repositoryCache().getKey().equals(changeSet.getRepositoryKey())) return;
-            String workspaceName = changeSet.getWorkspaceName();
-            if (workspaceName == null) {
-                // Look for changes to the workspaces ...
-                boolean changed = false;
-                for (Change change : changeSet) {
-                    if (change instanceof WorkspaceAdded) {
-                        changed = true;
-                    } else if (change instanceof WorkspaceRemoved) {
-                        changed = true;
-                    }
-                }
-                if (changed) workspacesChanged();
-            }
-        }
-    }
-
     @Immutable
     protected class RunningState {
 
         private final RepositoryConfiguration config;
         private final DocumentStore documentStore;
-        private final RepositoryCache cache;
         private final AuthenticationProviders authenticators;
         private final Credentials anonymousCredentialsIfSuppliedCredentialsFail;
         private final String defaultWorkspaceName;
@@ -960,8 +915,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final NodeTypesImporter nodeTypesImporter;
         private final Connectors connectors;
         private final RepositoryConfiguration.IndexRebuildOptions indexRebuildOptions;
+        private final List<ScheduledFuture<?>> gcProcesses = new ArrayList<ScheduledFuture<?>>();
 
-        private Transaction runningTransaction;
+        private Transaction existingUserTransaction;
+        private RepositoryCache cache;
 
         protected RunningState() throws Exception {
             this(null, null);
@@ -987,7 +944,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.statistics = other != null ? other.statistics : new RepositoryStatistics(tempContext);
                 if (this.config.getMonitoring().enabled()) {
                     // Start the Cron service, with a minimum of a single thread ...
-                    this.statsRollupService = (ScheduledExecutorService)tempContext.getScheduledThreadPool("modeshape-stats");
+                    this.statsRollupService = tempContext.getScheduledThreadPool("modeshape-stats");
                     this.statistics.start(this.statsRollupService);
                 } else {
                     this.statsRollupService = null;
@@ -1004,239 +961,248 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.defaultWorkspaceName = config.getDefaultWorkspaceName();
             }
 
-            if (other != null) {
-                if (change.storageChanged) {
-                    // Can't change where we're storing the content while we're running, so take effect upon next startup
-                    logger.warn(JcrI18n.storageRelatedConfigurationChangesWillTakeEffectAfterShutdown, getName());
-                }
-                if (change.binaryStorageChanged) {
-                    // Can't change where we're storing the content while we're running, so take effect upon next startup
-                    logger.warn(JcrI18n.storageRelatedConfigurationChangesWillTakeEffectAfterShutdown, getName());
-                }
-                // reuse the existing storage-related components ...
-                this.cache = other.cache;
-                this.context = other.context;
-                this.connectors = other.connectors;
-                this.documentStore = other.documentStore;
-                this.txnMgr = documentStore.transactionManager();
-                validateTransactionsEnabled();
-                MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
-                this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
-                // suspend any potential existing transaction, so that the initialization is "atomic"
-                runningTransaction = this.transactions.suspend();
-                if (change.largeValueChanged) {
-                    // We can update the value used in the repository cache dynamically ...
-                    BinaryStorage binaryStorage = config.getBinaryStorage();
-                    this.cache.setLargeStringLength(binaryStorage.getMinimumBinarySizeInBytes());
-                    this.context.getBinaryStore().setMinimumBinarySizeInBytes(binaryStorage.getMinimumBinarySizeInBytes());
-                }
-                if (change.workspacesChanged) {
-                    // Make sure that all the predefined workspaces are available ...
-                    for (String workspaceName : config.getPredefinedWorkspaceNames()) {
-                        this.cache.createWorkspace(workspaceName);
-                    }
-                }
-                this.mimeTypeDetector = new MimeTypeDetectors(other.config.environment());
-                this.binaryStore = other.binaryStore;
-                this.internalWorkerContext = other.internalWorkerContext;
-                this.nodeTypes = other.nodeTypes.with(this, true, true);
-                this.lockManager = other.lockManager.with(this);
-                this.cache.register(this.lockManager);
-                other.cache.unregister(other.lockManager);
-                this.persistentRegistry = other.persistentRegistry;
-                this.changeDispatchingQueue = other.changeDispatchingQueue;
-                this.changeBus = other.changeBus;
-            } else {
-                // find the Schematic database and Infinispan Cache ...
-                CacheContainer container = config.getContentCacheContainer();
-                String cacheName = config.getCacheName();
-                List<Component> connectorComponents = config.getFederation().getConnectors();
-                Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjectionsByWorkspace = config.getFederation()
-                                                                                                                               .getProjectionsByWorkspace();
-                this.connectors = new Connectors(this, connectorComponents, preconfiguredProjectionsByWorkspace);
-                logger.debug("Loading cache '{0}' from cache container {1}", cacheName, container);
-                SchematicDb database = Schematic.get(container, cacheName);
-                this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, database) : new LocalDocumentStore(
-                                                                                                                                            database);
-                // this.documentStore = new LocalDocumentStore(database);
-                this.txnMgr = this.documentStore.transactionManager();
-                validateTransactionsEnabled();
-                MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
-                this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
-                // suspend any potential existing transaction, so that the initialization is "atomic"
-                runningTransaction = this.transactions.suspend();
-
-                // Set up the binary store ...
-                BinaryStorage binaryStorageConfig = config.getBinaryStorage();
-                binaryStore = binaryStorageConfig.getBinaryStore();
-                binaryStore.start();
-                tempContext = tempContext.with(binaryStore);
-
-                // Now create the registry implementation and the execution context that uses it ...
-                this.persistentRegistry = new SystemNamespaceRegistry(this);
-                this.mimeTypeDetector = new MimeTypeDetectors(this.config.environment());
-                this.context = tempContext.with(persistentRegistry);
-                this.persistentRegistry.setContext(this.context);
-                this.internalWorkerContext = this.context.with(new InternalSecurityContext(INTERNAL_WORKER_USERNAME));
-
-                // Create the event bus
-                this.changeDispatchingQueue = this.context().getCachedTreadPool("modeshape-event-dispatcher");
-                this.changeBus = createBus(config.getClustering(), this.changeDispatchingQueue, systemWorkspaceName(), false);
-                this.changeBus.start();
-
-                // Set up the repository cache ...
-                final SessionEnvironment sessionEnv = new RepositorySessionEnvironment(this.transactions);
-                CacheContainer workspaceCacheContainer = this.config.getWorkspaceContentCacheContainer();
-                this.cache = new RepositoryCache(context, documentStore, config, systemContentInitializer, sessionEnv, changeBus,
-                                                 workspaceCacheContainer);
-
-                // Set up the node type manager ...
-                this.nodeTypes = new RepositoryNodeTypeManager(this, true, true);
-                this.cache.register(this.nodeTypes);
-
-                // Set up the lock manager ...
-                this.lockManager = new RepositoryLockManager(this);
-                this.cache.register(this.lockManager);
-
-                // Set up the unused binary value listener ...
-                this.cache.register(new BinaryUsageChangeSetListener(binaryStore));
-
-                // Refresh several of the components information from the repository cache ...
-                this.persistentRegistry.refreshFromSystem();
-                this.lockManager.refreshFromSystem();
-                if (!this.nodeTypes.refreshFromSystem()) {
-                    try {
-                        // Read in the built-in node types ...
-                        CndImporter importer = new CndImporter(context, true);
-                        importer.importBuiltIns(new SimpleProblems());
-                        this.nodeTypes.registerNodeTypes(importer.getNodeTypeDefinitions(), false, true, true);
-                    } catch (RepositoryException re) {
-                        throw new IllegalStateException("Could not load node type definition files", re);
-                    } catch (IOException ioe) {
-                        throw new IllegalStateException("Could not access node type definition files", ioe);
-                    }
-                }
-                // Add the built-ins, ensuring we overwrite any badly-initialized values ...
-                this.persistentRegistry.register(JcrNamespaceRegistry.STANDARD_BUILT_IN_NAMESPACES_BY_PREFIX);
-
-                // Record the number of workspaces that are available/predefined ...
-                this.statistics.set(ValueMetric.WORKSPACE_COUNT, cache.getWorkspaceNames().size());
-            }
-
-            this.useXaSessions = this.transactions instanceof SynchronizedTransactions;
-
-            if (other != null && !change.securityChanged) {
-                this.authenticators = other.authenticators;
-                this.anonymousCredentialsIfSuppliedCredentialsFail = other.anonymousCredentialsIfSuppliedCredentialsFail;
-            } else {
-                // Set up the security ...
-                AtomicBoolean useAnonymouOnFailedLogins = new AtomicBoolean();
-                this.authenticators = createAuthenticationProviders(useAnonymouOnFailedLogins);
-                this.anonymousCredentialsIfSuppliedCredentialsFail = useAnonymouOnFailedLogins.get() ? new AnonymousCredentials() : null;
-            }
-
-            if (other != null && !change.extractorsChanged) {
-                this.extractors = new TextExtractors(this, other.config.getQuery().getTextExtracting());
-            } else {
-                this.extractors = new TextExtractors(this, config.getQuery().getTextExtracting());
-            }
-            this.binaryStore.setMimeTypeDetector(this.mimeTypeDetector);
-            this.binaryStore.setTextExtractors(this.extractors);
-
-            if (other != null && !change.sequencingChanged) {
-                this.sequencingQueue = other.sequencingQueue;
-                this.sequencers = other.sequencers.with(this);
-                if (!sequencers.isEmpty()) this.cache.register(this.sequencers);
-                this.cache.unregister(other.sequencers);
-            } else {
-                // There are changes to the sequencers ...
-                Sequencers.WorkQueue queue = null;
-                List<Component> sequencerComponents = config.getSequencing().getSequencers();
-                if (sequencerComponents.isEmpty()) {
-                    // There are no sequencers ...
-                    this.sequencingQueue = null;
-                    this.sequencers = new Sequencers(this, sequencerComponents, cache.getWorkspaceNames(), queue);
-                } else {
-                    // Create an in-memory queue of sequencing work items ...
-                    String threadPoolName = config.getSequencing().getThreadPoolName();
-                    this.sequencingQueue = this.context.getThreadPool(threadPoolName);
-                    queue = new Sequencers.WorkQueue() {
-                        @SuppressWarnings( "synthetic-access" )
-                        @Override
-                        public void submit( final SequencingWorkItem work ) {
-                            sequencingQueue.execute(new SequencingRunner(JcrRepository.this, work));
-                        }
-                    };
-                    this.sequencers = new Sequencers(this, sequencerComponents, cache.getWorkspaceNames(), queue);
-                    this.cache.register(this.sequencers);
-                }
-            }
-
-            if (other != null && !change.indexingChanged) {
-                this.indexingExecutor = other.indexingExecutor;
-                this.queryParsers = other.queryParsers;
-            } else {
-                String indexThreadPoolName = config.getQuery().getThreadPoolName();
-                this.indexingExecutor = this.context.getThreadPool(indexThreadPoolName);
-                this.queryParsers = new QueryParsers(new JcrSql2QueryParser(), new XPathQueryParser(),
-                                                     new FullTextSearchParser(), new JcrSqlQueryParser(), new JcrQomQueryParser());
-            }
-            QuerySystem query = config.getQuery();
-            if (query.queriesEnabled()) {
-                // The query system is enabled ...
-                Properties backendProps = query.getIndexingBackendProperties();
-                Properties indexingProps = query.getIndexingProperties();
-                Properties indexStorageProps = query.getIndexStorageProperties();
-                this.repositoryQueryManager = new RepositoryQueryManager(this, config.getQuery(), indexingExecutor, backendProps,
-                                                                         indexingProps, indexStorageProps);
-                this.indexRebuildOptions = query.getIndexRebuildOptions();
-            } else {
-                this.repositoryQueryManager = new RepositoryDisabledQueryManager(this, config.getQuery());
-                this.indexRebuildOptions = null;
-                logger.debug("Queries have been DISABLED for the '{0}' repository. Nothing will be indexed, and all queries will return empty results.",
-                             repositoryName());
-            }
-
-            // Check that we have parsers for all the required languages ...
-            assert this.queryParsers.getParserFor(Query.XPATH) != null;
-            assert this.queryParsers.getParserFor(Query.SQL) != null;
-            assert this.queryParsers.getParserFor(Query.JCR_SQL2) != null;
-            assert this.queryParsers.getParserFor(Query.JCR_JQOM) != null;
-            assert this.queryParsers.getParserFor(QueryLanguage.SEARCH) != null;
-
-            if (other != null && !change.jndiChanged) {
-                // The repository is already registered (or not registered)
-                this.jndiName = other.jndiName;
-            } else {
-                // The JNDI location has changed, so register the new one ...
-                this.jndiName = config.getJndiName();
-                bindIntoJndi();
-
-                // And unregister the old name ...
+            try {
                 if (other != null) {
-                    other.unbindFromJndi();
+                    if (change.storageChanged) {
+                        // Can't change where we're storing the content while we're running, so take effect upon next startup
+                        logger.warn(JcrI18n.storageRelatedConfigurationChangesWillTakeEffectAfterShutdown, getName());
+                    }
+                    if (change.binaryStorageChanged) {
+                        // Can't change where we're storing the content while we're running, so take effect upon next startup
+                        logger.warn(JcrI18n.storageRelatedConfigurationChangesWillTakeEffectAfterShutdown, getName());
+                    }
+                    // reuse the existing storage-related components ...
+                    this.cache = other.cache;
+                    this.context = other.context;
+                    this.connectors = other.connectors;
+                    this.documentStore = other.documentStore;
+                    this.txnMgr = documentStore.transactionManager();
+
+                    MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
+                    this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
+
+                    suspendExistingUserTransaction();
+
+                    if (change.largeValueChanged) {
+                        // We can update the value used in the repository cache dynamically ...
+                        BinaryStorage binaryStorage = config.getBinaryStorage();
+                        this.cache.setLargeStringLength(binaryStorage.getMinimumBinarySizeInBytes());
+                        this.context.getBinaryStore().setMinimumBinarySizeInBytes(binaryStorage.getMinimumBinarySizeInBytes());
+                    }
+                    if (change.workspacesChanged) {
+                        // Make sure that all the predefined workspaces are available ...
+                        for (String workspaceName : config.getPredefinedWorkspaceNames()) {
+                            this.cache.createWorkspace(workspaceName);
+                        }
+                    }
+                    this.mimeTypeDetector = new MimeTypeDetectors(other.config.environment());
+                    this.binaryStore = other.binaryStore;
+                    this.internalWorkerContext = other.internalWorkerContext;
+                    this.nodeTypes = other.nodeTypes.with(this, true, true);
+                    this.lockManager = other.lockManager.with(this);
+                    this.cache.register(this.lockManager);
+                    other.cache.unregister(other.lockManager);
+                    this.persistentRegistry = other.persistentRegistry;
+                    this.changeDispatchingQueue = other.changeDispatchingQueue;
+                    this.changeBus = other.changeBus;
+                } else {
+                    // find the Schematic database and Infinispan Cache ...
+                    CacheContainer container = config.getContentCacheContainer();
+                    String cacheName = config.getCacheName();
+                    List<Component> connectorComponents = config.getFederation().getConnectors();
+                    Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjectionsByWorkspace = config.getFederation()
+                                                                                                                                   .getProjectionsByWorkspace();
+                    this.connectors = new Connectors(this, connectorComponents, preconfiguredProjectionsByWorkspace);
+                    logger.debug("Loading cache '{0}' from cache container {1}", cacheName, container);
+                    SchematicDb database = Schematic.get(container, cacheName);
+                    this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, database) : new LocalDocumentStore(
+                                                                                                                                                database);
+                    // this.documentStore = new LocalDocumentStore(database);
+                    this.txnMgr = this.documentStore.transactionManager();
+                    MonitorFactory monitorFactory = new RepositoryMonitorFactory(this);
+                    this.transactions = createTransactions(config.getTransactionMode(), monitorFactory, this.txnMgr);
+
+                    suspendExistingUserTransaction();
+
+                    // Set up the binary store ...
+                    BinaryStorage binaryStorageConfig = config.getBinaryStorage();
+                    binaryStore = binaryStorageConfig.getBinaryStore();
+                    binaryStore.start();
+                    tempContext = tempContext.with(binaryStore);
+
+                    // Now create the registry implementation and the execution context that uses it ...
+                    this.persistentRegistry = new SystemNamespaceRegistry(this);
+                    this.mimeTypeDetector = new MimeTypeDetectors(this.config.environment());
+                    this.context = tempContext.with(persistentRegistry);
+                    this.persistentRegistry.setContext(this.context);
+                    this.internalWorkerContext = this.context.with(new InternalSecurityContext(INTERNAL_WORKER_USERNAME));
+
+                    // Create the event bus
+                    this.changeDispatchingQueue = this.context().getCachedTreadPool("modeshape-event-dispatcher");
+                    this.changeBus = createBus(config.getClustering(), this.changeDispatchingQueue, systemWorkspaceName(), false);
+                    this.changeBus.start();
+
+                    // Set up the repository cache ...
+                    final SessionEnvironment sessionEnv = new RepositorySessionEnvironment(this.transactions);
+                    CacheContainer workspaceCacheContainer = this.config.getWorkspaceContentCacheContainer();
+                    this.cache = new RepositoryCache(context, documentStore, config, systemContentInitializer, sessionEnv,
+                                                     changeBus, workspaceCacheContainer);
+
+                    // Set up the node type manager ...
+                    this.nodeTypes = new RepositoryNodeTypeManager(this, true, true);
+                    this.cache.register(this.nodeTypes);
+
+                    // Set up the lock manager ...
+                    this.lockManager = new RepositoryLockManager(this);
+                    this.cache.register(this.lockManager);
+
+                    // Set up the unused binary value listener ...
+                    this.cache.register(new BinaryUsageChangeSetListener(binaryStore));
+
+                    // Refresh several of the components information from the repository cache ...
+                    this.persistentRegistry.refreshFromSystem();
+                    this.lockManager.refreshFromSystem();
+                    if (!this.nodeTypes.refreshFromSystem()) {
+                        try {
+                            // Read in the built-in node types ...
+                            CndImporter importer = new CndImporter(context, true);
+                            importer.importBuiltIns(new SimpleProblems());
+                            this.nodeTypes.registerNodeTypes(importer.getNodeTypeDefinitions(), false, true, true);
+                        } catch (RepositoryException re) {
+                            throw new IllegalStateException("Could not load node type definition files", re);
+                        } catch (IOException ioe) {
+                            throw new IllegalStateException("Could not access node type definition files", ioe);
+                        }
+                    }
+                    // Add the built-ins, ensuring we overwrite any badly-initialized values ...
+                    this.persistentRegistry.register(JcrNamespaceRegistry.STANDARD_BUILT_IN_NAMESPACES_BY_PREFIX);
+
+                    // Record the number of workspaces that are available/predefined ...
+                    this.statistics.set(ValueMetric.WORKSPACE_COUNT, cache.getWorkspaceNames().size());
                 }
-            }
 
-            // Set up the backup service and executor ...
-            this.backupService = new BackupService(this);
+                this.useXaSessions = this.transactions instanceof SynchronizedTransactions;
 
-            // Set up the initial content importer
-            this.initialContentImporter = new InitialContentImporter(config.getInitialContent(), this);
+                if (other != null && !change.securityChanged) {
+                    this.authenticators = other.authenticators;
+                    this.anonymousCredentialsIfSuppliedCredentialsFail = other.anonymousCredentialsIfSuppliedCredentialsFail;
+                } else {
+                    // Set up the security ...
+                    AtomicBoolean useAnonymouOnFailedLogins = new AtomicBoolean();
+                    this.authenticators = createAuthenticationProviders(useAnonymouOnFailedLogins);
+                    this.anonymousCredentialsIfSuppliedCredentialsFail = useAnonymouOnFailedLogins.get() ? new AnonymousCredentials() : null;
+                }
 
-            // Set up the node types importer
-            this.nodeTypesImporter = new NodeTypesImporter(config.getNodeTypes(), this);
-        }
+                if (other != null && !change.extractorsChanged) {
+                    this.extractors = new TextExtractors(this, other.config.getQuery().getTextExtracting());
+                } else {
+                    this.extractors = new TextExtractors(this, config.getQuery().getTextExtracting());
+                }
+                this.binaryStore.setMimeTypeDetector(this.mimeTypeDetector);
+                this.binaryStore.setTextExtractors(this.extractors);
 
-        private void validateTransactionsEnabled() {
-            if (txnMgr == null) {
-                throw new IllegalStateException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName()));
+                if (other != null && !change.sequencingChanged) {
+                    this.sequencingQueue = other.sequencingQueue;
+                    this.sequencers = other.sequencers.with(this);
+                    if (!sequencers.isEmpty()) this.cache.register(this.sequencers);
+                    this.cache.unregister(other.sequencers);
+                } else {
+                    // There are changes to the sequencers ...
+                    Sequencers.WorkQueue queue = null;
+                    List<Component> sequencerComponents = config.getSequencing().getSequencers();
+                    if (sequencerComponents.isEmpty()) {
+                        // There are no sequencers ...
+                        this.sequencingQueue = null;
+                        this.sequencers = new Sequencers(this, sequencerComponents, cache.getWorkspaceNames(), queue);
+                    } else {
+                        // Create an in-memory queue of sequencing work items ...
+                        String threadPoolName = config.getSequencing().getThreadPoolName();
+                        this.sequencingQueue = this.context.getThreadPool(threadPoolName);
+                        queue = new Sequencers.WorkQueue() {
+                            @SuppressWarnings( "synthetic-access" )
+                            @Override
+                            public void submit( final SequencingWorkItem work ) {
+                                sequencingQueue.execute(new SequencingRunner(JcrRepository.this, work));
+                            }
+                        };
+                        this.sequencers = new Sequencers(this, sequencerComponents, cache.getWorkspaceNames(), queue);
+                        this.cache.register(this.sequencers);
+                    }
+                }
+
+                if (other != null && !change.indexingChanged) {
+                    this.indexingExecutor = other.indexingExecutor;
+                    this.queryParsers = other.queryParsers;
+                } else {
+                    String indexThreadPoolName = config.getQuery().getThreadPoolName();
+                    this.indexingExecutor = this.context.getThreadPool(indexThreadPoolName);
+                    this.queryParsers = new QueryParsers(new JcrSql2QueryParser(), new XPathQueryParser(),
+                                                         new FullTextSearchParser(), new JcrSqlQueryParser(),
+                                                         new JcrQomQueryParser());
+                }
+                QuerySystem query = config.getQuery();
+                if (query.queriesEnabled()) {
+                    // The query system is enabled ...
+                    Properties backendProps = query.getIndexingBackendProperties();
+                    Properties indexingProps = query.getIndexingProperties();
+                    Properties indexStorageProps = query.getIndexStorageProperties();
+                    this.repositoryQueryManager = new RepositoryQueryManager(this, config.getQuery(), indexingExecutor,
+                                                                             backendProps, indexingProps, indexStorageProps);
+                    this.indexRebuildOptions = query.getIndexRebuildOptions();
+                } else {
+                    this.repositoryQueryManager = new RepositoryDisabledQueryManager(this, config.getQuery());
+                    this.indexRebuildOptions = null;
+                    logger.debug("Queries have been DISABLED for the '{0}' repository. Nothing will be indexed, and all queries will return empty results.",
+                                 repositoryName());
+                }
+
+                // Check that we have parsers for all the required languages ...
+                assert this.queryParsers.getParserFor(Query.XPATH) != null;
+                assert this.queryParsers.getParserFor(Query.SQL) != null;
+                assert this.queryParsers.getParserFor(Query.JCR_SQL2) != null;
+                assert this.queryParsers.getParserFor(Query.JCR_JQOM) != null;
+                assert this.queryParsers.getParserFor(QueryLanguage.SEARCH) != null;
+
+                if (other != null && !change.jndiChanged) {
+                    // The repository is already registered (or not registered)
+                    this.jndiName = other.jndiName;
+                } else {
+                    // The JNDI location has changed, so register the new one ...
+                    this.jndiName = config.getJndiName();
+                    bindIntoJndi();
+
+                    // And unregister the old name ...
+                    if (other != null) {
+                        other.unbindFromJndi();
+                    }
+                }
+
+                // Set up the backup service and executor ...
+                this.backupService = new BackupService(this);
+
+                // Set up the initial content importer
+                this.initialContentImporter = new InitialContentImporter(config.getInitialContent(), this);
+
+                // Set up the node types importer
+                this.nodeTypesImporter = new NodeTypesImporter(config.getNodeTypes(), this);
+            } catch (Throwable t) {
+                // remove the document that was written as part of the initialization procedure
+                if (cache != null) {
+                    cache.rollbackRepositoryInfo();
+                }
+                // resume any user transaction that may have been suspended earlier
+                resumeExistingUserTransaction();
+                throw (t instanceof Exception) ? (Exception)t : new RuntimeException(t);
             }
         }
 
         protected Transactions createTransactions( TransactionMode mode,
                                                    MonitorFactory monitorFactory,
                                                    TransactionManager txnMgr ) {
+            if (txnMgr == null) {
+                throw new IllegalStateException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName()));
+            }
+
             switch (mode) {
                 case NONE:
                     return new NoClientTransactions(monitorFactory, txnMgr);
@@ -1247,68 +1213,106 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         /**
-         * Perform any initialization code that requires the repository to be in a running state.
+         * Performs the steps required after the running state has been created and before a repository is considered
+         * "initialized"
+         * 
+         * @throws Exception if anything goes wrong in this phase. If it does, the transaction used for startup should be rolled
+         *         back
+         */
+        protected final void completeInitialization() throws Exception {
+            try {
+                refreshWorkspaces();
+
+                this.sequencers.initialize();
+
+                // import the preconfigured node types before the initial content, in case the latter use custom types
+                this.nodeTypesImporter.importNodeTypes();
+
+                if (repositoryCache().isInitializingRepository()) {
+                    // import initial content for each of the workspaces (this has to be done after the running state has
+                    // "started"
+                    this.cache.runSystemOneTimeInitializationOperation(new Callable<Void>() {
+                        @Override
+                        public Void call() throws Exception {
+                            for (String workspaceName : repositoryCache().getWorkspaceNames()) {
+                                initialContentImporter().importInitialContent(workspaceName);
+                            }
+                            return null;
+                        }
+                    });
+                }
+
+                // connectors must be initialized after initial content because that can have an influence on projections
+                this.connectors.initialize();
+
+                // Now record in the content that we're finished initializing the repository. This will commit the startup
+                // transaction
+                repositoryCache().completeInitialization();
+            } catch (Throwable t) {
+                this.cache.rollbackRepositoryInfo();
+                resumeExistingUserTransaction();
+                throw t instanceof Exception ? (Exception)t : new RuntimeException(t);
+            }
+        }
+
+        /**
+         * Perform any initialization code that requires the repository to be in a running state. The repository has been
+         * considered started up.
          * 
          * @throws Exception if there is a problem during this phase.
          */
         protected final void postInitialize() throws Exception {
-            this.sequencers.initialize();
+            try {
+                // check the re-indexing options and do the re-indexing (this must be done after all of the above have finished)
+                if (indexRebuildOptions != null) {
+                    RepositoryConfiguration.QueryRebuild when = indexRebuildOptions.getWhen();
+                    boolean includeSystemContent = indexRebuildOptions.includeSystemContent();
+                    boolean async = indexRebuildOptions.getMode() == RepositoryConfiguration.IndexingMode.ASYNC;
 
-            // import the preconfigured node types before the initial content, in case the latter use custom types
-            this.nodeTypesImporter.importNodeTypes();
-
-            if (repositoryCache().isInitializingRepository()) {
-                // import initial content for each of the workspaces (this has to be done after the running state has "started"
-                this.cache.runSystemOneTimeInitializationOperation(new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        for (String workspaceName : repositoryCache().getWorkspaceNames()) {
-                            initialContentImporter().importInitialContent(workspaceName);
+                    switch (when) {
+                        case ALWAYS: {
+                            this.repositoryQueryManager.reindexContent(false, includeSystemContent, async);
+                            break;
                         }
-                        return null;
-                    }
-                });
-            }
-
-            // connectors must be initialized after initial content because that can have an influence on projections
-            this.connectors.initialize();
-
-            // Now record in the content that we're finished initializing the repository ...
-            repositoryCache().completeInitialization();
-
-            // check the re-indexing options and do the re-indexing (this must be done after all of the above have finished)
-            if (indexRebuildOptions != null) {
-                RepositoryConfiguration.QueryRebuild when = indexRebuildOptions.getWhen();
-                boolean includeSystemContent = indexRebuildOptions.includeSystemContent();
-                boolean async = indexRebuildOptions.getMode() == RepositoryConfiguration.IndexingMode.ASYNC;
-
-                switch (when) {
-                    case ALWAYS: {
-                        this.repositoryQueryManager.reindexContent(false, includeSystemContent, async);
-                        break;
-                    }
-                    case IF_MISSING: {
-                        this.repositoryQueryManager.reindexContent(true, includeSystemContent, async);
-                        break;
-                    }
-                    case NEVER: {
-                        Set<NodeKey> existingIndexes = queryManager().getIndexes().indexedNodes();
-                        if (existingIndexes.isEmpty()) {
-                            logger.info(JcrI18n.noReindex, getName());
-                        } else {
-                            logger.debug("Index rebuild option is 'never' for repository {0} so nothing will be re-indexed. The existing indexed node are: {1}",
-                                         name(),
-                                         existingIndexes);
+                        case IF_MISSING: {
+                            this.repositoryQueryManager.reindexContent(true, includeSystemContent, async);
+                            break;
                         }
-                        break;
+                        case NEVER: {
+                            Set<NodeKey> existingIndexes = queryManager().getIndexes().indexedNodes();
+                            if (existingIndexes.isEmpty()) {
+                                logger.info(JcrI18n.noReindex, getName());
+                            } else {
+                                logger.debug("Index rebuild option is 'never' for repository {0} so nothing will be re-indexed. The existing indexed node are: {1}",
+                                             name(),
+                                             existingIndexes);
+                            }
+                            break;
+                        }
                     }
                 }
-            }
 
-            // any potential transaction was suspended during the creation of the running state to make sure intialization is
-            // atomic
-            this.transactions.resume(runningTransaction);
-            this.runningTransaction = null;
+                // Register the background processes. Do this last since we want the repository running before these are started
+                // ...
+                GarbageCollection gcConfig = config.getGarbageCollection();
+                String threadPoolName = gcConfig.getThreadPoolName();
+                long binaryGcInitialTime = determineInitialDelay(gcConfig.getInitialTimeExpression());
+                long binaryGcInterval = gcConfig.getIntervalInHours();
+                int lockSweepIntervalInMinutes = gcConfig.getLockSweepIntervalInMinutes();
+                assert binaryGcInitialTime >= 0;
+                ScheduledExecutorService garbageCollectionService = this.context.getScheduledThreadPool(threadPoolName);
+                gcProcesses.add(garbageCollectionService.scheduleAtFixedRate(new LockGarbageCollectionTask(JcrRepository.this),
+                                                                             lockSweepIntervalInMinutes,
+                                                                             lockSweepIntervalInMinutes,
+                                                                             TimeUnit.MINUTES));
+                gcProcesses.add(garbageCollectionService.scheduleAtFixedRate(new BinaryValueGarbageCollectionTask(
+                                                                                                                  JcrRepository.this),
+                                                                             binaryGcInitialTime,
+                                                                             binaryGcInterval,
+                                                                             TimeUnit.HOURS));
+            } finally {
+                resumeExistingUserTransaction();
+            }
         }
 
         protected final Sequencers sequencers() {
@@ -1506,6 +1510,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             // shutdown the connectors
             this.connectors.shutdown();
 
+            // Remove the scheduled operations ...
+            for (ScheduledFuture<?> future : gcProcesses) {
+                future.cancel(true);
+            }
+
             // Unregister from JNDI ...
             unbindFromJndi();
 
@@ -1645,7 +1654,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         /**
-         * @see JcrRepository#cleanUp()
+         * @see LockGarbageCollectionTask
          */
         void cleanUpLocks() {
             if (logger.isDebugEnabled()) {
@@ -1682,7 +1691,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         /**
-         * @see JcrRepository#cleanUp()
+         * @see BinaryValueGarbageCollectionTask
          */
         void cleanUpBinaryValues() {
             if (logger.isDebugEnabled()) {
@@ -1724,20 +1733,40 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                        boolean separateThreadForSystemWorkspace ) {
             RepositoryChangeBus standaloneBus = new RepositoryChangeBus(executor, systemWorkspaceName,
                                                                         separateThreadForSystemWorkspace);
-            return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration, standaloneBus) : standaloneBus;
+            return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration,
+                                                                                          standaloneBus) : standaloneBus;
+        }
+
+        void suspendExistingUserTransaction() throws SystemException {
+            // suspend any potential existing transaction, so that the initialization is "atomic"
+            this.existingUserTransaction = this.transactions.suspend();
+        }
+
+        void resumeExistingUserTransaction() throws SystemException {
+            if (transactions != null && existingUserTransaction != null) {
+                transactions.resume(existingUserTransaction);
+                existingUserTransaction = null;
+            }
         }
     }
 
     protected static class RepositorySessionEnvironment implements SessionEnvironment {
         private final Transactions transactions;
+        private final TransactionalWorkspaceCaches transactionalWorkspaceCacheFactory;
 
         protected RepositorySessionEnvironment( Transactions transactions ) {
             this.transactions = transactions;
+            this.transactionalWorkspaceCacheFactory = new TransactionalWorkspaceCaches(transactions);
         }
 
         @Override
         public Transactions getTransactions() {
             return transactions;
+        }
+
+        @Override
+        public TransactionalWorkspaceCaches getTransactionalWorkspaceCacheFactory() {
+            return transactionalWorkspaceCacheFactory;
         }
     }
 
@@ -1759,46 +1788,21 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         @Override
         public Monitor createMonitor() {
-            final Transaction txn = currentTransaction();
-            final RepositoryStatistics statistics = this.runningState.statistics();
             final RepositoryNodeTypeManager nodeTypeManager = this.runningState.nodeTypeManager();
             final RepositoryQueryManager queryManager = this.runningState.queryManager();
             if (nodeTypeManager == null || queryManager == null) {
-                // Happens only when the repository's initial content is being initialized,
-                // so return a monitor that captures statistics but does not index ...
-                return new Monitor() {
-                    @Override
-                    public void recordChanged( long changedNodesCount ) {
-                        // ValueMetric.SESSION_SAVES are tracked in JcrSession.save() ...
-                        statistics.increment(ValueMetric.NODE_CHANGES, changedNodesCount);
-                    }
-
-                    @Override
-                    public void recordAdd( String workspace,
-                                           NodeKey key,
-                                           org.modeshape.jcr.value.Path path,
-                                           Name primaryType,
-                                           Set<Name> mixinTypes,
-                                           Collection<Property> properties ) {
-                    }
-
-                    @Override
-                    public void recordRemove( String workspace,
-                                              Iterable<NodeKey> keys ) {
-                    }
-
-                    @Override
-                    public void recordUpdate( String workspace,
-                                              NodeKey key,
-                                              org.modeshape.jcr.value.Path path,
-                                              Name primaryType,
-                                              Set<Name> mixinTypes,
-                                              Iterator<Property> properties ) {
-                    }
-                };
+                //query isn't enabled most likely, so we'll only record statistics
+                return statisticsMonitor();
             }
+            return indexingMonitor(nodeTypeManager, queryManager);
+        }
+
+        private Monitor indexingMonitor( RepositoryNodeTypeManager nodeTypeManager,
+                                         RepositoryQueryManager queryManager ) {
             final NodeTypeSchemata schemata = nodeTypeManager.getRepositorySchemata();
             final QueryIndexing indexes = queryManager.getIndexes();
+            //a transaction will be returned only if it exists and is in ACTIVE status
+            final Transaction txn = currentTransaction();
             final TransactionContext txnCtx = new TransactionContext() {
                 @Override
                 public Object getTransactionIdentifier() {
@@ -1828,7 +1832,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 @Override
                 public void recordChanged( long changedNodesCount ) {
                     // ValueMetric.SESSION_SAVES are tracked in JcrSession.save() ...
-                    statistics.increment(ValueMetric.NODE_CHANGES, changedNodesCount);
+                    runningState.statistics.increment(ValueMetric.NODE_CHANGES, changedNodesCount);
                 }
 
                 @Override
@@ -1855,6 +1859,41 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 public void recordRemove( String workspace,
                                           Iterable<NodeKey> keys ) {
                     indexes.removeFromIndex(workspace, keys, txnCtx);
+                }
+            };
+        }
+
+        private Monitor statisticsMonitor() {
+            // Happens only when the repository's initial content is being initialized,
+            // so return a monitor that captures statistics but does not index ...
+            return new Monitor() {
+                @Override
+                public void recordChanged( long changedNodesCount ) {
+                    // ValueMetric.SESSION_SAVES are tracked in JcrSession.save() ...
+                    runningState.statistics.increment(ValueMetric.NODE_CHANGES, changedNodesCount);
+                }
+
+                @Override
+                public void recordAdd( String workspace,
+                                       NodeKey key,
+                                       org.modeshape.jcr.value.Path path,
+                                       Name primaryType,
+                                       Set<Name> mixinTypes,
+                                       Collection<Property> properties ) {
+                }
+
+                @Override
+                public void recordRemove( String workspace,
+                                          Iterable<NodeKey> keys ) {
+                }
+
+                @Override
+                public void recordUpdate( String workspace,
+                                          NodeKey key,
+                                          org.modeshape.jcr.value.Path path,
+                                          Name primaryType,
+                                          Set<Name> mixinTypes,
+                                          Iterator<Property> properties ) {
                 }
             };
         }
@@ -1889,4 +1928,83 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
     }
 
+    /**
+     * Determine the initial delay before the garbage collection process(es) should be run, based upon the supplied initial
+     * expression. Note that the initial expression specifies the hours and minutes in local time, whereas this method should
+     * return the delay in milliseconds after the current time.
+     * 
+     * @param initialTimeExpression the expression of the form "<code>hh:mm</code>"; never null
+     * @return the number of milliseconds after now that the process(es) should be started
+     */
+    protected long determineInitialDelay( String initialTimeExpression ) {
+        Matcher matcher = RepositoryConfiguration.INITIAL_TIME_PATTERN.matcher(initialTimeExpression);
+        if (matcher.matches()) {
+            int hours = Integer.decode(matcher.group(1));
+            int mins = Integer.decode(matcher.group(2));
+            DateTimeFactory factory = runningState().context().getValueFactories().getDateFactory();
+            DateTime now = factory.create();
+            DateTime initialTime = factory.create(now.getYear(), now.getMonthOfYear(), now.getDayOfMonth(), hours, mins, 0, 0);
+            long delay = initialTime.getMilliseconds() - System.currentTimeMillis();
+            if (delay <= 0L) {
+                initialTime = initialTime.plusDays(1);
+                delay = initialTime.getMilliseconds() - System.currentTimeMillis();
+            }
+            if (delay < 10000L) delay += 10000L; // at least 10 second delay to let repository finish starting ...
+            assert delay >= 0;
+            return delay;
+        }
+        String msg = JcrI18n.invalidGarbageCollectionInitialTime.text(repositoryName(), initialTimeExpression);
+        throw new IllegalArgumentException(msg);
+    }
+
+    /**
+     * The garbage collection tasks should get cancelled before the repository is shut down, but just in case we'll use a weak
+     * reference to hold onto the JcrRepository instance and we'll also check that the repository is running before we actually do
+     * any work.
+     */
+    protected static abstract class GarbageCollectionTask implements Runnable {
+        private WeakReference<JcrRepository> repositoryRef;
+
+        protected GarbageCollectionTask( JcrRepository repository ) {
+            assert repository != null;
+            this.repositoryRef = new WeakReference<JcrRepository>(repository);
+        }
+
+        @Override
+        public final void run() {
+            JcrRepository repository = repositoryRef.get();
+            if (repository != null && repository.getState() == State.RUNNING) {
+                doRun(repository);
+            }
+        }
+
+        /**
+         * Perform the garbage collection task.
+         * 
+         * @param repository the non-null and {@link State#RUNNING running} repository instance
+         */
+        protected abstract void doRun( JcrRepository repository );
+    }
+
+    protected static class BinaryValueGarbageCollectionTask extends GarbageCollectionTask {
+        protected BinaryValueGarbageCollectionTask( JcrRepository repository ) {
+            super(repository);
+        }
+
+        @Override
+        protected void doRun( JcrRepository repository ) {
+            repository.runningState().cleanUpBinaryValues();
+        }
+    }
+
+    protected static class LockGarbageCollectionTask extends GarbageCollectionTask {
+        protected LockGarbageCollectionTask( JcrRepository repository ) {
+            super(repository);
+        }
+
+        @Override
+        protected void doRun( JcrRepository repository ) {
+            repository.runningState().cleanUpLocks();
+        }
+    }
 }

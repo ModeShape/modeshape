@@ -162,14 +162,14 @@ public class WebDavServletBean extends HttpServlet {
         } catch (WebdavException e) {
             LOG.error(e, new TextI18n("WebdavException"));
             throw new ServletException(e);
-        } catch (Exception e) {
-            LOG.error(e, new TextI18n("Exception"));
+        } catch (Throwable t) {
+            LOG.error(t, new TextI18n("Exception"));
+            resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
             if (needRollback) {
                 store.rollback(transaction);
             }
         }
-
     }
 
     private void debugRequest( String methodName,

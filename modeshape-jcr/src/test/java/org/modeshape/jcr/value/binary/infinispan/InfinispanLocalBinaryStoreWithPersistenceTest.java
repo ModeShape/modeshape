@@ -27,9 +27,8 @@ import java.io.File;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.cache.LoaderConfigurationBuilder;
-import org.infinispan.loaders.file.FileCacheStore;
 import org.junit.BeforeClass;
+import org.modeshape.common.util.FileUtil;
 
 public class InfinispanLocalBinaryStoreWithPersistenceTest extends AbstractInfinispanStoreTest {
 
@@ -40,13 +39,11 @@ public class InfinispanLocalBinaryStoreWithPersistenceTest extends AbstractInfin
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.clustering().cacheMode(CacheMode.LOCAL);
         // Set up the file persistence ...
+        File dir = new File(System.getProperty("java.io.tmpdir"), "InfinispanLocalBinaryStoreWithPersistenceTest");
+        if (dir.exists()) FileUtil.delete(dir);
+        dir.mkdirs();
         configurationBuilder.loaders().shared(false);
-        LoaderConfigurationBuilder loaderBuilder = configurationBuilder.loaders()
-                                                                       .addCacheLoader()
-                                                                       .cacheLoader(new FileCacheStore());
-        loaderBuilder.addProperty("location", new File(System.getProperty("java.io.tmpdir"),
-                                                       "InfinispanLocalBinaryStoreWithPersistenceTest").getAbsolutePath());
-        loaderBuilder.purgeOnStartup(true);
+        configurationBuilder.loaders().addFileCacheStore().purgeOnStartup(true).location(dir.getAbsolutePath());
 
         // Create the configurations for the two different caches ...
         Configuration blobConfiguration = configurationBuilder.build();
