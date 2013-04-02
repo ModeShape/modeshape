@@ -952,6 +952,45 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResults(query, result, 21L);
     }
 
+    @FixFor( "MODE-1865" )
+    @Test
+    public void shouldBeAbleToQueryWithLimit1() throws RepositoryException {
+        Node parent, child, intermediate;
+        // this loop makes it much more likely that the actual row to be found is lost since doc ids are assigned at
+        // random.
+        for (int i = 0; i < 100; i++) {
+            parent = session.getRootNode().addNode("qwer" + i, "modetest:parent");
+            parent.setProperty("modetest:parentField", 5L);
+            intermediate = parent.getNode("modetest:folder");
+            child = intermediate.addNode("asdf");
+            child.setProperty("modetest:childField", i == 99 ? "bar" : "foo");
+        }
+
+        session.save();
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        QueryObjectModelFactory factory = queryManager.getQOMFactory();
+        Selector parentSelector = factory.selector("modetest:parent", "p");
+        Selector childSelector = factory.selector("modetest:child", "c");
+        Join join = factory.join(parentSelector,
+                                 childSelector,
+                                 QueryObjectModelConstants.JCR_JOIN_TYPE_INNER,
+                                 factory.descendantNodeJoinCondition("c", "p"));
+        Column[] columns = new Column[]{factory.column("p", "*", "parent")};
+
+        Constraint constraint = factory.comparison(factory.propertyValue("p", "modetest:parentField"),
+                                                   QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO,
+                                                   factory.literal(session.getValueFactory().createValue(5L)));
+        constraint = factory.and(constraint, factory.comparison(factory.propertyValue("c", "modetest:childField"),
+                                                                QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO,
+                                                                factory.literal(session.getValueFactory().createValue("bar"))));
+        Query query = factory.createQuery(join, constraint, null, columns);
+        query.setLimit(1);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1);
+    }
+
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarsUnderHybridWithOrderBy() throws RepositoryException {
         Query query = session.getWorkspace()
@@ -1970,7 +2009,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     /**
      * Tests that the child nodes (but no grandchild nodes) are returned.
-     * 
+     *
      * @throws RepositoryException
      */
     @SuppressWarnings( "deprecation" )
@@ -1989,7 +2028,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     /**
      * Tests that the child nodes (but no grandchild nodes) are returned.
-     * 
+     *
      * @throws RepositoryException
      */
     @SuppressWarnings( "deprecation" )
