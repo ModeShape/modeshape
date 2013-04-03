@@ -686,7 +686,7 @@
           each ModeShape process starts up.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
-    <xs:attribute name="rebuild-upon-startup-mode" type="synchronous-enum" use="optional" default="sync">
+    <xs:attribute name="rebuild-upon-startup-mode" type="synchronous-enum" use="optional" default="async">
       <xs:annotation>
         <xs:documentation>Specifies whether the rebuild process should be done synchronously or asynchronously</xs:documentation>
       </xs:annotation>

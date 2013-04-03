@@ -1500,6 +1500,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         protected void shutdown() {
+            //if  reindexing was asynchronous and is still going on, we need to terminate it before we stop any of caches
+            //or we do anything that affects the nodes
+            if (repositoryQueryManager != null) {
+                repositoryQueryManager.stopReindexing();
+            }
+
             // shutdown the connectors
             this.connectors.shutdown();
 

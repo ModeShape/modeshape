@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.query.InvalidQueryException;
@@ -79,6 +80,8 @@ class RepositoryQueryManager {
     private volatile LuceneQueryEngine queryEngine;
     private final Logger logger = Logger.getLogger(getClass());
 
+    private Future<Void> asyncReindexingResult;
+
     protected RepositoryQueryManager( RunningState runningState,
                                       QuerySystem querySystem ) {
         this.runningState = runningState;
@@ -116,6 +119,26 @@ class RepositoryQueryManager {
             }
         }
 
+    }
+
+    void stopReindexing() {
+        try {
+            engineInitLock.lock();
+            if (asyncReindexingResult != null) {
+                try {
+                    asyncReindexingResult.get(1, TimeUnit.MINUTES);
+                } catch (java.util.concurrent.TimeoutException e) {
+                    logger.debug("Re-indexing has not finished in time, attempting to cancel operation");
+                    asyncReindexingResult.cancel(true);
+                }
+                catch (Exception e) {
+                    logger.debug(e, "Unexpected exception while waiting for re-indexing to terminate");
+                }
+            }
+        } finally {
+            asyncReindexingResult = null;
+            engineInitLock.unlock();
+        }
     }
 
     public CancellableQuery query( ExecutionContext context,
@@ -176,7 +199,7 @@ class RepositoryQueryManager {
                                    final boolean includeSystemContent,
                                    boolean async ) {
         if (async) {
-            indexingExecutorService.submit(new Callable<Void>() {
+            asyncReindexingResult = indexingExecutorService.submit(new Callable<Void>() {
                 @SuppressWarnings( "synthetic-access" )
                 @Override
                 public Void call() throws Exception {
@@ -390,34 +413,6 @@ class RepositoryQueryManager {
         String workspaceName = repoCache.getSystemWorkspaceName();
         NodeCache systemWorkspaceCache = repoCache.getWorkspaceCache(workspaceName);
         reindexContent(workspaceName, schemata, systemWorkspaceCache, nodeInSystemBranch, depth, true, keysToExclude);
-    }
-
-    protected void reindexSystemContent( boolean async ) {
-        RepositoryCache repositoryCache = runningState.repositoryCache();
-        final NodeCache systemWorkspaceCache = repositoryCache.getWorkspaceCache(repositoryCache.getSystemWorkspaceName());
-        final CachedNode systemRoot = systemWorkspaceCache.getNode(repositoryCache.getSystemKey());
-        if (async) {
-            indexingExecutorService.submit(new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    reindexSystemContent(systemRoot, systemWorkspaceCache);
-                    return null;
-                }
-            });
-        } else {
-            reindexSystemContent(systemRoot, systemWorkspaceCache);
-        }
-    }
-
-    protected final void reindexSystemContent( CachedNode systemRoot,
-                                               NodeCache systemWorkspaceCache ) {
-        final NodeTypeSchemata schemata = runningState.nodeTypeManager().getRepositorySchemata();
-        // first reindex only /jcr:system
-        reindexSystemContent(systemRoot, 1, schemata, null);
-        for (ChildReference childReference : systemRoot.getChildReferences(systemWorkspaceCache)) {
-            CachedNode systemNode = systemWorkspaceCache.getNode(childReference.getKey());
-            reindexSystemContent(systemNode, Integer.MAX_VALUE, schemata, null);
-        }
     }
 
     /**

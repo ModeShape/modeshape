@@ -6,7 +6,8 @@
     "query" : {
         "indexing": {
             "rebuildOnStartup": {
-                "includeSystemContent": true
+                "includeSystemContent": true,
+                "mode" : "sync"
             }
         }
     }

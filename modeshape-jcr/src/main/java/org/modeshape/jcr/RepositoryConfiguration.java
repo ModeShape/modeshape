@@ -1852,28 +1852,28 @@ public class RepositoryConfiguration {
             assert query != null;
 
             // first parse the deprecated fields (we need to avoid breaking client compatibility)
-            QueryRebuild deprecatedQueryRebuild = QueryRebuild.IF_MISSING;
+            QueryRebuild defaultQueryRebuild = QueryRebuild.IF_MISSING;
             if (query.containsField(FieldName.REBUILD_UPON_STARTUP)) {
-                deprecatedQueryRebuild = QueryRebuild.valueOf(query.getString(FieldName.REBUILD_UPON_STARTUP).toUpperCase());
+                defaultQueryRebuild = QueryRebuild.valueOf(query.getString(FieldName.REBUILD_UPON_STARTUP).toUpperCase());
             }
 
-            Boolean deprecatedIncludeSystemContent = false;
-            IndexingMode deprecatedIndexingMode = IndexingMode.SYNC;
+            Boolean defaultIncludeSystemContent = false;
+            IndexingMode defaultIndexingMode = IndexingMode.ASYNC;
             if (query.containsField(FieldName.INDEXING_MODE_SYSTEM_CONTENT)) {
-                deprecatedIndexingMode = IndexingMode.valueOf(query.getString(FieldName.INDEXING_MODE_SYSTEM_CONTENT)
+                defaultIndexingMode = IndexingMode.valueOf(query.getString(FieldName.INDEXING_MODE_SYSTEM_CONTENT)
                                                                    .toUpperCase());
-                switch (deprecatedIndexingMode) {
+                switch (defaultIndexingMode) {
                     case SYNC: {
-                        deprecatedIncludeSystemContent = true;
+                        defaultIncludeSystemContent = true;
                         break;
                     }
                     case ASYNC: {
-                        deprecatedIncludeSystemContent = true;
+                        defaultIncludeSystemContent = true;
                         break;
                     }
                     case DISABLED: {
                         // we don't support disabled in the new indexing mode, so fallback to the default
-                        deprecatedIndexingMode = IndexingMode.SYNC;
+                        defaultIndexingMode = IndexingMode.SYNC;
                         break;
                     }
                 }
@@ -1888,16 +1888,16 @@ public class RepositoryConfiguration {
 
             if (rebuildOnStartupDocument == null) {
                 // there isn't the newer version of the rebuildOnStartupDocument present, so we need to use the old values
-                this.when = deprecatedQueryRebuild;
-                this.includeSystemContent = deprecatedIncludeSystemContent;
-                this.mode = deprecatedIndexingMode;
+                this.when = defaultQueryRebuild;
+                this.includeSystemContent = defaultIncludeSystemContent;
+                this.mode = defaultIndexingMode;
             } else {
-                String when = rebuildOnStartupDocument.getString(FieldName.REBUILD_WHEN, deprecatedQueryRebuild.name())
+                String when = rebuildOnStartupDocument.getString(FieldName.REBUILD_WHEN, defaultQueryRebuild.name())
                                                       .toUpperCase();
                 this.when = QueryRebuild.valueOf(when);
                 this.includeSystemContent = rebuildOnStartupDocument.getBoolean(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT,
-                                                                                deprecatedIncludeSystemContent.booleanValue());
-                String mode = rebuildOnStartupDocument.getString(FieldName.REBUILD_MODE, deprecatedIndexingMode.name())
+                                                                                defaultIncludeSystemContent.booleanValue());
+                String mode = rebuildOnStartupDocument.getString(FieldName.REBUILD_MODE, defaultIndexingMode.name())
                                                       .toUpperCase();
                 this.mode = IndexingMode.valueOf(mode);
             }

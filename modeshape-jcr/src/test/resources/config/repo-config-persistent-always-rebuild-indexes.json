@@ -12,7 +12,8 @@
         "enabled" : true,
         "indexing" : {
             "rebuildOnStartup" : {
-                "when" : "always"
+                "when" : "always",
+                "mode" : "sync"
             }
         }
     }
