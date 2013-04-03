@@ -42,7 +42,8 @@ public class AddRamIndexStorage extends AbstractAddIndexStorage {
     @Override
     protected void writeIndexStorageConfiguration( final OperationContext context,
                                                    final ModelNode storage,
-                                                   EditableDocument indexStorage ) {
+                                                   EditableDocument indexStorage,
+                                                   String repositoryName ) {
         indexStorage.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.INDEX_STORAGE_RAM);
     }
     

@@ -56,7 +56,7 @@ public class IndexStorageService implements Service<IndexStorage> {
     }
 
     private String appendDirDelim( String value ) {
-        if (value != null && value.endsWith("/")) {
+        if (value != null && !value.endsWith("/")) {
             value = value + "/";
         }
         return value;

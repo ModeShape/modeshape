@@ -62,7 +62,7 @@ public abstract class AbstractAddFileSystemIndexStorage extends AbstractAddIndex
             ServiceName serviceName = ModeShapeServiceNames.indexStorageDirectoryServiceName(repositoryName);
             newControllers.add(RelativePathService.addService(serviceName,
                                                               indexStoragePathInDataDirectory,
-                                                              ModeShapeExtension.DATA_DIR_VARIABLE,
+                                                              ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE,
                                                               target));
             // and add dependency on this path ...
             builder.addDependency(serviceName, String.class, service.getIndexStorageBasePathInjector());
@@ -72,7 +72,7 @@ public abstract class AbstractAddFileSystemIndexStorage extends AbstractAddIndex
             ServiceName serviceName = ModeShapeServiceNames.indexSourceStorageDirectoryServiceName(repositoryName);
             newControllers.add(RelativePathService.addService(serviceName,
                                                               indexSourcePathInDataDirectory,
-                                                              ModeShapeExtension.DATA_DIR_VARIABLE,
+                                                              ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE,
                                                               target));
             builder.addDependency(serviceName, String.class, service.getIndexStorageSourceBasePathInjector());
         }

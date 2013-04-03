@@ -43,21 +43,32 @@ public class AddLocalFileSystemIndexStorage extends AbstractAddFileSystemIndexSt
     @Override
     protected void writeIndexStorageConfiguration( OperationContext context,
                                                    ModelNode storage,
-                                                   EditableDocument indexStorage ) throws OperationFailedException {
+                                                   EditableDocument indexStorage,
+                                                   String repositoryName ) throws OperationFailedException {
         // Set the type of storage ...
         indexStorage.set(FieldName.TYPE, FieldValue.INDEX_STORAGE_FILESYSTEM);
 
         String accessType = ModelAttributes.ACCESS_TYPE.resolveModelAttribute(context, storage).asString();
         String locking = ModelAttributes.LOCKING_STRATEGY.resolveModelAttribute(context, storage).asString();
+
         String relativeTo = ModelAttributes.RELATIVE_TO.resolveModelAttribute(context, storage).asString();
-        String path = ModelAttributes.PATH.resolveModelAttribute(context, storage).asString();
-        // Check the ModelNode value **without** resolving any symbols ...
-        if (storage.has(ModelKeys.RELATIVE_TO) && storage.get(ModelKeys.RELATIVE_TO).asString().contains(DATA_DIR_VARIABLE)) {
-            setIndexStoragePathInDataDirectory(path);
+
+        ModelNode pathNode = ModelAttributes.PATH.resolveModelAttribute(context, storage);
+        String path = pathNode.isDefined() ? pathNode.asString() : "modeshape/" + repositoryName + "/indexes";
+
+        if (relativeTo.equalsIgnoreCase(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
+            //the relative-to path should be the default jboss-data-dir. Setting to an empty string will trigger path injection
+            setIndexStoragePathInDataDirectory(".");
+            //this only contains the path because the IndexStorageService will create the "end-path"
+            indexStorage.set(FieldName.INDEX_STORAGE_LOCATION, path);
+        } else {
+            if (!relativeTo.endsWith("/")) {
+                relativeTo = relativeTo + "/";
+            }
+            indexStorage.set(FieldName.INDEX_STORAGE_LOCATION, relativeTo + path);
         }
-        path = relativeTo + path;
+
         indexStorage.set(FieldName.TYPE, FieldValue.INDEX_STORAGE_FILESYSTEM);
-        indexStorage.set(FieldName.INDEX_STORAGE_LOCATION, path);
         indexStorage.set(FieldName.INDEX_STORAGE_LOCKING_STRATEGY, locking.toLowerCase());
         indexStorage.set(FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE, accessType.toLowerCase());
     }

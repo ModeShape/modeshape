@@ -254,7 +254,7 @@ public class AddRepository extends AbstractAddStepHandler {
         ServiceName dataDirServiceName = ModeShapeServiceNames.dataDirectoryServiceName(repositoryName);
         ServiceController<String> dataDirServiceController = RelativePathService.addService(dataDirServiceName,
                                                                                             "modeshape/" + repositoryName,
-                                                                                            ModeShapeExtension.DATA_DIR_VARIABLE,
+                                                                                            ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE,
                                                                                             target);
         newControllers.add(dataDirServiceController);
         builder.addDependency(dataDirServiceName, String.class, repositoryService.getDataDirectoryPathInjector());

@@ -43,9 +43,6 @@ import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
-
-    protected static final String DATA_DIR_VARIABLE = ModeShapeExtension.DATA_DIR_VARIABLE;
-
     protected AbstractAddIndexStorage() {
     }
 
@@ -85,7 +82,7 @@ public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
 
         // Build the 'query/indexingStorage' nested document from scratch
         EditableDocument indexStorage = query.setDocument(FieldName.INDEX_STORAGE);
-        writeIndexStorageConfiguration(context, storage, indexStorage);
+        writeIndexStorageConfiguration(context, storage, indexStorage, repositoryName);
 
         // Build the 'query/indexing/backend' nested document ...
         EditableDocument backend = indexing.getOrCreateDocument(FieldName.INDEXING_BACKEND);
@@ -104,7 +101,8 @@ public abstract class AbstractAddIndexStorage extends AbstractAddStepHandler {
 
     protected abstract void writeIndexStorageConfiguration( final OperationContext context,
                                                             final ModelNode storage,
-                                                            EditableDocument indexStorage ) throws OperationFailedException;
+                                                            EditableDocument indexStorage,
+                                                            String repositoryName ) throws OperationFailedException;
 
     protected void writeIndexStorageSpecificIndexingConfiguration( final OperationContext context,
                                                                    final ModelNode storage,

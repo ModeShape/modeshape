@@ -43,7 +43,8 @@ public class AddCustomIndexStorage extends AbstractAddIndexStorage {
     @Override
     protected void writeIndexStorageConfiguration( final OperationContext context,
                                                    final ModelNode storage,
-                                                   EditableDocument indexStorage ) {
+                                                   EditableDocument indexStorage,
+                                                   String repositoryName ) {
         indexStorage.set(FieldName.TYPE, FieldValue.INDEX_STORAGE_CUSTOM);
         for (String key : storage.keys()) {
             String value = storage.get(key).asString();
