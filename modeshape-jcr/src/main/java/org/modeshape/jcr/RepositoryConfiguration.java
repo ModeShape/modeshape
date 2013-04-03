@@ -285,7 +285,7 @@ public class RepositoryConfiguration {
          * optimization that stores each unique large value only once. By default, the {@link #MINIMUM_BINARY_SIZE_IN_BYTES} value
          * will be used.
          */
-        public static final String MINIMUM_STRING_LENGTH = "minimumStringSizeInBytes";
+        public static final String MINIMUM_STRING_SIZE = "minimumStringSize";
 
         /**
          * The name for the field whose value is a document containing workspace information.
@@ -1151,7 +1151,7 @@ public class RepositoryConfiguration {
         }
 
         public long getMinimumStringSize() {
-            return binaryStorage.getLong(FieldName.MINIMUM_STRING_LENGTH, getMinimumBinarySizeInBytes());
+            return binaryStorage.getLong(FieldName.MINIMUM_STRING_SIZE, getMinimumBinarySizeInBytes());
         }
 
         public AbstractBinaryStore getBinaryStore() throws Exception {

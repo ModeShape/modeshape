@@ -469,7 +469,7 @@ public class ModelAttributes {
                                                                                                                            .setFlags(AttributeAccess.Flag.RESTART_NONE)
                                                                                                                            .setFieldPathInRepositoryConfiguration(FieldName.STORAGE,
                                                                                                                                                                   FieldName.BINARY_STORAGE,
-                                                                                                                                                                  FieldName.MINIMUM_STRING_LENGTH)
+                                                                                                                                                                  FieldName.MINIMUM_STRING_SIZE)
                                                                                                                            .build();
 
     public static final SimpleAttributeDefinition MODE = new MappedAttributeDefinitionBuilder(ModelKeys.MODE, ModelType.STRING).setXmlName(Attribute.MODE.getLocalName())

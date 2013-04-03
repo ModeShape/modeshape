@@ -56,7 +56,6 @@ public class AddCacheBinaryStorage extends AbstractAddBinaryStorage {
                                                     OperationContext context,
                                                     ModelNode model,
                                                     EditableDocument binaries ) throws OperationFailedException {
-        super.writeCommonBinaryStorageConfiguration(repositoryName, context, model, binaries);
         binaries.set(FieldName.TYPE, FieldValue.BINARY_STORAGE_TYPE_CACHE);
         String defaultDataCache = repositoryName + "-binary-data";
         String defaultMetaCache = repositoryName + "-binary-metadata";
