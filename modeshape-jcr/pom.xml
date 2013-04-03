@@ -228,6 +228,16 @@
             <groupId>com.atomikos</groupId>
             <artifactId>transactions-jta</artifactId>
         </dependency>
+        
+         <!--
+            Import/Export with persistent infinispan(for testing only)
+        -->
+        <dependency>
+			<groupId>com.mchange</groupId>
+			<artifactId>c3p0</artifactId>
+			<version>0.9.2-pre8</version>
+			<scope>test</scope>
+		</dependency> 
     </dependencies>
     <build>
         <resources>
