@@ -72,6 +72,7 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
 
         // Build the 'binaryStorage' document ...
         EditableDocument binaries = Schematic.newDocument();
+        writeCommonBinaryStorageConfiguration(context, model, binaries);
         writeBinaryStorageConfiguration(repositoryName, context, model, binaries);
 
         // Remove the default service, added by "AddRepository"
@@ -94,15 +95,14 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
                                                              ModelNode storage,
                                                              EditableDocument binaryStorage ) throws OperationFailedException;
 
-    protected void writeCommonBinaryStorageConfiguration( String repositoryName,
-                                                          OperationContext context,
+    protected void writeCommonBinaryStorageConfiguration( OperationContext context,
                                                           ModelNode model,
                                                           EditableDocument binaries ) throws OperationFailedException {
         int minBinSize = ModelAttributes.MINIMUM_BINARY_SIZE.resolveModelAttribute(context, model).asInt();
         binaries.set(FieldName.MINIMUM_BINARY_SIZE_IN_BYTES, minBinSize);
         ModelNode stringSize = ModelAttributes.MINIMUM_STRING_SIZE.resolveModelAttribute(context, model);
         if (stringSize.isDefined()) {
-            binaries.set(FieldName.MINIMUM_STRING_LENGTH, stringSize.asInt());
+            binaries.set(FieldName.MINIMUM_STRING_SIZE, stringSize.asInt());
         }
     }
 

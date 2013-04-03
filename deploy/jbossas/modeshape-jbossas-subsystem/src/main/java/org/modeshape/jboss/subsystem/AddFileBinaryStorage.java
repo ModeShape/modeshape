@@ -57,7 +57,6 @@ public class AddFileBinaryStorage extends AbstractAddBinaryStorage {
                                                     OperationContext context,
                                                     ModelNode model,
                                                     EditableDocument binaries ) throws OperationFailedException {
-        super.writeCommonBinaryStorageConfiguration(repositoryName, context, model, binaries);
         binaries.set(FieldName.TYPE, FieldValue.BINARY_STORAGE_TYPE_FILE);
         String defaultPath = "modeshape/" + repositoryName + "/binaries";
         ModelNode pathNode = ModelAttributes.PATH.resolveModelAttribute(context, model);
