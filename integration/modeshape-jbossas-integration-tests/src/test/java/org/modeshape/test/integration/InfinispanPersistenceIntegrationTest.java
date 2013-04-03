@@ -24,7 +24,6 @@
 
 package org.modeshape.test.integration;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.util.UUID;
 import javax.annotation.Resource;
@@ -42,7 +41,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.common.util.IoUtil;
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 

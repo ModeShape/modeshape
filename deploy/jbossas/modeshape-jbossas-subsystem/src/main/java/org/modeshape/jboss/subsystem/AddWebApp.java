@@ -42,7 +42,7 @@ import org.jboss.modules.Module;
 
 /**
  * {@link AbstractAddStepHandler} which is triggered each time an <webapp/> element is found in the ModeShape subsystem.
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 class AddWebApp extends AbstractAddStepHandler {
@@ -66,8 +66,8 @@ class AddWebApp extends AbstractAddStepHandler {
             String webappName = pathAddress.getLastElement().getValue();
             boolean exploded = attribute(context, resource.getModel(), ModelAttributes.EXPLODED).asBoolean();
 
-            PathAddress deploymentAddress = PathAddress.pathAddress(PathElement.pathElement(
-                    ModelDescriptionConstants.DEPLOYMENT, webappName));
+            PathAddress deploymentAddress = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.DEPLOYMENT,
+                                                                                            webappName));
             ModelNode op = Util.createOperation(ModelDescriptionConstants.ADD, deploymentAddress);
             op.get(ModelDescriptionConstants.ENABLED).set(true);
             op.get(ModelDescriptionConstants.PERSISTENT).set(false); // prevents writing this deployment out to standalone.xml
@@ -106,11 +106,13 @@ class AddWebApp extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
+    protected void populateModel( ModelNode operation,
+                                  ModelNode model ) {
         // We overrode the code that calls this method
         throw new UnsupportedOperationException();
     }
 
+    @Override
     protected boolean requiresRuntimeVerification() {
         return false;
     }

@@ -24,21 +24,20 @@
 
 package org.modeshape.jboss.subsystem;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import java.util.List;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 /**
- * Base {@link AbstractRemoveStepHandler} which should be extended by all ModeShape subsystem services, as removal & recovery
- * is similar for all.
- *
+ * Base {@link AbstractRemoveStepHandler} which should be extended by all ModeShape subsystem services, as removal & recovery is
+ * similar for all.
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 abstract class AbstractModeShapeRemoveStepHandler extends AbstractRemoveStepHandler {
@@ -48,7 +47,7 @@ abstract class AbstractModeShapeRemoveStepHandler extends AbstractRemoveStepHand
     @Override
     protected void performRuntime( OperationContext context,
                                    ModelNode operation,
-                                   ModelNode model ) throws OperationFailedException {
+                                   ModelNode model ) {
         String repositoryName = null;
 
         for (ServiceName serviceName : servicesToRemove(operation, model)) {
@@ -65,7 +64,7 @@ abstract class AbstractModeShapeRemoveStepHandler extends AbstractRemoveStepHand
     @Override
     protected void recoverServices( OperationContext context,
                                     ModelNode operation,
-                                    ModelNode model ) throws OperationFailedException {
+                                    ModelNode model ) {
         String repositoryName = null;
 
         ServiceRegistry serviceRegistry = context.getServiceRegistry(false);
@@ -83,7 +82,7 @@ abstract class AbstractModeShapeRemoveStepHandler extends AbstractRemoveStepHand
     abstract List<ServiceName> servicesToRemove( ModelNode operation,
                                                  ModelNode model );
 
-    String repositoryName(ModelNode operation) {
+    String repositoryName( ModelNode operation ) {
         // Get the service addresses ...
         final PathAddress serviceAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
         // Get the repository name ...

@@ -1726,8 +1726,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                        boolean separateThreadForSystemWorkspace ) {
             RepositoryChangeBus standaloneBus = new RepositoryChangeBus(executor, systemWorkspaceName,
                                                                         separateThreadForSystemWorkspace);
-            return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration,
-                                                                                          standaloneBus) : standaloneBus;
+            return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration, standaloneBus) : standaloneBus;
         }
 
         void suspendExistingUserTransaction() throws SystemException {
@@ -1784,7 +1783,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             final RepositoryNodeTypeManager nodeTypeManager = this.runningState.nodeTypeManager();
             final RepositoryQueryManager queryManager = this.runningState.queryManager();
             if (nodeTypeManager == null || queryManager == null) {
-                //query isn't enabled most likely, so we'll only record statistics
+                // query isn't enabled most likely, so we'll only record statistics
                 return statisticsMonitor();
             }
             return indexingMonitor(nodeTypeManager, queryManager);
@@ -1794,7 +1793,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                          RepositoryQueryManager queryManager ) {
             final NodeTypeSchemata schemata = nodeTypeManager.getRepositorySchemata();
             final QueryIndexing indexes = queryManager.getIndexes();
-            //a transaction will be returned only if it exists and is in ACTIVE status
+            // a transaction will be returned only if it exists and is in ACTIVE status
             final Transaction txn = currentTransaction();
             final TransactionContext txnCtx = new TransactionContext() {
                 @Override
@@ -1821,11 +1820,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 }
             };
             // Create a monitor that forwards everything to the correct component ...
+            final RunningState runningState = this.runningState;
             return new Monitor() {
                 @Override
                 public void recordChanged( long changedNodesCount ) {
                     // ValueMetric.SESSION_SAVES are tracked in JcrSession.save() ...
-                    runningState.statistics.increment(ValueMetric.NODE_CHANGES, changedNodesCount);
+                    runningState.statistics().increment(ValueMetric.NODE_CHANGES, changedNodesCount);
                 }
 
                 @Override
@@ -1859,11 +1859,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private Monitor statisticsMonitor() {
             // Happens only when the repository's initial content is being initialized,
             // so return a monitor that captures statistics but does not index ...
+            final RunningState runningState = this.runningState;
             return new Monitor() {
                 @Override
                 public void recordChanged( long changedNodesCount ) {
                     // ValueMetric.SESSION_SAVES are tracked in JcrSession.save() ...
-                    runningState.statistics.increment(ValueMetric.NODE_CHANGES, changedNodesCount);
+                    runningState.statistics().increment(ValueMetric.NODE_CHANGES, changedNodesCount);
                 }
 
                 @Override
