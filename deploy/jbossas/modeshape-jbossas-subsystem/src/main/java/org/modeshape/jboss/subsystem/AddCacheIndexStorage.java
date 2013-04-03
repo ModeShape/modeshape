@@ -53,7 +53,8 @@ public class AddCacheIndexStorage extends AbstractAddIndexStorage {
     @Override
     protected void writeIndexStorageConfiguration( final OperationContext context,
                                                    final ModelNode storage,
-                                                   EditableDocument indexStorage ) throws OperationFailedException {
+                                                   EditableDocument indexStorage,
+                                                   String repositoryName ) throws OperationFailedException {
         indexStorage.set(FieldName.TYPE, FieldValue.INDEX_STORAGE_INFINISPAN);
 
         this.cacheContainerName = ModelAttributes.INDEX_STORAGE_CACHE_CONTAINER.resolveModelAttribute(context, storage)

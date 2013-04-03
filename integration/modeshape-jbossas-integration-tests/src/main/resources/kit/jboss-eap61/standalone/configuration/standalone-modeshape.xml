@@ -433,6 +433,7 @@
                 <node-types>
                     <node-type>custom.cnd</node-type>
                 </node-types>
+                <local-file-index-storage/>
             </repository>
             <repository name="federatedRepository">
                 <!--Turn off initial indexing for performance reasons-->

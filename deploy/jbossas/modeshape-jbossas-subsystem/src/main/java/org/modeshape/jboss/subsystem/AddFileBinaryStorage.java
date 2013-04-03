@@ -45,8 +45,6 @@ public class AddFileBinaryStorage extends AbstractAddBinaryStorage {
 
     public static final AddFileBinaryStorage INSTANCE = new AddFileBinaryStorage();
 
-    protected static final String DATA_DIR_VARIABLE = "jboss.server.data.dir";
-
     private String binaryStoragePathInDataDirectory;
 
     private AddFileBinaryStorage() {
@@ -63,7 +61,7 @@ public class AddFileBinaryStorage extends AbstractAddBinaryStorage {
         ModelNode pathNode = ModelAttributes.PATH.resolveModelAttribute(context, model);
         String path = pathNode.isDefined() ? pathNode.asString() : defaultPath;
         String relativeTo = ModelAttributes.RELATIVE_TO.resolveModelAttribute(context, model).asString();
-        if (model.has(ModelKeys.RELATIVE_TO) && model.get(ModelKeys.RELATIVE_TO).asString().contains(DATA_DIR_VARIABLE)) {
+        if (model.has(ModelKeys.RELATIVE_TO) && model.get(ModelKeys.RELATIVE_TO).asString().contains(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
             binaryStoragePathInDataDirectory = path;
         }
         path = relativeTo + path;
@@ -81,7 +79,7 @@ public class AddFileBinaryStorage extends AbstractAddBinaryStorage {
             ServiceName serviceName = ModeShapeServiceNames.binaryStorageDirectoryServiceName(repositoryName);
             newControllers.add(RelativePathService.addService(serviceName,
                                                               binaryStoragePathInDataDirectory,
-                                                              ModeShapeExtension.DATA_DIR_VARIABLE,
+                                                              ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE,
                                                               target));
             // and add dependency on this path ...
             builder.addDependency(serviceName, String.class, service.getBinaryStorageBasePathInjector());
