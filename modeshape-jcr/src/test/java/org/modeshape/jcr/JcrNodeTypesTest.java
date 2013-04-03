@@ -28,6 +28,7 @@ import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import javax.jcr.NamespaceRegistry;
+import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
@@ -79,6 +80,98 @@ public class JcrNodeTypesTest extends SingleUseAbstractTest {
         PropertyDefinition uriPropDefn = nt.getDeclaredPropertyDefinitions()[0];
         assertThat(uriPropDefn.getName(), is("ex:path"));
         assertThat(uriPropDefn.getRequiredType(), is(PropertyType.URI));
+    }
+
+    @Test
+    @FixFor( "MODE-1878" )
+    public void shouldRegisterNodeTypesWithSnsAndCreateChildren() throws Exception {
+        startRepository();
+        registerNodeTypes("cnd/nodetypes-with-sns.cnd");
+        NodeTypeManager ntmgr = session.getWorkspace().getNodeTypeManager();
+        NodeType nt = ntmgr.getNodeType("inf:patient");
+        PropertyDefinition uriPropDefn = nt.getDeclaredPropertyDefinitions()[0];
+        assertThat(uriPropDefn.getName(), is("inf:masterId"));
+        assertThat(uriPropDefn.getRequiredType(), is(PropertyType.STRING));
+
+        Node top = session.getRootNode().addNode("top");
+        Node patient = top.addNode("patient", "inf:patient");
+        patient.setProperty("inf:masterId", "id1");
+        patient.setProperty("inf:masterNs", "ns1");
+        Node section1 = patient.addNode("section", "inf:section");
+        section1.setProperty("inf:name", "sectionA");
+        assertThat(section1.getIndex(), is(1));
+        assertThat(section1.getPath(), is("/top/patient/section"));
+        Node section2 = patient.addNode("section", "inf:section");
+        section2.setProperty("inf:name", "sectionA");
+        assertThat(section2.getIndex(), is(2));
+        assertThat(section2.getPath(), is("/top/patient/section[2]"));
+        assertThat(section2.getDefinition().allowsSameNameSiblings(), is(true));
+        assertThat(section2.getDefinition().getName(), is("*"));
+        session.save();
+
+        Node section3 = patient.addNode("section", "inf:section");
+        section3.setProperty("inf:name", "sectionA");
+        assertThat(section3.getIndex(), is(3));
+        assertThat(section3.getPath(), is("/top/patient/section[3]"));
+        session.save();
+
+        Node section4 = patient.addNode("section", "inf:section");
+        section4.setProperty("inf:name", "sectionA");
+        assertThat(section4.getIndex(), is(4));
+        assertThat(section4.getPath(), is("/top/patient/section[4]"));
+        Node section5 = patient.addNode("section", "inf:section");
+        section5.setProperty("inf:name", "sectionA");
+        assertThat(section5.getIndex(), is(5));
+        assertThat(section5.getPath(), is("/top/patient/section[5]"));
+        section2.remove();
+        session.save();
+    }
+
+    @Test
+    @FixFor( "MODE-1878" )
+    public void shouldRegisterNodeTypesWithSnsAndCreateChildrenAlternative2() throws Exception {
+        startRepository();
+        registerNodeTypes("cnd/nodetypes-with-sns.cnd");
+        NodeTypeManager ntmgr = session.getWorkspace().getNodeTypeManager();
+        NodeType nt = ntmgr.getNodeType("inf:patient");
+        PropertyDefinition uriPropDefn = nt.getDeclaredPropertyDefinitions()[0];
+        assertThat(uriPropDefn.getName(), is("inf:masterId"));
+        assertThat(uriPropDefn.getRequiredType(), is(PropertyType.STRING));
+
+        Node top = session.getRootNode().addNode("top");
+        Node patient = top.addNode("patient", "inf:patient");
+        patient.setProperty("inf:masterId", "id1");
+        patient.setProperty("inf:masterNs", "ns1");
+        Node section1 = patient.addNode("section", "inf:section");
+        section1.setProperty("inf:name", "sectionA");
+        assertThat(section1.getIndex(), is(1));
+        assertThat(section1.getPath(), is("/top/patient/section"));
+        session.save();
+
+        Node section2 = patient.addNode("section", "inf:section");
+        section2.setProperty("inf:name", "sectionA");
+        assertThat(section2.getIndex(), is(2));
+        assertThat(section2.getPath(), is("/top/patient/section[2]"));
+        assertThat(section2.getDefinition().allowsSameNameSiblings(), is(true));
+        assertThat(section2.getDefinition().getName(), is("*"));
+        session.save();
+
+        Node section3 = patient.addNode("section", "inf:section");
+        section3.setProperty("inf:name", "sectionA");
+        assertThat(section3.getIndex(), is(3));
+        assertThat(section3.getPath(), is("/top/patient/section[3]"));
+        session.save();
+
+        Node section4 = patient.addNode("section", "inf:section");
+        section4.setProperty("inf:name", "sectionA");
+        assertThat(section4.getIndex(), is(4));
+        assertThat(section4.getPath(), is("/top/patient/section[4]"));
+        Node section5 = patient.addNode("section", "inf:section");
+        section5.setProperty("inf:name", "sectionA");
+        assertThat(section5.getIndex(), is(5));
+        assertThat(section5.getPath(), is("/top/patient/section[5]"));
+        section2.remove();
+        session.save();
     }
 
     @Override

@@ -1,0 +1,20 @@
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<inf='http://www.example.com/test'>
+
+[inf:patient] > mix:versionable, nt:hierarchyNode
++ * (inf:patientId) COPY
++ * (inf:section) SNS COPY 
+- inf:masterId (STRING) mandatory COPY
+- inf:masterNs (STRING) mandatory COPY
+
+
+/**
+ * A section node is a named container of either episodes or documents.
+ */
+[inf:section] > nt:hierarchyNode orderable 
+- inf:name (STRING) mandatory COPY
++ * (nt:hierarchyNode) SNS VERSION 
+
+[inf:patientId]
+- inf:name (STRING) mandatory COPY
