@@ -540,7 +540,8 @@ public class FileSystemConnector extends WritableConnector {
             //the FS connector does not support namespaces in names
             getLogger().warn(JcrI18n.fileConnectorNamespaceIgnored, getSourceName(), newDocumentName.getNamespaceUri());
         }
-        documentIdBuilder.append(newDocumentName.getLocalName());
+        //treat jcr:content nodes as 'special' so isContentNode(id) and fileFor(id) see the ID they expect
+        documentIdBuilder.append(JCR_CONTENT.equals(newDocumentName.getString()) ? newDocumentName.getString() : newDocumentName.getLocalName());
         return documentIdBuilder.toString();
     }
 
