@@ -23,6 +23,9 @@
  */
 package org.modeshape.jcr.query.lucene;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.Iterator;
 import javax.jcr.query.qom.Constraint;
 import javax.jcr.query.qom.DynamicOperand;
 import javax.jcr.query.qom.Length;
@@ -77,9 +80,6 @@ import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Iterator;
 
 /**
  * The factory that creates a Lucene {@link Query} object from a Query Object Model {@link Constraint} object.
@@ -218,6 +218,18 @@ public abstract class LuceneQueryFactory {
             String propertyName = search.getPropertyName();
             if (propertyName != null) propertyName = fieldNameFor(propertyName);
             String fieldName = fullTextFieldName(propertyName);
+            StaticOperand expression = search.getFullTextSearchExpression();
+            if (expression instanceof BindVariableName) {
+                BindVariableName bindVariable = (BindVariableName)expression;
+                Object value = context.getVariables().get(bindVariable.getBindVariableName());
+                if (value == null) {
+                    throw new LuceneException(JcrI18n.missingVariableValue.text(bindVariable.getBindVariableName()));
+                }
+                if (value instanceof Literal) {
+                    value = ((Literal)value).value();
+                }
+                search = search.withFullTextExpression(value.toString());
+            }
             return createQuery(selectorName, fieldName, search.getTerm());
         }
         if (constraint instanceof SameNode) {
