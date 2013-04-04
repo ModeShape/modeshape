@@ -60,6 +60,7 @@ import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.InvalidNodeTypeDefinitionException;
+import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
@@ -1852,6 +1853,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1L);
+        assertResultsHaveRows(result, "jcr:path", "/Other/NodeA[2]");
     }
 
     @Ignore
@@ -1920,6 +1922,33 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, JcrRepository.QueryLanguage.JCR_SQL2);
         QueryResult result = query.execute();
         assertResults(query, result, 1);
+    }
+
+    @FixFor( "MODE-1840" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithBindVariableInsideContains() throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, $expression)";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        query.bindValue("expression", session.getValueFactory().createValue("cat wearing"));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+        assertResultsHaveColumns(result, new String[] {"jcr:path"});
+        assertResultsHaveRows(result, "jcr:path", "/Other/NodeA[2]");
+    }
+
+    @FixFor( "MODE-1840" )
+    @Test( expected = InvalidQueryException.class )
+    public void shouldNotBeAbleToCreateAndExecuteJcrSql2QueryWithBindVariableInsideContainsIfVariableIsNotBound()
+        throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, $expression)";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // do not bind a value
+        // query.bindValue("expression", session.getValueFactory().createValue("cat wearing"));
+        query.execute();
     }
 
     // ----------------------------------------------------------------------------------------------------------------

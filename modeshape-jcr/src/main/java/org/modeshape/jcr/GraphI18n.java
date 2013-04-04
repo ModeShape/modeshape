@@ -211,6 +211,7 @@ public final class GraphI18n {
     public static I18n expectingComparisonOperator;
     public static I18n expectingConstraintCondition;
     public static I18n functionIsAmbiguous;
+    public static I18n functionHasInvalidBindVariable;
     public static I18n bindVariableMustConformToNcName;
     public static I18n invalidPropertyType;
     public static I18n valueCannotBeCastToSpecifiedType;
