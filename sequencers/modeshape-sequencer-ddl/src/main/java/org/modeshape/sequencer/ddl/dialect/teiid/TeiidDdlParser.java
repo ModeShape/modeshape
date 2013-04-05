@@ -29,10 +29,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.modeshape.common.text.ParsingException;
 import org.modeshape.sequencer.ddl.DdlTokenStream;
 import org.modeshape.sequencer.ddl.StandardDdlParser;
-import org.modeshape.sequencer.ddl.datatype.DataTypeParser;
 import org.modeshape.sequencer.ddl.node.AstNode;
 
 /**
@@ -49,8 +47,7 @@ public final class TeiidDdlParser extends StandardDdlParser implements TeiidDdlC
      * Constructs a Teiid DDL parser.
      */
     public TeiidDdlParser() {
-        final DataTypeParser dataTypeParser = new TeiidDataTypeParser();
-        setDatatypeParser(dataTypeParser);
+        setDatatypeParser(new TeiidDataTypeParser());
         this.namespaceAliases = new HashMap<String, String>();
 
         // setup statement parsers
@@ -138,203 +135,6 @@ public final class TeiidDdlParser extends StandardDdlParser implements TeiidDdlC
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseAlterStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode)
-     */
-    @Override
-    protected AstNode parseAlterStatement( final DdlTokenStream tokens,
-                                           final AstNode parentNode ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseAlterStatement should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseAlterTableStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode)
-     */
-    @Override
-    protected AstNode parseAlterTableStatement( final DdlTokenStream tokens,
-                                                final AstNode parentNode ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseAlterTableStatement should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseCollateClause(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode)
-     */
-    @Override
-    protected boolean parseCollateClause( final DdlTokenStream tokens,
-                                          final AstNode columnNode ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseCollateClause should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseColumnConstraint(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode, boolean)
-     */
-    @Override
-    protected boolean parseColumnConstraint( final DdlTokenStream tokens,
-                                             final AstNode columnNode,
-                                             final boolean isAlterTable ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseCollateClause should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseColumnDefinition(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode, boolean)
-     */
-    @Override
-    protected void parseColumnDefinition( final DdlTokenStream tokens,
-                                          final AstNode tableNode,
-                                          final boolean isAlterTable ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseColumnDefinition should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseCreateSchemaStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode)
-     */
-    @Override
-    protected AstNode parseCreateSchemaStatement( final DdlTokenStream tokens,
-                                                  final AstNode parentNode ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseCreateSchemaStatement should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseCreateStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode)
-     */
-    @Override
-    protected AstNode parseCreateStatement( final DdlTokenStream tokens,
-                                            final AstNode parentNode ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseCreateStatement should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseCreateViewStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode)
-     */
-    @Override
-    protected AstNode parseCreateViewStatement( final DdlTokenStream tokens,
-                                                final AstNode parentNode ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseCreateViewStatement should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseCustomStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode)
-     */
-    @Override
-    protected AstNode parseCustomStatement( final DdlTokenStream tokens,
-                                            final AstNode parentNode ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseCustomStatement should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseDropStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode)
-     */
-    @Override
-    protected AstNode parseDropStatement( final DdlTokenStream tokens,
-                                          final AstNode parentNode ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseDropStatement should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseGrantPrivileges(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      java.util.List)
-     */
-    @Override
-    protected void parseGrantPrivileges( final DdlTokenStream tokens,
-                                         final List<AstNode> privileges ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseGrantPrivileges should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseGrantStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode)
-     */
-    @Override
-    protected AstNode parseGrantStatement( final DdlTokenStream tokens,
-                                           final AstNode parentNode ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseGrantStatement should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseIgnorableStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      java.lang.String, org.modeshape.sequencer.ddl.node.AstNode)
-     */
-    @Override
-    protected AstNode parseIgnorableStatement( final DdlTokenStream tokens,
-                                               final String name,
-                                               final AstNode parentNode ) {
-        throw new TeiidDdlParsingException(tokens, "parseIgnorableStatement should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseIgnorableStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      java.lang.String, org.modeshape.sequencer.ddl.node.AstNode, java.lang.String)
-     */
-    @Override
-    protected AstNode parseIgnorableStatement( final DdlTokenStream tokens,
-                                               final String name,
-                                               final AstNode parentNode,
-                                               final String mixinType ) {
-        throw new TeiidDdlParsingException(tokens, "parseIgnorableStatement should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseInsertStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode)
-     */
-    @Override
-    protected AstNode parseInsertStatement( final DdlTokenStream tokens,
-                                            final AstNode parentNode ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseInsertStatement should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseNextCreateTableOption(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode)
-     */
-    @Override
-    protected void parseNextCreateTableOption( final DdlTokenStream tokens,
-                                               final AstNode tableNode ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseNextCreateTableOption should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseNextStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
      *      org.modeshape.sequencer.ddl.node.AstNode)
      */
@@ -352,69 +152,6 @@ public final class TeiidDdlParser extends StandardDdlParser implements TeiidDdlC
 
         // Unparsable DDL statement
         throw new TeiidDdlParsingException(tokens, "Unparsable DDL statement");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseReferences(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode)
-     */
-    @Override
-    protected void parseReferences( final DdlTokenStream tokens,
-                                    final AstNode constraintNode ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseReferences should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseRevokeStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode)
-     */
-    @Override
-    protected AstNode parseRevokeStatement( final DdlTokenStream tokens,
-                                            final AstNode parentNode ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseRevokeStatement should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseSetStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode)
-     */
-    @Override
-    protected AstNode parseSetStatement( final DdlTokenStream tokens,
-                                         final AstNode parentNode ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseSetStatement should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      java.lang.String[], org.modeshape.sequencer.ddl.node.AstNode, java.lang.String)
-     */
-    @Override
-    protected AstNode parseStatement( final DdlTokenStream tokens,
-                                      final String[] stmt_start_phrase,
-                                      final AstNode parentNode,
-                                      final String mixinType ) {
-        throw new TeiidDdlParsingException(tokens, "parseStatement should not be called");
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseTableConstraint(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode, boolean)
-     */
-    @Override
-    protected void parseTableConstraint( final DdlTokenStream tokens,
-                                         final AstNode tableNode,
-                                         final boolean isAlterTable ) throws ParsingException {
-        throw new TeiidDdlParsingException(tokens, "parseTableConstraint should not be called");
     }
 
 }

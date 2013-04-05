@@ -278,11 +278,10 @@ final class CreateTableParser extends StatementParser {
 
             // can't find referenced column
             if (referencedColumnNode == null) {
-                throw new TeiidDdlParsingException(tokens, "Unparsable reference list (node of reference '" + columnName
-                                                           + "' not found)");
+                this.logger.debug("Create table statment node of column reference '{0}' was not found", columnName);
+            } else {
+                references.add(referencedColumnNode);
             }
-
-            references.add(referencedColumnNode);
         }
 
         return references;
@@ -390,18 +389,20 @@ final class CreateTableParser extends StatementParser {
 
                         // can't find referenced table
                         if (referencesTableNode == null) {
-                            throw new TeiidDdlParsingException(tokens,
-                                                               "Unparsable reference list (foreign key reference table not found: "
-                                                               + referencesTableName + ')');
+                            this.logger.debug("Create table statment foreign key reference table '{0}' was not found",
+                                              referencesTableName);
+                        } else {
+                            constraintNode.setProperty(TeiidDdlLexicon.Constraint.TABLE_REFERENCE, referencesTableNode);
                         }
-
-                        constraintNode.setProperty(TeiidDdlLexicon.Constraint.TABLE_REFERENCE, referencesTableNode);
 
                         // may have referenced columns so check for opening paren before parsing refs
                         if (tokens.matches(L_PAREN)) {
                             final List<AstNode> constraintReferences = parseReferenceList(tokens, referencesTableNode);
-                            constraintNode.setProperty(TeiidDdlLexicon.Constraint.TABLE_REFERENCE_REFERENCES,
-                                                       constraintReferences);
+
+                            if (!constraintReferences.isEmpty()) {
+                                constraintNode.setProperty(TeiidDdlLexicon.Constraint.TABLE_REFERENCE_REFERENCES,
+                                                           constraintReferences);
+                            }
                         }
                     } else {
                         throw new TeiidDdlParsingException(tokens,
@@ -510,7 +511,8 @@ final class CreateTableParser extends StatementParser {
         }
 
         columnNode.setProperty(TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, foundAutoIncrement);
-        columnNode.setProperty(TeiidDdlLexicon.CreateTable.CAN_BE_NULL, !foundNotNull);
+        columnNode.setProperty(StandardDdlLexicon.NULLABLE, (foundNotNull ? "NOT NULL" : "NULL"));
+
         return columnNode;
     }
 

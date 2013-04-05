@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.sequencer.ddl.DdlTokenStream;
 import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.DdlStatement;
@@ -145,7 +144,7 @@ final class AlterOptionsParser extends StatementParser {
         // parse table reference
         final String tableRefName = parseIdentifier(tokens);
 
-        final AstNode alterOptionsNode = getNodeFactory().node(nodeType, parentNode, nodeType);
+        final AstNode alterOptionsNode = getNodeFactory().node(tableRefName, parentNode, nodeType);
         alterOptionsNode.setProperty(TeiidDdlLexicon.SchemaElement.TYPE, schemaElementType.toDdl());
 
         // find referenced table node
@@ -153,11 +152,10 @@ final class AlterOptionsParser extends StatementParser {
 
         // can't find referenced table
         if (tableRefNode == null) {
-            throw new TeiidDdlParsingException(tokens, "Unparsable alter options statement (table reference node not found: "
-                                                       + tableRefName + ')');
+            this.logger.debug("Alter options statement table reference '{0}' node not found", tableRefName);
+        } else {
+            alterOptionsNode.setProperty(TeiidDdlLexicon.AlterOptions.REFERENCE, tableRefNode);
         }
-
-        alterOptionsNode.setProperty(TeiidDdlLexicon.AlterOptions.REFERENCE, tableRefNode);
 
         // must have either a <alter options list> or a <alter column options>
         if (!parseAlterOptionsList(tokens, alterOptionsNode) && !parseAlterColumnOptions(tokens, alterOptionsNode)) {
@@ -198,34 +196,31 @@ final class AlterOptionsParser extends StatementParser {
             assert (nodeType != null) : "Alter column options node type is null";
 
             final String refName = parseIdentifier(tokens);
-            final AstNode columnOptionsNode = getNodeFactory().node(nodeType, alterOptionsNode, nodeType);
-            columnOptionsNode.setProperty(JcrConstants.JCR_PRIMARY_TYPE, nodeType);
+            final AstNode columnOptionsNode = getNodeFactory().node(refName, alterOptionsNode, nodeType);
 
             // find referenced column/parameter
             final AstNode refTableNode = (AstNode)alterOptionsNode.getProperty(TeiidDdlLexicon.AlterOptions.REFERENCE);
 
             if (refTableNode == null) {
-                throw new TeiidDdlParsingException(tokens,
-                                                   "Unparsable alter column options (reference table/procedure node not found)");
-            }
-
-            String refPropType = null;
-
-            if (refTableNode.hasMixin(TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE)) {
-                refPropType = TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE;
+                this.logger.debug("Table/procedure/view node not found for alter column '{0}'", refName);
             } else {
-                refPropType = TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE;
+                String refPropType = null;
+
+                if (refTableNode.hasMixin(TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE)) {
+                    refPropType = TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE;
+                } else {
+                    refPropType = TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE;
+                }
+
+                final AstNode refNode = getNode(refTableNode, refName, refPropType);
+
+                // can't find referenced column node
+                if (refNode == null) {
+                    this.logger.debug("Alter column options reference column node not found: {0}", refName);
+                }
+
+                columnOptionsNode.setProperty(TeiidDdlLexicon.AlterOptions.REFERENCE, refNode);
             }
-
-            final AstNode refNode = getNode(refTableNode, refName, refPropType);
-
-            // can't find referenced table node
-            if (refNode == null) {
-                throw new TeiidDdlParsingException(tokens, "Unparsable alter column options (reference node not found: "
-                                                           + refName + ')');
-            }
-
-            columnOptionsNode.setProperty(TeiidDdlLexicon.AlterOptions.REFERENCE, refNode);
 
             if (parseAlterOptionsList(tokens, columnOptionsNode)) {
                 return true; // well formed
@@ -275,7 +270,7 @@ final class AlterOptionsParser extends StatementParser {
                     || parentNode.hasMixin(TeiidDdlLexicon.AlterOptions.PARAMETER_NODE_TYPE)) {
                     optionsListNode = parentNode;
                 } else {
-                    optionsListNode = getNodeFactory().node(TeiidDdlLexicon.AlterOptions.OPTIONS_LIST_NODE_TYPE,
+                    optionsListNode = getNodeFactory().node(TeiidDdlLexicon.AlterOptions.ALTERS,
                                                             parentNode,
                                                             TeiidDdlLexicon.AlterOptions.OPTIONS_LIST_NODE_TYPE);
                 }

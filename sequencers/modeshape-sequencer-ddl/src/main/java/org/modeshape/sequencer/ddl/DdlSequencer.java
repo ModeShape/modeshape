@@ -242,7 +242,17 @@ public class DdlSequencer extends Sequencer {
     private Node createFromAstNode( Node parent,
                                     AstNode astNode ) throws RepositoryException {
         String relativePath = astNode.getAbsolutePath().substring(1);
-        Node sequenceNode = parent.addNode(relativePath, astNode.getPrimaryType());
+        Node sequenceNode = null;
+
+        // for SNS the absolute path will use first node it finds as the parent so find real parent if possible
+        Node parentNode = getNode(astNode.getParent());
+
+        if (parentNode == null) {
+            sequenceNode = parent.addNode(relativePath, astNode.getPrimaryType());
+        } else {
+            sequenceNode = parentNode.addNode(astNode.getName(), astNode.getPrimaryType());
+        }
+
         this.nodeMap.put(astNode, sequenceNode);
         for (String mixin : astNode.getMixins()) {
             sequenceNode.addMixin(mixin);
@@ -256,8 +266,7 @@ public class DdlSequencer extends Sequencer {
                                                  ValueFactory valueFactory ) throws RepositoryException {
         List<Value> result = new ArrayList<Value>();
         if (objectValue instanceof Collection) {
-            @SuppressWarnings( "unchecked" )
-            Collection<? extends Value> objects = (Collection<? extends Value>)objectValue;
+            Collection<?> objects = (Collection<?>)objectValue;
             for (Object childObjectValue : objects) {
                 List<Value> childValues = convertToPropertyValues(childObjectValue, valueFactory);
                 result.addAll(childValues);

@@ -48,6 +48,11 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
     interface AlterOptions {
 
         /**
+         * The child node name for the element being altered (name is not prefixed).
+         */
+        String ALTERS = "alters";
+
+        /**
          * The node type name for an alter column clause.
          */
         String COLUMN_NODE_TYPE = Namespace.PREFIX + ":alterColumn";
@@ -142,11 +147,6 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
     interface CreateProcedure {
 
         /**
-         * The name of the property that indicates if a result column can be <code>null</code>.
-         */
-        String CAN_BE_NULL = Namespace.PREFIX + ":canBeNull";
-
-        /**
          * The node type name for a create function statement.
          */
         String FUNCTION_NODE_TYPE = Namespace.PREFIX + ":createFunction";
@@ -187,9 +187,9 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
         String RESULT_DATA_TYPE_NODE_TYPE = Namespace.PREFIX + ":resultDataType";
 
         /**
-         * A property name for a result set.
+         * The child node name for a result set (name is not prefixed).
          */
-        String RESULT_SET = Namespace.PREFIX + ":resultSet";
+        String RESULT_SET = "resultSet";
 
         /**
          * The name of the procedure statement property.
@@ -212,11 +212,6 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
          * The auto-increment property name of a table element.
          */
         String AUTO_INCREMENT = Namespace.PREFIX + ":autoIncrement";
-
-        /**
-         * The name of the property that indicates if a column can be <code>null</code>.
-         */
-        String CAN_BE_NULL = Namespace.PREFIX + ":canBeNull";
 
         /**
          * The property name for create schema (table, view) statement.
@@ -264,6 +259,11 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
          * A create trigger DDL statement node type name.
          */
         String NODE_TYPE = Namespace.PREFIX + ":createTrigger";
+
+        /**
+         * A trigger row action child node name (name is not prefixed).
+         */
+        String ROW_ACTION = "rowAction";
 
         /**
          * The table reference property name.
