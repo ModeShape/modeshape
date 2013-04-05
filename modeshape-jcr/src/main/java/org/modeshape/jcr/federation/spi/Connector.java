@@ -52,13 +52,13 @@ import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFormatException;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
+import org.modeshape.jcr.value.binary.UrlBinaryValue;
 
 /**
  * SPI of a generic external connector, representing the interface to an external system integrated with ModeShape. Since it is
- * expected that the documents are well formed (structure-wise), the {@link FederatedDocumentWriter} class should be used.
- *
- * This is the base class for {@link WritableConnector} and {@link ReadOnlyConnector} which is what connector implementations
- * are expected to implement.
+ * expected that the documents are well formed (structure-wise), the {@link FederatedDocumentWriter} class should be used. This is
+ * the base class for {@link WritableConnector} and {@link ReadOnlyConnector} which is what connector implementations are expected
+ * to implement.
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
@@ -100,9 +100,8 @@ public abstract class Connector {
     private Integer cacheTtlSeconds;
 
     /**
-     * A flag which indicates whether content exposed by this connector should be indexed or not by the repository. This acts
-     * as a global flag, allowing a connector to mark it's entire content as non-queryable. By default, all content is queryable.
-     *
+     * A flag which indicates whether content exposed by this connector should be indexed or not by the repository. This acts as a
+     * global flag, allowing a connector to mark it's entire content as non-queryable. By default, all content is queryable.
      * <p>
      * The field is assigned via reflection based upon the configuration of the external source represented by this connector
      * before ModeShape calls {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
@@ -132,9 +131,9 @@ public abstract class Connector {
     private ExtraPropertiesStore extraPropertiesStore;
 
     /**
-     * The {@link TransactionManager} instance used by the repository, which allows a connector to enroll, via an {@link javax.transaction.xa.XAResource}
-     * implementation into existing transactions. It's up to the connector to implement the logic for determining transaction boundaries
-     * and to process documents accordingly.
+     * The {@link TransactionManager} instance used by the repository, which allows a connector to enroll, via an
+     * {@link javax.transaction.xa.XAResource} implementation into existing transactions. It's up to the connector to implement
+     * the logic for determining transaction boundaries and to process documents accordingly.
      * <p>
      * The field is assigned via reflection before ModeShape calls {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
      * </p>
@@ -209,7 +208,7 @@ public abstract class Connector {
 
     /**
      * Indicates if content exposed by this connector should be indexed by the repository or not.
-     *
+     * 
      * @return {@code true} if the content should be indexed, {@code false} otherwise.
      */
     public Boolean isQueryable() {
@@ -246,6 +245,7 @@ public abstract class Connector {
 
     /**
      * Returns the transaction manager instance that was set on the connector during initialization.
+     * 
      * @return a {@code non-null} {@link TransactionManager} instance
      */
     protected TransactionManager getTransactionManager() {
@@ -320,7 +320,7 @@ public abstract class Connector {
 
     /**
      * Indicates if the connector instance has been configured in read-only mode.
-     *
+     * 
      * @return {@code true} if the connector has been configured in read-only mode, false otherwise.
      */
     public abstract boolean isReadonly();
@@ -344,13 +344,20 @@ public abstract class Connector {
     }
 
     /**
-     * Returns a binary value which is connector specific and which is never stored by ModeShape. Typically connectors who need
-     * this feature will have their own subclasses of {@link ExternalBinaryValue}
-     *
-     * @param id a {@code String} representing the id of the external binary which should have connector-specific meaning.
+     * Returns a binary value which is connector specific and which is never stored by ModeShape. Connectors who need this feature
+     * must return an object that is an instance of a subclasses of {@link ExternalBinaryValue}, either {@link UrlBinaryValue} or
+     * a custom subclass with connector-specific information.
+     * <p>
+     * Normally, the {@link #getDocumentById(String)} method implementation will set binary values on properties of nodes, which
+     * should create the same ExternalBinaryValue subclass that is returned by this method. The
+     * {@link ExternalBinaryValue#getId()} value from that instance will be passed into this method.
+     * </p>
+     * 
+     * @param id a {@code String} representing the identifier of the external binary which should have connector-specific meaning.
+     *        This identifier need not be the SHA-1 hash of the content.
      * @return either a binary value implementation or {@code null} if there is no such value with the given id.
      */
-    public ExternalBinaryValue getBinaryValue(String id) {
+    public ExternalBinaryValue getBinaryValue( String id ) {
         return null;
     }
 
@@ -387,18 +394,18 @@ public abstract class Connector {
      */
     public abstract void updateDocument( DocumentChanges documentChanges );
 
-
     /**
-     * Generates an identifier which will be assigned when a new document (aka. child) is created under an existing document (aka.parent).
-     * This method should be implemented only by connectors which support writing.
-     *
-     * @param parentId a {@code non-null} {@link String} which represents the identifier of the parent under which the new document
-     * will be created.
-     * @param newDocumentName a {@code non-null} {@link org.modeshape.jcr.value.Name} which represents the name that will be given to the child document
-     * @param newDocumentPrimaryType a {@code non-null} {@link org.modeshape.jcr.value.Name} which represents the child document's primary type.
+     * Generates an identifier which will be assigned when a new document (aka. child) is created under an existing document
+     * (aka.parent). This method should be implemented only by connectors which support writing.
+     * 
+     * @param parentId a {@code non-null} {@link String} which represents the identifier of the parent under which the new
+     *        document will be created.
+     * @param newDocumentName a {@code non-null} {@link org.modeshape.jcr.value.Name} which represents the name that will be given
+     *        to the child document
+     * @param newDocumentPrimaryType a {@code non-null} {@link org.modeshape.jcr.value.Name} which represents the child document's
+     *        primary type.
      * @return either a {@code non-null} {@link String} which will be assigned as the new identifier, or {@code null} which means
-     * that no "special" id format is required. In this last case, the repository will auto-generate a random id.
-     *
+     *         that no "special" id format is required. In this last case, the repository will auto-generate a random id.
      * @throws org.modeshape.jcr.cache.DocumentStoreException if the connector is readonly.
      */
     public abstract String newDocumentId( String parentId,

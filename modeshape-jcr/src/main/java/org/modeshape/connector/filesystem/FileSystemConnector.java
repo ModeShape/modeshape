@@ -29,6 +29,7 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -56,6 +57,7 @@ import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 import org.modeshape.jcr.value.binary.UrlBinaryValue;
 
 /**
@@ -229,7 +231,7 @@ public class FileSystemConnector extends WritableConnector {
 
     /**
      * Get the namespace registry.
-     *
+     * 
      * @return the namespace registry; never null
      */
     NamespaceRegistry registry() {
@@ -240,7 +242,7 @@ public class FileSystemConnector extends WritableConnector {
      * Utility method for determining if the supplied identifier is for the "jcr:content" child node of a file. * Subclasses may
      * override this method to change the format of the identifiers, but in that case should also override the
      * {@link #fileFor(String)}, {@link #isRoot(String)}, and {@link #idFor(File)} methods.
-     *
+     * 
      * @param id the identifier; may not be null
      * @return true if the identifier signals the "jcr:content" child node of a file, or false otherwise
      * @see #isRoot(String)
@@ -255,7 +257,7 @@ public class FileSystemConnector extends WritableConnector {
      * Utility method for obtaining the {@link File} object that corresponds to the supplied identifier. Subclasses may override
      * this method to change the format of the identifiers, but in that case should also override the {@link #isRoot(String)},
      * {@link #isContentNode(String)}, and {@link #idFor(File)} methods.
-     *
+     * 
      * @param id the identifier; may not be null
      * @return the File object for the given identifier
      * @see #isRoot(String)
@@ -277,7 +279,7 @@ public class FileSystemConnector extends WritableConnector {
      * Utility method for determining if the node identifier is the identifier of the root node in this external source.
      * Subclasses may override this method to change the format of the identifiers, but in that case should also override the
      * {@link #fileFor(String)}, {@link #isContentNode(String)}, and {@link #idFor(File)} methods.
-     *
+     * 
      * @param id the identifier; may not be null
      * @return true if the identifier is for the root of this source, or false otherwise
      * @see #isContentNode(String)
@@ -292,7 +294,7 @@ public class FileSystemConnector extends WritableConnector {
      * Utility method for determining the node identifier for the supplied file. Subclasses may override this method to change the
      * format of the identifiers, but in that case should also override the {@link #fileFor(String)},
      * {@link #isContentNode(String)}, and {@link #isRoot(String)} methods.
-     *
+     * 
      * @param file the file; may not be null
      * @return the node identifier; never null
      * @see #isRoot(String)
@@ -318,11 +320,11 @@ public class FileSystemConnector extends WritableConnector {
     /**
      * Utility method for creating a {@link BinaryValue} for the given {@link File} object. Subclasses should rarely override this
      * method.
-     *
+     * 
      * @param file the file; may not be null
      * @return the BinaryValue; never null
      */
-    protected BinaryValue binaryFor( File file ) {
+    protected ExternalBinaryValue binaryFor( File file ) {
         try {
             byte[] sha1 = SecureHash.getHash(Algorithm.SHA_1, file);
             BinaryKey key = new BinaryKey(sha1);
@@ -337,16 +339,16 @@ public class FileSystemConnector extends WritableConnector {
     /**
      * Utility method to create a {@link BinaryValue} object for the given file. Subclasses should rarely override this method,
      * since the {@link UrlBinaryValue} will be applicable in most situations.
-     *
+     * 
      * @param key the binary key; never null
      * @param file the file for which the {@link BinaryValue} is to be created; never null
      * @return the binary value; never null
      * @throws IOException if there is an error creating the value
      */
-    protected BinaryValue createBinaryValue( BinaryKey key,
-                                             File file ) throws IOException {
+    protected ExternalBinaryValue createBinaryValue( BinaryKey key,
+                                                     File file ) throws IOException {
         URL content = createUrlForFile(file);
-        return new UrlBinaryValue(key, content, file.getTotalSpace(), file.getName(), getMimeTypeDetector());
+        return new UrlBinaryValue(key, getSourceName(), content, file.length(), file.getName(), getMimeTypeDetector());
     }
 
     /**
@@ -356,7 +358,7 @@ public class FileSystemConnector extends WritableConnector {
      * Subclasses can override this method to transform the URL into something different. For example, if the files are being
      * served by a web server, the overridden method might transform the file-based URL into the corresponding HTTP-based URL.
      * </p>
-     *
+     * 
      * @param file the file for which the URL is to be created; never null
      * @return the URL for the file; never null
      * @throws IOException if there is an error creating the URL
@@ -365,9 +367,13 @@ public class FileSystemConnector extends WritableConnector {
         return file.toURI().toURL();
     }
 
+    protected File createFileForUrl( URL url ) throws URISyntaxException {
+        return new File(url.toURI());
+    }
+
     /**
      * Utility method to determine if the file is excluded by the inclusion/exclusion filter.
-     *
+     * 
      * @param file the file
      * @return true if the file is excluded, or false if it is to be included
      */
@@ -377,7 +383,7 @@ public class FileSystemConnector extends WritableConnector {
 
     /**
      * Utility method to ensure that the file is writable by this connector.
-     *
+     * 
      * @param id the identifier of the node
      * @param file the file
      * @throws DocumentStoreException if the file is expected to be writable but is not or is excluded, or if the connector is
@@ -422,7 +428,7 @@ public class FileSystemConnector extends WritableConnector {
             writer.addProperty(JCR_LAST_MODIFIED, factories().getDateFactory().create(file.lastModified()));
             writer.addProperty(JCR_LAST_MODIFIED_BY, null); // ignored
 
-            //make these binary not queryable. If we really want to query them, we need to switch to external binaries
+            // make these binary not queryable. If we really want to query them, we need to switch to external binaries
             writer.setNotQueryable();
             parentFile = file;
         } else if (file.isFile()) {
@@ -471,6 +477,18 @@ public class FileSystemConnector extends WritableConnector {
         String id = path; // this connector treats the ID as the path
         File file = fileFor(id);
         return file.exists() ? id : null;
+    }
+
+    @Override
+    public ExternalBinaryValue getBinaryValue( String id ) {
+        try {
+            File f = createFileForUrl(new URL(id));
+            return binaryFor(f);
+        } catch (IOException e) {
+            throw new DocumentStoreException(id, e);
+        } catch (URISyntaxException e) {
+            throw new DocumentStoreException(id, e);
+        }
     }
 
     @Override
@@ -568,7 +586,8 @@ public class FileSystemConnector extends WritableConnector {
 
         File file = fileFor(id);
 
-        //if we're dealing with the root of the connector, we can't process any moves/removes because that would go "outside" the connector scope
+        // if we're dealing with the root of the connector, we can't process any moves/removes because that would go "outside" the
+        // connector scope
         if (!isRoot(id)) {
             String parentId = reader.getParentIds().get(0);
             File parent = file.getParentFile();
