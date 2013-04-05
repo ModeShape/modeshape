@@ -532,17 +532,31 @@ public class FileSystemConnector extends WritableConnector {
     public String newDocumentId( String parentId,
                                  Name newDocumentName,
                                  Name newDocumentPrimaryType ) {
-        StringBuilder documentIdBuilder = new StringBuilder(parentId);
+        StringBuilder id = new StringBuilder(parentId);
         if (!parentId.endsWith(DELIMITER)) {
-            documentIdBuilder.append(DELIMITER);
+            id.append(DELIMITER);
         }
-        if (!StringUtil.isBlank(newDocumentName.getNamespaceUri()))  {
-            //the FS connector does not support namespaces in names
-            getLogger().warn(JcrI18n.fileConnectorNamespaceIgnored, getSourceName(), newDocumentName.getNamespaceUri());
+
+        // We're only using the name to check, which can be a bit dangerous if users don't follow the JCR conventions.
+        // However, it matches what "isContentNode(...)" does.
+        String childNameStr = getContext().getValueFactories().getStringFactory().create(newDocumentName);
+        if (JCR_CONTENT.equals(childNameStr)) {
+            // This is for the "jcr:content" node underneath a file node. Since this doesn't actually result in a file or folder
+            // on the file system (it's merged into the file for the parent 'nt:file' node), we'll keep the "jcr" namespace
+            // prefix in the ID so that 'isContentNode(...)' works properly ...
+            id.append(childNameStr);
+        } else {
+            // File systems don't universally deal well with ':' in the names, and when they do it can be a bit awkward. Since we
+            // don't often expect the node NAMES to contain namespaces (at leat with this connector), we'll just
+            // use the local part for the ID ...
+            id.append(newDocumentName.getLocalName());
+            if (!StringUtil.isBlank(newDocumentName.getNamespaceUri())) {
+                // the FS connector does not support namespaces in names
+                String ns = newDocumentName.getNamespaceUri();
+                getLogger().warn(JcrI18n.fileConnectorNamespaceIgnored, getSourceName(), ns, id, childNameStr, parentId);
+            }
         }
-        //treat jcr:content nodes as 'special' so isContentNode(id) and fileFor(id) see the ID they expect
-        documentIdBuilder.append(JCR_CONTENT.equals(newDocumentName.getString()) ? newDocumentName.getString() : newDocumentName.getLocalName());
-        return documentIdBuilder.toString();
+        return id.toString();
     }
 
     @Override
