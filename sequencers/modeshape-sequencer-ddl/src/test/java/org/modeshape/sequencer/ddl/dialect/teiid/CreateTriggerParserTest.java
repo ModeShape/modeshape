@@ -24,6 +24,7 @@
 package org.modeshape.sequencer.ddl.dialect.teiid;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,10 +53,21 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
     }
 
     @Test
+    public void shouldParseUnresolvedTableReference() {
+        final String content = "CREATE TRIGGER ON missingTable INSTEAD OF DELETE AS FOR EACH ROW DELETE FROM x WHERE foo = 'bar';";
+        final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
+        assertThat(triggerNode.getName(), is("missingTable"));
+        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+        assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.DELETE);
+        assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, true);
+        assertThat(triggerNode.getProperty(TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE), is(nullValue()));
+    }
+
+    @Test
     public void shouldParseCreateTriggerDelete() {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF DELETE AS FOR EACH ROW DELETE FROM x WHERE foo = 'bar';";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertThat(triggerNode.getName(), is(TeiidDdlLexicon.CreateTrigger.NODE_TYPE));
+        assertThat(triggerNode.getName(), is("foo"));
         assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.DELETE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, true);
@@ -63,6 +75,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
 
         // row actions
         assertThat(triggerNode.getChildCount(), is(1));
+        assertThat(triggerNode.getChild(0).getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
         assertMixinType(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
         assertProperty(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.ACTION, "DELETE FROM x WHERE foo = 'bar';");
     }
@@ -71,7 +84,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
     public void shouldParseCreateTriggerDeleteWithAtomicBeginBlockOneStatement() {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF DELETE AS FOR EACH ROW BEGIN ATOMIC DELETE FROM x WHERE foo = 'bar'; END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertThat(triggerNode.getName(), is(TeiidDdlLexicon.CreateTrigger.NODE_TYPE));
+        assertThat(triggerNode.getName(), is("foo"));
         assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.DELETE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, true);
@@ -79,6 +92,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
 
         // row actions
         assertThat(triggerNode.getChildCount(), is(1));
+        assertThat(triggerNode.getChild(0).getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
         assertMixinType(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
         assertProperty(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.ACTION, "DELETE FROM x WHERE foo = 'bar';");
     }
@@ -87,7 +101,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
     public void shouldParseCreateTriggerDeleteWithBeginBlockOneStatement() {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF DELETE AS FOR EACH ROW BEGIN DELETE FROM x WHERE foo = 'bar'; END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertThat(triggerNode.getName(), is(TeiidDdlLexicon.CreateTrigger.NODE_TYPE));
+        assertThat(triggerNode.getName(), is("foo"));
         assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.DELETE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, false);
@@ -95,6 +109,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
 
         // row actions
         assertThat(triggerNode.getChildCount(), is(1));
+        assertThat(triggerNode.getChild(0).getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
         assertMixinType(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
         assertProperty(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.ACTION, "DELETE FROM x WHERE foo = 'bar';");
     }
@@ -103,7 +118,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
     public void shouldParseCreateTriggerDeleteWithBeginBlockTwoStatements() {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF DELETE AS FOR EACH ROW BEGIN DELETE FROM x WHERE foo = 'bar'; DELETE FROM x WHERE bar = 'foo'; END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertThat(triggerNode.getName(), is(TeiidDdlLexicon.CreateTrigger.NODE_TYPE));
+        assertThat(triggerNode.getName(), is("foo"));
         assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.DELETE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, false);
@@ -111,8 +126,10 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
 
         // row actions
         assertThat(triggerNode.getChildCount(), is(2));
+        assertThat(triggerNode.getChild(0).getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
         assertMixinType(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
         assertProperty(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.ACTION, "DELETE FROM x WHERE foo = 'bar';");
+        assertThat(triggerNode.getChild(1).getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
         assertMixinType(triggerNode.getChild(1), TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
         assertProperty(triggerNode.getChild(1), TeiidDdlLexicon.CreateTrigger.ACTION, "DELETE FROM x WHERE bar = 'foo';");
     }
@@ -121,7 +138,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
     public void shouldParseCreateTriggerInsert() {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF INSERT AS FOR EACH ROW insert into g1 (e1, e2) values (1, 'trig');";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertThat(triggerNode.getName(), is(TeiidDdlLexicon.CreateTrigger.NODE_TYPE));
+        assertThat(triggerNode.getName(), is("foo"));
         assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.INSERT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, true);
@@ -129,6 +146,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
 
         // row actions
         assertThat(triggerNode.getChildCount(), is(1));
+        assertThat(triggerNode.getChild(0).getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
         assertMixinType(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
         assertProperty(triggerNode.getChild(0),
                        TeiidDdlLexicon.CreateTrigger.ACTION,
@@ -139,7 +157,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
     public void shouldParseCreateTriggerInsertWithAtomicBeginBlockOneStatement() {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF INSERT AS FOR EACH ROW BEGIN ATOMIC insert into g1 (e1, e2) values (1, 'trig'); END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertThat(triggerNode.getName(), is(TeiidDdlLexicon.CreateTrigger.NODE_TYPE));
+        assertThat(triggerNode.getName(), is("foo"));
         assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.INSERT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, true);
@@ -147,6 +165,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
 
         // row actions
         assertThat(triggerNode.getChildCount(), is(1));
+        assertThat(triggerNode.getChild(0).getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
         assertMixinType(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
         assertProperty(triggerNode.getChild(0),
                        TeiidDdlLexicon.CreateTrigger.ACTION,
@@ -157,7 +176,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
     public void shouldParseCreateTriggerInsertWithBeginBlockOneStatement() {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF INSERT AS FOR EACH ROW BEGIN insert into g1 (e1, e2) values (1, 'trig'); END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertThat(triggerNode.getName(), is(TeiidDdlLexicon.CreateTrigger.NODE_TYPE));
+        assertThat(triggerNode.getName(), is("foo"));
         assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.INSERT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, false);
@@ -165,6 +184,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
 
         // row actions
         assertThat(triggerNode.getChildCount(), is(1));
+        assertThat(triggerNode.getChild(0).getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
         assertMixinType(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
         assertProperty(triggerNode.getChild(0),
                        TeiidDdlLexicon.CreateTrigger.ACTION,
@@ -175,7 +195,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
     public void shouldParseCreateTriggerInsertWithBeginBlockTwoStatements() {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF INSERT AS FOR EACH ROW BEGIN insert into g1 (e1, e2) values (1, 'trig'); insert into g1 (e1, e2) values (2, 'hammer'); END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertThat(triggerNode.getName(), is(TeiidDdlLexicon.CreateTrigger.NODE_TYPE));
+        assertThat(triggerNode.getName(), is("foo"));
         assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.INSERT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, false);
@@ -183,10 +203,12 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
 
         // row actions
         assertThat(triggerNode.getChildCount(), is(2));
+        assertThat(triggerNode.getChild(0).getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
         assertMixinType(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
         assertProperty(triggerNode.getChild(0),
                        TeiidDdlLexicon.CreateTrigger.ACTION,
                        "insert into g1 (e1, e2) values (1, 'trig');");
+        assertThat(triggerNode.getChild(1).getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
         assertMixinType(triggerNode.getChild(1), TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
         assertProperty(triggerNode.getChild(1),
                        TeiidDdlLexicon.CreateTrigger.ACTION,
@@ -197,7 +219,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
     public void shouldParseCreateTriggerUpdate() {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF UPDATE AS FOR EACH ROW UPDATE x SET foo = 'bar';";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertThat(triggerNode.getName(), is(TeiidDdlLexicon.CreateTrigger.NODE_TYPE));
+        assertThat(triggerNode.getName(), is("foo"));
         assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.UPDATE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, true);
@@ -205,6 +227,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
 
         // row actions
         assertThat(triggerNode.getChildCount(), is(1));
+        assertThat(triggerNode.getChild(0).getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
         assertMixinType(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
         assertProperty(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.ACTION, "UPDATE x SET foo = 'bar';");
     }
@@ -213,7 +236,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
     public void shouldParseCreateTriggerUpdateWithAtomicBeginBlockOneStatement() {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF UPDATE AS FOR EACH ROW BEGIN ATOMIC UPDATE x SET foo = 'bar'; END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertThat(triggerNode.getName(), is(TeiidDdlLexicon.CreateTrigger.NODE_TYPE));
+        assertThat(triggerNode.getName(), is("foo"));
         assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.UPDATE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, true);
@@ -221,6 +244,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
 
         // row actions
         assertThat(triggerNode.getChildCount(), is(1));
+        assertThat(triggerNode.getChild(0).getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
         assertMixinType(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
         assertProperty(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.ACTION, "UPDATE x SET foo = 'bar';");
     }
@@ -229,7 +253,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
     public void shouldParseCreateTriggerUpdateWithBeginBlockOneStatement() {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF UPDATE AS FOR EACH ROW BEGIN UPDATE x SET foo = 'bar'; END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertThat(triggerNode.getName(), is(TeiidDdlLexicon.CreateTrigger.NODE_TYPE));
+        assertThat(triggerNode.getName(), is("foo"));
         assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.UPDATE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, false);
@@ -237,6 +261,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
 
         // row actions
         assertThat(triggerNode.getChildCount(), is(1));
+        assertThat(triggerNode.getChild(0).getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
         assertMixinType(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
         assertProperty(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.ACTION, "UPDATE x SET foo = 'bar';");
     }
@@ -245,7 +270,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
     public void shouldParseCreateTriggerUpdateWithBeginBlockTwoStatements() {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF UPDATE AS FOR EACH ROW BEGIN UPDATE x SET foo = 'bar'; UPDATE x SET bar = 'foo'; END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertThat(triggerNode.getName(), is(TeiidDdlLexicon.CreateTrigger.NODE_TYPE));
+        assertThat(triggerNode.getName(), is("foo"));
         assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.UPDATE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, false);
@@ -253,8 +278,10 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
 
         // row actions
         assertThat(triggerNode.getChildCount(), is(2));
+        assertThat(triggerNode.getChild(0).getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
         assertMixinType(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
         assertProperty(triggerNode.getChild(0), TeiidDdlLexicon.CreateTrigger.ACTION, "UPDATE x SET foo = 'bar';");
+        assertThat(triggerNode.getChild(1).getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
         assertMixinType(triggerNode.getChild(1), TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
         assertProperty(triggerNode.getChild(1), TeiidDdlLexicon.CreateTrigger.ACTION, "UPDATE x SET bar = 'foo';");
     }

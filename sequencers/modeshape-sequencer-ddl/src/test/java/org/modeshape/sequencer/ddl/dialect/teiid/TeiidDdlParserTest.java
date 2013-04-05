@@ -145,14 +145,9 @@ public class TeiidDdlParserTest extends DdlParserTestHelper implements TeiidDdlC
 
         {
             final List<AstNode> kids = this.rootNode.childrenWithName("G1");
-            assertThat(kids.size(), is(1));
+            assertThat(kids.size(), is(2)); // view, trigger
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateTable.VIEW_NODE_TYPE);
-        }
-
-        {
-            final List<AstNode> kids = this.rootNode.childrenWithName(TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
-            assertThat(kids.size(), is(1));
-            assertMixinType(kids.get(0), TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+            assertMixinType(kids.get(1), TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
         }
 
         {

@@ -741,7 +741,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.IN.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
-        assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.CAN_BE_NULL, true);
+        assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NULL");
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, false);
     }
 
@@ -756,7 +756,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.IN.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
-        assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.CAN_BE_NULL, true);
+        assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NULL");
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, false);
     }
 
@@ -771,7 +771,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.OUT.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
-        assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.CAN_BE_NULL, true);
+        assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NULL");
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, false);
     }
 
@@ -786,7 +786,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.INOUT.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
-        assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.CAN_BE_NULL, true);
+        assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NULL");
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, false);
     }
 
@@ -801,7 +801,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidNonReservedWord.VARIADIC.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
-        assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.CAN_BE_NULL, true);
+        assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NULL");
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, false);
     }
 
@@ -816,7 +816,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.IN.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
-        assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.CAN_BE_NULL, false);
+        assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NOT NULL");
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, false);
     }
 
@@ -832,7 +832,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.IN.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, true);
-        assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.CAN_BE_NULL, true);
+        assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NULL");
     }
 
     @Test
@@ -847,7 +847,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.IN.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DEFAULT_VALUE, "default-value");
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, false);
-        assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.CAN_BE_NULL, true);
+        assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NULL");
     }
 
     @Test
@@ -861,7 +861,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.IN.toDdl());
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, false);
-        assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.CAN_BE_NULL, true);
+        assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NULL");
 
         assertThat(paramNode.getChildCount(), is(2)); // 2 options
 
@@ -897,7 +897,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.IN.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DEFAULT_VALUE, "default-value");
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, true);
-        assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.CAN_BE_NULL, false);
+        assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NOT NULL");
     }
 
     // ********* procedure parameters tests ***********
@@ -940,7 +940,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertThat(paramNode.getName(), is("r1"));
         assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN_NODE_TYPE);
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
-        assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.CAN_BE_NULL, true);
+        assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NULL");
     }
 
     @Test
@@ -953,7 +953,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertThat(paramNode.getName(), is("r1"));
         assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN_NODE_TYPE);
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
-        assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.CAN_BE_NULL, false);
+        assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NOT NULL");
     }
 
     @Test
@@ -966,7 +966,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertThat(resultColumnNode.getName(), is("r1"));
         assertMixinType(resultColumnNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN_NODE_TYPE);
         assertProperty(resultColumnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
-        assertProperty(resultColumnNode, TeiidDdlLexicon.CreateProcedure.CAN_BE_NULL, true);
+        assertProperty(resultColumnNode, StandardDdlLexicon.NULLABLE, "NULL");
 
         assertThat(resultColumnNode.getChildCount(), is(2)); // 2 options
 

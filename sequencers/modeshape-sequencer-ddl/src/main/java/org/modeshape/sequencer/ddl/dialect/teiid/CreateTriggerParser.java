@@ -82,7 +82,7 @@ final class CreateTriggerParser extends StatementParser {
                     final String triggerType = tokens.consume();
 
                     if (tokens.canConsume(TeiidReservedWord.AS.toDdl())) {
-                        final AstNode triggerNode = getNodeFactory().node(TeiidDdlLexicon.CreateTrigger.NODE_TYPE,
+                        final AstNode triggerNode = getNodeFactory().node(tableRefName,
                                                                           parentNode,
                                                                           TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
                         triggerNode.setProperty(TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, triggerType);
@@ -95,12 +95,10 @@ final class CreateTriggerParser extends StatementParser {
 
                         // can't find referenced table node
                         if (tableRefNode == null) {
-                            throw new TeiidDdlParsingException(tokens,
-                                                               "Unparsable create trigger statement (table reference node not found: "
-                                                               + tableRefName + ')');
+                            this.logger.debug("Create trigger statement table reference '{0}' node not found", tableRefName);
+                        } else {
+                            triggerNode.setProperty(TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, tableRefNode);
                         }
-
-                        triggerNode.setProperty(TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, tableRefNode);
 
                         if (tokens.canConsume(FOR_EACH_ROW)) {
                             boolean error = false;
@@ -110,7 +108,7 @@ final class CreateTriggerParser extends StatementParser {
 
                             { // first row action
                                 final String rowAction = parseUntilTerminatorIgnoreEmbeddedStatements(tokens).trim();
-                                final AstNode rowActionNode = getNodeFactory().node(TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION,
+                                final AstNode rowActionNode = getNodeFactory().node(TeiidDdlLexicon.CreateTrigger.ROW_ACTION,
                                                                                     triggerNode,
                                                                                     TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
 
@@ -133,7 +131,7 @@ final class CreateTriggerParser extends StatementParser {
                                         }
 
                                         final String rowAction = parseUntilTerminatorIgnoreEmbeddedStatements(tokens).trim();
-                                        final AstNode rowActionNode = getNodeFactory().node(TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION,
+                                        final AstNode rowActionNode = getNodeFactory().node(TeiidDdlLexicon.CreateTrigger.ROW_ACTION,
                                                                                             triggerNode,
                                                                                             TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
                                         rowActionNode.setProperty(TeiidDdlLexicon.CreateTrigger.ACTION, rowAction);

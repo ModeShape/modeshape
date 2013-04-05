@@ -31,6 +31,7 @@ import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.sequencer.ddl.DdlTokenStream;
+import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 import org.modeshape.sequencer.ddl.datatype.DataType;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.DdlStatement;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.SchemaElementType;
@@ -192,7 +193,7 @@ final class CreateProcedureParser extends StatementParser {
             }
         }
 
-        parameterNode.setProperty(TeiidDdlLexicon.CreateProcedure.CAN_BE_NULL, !foundNotNull);
+        parameterNode.setProperty(StandardDdlLexicon.NULLABLE, (foundNotNull ? "NOT NULL" : "NULL"));
         parameterNode.setProperty(TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, foundResult);
     }
 
@@ -244,7 +245,7 @@ final class CreateProcedureParser extends StatementParser {
         final AstNode resultColumnNode = getNodeFactory().node(id,
                                                                resultSetNode,
                                                                TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN_NODE_TYPE);
-        resultColumnNode.setProperty(TeiidDdlLexicon.CreateProcedure.CAN_BE_NULL, !notNull);
+        resultColumnNode.setProperty(StandardDdlLexicon.NULLABLE, (notNull ? "NOT NULL" : "NULL"));
         getDataTypeParser().setPropertiesOnNode(resultColumnNode, dataType);
 
         // may have an options clause

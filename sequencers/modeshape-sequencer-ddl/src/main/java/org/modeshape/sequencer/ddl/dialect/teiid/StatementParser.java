@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
 import org.modeshape.common.util.StringUtil;
@@ -46,6 +47,7 @@ abstract class StatementParser implements DdlConstants {
 
     static final String[] NOT_NULL = new String[] {NOT, NULL};
 
+    protected Logger logger = Logger.getLogger(getClass());
     private final TeiidDdlParser teiidDdlParser;
 
     protected StatementParser( final TeiidDdlParser teiidDdlParser ) {

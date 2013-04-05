@@ -47,7 +47,7 @@
  
 [teiidddl:expressionConstraint] > teiidddl:constraint mixin
 - teiidddl:constraintType (string) = 'INDEX' mandatory autocreated < 'INDEX'
-- teiidddl:expression (string)
+- teiidddl:expression (string) mandatory
 
 // =============================================================================
 // SCHEMA ELEMENT
@@ -60,12 +60,12 @@
 // CREATE TABLE
 // =============================================================================
 
-[teiidddl:tableElement] > ddl:columnDefinition mixin
+[teiidddl:tableElement] > ddl:columnDefinition, mix:referenceable mixin
 - teiidddl:autoIncrement (boolean) = 'false'
-- teiidddl:canBeNull (boolean) = 'true' mandatory autocreated
+- ddl:nullable (string) = 'NULL' mandatory autocreated < 'NULL', 'NOT NULL'
 + * (ddl:statementOption) = ddl:statementOption 
 
-[teiidddl:abstractCreateTable] > ddl:createTableStatement, teiidddl:schemaElement abstract mixin
+[teiidddl:abstractCreateTable] > ddl:createTableStatement, teiidddl:schemaElement, mix:referenceable abstract mixin
 - teiidddl:queryExpression (string)
 + * (teiidddl:constraint) = teiidddl:constraint sns
 
@@ -76,10 +76,10 @@
 // CREATE PROCEDURE
 // =============================================================================
 
-[teiidddl:procedureParameter] mixin
+[teiidddl:procedureParameter] > mix:referenceable mixin
 - teiidddl:parameterType (string) = 'IN' mandatory autocreated < 'IN', 'OUT', 'INOUT', 'VARIADIC'
 - teiidddl:result (boolean) = 'false' autocreated
-- teiidddl:canBeNull (boolean) = 'true' mandatory autocreated
+- ddl:nullable (string) = 'NULL' mandatory autocreated < 'NULL', 'NOT NULL'
 - ddl:datatypeName (STRING)
 - ddl:datatypeLength (LONG)
 - ddl:datatypePrecision (LONG)
@@ -107,36 +107,34 @@
 
 [teiidddl:abstractCreateProcedure] > ddl:creatable, ddl:statement, teiidddl:schemaElement abstract mixin
 + * (teiidddl:procedureParameter) = teiidddl:procedureParameter
-+ teiidddl:resultSet (teiidddl:resultSet)
++ resultSet (teiidddl:resultSet)
 + * (ddl:statementOption) = ddl:statementOption
 
 [teiidddl:createFunction] > teiidddl:abstractCreateProcedure mixin
 
-[teiidddl:createProcedure] > teiidddl:abstractCreateProcedure mixin
+[teiidddl:createProcedure] > teiidddl:abstractCreateProcedure, mix:referenceable mixin
 - teiidddl:statement (string)
 
 // =============================================================================
 // ALTER OPTIONS
 // =============================================================================
 
-[teiidddl:alterOptionsList] abstract mixin
+[teiidddl:alterOptionsList] mixin
 - teiidddl:dropped (string) multiple
 + * (ddl:statementOption) = ddl:statementOption
 
 [teiidddl:alterOptions] > ddl:creatable, ddl:statement, teiidddl:schemaElement abstract mixin
 - teiidddl:reference (reference) mandatory
-+ * (teiidddl:alterOptionsList) = teiidddl:alterOptionsList
-+ * (teiidddl:alterColumn) = teiidddl:alterColumn
-+ * (teiidddl:alterParameter) = teiidddl:alterParameter
++ alters (teiidddl:alterOptionsList)
 
 [teiidddl:alterTable] > teiidddl:alterOptions mixin
 [teiidddl:alterView] > teiidddl:alterOptions mixin
 [teiidddl:alterProcedure] > teiidddl:alterOptions mixin
 
-[teiidddl:alterColumn] > teiidddl:alterOptionsList mixin
+[teiidddl:alterColumn] > teiidddl:alterOptionsList, mix:referenceable mixin
 - teiidddl:reference (reference) mandatory
 
-[teiidddl:alterParameter] > teiidddl:alterOptionsList mixin
+[teiidddl:alterParameter] > teiidddl:alterOptionsList, mix:referenceable mixin
 - teiidddl:reference (reference) mandatory
 
 // =============================================================================
@@ -150,4 +148,5 @@
 - teiidddl:insteadOf (string) mandatory < 'INSERT', 'UPDATE', 'DELETE'
 - teiidddl:tableRef (reference) mandatory
 - teiidddl:atomic (boolean) = 'true' autocreated
-+ teiidddl:triggerRowAction (teiidddl:triggerRowAction) multiple sns
++ rowAction (teiidddl:triggerRowAction) = teiidddl:triggerRowAction multiple sns
++ * (ddl:statementOption) = ddl:statementOption

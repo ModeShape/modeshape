@@ -81,7 +81,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
             final AstNode e1 = tableNode.childrenWithName("e1").get(0);
             assertProperty(e1, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.INTEGER.toDdl());
             assertProperty(e1, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e1, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e1, StandardDdlLexicon.NULLABLE, DdlConstants.NULL);
         }
 
         { // column e2
@@ -90,7 +90,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
             assertProperty(e2, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.VARCHAR.toDdl());
             assertProperty(e2, StandardDdlLexicon.DATATYPE_LENGTH, 10L);
             assertProperty(e2, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e2, StandardDdlLexicon.NULLABLE, "NULL");
         }
 
         { // column e3
@@ -98,7 +98,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
             final AstNode e3 = tableNode.childrenWithName("e3").get(0);
             assertProperty(e3, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.DATE.toDdl());
             assertProperty(e3, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e3, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, false);
+            assertProperty(e3, StandardDdlLexicon.NULLABLE, "NOT NULL");
         }
 
         { // column e4
@@ -108,7 +108,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
             assertProperty(e4, StandardDdlLexicon.DATATYPE_PRECISION, 12);
             assertProperty(e4, StandardDdlLexicon.DATATYPE_SCALE, 3);
             assertProperty(e4, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e4, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e4, StandardDdlLexicon.NULLABLE, "NULL");
 
             // options
             assertThat(e4.getChildren(StandardDdlLexicon.TYPE_STATEMENT_OPTION).size(), is(1));
@@ -123,7 +123,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
             final AstNode e5 = tableNode.childrenWithName("e5").get(0);
             assertProperty(e5, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.INTEGER.toDdl());
             assertProperty(e5, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, true);
-            assertProperty(e5, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e5, StandardDdlLexicon.NULLABLE, "NULL");
 
             // options
             assertThat(e5.getChildren(StandardDdlLexicon.TYPE_STATEMENT_OPTION).size(), is(3));
@@ -137,11 +137,11 @@ public class CreateTableParserTest extends TeiidDdlTest {
 
         { // column e6
             assertThat(tableNode.childrenWithName("e6").size(), is(1));
-            final AstNode e2 = tableNode.childrenWithName("e6").get(0);
-            assertProperty(e2, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.VARCHAR.toDdl());
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
-            assertProperty(e2, StandardDdlLexicon.DEFAULT_VALUE, "hello");
+            final AstNode e6 = tableNode.childrenWithName("e6").get(0);
+            assertProperty(e6, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.VARCHAR.toDdl());
+            assertProperty(e6, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
+            assertProperty(e6, StandardDdlLexicon.NULLABLE, "NULL");
+            assertProperty(e6, StandardDdlLexicon.DEFAULT_VALUE, "hello");
         }
 
         // constraints
@@ -242,7 +242,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
             final AstNode e1 = tableNode.childrenWithName("e1").get(0);
             assertProperty(e1, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.INTEGER.toDdl());
             assertProperty(e1, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, true);
-            assertProperty(e1, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e1, StandardDdlLexicon.NULLABLE, DdlConstants.NULL);
         }
 
         { // column e2
@@ -250,7 +250,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
             final AstNode e2 = tableNode.childrenWithName("e2").get(0);
             assertProperty(e2, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.VARCHAR.toDdl());
             assertProperty(e2, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e2, StandardDdlLexicon.NULLABLE, "NULL");
         }
 
         // constraints
@@ -277,7 +277,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
             final AstNode e1 = tableNode.childrenWithName("e1").get(0);
             assertProperty(e1, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.INTEGER.toDdl());
             assertProperty(e1, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e1, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e1, StandardDdlLexicon.NULLABLE, DdlConstants.NULL);
         }
 
         { // column e2
@@ -285,7 +285,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
             final AstNode e2 = tableNode.childrenWithName("e2").get(0);
             assertProperty(e2, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.VARCHAR.toDdl());
             assertProperty(e2, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e2, StandardDdlLexicon.NULLABLE, "NULL");
         }
 
         // constraints
@@ -312,7 +312,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
             final AstNode e1 = tableNode.childrenWithName("e1").get(0);
             assertProperty(e1, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.INTEGER.toDdl());
             assertProperty(e1, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e1, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e1, StandardDdlLexicon.NULLABLE, DdlConstants.NULL);
         }
 
         { // column e2
@@ -320,7 +320,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
             final AstNode e2 = tableNode.childrenWithName("e2").get(0);
             assertProperty(e2, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.VARCHAR.toDdl());
             assertProperty(e2, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e2, StandardDdlLexicon.NULLABLE, "NULL");
         }
 
         // constraints
@@ -350,7 +350,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
             final AstNode e1 = tableNode.childrenWithName("e1").get(0);
             assertProperty(e1, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.INTEGER.toDdl());
             assertProperty(e1, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e1, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e1, StandardDdlLexicon.NULLABLE, DdlConstants.NULL);
         }
 
         { // column e2
@@ -358,15 +358,15 @@ public class CreateTableParserTest extends TeiidDdlTest {
             final AstNode e2 = tableNode.childrenWithName("e2").get(0);
             assertProperty(e2, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.VARCHAR.toDdl());
             assertProperty(e2, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e2, StandardDdlLexicon.NULLABLE, "NULL");
         }
 
         { // column e3
             assertThat(tableNode.childrenWithName("e3").size(), is(1));
-            final AstNode e2 = tableNode.childrenWithName("e3").get(0);
-            assertProperty(e2, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.DATE.toDdl());
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            final AstNode e3 = tableNode.childrenWithName("e3").get(0);
+            assertProperty(e3, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.DATE.toDdl());
+            assertProperty(e3, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
+            assertProperty(e3, StandardDdlLexicon.NULLABLE, "NULL");
         }
 
         // constraints
@@ -393,7 +393,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
             final AstNode e1 = tableNode.childrenWithName("e1").get(0);
             assertProperty(e1, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.INTEGER.toDdl());
             assertProperty(e1, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e1, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e1, StandardDdlLexicon.NULLABLE, DdlConstants.NULL);
         }
 
         { // column e2
@@ -401,15 +401,15 @@ public class CreateTableParserTest extends TeiidDdlTest {
             final AstNode e2 = tableNode.childrenWithName("e2").get(0);
             assertProperty(e2, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.VARCHAR.toDdl());
             assertProperty(e2, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e2, StandardDdlLexicon.NULLABLE, "NULL");
         }
 
         { // column e3
             assertThat(tableNode.childrenWithName("e3").size(), is(1));
-            final AstNode e2 = tableNode.childrenWithName("e3").get(0);
-            assertProperty(e2, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.DATE.toDdl());
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            final AstNode e3 = tableNode.childrenWithName("e3").get(0);
+            assertProperty(e3, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.DATE.toDdl());
+            assertProperty(e3, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
+            assertProperty(e3, StandardDdlLexicon.NULLABLE, "NULL");
         }
 
         // constraints
@@ -436,7 +436,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
             final AstNode e1 = tableNode.childrenWithName("e1").get(0);
             assertProperty(e1, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.INTEGER.toDdl());
             assertProperty(e1, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e1, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e1, StandardDdlLexicon.NULLABLE, DdlConstants.NULL);
         }
 
         { // column e2
@@ -444,15 +444,15 @@ public class CreateTableParserTest extends TeiidDdlTest {
             final AstNode e2 = tableNode.childrenWithName("e2").get(0);
             assertProperty(e2, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.VARCHAR.toDdl());
             assertProperty(e2, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e2, StandardDdlLexicon.NULLABLE, "NULL");
         }
 
         { // column e3
             assertThat(tableNode.childrenWithName("e3").size(), is(1));
-            final AstNode e2 = tableNode.childrenWithName("e3").get(0);
-            assertProperty(e2, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.DATE.toDdl());
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            final AstNode e3 = tableNode.childrenWithName("e3").get(0);
+            assertProperty(e3, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.DATE.toDdl());
+            assertProperty(e3, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
+            assertProperty(e3, StandardDdlLexicon.NULLABLE, "NULL");
         }
 
         // constraints
@@ -479,7 +479,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
             final AstNode e1 = tableNode.childrenWithName("e1").get(0);
             assertProperty(e1, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.INTEGER.toDdl());
             assertProperty(e1, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e1, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e1, StandardDdlLexicon.NULLABLE, DdlConstants.NULL);
         }
 
         { // column e2
@@ -487,15 +487,15 @@ public class CreateTableParserTest extends TeiidDdlTest {
             final AstNode e2 = tableNode.childrenWithName("e2").get(0);
             assertProperty(e2, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.VARCHAR.toDdl());
             assertProperty(e2, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            assertProperty(e2, StandardDdlLexicon.NULLABLE, "NULL");
         }
 
         { // column e3
             assertThat(tableNode.childrenWithName("e3").size(), is(1));
-            final AstNode e2 = tableNode.childrenWithName("e3").get(0);
-            assertProperty(e2, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.DATE.toDdl());
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
-            assertProperty(e2, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+            final AstNode e3 = tableNode.childrenWithName("e3").get(0);
+            assertProperty(e3, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.DATE.toDdl());
+            assertProperty(e3, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, false);
+            assertProperty(e3, StandardDdlLexicon.NULLABLE, "NULL");
         }
 
         // constraints
@@ -516,10 +516,35 @@ public class CreateTableParserTest extends TeiidDdlTest {
     /**
      * See Teiid TestDDLParser#testWrongPrimarykey()
      */
-    @Test( expected = ParsingException.class )
-    public void shouldNotParseWrongPrimaryKey() {
-        final String content = "CREATE FOREIGN TABLE G1( e1 integer, e2 varchar, PRIMARY KEY (e3))";
-        this.parser.parse(getTokens(content), this.rootNode);
+    @Test
+    public void shouldParseUnresolvedColumnInPrimaryKey() {
+        final String content = "CREATE FOREIGN TABLE G1( e1 integer, e2 varchar, PRIMARY KEY (missingColumn))";
+        final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
+        assertThat(tableNode.getName(), is("G1"));
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
+        assertThat(tableNode.childrenWithName(DdlConstants.PRIMARY_KEY).size(), is(1)); // make sure primary key still created
+    }
+
+    @Test
+    public void shouldParseUnresolvedTableInForeignKey() {
+        final String content = "CREATE FOREIGN TABLE G1 (e1 integer, e2 varchar, CONSTRAINT fk_1 FOREIGN KEY (e1, e2) REFERENCES missingTable)";
+        final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
+        assertThat(tableNode.getName(), is("G1"));
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
+        assertThat(tableNode.childrenWithName("fk_1").size(), is(1)); // make sure foreign key still created
+    }
+
+    @Test
+    public void shouldNotParseUnresolvedColumnReferenceInForeignKey() {
+        this.parser.parse(getTokens("CREATE FOREIGN TABLE refTable( t1 integer, t2 varchar)"), this.rootNode);
+        final String content = "CREATE FOREIGN TABLE G1 (e1 integer, e2 varchar, CONSTRAINT fk_1 FOREIGN KEY (e1, e2) REFERENCES refTable (t1, missingColumn))";
+        final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
+        assertThat(tableNode.getName(), is("G1"));
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
+        assertThat(tableNode.childrenWithName("fk_1").size(), is(1)); // make sure foreign key still created
     }
 
     /**
@@ -659,7 +684,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertMixinType(node, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE);
         assertThat(node.getName(), is("ACCOUNT_ID"));
         assertProperty(node, StandardDdlLexicon.DATATYPE_NAME, TeiidDdlConstants.TeiidDataType.LONG.toDdl());
-        assertProperty(node, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, false);
+        assertProperty(node, StandardDdlLexicon.NULLABLE, "NOT NULL");
     }
 
     @Test
@@ -774,7 +799,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(columnNode.getName(), is("e5"));
         assertProperty(columnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDdlConstants.TeiidDataType.INTEGER.toDdl());
         assertProperty(columnNode, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, true);
-        assertProperty(columnNode, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, true);
+        assertProperty(columnNode, StandardDdlLexicon.NULLABLE, DdlConstants.NULL);
 
         // check constraint
         final List<AstNode> kids = this.rootNode.getChildren();
@@ -809,7 +834,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertProperty(columnNode, StandardDdlLexicon.DEFAULT_OPTION, StandardDdlLexicon.DEFAULT_ID_LITERAL);
         assertProperty(columnNode, StandardDdlLexicon.DEFAULT_VALUE, value);
         assertProperty(columnNode, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, true);
-        assertProperty(columnNode, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, false);
+        assertProperty(columnNode, StandardDdlLexicon.NULLABLE, "NOT NULL");
 
         // make sure root has 2 children (column, constraint)
         final List<AstNode> rootKids = this.rootNode.getChildren();

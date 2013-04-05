@@ -32,6 +32,7 @@ import javax.jcr.NodeIterator;
 import org.junit.After;
 import org.junit.Test;
 import org.modeshape.sequencer.ddl.AbstractDdlSequencerTest;
+import org.modeshape.sequencer.ddl.DdlConstants;
 import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.SchemaElementType;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.TeiidDataType;
@@ -234,6 +235,265 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
     }
 
     @Test
+    public void shouldSequenceAlterOptionsDdl() throws Exception {
+        this.statementsNode = sequenceDdl("ddl/dialect/teiid/alterOptions.ddl");
+        assertThat(this.statementsNode.getNodes().getSize(), is(26L));
+
+        { // myTable
+            final NodeIterator itr = this.statementsNode.getNodes("myTable");
+            assertThat(itr.getSize(), is(11L)); // 1 view, 10 alter tables
+            verifyMixinType(itr.nextNode(), TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+
+            for (int i = 0; i < 10; ++i) {
+                verifyMixinType(itr.nextNode(), TeiidDdlLexicon.AlterOptions.TABLE_NODE_TYPE);
+            }
+        }
+
+        { // myView
+            final NodeIterator itr = this.statementsNode.getNodes("myView");
+            assertThat(itr.getSize(), is(11L)); // 1 view, 10 alter views
+
+            final Node viewNode = itr.nextNode();
+            verifyMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_NODE_TYPE);
+            verifyProperty(viewNode, TeiidDdlLexicon.CreateTable.QUERY_EXPRESSION, "select e1, e2 from foo.bar");
+
+            { // option
+                final Node optionNode = viewNode.getNode("CARDINALITY");
+                verifyMixinType(optionNode, StandardDdlLexicon.TYPE_STATEMENT_OPTION);
+                verifyProperty(optionNode, StandardDdlLexicon.VALUE, "12");
+            }
+
+            // columns
+            final Node v1ColNode = viewNode.getNode("v1");
+            final Node v2ColNode = viewNode.getNode("v2");
+
+            for (int i = 0; i < 10; ++i) {
+                final Node alterNode = itr.nextNode();
+                verifyMixinType(alterNode, TeiidDdlLexicon.AlterOptions.VIEW_NODE_TYPE);
+                verifyProperty(alterNode, TeiidDdlLexicon.AlterOptions.REFERENCE, viewNode.getIdentifier());
+                assertThat(alterNode.getNodes().getSize(), is(1L));
+
+                final Node optionsListNode = alterNode.getNodes().nextNode();
+
+                if (i < 6) {
+                    verifyMixinType(optionsListNode, TeiidDdlLexicon.AlterOptions.OPTIONS_LIST_NODE_TYPE);
+                    assertThat(optionsListNode.hasProperty(TeiidDdlLexicon.AlterOptions.DROPPED), is(i > 3));
+                    assertThat(optionsListNode.hasProperty(TeiidDdlLexicon.AlterOptions.REFERENCE), is(false));
+
+                    if (i == 4) {
+                        verifyProperty(optionsListNode, TeiidDdlLexicon.AlterOptions.DROPPED, "CARDINALITY");
+                        assertThat(optionsListNode.getNodes().getSize(), is(0L));
+                    } else if (i == 5) {
+                        verifyProperty(optionsListNode, TeiidDdlLexicon.AlterOptions.DROPPED, "FOO");
+                        assertThat(optionsListNode.getNodes().getSize(), is(0L));
+                    } else {
+                        assertThat(optionsListNode.hasProperty(TeiidDdlLexicon.AlterOptions.DROPPED), is(false));
+
+                        // option
+                        assertThat(optionsListNode.getNodes().getSize(), is(1L));
+                        final Node optionNode = optionsListNode.getNodes().nextNode();
+                        verifyMixinType(optionNode, StandardDdlLexicon.TYPE_STATEMENT_OPTION);
+
+                        String name = null;
+                        String value = null;
+
+                        if (i == 0) {
+                            name = "CARDINALITY";
+                            value = "12";
+                        } else if (i == 1) {
+                            name = "FOO";
+                            value = "BAR";
+                        } else if (i == 2) {
+                            name = "CARDINALITY";
+                            value = "24";
+                        } else if (i == 3) {
+                            name = "FOO";
+                            value = "BARBAR";
+                        }
+
+                        assertThat(optionNode.getName(), is(name));
+                        verifyProperty(optionNode, StandardDdlLexicon.VALUE, value);
+
+                    }
+                } else {
+                    verifyMixinType(alterNode.getNodes().nextNode(), TeiidDdlLexicon.AlterOptions.COLUMN_NODE_TYPE);
+                    assertThat(optionsListNode.hasProperty(TeiidDdlLexicon.AlterOptions.DROPPED), is(i > 7));
+
+                    if ((i == 6) || (i == 8)) {
+                        verifyProperty(optionsListNode, TeiidDdlLexicon.AlterOptions.REFERENCE, v1ColNode.getIdentifier());
+                    } else {
+                        verifyProperty(optionsListNode, TeiidDdlLexicon.AlterOptions.REFERENCE, v2ColNode.getIdentifier());
+                    }
+
+                    if (i == 8) {
+                        verifyProperty(optionsListNode, TeiidDdlLexicon.AlterOptions.DROPPED, "NULL_VALUE_COUNT");
+                        assertThat(optionsListNode.getNodes().getSize(), is(0L));
+                    } else if (i == 9) {
+                        verifyProperty(optionsListNode, TeiidDdlLexicon.AlterOptions.DROPPED, "FOO");
+                        assertThat(optionsListNode.getNodes().getSize(), is(0L));
+                    } else {
+                        assertThat(optionsListNode.getNodes().getSize(), is(1L));
+                    }
+                }
+            }
+        }
+
+        { // myProc
+            final NodeIterator itr = this.statementsNode.getNodes("myProc");
+            assertThat(itr.getSize(), is(4L)); // 1 view, 3 alter procedures
+
+            final Node procedureNode = itr.nextNode();
+            verifyMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE);
+            assertThat(procedureNode.getNodes().getSize(), is(3L)); // 3 columns
+
+            for (int i = 0; i < 3; ++i) {
+                final Node alterNode = itr.nextNode();
+                verifyMixinType(alterNode, TeiidDdlLexicon.AlterOptions.PROCEDURE_NODE_TYPE);
+                verifyProperty(alterNode, TeiidDdlLexicon.AlterOptions.REFERENCE, procedureNode.getIdentifier());
+                assertThat(alterNode.getNodes().getSize(), is(1L));
+
+                final Node optionsListNode = alterNode.getNodes().nextNode();
+
+                if (i != 1) {
+                    verifyMixinType(optionsListNode, TeiidDdlLexicon.AlterOptions.OPTIONS_LIST_NODE_TYPE);
+                    assertThat(optionsListNode.hasProperty(TeiidDdlLexicon.AlterOptions.REFERENCE), is(false));
+
+                    if (i == 0) {
+                        assertThat(optionsListNode.hasProperty(TeiidDdlLexicon.AlterOptions.DROPPED), is(false));
+                        assertThat(optionsListNode.getNodes().getSize(), is(1L)); // option
+
+                        // option
+                        final Node optionNode = optionsListNode.getNode("NAMEINSOURCE");
+                        verifyMixinType(optionNode, StandardDdlLexicon.TYPE_STATEMENT_OPTION);
+                        verifyProperty(optionNode, StandardDdlLexicon.VALUE, "x");
+                    } else {
+                        verifyProperty(optionsListNode, TeiidDdlLexicon.AlterOptions.DROPPED, "UPDATECOUNT");
+                        assertThat(optionsListNode.getProperty(TeiidDdlLexicon.AlterOptions.DROPPED).getValues()[1].getString(),
+                                   is("NAMEINSOURCE"));
+                        assertThat(optionsListNode.getNodes().getSize(), is(0L));
+                    }
+                } else {
+                    verifyMixinType(optionsListNode, TeiidDdlLexicon.AlterOptions.PARAMETER_NODE_TYPE);
+                    assertThat(optionsListNode.getNodes().getSize(), is(2L)); // 2 options
+
+                    final Node p2ParmNode = procedureNode.getNode("p2");
+                    verifyProperty(optionsListNode, TeiidDdlLexicon.AlterOptions.REFERENCE, p2ParmNode.getIdentifier());
+
+                    { // option1
+                        final Node optionNode = optionsListNode.getNode("x");
+                        verifyMixinType(optionNode, StandardDdlLexicon.TYPE_STATEMENT_OPTION);
+                        verifyProperty(optionNode, StandardDdlLexicon.VALUE, "y");
+                    }
+
+                    { // option2
+                        final Node optionNode = optionsListNode.getNode("a");
+                        verifyMixinType(optionNode, StandardDdlLexicon.TYPE_STATEMENT_OPTION);
+                        verifyProperty(optionNode, StandardDdlLexicon.VALUE, "b");
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void shouldSequenceCreateTriggerDdl() throws Exception {
+        this.statementsNode = sequenceDdl("ddl/dialect/teiid/createTrigger.ddl");
+        assertThat(this.statementsNode.getNodes().getSize(), is(5L)); // 2 views, 3 triggers
+
+        { // myView
+            final NodeIterator itr = this.statementsNode.getNodes("myView");
+            assertThat(itr.getSize(), is(2L)); // 1 view, 1 trigger
+
+            // view
+            final Node viewNode = itr.nextNode();
+            verifyMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_NODE_TYPE);
+            verifyProperty(viewNode, TeiidDdlLexicon.CreateTable.QUERY_EXPRESSION, "select * from foo");
+            assertThat(viewNode.getNodes().getSize(), is(2L)); // 2 columns
+
+            { // trigger node
+                final Node triggerNode = itr.nextNode();
+                verifyMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+                verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.INSERT);
+                verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, "false");
+                verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, viewNode.getIdentifier());
+
+                final NodeIterator actionItr = triggerNode.getNodes();
+                assertThat(actionItr.getSize(), is(3L)); // 3 trigger row actions
+
+                { // first action
+                    final Node actionNode = actionItr.nextNode();
+                    assertThat(actionNode.getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
+                    verifyMixinType(actionNode, TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
+                    verifyProperty(actionNode,
+                                   TeiidDdlLexicon.CreateTrigger.ACTION,
+                                   "insert into myView (age, name) values (4, 'Lucas');");
+                }
+
+                { // second action
+                    final Node actionNode = actionItr.nextNode();
+                    assertThat(actionNode.getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
+                    verifyMixinType(actionNode, TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
+                    verifyProperty(actionNode,
+                                   TeiidDdlLexicon.CreateTrigger.ACTION,
+                                   "insert into myView (age, name) values (6, 'Brady');");
+                }
+
+                { // third action
+                    final Node actionNode = actionItr.nextNode();
+                    assertThat(actionNode.getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
+                    verifyMixinType(actionNode, TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
+                    verifyProperty(actionNode,
+                                   TeiidDdlLexicon.CreateTrigger.ACTION,
+                                   "insert into myView (age, name) values (11, 'Joshua');");
+                }
+            }
+        }
+
+        { // HS_VIEW
+            final NodeIterator itr = this.statementsNode.getNodes("HS_VIEW");
+            assertThat(itr.getSize(), is(3L)); // 1 view, 2 triggers
+
+            // view
+            final Node viewNode = itr.nextNode();
+            verifyMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_NODE_TYPE);
+            verifyProperty(viewNode, TeiidDdlLexicon.CreateTable.QUERY_EXPRESSION, "select * from Accounts.HEALTHSTATE");
+            assertThat(viewNode.getNodes().getSize(), is(1L)); // 1 option
+
+            { // trigger1
+                final Node triggerNode = itr.nextNode();
+                verifyMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+                verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.INSERT);
+                verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, "true");
+                verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, viewNode.getIdentifier());
+                assertThat(triggerNode.getNodes().getSize(), is(1L)); // 1 trigger row action
+
+                final Node actionNode = triggerNode.getNodes().nextNode();
+                assertThat(actionNode.getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
+                verifyMixinType(actionNode, TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
+                verifyProperty(actionNode,
+                               TeiidDdlLexicon.CreateTrigger.ACTION,
+                               "SELECT RepHealth(New.HEALTHTIME, New.POLICYKEY, New.OBJKEY, New.HEALTHSTATE) from HS_VIEW;");
+            }
+
+            { // trigger2
+                final Node triggerNode = itr.nextNode();
+                verifyMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+                verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.UPDATE);
+                verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, "true");
+                verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, viewNode.getIdentifier());
+                assertThat(triggerNode.getNodes().getSize(), is(1L)); // 1 trigger row action
+
+                final Node actionNode = triggerNode.getNodes().nextNode();
+                assertThat(actionNode.getName(), is(TeiidDdlLexicon.CreateTrigger.ROW_ACTION));
+                verifyMixinType(actionNode, TeiidDdlLexicon.CreateTrigger.TRIGGER_ROW_ACTION);
+                verifyProperty(actionNode,
+                               TeiidDdlLexicon.CreateTrigger.ACTION,
+                               "SELECT RepHealth(New.HEALTHTIME, New.POLICYKEY, New.OBJKEY, New.HEALTHSTATE) from HS_VIEW;");
+            }
+        }
+    }
+
+    @Test
     public void shouldSequenceAccountsDdl() throws Exception {
         this.statementsNode = sequenceDdl("ddl/dialect/teiid/accounts.ddl");
         assertThat(this.statementsNode.getNodes().getSize(), is(5L));
@@ -248,7 +508,6 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
                 assertThat(itr.getSize(), is(1L));
                 final Node columnNode = itr.nextNode();
                 verifyProperty(columnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.LONG.toDdl());
-                verifyProperty(columnNode, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, "false");
                 verifyProperty(columnNode, StandardDdlLexicon.DEFAULT_VALUE, 0);
 
                 { // NAMEINSOURCE option
@@ -293,7 +552,7 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
                 assertThat(itr.getSize(), is(1L));
                 final Node columnNode = itr.nextNode();
                 verifyProperty(columnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.TIMESTAMP.toDdl());
-                verifyProperty(columnNode, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, "false");
+                verifyProperty(columnNode, StandardDdlLexicon.NULLABLE, "NOT NULL");
                 verifyProperty(columnNode, StandardDdlLexicon.DEFAULT_VALUE, "CURRENT_TIMESTAMP");
             }
 
@@ -302,7 +561,7 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
                 assertThat(itr.getSize(), is(1L));
                 final Node columnNode = itr.nextNode();
                 verifyProperty(columnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.TIMESTAMP.toDdl());
-                verifyProperty(columnNode, TeiidDdlLexicon.CreateTable.CAN_BE_NULL, "false");
+                verifyProperty(columnNode, StandardDdlLexicon.NULLABLE, "NOT NULL");
                 verifyProperty(columnNode, StandardDdlLexicon.DEFAULT_VALUE, "0000-00-00 00:00:00");
             }
 

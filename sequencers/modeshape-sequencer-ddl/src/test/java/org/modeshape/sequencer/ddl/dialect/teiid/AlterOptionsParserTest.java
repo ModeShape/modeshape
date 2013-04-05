@@ -95,13 +95,14 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
 
     @Test
     public void shouldParseAlterForeignProcedureWithColumnOptions() {
-        final String content = "ALTER FOREIGN PROCEDURE myProc ALTER COLUMN p1 OPTIONS (ADD cardinality 100)";
+        final String content = "ALTER FOREIGN PROCEDURE myProc ALTER PARAMETER p1 OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.PROCEDURE_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("myProc"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.PROCEDURE_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.procedureRefNode);
+        assertThat(alterOptionsNode.childrenWithName("p1").size(), is(1));
     }
 
     @Test
@@ -109,10 +110,11 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "ALTER FOREIGN PROCEDURE myProc OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.PROCEDURE_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("myProc"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.PROCEDURE_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.procedureRefNode);
+        assertThat(alterOptionsNode.childrenWithName(TeiidDdlLexicon.AlterOptions.ALTERS).size(), is(1));
     }
 
     @Test
@@ -120,10 +122,11 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "ALTER FOREIGN TABLE foo ALTER COLUMN bar OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.TABLE_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("foo"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.TABLE_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.tableRefNode);
+        assertThat(alterOptionsNode.childrenWithName("bar").size(), is(1));
     }
 
     @Test
@@ -131,10 +134,11 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "ALTER FOREIGN TABLE foo OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.TABLE_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("foo"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.TABLE_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.tableRefNode);
+        assertThat(alterOptionsNode.childrenWithName(TeiidDdlLexicon.AlterOptions.ALTERS).size(), is(1));
     }
 
     @Test
@@ -142,10 +146,11 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "ALTER FOREIGN VIEW G1 ALTER COLUMN e1 OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.VIEW_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("G1"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.VIEW_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.viewRefNode);
+        assertThat(alterOptionsNode.childrenWithName("e1").size(), is(1));
     }
 
     @Test
@@ -153,21 +158,23 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "ALTER FOREIGN VIEW G1 OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.VIEW_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("G1"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.VIEW_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.viewRefNode);
+        assertThat(alterOptionsNode.childrenWithName(TeiidDdlLexicon.AlterOptions.ALTERS).size(), is(1));
     }
 
     @Test
     public void shouldParseAlterImplicitProcedureWithColumnOptions() {
-        final String content = "ALTER PROCEDURE myProc ALTER COLUMN p1 OPTIONS (ADD cardinality 100)";
+        final String content = "ALTER PROCEDURE myProc ALTER PARAMETER p1 OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.PROCEDURE_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("myProc"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.PROCEDURE_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.procedureRefNode);
+        assertThat(alterOptionsNode.childrenWithName("p1").size(), is(1));
     }
 
     @Test
@@ -175,10 +182,11 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "ALTER PROCEDURE myProc OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.PROCEDURE_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("myProc"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.PROCEDURE_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.procedureRefNode);
+        assertThat(alterOptionsNode.childrenWithName(TeiidDdlLexicon.AlterOptions.ALTERS).size(), is(1));
     }
 
     @Test
@@ -186,10 +194,11 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "ALTER TABLE foo ALTER COLUMN bar OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.TABLE_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("foo"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.TABLE_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.tableRefNode);
+        assertThat(alterOptionsNode.childrenWithName("bar").size(), is(1));
     }
 
     @Test
@@ -197,10 +206,11 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "ALTER TABLE foo OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.TABLE_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("foo"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.TABLE_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.tableRefNode);
+        assertThat(alterOptionsNode.childrenWithName(TeiidDdlLexicon.AlterOptions.ALTERS).size(), is(1));
     }
 
     @Test
@@ -208,10 +218,11 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "ALTER VIEW G1 ALTER COLUMN e1 OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.VIEW_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("G1"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.VIEW_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.viewRefNode);
+        assertThat(alterOptionsNode.childrenWithName("e1").size(), is(1));
     }
 
     @Test
@@ -219,21 +230,23 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "ALTER VIEW G1 OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.VIEW_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("G1"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.VIEW_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.viewRefNode);
+        assertThat(alterOptionsNode.childrenWithName(TeiidDdlLexicon.AlterOptions.ALTERS).size(), is(1));
     }
 
     @Test
     public void shouldParseAlterVirtualProcedureWithColumnOptions() {
-        final String content = "ALTER VIRTUAL PROCEDURE myProc ALTER COLUMN p1 OPTIONS (ADD cardinality 100)";
+        final String content = "ALTER VIRTUAL PROCEDURE myProc ALTER PARAMETER p1 OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.PROCEDURE_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("myProc"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.PROCEDURE_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.procedureRefNode);
+        assertThat(alterOptionsNode.childrenWithName("p1").size(), is(1));
     }
 
     @Test
@@ -241,10 +254,11 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "ALTER VIRTUAL PROCEDURE myProc OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.PROCEDURE_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("myProc"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.PROCEDURE_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.procedureRefNode);
+        assertThat(alterOptionsNode.childrenWithName(TeiidDdlLexicon.AlterOptions.ALTERS).size(), is(1));
     }
 
     @Test
@@ -252,10 +266,11 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "ALTER VIRTUAL TABLE foo ALTER COLUMN bar OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.TABLE_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("foo"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.TABLE_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.tableRefNode);
+        assertThat(alterOptionsNode.childrenWithName("bar").size(), is(1));
     }
 
     @Test
@@ -263,10 +278,11 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "ALTER VIRTUAL TABLE foo OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.TABLE_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("foo"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.TABLE_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.tableRefNode);
+        assertThat(alterOptionsNode.childrenWithName(TeiidDdlLexicon.AlterOptions.ALTERS).size(), is(1));
     }
 
     @Test
@@ -274,10 +290,11 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "ALTER VIRTUAL VIEW G1 ALTER COLUMN e1 OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.VIEW_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("G1"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.VIEW_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.viewRefNode);
+        assertThat(alterOptionsNode.childrenWithName("e1").size(), is(1));
     }
 
     @Test
@@ -285,10 +302,11 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "ALTER VIRTUAL VIEW G1 OPTIONS (ADD cardinality 100)";
         final AstNode alterOptionsNode = this.parser.parse(getTokens(content), this.rootNode);
 
-        assertThat(alterOptionsNode.getName(), is(TeiidDdlLexicon.AlterOptions.VIEW_NODE_TYPE));
+        assertThat(alterOptionsNode.getName(), is("G1"));
         assertMixinType(alterOptionsNode, TeiidDdlLexicon.AlterOptions.VIEW_NODE_TYPE);
         assertProperty(alterOptionsNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
         assertProperty(alterOptionsNode, TeiidDdlLexicon.AlterOptions.REFERENCE, this.viewRefNode);
+        assertThat(alterOptionsNode.childrenWithName(TeiidDdlLexicon.AlterOptions.ALTERS).size(), is(1));
     }
 
     // ********* parse alter options list clause tests ***********
@@ -298,9 +316,10 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "OPTIONS (ADD updatable 'true')";
 
         assertThat(this.parser.parseAlterOptionsList(getTokens(content), this.rootNode), is(true));
-        final List<AstNode> nodes = this.rootNode.childrenWithName(TeiidDdlLexicon.AlterOptions.OPTIONS_LIST_NODE_TYPE);
+        final List<AstNode> nodes = this.rootNode.childrenWithName(TeiidDdlLexicon.AlterOptions.ALTERS);
         assertThat(nodes.size(), is(1));
         final AstNode optionsListNode = nodes.get(0);
+        assertMixinType(optionsListNode, TeiidDdlLexicon.AlterOptions.OPTIONS_LIST_NODE_TYPE);
 
         final List<AstNode> options = optionsListNode.childrenWithName("updatable");
         assertThat(options.size(), is(1));
@@ -312,9 +331,10 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "OPTIONS (SET updatable 'true')";
 
         assertThat(this.parser.parseAlterOptionsList(getTokens(content), this.rootNode), is(true));
-        final List<AstNode> nodes = this.rootNode.childrenWithName(TeiidDdlLexicon.AlterOptions.OPTIONS_LIST_NODE_TYPE);
+        final List<AstNode> nodes = this.rootNode.childrenWithName(TeiidDdlLexicon.AlterOptions.ALTERS);
         assertThat(nodes.size(), is(1));
         final AstNode optionsListNode = nodes.get(0);
+        assertMixinType(optionsListNode, TeiidDdlLexicon.AlterOptions.OPTIONS_LIST_NODE_TYPE);
 
         final List<AstNode> options = optionsListNode.childrenWithName("updatable");
         assertThat(options.size(), is(1));
@@ -326,9 +346,10 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "OPTIONS (DROP updatable)";
 
         assertThat(this.parser.parseAlterOptionsList(getTokens(content), this.rootNode), is(true));
-        final List<AstNode> nodes = this.rootNode.childrenWithName(TeiidDdlLexicon.AlterOptions.OPTIONS_LIST_NODE_TYPE);
+        final List<AstNode> nodes = this.rootNode.childrenWithName(TeiidDdlLexicon.AlterOptions.ALTERS);
         assertThat(nodes.size(), is(1));
         final AstNode optionsListNode = nodes.get(0);
+        assertMixinType(optionsListNode, TeiidDdlLexicon.AlterOptions.OPTIONS_LIST_NODE_TYPE);
 
         final Object value = optionsListNode.getProperty(TeiidDdlLexicon.AlterOptions.DROPPED);
         assertThat(value, is(instanceOf(List.class)));
@@ -344,9 +365,10 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         final String content = "OPTIONS (ADD sledge 'foo', SET hammer 'bar', DROP elvis, DROP ringo)";
 
         assertThat(this.parser.parseAlterOptionsList(getTokens(content), this.rootNode), is(true));
-        final List<AstNode> nodes = this.rootNode.childrenWithName(TeiidDdlLexicon.AlterOptions.OPTIONS_LIST_NODE_TYPE);
+        final List<AstNode> nodes = this.rootNode.childrenWithName(TeiidDdlLexicon.AlterOptions.ALTERS);
         assertThat(nodes.size(), is(1));
         final AstNode optionsListNode = nodes.get(0);
+        assertMixinType(optionsListNode, TeiidDdlLexicon.AlterOptions.OPTIONS_LIST_NODE_TYPE);
 
         { // first option
             final List<AstNode> options = optionsListNode.childrenWithName("sledge");
@@ -389,13 +411,13 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
     }
 
     @Test( expected = ParsingException.class )
-    public void shouldNotParseAlterColumnOptions() {
+    public void shouldNotParseOptionsListWithExtraComma() {
         final String content = "OPTIONS (SET updatable 'true',, ADD sledge 'foo')";
         this.parser.parseAlterOptionsList(getTokens(content), this.rootNode);
     }
 
     @Test
-    public void shouldNotParseOptionsListWithExtraComma() {
+    public void shouldNotParseOptionsListWithColumnOptions() {
         final String content = "ALTER COLUMN mycolumn OPTIONS (ADD updatable true)";
         assertThat(this.parser.parseAlterOptionsList(getTokens(content), this.rootNode), is(false));
     }
@@ -410,6 +432,7 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         assertThat(this.alterOptionsNodeTable.getChildCount(), is(1));
 
         final AstNode alterColumnNode = this.alterOptionsNodeTable.getFirstChild();
+        assertThat(alterColumnNode.getName(), is("bar"));
         assertMixinType(alterColumnNode, TeiidDdlLexicon.AlterOptions.COLUMN_NODE_TYPE);
         assertThat(alterColumnNode.getProperty(TeiidDdlLexicon.AlterOptions.REFERENCE), is(notNullValue()));
 
@@ -427,6 +450,7 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         assertThat(this.alterOptionsNodeTable.getChildCount(), is(1));
 
         final AstNode alterColumnNode = this.alterOptionsNodeTable.getFirstChild();
+        assertThat(alterColumnNode.getName(), is("bar"));
         assertMixinType(alterColumnNode, TeiidDdlLexicon.AlterOptions.COLUMN_NODE_TYPE);
         assertThat(alterColumnNode.getProperty(TeiidDdlLexicon.AlterOptions.REFERENCE), is(notNullValue()));
 
@@ -443,12 +467,13 @@ public class AlterOptionsParserTest extends TeiidDdlTest {
         assertThat(this.parser.parseAlterColumnOptions(getTokens(content), this.alterOptionsNodeProcedure), is(true));
         assertThat(this.alterOptionsNodeProcedure.getChildCount(), is(1));
 
-        final AstNode alterColumnNode = this.alterOptionsNodeProcedure.getFirstChild();
-        assertMixinType(alterColumnNode, TeiidDdlLexicon.AlterOptions.PARAMETER_NODE_TYPE);
-        assertThat(alterColumnNode.getProperty(TeiidDdlLexicon.AlterOptions.REFERENCE), is(notNullValue()));
+        final AstNode alterParamNode = this.alterOptionsNodeProcedure.getFirstChild();
+        assertThat(alterParamNode.getName(), is("p1"));
+        assertMixinType(alterParamNode, TeiidDdlLexicon.AlterOptions.PARAMETER_NODE_TYPE);
+        assertThat(alterParamNode.getProperty(TeiidDdlLexicon.AlterOptions.REFERENCE), is(notNullValue()));
 
         // option
-        final List<AstNode> options = alterColumnNode.childrenWithName("x");
+        final List<AstNode> options = alterParamNode.childrenWithName("x");
         assertThat(options.size(), is(1));
         assertProperty(options.get(0), StandardDdlLexicon.VALUE, "y");
     }
