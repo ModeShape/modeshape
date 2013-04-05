@@ -80,11 +80,13 @@ public class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
     @Override
     public JcrValue createValue( String value,
                                  int propertyType ) throws ValueFormatException {
+        if (value == null) return null;
         return new JcrValue(valueFactories, propertyType, convertValueToType(value, propertyType));
     }
 
     public JcrValue createValue( Object value,
                                  int propertyType ) throws ValueFormatException {
+        if (value == null) return null;
         return new JcrValue(valueFactories, propertyType, convertValueToType(value, propertyType));
     }
 
@@ -128,22 +130,26 @@ public class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
 
     @Override
     public JcrValue createValue( javax.jcr.Binary value ) {
+        if (value == null) return null;
         return new JcrValue(valueFactories, PropertyType.BINARY, value);
     }
 
     @Override
     public JcrValue createValue( InputStream value ) {
+        if (value == null) return null;
         BinaryValue binary = valueFactories.getBinaryFactory().create(value);
         return new JcrValue(valueFactories, PropertyType.BINARY, binary);
     }
 
     @Override
     public BinaryValue createBinary( InputStream value ) {
+        if (value == null) return null;
         return valueFactories.getBinaryFactory().create(value);
     }
 
     @Override
     public JcrValue createValue( Calendar value ) {
+        if (value == null) return null;
         DateTime dateTime = valueFactories.getDateFactory().create(value);
         return new JcrValue(valueFactories, PropertyType.DATE, dateTime);
     }
@@ -165,25 +171,30 @@ public class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
 
     @Override
     public JcrValue createValue( String value ) {
+        if (value == null) return null;
         return new JcrValue(valueFactories, PropertyType.STRING, value);
     }
 
     @Override
     public JcrValue createValue( BigDecimal value ) {
+        if (value == null) return null;
         return new JcrValue(valueFactories, PropertyType.DECIMAL, value);
     }
 
     @Override
     public BinaryValue createBinary( byte[] value ) {
+        if (value == null) return null;
         return valueFactories.getBinaryFactory().create(value);
     }
 
     @Override
     public JcrValue createValue( Date value ) {
+        if (value == null) return null;
         return new JcrValue(valueFactories, PropertyType.DATE, value);
     }
 
     public JcrValue createValue( Reference value ) {
+        if (value == null) return null;
         int refType = value.isWeak() ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE;
         return new JcrValue(valueFactories, refType, value);
     }

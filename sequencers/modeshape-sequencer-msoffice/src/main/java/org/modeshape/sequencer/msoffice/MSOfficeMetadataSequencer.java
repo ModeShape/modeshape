@@ -58,6 +58,7 @@ import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
+import javax.jcr.Value;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
@@ -147,7 +148,7 @@ public class MSOfficeMetadataSequencer extends Sequencer {
             sequencedNode = outputNode.addNode(METADATA_NODE, METADATA_NODE);
         }
 
-        sequencedNode.setProperty(JCR_MIME_TYPE, mimeType);
+        setProperty(sequencedNode, JCR_MIME_TYPE, mimeType);
         if (isPowerpoint(mimeType)) {
             InputStream stream = binaryValue.getStream();
             try {
@@ -195,12 +196,12 @@ public class MSOfficeMetadataSequencer extends Sequencer {
                                 InputStream stream ) throws IOException, RepositoryException {
         ExcelMetadata excelMetadata = ExcelMetadataReader.instance(stream);
         recordMetadata(sequencedNode, valueFactory, excelMetadata.getMetadata());
-        sequencedNode.setProperty(FULL_CONTENT, excelMetadata.getText());
+        setProperty(sequencedNode, FULL_CONTENT, excelMetadata.getText());
 
         for (ExcelSheetMetadata sheetMetadata : excelMetadata.getSheets()) {
             Node sheet = sequencedNode.addNode(EXCEL_SHEET, EXCEL_SHEET_NODE);
-            sheet.setProperty(SHEET_NAME, sheetMetadata.getName());
-            sheet.setProperty(TEXT, sheetMetadata.getText());
+            setProperty(sheet, SHEET_NAME, sheetMetadata.getName());
+            setProperty(sheet, TEXT, sheetMetadata.getText());
         }
     }
 
@@ -219,8 +220,8 @@ public class MSOfficeMetadataSequencer extends Sequencer {
 
         for (WordMetadata.WordHeading headingMetadata : wordMetadata.getHeadings()) {
             Node heading = rootNode.addNode(HEADING_NODE, HEADING_NODE);
-            heading.setProperty(HEADING_NAME, headingMetadata.getText());
-            heading.setProperty(HEADING_LEVEL, headingMetadata.getHeaderLevel());
+            setProperty(heading, HEADING_NAME, headingMetadata.getText());
+            setProperty(heading, HEADING_LEVEL, headingMetadata.getHeaderLevel());
         }
     }
 
@@ -236,34 +237,75 @@ public class MSOfficeMetadataSequencer extends Sequencer {
 
         for (SlideMetadata slideMetadata : deck.getSlides()) {
             Node slide = rootNode.addNode(SLIDE, SLIDE_NODE);
-            slide.setProperty(TITLE, slideMetadata.getTitle());
-            slide.setProperty(TEXT, slideMetadata.getText());
-            slide.setProperty(NOTES, slideMetadata.getNotes());
-            slide.setProperty(THUMBNAIL, valueFactory.createBinary(slideMetadata.getThumbnail()));
+            setProperty(slide, TITLE, slideMetadata.getTitle());
+            setProperty(slide, TEXT, slideMetadata.getText());
+            setProperty(slide, NOTES, slideMetadata.getNotes());
+            setProperty(slide, THUMBNAIL, valueFactory.createBinary(slideMetadata.getThumbnail()));
         }
     }
 
     private void recordMetadata( Node rootNode,
                                  org.modeshape.jcr.api.ValueFactory valueFactory,
                                  MSOfficeMetadata metadata ) throws RepositoryException {
-        rootNode.setProperty(TITLE, metadata.getTitle());
-        rootNode.setProperty(SUBJECT, metadata.getSubject());
-        rootNode.setProperty(AUTHOR, metadata.getAuthor());
-        rootNode.setProperty(KEYWORDS, metadata.getKeywords());
-        rootNode.setProperty(COMMENT, metadata.getComment());
-        rootNode.setProperty(TEMPLATE, metadata.getTemplate());
-        rootNode.setProperty(SAVED, valueFactory.createValue(metadata.getLastSaved()));
-        rootNode.setProperty(REVISION, metadata.getRevision());
-        rootNode.setProperty(TOTAL_EDITING_TIME, metadata.getTotalEditingTime());
-        rootNode.setProperty(LAST_PRINTED, valueFactory.createValue(metadata.getLastPrinted()));
-        rootNode.setProperty(CREATED, valueFactory.createValue(metadata.getCreated()));
-        rootNode.setProperty(PAGES, metadata.getPages());
-        rootNode.setProperty(WORDS, metadata.getWords());
-        rootNode.setProperty(CHARACTERS, metadata.getCharacters());
-        rootNode.setProperty(CREATING_APPLICATION, metadata.getCreatingApplication());
-        byte[] thumbnail = metadata.getThumbnail();
-        if (thumbnail != null) {
-            rootNode.setProperty(THUMBNAIL, valueFactory.createBinary(thumbnail));
+        setProperty(rootNode, TITLE, metadata.getTitle());
+        setProperty(rootNode, SUBJECT, metadata.getSubject());
+        setProperty(rootNode, AUTHOR, metadata.getAuthor());
+        setProperty(rootNode, KEYWORDS, metadata.getKeywords());
+        setProperty(rootNode, COMMENT, metadata.getComment());
+        setProperty(rootNode, TEMPLATE, metadata.getTemplate());
+        setProperty(rootNode, SAVED, valueFactory.createValue(metadata.getLastSaved()));
+        setProperty(rootNode, REVISION, metadata.getRevision());
+        setProperty(rootNode, TOTAL_EDITING_TIME, metadata.getTotalEditingTime());
+        setProperty(rootNode, LAST_PRINTED, valueFactory.createValue(metadata.getLastPrinted()));
+        setProperty(rootNode, CREATED, valueFactory.createValue(metadata.getCreated()));
+        setProperty(rootNode, PAGES, metadata.getPages());
+        setProperty(rootNode, WORDS, metadata.getWords());
+        setProperty(rootNode, CHARACTERS, metadata.getCharacters());
+        setProperty(rootNode, CREATING_APPLICATION, metadata.getCreatingApplication());
+        setProperty(rootNode, THUMBNAIL, valueFactory.createBinary(metadata.getThumbnail()));
+    }
+
+    private void setProperty( Node node,
+                              String propertyName,
+                              String value ) throws RepositoryException {
+        if (value != null) {
+            node.setProperty(propertyName, value);
+        }
+    }
+
+    private void setProperty( Node node,
+                              String propertyName,
+                              Value value ) throws RepositoryException {
+        if (value != null) {
+            node.setProperty(propertyName, value);
+        }
+    }
+
+    private void setProperty( Node node,
+                              String propertyName,
+                              Binary value ) throws RepositoryException {
+        if (value != null) {
+            node.setProperty(propertyName, value);
+        }
+    }
+
+    // Intentionally use the Long object form, in case this is called by methods that return a null Long reference
+    // for optional values
+    private void setProperty( Node node,
+                              String propertyName,
+                              Long value ) throws RepositoryException {
+        if (value != null) {
+            node.setProperty(propertyName, value.longValue());
+        }
+    }
+
+    // Intentionally use the Integer object form, in case this is called by methods that return a null Integer reference
+    // for optional values
+    private void setProperty( Node node,
+                              String propertyName,
+                              Integer value ) throws RepositoryException {
+        if (value != null) {
+            node.setProperty(propertyName, value.longValue());
         }
     }
 
