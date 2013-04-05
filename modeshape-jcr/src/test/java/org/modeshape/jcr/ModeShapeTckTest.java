@@ -50,6 +50,8 @@ import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionIterator;
 import javax.jcr.version.VersionManager;
+
+import junit.framework.Assert;
 import junit.framework.Test;
 import org.apache.jackrabbit.test.AbstractJCRTest;
 import org.apache.jackrabbit.test.api.ShareableNodeTest;
@@ -284,7 +286,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     /**
      * Tests that read-only sessions can read nodes by loading all of the children of the root node
-     * 
+     *
      * @throws Exception
      */
     public void testShouldAllowReadOnlySessionToRead() throws Exception {
@@ -294,7 +296,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     /**
      * Tests that read-only sessions cannot add nodes, remove nodes, set nodes, or set properties.
-     * 
+     *
      * @throws Exception
      */
     public void testShouldNotAllowReadOnlySessionToWrite() throws Exception {
@@ -323,7 +325,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     /**
      * Tests that read-only sessions cannot register namespaces or types
-     * 
+     *
      * @throws Exception
      */
     public void testShouldNotAllowReadOnlySessionToAdmin() throws Exception {
@@ -342,7 +344,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     /**
      * Tests that read-write sessions can read nodes by loading all of the children of the root node
-     * 
+     *
      * @throws Exception
      */
     public void testShouldAllowReadWriteSessionToRead() throws Exception {
@@ -352,7 +354,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     /**
      * Tests that read-write sessions can add nodes, remove nodes, set nodes, and set properties.
-     * 
+     *
      * @throws Exception
      */
     public void testShouldAllowReadWriteSessionToWrite() throws Exception {
@@ -362,7 +364,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     /**
      * Tests that read-write sessions cannot register namespaces or types
-     * 
+     *
      * @throws Exception
      */
     public void testShouldNotAllowReadWriteSessionToAdmin() throws Exception {
@@ -381,7 +383,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     /**
      * Tests that admin sessions can read nodes by loading all of the children of the root node
-     * 
+     *
      * @throws Exception
      */
     public void testShouldAllowAdminSessionToRead() throws Exception {
@@ -391,7 +393,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     /**
      * Tests that admin sessions can add nodes, remove nodes, set nodes, and set properties.
-     * 
+     *
      * @throws Exception
      */
     public void testShouldAllowAdminSessionToWrite() throws Exception {
@@ -401,7 +403,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     /**
      * Tests that admin sessions can register namespaces and types
-     * 
+     *
      * @throws Exception
      */
     public void testShouldAllowAdminSessionToAdmin() throws Exception {
@@ -412,7 +414,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     /**
      * User defaultuser is configured to have readwrite in "otherWorkspace" and readonly in the default workspace. This test makes
      * sure both work.
-     * 
+     *
      * @throws Exception
      */
     public void testShouldMapReadRolesToWorkspacesWhenSpecified() throws Exception {
@@ -439,7 +441,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     /**
      * User defaultuser is configured to have readwrite in "otherWorkspace" and readonly in the default workspace. This test makes
      * sure both work.
-     * 
+     *
      * @throws Exception
      */
     public void testShouldMapWriteRolesToWorkspacesWhenSpecified() throws Exception {
@@ -464,7 +466,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     /**
      * Users should not be able to see workspaces to which they don't at least have read access. User 'noaccess' has no access to
      * the default workspace.
-     * 
+     *
      * @throws Exception
      */
     public void testShouldNotSeeWorkspacesWithoutReadPermission() throws Exception {
@@ -513,7 +515,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     /**
      * A clone operation with removeExisting = true should fail if it would require removing an existing node that is a mandatory
      * child node of some other parent (and not replacing it as part of the clone operation).
-     * 
+     *
      * @throws Exception if an error occurs
      */
     public void testShouldNotCloneIfItWouldViolateTypeSemantics() throws Exception {
@@ -960,6 +962,41 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         } catch (PathNotFoundException pnfe) {
             fail("Ignored property should be copied to versionable child of versioned node when in a COPY subgraph");
         }
+    }
+
+    public void testShouldRestoreDeletedNode() throws Exception {
+        session = getHelper().getReadWriteSession();
+        Node node = getTestRoot(session).addNode("checkInTest", "nt:folder");
+        session.save();
+
+        /*
+         * Create /checkInTest/removeNode with versionable attributes.
+         * This node will be removed and restored.
+         */
+
+        Node n = node.addNode("removeNode", "nt:folder");
+        n.addMixin("mix:title");
+        n.addMixin("mix:versionable");
+        n.addMixin("mix:lastModified");
+        n.addMixin("mix:shareable");
+
+        VersionManager vm = session.getWorkspace().getVersionManager();
+
+        // Version 1.0
+        vm.checkout(n.getPath());
+        n.setProperty("jcr:description", "Version 1.0");
+        session.save();
+        Version v = vm.checkin(n.getPath());
+        Assert.assertEquals("1.0", v.getName());
+
+        n.remove();
+        session.save();
+
+        vm.restore(v, false);
+        session.save();
+
+        Node restoreNode = session.getNode(n.getPath());
+        session.save();
     }
 
     public void testShouldRestorePropertiesOnVersionableNode() throws Exception {
@@ -2603,7 +2640,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
      * NOTE: This is a copy of the {@link ShareableNodeTest#testRestoreRemoveExisting()} method in the TCK test, useful for
      * debugging.
      * </p>
-     * 
+     *
      * @throws Exception
      * @see ShareableNodeTest#testRestoreRemoveExisting()
      */
@@ -2716,7 +2753,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     /**
      * Return a shared set as an array of nodes.
-     * 
+     *
      * @param n node
      * @return array of nodes in shared set
      * @throws RepositoryException
@@ -2727,7 +2764,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     /**
      * Return an array of nodes given a <code>NodeIterator</code>.
-     * 
+     *
      * @param iter node iterator
      * @return node array
      */
