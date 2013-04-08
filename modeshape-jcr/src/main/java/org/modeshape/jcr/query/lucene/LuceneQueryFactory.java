@@ -52,6 +52,7 @@ import org.apache.lucene.util.Version;
 import org.hibernate.search.SearchFactory;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.query.qom.Between;
 import org.modeshape.jcr.api.query.qom.NodeDepth;
 import org.modeshape.jcr.api.query.qom.NodePath;
@@ -74,6 +75,7 @@ import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.SetCriteria;
 import org.modeshape.jcr.query.validate.Schemata;
 import org.modeshape.jcr.query.validate.Schemata.Column;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
@@ -174,6 +176,7 @@ public abstract class LuceneQueryFactory {
                             if (resolvedValue instanceof Literal) {
                                 elementInRight = (Literal)resolvedValue;
                             } else {
+                                resolvedValue = convertBindVariableValue(resolvedValue);
                                 elementInRight = new Literal(resolvedValue);
                             }
                             Query rightQuery = createQuery(selectorName, left, Operator.EQUAL_TO, elementInRight);
@@ -251,6 +254,20 @@ public abstract class LuceneQueryFactory {
         assert false : "Unexpected Constraint instance: class=" + (constraint != null ? constraint.getClass() : "null")
                        + " and instance=" + constraint;
         return null;
+    }
+
+    /**
+     * Some variable values may be obtained from psuedo-columns that are not of the correct class to use as constraint values. So
+     * we need to convert these to value types we can use.
+     * 
+     * @param value the value; may be null
+     * @return the possibly converted value
+     */
+    private Object convertBindVariableValue( Object value ) {
+        if (value instanceof Path || value instanceof Name || value instanceof Binary) {
+            return stringFactory.create(value);
+        }
+        return value;
     }
 
     public Query createQuery( SelectorName selectorName,
@@ -341,6 +358,7 @@ public abstract class LuceneQueryFactory {
             if (value == null) {
                 throw new LuceneException(JcrI18n.missingVariableValue.text(variableName));
             }
+            value = convertBindVariableValue(value);
             // if (value instanceof String || value instanceof Binary) {
             // value = caseOperation.execute(stringValueFrom(value));
             // }

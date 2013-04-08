@@ -259,7 +259,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
                 c.setProperty("propC", "value1");
                 c.setProperty("notion:singleReference", a);
                 c.setProperty("notion:multipleReferences", refValues);
-                session.getRootNode().addNode("NodeB", "nt:unstructured").setProperty("myUrl", "http://www.acme.com/foo/bar");
+                Node b = session.getRootNode().addNode("NodeB", "nt:unstructured");
+                b.setProperty("myUrl", "http://www.acme.com/foo/bar");
+                b.setProperty("pathProperty", a.getPath());
                 session.save();
 
                 // Initialize the nodes count
@@ -1347,6 +1349,21 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 4); // the 4 types of cars made by makers that make hybrids
         assertResultsHaveColumns(result, carColumnNames("car:Car"));
+    }
+
+    @FixFor( "MODE-1873" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithSubqueryInCriteriaWhenSubquerySelectsPseudoColumn()
+        throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT [jcr:path] FROM [nt:unstructured] WHERE [pathProperty] IN (SELECT [jcr:path] FROM [nt:unstructured] WHERE PATH() LIKE '/Other/%')",
+                                          Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1); // the 4 types of cars made by makers that make hybrids
+        assertResultsHaveColumns(result, new String[] {"jcr:path"});
     }
 
     @FixFor( "MODE-909" )

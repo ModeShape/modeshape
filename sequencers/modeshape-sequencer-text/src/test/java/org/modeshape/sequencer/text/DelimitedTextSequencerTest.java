@@ -24,10 +24,11 @@
 package org.modeshape.sequencer.text;
 
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 
 /**
  * Unit test for {@link DelimitedTextSequencer}
- *
+ * 
  * @author Horia Chiorean
  */
 public class DelimitedTextSequencerTest extends AbstractTextSequencerTest {
@@ -40,7 +41,8 @@ public class DelimitedTextSequencerTest extends AbstractTextSequencerTest {
 
         assertRows(filePath, 1, TEST_COLUMNS);
     }
-   @Test
+
+    @Test
     public void shouldSequenceCommaDelimitedFileWithOneLineAndNoTrailingNewLine() throws Exception {
         String filename = "oneLineCommaDelimitedFileNoTrailingNewLine.csv";
         String filePath = getTestFilePath(filename);
@@ -94,7 +96,6 @@ public class DelimitedTextSequencerTest extends AbstractTextSequencerTest {
         assertRows(filePath, 4, TEST_COLUMNS);
     }
 
-
     @Test
     public void shouldSequenceCommaDelimitedFileUpToMaximumLinesSetting() throws Exception {
         String filename = "multiLineCommaDelimitedFile.csv";
@@ -102,6 +103,41 @@ public class DelimitedTextSequencerTest extends AbstractTextSequencerTest {
 
         String sequencedPath = "delimited/maxlines/" + filename;
         assertRows(sequencedPath, 3, TEST_COLUMNS);
+    }
+
+    @Test
+    @FixFor( "MODE-1873" )
+    public void shouldBeAbleToQueryForDerivedContent() throws Exception {
+        String filename = "multiLineCommaDelimitedFile.csv";
+        createNodeWithContentFromFile("maxlines/" + filename, "delimited/" + filename);
+
+        String sequencedPath = "/maxlines/" + filename;
+        String sequencedOutputPath = "delimited/maxlines/" + filename;
+        assertRows(sequencedOutputPath, 3, TEST_COLUMNS);
+
+        // print = true;
+        print("/maxlines");
+        print("/delimited");
+
+        // Now query for the results ...
+        assertJcrSql2Query("SELECT [jcr:path] FROM [nt:base] WHERE PATH() = '" + sequencedPath + "'", 1);
+        assertJcrSql2Query("SELECT [jcr:path] FROM [nt:base] WHERE PATH() = '" + sequencedPath + "/jcr:content'", 1);
+        assertJcrSql2Query("SELECT [jcr:path] FROM [nt:base] WHERE [jcr:path] IN (SELECT [jcr:path] FROM [nt:base] WHERE PATH() = '/maxlines/multiLineCommaDelimitedFile.csv/jcr:content' )",
+                           1);
+        assertJcrSql2Query("SELECT [jcr:path] FROM [nt:base] WHERE PATH() IN (SELECT [jcr:path] FROM [nt:base] WHERE PATH() = '/maxlines/multiLineCommaDelimitedFile.csv/jcr:content' )",
+                           1);
+        assertJcrSql2Query("SELECT [jcr:path],[jcr:mixinTypes] FROM [nt:base] WHERE ISDESCENDANTNODE('/maxlines')", 2);
+        assertJcrSql2Query("SELECT [mode:derivedFrom] FROM [nt:base] WHERE [mode:derivedFrom] IS NOT NULL", 1);
+        assertJcrSql2Query("SELECT [jcr:path] FROM [mode:derived] AS d WHERE d.[mode:derivedFrom] LIKE '/maxlines%'", 1);
+        assertJcrSql2Query("SELECT [jcr:path] FROM [mode:derived] AS d WHERE d.[mode:derivedFrom] = '/maxlines/multiLineCommaDelimitedFile.csv/jcr:content'",
+                           1);
+        assertJcrSql2Query("SELECT [jcr:path] FROM [mode:derived] AS d WHERE d.[mode:derivedFrom] IN ( '/maxlines/multiLineCommaDelimitedFile.csv/jcr:content' )",
+                           1);
+        assertJcrSql2Query("SELECT [jcr:path] FROM [mode:derived] AS d WHERE d.[mode:derivedFrom] in (SELECT [jcr:path] FROM [nt:base] WHERE PATH() = '/maxlines/multiLineCommaDelimitedFile.csv/jcr:content' )",
+                           1);
+        assertJcrSql2Query("SELECT [jcr:path] FROM [mode:derived] AS d WHERE d.[mode:derivedFrom] in (SELECT [jcr:path] FROM [nt:base] WHERE PATH() = '"
+                           + sequencedPath + "/jcr:content' )",
+                           1);
     }
 
     private String getTestFilePath( String filename ) {
