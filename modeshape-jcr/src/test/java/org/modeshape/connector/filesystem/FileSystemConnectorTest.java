@@ -196,7 +196,6 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         // Make sure that we can re-read the binary content via JCR ...
         Node contentNode = session.getNode("/testRoot/store/dir3/newFile.txt/jcr:content");
         Binary value = (Binary)contentNode.getProperty("jcr:data").getBinary();
-        String binStr = new String(IoUtil.readBytes(value.getStream()));
         assertBinaryContains(value, actualContent.getBytes());
     }
 
