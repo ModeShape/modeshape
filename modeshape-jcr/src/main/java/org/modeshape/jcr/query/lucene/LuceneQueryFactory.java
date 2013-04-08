@@ -172,16 +172,14 @@ public abstract class LuceneQueryFactory {
                         while (iter.hasNext()) {
                             Object resolvedValue = iter.next();
                             if (resolvedValue == null) continue;
-                            StaticOperand elementInRight = null;
-                            if (resolvedValue instanceof Literal) {
-                                elementInRight = (Literal)resolvedValue;
+                            if (resolvedValue instanceof Object[]) {
+                                // The row has multiple values (e.g., a multi-valued property) ...
+                                for (Object val : (Object[])resolvedValue) {
+                                    addQueryForValue(setQuery, selectorName, left, val);
+                                }
                             } else {
-                                resolvedValue = convertBindVariableValue(resolvedValue);
-                                elementInRight = new Literal(resolvedValue);
+                                addQueryForValue(setQuery, selectorName, left, resolvedValue);
                             }
-                            Query rightQuery = createQuery(selectorName, left, Operator.EQUAL_TO, elementInRight);
-                            if (rightQuery == null) continue;
-                            setQuery.add(rightQuery, Occur.SHOULD);
                         }
                     }
                     if (value == null) {
@@ -268,6 +266,21 @@ public abstract class LuceneQueryFactory {
             return stringFactory.create(value);
         }
         return value;
+    }
+
+    private void addQueryForValue( BooleanQuery setQuery,
+                                   SelectorName selectorName,
+                                   DynamicOperand left,
+                                   Object resolvedValue ) throws IOException {
+        StaticOperand elementInRight = null;
+        if (resolvedValue instanceof Literal) {
+            elementInRight = (Literal)resolvedValue;
+        } else {
+            resolvedValue = convertBindVariableValue(resolvedValue);
+            elementInRight = new Literal(resolvedValue);
+        }
+        Query rightQuery = createQuery(selectorName, left, Operator.EQUAL_TO, elementInRight);
+        if (rightQuery != null) setQuery.add(rightQuery, Occur.SHOULD);
     }
 
     public Query createQuery( SelectorName selectorName,

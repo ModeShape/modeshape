@@ -95,6 +95,11 @@ public class QueryResultColumns implements Columns {
             this.columnIndex = columnIndex;
             this.type = type;
         }
+
+        @Override
+        public String toString() {
+            return "" + columnIndex + "(" + type + ")";
+        }
     }
 
     /**

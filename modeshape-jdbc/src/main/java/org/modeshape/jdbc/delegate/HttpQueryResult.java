@@ -26,6 +26,7 @@ package org.modeshape.jdbc.delegate;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +73,11 @@ public final class HttpQueryResult implements QueryResult {
     @Override
     public String getPlan() {
         return null;
+    }
+
+    @Override
+    public Collection<String> getWarnings() {
+        return Collections.emptyList();
     }
 
     @Override

@@ -39,9 +39,6 @@ import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.collection.Problem;
-import org.modeshape.common.collection.Problem.Status;
-import org.modeshape.common.collection.Problems;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrRepository.QueryLanguage;
@@ -226,18 +223,6 @@ class JcrQueryManager implements QueryManager {
         }
         JcrQueryContext context = new SessionQueryContext(session);
         return new JcrQuery(context, expression, language, command, hints, storedAtPath);
-    }
-
-    protected void checkForProblems( Problems problems ) throws RepositoryException {
-        if (problems.hasErrors()) {
-            // Build a message with the problems ...
-            StringBuilder msg = new StringBuilder();
-            for (Problem problem : problems) {
-                if (problem.getStatus() != Status.ERROR) continue;
-                msg.append(problem.getMessageString()).append("\n");
-            }
-            throw new RepositoryException(msg.toString());
-        }
     }
 
     protected static class SessionQueryContext implements JcrQueryContext {
