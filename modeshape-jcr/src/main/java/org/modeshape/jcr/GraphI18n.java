@@ -186,7 +186,11 @@ public final class GraphI18n {
     /* Query */
     public static I18n unknownQueryLanguage;
     public static I18n tableDoesNotExist;
+    public static I18n tableDoesNotExistButMatchesAnotherTable;
     public static I18n columnDoesNotExistOnTable;
+    public static I18n columnDoesNotExistOnTableAndMayBeResidual;
+    public static I18n columnDoesNotExistOnTableAndMayBeTypo;
+    public static I18n columnDoesNotExistOnTableAndMayBeWrongSelector;
     public static I18n columnDoesNotExistInQuery;
     public static I18n columnIsNotFullTextSearchable;
     public static I18n tableIsNotFullTextSearchable;

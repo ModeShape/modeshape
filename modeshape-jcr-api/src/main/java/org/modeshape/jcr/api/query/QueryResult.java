@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.api.query;
 
+import java.util.Collection;
 import javax.jcr.PropertyType;
 
 /**
@@ -51,5 +52,21 @@ public interface QueryResult extends javax.jcr.query.QueryResult {
      *         captured for the query (though currently it is always captured)
      */
     public String getPlan();
+
+    /**
+     * Get any warnings that might describe potential problems with this query.
+     * <p>
+     * Note that a query that has warnings is not necessarily incorrect or potentially wrong - because of residual properties,
+     * ModeShape may produce warnings for queries that are perfectly valid.
+     * </p>
+     * <p>
+     * However, if a query does not give the expected results (during development), check the warnings to see if ModeShape can
+     * suggest specific things to look at. For example, a warnings might suggest that a column might be resolved on a different
+     * selector, or that a column might have been misspelled.
+     * </p>
+     * 
+     * @return the collection of warnings; never null be empty when there are no warnings
+     */
+    public Collection<String> getWarnings();
 
 }

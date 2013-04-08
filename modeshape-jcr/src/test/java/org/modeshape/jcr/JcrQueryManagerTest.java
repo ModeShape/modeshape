@@ -190,8 +190,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         return new String[] {"jcr:score"};
     }
 
-    private boolean print;
-
     @SuppressWarnings( "deprecation" )
     @BeforeClass
     public static void beforeAll() throws Exception {
@@ -559,6 +557,102 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     // ----------------------------------------------------------------------------------------------------------------
     // JCR-SQL2 Queries
     // ----------------------------------------------------------------------------------------------------------------
+
+    @FixFor( "MODE-1888" )
+    @Test
+    public void shouldCaptureWarningsAboutPotentialTypos() throws RepositoryException {
+        String sql = "SELECT [jcr.uuid] FROM [nt:file]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        // print = true;
+        printMessage(result.getWarnings());
+        assertThat(result.getWarnings().size(), is(1));
+        assertResults(query, result, 0L);
+    }
+
+    @FixFor( "MODE-1888" )
+    @Test
+    public void shouldCaptureWarningsAboutUsingMisspelledColumnOnWrongSelector() throws RepositoryException {
+        String sql = "SELECT file.[jcr.uuid] FROM [nt:file] AS file JOIN [mix:referenceable] AS ref ON ISSAMENODE(file,ref)";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        // print = true;
+        printMessage(result.getWarnings());
+        assertThat(result.getWarnings().size(), is(1));
+        assertResults(query, result, 0L);
+    }
+
+    @FixFor( "MODE-1888" )
+    @Test
+    public void shouldCaptureWarningsAboutUsingColumnOnWrongSelector() throws RepositoryException {
+        String sql = "SELECT file.[jcr:uuid] FROM [nt:file] AS file JOIN [mix:referenceable] AS ref ON ISSAMENODE(file,ref)";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        // print = true;
+        printMessage(result.getWarnings());
+        assertThat(result.getWarnings().size(), is(1));
+        assertResults(query, result, 0L);
+    }
+
+    @FixFor( "MODE-1888" )
+    @Test
+    public void shouldCaptureWarningAboutUseOfResidualProperties() throws RepositoryException {
+        String sql = "SELECT [foo_bar] FROM [nt:unstructured]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        assertThat(result.getWarnings().size(), is(1));
+        // print = true;
+        printMessage(result.getWarnings());
+        assertResults(query, result, 24L);
+    }
+
+    @FixFor( "MODE-1888" )
+    @Test
+    public void shouldNotCaptureWarningAboutUseOfPseudoColumns() throws RepositoryException {
+        String sql = "SELECT [jcr:path] FROM [nt:unstructured]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        assertThat(result.getWarnings().size(), is(0));
+        // print = true;
+        printMessage(result.getWarnings());
+        assertResults(query, result, 24L);
+    }
+
+    @FixFor( "MODE-1888" )
+    @Test
+    public void shouldCaptureWarningAboutUseOfPseudoColumnWithPeriodInsteadOfColonDelimiter() throws RepositoryException {
+        String sql = "SELECT [jcr.path] FROM [nt:unstructured]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        assertThat(result.getWarnings().size(), is(1));
+        // print = true;
+        printMessage(result.getWarnings());
+        assertResults(query, result, 24L);
+    }
+
+    @FixFor( "MODE-1888" )
+    @Test
+    public void shouldCaptureWarningAboutUseOfPseudoColumnWithUnderscoreInsteadOfColonDelimiter() throws RepositoryException {
+        String sql = "SELECT [jcr_path] FROM [nt:unstructured]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        assertThat(result.getWarnings().size(), is(1));
+        // print = true;
+        printMessage(result.getWarnings());
+        assertResults(query, result, 24L);
+    }
+
+    @FixFor( "MODE-1888" )
+    @Test
+    public void shouldCaptureWarningAboutUseOfNonPluralJcrMixinTypeColumn() throws RepositoryException {
+        String sql = "SELECT [jcr:mixinType] FROM [nt:unstructured]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        assertThat(result.getWarnings().size(), is(1));
+        // print = true;
+        printMessage(result.getWarnings());
+        assertResults(query, result, 24L);
+    }
 
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllNodes() throws RepositoryException {

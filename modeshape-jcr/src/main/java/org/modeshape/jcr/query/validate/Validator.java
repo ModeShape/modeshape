@@ -24,7 +24,9 @@
 package org.modeshape.jcr.query.validate;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.query.qom.Literal;
@@ -534,7 +536,14 @@ public class Validator extends AbstractVisitor {
                                       boolean columnIsRequired ) {
         Table table = tableWithNameOrAlias(selectorName);
         if (table == null) {
-            problems.addError(GraphI18n.tableDoesNotExist, selectorName.name());
+            StringBuilder existingSelectors = new StringBuilder();
+            boolean first = true;
+            for (SelectorName sel : selectorsByNameOrAlias.keySet()) {
+                if (first) first = false;
+                else existingSelectors.append(", ");
+                existingSelectors.append("'").append(sel.getString()).append("'");
+            }
+            problems.addError(GraphI18n.tableDoesNotExistButMatchesAnotherTable, selectorName.name(), existingSelectors);
             return null;
         }
         Schemata.Column column = table.getColumn(propertyName);
@@ -542,11 +551,59 @@ public class Validator extends AbstractVisitor {
             // Maybe the supplied property name is really an alias ...
             column = this.columnsByAlias.get(propertyName);
             boolean propertyNameIsWildcard = propertyName == null || "*".equals(propertyName);
-            if (column == null && !propertyNameIsWildcard && columnIsRequired && !table.hasExtraColumns()) {
-                problems.addError(GraphI18n.columnDoesNotExistOnTable, propertyName, selectorName.name());
+            if (column == null && !propertyNameIsWildcard) {
+                if (!table.hasExtraColumns() && columnIsRequired) {
+                    problems.addError(GraphI18n.columnDoesNotExistOnTable, propertyName, selectorName.name());
+                    checkVariationsOfPropertyName(selectorName, propertyName, table, problems);
+                } else {
+                    if (!checkVariationsOfPropertyName(selectorName, propertyName, table, problems)) {
+                        problems.addWarning(GraphI18n.columnDoesNotExistOnTableAndMayBeResidual,
+                                            propertyName,
+                                            selectorName.name());
+                    }
+                }
             }
         }
         return column; // may be null
     }
 
+    protected boolean checkVariationsOfPropertyName( SelectorName selector,
+                                                     String propertyName,
+                                                     Table actualTable,
+                                                     Problems problems ) {
+        Set<String> vars = new HashSet<String>();
+        vars.add(propertyName);
+
+        // Now add some common misspellings ...
+        vars.add(propertyName.replace('.', ':')); // period instead of colon
+        vars.add(propertyName.replace('_', ':')); // underscore instead of colon
+        if ("jcr:mixinType".equalsIgnoreCase(propertyName) || "jcr.mixinType".equalsIgnoreCase(propertyName)) {
+            vars.add("jcr:mixinTypes");
+        }
+        if ("jcr:uid".equalsIgnoreCase(propertyName) || "jcr:uuuid".equalsIgnoreCase(propertyName)) {
+            vars.add("jcr:uuid");
+        }
+
+        // Look to see if any of these variations can be found on any of the selectors ...
+        boolean found = false;
+        for (SelectorName selectorName : selectorsByNameOrAlias.keySet()) {
+            Table table = tableWithNameOrAlias(selectorName);
+            for (String var : vars) {
+                if (table != null && table.getColumn(var) != null) {
+                    if (table == actualTable) {
+                        problems.addWarning(GraphI18n.columnDoesNotExistOnTableAndMayBeTypo, propertyName, selector.name(), var);
+                        found = true;
+                    } else {
+                        problems.addWarning(GraphI18n.columnDoesNotExistOnTableAndMayBeWrongSelector,
+                                            propertyName,
+                                            selector.name(),
+                                            var,
+                                            selectorName.name());
+                        found = true;
+                    }
+                }
+            }
+        }
+        return found;
+    }
 }
