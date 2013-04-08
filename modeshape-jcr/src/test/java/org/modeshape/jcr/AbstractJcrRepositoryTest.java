@@ -41,6 +41,8 @@ import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryResult;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
@@ -199,9 +201,26 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
         return false;
     }
 
+    protected QueryResult assertJcrSql2Query( String sql,
+                                              long expectedRowCount ) throws RepositoryException {
+        Query query = session().getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult results = query.execute();
+        printMessage(query.getStatement());
+        printResults(results);
+        printMessage("");
+        assertThat(results.getRows().getSize(), is(expectedRowCount));
+        return results;
+    }
+
     protected void printMessage( String message ) {
         if (print) {
             System.out.println(message);
+        }
+    }
+
+    protected void printResults( QueryResult results ) {
+        if (print) {
+            System.out.println(results);
         }
     }
 
