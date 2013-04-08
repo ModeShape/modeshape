@@ -219,7 +219,13 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
     }
 
     protected void printResults( QueryResult results ) {
+        printResults(null, results);
+    }
+
+    protected void printResults( String msg,
+                                 QueryResult results ) {
         if (print) {
+            if (msg != null) System.out.println(msg);
             System.out.println(results);
         }
     }
