@@ -60,14 +60,14 @@ import java.math.BigInteger;
 import java.util.*;
 
 /**
- * @author kulikov
+ * @author Oleg Kulikov
  * @author Ivan Vasyliev
  */
 public class CmisConnector extends Connector {
 
     //path and id for the repository node
-    private static final String REPOSITORY_ID = "repository";
-    private static final String REPOSITORY_NODE_NAME = "repository";
+    private static final String REPOSITORY_INFO_ID = "repositoryInfo";
+    private static final String REPOSITORY_INFO_NODE_NAME = "repositoryInfo";
     private Session session;
     private ValueFactories factories;
     //binding parameters
@@ -136,9 +136,6 @@ public class CmisConnector extends Connector {
         registry.registerNamespace(CmisLexicon.Namespace.PREFIX, CmisLexicon.Namespace.URI);
         importTypes(session.getTypeDescendants(null, Integer.MAX_VALUE, true), nodeTypeManager, registry);
         registerRepositoryInfoType(nodeTypeManager);
-
-        InputStream cndStream = getClass().getClassLoader().getResourceAsStream("cmis.cnd");
-        nodeTypeManager.registerNodeTypes(cndStream, true);        
     }
 
     @Override
@@ -149,7 +146,7 @@ public class CmisConnector extends Connector {
         
         //this action depends from object type                
         switch (objectId.getType()) {
-            case REPOSITORY:
+            case REPOSITORY_INFO:
                 //convert information about repository from 
                 //cmis domain into jcr domain
                 return cmisRepository();
@@ -181,7 +178,7 @@ public class CmisConnector extends Connector {
         
         //this action depends from object type        
         switch (objectId.getType()) {
-            case REPOSITORY :
+            case REPOSITORY_INFO:
                 //information about repository is ready only
                 return false;
             case CONTENT :
@@ -231,7 +228,7 @@ public class CmisConnector extends Connector {
 
         //this action depends from object type
         switch (objectId.getType()) {
-            case REPOSITORY:
+            case REPOSITORY_INFO:
                 //exist always 
                 return true;
             case CONTENT:
@@ -257,7 +254,7 @@ public class CmisConnector extends Connector {
         
         //this action depends from object type
         switch (objectId.getType()) {
-            case REPOSITORY :
+            case REPOSITORY_INFO:
                 //repository information is ready only
                 return;
             case CONTENT :
@@ -280,7 +277,7 @@ public class CmisConnector extends Connector {
                 //original object is here so converting binary value and
                 //updating original cmis:document
                 ContentStream stream = jcrBinaryContent(document);
-                if (stream != null && cmisObject != null) {
+                if (stream != null) {
                     ((org.apache.chemistry.opencmis.client.api.Document)cmisObject).setContentStream(stream, true);
                 }
                 break;
@@ -314,43 +311,37 @@ public class CmisConnector extends Connector {
                 
                 //jcr properties are grouped by namespace uri
                 //we will travers over all namespaces (ie group of properties)
-                Iterator<Field> it = jcrProperties.fields().iterator();
-                while (it.hasNext()) {
+                for (Field field : jcrProperties.fields()) {
                     //field has namespace uri as field's name and properties
                     //as value
-                    Field field = it.next();
-                    
                     //getting namespace uri and properties
                     String namespaceUri = field.getName();
                     Document props = field.getValueAsDocument();
-                    
+
                     //namespace uri uniquily defines prefix for the property name
                     String prefix = prefixes.value(namespaceUri);
-                    
+
                     //now scroll over properties
-                    Iterator<Field> pit = props.fields().iterator();
-                    while (pit.hasNext()) {
-                        Field property = pit.next();
-                        
+                    for (Field property : props.fields()) {
                         //getting jcr fully qualified name of property
                         //then determine the the name of this property 
                         //in the cmis domain
                         String jcrPropertyName = prefix + property.getName();
                         String cmisPropertyName = properties.findCmisName(jcrPropertyName);
-                        
+
                         //now we need to convert value, we will use 
                         //property definition from the original cmis repo for this step
                         PropertyDefinition pdef = propDefs.get(cmisPropertyName);
-                        
+
                         //unknown property? 
                         if (pdef == null) {
                             //ignore
                             return;
                         }
-                        
+
                         //make conversation for the value
                         Object cmisValue = properties.cmisValue(pdef, property);
-                        
+
                         //store properties for update
                         updateProperties.put(cmisPropertyName, cmisValue);
                     }
@@ -372,7 +363,7 @@ public class CmisConnector extends Connector {
 
         //this action depends from object type
         switch (objectId.getType()) {
-            case REPOSITORY :
+            case REPOSITORY_INFO:
                 //repository node is read only
                 break;
             case CONTENT :
@@ -401,7 +392,7 @@ public class CmisConnector extends Connector {
                     ((org.apache.chemistry.opencmis.client.api.Document)cmisObject).deleteContentStream();
                 } else {
                     ContentStream stream = jcrBinaryContent(delta.getDocument());
-                    if (stream != null && cmisObject != null) {
+                    if (stream != null ) {
                         ((org.apache.chemistry.opencmis.client.api.Document)cmisObject).setContentStream(stream, true);
                     }
                 }
@@ -491,7 +482,7 @@ public class CmisConnector extends Connector {
 
     @Override
     public String newDocumentId(String parentId, Name name, Name primaryType) {
-        HashMap<String, Object> params = new HashMap();
+        HashMap params = new HashMap();
 
         //let'start from checking primary type
         if (primaryType.getLocalName().equals("resource")) {
@@ -501,7 +492,7 @@ public class CmisConnector extends Connector {
         }
         
         //all other node types belong to cmis object
-        String jcrNodeType = primaryType.getLocalName();        
+        String jcrNodeType = primaryType.toString();
         String cmisObjectTypeName = nodes.findCmisName(jcrNodeType);
 
         Folder parent = (Folder) session.getObject(parentId);
@@ -528,11 +519,9 @@ public class CmisConnector extends Connector {
         switch (objectType.getBaseTypeId()) {
             case CMIS_FOLDER :
                 params.put(PropertyIds.PATH, path);
-                String id = ObjectId.toString(ObjectId.Type.OBJECT, parent.createFolder(params).getId());
-                return  id;
+                return ObjectId.toString(ObjectId.Type.OBJECT, parent.createFolder(params).getId());
             case CMIS_DOCUMENT :
-                id = ObjectId.toString(ObjectId.Type.OBJECT, parent.createDocument(params, null, VersioningState.NONE).getId());
-                return id;
+                return ObjectId.toString(ObjectId.Type.OBJECT, parent.createDocument(params, null, VersioningState.NONE).getId());
             default :
                 return null;
         }
@@ -580,22 +569,14 @@ public class CmisConnector extends Connector {
         } else {
             writer.setPrimaryType(objectType.getId());
         }
-
         writer.setParent(folder.getParentId());
-        //TODO: Is this required?
-        writer.addMixinType(NodeType.MIX_CREATED);
-        writer.addMixinType(NodeType.MIX_LAST_MODIFIED);
         writer.addMixinType(NodeType.MIX_REFERENCEABLE);
-        writer.addMixinType("mix:folder");
-
         cmisProperties(folder, writer);
         cmisChildren(folder, writer);
-
         //append repository information to the root node
         if (folder.isRootFolder()) {
-            writer.addChild(ObjectId.toString(ObjectId.Type.REPOSITORY, ""), REPOSITORY_NODE_NAME);
+            writer.addChild(ObjectId.toString(ObjectId.Type.REPOSITORY_INFO, ""), REPOSITORY_INFO_NODE_NAME);
         }
-
         return writer.document();
     }
 
@@ -616,38 +597,15 @@ public class CmisConnector extends Connector {
         } else {
             writer.setPrimaryType(objectType.getId());
         }
-
-        /*
-
-        + myFile  (jcr:primaryType=nt:file,
-           |        jcr:created=<date>,
-           |        jcr:createdBy=<username>)
-           + jcr:content  (jcr:primaryType=nt:resource,
-                           jcr:lastModified=<date>,
-                           jcr:lastModifiedBy=<username>,
-                           jcr:mimeType=<mimeType>,
-                           jcr:encoding=<null>,
-                           jcr:data=<binary-content>)
-        */
-        //TODO: Is this required? 
-        //Ivan, yes. Just try to comment out those lines
-       
         List<Folder> parents = doc.getParents();
         ArrayList parentIds = new ArrayList();
-        
         for (Folder f : parents) {
             parentIds.add(ObjectId.toString(ObjectId.Type.OBJECT, f.getId()));
         }
-
         writer.setParents(parentIds);
-        
-        writer.addMixinType(NodeType.MIX_CREATED);
-        writer.addMixinType(NodeType.MIX_LAST_MODIFIED);
         writer.addMixinType(NodeType.MIX_REFERENCEABLE);
-
         cmisProperties(doc, writer);
         writer.addChild(ObjectId.toString(ObjectId.Type.CONTENT, doc.getId()), JcrConstants.JCR_CONTENT);
-
         return writer.document();
     }
 
@@ -710,10 +668,10 @@ public class CmisConnector extends Connector {
      */
     private Document cmisRepository() {
         RepositoryInfo info = session.getRepositoryInfo();
-        DocumentWriter writer = newDocument(ObjectId.toString(ObjectId.Type.REPOSITORY, ""));
+        DocumentWriter writer = newDocument(ObjectId.toString(ObjectId.Type.REPOSITORY_INFO, ""));
 
         writer.setPrimaryType(CmisLexicon.REPOSITORY);
-        writer.setId(REPOSITORY_ID);
+        writer.setId(REPOSITORY_INFO_ID);
 
         //product name/vendor/version
         writer.addProperty(CmisLexicon.VENDOR_NAME, info.getVendorName());
@@ -750,9 +708,7 @@ public class CmisConnector extends Connector {
         bin.reset();
 
         //create content stream
-        ContentStreamImpl contentStream = new ContentStreamImpl(fileName, BigInteger.valueOf(content.length), mimeType, bin);
-
-        return contentStream;
+        return new ContentStreamImpl(fileName, BigInteger.valueOf(content.length), mimeType, bin);
     }
 
     /**
@@ -763,8 +719,7 @@ public class CmisConnector extends Connector {
      * @param registry
      */
     private void importTypes(List<Tree<ObjectType>> types, NodeTypeManager typeManager, NamespaceRegistry registry) throws RepositoryException {
-        for (int i = 0; i < types.size(); i++) {
-            Tree<ObjectType> tree = types.get(i);
+        for (Tree<ObjectType> tree : types) {
             importType(tree.getItem(), typeManager, registry);
             importTypes(tree.getChildren(), typeManager, registry);
         }

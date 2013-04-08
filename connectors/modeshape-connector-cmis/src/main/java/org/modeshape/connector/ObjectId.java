@@ -42,7 +42,7 @@ package org.modeshape.connector;
  */
 public class ObjectId {
     //this are object types we can outline
-    public enum Type {REPOSITORY, CONTENT, OBJECT}
+    public enum Type {REPOSITORY_INFO, CONTENT, OBJECT}
 
     private Type type;
     private String id;

@@ -23,10 +23,8 @@
  */
 package org.modeshape.connector;
 
-import org.apache.chemistry.opencmis.client.api.ObjectType;
 import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.api.SessionFactory;
-import org.apache.chemistry.opencmis.client.api.Tree;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
 import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
@@ -39,15 +37,16 @@ import org.modeshape.jcr.RepositoryConfiguration;
 import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.Property;
-import javax.jcr.ValueFactory;
+import javax.jcr.PropertyIterator;
+import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.NodeTypeIterator;
+import javax.jcr.nodetype.NodeTypeManager;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import javax.jcr.PropertyIterator;
 
 import static org.junit.Assert.*;
 
@@ -103,11 +102,13 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         assertTrue("Chemistry session should exists.", session != null);
     }
 
-    private void print(List<Tree<ObjectType>> tree) {
-        for (int i = 0; i < tree.size(); i++) {
-            Tree t = tree.get(i);
-            System.out.println("item: " + t.getItem());
-            print(t.getChildren());
+    @Test
+    public void shouldSeeCmisTypesAsJcrTypes() throws Exception {
+        NodeTypeManager manager = getSession().getWorkspace().getNodeTypeManager();
+
+        NodeTypeIterator it = manager.getNodeType("nt:file").getDeclaredSubtypes();
+        while (it.hasNext()) {
+            NodeType nodeType = it.nextNodeType();
         }
     }
 
@@ -125,7 +126,7 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
 
     @Test
     public void shouldAccessRepositoryInfo() throws Exception {
-        Node repoInfo = getSession().getNode("/cmis/repository");
+        Node repoInfo = getSession().getNode("/cmis/repositoryInfo");
         assertEquals("OpenCMIS InMemory-Server", repoInfo.getProperty("cmis:productName").getString());
         assertEquals("Apache Chemistry", repoInfo.getProperty("cmis:vendorName").getString());
         assertTrue(repoInfo.getProperty("cmis:productVersion").getString() != null);
@@ -216,7 +217,6 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         assertTrue(date != null);
     }
 
-
     //-----------------------------------------------------------------------/
     // Document cmis build-in properties
     //-----------------------------------------------------------------------/
@@ -226,7 +226,6 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         String objectId = node.getProperty("jcr:uuid").getString();
         assertTrue(objectId != null);
     }
-
 
     @Test
     public void shouldAccessCreatedByPropertyForDocument() throws Exception {
@@ -262,28 +261,27 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
     public void shouldCreateFolderAndDocument() throws Exception {
         Node root = getSession().getNode("/cmis");
 
-        String name = "test"+System.currentTimeMillis();
+        String name = "test" + System.currentTimeMillis();
         Node node = root.addNode(name, "nt:folder");
         assertTrue(name.equals(node.getName()));
         //node.setProperty("name", "test-name");
 
-        root = getSession().getNode("/cmis/"+name);
+        root = getSession().getNode("/cmis/" + name);
         Node node1 = root.addNode("test-1", "nt:file");
-System.out.println("Test: creating binary content");
+        System.out.println("Test: creating binary content");
         byte[] content = "Hello World".getBytes();
         ByteArrayInputStream bin = new ByteArrayInputStream(content);
         bin.reset();
 
-System.out.println("Test: creating content node");
+        System.out.println("Test: creating content node");
         Node contentNode = node1.addNode("jcr:content", "nt:resource");
         Binary binary = session.getValueFactory().createBinary(bin);
         contentNode.setProperty("jcr:data", binary);
-        contentNode.setProperty("jcr:lastModified",Calendar.getInstance());
+        contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
 
-System.out.println("Test: trying to save");
+        System.out.println("Test: trying to save");
         getSession().save();
-System.out.println("Test: checking result");
-        assertTrue(node != null);
+        System.out.println("Test: checking result");
 
     }
 
