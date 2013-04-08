@@ -23,11 +23,6 @@
  */
 package org.modeshape.connector;
 
-import java.math.BigDecimal;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.GregorianCalendar;
-import java.util.List;
 import org.apache.chemistry.opencmis.client.api.Property;
 import org.apache.chemistry.opencmis.commons.definitions.PropertyDefinition;
 import org.apache.chemistry.opencmis.commons.enums.PropertyType;
@@ -37,13 +32,20 @@ import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 
+import java.math.BigDecimal;
+import java.net.URI;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Implements mapping between several CMIS and JCR  properties.
- *
- * This implementation of the connector suppose conversation between cmis folders 
- * and document into jcr folders and files. Such conversation in its order suppose 
+ * <p/>
+ * This implementation of the connector suppose conversation between cmis folders
+ * and document into jcr folders and files. Such conversation in its order suppose
  * conversation of the names and values. This utility class provides such work for us.
- * 
+ *
  * @author kulikov
  */
 public class Properties {
@@ -52,72 +54,99 @@ public class Properties {
     //Relations are defined as list of strings. This way seems preffered because 
     //we have a small amount of such relations and simple linear search give us
     //better performance for small sets.
-    private final static String[] map = new String[] {
-        "cmis:objectId = jcr:uuid",
-        "cmis:createdBy = jcr:createdBy",
-        "cmis:creationDate = jcr:created",
-        "cmis:lastModificationDate = jcr:lastModified",
-        "cmis:lastModifiedBy = jcr:lastModifiedBy"
-    };
 
+    /*
+      https://docs.jboss.org/author/display/MODE/Storing+files+and+folders
+      myFile  (jcr:primaryType=nt:file,
+      |        jcr:created=<date>,
+      |        jcr:createdBy=<username>)
+      + jcr:content  (jcr:primaryType=nt:resource,
+                      jcr:lastModified=<date>,
+                      jcr:lastModifiedBy=<username>,
+                      jcr:mimeType=<mimeType>,
+                      jcr:encoding=<null>,
+                      jcr:data=<binary-content>)
+   */
+    //TODO: Mapping is conditional
+    //This is true for nt:file and nt:folder
+    private final static String[] mapAll = new String[]{
+            "cmis:objectId = jcr:uuid",
+            "cmis:createdBy = jcr:createdBy",
+            "cmis:creationDate = jcr:created",
+
+    };
+    //This is true for nt:file
+    private final static String[] mapContent = new String[]{
+            "cmis:lastModificationDate = jcr:content/@jcr:lastModified",
+            "cmis:lastModifiedBy = jcr:content/@jcr:lastModifiedBy",
+            "cmis:contentStreamMimeType = jcr:content/@jcr:mimeType",
+            //This is nice to have
+            "cmis:contentStreamFileName = fn:name()",
+    };
+    //This is true for nt:folder
+    private final static String[] mapFolder = new String[]{
+            "cmis:lastModificationDate = jcr:lastModified",
+            "cmis:lastModifiedBy = jcr:lastModifiedBy",
+
+    };
+    Map<String, Relation> cmisToJcr = new HashMap<String, Relation>();
+    Map<String, Relation> jcrToCmis = new HashMap<String, Relation>();
     //this is value factory used for converation of the values
     private ValueFactories valueFactories;
-    
+
     //list of relations between names
-    private ArrayList<Relation> list = new ArrayList();
+    // private ArrayList<Relation> list = new ArrayList();
 
     /**
      * Constructs this class instance.
-     * 
+     *
      * @param valueFactories jcr value factory
      */
     public Properties(ValueFactories valueFactories) {
         this.valueFactories = valueFactories;
         //parse strings and create relations
-        for (int i = 0; i < map.length; i++) {
-           String[] tokens = map[i].split("=");
-           list.add(new Relation(tokens[0].trim(), tokens[1].trim()));
+        for (String aMapAll : mapAll) {
+            String[] tokens = aMapAll.split("=");
+            Relation rel = new Relation(tokens[0].trim(), tokens[1].trim());
+            cmisToJcr.put(rel.cmisName, rel);
+            jcrToCmis.put(rel.jcrName, rel);
         }
     }
 
     /**
      * Determines the name of the given property from cmis domain in jcr domain.
-     * 
+     *
      * @param cmisName the name of property in cmis domain.
      * @return the name of the same property in jcr domain.
      */
     public String findJcrName(String cmisName) {
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).cmisName.equals(cmisName)) {
-                return list.get(i).jcrName;
-            }
+        if (cmisToJcr.containsKey(cmisName)) {
+            return cmisToJcr.get(cmisName).jcrName;
         }
         return cmisName;
     }
 
     /**
      * Determines the name of the given property from jcr domain in cmis domain.
-     * 
+     *
      * @param jcrName the name of property in jcr domain.
      * @return the name of the same property in cmis domain.
      */
     public String findCmisName(String jcrName) {
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).jcrName.equals(jcrName)) {
-                return list.get(i).cmisName;
-            }
+        if (jcrToCmis.containsKey(jcrName)) {
+            return jcrToCmis.get(jcrName).cmisName;
         }
         return jcrName;
     }
 
     /**
      * Converts type of property.
-     * 
+     *
      * @param propertyType the type of the property in cmis domain.
      * @return the type of the property in jcr domain.
      */
     public int getJcrType(PropertyType propertyType) {
-        switch (propertyType){
+        switch (propertyType) {
             case BOOLEAN:
                 return javax.jcr.PropertyType.BOOLEAN;
             case DATETIME:
@@ -139,8 +168,8 @@ public class Properties {
 
     /**
      * Calculates value of the property corresponding to cmis domain.
-     * 
-     * @param pdef property definition as declared in cmis repository.
+     *
+     * @param pdef  property definition as declared in cmis repository.
      * @param field the representation of the value of the property in jcr domain.
      * @return value as declared by property definition.
      */
@@ -161,6 +190,7 @@ public class Properties {
                 try {
                     return new URI(field.getValueAsString());
                 } catch (Exception e) {
+                    e.printStackTrace();
                 }
                 break;
             case ID:
@@ -174,9 +204,9 @@ public class Properties {
 
     /**
      * Calculates value of the property corresponding to cmis domain.
-     * 
-     * @param pdef property definition as declared in cmis repository.
-     * @param jcrName the name of the property in jcr domain
+     *
+     * @param pdef     property definition as declared in cmis repository.
+     * @param jcrName  the name of the property in jcr domain
      * @param document connectors's view of properties in jcr domain.
      * @return value as declared by property definition.
      */
@@ -197,6 +227,7 @@ public class Properties {
                 try {
                     return new URI(document.getString(jcrName));
                 } catch (Exception e) {
+                    e.printStackTrace();
                 }
                 break;
             case ID:
@@ -207,10 +238,10 @@ public class Properties {
 
         return null;
     }
-    
+
     /**
      * Converts value of the property for the jcr domain.
-     * 
+     *
      * @param property property in cmis domain
      * @return value of the given property in jcr domain.
      */
@@ -235,7 +266,7 @@ public class Properties {
                 return asIDs(values);
             case HTML:
                 return asHTMLs(values);
-            default :
+            default:
                 return null;
         }
     }
@@ -310,7 +341,7 @@ public class Properties {
         ValueFactory<DateTime> factory = valueFactories.getDateFactory();
         DateTime[] res = new DateTime[values.size()];
         for (int i = 0; i < res.length; i++) {
-            res[i] = factory.create(((GregorianCalendar)values.get(i)).getTime());
+            res[i] = factory.create(((GregorianCalendar) values.get(i)).getTime());
         }
         return res;
     }
@@ -325,7 +356,7 @@ public class Properties {
         ValueFactory<URI> factory = valueFactories.getUriFactory();
         URI[] res = new URI[values.size()];
         for (int i = 0; i < res.length; i++) {
-            res[i] = factory.create(((GregorianCalendar)values.get(i)).getTime());
+            res[i] = factory.create(((GregorianCalendar) values.get(i)).getTime());
         }
         return res;
     }
@@ -359,7 +390,6 @@ public class Properties {
         }
         return res;
     }
-
 
     private class Relation {
         private String jcrName;

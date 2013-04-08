@@ -65,10 +65,10 @@ public class ObjectIdTest {
 
     @Test
     public void testRepository() {
-        String uuid = "/repository";
+        String uuid = "/repository_info";
         ObjectId ID = ObjectId.valueOf(uuid);
 
-        assertEquals(ObjectId.Type.REPOSITORY, ID.getType());
+        assertEquals(ObjectId.Type.REPOSITORY_INFO, ID.getType());
     }
 
     @Test

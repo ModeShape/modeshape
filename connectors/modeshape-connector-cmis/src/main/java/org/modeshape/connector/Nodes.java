@@ -23,6 +23,9 @@
  */
 package org.modeshape.connector;
 
+import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
+
+import javax.jcr.nodetype.NodeType;
 import java.util.ArrayList;
 
 /**
@@ -32,11 +35,11 @@ import java.util.ArrayList;
  */
 public class Nodes {
     private final static String[] map = new String[] {
-        "cmis:folder = folder",
-        "cmis:document = file"
+            BaseTypeId.CMIS_FOLDER.value()+" = " + NodeType.NT_FOLDER,
+            BaseTypeId.CMIS_DOCUMENT.value()+" = " + NodeType.NT_FILE
     };
     
-    private ArrayList<Relation> list = new ArrayList();
+    private ArrayList<Relation> list = new ArrayList<Relation>();
     
     /**
      * Gets the name of the given property in JCR domain.
@@ -45,9 +48,9 @@ public class Nodes {
      * @return the name of the given property in JCR domain.
      */
     public String findJcrName(String cmisName) {
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).cmisName.equals(cmisName)) {
-                return list.get(i).jcrName;
+        for (Relation aList : list) {
+            if (aList.cmisName.equals(cmisName)) {
+                return aList.jcrName;
             }
         }
         return cmisName;
@@ -60,18 +63,18 @@ public class Nodes {
      * @return the name of the given property in CMIS domain.
      */
     public String findCmisName(String jcrName) {
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).jcrName.equals(jcrName)) {
-                return list.get(i).cmisName;
+        for (Relation aList : list) {
+            if (aList.jcrName.equals(jcrName)) {
+                return aList.cmisName;
             }
         }
         return jcrName;
     }
     
     public Nodes() {
-        for (int i = 0; i < map.length; i++) {
-           String[] tokens = map[i].split("=");
-           list.add(new Relation(tokens[0].trim(), tokens[1].trim()));
+        for (String aMap : map) {
+            String[] tokens = aMap.split("=");
+            list.add(new Relation(tokens[0].trim(), tokens[1].trim()));
         }
     }
     
