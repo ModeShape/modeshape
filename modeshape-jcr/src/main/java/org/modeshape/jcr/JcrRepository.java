@@ -1279,7 +1279,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                             break;
                         }
                         case NEVER: {
-                            logger.info(JcrI18n.noReindex, getName());
+                            logger.debug(JcrI18n.noReindex.text(getName()));
                             break;
                         }
                     }

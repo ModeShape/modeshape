@@ -188,7 +188,7 @@ class RepositoryQueryManager {
 
     /**
      * Crawl and index all of the repository content.
-     * 
+     *
      * @param indexOnlyIfMissing flag which indicates whether all the nodes should be re-indexed or only nodes which are not part
      *        of the existing indexes
      * @param includeSystemContent flag which indicates whether content in the system workspace (below /jcr:system) should be
@@ -214,7 +214,7 @@ class RepositoryQueryManager {
 
     /**
      * Crawl and index all of the repository content.
-     * 
+     *
      * @param indexOnlyIfMissing true if the reindexing should be performed if the indexes are missing
      * @param includeSystemContent true if the system content should also be indexed
      */
@@ -232,7 +232,7 @@ class RepositoryQueryManager {
 
         if (indexOnlyIfMissing) {
             if (excludedKeysFromIndexing.isEmpty()) {
-                logger.info(JcrI18n.reindexMissingNoIndexesExist, runningState.name());
+                logger.debug(JcrI18n.reindexMissingNoIndexesExist.text(runningState.name()));
             } else {
                 logger.debug("Only missing indexes will be re-indexed in the {0} repository. The existing nodes are indexed: {1}",
                              runningState.name(),
