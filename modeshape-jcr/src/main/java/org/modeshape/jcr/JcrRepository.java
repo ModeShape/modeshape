@@ -491,7 +491,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             start();
             logger.debug("Started '{0}' after content has been restored; beginning indexing of content", getName());
             // Reindex all content ...
-            queryManager().reindexContent(false, true, false);
+            queryManager().reindexContent(true, false, false);
             logger.debug("Completed reindexing all content in '{0}' after restore.", getName());
         }
     }
@@ -1271,11 +1271,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                     switch (when) {
                         case ALWAYS: {
-                            this.repositoryQueryManager.reindexContent(false, includeSystemContent, async);
+                            this.repositoryQueryManager.reindexContent(includeSystemContent, async, false);
                             break;
                         }
                         case IF_MISSING: {
-                            this.repositoryQueryManager.reindexContent(true, includeSystemContent, async);
+                            this.repositoryQueryManager.reindexContent(includeSystemContent, async, true);
                             break;
                         }
                         case NEVER: {

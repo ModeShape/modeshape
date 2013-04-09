@@ -28,7 +28,6 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
-import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.sequencer.ddl.node.AstNode;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

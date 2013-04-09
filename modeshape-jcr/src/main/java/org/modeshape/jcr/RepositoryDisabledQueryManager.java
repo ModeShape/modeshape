@@ -24,7 +24,6 @@
 package org.modeshape.jcr;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -73,8 +72,9 @@ class RepositoryDisabledQueryManager extends RepositoryQueryManager {
         }
 
         @Override
-        public Set<NodeKey> indexedNodes() {
-            return Collections.emptySet();
+        public boolean isEmpty() {
+            // Even though there is no content, this system is disabled so pretend we're not empty
+            return false;
         }
 
         @Override
@@ -183,16 +183,14 @@ class RepositoryDisabledQueryManager extends RepositoryQueryManager {
                                    NodeCache cache,
                                    CachedNode node,
                                    int depth,
-                                   boolean reindexSystemContent,
-                                   Set<NodeKey> keysToExclude ) {
+                                   boolean reindexSystemContent ) {
         // do nothing
     }
 
     @Override
     protected void reindexSystemContent( CachedNode nodeInSystemBranch,
                                          int depth,
-                                         NodeTypeSchemata schemata,
-                                         Set<NodeKey> keysToExclude ) {
+                                         NodeTypeSchemata schemata ) {
         // do nothing
     }
 }
