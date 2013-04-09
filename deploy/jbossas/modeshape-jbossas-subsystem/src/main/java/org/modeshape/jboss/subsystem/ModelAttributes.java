@@ -674,7 +674,7 @@ public class ModelAttributes {
                                                                                                                            ModelType.STRING).setXmlName(Attribute.REBUILD_UPON_STARTUP_MODE.getLocalName())
                                                                                                                                             .setAllowExpression(true)
                                                                                                                                             .setAllowNull(true)
-                                                                                                                                            .setDefaultValue(new ModelNode().set(IndexingMode.SYNC.toString()))
+                                                                                                                                            .setDefaultValue(new ModelNode().set(IndexingMode.ASYNC.toString()))
                                                                                                                                             .setValidator(INDEXING_MODE_VALIDATOR)
                                                                                                                                             .setFlags(AttributeAccess.Flag.RESTART_NONE)
                                                                                                                                             .setFieldPathInRepositoryConfiguration(FieldName.QUERY,

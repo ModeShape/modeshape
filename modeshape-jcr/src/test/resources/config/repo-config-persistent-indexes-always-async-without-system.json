@@ -13,7 +13,8 @@
         "indexing" : {
             "rebuildOnStartup" : {
                 "when" : "always",
-                "mode" : "sync"
+                "includeSystemContent" : false,
+                "mode" : "async"
             }
         }
     }

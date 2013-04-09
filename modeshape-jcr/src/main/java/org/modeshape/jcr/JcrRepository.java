@@ -1279,7 +1279,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                             break;
                         }
                         case NEVER: {
-                            logger.info(JcrI18n.noReindex, getName());
+                            logger.debug(JcrI18n.noReindex.text(getName()));
                             break;
                         }
                     }
@@ -1500,6 +1500,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         protected void shutdown() {
+            //if  reindexing was asynchronous and is still going on, we need to terminate it before we stop any of caches
+            //or we do anything that affects the nodes
+            if (repositoryQueryManager != null) {
+                repositoryQueryManager.stopReindexing();
+            }
+
             // shutdown the connectors
             this.connectors.shutdown();
 

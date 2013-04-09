@@ -23,8 +23,11 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.File;
@@ -356,5 +359,23 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         Executors.newSingleThreadExecutor().submit(restartRunnable);
         //wait the repo to restart or fail
         assertTrue("Repository did not restart in the expected amount of time", restartLatch.await(1, TimeUnit.MINUTES));
+    }
+
+    @Test
+    @FixFor( "MODE-1872" )
+    public void asyncReindexingWithoutSystemContentShouldNotCorruptSystemBranch() throws Exception {
+        FileUtil.delete("target/persistent_repository/");
+        RepositoryConfiguration config = RepositoryConfiguration.read(
+                getClass().getClassLoader().getResourceAsStream(
+                        "config/repo-config-persistent-indexes-always-async-without-system.json")
+                , "Persistent Repository");
+        JcrRepository repository = new JcrRepository(config);
+        repository.start();
+
+        JcrSession session = repository.login();
+
+        javax.jcr.Node root = session.getRootNode();
+        AbstractJcrNode system = (AbstractJcrNode)root.getNode("jcr:system");
+        assertThat(system, is(notNullValue()));
     }
 }

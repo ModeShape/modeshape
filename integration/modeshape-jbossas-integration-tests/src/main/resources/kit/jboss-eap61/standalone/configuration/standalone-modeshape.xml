@@ -336,7 +336,7 @@
                  and indexes are stored within the server's data directory. This is the simplest way to configure a repository
                  that uses defaults for everything; feel free to change and specify other configuration options.  -->
             <repository name="sample">
-                <indexing rebuild-upon-startup-include-system-content="true"/>
+                <indexing rebuild-upon-startup-include-system-content="true" rebuild-upon-startup-mode="sync"/>
             </repository>
             <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
             <repository name="artifacts">

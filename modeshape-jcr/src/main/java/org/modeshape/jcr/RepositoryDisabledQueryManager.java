@@ -189,11 +189,6 @@ class RepositoryDisabledQueryManager extends RepositoryQueryManager {
     }
 
     @Override
-    protected void reindexSystemContent( boolean async ) {
-        // do nothing
-    }
-
-    @Override
     protected void reindexSystemContent( CachedNode nodeInSystemBranch,
                                          int depth,
                                          NodeTypeSchemata schemata,

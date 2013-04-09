@@ -287,12 +287,10 @@ public class RepositoryCache implements Observable {
     public void completeInitialization() {
         if (initializingRepository) {
             LOGGER.debug("Marking repository '{0}' as fully initialized", name);
-            // Start a transaction ...
-            Transactions txns = sessionContext.getTransactions();
-            try {
-                Transaction txn = txns.begin();
-                try {
-                    LocalDocumentStore store = this.documentStore.localStore();
+            runInTransaction(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    LocalDocumentStore store = RepositoryCache.this.documentStore.localStore();
                     store.prepareDocumentsForUpdate(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
                     SchematicEntry repositoryInfo = store.get(REPOSITORY_INFO_KEY);
                     EditableDocument editor = repositoryInfo.editDocumentContent();
@@ -300,34 +298,33 @@ public class RepositoryCache implements Observable {
                         DateTime now = context.getValueFactories().getDateFactory().create();
                         editor.setDate(REPOSITORY_INITIALIZED_AT_FIELD_NAME, now.toDate());
                     }
-                } catch (RuntimeException e) {
-                    txn.rollback();
-                    throw e;
+                    return null;
                 }
+            });
+            LOGGER.debug("Repository '{0}' is fully initialized", name);
+        }
+    }
+
+    private <V> V runInTransaction(Callable<V> operation) {
+        // Start a transaction ...
+        Transactions txns = sessionContext.getTransactions();
+        try {
+            Transaction txn = txns.begin();
+            try {
+                V result = operation.call();
                 txn.commit();
-                LOGGER.debug("Repository '{0}' is fully initialized", name);
-            } catch (NotSupportedException err) {
-                // No nested transactions are supported ...
-                return;
-            } catch (SecurityException err) {
-                // No privilege to commit ...
-                throw new SystemFailureException(err);
-            } catch (IllegalStateException err) {
-                // Not associated with a txn??
-                throw new SystemFailureException(err);
-            } catch (RollbackException err) {
-                // Couldn't be committed, but the txn is already rolled back ...
-                return;
-            } catch (HeuristicMixedException err) {
-            } catch (HeuristicRollbackException err) {
-                // Rollback has occurred ...
-                return;
-            } catch (SystemException err) {
-                // System failed unexpectedly ...
-                throw new SystemFailureException(err);
-            } finally {
-                initializingRepository = false;
+                return result;
+            } catch (Exception e) {
+                txn.rollback();
+                throw new RuntimeException(e);
             }
+        } catch (IllegalStateException err) {
+            throw new SystemFailureException(err);
+        } catch (SystemException err) {
+            throw new SystemFailureException(err);
+        } catch (NotSupportedException e) {
+            logger.debug(e, "unexpected exception while committing transaction");
+            return null;
         }
     }
 
@@ -560,43 +557,66 @@ public class RepositoryCache implements Observable {
         return Collections.unmodifiableSet(this.workspaceNames);
     }
 
-    WorkspaceCache workspace( String name ) {
-        WorkspaceCache cache = workspaceCachesByName.get(name);
-        if (cache == null) {
-            if (!this.workspaceNames.contains(name) && !this.systemWorkspaceName.equals(name)) {
-                throw new WorkspaceNotFoundException(name);
-            }
-            // Compute the root key for this workspace ...
-            String workspaceKey = NodeKey.keyForWorkspaceName(name);
-            NodeKey rootKey = new NodeKey(sourceKey, workspaceKey, rootNodeId);
+    WorkspaceCache workspace( final String name ) {
+        WorkspaceCache workspaceCache = workspaceCachesByName.get(name);
 
-            // Create the root document for this workspace ...
-            EditableDocument rootDoc = Schematic.newDocument();
-            DocumentTranslator trans = new DocumentTranslator(context, documentStore, Long.MAX_VALUE);
-            trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.ROOT), null);
-            trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKey.toString()), null);
+        if (workspaceCache != null) {
+            return workspaceCache;
+        }
 
-            documentStore.localStore().putIfAbsent(rootKey.toString(), rootDoc);
+        if (!this.workspaceNames.contains(name) && !this.systemWorkspaceName.equals(name)) {
+            throw new WorkspaceNotFoundException(name);
+        }
 
-            // Create/get the Infinispan cache that we'll use within the WorkspaceCache, using the cache manager's
-            // default configuration ...
-            Cache<NodeKey, CachedNode> nodeCache = workspaceCacheManager.getCache(cacheNameForWorkspace(name));
-            cache = new WorkspaceCache(context, getKey(), name, documentStore, translator, rootKey, nodeCache, changeBus);
+        //when multiple threads (e.g. re-indexing threads) are performing ws cache initialization, we want this to be atomic
+        synchronized (this) {
+            //after we have the lock, check if maybe another thread has already finished
+            if (!workspaceCachesByName.containsKey(name)) {
+                runInTransaction(new Callable<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        // Compute the root key for this workspace ...
+                        String workspaceKey = NodeKey.keyForWorkspaceName(name);
+                        NodeKey rootKey = new NodeKey(sourceKey, workspaceKey, rootNodeId);
 
-            WorkspaceCache existing = workspaceCachesByName.putIfAbsent(name, cache);
-            if (existing != null) {
-                // Some other thread snuck in and created the cache for this workspace, so use it instead ...
-                cache = existing;
-            } else if (!this.systemWorkspaceName.equals(name)) {
-                logger.debug("Creating '{0}' workspace in repository '{1}'", name, getName());
-                // Link the system node to have this root as an additional parent ...
-                SessionCache systemLinker = createSession(this.context, name, false);
-                MutableCachedNode systemNode = systemLinker.mutable(systemLinker.getRootKey());
-                systemNode.linkChild(systemLinker, this.systemKey, JcrLexicon.SYSTEM);
-                systemLinker.save();
+                        // Create the root document for this workspace ...
+                        EditableDocument rootDoc = Schematic.newDocument();
+                        DocumentTranslator trans = new DocumentTranslator(context, documentStore, Long.MAX_VALUE);
+                        trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE,
+                                                                                       ModeShapeLexicon.ROOT),
+                                          null);
+                        trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKey.toString()),
+                                          null);
+
+                        // Create/get the Infinispan workspaceCache that we'll use within the WorkspaceCache, using the workspaceCache manager's
+                        // default configuration ...
+                        Cache<NodeKey, CachedNode> nodeCache = workspaceCacheManager.getCache(cacheNameForWorkspace(name));
+                        WorkspaceCache workspaceCache = new WorkspaceCache(context, getKey(), name, documentStore, translator,
+                                                                           rootKey,
+                                                                           nodeCache, changeBus);
+
+                        if (documentStore.localStore().putIfAbsent(rootKey.toString(), rootDoc) == null) {
+                            //we are the first node to perform the initialization, so we need to link the system node
+                            if (!RepositoryCache.this.systemWorkspaceName.equals(name)) {
+                                logger.debug("Creating '{0}' workspace in repository '{1}'", name, getName());
+                                SessionCache workspaceSession = new WritableSessionCache(context, workspaceCache,
+                                                                                         sessionContext);
+                                MutableCachedNode workspaceRootNode = workspaceSession.mutable(workspaceSession.getRootKey());
+                                workspaceRootNode.linkChild(workspaceSession, RepositoryCache.this.systemKey,
+                                                            JcrLexicon.SYSTEM);
+
+                                //this will be enrolled in the active transaction
+                                workspaceSession.save();
+                            }
+                        }
+                        workspaceCachesByName.putIfAbsent(name, workspaceCache);
+                        return null;
+                    }
+                });
             }
         }
-        return cache;
+
+        return workspaceCachesByName.get(name);
     }
 
     protected final String cacheNameForWorkspace( String workspaceName ) {
