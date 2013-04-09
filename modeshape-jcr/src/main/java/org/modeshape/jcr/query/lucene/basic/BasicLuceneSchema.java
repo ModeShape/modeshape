@@ -28,8 +28,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -517,23 +515,23 @@ public class BasicLuceneSchema implements LuceneSchema {
     }
 
     @Override
-    public Set<NodeKey> indexedNodes() {
+    public boolean isEmpty() {
         IndexManager indexManager = searchFactory.getAllIndexesManager().getIndexManager(NodeInfoIndex.INDEX_NAME);
         if (indexManager == null) {
-            return Collections.emptySet();
+            // Usually the case when there are no indexes yet ...
+            return true;
         }
 
+        // There are indexes, but make sure there is content in them ...
         ReaderProvider readerProvider = indexManager.getReaderProvider();
         IndexReader indexReader = readerProvider.openIndexReader();
-        Set<NodeKey> indexedNodes = new HashSet<NodeKey>();
 
         FieldSelector fieldSelector = new FieldSelector() {
             private static final long serialVersionUID = 1L;
 
             @Override
             public FieldSelectorResult accept( String fieldName ) {
-                return FieldName.ID.equalsIgnoreCase(fieldName) ?
-                       FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
+                return FieldName.ID.equalsIgnoreCase(fieldName) ? FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
             }
         };
 
@@ -543,9 +541,9 @@ public class BasicLuceneSchema implements LuceneSchema {
                     continue;
                 }
                 Document doc = indexReader.document(docNumber, fieldSelector);
-                indexedNodes.add(new NodeKey(doc.get(FieldName.ID)));
+                return doc != null; // usually the case
             }
-            return indexedNodes;
+            return false;
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {

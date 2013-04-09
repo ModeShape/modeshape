@@ -82,11 +82,11 @@ public interface QueryIndexing {
                       TransactionContext txnCtx );
 
     /**
-     * Retrieve the set of keys of the nodes that are currently stored in the index.
-     *
-     * @return a {@code Set} of {@code NodeKey} instances; never {@code null}
+     * Retrieve whether at least one node is currently stored in the index.
+     * 
+     * @return true if the index(es) have no content, or false if there is at least some content in the indexes
      */
-    Set<NodeKey> indexedNodes();
+    boolean isEmpty();
 
     void removeFromIndex( String workspace,
                           Iterable<NodeKey> keys,
