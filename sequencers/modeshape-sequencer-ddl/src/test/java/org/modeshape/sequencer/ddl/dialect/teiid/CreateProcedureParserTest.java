@@ -134,7 +134,6 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
     /**
      * See Teiid TestDDLParser#testPushdownFunctionNoArgs()
      */
-    @SuppressWarnings( "null" )
     @Test
     public void shouldParsePushdownFunctionNoArgs() {
         final String content = "CREATE FOREIGN FUNCTION SourceFunc() RETURNS integer OPTIONS (UUID 'hello world')";
