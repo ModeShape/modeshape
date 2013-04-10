@@ -26,6 +26,7 @@ package org.modeshape.test.integration;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Random;
 import javax.annotation.Resource;
@@ -57,6 +58,8 @@ import static org.junit.Assert.assertNotNull;
 @RunWith( Arquillian.class )
 public class JDBCRepositoryIntegrationTest {
 
+    private static final JcrTools JCR_TOOLS = new JcrTools();
+
     @Resource( mappedName = "/jcr/jdbcRepository" )
     private Repository repositoryWithoutEviction;
 
@@ -64,7 +67,10 @@ public class JDBCRepositoryIntegrationTest {
     private Repository repositoryWithEviction;
 
     @Resource (mappedName =  "/jcr/binaryJDBCRepository")
-    private Repository repositoryWithBinaryJDBCStore;
+    private JcrRepository repositoryWithBinaryJDBCStore;
+
+    @Resource (mappedName =  "/jcr/binaryIndexingJDBCRepository")
+    private JcrRepository binaryIndexingJDBCRepository;
 
     @Deployment
     public static WebArchive createDeployment() {
@@ -109,19 +115,28 @@ public class JDBCRepositoryIntegrationTest {
 
     @Test
     @FixFor( "MODE-1676" )
-    public void shouldPersistBinaryDataInJDBCStore() throws Exception {
-        JcrTools tools = new JcrTools();
-        assertNotNull(repositoryWithBinaryJDBCStore);
+    public void shouldPersistBinaryDataInJDBCBinaryStore() throws Exception {
+        persistBinaryContent(repositoryWithBinaryJDBCStore);
+    }
 
-        long minimumBinarySize = ((JcrRepository) repositoryWithBinaryJDBCStore).getConfiguration().getBinaryStorage().getMinimumBinarySizeInBytes();
+    @Test
+    @FixFor( "MODE-1841" )
+    public void shouldPersistBinaryDataInJDBCIndexingBinaryStore() throws Exception {
+        persistBinaryContent(binaryIndexingJDBCRepository);
+    }
+
+    private void persistBinaryContent( JcrRepository repository ) throws RepositoryException, IOException {
+        assertNotNull(repository);
+
+        long minimumBinarySize = repository.getConfiguration().getBinaryStorage().getMinimumBinarySizeInBytes();
         long binarySize = minimumBinarySize + 1;
 
-        Session session = repositoryWithBinaryJDBCStore.login();
+        Session session = repository.login();
         InputStream binaryValueStream = null;
         try {
             byte[] content = new byte[(int)binarySize];
             new Random().nextBytes(content);
-            tools.uploadFile(session, "folder/file", new ByteArrayInputStream(content));
+            JCR_TOOLS.uploadFile(session, "folder/file", new ByteArrayInputStream(content));
             session.save();
 
             Node nodeWithBinaryContent = session.getNode("/folder/file/jcr:content");
