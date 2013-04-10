@@ -94,6 +94,7 @@ public class BasicLuceneSchema implements LuceneSchema {
     private final BinaryStore binaryStore;
     private final ValueFactory<String> stringFactory;
     private final boolean enableFullTextSearch;
+    private final boolean indexesWereEmpty;
 
     /**
      * @param context the execution context for the repository
@@ -115,6 +116,8 @@ public class BasicLuceneSchema implements LuceneSchema {
         this.namespaces = context.getNamespaceRegistry();
         this.logger = Logger.getLogger(getClass());
         assert this.searchFactory != null;
+        // Determine if the indexes are empty ...
+        this.indexesWereEmpty = indexesEmpty();
     }
 
     public void shutdown() {
@@ -515,7 +518,11 @@ public class BasicLuceneSchema implements LuceneSchema {
     }
 
     @Override
-    public boolean isEmpty() {
+    public boolean initializedIndexes() {
+        return indexesWereEmpty;
+    }
+
+    private boolean indexesEmpty() {
         IndexManager indexManager = searchFactory.getAllIndexesManager().getIndexManager(NodeInfoIndex.INDEX_NAME);
         if (indexManager == null) {
             // Usually the case when there are no indexes yet ...
@@ -536,14 +543,18 @@ public class BasicLuceneSchema implements LuceneSchema {
         };
 
         try {
-            for (int docNumber = 0; docNumber < indexReader.numDocs(); docNumber++) {
+            int numDocs = indexReader.numDocs();
+            for (int docNumber = 0; docNumber < numDocs; docNumber++) {
                 if (indexReader.isDeleted(docNumber)) {
                     continue;
                 }
                 Document doc = indexReader.document(docNumber, fieldSelector);
-                return doc != null; // usually the case
+                assert doc != null;
+                // We know it's not deleted, so we should always get something back ...
+                return false; // therefore not empty
             }
-            return false;
+            // Didn't find a single document, so it must be empty
+            return true;
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {

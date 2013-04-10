@@ -195,8 +195,8 @@ class RepositoryQueryManager {
     protected void reindexContent( final boolean includeSystemContent,
                                    boolean async,
                                    boolean onlyIfEmpty ) {
-        if (onlyIfEmpty && !getIndexes().isEmpty()) {
-            // Only need to reindex if no content, but there is content, so we're done
+        if (onlyIfEmpty && !getIndexes().initializedIndexes()) {
+            // There already was some indexed content, so there's nothing to do ...
             return;
         }
 
