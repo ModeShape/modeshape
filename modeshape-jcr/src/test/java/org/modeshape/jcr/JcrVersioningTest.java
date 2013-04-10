@@ -33,6 +33,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.net.URL;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
@@ -461,6 +462,41 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         assertThat(session.getNodeByUUID(version.getProperty("jcr:uuid").getString()), is((Node)version));
     }
 
+    @Test
+    @FixFor( "MODE-1887" )
+    public void shouldMergeWorkspaces() throws Exception {
+        registerNodeTypes(session, "cnd/mode-1887.cnd");
+        Session session = repository.login("default");
+
+        session.getWorkspace().createWorkspace("original");
+        session = repository.login("original");
+
+        Node root = session.getRootNode();
+        Node parent1 = root.addNode("parent1", "Parent");
+        session.save();
+
+        Node child1 = parent1.addNode("child1", "Child");
+        session.save();
+
+        session.getWorkspace().createWorkspace("clone", "original");
+        session = repository.login("clone");
+
+        Node child2 = session.getNode("/parent1").addNode("child2", "Child");
+        session.save();
+
+        session = repository.login("original");
+        VersionManager vm = session.getWorkspace().getVersionManager();
+
+        NodeIterator ni = vm.merge("/", "clone", true);
+        session.save();
+        
+        System.out.println("Failed nodes------------------");
+        while (ni.hasNext()) {
+            System.out.println(ni.nextNode());
+        }
+        session.getNode("/parent1/child2");
+    }
+    
     private void registerNodeTypes( Session session,
                                     String resourcePathToCnd ) throws Exception {
         NodeTypeManager nodeTypes = (NodeTypeManager)session.getWorkspace().getNodeTypeManager();
