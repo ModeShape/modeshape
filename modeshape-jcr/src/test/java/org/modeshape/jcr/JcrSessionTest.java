@@ -1108,6 +1108,31 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         assertEquals(1, result.getNodes().getSize());
     }
 
+    @Test
+    @FixFor( "MODE-1894" )
+    public void shouldReplaceOldPropertyValuesInIndexesWhenUpdating() throws Exception {
+        initializeData();
+
+        Node a = session.getNode("/a");
+        a.setProperty("stringProperty1", "value");
+        session.save();
+
+        QueryResult queryResult = tools.printQuery(session, "select * from [nt:unstructured] as node where node.stringProperty='value'");
+        assertEquals(2, queryResult.getNodes().getSize());
+
+        queryResult = tools.printQuery(session, "select * from [nt:unstructured] as node where node.stringProperty1='value'");
+        assertEquals(1, queryResult.getNodes().getSize());
+
+        a.setProperty("stringProperty", "value1");
+        session.save();
+
+        queryResult = tools.printQuery(session, "select * from [nt:unstructured] as node where node.stringProperty='value'");
+        assertEquals(1, queryResult.getNodes().getSize());
+
+        queryResult = tools.printQuery(session, "select * from [nt:unstructured] as node where node.stringProperty1='value'");
+        assertEquals(1, queryResult.getNodes().getSize());
+    }
+
     protected static class PropertyListener implements EventListener {
         protected int adds, removes, changes;
 
