@@ -1702,7 +1702,7 @@ final class JcrVersionManager implements VersionManager {
                 return;
             }
             
-            if (targetVersion.isSuccessorOf(sourceVersion)/* || targetVersion.key().equals(sourceVersion.key())*/) {
+            if (targetVersion.isSuccessorOf(sourceVersion)) {
                 doLeave(targetNode);
                 return;
             }
