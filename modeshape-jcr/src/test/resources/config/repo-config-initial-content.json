@@ -1,8 +1,5 @@
 {
     "name" : "Repository with initial content",
-    "storage" : {
-        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
-    },
     "workspaces" : {
         "predefined" : ["ws1", "ws2"],
         "default" : "default",

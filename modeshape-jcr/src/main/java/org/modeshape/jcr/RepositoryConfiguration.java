@@ -63,7 +63,6 @@ import org.infinispan.schematic.document.Editor;
 import org.infinispan.schematic.document.Json;
 import org.infinispan.schematic.document.ParsingException;
 import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
-import org.infinispan.transaction.lookup.TransactionManagerLookup;
 import org.infinispan.util.FileLookup;
 import org.infinispan.util.FileLookupFactory;
 import org.infinispan.util.ReflectionUtil;
@@ -266,7 +265,11 @@ public class RepositoryConfiguration {
          * The name for the field containing the name of the Infinispan transaction manager lookup class. This is only used if no
          * {@link #CACHE_CONFIGURATION cacheConfiguration} value is specified and ModeShape needs to instantiate the Infinispan
          * {@link CacheContainer}. By default, the {@link GenericTransactionManagerLookup} class is used.
+         * 
+         * @deprecated The transaction manager lookup class should be specified in the Infinispan cache configuration (or in a
+         *             custom Environment subclass for default caches)
          */
+        @Deprecated
         public static final String CACHE_TRANSACTION_MANAGER_LOOKUP = "transactionManagerLookup";
 
         /**
@@ -605,6 +608,8 @@ public class RepositoryConfiguration {
 
     }
 
+    protected static final Set<List<String>> DEPRECATED_FIELDS;
+
     public enum IndexingMode {
         SYNC,
         ASYNC,
@@ -748,6 +753,15 @@ public class RepositoryConfiguration {
         } catch (IOException e) {
             LOGGER.error(e, JcrI18n.unableToLoadRepositoryConfigurationSchema, JSON_SCHEMA_RESOURCE_PATH);
         }
+
+        Set<List<String>> deprecatedFieldNames = new HashSet<List<String>>();
+        deprecatedFieldNames.add(Collections.unmodifiableList(Arrays.asList(new String[] {FieldName.STORAGE,
+            FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP})));
+        deprecatedFieldNames.add(Collections.unmodifiableList(Arrays.asList(new String[] {FieldName.QUERY, FieldName.INDEXING,
+            FieldName.INDEXING_MODE_SYSTEM_CONTENT})));
+        deprecatedFieldNames.add(Collections.unmodifiableList(Arrays.asList(new String[] {FieldName.QUERY,
+            FieldName.REBUILD_UPON_STARTUP})));
+        DEPRECATED_FIELDS = Collections.unmodifiableSet(deprecatedFieldNames);
     }
 
     /**
@@ -900,6 +914,7 @@ public class RepositoryConfiguration {
         Document replaced = replaceSystemPropertyVariables(document);
         this.doc = ensureNamed(replaced, documentName);
         this.docName = documentName;
+        warnUseOfDeprecatedFields();
     }
 
     public RepositoryConfiguration( String name,
@@ -915,6 +930,7 @@ public class RepositoryConfiguration {
         this.doc = ensureNamed(replaced, documentName);
         this.docName = documentName;
         this.environment = environment;
+        warnUseOfDeprecatedFields();
     }
 
     protected Environment environment() {
@@ -953,14 +969,6 @@ public class RepositoryConfiguration {
         return null;
     }
 
-    public String getCacheTransactionManagerLookupClassName() {
-        Document storage = doc.getDocument(FieldName.STORAGE);
-        if (storage != null) {
-            return storage.getString(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP, Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
-        }
-        return Default.CACHE_TRANSACTION_MANAGER_LOOKUP;
-    }
-
     public String getWorkspaceCacheConfiguration() {
         Document storage = doc.getDocument(FieldName.WORKSPACES);
         if (storage != null) {
@@ -981,16 +989,6 @@ public class RepositoryConfiguration {
     protected CacheContainer getCacheContainer( String config ) throws IOException, NamingException {
         if (config == null) config = getCacheConfiguration();
         return environment.getCacheContainer(config);
-    }
-
-    @SuppressWarnings( "unchecked" )
-    protected Class<? extends TransactionManagerLookup> getCacheTransactionManagerLookupClass() {
-        String txnMgrLookupClassName = getCacheTransactionManagerLookupClassName();
-        try {
-            return (Class<TransactionManagerLookup>)getClass().getClassLoader().loadClass(txnMgrLookupClassName);
-        } catch (ClassNotFoundException e) {
-            return GenericTransactionManagerLookup.class;
-        }
     }
 
     public BinaryStorage getBinaryStorage() {
@@ -1860,8 +1858,7 @@ public class RepositoryConfiguration {
             Boolean defaultIncludeSystemContent = false;
             IndexingMode defaultIndexingMode = IndexingMode.ASYNC;
             if (query.containsField(FieldName.INDEXING_MODE_SYSTEM_CONTENT)) {
-                defaultIndexingMode = IndexingMode.valueOf(query.getString(FieldName.INDEXING_MODE_SYSTEM_CONTENT)
-                                                                   .toUpperCase());
+                defaultIndexingMode = IndexingMode.valueOf(query.getString(FieldName.INDEXING_MODE_SYSTEM_CONTENT).toUpperCase());
                 switch (defaultIndexingMode) {
                     case SYNC: {
                         defaultIncludeSystemContent = true;
@@ -2499,6 +2496,22 @@ public class RepositoryConfiguration {
      */
     public RepositoryConfiguration withName( String docName ) {
         return new RepositoryConfiguration(doc.clone(), docName, environment);
+    }
+
+    protected void warnUseOfDeprecatedFields() {
+        for (List<String> path : DEPRECATED_FIELDS) {
+            Document nested = this.doc;
+            Object value = null;
+            for (String segment : path) {
+                value = nested.get(segment);
+                if (value == null) break;
+                if (value instanceof Document) nested = (Document)value; // or array
+            }
+            if (value != null) {
+                String p = StringUtil.join(path, ".");
+                LOGGER.warn(JcrI18n.repositoryConfigurationContainsDeprecatedField, p, this.doc);
+            }
+        }
     }
 
     @Immutable

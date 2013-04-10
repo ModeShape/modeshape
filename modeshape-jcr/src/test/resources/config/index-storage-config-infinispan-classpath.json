@@ -1,8 +1,5 @@
 {
     "name" : "ISPNIndexingRepo",
-    "storage" : {
-        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
-    },
     "query" : {
         "indexStorage" : {
             "type" : "infinispan",

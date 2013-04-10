@@ -6,9 +6,6 @@
         "default" : "default",
         "allowCreation" : true
     },
-    "storage" : {
-        "transactionManagerLookup" = "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
-    },
     "security" : {
         "anonymous" : {
             "roles" : ["readonly","readwrite","admin"],

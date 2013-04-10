@@ -12,7 +12,6 @@
     "storage" : {
         "cacheName" : "Thorough",
         "cacheConfiguration" : "infinispan_configuration.xml",
-        "transactionManagerLookup" = "org.infinispan.transaction.lookup.GenericTransactionManagerLookup",
         "binaryStorage" : {
             "type" : "file",
             "directory" : "Thorough/binaries",
