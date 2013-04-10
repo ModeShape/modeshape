@@ -1,0 +1,10 @@
+<ver='http://www.modeshape.org/test/nodetypes/versioning'>
+
+[Parent] > mix:versionable
+  - name (string) copy
+  + * (Child) version
+ 
+ 
+[Child] > mix:versionable
+  - name (string) copy
+  
