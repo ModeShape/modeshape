@@ -82,11 +82,12 @@ public interface QueryIndexing {
                       TransactionContext txnCtx );
 
     /**
-     * Retrieve whether at least one node is currently stored in the index.
+     * Retrieve whether the indexes were initialized and empty upon startup.
      * 
-     * @return true if the index(es) have no content, or false if there is at least some content in the indexes
+     * @return true if the index(es) initially had no content, or false if there was already at least some content in the indexes
+     *         upon startup
      */
-    boolean isEmpty();
+    boolean initializedIndexes();
 
     void removeFromIndex( String workspace,
                           Iterable<NodeKey> keys,

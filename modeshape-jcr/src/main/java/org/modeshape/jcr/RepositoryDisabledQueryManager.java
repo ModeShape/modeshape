@@ -72,8 +72,8 @@ class RepositoryDisabledQueryManager extends RepositoryQueryManager {
         }
 
         @Override
-        public boolean isEmpty() {
-            // Even though there is no content, this system is disabled so pretend we're not empty
+        public boolean initializedIndexes() {
+            // Even though there is no content, this system is disabled so pretend we didn't initialize the indexes
             return false;
         }
 
