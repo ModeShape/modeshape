@@ -224,7 +224,7 @@ class RepositoryQueryManager {
         NodeTypeSchemata schemata = runningState.nodeTypeManager().getRepositorySchemata();
         RepositoryCache repoCache = runningState.repositoryCache();
 
-        logger.info(JcrI18n.reindexAll, runningState.name());
+        logger.debug(JcrI18n.reindexAll.text(runningState.name()));
 
         if (includeSystemContent) {
             NodeCache systemWorkspaceCache = repoCache.getWorkspaceCache(repoCache.getSystemWorkspaceName());
