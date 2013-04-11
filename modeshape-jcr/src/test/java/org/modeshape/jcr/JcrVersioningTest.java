@@ -489,10 +489,12 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
 
         NodeIterator ni = vm.merge("/", "clone", true);
         session.save();
-        
-        System.out.println("Failed nodes------------------");
-        while (ni.hasNext()) {
-            System.out.println(ni.nextNode());
+
+        if (print) {
+            System.out.println("Failed nodes------------------");
+            while (ni.hasNext()) {
+                System.out.println(ni.nextNode());
+            }
         }
         session.getNode("/parent1/child2");
     }

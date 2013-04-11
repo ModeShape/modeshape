@@ -1,9 +1,5 @@
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsSame.sameInstance;
-import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -50,11 +46,15 @@ import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionIterator;
 import javax.jcr.version.VersionManager;
-import junit.framework.Test;
 import org.apache.jackrabbit.test.AbstractJCRTest;
 import org.apache.jackrabbit.test.api.ShareableNodeTest;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.JcrTools;
+import junit.framework.Test;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertThat;
 
 /**
  * Additional ModeShape tests that check for JCR compliance.
@@ -75,6 +75,12 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     public static Test suite() {
         return JcrTckSuites.someTestsInline(ModeShapeTckTest.class);
+    }
+
+    @Override
+    protected void setUp() throws Exception {
+        AbstractTransactionalTest.beforeSuite();
+        super.setUp();
     }
 
     @Override
@@ -106,8 +112,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
             }
         }
 
-        // Force a new repository instance for each test ...
-        // ModeShapeRepositoryStub.reloadRepositoryInstance();
+        AbstractTransactionalTest.afterSuite();
     }
 
     protected Node getTestRoot( Session session ) throws Exception {
@@ -1398,7 +1403,6 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     @FixFor( "MODE-1822" )
     public void testShouldBeAbleToVersionWithinUserTransactionAndJBossTransactionManager() throws Exception {
         session = getHelper().getReadWriteSession();
-        print = true;
 
         VersionManager vm = session.getWorkspace().getVersionManager();
 
@@ -2448,8 +2452,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     @FixFor( "MODE-1234" )
-    public void IGNOREtestShouldFindCheckedOutNodesByQuerying() throws Exception {
-        // TODO: Query
+    public void testShouldFindCheckedOutNodesByQuerying() throws Exception {
+
         Session session1 = getHelper().getSuperuserSession();
         VersionManager vm = session1.getWorkspace().getVersionManager();
 
@@ -2468,10 +2472,9 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         session1.save();
 
         file.addMixin("mix:versionable");
-        // session.save();
-
-        isVersionable(vm, file); // here's the problem
         session1.save();
+
+        assertTrue(isVersionable(vm, file));
 
         Version v1 = vm.checkin(file.getPath());
         assertThat(v1, is(notNullValue()));
@@ -2509,16 +2512,11 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     protected int queryForCheckedOutVersionables( Session session,
                                                   int expected,
                                                   boolean print ) throws RepositoryException {
-        String queryStr = "SELECT * FROM [nt:unstructured] AS node JOIN [mix:versionable] AS versionable "
-                          + "ON ISSAMENODE(node,versionable) WHERE versionable.[jcr:isCheckedOut] = true";
+        String queryStr = "SELECT * FROM [mix:versionable] AS versionable WHERE versionable.[jcr:isCheckedOut] = true";
         QueryResult result = query(session, queryStr);
         int actual = (int)result.getRows().getSize();
-        if (print) System.out.println("Result = \n" + result);
-        if (actual != expected) {
-            queryStr = "SELECT * FROM [nt:unstructured] AS node JOIN [mix:versionable] AS versionable "
-                       + "ON ISSAMENODE(node,versionable)";
-            result = query(session, queryStr);
-            System.out.println(result);
+        if (print) {
+            System.out.println("Result = \n" + result);
         }
         assertThat(actual, is(expected));
         return actual;
@@ -2711,6 +2709,34 @@ public class ModeShapeTckTest extends AbstractJCRTest {
             }
             nodesNotFound.append(" not found by query");
             fail(nodesNotFound.toString());
+        }
+    }
+
+    @FixFor( "MODE-1883" )
+    public void testShouldRestoreDeletedNode() throws Exception {
+        session = getHelper().getReadWriteSession();
+        Node node = getTestRoot(session).addNode("checkInTest", "nt:folder");
+        session.save();
+
+        Node n = node.addNode("removeNode", "nt:folder");
+        n.addMixin("mix:versionable");
+        session.save();
+
+        VersionManager vm = session.getWorkspace().getVersionManager();
+
+        // Version 1.0
+        vm.checkout(n.getPath());
+        Version version1 = vm.checkin(n.getPath());
+        assertEquals("1.0", version1.getName());
+
+        n.remove();
+        session.save();
+
+        try {
+            vm.restore(version1, false);
+            fail("An exception should be thrown, because a removed not cannot be restored");
+        } catch (VersionException e) {
+            //expected
         }
     }
 

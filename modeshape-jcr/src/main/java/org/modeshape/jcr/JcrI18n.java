@@ -363,6 +363,7 @@ public final class JcrI18n {
     public static I18n cannotCheckinNodeWithAbortProperty;
     public static I18n cannotCheckinNodeWithAbortChildNode;
     public static I18n noExistingVersionForRestore;
+    public static I18n invalidVersionForRestore;
     public static I18n versionNotInMergeFailed;
     public static I18n unrootedVersionsInRestore;
     public static I18n errorDuringCheckinNode;
