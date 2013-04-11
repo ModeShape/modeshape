@@ -328,7 +328,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             // Always update the configuration ...
             RunningState oldState = this.runningState.get();
-            this.config.set(new RepositoryConfiguration(copy, copy.getString(FieldName.NAME), oldConfiguration.environment()));
+            this.config.set(new RepositoryConfiguration(copy.unwrap(), copy.getString(FieldName.NAME), oldConfiguration.environment()));
             if (oldState != null) {
                 assert state.get() == State.RUNNING;
                 // Repository is running, so create a new running state ...

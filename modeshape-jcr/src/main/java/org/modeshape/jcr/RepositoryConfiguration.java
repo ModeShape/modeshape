@@ -2471,7 +2471,7 @@ public class RepositoryConfiguration {
         // Create a copy of this configuration ...
         Editor copy = edit();
         copy.apply(changes);
-        RepositoryConfiguration updated = new RepositoryConfiguration(copy, this.getName());
+        RepositoryConfiguration updated = new RepositoryConfiguration(copy.unwrap(), this.getName());
         return updated.validate();
     }
 

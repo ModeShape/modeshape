@@ -100,12 +100,6 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
         value = new BasicDocument(FieldName.METADATA, metadata, FieldName.CONTENT, new BasicDocument());
     }
 
-    public SchematicEntryLiteral( String key,
-                                  boolean isCopy ) {
-        this(key);
-        this.copied = true;
-    }
-
     protected SchematicEntryLiteral( MutableDocument document ) {
         this.value = document;
         assert this.value != null;
@@ -209,10 +203,6 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
         return value.getDocument(FieldName.METADATA);
     }
 
-    protected MutableDocument mutableMetadata() {
-        return (MutableDocument)getMetadata();
-    }
-
     protected String getKey() {
         return getMetadata().getString(FieldName.ID);
     }
@@ -249,6 +239,10 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
 
     protected Object setContent( Object content ) {
         assert content != null;
+        if (content instanceof EditableDocument) {
+            content = ((EditableDocument)content).unwrap();
+        }
+
         Object existing = this.value.put(FieldName.CONTENT, content);
         SchematicDelta delta = this.delta.get();
         if (delta != null && delta.isRecordingOperations()) {
@@ -294,7 +288,6 @@ public class SchematicEntryLiteral implements SchematicEntry, DeltaAware {
     protected void internalSetContent( Document content,
                                        Document metadata,
                                        String defaultContentType ) {
-        if (content instanceof EditableDocument) content = ((EditableDocument)content).unwrap();
         setContent(content);
         setMetadata(metadata, defaultContentType);
     }
