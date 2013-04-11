@@ -702,7 +702,12 @@ final class JcrVersionManager implements VersionManager {
         // Create a new session in which we'll finish the restore, so this session remains thread-safe ...
         JcrSession restoreSession = session.spawnSession(false);
         String identifier = version.getContainingHistory().getVersionableIdentifier();
-        AbstractJcrNode node = restoreSession.getNonSystemNodeByIdentifier(identifier);
+        AbstractJcrNode node = null;
+        try {
+            node = restoreSession.getNonSystemNodeByIdentifier(identifier);
+        } catch (ItemNotFoundException e) {
+            throw new VersionException(JcrI18n.invalidVersionForRestore.text());
+        }
         Path path = node.path();
         restore(restoreSession, path, version, null, removeExisting);
     }
