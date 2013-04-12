@@ -934,8 +934,8 @@
                                         },
                                         "channelConfiguration" : { 
                                             "type" : "string",
-                                            "required" : true,
-                                            "description" : "The JGroups channel configuration. The value should be the path to a resource file on the classpath containing the JGroups configuration."
+                                            "required" : false,
+                                            "description" : "The optional JGroups channel configuration. The value should be the path to a resource file on the classpath containing the JGroups configuration."
                                         },
                                         "description" : {
                                             "type" : "string",
@@ -961,8 +961,8 @@
                                         },
                                         "channelConfiguration" : {
                                             "type" : "string",
-                                            "required" : true,
-                                            "description" : "The JGroups channel configuration. The value should be the path to a resource file on the classpath containing the JGroups configuration."
+                                            "required" : false,
+                                            "description" : "The optional JGroups channel configuration. The value should be the path to a resource file on the classpath containing the JGroups configuration."
                                         },
                                         "description" : {
                                             "type" : "string",

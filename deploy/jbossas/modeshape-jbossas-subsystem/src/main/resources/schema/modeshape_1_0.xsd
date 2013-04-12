@@ -832,15 +832,6 @@
     </xs:attribute>
   </xs:attributeGroup>
 
-  <xs:attributeGroup name="jgroups-backend-attributes">
-    <xs:attribute name="channel-name" type="xs:string" use="required">
-      <xs:annotation>
-        <xs:documentation>The name of the JGroups channel used for indexing updates.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-  </xs:attributeGroup>
-
-
   <!-- Global simple types -->
   <xs:simpleType name="index-format">
     <xs:restriction base="xs:string">

@@ -23,7 +23,11 @@
     },
     "query":{
         "enabled":true,
-        "rebuildUponStartup":"if_missing",
+        "indexing" : {
+            "rebuildOnStartup": {
+                "when": "if_missing"
+            }
+        },
         "indexStorage": {
             "type":"filesystem",
             "location":"target/clustered/repository_2/index",
