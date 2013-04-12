@@ -34,20 +34,19 @@
 
 [teiidddl:constraint] abstract mixin
 - teiidddl:constraintType (string) < 'PRIMARY KEY', 'UNIQUE', 'ACCESSPATTERN', 'FOREIGN KEY', 'INDEX'
+- teiidddl:tableElementRefs (reference) multiple
  
 [teiidddl:tableElementConstraint] > teiidddl:constraint mixin
 - teiidddl:constraintType (string) mandatory < 'PRIMARY KEY', 'UNIQUE', 'ACCESSPATTERN'
-- teiidddl:tableElementRefs (reference) multiple
 
-[teiidddl:tableElementReferencesConstraint] > teiidddl:constraint mixin
+[teiidddl:foreignKeyConstraint] > teiidddl:constraint mixin
 - teiidddl:constraintType (string) = 'FOREIGN KEY' mandatory autocreated < 'FOREIGN KEY'
-- teiidddl:tableElementRefs (reference) multiple
 - teiidddl:tableRef (reference) mandatory
-- teiidddl:referencesTableElementRefs (reference) multiple
+- teiidddl:tableRefElementRefs (reference) multiple
  
-[teiidddl:expressionConstraint] > teiidddl:constraint mixin
+[teiidddl:indexConstraint] > teiidddl:constraint mixin
 - teiidddl:constraintType (string) = 'INDEX' mandatory autocreated < 'INDEX'
-- teiidddl:expression (string) mandatory
+- teiidddl:expression (string)
 
 // =============================================================================
 // SCHEMA ELEMENT
@@ -94,7 +93,7 @@
 - ddl:datatypeLength (long)
 - ddl:datatypePrecision (long)
 - ddl:datatypeScale (long)
-- teiidddl:canBeNull (boolean) = 'true' mandatory autocreated
+- ddl:nullable (string) = 'NULL' mandatory autocreated < 'NULL', 'NOT NULL'
 + * (ddl:statementOption) = ddl:statementOption
 
 [teiidddl:resultSet] abstract mixin

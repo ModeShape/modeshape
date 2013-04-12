@@ -111,7 +111,7 @@ final class CreateProcedureParser extends StatementParser {
         final String id = parseIdentifier(tokens);
         final AstNode procedureNode = getNodeFactory().node(id,
                                                             parentNode,
-                                                            (procedure ? TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE : TeiidDdlLexicon.CreateProcedure.FUNCTION_NODE_TYPE));
+                                                            (procedure ? TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT : TeiidDdlLexicon.CreateProcedure.FUNCTION_STATEMENT));
         procedureNode.setProperty(TeiidDdlLexicon.SchemaElement.TYPE, schemaElementType.toDdl());
 
         // must have parens after identifier and may have one or more parameters
@@ -163,9 +163,7 @@ final class CreateProcedureParser extends StatementParser {
         }
 
         final String id = parseIdentifier(tokens);
-        final AstNode parameterNode = getNodeFactory().node(id,
-                                                            procedureNode,
-                                                            TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+        final AstNode parameterNode = getNodeFactory().node(id, procedureNode, TeiidDdlLexicon.CreateProcedure.PARAMETER);
         parameterNode.setProperty(TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, paramType);
 
         // parse data type
@@ -242,9 +240,7 @@ final class CreateProcedureParser extends StatementParser {
         final DataType dataType = getDataTypeParser().parse(tokens);
         final boolean notNull = tokens.canConsume(NOT_NULL);
 
-        final AstNode resultColumnNode = getNodeFactory().node(id,
-                                                               resultSetNode,
-                                                               TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN_NODE_TYPE);
+        final AstNode resultColumnNode = getNodeFactory().node(id, resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN);
         resultColumnNode.setProperty(StandardDdlLexicon.NULLABLE, (notNull ? "NOT NULL" : "NULL"));
         getDataTypeParser().setPropertiesOnNode(resultColumnNode, dataType);
 
@@ -271,7 +267,7 @@ final class CreateProcedureParser extends StatementParser {
                 // create result columns node
                 final AstNode resultSetNode = getNodeFactory().node(TeiidDdlLexicon.CreateProcedure.RESULT_SET,
                                                                     procedureNode,
-                                                                    TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS_NODE_TYPE);
+                                                                    TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS);
                 resultSetNode.setProperty(TeiidDdlLexicon.CreateProcedure.TABLE_FLAG, table);
 
                 parseProcedureResultColumn(tokens, resultSetNode); // must have at least one
@@ -315,7 +311,7 @@ final class CreateProcedureParser extends StatementParser {
                 // create result node
                 final AstNode resultNode = getNodeFactory().node(TeiidDdlLexicon.CreateProcedure.RESULT_SET,
                                                                  procedureNode,
-                                                                 TeiidDdlLexicon.CreateProcedure.RESULT_DATA_TYPE_NODE_TYPE);
+                                                                 TeiidDdlLexicon.CreateProcedure.RESULT_DATA_TYPE);
                 resultNode.setProperty(DATATYPE_NAME, dataType.getName());
 
                 if (dataType.getLength() != DataType.DEFAULT_LENGTH) {

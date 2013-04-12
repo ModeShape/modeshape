@@ -98,41 +98,41 @@ final class AlterOptionsParser extends StatementParser {
         String refNodeType = null;
 
         if (tokens.canConsume(DdlStatement.ALTER_TABLE.tokens())) {
-            nodeType = TeiidDdlLexicon.AlterOptions.TABLE_NODE_TYPE;
+            nodeType = TeiidDdlLexicon.AlterOptions.TABLE_STATEMENT;
             schemaElementType = SchemaElementType.FOREIGN;
-            refNodeType = TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE;
+            refNodeType = TeiidDdlLexicon.CreateTable.TABLE_STATEMENT;
         } else if (tokens.canConsume(DdlStatement.ALTER_VIEW.tokens())) {
-            nodeType = TeiidDdlLexicon.AlterOptions.VIEW_NODE_TYPE;
+            nodeType = TeiidDdlLexicon.AlterOptions.VIEW_STATEMENT;
             schemaElementType = SchemaElementType.FOREIGN;
-            refNodeType = TeiidDdlLexicon.CreateTable.VIEW_NODE_TYPE;
+            refNodeType = TeiidDdlLexicon.CreateTable.VIEW_STATEMENT;
         } else if (tokens.canConsume(DdlStatement.ALTER_PROCEDURE.tokens())) {
-            nodeType = TeiidDdlLexicon.AlterOptions.PROCEDURE_NODE_TYPE;
+            nodeType = TeiidDdlLexicon.AlterOptions.PROCEDURE_STATEMENT;
             schemaElementType = SchemaElementType.FOREIGN;
-            refNodeType = TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE;
+            refNodeType = TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT;
         } else if (tokens.canConsume(DdlStatement.ALTER_VIRTUAL_TABLE.tokens())) {
-            nodeType = TeiidDdlLexicon.AlterOptions.TABLE_NODE_TYPE;
+            nodeType = TeiidDdlLexicon.AlterOptions.TABLE_STATEMENT;
             schemaElementType = SchemaElementType.VIRTUAL;
-            refNodeType = TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE;
+            refNodeType = TeiidDdlLexicon.CreateTable.TABLE_STATEMENT;
         } else if (tokens.canConsume(DdlStatement.ALTER_VIRTUAL_VIEW.tokens())) {
-            nodeType = TeiidDdlLexicon.AlterOptions.VIEW_NODE_TYPE;
+            nodeType = TeiidDdlLexicon.AlterOptions.VIEW_STATEMENT;
             schemaElementType = SchemaElementType.VIRTUAL;
-            refNodeType = TeiidDdlLexicon.CreateTable.VIEW_NODE_TYPE;
+            refNodeType = TeiidDdlLexicon.CreateTable.VIEW_STATEMENT;
         } else if (tokens.canConsume(DdlStatement.ALTER_VIRTUAL_PROCEDURE.tokens())) {
-            nodeType = TeiidDdlLexicon.AlterOptions.PROCEDURE_NODE_TYPE;
+            nodeType = TeiidDdlLexicon.AlterOptions.PROCEDURE_STATEMENT;
             schemaElementType = SchemaElementType.VIRTUAL;
-            refNodeType = TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE;
+            refNodeType = TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT;
         } else if (tokens.canConsume(DdlStatement.ALTER_FOREIGN_TABLE.tokens())) {
-            nodeType = TeiidDdlLexicon.AlterOptions.TABLE_NODE_TYPE;
+            nodeType = TeiidDdlLexicon.AlterOptions.TABLE_STATEMENT;
             schemaElementType = SchemaElementType.FOREIGN;
-            refNodeType = TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE;
+            refNodeType = TeiidDdlLexicon.CreateTable.TABLE_STATEMENT;
         } else if (tokens.canConsume(DdlStatement.ALTER_FOREIGN_VIEW.tokens())) {
-            nodeType = TeiidDdlLexicon.AlterOptions.VIEW_NODE_TYPE;
+            nodeType = TeiidDdlLexicon.AlterOptions.VIEW_STATEMENT;
             schemaElementType = SchemaElementType.FOREIGN;
-            refNodeType = TeiidDdlLexicon.CreateTable.VIEW_NODE_TYPE;
+            refNodeType = TeiidDdlLexicon.CreateTable.VIEW_STATEMENT;
         } else if (tokens.canConsume(DdlStatement.ALTER_FOREIGN_PROCEDURE.tokens())) {
-            nodeType = TeiidDdlLexicon.AlterOptions.PROCEDURE_NODE_TYPE;
+            nodeType = TeiidDdlLexicon.AlterOptions.PROCEDURE_STATEMENT;
             schemaElementType = SchemaElementType.FOREIGN;
-            refNodeType = TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE;
+            refNodeType = TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT;
         } else {
             throw new TeiidDdlParsingException(tokens, "Unparsable alter options statement");
         }
@@ -186,11 +186,11 @@ final class AlterOptionsParser extends StatementParser {
             String nodeType = null;
 
             if (tokens.canConsume(TeiidReservedWord.COLUMN.toDdl())) {
-                nodeType = TeiidDdlLexicon.AlterOptions.COLUMN_NODE_TYPE;
+                nodeType = TeiidDdlLexicon.AlterOptions.COLUMN;
             } else if (tokens.canConsume(TeiidReservedWord.PARAMETER.toDdl())) {
-                nodeType = TeiidDdlLexicon.AlterOptions.PARAMETER_NODE_TYPE;
+                nodeType = TeiidDdlLexicon.AlterOptions.PARAMETER;
             } else {
-                nodeType = TeiidDdlLexicon.AlterOptions.COLUMN_NODE_TYPE;
+                nodeType = TeiidDdlLexicon.AlterOptions.COLUMN;
             }
 
             assert (nodeType != null) : "Alter column options node type is null";
@@ -206,10 +206,10 @@ final class AlterOptionsParser extends StatementParser {
             } else {
                 String refPropType = null;
 
-                if (refTableNode.hasMixin(TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE)) {
-                    refPropType = TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE;
+                if (refTableNode.hasMixin(TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT)) {
+                    refPropType = TeiidDdlLexicon.CreateProcedure.PARAMETER;
                 } else {
-                    refPropType = TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE;
+                    refPropType = TeiidDdlLexicon.CreateTable.TABLE_ELEMENT;
                 }
 
                 final AstNode refNode = getNode(refTableNode, refName, refPropType);
@@ -266,13 +266,13 @@ final class AlterOptionsParser extends StatementParser {
                 // create options list node
                 AstNode optionsListNode = null;
 
-                if (parentNode.hasMixin(TeiidDdlLexicon.AlterOptions.COLUMN_NODE_TYPE)
-                    || parentNode.hasMixin(TeiidDdlLexicon.AlterOptions.PARAMETER_NODE_TYPE)) {
+                if (parentNode.hasMixin(TeiidDdlLexicon.AlterOptions.COLUMN)
+                    || parentNode.hasMixin(TeiidDdlLexicon.AlterOptions.PARAMETER)) {
                     optionsListNode = parentNode;
                 } else {
                     optionsListNode = getNodeFactory().node(TeiidDdlLexicon.AlterOptions.ALTERS,
                                                             parentNode,
-                                                            TeiidDdlLexicon.AlterOptions.OPTIONS_LIST_NODE_TYPE);
+                                                            TeiidDdlLexicon.AlterOptions.OPTIONS_LIST);
                 }
 
                 // will have one or more add, set, or drop clauses separated by comma

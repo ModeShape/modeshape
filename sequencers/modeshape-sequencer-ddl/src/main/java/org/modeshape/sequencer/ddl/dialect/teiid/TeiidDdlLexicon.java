@@ -34,9 +34,9 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
 
     static String[] getValidSchemaChildTypes() {
         if (_schemaChildTypes == null) {
-            _schemaChildTypes = new String[] {AlterOptions.TABLE_NODE_TYPE, AlterOptions.VIEW_NODE_TYPE,
-                AlterOptions.PROCEDURE_NODE_TYPE, CreateProcedure.FUNCTION_NODE_TYPE, CreateProcedure.PROCEDURE_NODE_TYPE,
-                CreateTable.TABLE_NODE_TYPE, CreateTable.VIEW_NODE_TYPE, CreateTrigger.NODE_TYPE};
+            _schemaChildTypes = new String[] {AlterOptions.TABLE_STATEMENT, AlterOptions.VIEW_STATEMENT,
+                AlterOptions.PROCEDURE_STATEMENT, CreateProcedure.FUNCTION_STATEMENT, CreateProcedure.PROCEDURE_STATEMENT,
+                CreateTable.TABLE_STATEMENT, CreateTable.VIEW_STATEMENT, CreateTrigger.STATEMENT};
         }
 
         return _schemaChildTypes;
@@ -45,7 +45,7 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
     /**
      * JCR names related to the alter options DDL statement.
      */
-    interface AlterOptions {
+    public interface AlterOptions {
 
         /**
          * The child node name for the element being altered (name is not prefixed).
@@ -53,9 +53,9 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
         String ALTERS = "alters";
 
         /**
-         * The node type name for an alter column clause.
+         * The mixin name for an alter column clause.
          */
-        String COLUMN_NODE_TYPE = Namespace.PREFIX + ":alterColumn";
+        String COLUMN = Namespace.PREFIX + ":alterColumn";
 
         /**
          * The property name for the dropped schema elements.
@@ -63,19 +63,19 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
         String DROPPED = Namespace.PREFIX + ":dropped";
 
         /**
-         * The node type name for a list of altered options.
+         * The mixin name for a list of altered options.
          */
-        String OPTIONS_LIST_NODE_TYPE = Namespace.PREFIX + ":alterOptionsList";
+        String OPTIONS_LIST = Namespace.PREFIX + ":alterOptionsList";
 
         /**
-         * The node type name for an alter parameter clause.
+         * The mixin name for an alter parameter clause.
          */
-        String PARAMETER_NODE_TYPE = Namespace.PREFIX + ":alterParameter";
+        String PARAMETER = Namespace.PREFIX + ":alterParameter";
 
         /**
-         * The node type name for an alter procedure DDL statement.
+         * The mixin name for an alter procedure DDL statement.
          */
-        String PROCEDURE_NODE_TYPE = Namespace.PREFIX + ":alterProcedure";
+        String PROCEDURE_STATEMENT = Namespace.PREFIX + ":alterProcedure";
 
         /**
          * The column, parameter, or table reference property name.
@@ -83,31 +83,36 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
         String REFERENCE = Namespace.PREFIX + ":reference";
 
         /**
-         * The node type name for an alter table DDL statement.
+         * The mixin name for an alter table DDL statement.
          */
-        String TABLE_NODE_TYPE = Namespace.PREFIX + ":alterTable";
+        String TABLE_STATEMENT = Namespace.PREFIX + ":alterTable";
 
         /**
-         * The node type name for an alter view DDL statement.
+         * The mixin name for an alter view DDL statement.
          */
-        String VIEW_NODE_TYPE = Namespace.PREFIX + ":alterView";
+        String VIEW_STATEMENT = Namespace.PREFIX + ":alterView";
 
     }
 
     /**
      * JCR names for DDL constraint-related elements.
      */
-    interface Constraint {
+    public interface Constraint {
 
         /**
-         * The expression property name.
+         * The expression property name used in index constraints.
          */
         String EXPRESSION = Namespace.PREFIX + ":expression";
 
         /**
-         * The table element constraint node type name.
+         * The table element foreign key constraint mixin name.
          */
-        String EXPRESSION_NODE_TYPE = Namespace.PREFIX + ":expressionConstraint";
+        String FOREIGN_KEY_CONSTRAINT = Namespace.PREFIX + ":foreignKeyConstraint";
+
+        /**
+         * The table element index constraint mixin name.
+         */
+        String INDEX_CONSTRAINT = Namespace.PREFIX + ":indexConstraint";
 
         /**
          * The table element references property name.
@@ -115,14 +120,9 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
         String REFERENCES = Namespace.PREFIX + ":tableElementRefs";
 
         /**
-         * The table element constraint node type name.
+         * The table element constraint mixin name.
          */
-        String TABLE_ELEMENT_NODE_TYPE = Namespace.PREFIX + ":tableElementConstraint";
-
-        /**
-         * The table element constraint's references node type name.
-         */
-        String TABLE_ELEMENT_REFERENCES_NODE_TYPE = Namespace.PREFIX + ":tableElementReferencesConstraint";
+        String TABLE_ELEMENT = Namespace.PREFIX + ":tableElementConstraint";
 
         /**
          * The references table reference property name.
@@ -132,7 +132,7 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
         /**
          * The table element references property name.
          */
-        String TABLE_REFERENCE_REFERENCES = Namespace.PREFIX + ":referencesTableElementRefs";
+        String TABLE_REFERENCE_REFERENCES = Namespace.PREFIX + ":tableRefElementRefs";
 
         /**
          * The constraint type property name.
@@ -144,17 +144,17 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
     /**
      * JCR names related to the create procedure DDL statement.
      */
-    interface CreateProcedure {
+    public interface CreateProcedure {
 
         /**
-         * The node type name for a create function statement.
+         * The mixin name for a create function statement.
          */
-        String FUNCTION_NODE_TYPE = Namespace.PREFIX + ":createFunction";
+        String FUNCTION_STATEMENT = Namespace.PREFIX + ":createFunction";
 
         /**
-         * The node type name for a create procedure parameter.
+         * The mixin name for a create procedure parameter.
          */
-        String PARAMETER_NODE_TYPE = Namespace.PREFIX + ":procedureParameter";
+        String PARAMETER = Namespace.PREFIX + ":procedureParameter";
 
         /**
          * The name of the procedure parameter result flag property.
@@ -167,24 +167,24 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
         String PARAMETER_TYPE = Namespace.PREFIX + ":parameterType";
 
         /**
-         * The node type name for a create procedure statement.
+         * The mixin name for a create procedure statement.
          */
-        String PROCEDURE_NODE_TYPE = Namespace.PREFIX + ":createProcedure";
+        String PROCEDURE_STATEMENT = Namespace.PREFIX + ":createProcedure";
 
         /**
-         * The node type name of a result column.
+         * The mixin name of a result column.
          */
-        String RESULT_COLUMN_NODE_TYPE = Namespace.PREFIX + ":resultColumn";
+        String RESULT_COLUMN = Namespace.PREFIX + ":resultColumn";
 
         /**
-         * The node type name of the result set that contains result columns.
+         * The mixin name of the result set that contains result columns.
          */
-        String RESULT_COLUMNS_NODE_TYPE = Namespace.PREFIX + ":resultColumns";
+        String RESULT_COLUMNS = Namespace.PREFIX + ":resultColumns";
 
         /**
-         * The node type name of the result set that contains one unnamed data type.
+         * The mixin name of the result set that contains one unnamed data type.
          */
-        String RESULT_DATA_TYPE_NODE_TYPE = Namespace.PREFIX + ":resultDataType";
+        String RESULT_DATA_TYPE = Namespace.PREFIX + ":resultDataType";
 
         /**
          * The child node name for a result set (name is not prefixed).
@@ -206,7 +206,7 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
     /**
      * JCR names related to the create table DDL statement.
      */
-    interface CreateTable {
+    public interface CreateTable {
 
         /**
          * The auto-increment property name of a table element.
@@ -214,31 +214,31 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
         String AUTO_INCREMENT = Namespace.PREFIX + ":autoIncrement";
 
         /**
-         * The property name for create schema (table, view) statement.
+         * The property name for the query expression.
          */
         String QUERY_EXPRESSION = Namespace.PREFIX + ":queryExpression";
 
         /**
-         * The node type name for a table element.
+         * The mixin name for a table element.
          */
-        String TABLE_ELEMENT_NODE_TYPE = Namespace.PREFIX + ":tableElement";
+        String TABLE_ELEMENT = Namespace.PREFIX + ":tableElement";
 
         /**
-         * The node type name for a create table statement.
+         * The mixin name for a create table statement.
          */
-        String TABLE_NODE_TYPE = Namespace.PREFIX + ":createTable";
+        String TABLE_STATEMENT = Namespace.PREFIX + ":createTable";
 
         /**
-         * The node type name for a create view statement.
+         * The mixin name for a create view statement.
          */
-        String VIEW_NODE_TYPE = Namespace.PREFIX + ":createView";
+        String VIEW_STATEMENT = Namespace.PREFIX + ":createView";
 
     }
 
     /**
      * JCR names related to the create trigger DDL statement.
      */
-    interface CreateTrigger {
+    public interface CreateTrigger {
 
         /**
          * A property for a trigger row action that defines the action.
@@ -256,14 +256,14 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
         String INSTEAD_OF = Namespace.PREFIX + ":insteadOf";
 
         /**
-         * A create trigger DDL statement node type name.
-         */
-        String NODE_TYPE = Namespace.PREFIX + ":createTrigger";
-
-        /**
          * A trigger row action child node name (name is not prefixed).
          */
         String ROW_ACTION = "rowAction";
+
+        /**
+         * A create trigger DDL statement mixin name.
+         */
+        String STATEMENT = Namespace.PREFIX + ":createTrigger";
 
         /**
          * The table reference property name.
@@ -271,7 +271,7 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
         String TABLE_REFERENCE = Namespace.PREFIX + ":tableRef";
 
         /**
-         * A trigger row action node type name.
+         * A trigger row action mixin name.
          */
         String TRIGGER_ROW_ACTION = Namespace.PREFIX + ":triggerRowAction";
 
@@ -287,7 +287,7 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
 
     }
 
-    interface SchemaElement {
+    public interface SchemaElement {
 
         String MIXIN = Namespace.PREFIX + ':' + "schemaElement";
         String TYPE = Namespace.PREFIX + ':' + "schemaElementType";

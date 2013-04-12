@@ -57,7 +57,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
         final String content = "CREATE TRIGGER ON missingTable INSTEAD OF DELETE AS FOR EACH ROW DELETE FROM x WHERE foo = 'bar';";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(triggerNode.getName(), is("missingTable"));
-        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.STATEMENT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.DELETE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, true);
         assertThat(triggerNode.getProperty(TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE), is(nullValue()));
@@ -68,7 +68,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF DELETE AS FOR EACH ROW DELETE FROM x WHERE foo = 'bar';";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(triggerNode.getName(), is("foo"));
-        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.STATEMENT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.DELETE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, true);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, this.tableRefNode);
@@ -85,7 +85,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF DELETE AS FOR EACH ROW BEGIN ATOMIC DELETE FROM x WHERE foo = 'bar'; END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(triggerNode.getName(), is("foo"));
-        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.STATEMENT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.DELETE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, true);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, this.tableRefNode);
@@ -102,7 +102,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF DELETE AS FOR EACH ROW BEGIN DELETE FROM x WHERE foo = 'bar'; END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(triggerNode.getName(), is("foo"));
-        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.STATEMENT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.DELETE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, false);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, this.tableRefNode);
@@ -119,7 +119,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF DELETE AS FOR EACH ROW BEGIN DELETE FROM x WHERE foo = 'bar'; DELETE FROM x WHERE bar = 'foo'; END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(triggerNode.getName(), is("foo"));
-        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.STATEMENT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.DELETE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, false);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, this.tableRefNode);
@@ -139,7 +139,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF INSERT AS FOR EACH ROW insert into g1 (e1, e2) values (1, 'trig');";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(triggerNode.getName(), is("foo"));
-        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.STATEMENT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.INSERT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, true);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, this.tableRefNode);
@@ -158,7 +158,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF INSERT AS FOR EACH ROW BEGIN ATOMIC insert into g1 (e1, e2) values (1, 'trig'); END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(triggerNode.getName(), is("foo"));
-        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.STATEMENT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.INSERT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, true);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, this.tableRefNode);
@@ -177,7 +177,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF INSERT AS FOR EACH ROW BEGIN insert into g1 (e1, e2) values (1, 'trig'); END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(triggerNode.getName(), is("foo"));
-        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.STATEMENT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.INSERT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, false);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, this.tableRefNode);
@@ -196,7 +196,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF INSERT AS FOR EACH ROW BEGIN insert into g1 (e1, e2) values (1, 'trig'); insert into g1 (e1, e2) values (2, 'hammer'); END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(triggerNode.getName(), is("foo"));
-        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.STATEMENT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.INSERT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, false);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, this.tableRefNode);
@@ -220,7 +220,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF UPDATE AS FOR EACH ROW UPDATE x SET foo = 'bar';";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(triggerNode.getName(), is("foo"));
-        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.STATEMENT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.UPDATE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, true);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, this.tableRefNode);
@@ -237,7 +237,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF UPDATE AS FOR EACH ROW BEGIN ATOMIC UPDATE x SET foo = 'bar'; END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(triggerNode.getName(), is("foo"));
-        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.STATEMENT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.UPDATE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, true);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, this.tableRefNode);
@@ -254,7 +254,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF UPDATE AS FOR EACH ROW BEGIN UPDATE x SET foo = 'bar'; END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(triggerNode.getName(), is("foo"));
-        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.STATEMENT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.UPDATE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, false);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, this.tableRefNode);
@@ -271,7 +271,7 @@ public class CreateTriggerParserTest extends TeiidDdlTest {
         final String content = "CREATE TRIGGER ON foo INSTEAD OF UPDATE AS FOR EACH ROW BEGIN UPDATE x SET foo = 'bar'; UPDATE x SET bar = 'foo'; END";
         final AstNode triggerNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(triggerNode.getName(), is("foo"));
-        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+        assertMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.STATEMENT);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.UPDATE);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, false);
         assertProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, this.tableRefNode);
