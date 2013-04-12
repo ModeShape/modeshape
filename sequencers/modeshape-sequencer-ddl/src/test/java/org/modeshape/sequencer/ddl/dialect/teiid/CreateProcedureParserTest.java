@@ -56,7 +56,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
     public void shouldParseCreateProcedure() {
         final String content = "CREATE PROCEDURE FOO(P1 integer) RETURNS (e1 integer, e2 varchar) AS SELECT * FROM PM1.G1;";
         final AstNode procedureNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE);
+        assertMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
         assertProperty(procedureNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertThat(procedureNode.getName(), is("FOO"));
 
@@ -71,7 +71,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         { // result set
             final AstNode resultSetNode = procedureNode.childrenWithName(TeiidDdlLexicon.CreateProcedure.RESULT_SET).get(0);
-            assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS_NODE_TYPE);
+            assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS);
             assertProperty(resultSetNode, TeiidDdlLexicon.CreateProcedure.TABLE_FLAG, false);
             assertThat(resultSetNode.getChildCount(), is(2));
 
@@ -105,7 +105,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
     public void shouldParseMixedCaseTypes() {
         final String content = "CREATE FUNCTION SourceFunc(flag Boolean) RETURNS varchaR options (UUID 'z')";
         final AstNode functionNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertMixinType(functionNode, TeiidDdlLexicon.CreateProcedure.FUNCTION_NODE_TYPE);
+        assertMixinType(functionNode, TeiidDdlLexicon.CreateProcedure.FUNCTION_STATEMENT);
         assertProperty(functionNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertThat(functionNode.getName(), is("SourceFunc"));
 
@@ -120,7 +120,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         { // result set
             final AstNode resultSetNode = functionNode.childrenWithName(TeiidDdlLexicon.CreateProcedure.RESULT_SET).get(0);
-            assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_DATA_TYPE_NODE_TYPE);
+            assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_DATA_TYPE);
             assertThat(resultSetNode.getChildCount(), is(0));
             assertProperty(resultSetNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.VARCHAR.toDdl());
         }
@@ -138,7 +138,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
     public void shouldParsePushdownFunctionNoArgs() {
         final String content = "CREATE FOREIGN FUNCTION SourceFunc() RETURNS integer OPTIONS (UUID 'hello world')";
         final AstNode functionNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertMixinType(functionNode, TeiidDdlLexicon.CreateProcedure.FUNCTION_NODE_TYPE);
+        assertMixinType(functionNode, TeiidDdlLexicon.CreateProcedure.FUNCTION_STATEMENT);
         assertProperty(functionNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertThat(functionNode.getName(), is("SourceFunc"));
 
@@ -148,7 +148,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         AstNode resultSetNode = null;
         AstNode optionNode = null;
 
-        if (functionNode.getChild(0).hasMixin(TeiidDdlLexicon.CreateProcedure.RESULT_DATA_TYPE_NODE_TYPE)) {
+        if (functionNode.getChild(0).hasMixin(TeiidDdlLexicon.CreateProcedure.RESULT_DATA_TYPE)) {
             resultSetNode = functionNode.getChild(0);
             optionNode = functionNode.getChild(1);
         } else if (hasMixin(functionNode.getChild(0), StandardDdlLexicon.OPTION)) {
@@ -177,7 +177,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
                                + "RETURNS (r1 varchar, r2 decimal) "
                                + "OPTIONS(RANDOM 'any', UUID 'uuid', NAMEINSOURCE 'nis', ANNOTATION 'desc', UPDATECOUNT '2');";
         final AstNode procedureNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE);
+        assertMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
         assertProperty(procedureNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertThat(procedureNode.getName(), is("myProc"));
 
@@ -204,7 +204,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         { // result set
             final AstNode resultSetNode = procedureNode.childrenWithName(TeiidDdlLexicon.CreateProcedure.RESULT_SET).get(0);
-            assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS_NODE_TYPE);
+            assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS);
             assertProperty(resultSetNode, TeiidDdlLexicon.CreateProcedure.TABLE_FLAG, false);
             assertThat(resultSetNode.getChildCount(), is(2));
 
@@ -243,7 +243,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         final String content = "CREATE VIRTUAL FUNCTION SourceFunc(flag boolean, msg varchar) RETURNS varchar "
                                + "OPTIONS(CATEGORY 'misc', AGGREGATE 'true', \"allows-distinct\" 'true', UUID 'y')";
         final AstNode functionNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertMixinType(functionNode, TeiidDdlLexicon.CreateProcedure.FUNCTION_NODE_TYPE);
+        assertMixinType(functionNode, TeiidDdlLexicon.CreateProcedure.FUNCTION_STATEMENT);
         assertProperty(functionNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
         assertThat(functionNode.getName(), is("SourceFunc"));
 
@@ -264,7 +264,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         { // result set
             final AstNode resultSetNode = functionNode.childrenWithName(TeiidDdlLexicon.CreateProcedure.RESULT_SET).get(0);
-            assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_DATA_TYPE_NODE_TYPE);
+            assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_DATA_TYPE);
             assertThat(resultSetNode.getChildCount(), is(0));
             assertProperty(resultSetNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.VARCHAR.toDdl());
         }
@@ -299,7 +299,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
                                + option5.getKey() + " '" + option5.getValue() + "', " + option6.getKey() + " '"
                                + option6.getValue() + "', " + option7.getKey() + " '" + option7.getValue() + "')";
         final AstNode functionNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertMixinType(functionNode, TeiidDdlLexicon.CreateProcedure.FUNCTION_NODE_TYPE);
+        assertMixinType(functionNode, TeiidDdlLexicon.CreateProcedure.FUNCTION_STATEMENT);
         assertProperty(functionNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
         assertThat(functionNode.getName(), is("SourceFunc"));
 
@@ -338,7 +338,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
     public void shouldParseVarargs() {
         final String content = "CREATE FUNCTION SourceFunc(flag boolean) RETURNS varchar options (varargs 'true', UUID 'z')";
         final AstNode functionNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertMixinType(functionNode, TeiidDdlLexicon.CreateProcedure.FUNCTION_NODE_TYPE);
+        assertMixinType(functionNode, TeiidDdlLexicon.CreateProcedure.FUNCTION_STATEMENT);
         assertProperty(functionNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertThat(functionNode.getName(), is("SourceFunc"));
 
@@ -353,7 +353,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         { // result set
             final AstNode resultSetNode = functionNode.childrenWithName(TeiidDdlLexicon.CreateProcedure.RESULT_SET).get(0);
-            assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_DATA_TYPE_NODE_TYPE);
+            assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_DATA_TYPE);
             assertThat(resultSetNode.getChildCount(), is(0));
             assertProperty(resultSetNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.VARCHAR.toDdl());
         }
@@ -374,7 +374,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
                                + "OPTIONS(RANDOM 'any', UUID 'uuid', NAMEINSOURCE 'nis', ANNOTATION 'desc', UPDATECOUNT '2') "
                                + "AS /*+ cache */ BEGIN select * from foo; END";
         final AstNode procedureNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE);
+        assertMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
         assertProperty(procedureNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
         assertThat(procedureNode.getName(), is("myProc"));
 
@@ -401,7 +401,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         { // result set
             final AstNode resultSetNode = procedureNode.childrenWithName(TeiidDdlLexicon.CreateProcedure.RESULT_SET).get(0);
-            assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS_NODE_TYPE);
+            assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS);
             assertProperty(resultSetNode, TeiidDdlLexicon.CreateProcedure.TABLE_FLAG, false);
             assertThat(resultSetNode.getChildCount(), is(2));
 
@@ -443,7 +443,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
                                + "RETURNS TABLE (file blob, filePath string) "
                                + "OPTIONS (ANNOTATION 'Returns files that match the given path and pattern as BLOBs')";
         final AstNode procedureNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE);
+        assertMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
         assertProperty(procedureNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertThat(procedureNode.getName(), is("getFiles"));
 
@@ -460,7 +460,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         { // result set
             final AstNode resultSetNode = procedureNode.childrenWithName(TeiidDdlLexicon.CreateProcedure.RESULT_SET).get(0);
-            assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS_NODE_TYPE);
+            assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS);
             assertProperty(resultSetNode, TeiidDdlLexicon.CreateProcedure.TABLE_FLAG, true);
             assertThat(resultSetNode.getChildCount(), is(2));
 
@@ -496,7 +496,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
                                + "RETURNS TABLE (file clob, filePath string) "
                                + "OPTIONS (ANNOTATION 'Returns text files that match the given path and pattern as CLOBs')";
         final AstNode procedureNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE);
+        assertMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
         assertProperty(procedureNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertThat(procedureNode.getName(), is("getTextFiles"));
 
@@ -513,7 +513,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         { // result set
             final AstNode resultSetNode = procedureNode.childrenWithName(TeiidDdlLexicon.CreateProcedure.RESULT_SET).get(0);
-            assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS_NODE_TYPE);
+            assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS);
             assertProperty(resultSetNode, TeiidDdlLexicon.CreateProcedure.TABLE_FLAG, true);
             assertThat(resultSetNode.getChildCount(), is(2));
 
@@ -549,7 +549,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
                                + "IN file object OPTIONS (ANNOTATION 'The contents to save.  Can be one of CLOB, BLOB, or XML'))"
                                + "OPTIONS (ANNOTATION 'Saves the given value to the given path.  Any existing file will be overriden.')";
         final AstNode procedureNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE);
+        assertMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
         assertProperty(procedureNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertThat(procedureNode.getName(), is("saveFile"));
 
@@ -590,7 +590,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
                                + "IN stream boolean DEFAULT 'false' OPTIONS (ANNOTATION 'If the result should be streamed.'))"
                                + "OPTIONS (ANNOTATION 'Invokes a webservice that returns an XML result')";
         final AstNode procedureNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE);
+        assertMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
         assertProperty(procedureNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertThat(procedureNode.getName(), is("invoke"));
 
@@ -664,7 +664,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
                                + "OUT contentType string) "
                                + "OPTIONS (ANNOTATION 'Invokes a webservice that returns an binary result')";
         final AstNode procedureNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE);
+        assertMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
         assertProperty(procedureNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertThat(procedureNode.getName(), is("invokeHttp"));
 
@@ -737,7 +737,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         final AstNode paramNode = this.rootNode.getChild(0);
         assertThat(paramNode.getName(), is("param"));
-        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER);
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.IN.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NULL");
@@ -752,7 +752,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         final AstNode paramNode = this.rootNode.getChild(0);
         assertThat(paramNode.getName(), is("param"));
-        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER);
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.IN.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NULL");
@@ -767,7 +767,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         final AstNode paramNode = this.rootNode.getChild(0);
         assertThat(paramNode.getName(), is("param"));
-        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER);
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.OUT.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NULL");
@@ -782,7 +782,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         final AstNode paramNode = this.rootNode.getChild(0);
         assertThat(paramNode.getName(), is("param"));
-        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER);
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.INOUT.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NULL");
@@ -797,7 +797,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         final AstNode paramNode = this.rootNode.getChild(0);
         assertThat(paramNode.getName(), is("param"));
-        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER);
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidNonReservedWord.VARIADIC.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NULL");
@@ -812,7 +812,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         final AstNode paramNode = this.rootNode.getChild(0);
         assertThat(paramNode.getName(), is("param"));
-        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER);
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.IN.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NOT NULL");
@@ -827,7 +827,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         final AstNode paramNode = this.rootNode.getChild(0);
         assertThat(paramNode.getName(), is("param"));
-        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER);
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.IN.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, true);
@@ -842,7 +842,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         final AstNode paramNode = this.rootNode.getChild(0);
         assertThat(paramNode.getName(), is("param"));
-        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER);
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.IN.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DEFAULT_VALUE, "default-value");
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, false);
@@ -857,7 +857,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         final AstNode paramNode = this.rootNode.getChild(0);
         assertThat(paramNode.getName(), is("param"));
-        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER);
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.IN.toDdl());
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, false);
         assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NULL");
@@ -892,7 +892,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         final AstNode paramNode = this.rootNode.getChild(0);
         assertThat(paramNode.getName(), is("param"));
-        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER);
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, TeiidReservedWord.IN.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.DEFAULT_VALUE, "default-value");
         assertProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, true);
@@ -913,7 +913,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         final String content = "(INOUT param string)";
         this.parser.parseProcedureParameters(getTokens(content), this.rootNode);
         assertThat(this.rootNode.getChildCount(), is(1));
-        assertMixinType(this.rootNode.getChild(0), TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+        assertMixinType(this.rootNode.getChild(0), TeiidDdlLexicon.CreateProcedure.PARAMETER);
     }
 
     @Test
@@ -923,7 +923,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertThat(this.rootNode.getChildCount(), is(4));
 
         for (final AstNode paramNode : this.rootNode.getChildren()) {
-            assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+            assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER);
         }
     }
 
@@ -937,7 +937,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         final AstNode paramNode = this.rootNode.getChild(0);
         assertThat(paramNode.getName(), is("r1"));
-        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN_NODE_TYPE);
+        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN);
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NULL");
     }
@@ -950,7 +950,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         final AstNode paramNode = this.rootNode.getChild(0);
         assertThat(paramNode.getName(), is("r1"));
-        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN_NODE_TYPE);
+        assertMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN);
         assertProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
         assertProperty(paramNode, StandardDdlLexicon.NULLABLE, "NOT NULL");
     }
@@ -963,7 +963,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         final AstNode resultColumnNode = this.rootNode.getChild(0);
         assertThat(resultColumnNode.getName(), is("r1"));
-        assertMixinType(resultColumnNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN_NODE_TYPE);
+        assertMixinType(resultColumnNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN);
         assertProperty(resultColumnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
         assertProperty(resultColumnNode, StandardDdlLexicon.NULLABLE, "NULL");
 
@@ -998,11 +998,11 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertThat(this.rootNode.getChildCount(), is(1));
 
         final AstNode resultColumnsNode = this.rootNode.getChild(0);
-        assertMixinType(resultColumnsNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS_NODE_TYPE);
+        assertMixinType(resultColumnsNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS);
         assertProperty(resultColumnsNode, TeiidDdlLexicon.CreateProcedure.TABLE_FLAG, false);
 
         assertThat(resultColumnsNode.getChildCount(), is(1));
-        assertMixinType(resultColumnsNode.getChild(0), TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN_NODE_TYPE);
+        assertMixinType(resultColumnsNode.getChild(0), TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN);
     }
 
     @Test
@@ -1012,11 +1012,11 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertThat(this.rootNode.getChildCount(), is(1));
 
         final AstNode resultColumnsNode = this.rootNode.getChild(0);
-        assertMixinType(resultColumnsNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS_NODE_TYPE);
+        assertMixinType(resultColumnsNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS);
         assertProperty(resultColumnsNode, TeiidDdlLexicon.CreateProcedure.TABLE_FLAG, true);
 
         assertThat(resultColumnsNode.getChildCount(), is(1));
-        assertMixinType(resultColumnsNode.getChild(0), TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN_NODE_TYPE);
+        assertMixinType(resultColumnsNode.getChild(0), TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN);
     }
 
     @Test
@@ -1026,12 +1026,12 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertThat(this.rootNode.getChildCount(), is(1));
 
         final AstNode resultColumnsNode = this.rootNode.getChild(0);
-        assertMixinType(resultColumnsNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS_NODE_TYPE);
+        assertMixinType(resultColumnsNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS);
         assertProperty(resultColumnsNode, TeiidDdlLexicon.CreateProcedure.TABLE_FLAG, false);
         assertThat(resultColumnsNode.getChildCount(), is(5));
 
         for (final AstNode resultColumnNode : resultColumnsNode.getChildren()) {
-            assertMixinType(resultColumnNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN_NODE_TYPE);
+            assertMixinType(resultColumnNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN);
         }
     }
 
@@ -1042,12 +1042,12 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         assertThat(this.rootNode.getChildCount(), is(1));
 
         final AstNode resultColumnsNode = this.rootNode.getChild(0);
-        assertMixinType(resultColumnsNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS_NODE_TYPE);
+        assertMixinType(resultColumnsNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS);
         assertProperty(resultColumnsNode, TeiidDdlLexicon.CreateProcedure.TABLE_FLAG, true);
         assertThat(resultColumnsNode.getChildCount(), is(5));
 
         for (final AstNode resultColumnNode : resultColumnsNode.getChildren()) {
-            assertMixinType(resultColumnNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN_NODE_TYPE);
+            assertMixinType(resultColumnNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN);
         }
     }
 
@@ -1092,7 +1092,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         final AstNode resultSetNode = this.rootNode.getChild(0);
         assertThat(resultSetNode.getName(), is(TeiidDdlLexicon.CreateProcedure.RESULT_SET));
-        assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_DATA_TYPE_NODE_TYPE);
+        assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_DATA_TYPE);
         assertProperty(resultSetNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
     }
 
@@ -1104,7 +1104,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
 
         final AstNode resultSetNode = this.rootNode.getChild(0);
         assertThat(resultSetNode.getName(), is(TeiidDdlLexicon.CreateProcedure.RESULT_SET));
-        assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS_NODE_TYPE);
+        assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS);
     }
 
 }

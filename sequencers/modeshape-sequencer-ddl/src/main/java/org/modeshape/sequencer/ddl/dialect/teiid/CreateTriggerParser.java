@@ -84,14 +84,14 @@ final class CreateTriggerParser extends StatementParser {
                     if (tokens.canConsume(TeiidReservedWord.AS.toDdl())) {
                         final AstNode triggerNode = getNodeFactory().node(tableRefName,
                                                                           parentNode,
-                                                                          TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+                                                                          TeiidDdlLexicon.CreateTrigger.STATEMENT);
                         triggerNode.setProperty(TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, triggerType);
 
                         // find referenced table node
                         final AstNode tableRefNode = getNode(parentNode,
                                                              tableRefName,
-                                                             TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE,
-                                                             TeiidDdlLexicon.CreateTable.VIEW_NODE_TYPE);
+                                                             TeiidDdlLexicon.CreateTable.TABLE_STATEMENT,
+                                                             TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
 
                         // can't find referenced table node
                         if (tableRefNode == null) {
