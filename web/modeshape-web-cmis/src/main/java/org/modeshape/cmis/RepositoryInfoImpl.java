@@ -21,9 +21,11 @@ package org.modeshape.cmis;
 import java.util.List;
 import org.apache.chemistry.opencmis.commons.data.AclCapabilities;
 import org.apache.chemistry.opencmis.commons.data.CmisExtensionElement;
+import org.apache.chemistry.opencmis.commons.data.ExtensionFeature;
 import org.apache.chemistry.opencmis.commons.data.RepositoryCapabilities;
 import org.apache.chemistry.opencmis.commons.data.RepositoryInfo;
 import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
+import org.apache.chemistry.opencmis.commons.enums.CmisVersion;
 
 /**
  *
@@ -39,76 +41,104 @@ public class RepositoryInfoImpl implements RepositoryInfo {
         this.info = info;
     }
 
+    @Override
     public String getId() {
         return repositoryId;
     }
 
+    @Override
     public String getName() {
         return info.getName();
     }
 
+    @Override
     public String getDescription() {
         return info.getDescription();
     }
 
+    @Override
     public String getVendorName() {
         return info.getVendorName();
     }
 
+    @Override
     public String getProductName() {
         return info.getProductName();
     }
 
+    @Override
     public String getProductVersion() {
         return info.getProductVersion();
     }
 
+    @Override
     public String getRootFolderId() {
         return info.getRootFolderId();
     }
 
+    @Override
     public RepositoryCapabilities getCapabilities() {
         return info.getCapabilities();
     }
 
+    @Override
     public AclCapabilities getAclCapabilities() {
         return info.getAclCapabilities();
     }
 
+    @Override
     public String getLatestChangeLogToken() {
         return info.getLatestChangeLogToken();
     }
 
+    @Override
     public String getCmisVersionSupported() {
         return info.getCmisVersionSupported();
     }
 
+    @Override
     public String getThinClientUri() {
         return info.getThinClientUri();
     }
 
+    @Override
     public Boolean getChangesIncomplete() {
         return info.getChangesIncomplete();
     }
 
+    @Override
     public List<BaseTypeId> getChangesOnType() {
         return info.getChangesOnType();
     }
 
+    @Override
     public String getPrincipalIdAnonymous() {
         return info.getPrincipalIdAnonymous();
     }
 
+    @Override
     public String getPrincipalIdAnyone() {
         return info.getPrincipalIdAnyone();
     }
 
+    @Override
     public List<CmisExtensionElement> getExtensions() {
         return info.getExtensions();
     }
 
+    @Override
     public void setExtensions(List<CmisExtensionElement> list) {
         info.setExtensions(list);
+    }
+
+    @Override
+    public CmisVersion getCmisVersion() {
+        return info.getCmisVersion();
+    }
+
+    @Override
+    public List<ExtensionFeature> getExtensionFeatures() {
+        return info.getExtensionFeatures();
     }
 
 }
