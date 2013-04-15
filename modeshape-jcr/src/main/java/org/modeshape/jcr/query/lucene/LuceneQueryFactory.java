@@ -494,14 +494,16 @@ public abstract class LuceneQueryFactory {
             if (simple.containsWildcards()) {
                 // Use the ComplexPhraseQueryParser, but instead of wildcard queries (which don't work with leading
                 // wildcards) we should use our like queries (which often use RegexQuery where applicable) ...
+
+                //as an alternative, for leading wildcards one could call parser.setAllowLeadingWildcard(true);
+                //and use the default Lucene query parser
                 QueryParser parser = new QueryParser(version, fieldName, analyzer) {
                     @Override
                     protected org.apache.lucene.search.Query getWildcardQuery( String field,
                                                                                String termStr ) {
-                        return findNodesLike(selectorName, termStr.toLowerCase(), field, CaseOperations.LOWERCASE);
+                        return findNodesLike(selectorName, field, termStr.toLowerCase(), CaseOperations.LOWERCASE);
                     }
                 };
-                parser.setAllowLeadingWildcard(true);
                 try {
                     String expression = simple.getValue();
                     // The ComplexPhraseQueryParser only understands the '?' and '*' as being wildcards ...
