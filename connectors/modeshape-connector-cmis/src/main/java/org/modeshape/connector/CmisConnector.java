@@ -470,7 +470,9 @@ public class CmisConnector extends Connector {
                 }
                 
                 //run update action
-                cmisObject.updateProperties(updateProperties);
+                if (!updateProperties.isEmpty()) {
+                    cmisObject.updateProperties(updateProperties);
+                }
                 break;
         }        
     }
@@ -569,10 +571,13 @@ public class CmisConnector extends Connector {
         } else {
             writer.setPrimaryType(objectType.getId());
         }
+        
         writer.setParent(folder.getParentId());
         writer.addMixinType(NodeType.MIX_REFERENCEABLE);
+        
         cmisProperties(folder, writer);
         cmisChildren(folder, writer);
+        
         //append repository information to the root node
         if (folder.isRootFolder()) {
             writer.addChild(ObjectId.toString(ObjectId.Type.REPOSITORY_INFO, ""), REPOSITORY_INFO_NODE_NAME);
@@ -597,15 +602,20 @@ public class CmisConnector extends Connector {
         } else {
             writer.setPrimaryType(objectType.getId());
         }
+        
         List<Folder> parents = doc.getParents();
         ArrayList parentIds = new ArrayList();
         for (Folder f : parents) {
             parentIds.add(ObjectId.toString(ObjectId.Type.OBJECT, f.getId()));
         }
+
         writer.setParents(parentIds);
         writer.addMixinType(NodeType.MIX_REFERENCEABLE);
+                
+        //document specific property conversation
         cmisProperties(doc, writer);
         writer.addChild(ObjectId.toString(ObjectId.Type.CONTENT, doc.getId()), JcrConstants.JCR_CONTENT);
+        
         return writer.document();
     }
 
@@ -630,6 +640,12 @@ public class CmisConnector extends Connector {
             writer.addProperty(JcrConstants.JCR_MIME_TYPE, doc.getContentStream().getMimeType());
         }
 
+        Property lastModified = doc.getProperty(PropertyIds.LAST_MODIFICATION_DATE);
+        Property lastModifiedBy = doc.getProperty(PropertyIds.LAST_MODIFIED_BY);
+        
+        writer.addProperty(JcrLexicon.LAST_MODIFIED, properties.jcrValues(lastModified));
+        writer.addProperty(JcrLexicon.LAST_MODIFIED_BY, properties.jcrValues(lastModifiedBy));
+        
         return writer.document();
     }
 
@@ -644,7 +660,9 @@ public class CmisConnector extends Connector {
         List<Property<?>> list = object.getProperties();
         for (Property property : list) {
             String pname = properties.findJcrName(property.getId());
-            writer.addProperty(pname, properties.jcrValues(property));
+            if (pname != null) {
+                writer.addProperty(pname, properties.jcrValues(property));
+            }
         }
     }
 
