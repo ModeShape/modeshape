@@ -57,13 +57,13 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
 
         { // getFiles
             final Node procedureNode = this.statementsNode.getNode("getFiles");
-            verifyMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE);
+            verifyMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
             verifyProperty(procedureNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
             assertThat(procedureNode.getNodes().getSize(), is(3L)); // param, returns, option
 
             { // pathAndPattern parameter
                 final Node paramNode = procedureNode.getNode("pathAndPattern");
-                verifyMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+                verifyMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER);
                 verifyProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, "IN");
                 verifyProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
                 verifyProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, "false");
@@ -80,19 +80,19 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
 
             { // returns
                 final Node resultNode = procedureNode.getNode(TeiidDdlLexicon.CreateProcedure.RESULT_SET);
-                verifyMixinType(resultNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS_NODE_TYPE);
+                verifyMixinType(resultNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS);
                 verifyProperty(resultNode, TeiidDdlLexicon.CreateProcedure.TABLE_FLAG, "true");
                 assertThat(resultNode.getNodes().getSize(), is(2L)); // result columns
 
                 { // file result column
                     final Node resultColumnNode = resultNode.getNode("file");
-                    verifyMixinType(resultColumnNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN_NODE_TYPE);
+                    verifyMixinType(resultColumnNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN);
                     verifyProperty(resultColumnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.BLOB.toDdl());
                 }
 
                 { // filePath result column
                     final Node resultColumnNode = resultNode.getNode("filePath");
-                    verifyMixinType(resultColumnNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN_NODE_TYPE);
+                    verifyMixinType(resultColumnNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN);
                     verifyProperty(resultColumnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
                 }
             }
@@ -108,13 +108,13 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
 
         { // getTextFiles
             final Node procedureNode = this.statementsNode.getNode("getTextFiles");
-            verifyMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE);
+            verifyMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
             verifyProperty(procedureNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
             assertThat(procedureNode.getNodes().getSize(), is(3L)); // param, returns, option
 
             { // pathAndPattern parameter
                 final Node paramNode = procedureNode.getNode("pathAndPattern");
-                verifyMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+                verifyMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER);
                 verifyProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, "IN");
                 verifyProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
                 verifyProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, "false");
@@ -131,19 +131,19 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
 
             { // returns
                 final Node resultNode = procedureNode.getNode(TeiidDdlLexicon.CreateProcedure.RESULT_SET);
-                verifyMixinType(resultNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS_NODE_TYPE);
+                verifyMixinType(resultNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS);
                 verifyProperty(resultNode, TeiidDdlLexicon.CreateProcedure.TABLE_FLAG, "true");
                 assertThat(resultNode.getNodes().getSize(), is(2L)); // result columns
 
                 { // file result column
                     final Node resultColumnNode = resultNode.getNode("file");
-                    verifyMixinType(resultColumnNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN_NODE_TYPE);
+                    verifyMixinType(resultColumnNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN);
                     verifyProperty(resultColumnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.CLOB.toDdl());
                 }
 
                 { // filePath result column
                     final Node resultColumnNode = resultNode.getNode("filePath");
-                    verifyMixinType(resultColumnNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN_NODE_TYPE);
+                    verifyMixinType(resultColumnNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMN);
                     verifyProperty(resultColumnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
                 }
             }
@@ -159,13 +159,13 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
 
         { // saveFile
             final Node procedureNode = this.statementsNode.getNode("saveFile");
-            verifyMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE);
+            verifyMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
             verifyProperty(procedureNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
             assertThat(procedureNode.getNodes().getSize(), is(3L)); // 2 params, 1 option
 
             { // filePath parameter
                 final Node paramNode = procedureNode.getNode("filePath");
-                verifyMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+                verifyMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER);
                 verifyProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, "IN");
                 verifyProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
                 verifyProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, "false");
@@ -174,7 +174,7 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
 
             { // file parameter
                 final Node paramNode = procedureNode.getNode("file");
-                verifyMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+                verifyMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER);
                 verifyProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, "IN");
                 verifyProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.OBJECT.toDdl());
                 verifyProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, "false");
@@ -206,13 +206,13 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
 
         { // invoke
             final Node procedureNode = this.statementsNode.getNode("invoke");
-            verifyMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE);
+            verifyMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
             verifyProperty(procedureNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
             assertThat(procedureNode.getNodes().getSize(), is(7L)); // 6 params, 1 option
 
             { // result parameter
                 final Node paramNode = procedureNode.getNode("result");
-                verifyMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_NODE_TYPE);
+                verifyMixinType(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER);
                 verifyProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_TYPE, "OUT");
                 verifyProperty(paramNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.XML.toDdl());
                 verifyProperty(paramNode, TeiidDdlLexicon.CreateProcedure.PARAMETER_RESULT_FLAG, "true");
@@ -222,7 +222,7 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
 
         { // invokeHttp
             final Node procedureNode = this.statementsNode.getNode("invokeHttp");
-            verifyMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE);
+            verifyMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
             verifyProperty(procedureNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
             assertThat(procedureNode.getNodes().getSize(), is(7L)); // 6 params, 1 option
         }
@@ -242,10 +242,10 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
         { // myTable
             final NodeIterator itr = this.statementsNode.getNodes("myTable");
             assertThat(itr.getSize(), is(11L)); // 1 view, 10 alter tables
-            verifyMixinType(itr.nextNode(), TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+            verifyMixinType(itr.nextNode(), TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
 
             for (int i = 0; i < 10; ++i) {
-                verifyMixinType(itr.nextNode(), TeiidDdlLexicon.AlterOptions.TABLE_NODE_TYPE);
+                verifyMixinType(itr.nextNode(), TeiidDdlLexicon.AlterOptions.TABLE_STATEMENT);
             }
         }
 
@@ -254,7 +254,7 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
             assertThat(itr.getSize(), is(11L)); // 1 view, 10 alter views
 
             final Node viewNode = itr.nextNode();
-            verifyMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_NODE_TYPE);
+            verifyMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
             verifyProperty(viewNode, TeiidDdlLexicon.CreateTable.QUERY_EXPRESSION, "select e1, e2 from foo.bar");
 
             { // option
@@ -269,14 +269,14 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
 
             for (int i = 0; i < 10; ++i) {
                 final Node alterNode = itr.nextNode();
-                verifyMixinType(alterNode, TeiidDdlLexicon.AlterOptions.VIEW_NODE_TYPE);
+                verifyMixinType(alterNode, TeiidDdlLexicon.AlterOptions.VIEW_STATEMENT);
                 verifyProperty(alterNode, TeiidDdlLexicon.AlterOptions.REFERENCE, viewNode.getIdentifier());
                 assertThat(alterNode.getNodes().getSize(), is(1L));
 
                 final Node optionsListNode = alterNode.getNodes().nextNode();
 
                 if (i < 6) {
-                    verifyMixinType(optionsListNode, TeiidDdlLexicon.AlterOptions.OPTIONS_LIST_NODE_TYPE);
+                    verifyMixinType(optionsListNode, TeiidDdlLexicon.AlterOptions.OPTIONS_LIST);
                     assertThat(optionsListNode.hasProperty(TeiidDdlLexicon.AlterOptions.DROPPED), is(i > 3));
                     assertThat(optionsListNode.hasProperty(TeiidDdlLexicon.AlterOptions.REFERENCE), is(false));
 
@@ -316,7 +316,7 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
 
                     }
                 } else {
-                    verifyMixinType(alterNode.getNodes().nextNode(), TeiidDdlLexicon.AlterOptions.COLUMN_NODE_TYPE);
+                    verifyMixinType(alterNode.getNodes().nextNode(), TeiidDdlLexicon.AlterOptions.COLUMN);
                     assertThat(optionsListNode.hasProperty(TeiidDdlLexicon.AlterOptions.DROPPED), is(i > 7));
 
                     if ((i == 6) || (i == 8)) {
@@ -343,19 +343,19 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
             assertThat(itr.getSize(), is(4L)); // 1 view, 3 alter procedures
 
             final Node procedureNode = itr.nextNode();
-            verifyMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_NODE_TYPE);
+            verifyMixinType(procedureNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
             assertThat(procedureNode.getNodes().getSize(), is(3L)); // 3 columns
 
             for (int i = 0; i < 3; ++i) {
                 final Node alterNode = itr.nextNode();
-                verifyMixinType(alterNode, TeiidDdlLexicon.AlterOptions.PROCEDURE_NODE_TYPE);
+                verifyMixinType(alterNode, TeiidDdlLexicon.AlterOptions.PROCEDURE_STATEMENT);
                 verifyProperty(alterNode, TeiidDdlLexicon.AlterOptions.REFERENCE, procedureNode.getIdentifier());
                 assertThat(alterNode.getNodes().getSize(), is(1L));
 
                 final Node optionsListNode = alterNode.getNodes().nextNode();
 
                 if (i != 1) {
-                    verifyMixinType(optionsListNode, TeiidDdlLexicon.AlterOptions.OPTIONS_LIST_NODE_TYPE);
+                    verifyMixinType(optionsListNode, TeiidDdlLexicon.AlterOptions.OPTIONS_LIST);
                     assertThat(optionsListNode.hasProperty(TeiidDdlLexicon.AlterOptions.REFERENCE), is(false));
 
                     if (i == 0) {
@@ -373,7 +373,7 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
                         assertThat(optionsListNode.getNodes().getSize(), is(0L));
                     }
                 } else {
-                    verifyMixinType(optionsListNode, TeiidDdlLexicon.AlterOptions.PARAMETER_NODE_TYPE);
+                    verifyMixinType(optionsListNode, TeiidDdlLexicon.AlterOptions.PARAMETER);
                     assertThat(optionsListNode.getNodes().getSize(), is(2L)); // 2 options
 
                     final Node p2ParmNode = procedureNode.getNode("p2");
@@ -406,13 +406,13 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
 
             // view
             final Node viewNode = itr.nextNode();
-            verifyMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_NODE_TYPE);
+            verifyMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
             verifyProperty(viewNode, TeiidDdlLexicon.CreateTable.QUERY_EXPRESSION, "select * from foo");
             assertThat(viewNode.getNodes().getSize(), is(2L)); // 2 columns
 
             { // trigger node
                 final Node triggerNode = itr.nextNode();
-                verifyMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+                verifyMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.STATEMENT);
                 verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.INSERT);
                 verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, "false");
                 verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, viewNode.getIdentifier());
@@ -455,13 +455,13 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
 
             // view
             final Node viewNode = itr.nextNode();
-            verifyMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_NODE_TYPE);
+            verifyMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
             verifyProperty(viewNode, TeiidDdlLexicon.CreateTable.QUERY_EXPRESSION, "select * from Accounts.HEALTHSTATE");
             assertThat(viewNode.getNodes().getSize(), is(1L)); // 1 option
 
             { // trigger1
                 final Node triggerNode = itr.nextNode();
-                verifyMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+                verifyMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.STATEMENT);
                 verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.INSERT);
                 verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, "true");
                 verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, viewNode.getIdentifier());
@@ -477,7 +477,7 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
 
             { // trigger2
                 final Node triggerNode = itr.nextNode();
-                verifyMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.NODE_TYPE);
+                verifyMixinType(triggerNode, TeiidDdlLexicon.CreateTrigger.STATEMENT);
                 verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.INSTEAD_OF, DdlConstants.UPDATE);
                 verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.ATOMIC, "true");
                 verifyProperty(triggerNode, TeiidDdlLexicon.CreateTrigger.TABLE_REFERENCE, viewNode.getIdentifier());
@@ -500,7 +500,7 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
 
         { // accounts.ACCOUNT
             final Node tableNode = statementsNode.getNode("accounts.ACCOUNT");
-            verifyMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+            verifyMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
             verifyProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
 
             { // ACCOUNT_ID column
@@ -580,25 +580,25 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
 
         { // accounts.CUSTOMER
             final Node tableNode = statementsNode.getNode("accounts.CUSTOMER");
-            verifyMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+            verifyMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
             verifyProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         }
 
         { // accounts.HOLDINGS
             final Node tableNode = statementsNode.getNode("accounts.HOLDINGS");
-            verifyMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+            verifyMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
             verifyProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         }
 
         { // accounts.PRODUCT
             final Node tableNode = statementsNode.getNode("accounts.PRODUCT");
-            verifyMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+            verifyMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
             verifyProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         }
 
         { // accounts.SUBSCRIPTIONS
             final Node tableNode = statementsNode.getNode("accounts.SUBSCRIPTIONS");
-            verifyMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+            verifyMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
             verifyProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         }
     }

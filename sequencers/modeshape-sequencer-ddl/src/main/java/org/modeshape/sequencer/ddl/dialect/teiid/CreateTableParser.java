@@ -25,7 +25,9 @@ package org.modeshape.sequencer.ddl.dialect.teiid;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
 import org.modeshape.common.util.StringUtil;
@@ -46,6 +48,21 @@ import org.modeshape.sequencer.ddl.node.AstNode;
  * </code>
  */
 final class CreateTableParser extends StatementParser {
+
+    /**
+     * Sequence is any number of characters, word boundary, column name, word boundary, and any number of characters.
+     */
+    private static final String REGEX = ".*\\b(?i)%s(?-i)\\b.*";
+
+    /**
+     * @param expression the expression being looked at (cannot be <code>null</code>)
+     * @param columnName the name of the column being looked for in the expression (cannot be <code>null</code>)
+     * @return <code>true</code> if the expression contains the column name
+     */
+    static boolean contains( final String expression,
+                             final String columnName ) {
+        return expression.matches(String.format(REGEX, columnName));
+    }
 
     CreateTableParser( final TeiidDdlParser teiidDdlParser ) {
         super(teiidDdlParser);
@@ -135,7 +152,7 @@ final class CreateTableParser extends StatementParser {
         final String id = parseIdentifier(tokens);
         final AstNode tableNode = getNodeFactory().node(id,
                                                         parentNode,
-                                                        (view ? TeiidDdlLexicon.CreateTable.VIEW_NODE_TYPE : TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE));
+                                                        (view ? TeiidDdlLexicon.CreateTable.VIEW_STATEMENT : TeiidDdlLexicon.CreateTable.TABLE_STATEMENT));
         tableNode.setProperty(TeiidDdlLexicon.SchemaElement.TYPE, schemaElementType.toDdl());
 
         // must have a table body
@@ -354,13 +371,13 @@ final class CreateTableParser extends StatementParser {
                 || tokens.matches(TeiidNonReservedWord.ACCESSPATTERN.toDdl())) {
                 if (tokens.canConsume(PRIMARY, KEY)) {
                     constraintType = PRIMARY_KEY;
-                    nodeType = TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE;
+                    nodeType = TeiidDdlLexicon.Constraint.TABLE_ELEMENT;
                 } else if (tokens.canConsume(FOREIGN, KEY)) {
                     constraintType = FOREIGN_KEY;
-                    nodeType = TeiidDdlLexicon.Constraint.TABLE_ELEMENT_REFERENCES_NODE_TYPE;
+                    nodeType = TeiidDdlLexicon.Constraint.FOREIGN_KEY_CONSTRAINT;
                 } else if (tokens.matchesAnyOf(TeiidReservedWord.UNIQUE.toDdl(), TeiidNonReservedWord.ACCESSPATTERN.toDdl())) {
                     constraintType = tokens.consume();
-                    nodeType = TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE;
+                    nodeType = TeiidDdlLexicon.Constraint.TABLE_ELEMENT;
                 }
 
                 assert (constraintType != null);
@@ -384,8 +401,8 @@ final class CreateTableParser extends StatementParser {
                         final String referencesTableName = parseIdentifier(tokens);
                         final AstNode referencesTableNode = getNode(tableNode.getParent(),
                                                                     referencesTableName,
-                                                                    TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE,
-                                                                    TeiidDdlLexicon.CreateTable.VIEW_NODE_TYPE);
+                                                                    TeiidDdlLexicon.CreateTable.TABLE_STATEMENT,
+                                                                    TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
 
                         // can't find referenced table
                         if (referencesTableNode == null) {
@@ -417,11 +434,25 @@ final class CreateTableParser extends StatementParser {
                     constraintId = constraintType;
                 }
 
-                constraintNode = getNodeFactory().node(constraintId, tableNode, TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE);
+                constraintNode = getNodeFactory().node(constraintId, tableNode, TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT);
                 constraintNode.setProperty(TeiidDdlLexicon.Constraint.TYPE, constraintType);
 
                 final String expression = parseExpression(tokens);
                 constraintNode.setProperty(TeiidDdlLexicon.Constraint.EXPRESSION, expression);
+
+                // look for table element references in the expression and set references
+                final List<AstNode> columns = tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT);
+                final Set<AstNode> referencedColumns = new HashSet<AstNode>(columns.size());
+
+                for (final AstNode column : columns) {
+                    if (contains(expression, column.getName())) {
+                        referencedColumns.add(column);
+                    }
+                }
+
+                if (!referencedColumns.isEmpty()) {
+                    constraintNode.setProperty(TeiidDdlLexicon.Constraint.REFERENCES, new ArrayList<AstNode>(referencedColumns));
+                }
             } else {
                 throw new TeiidDdlParsingException(tokens, "Unparsable table body constraint");
             }
@@ -452,7 +483,7 @@ final class CreateTableParser extends StatementParser {
         final String id = parseIdentifier(tokens);
         final DataType datatype = getDataTypeParser().parse(tokens);
 
-        final AstNode columnNode = getNodeFactory().node(id, tableNode, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE);
+        final AstNode columnNode = getNodeFactory().node(id, tableNode, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT);
         getDataTypeParser().setPropertiesOnNode(columnNode, datatype);
 
         boolean foundNotNull = false;
@@ -485,7 +516,7 @@ final class CreateTableParser extends StatementParser {
                     // create constraint node
                     final AstNode constraintNode = getNodeFactory().node(constraintType,
                                                                          tableNode,
-                                                                         TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE);
+                                                                         TeiidDdlLexicon.Constraint.TABLE_ELEMENT);
                     constraintNode.setProperty(TeiidDdlLexicon.Constraint.TYPE, constraintType);
 
                     // create a single element list since property is multi-valued
@@ -496,8 +527,11 @@ final class CreateTableParser extends StatementParser {
                     // create constraint node
                     final AstNode constraintNode = getNodeFactory().node(constraintType,
                                                                          tableNode,
-                                                                         TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE);
+                                                                         TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT);
                     constraintNode.setProperty(TeiidDdlLexicon.Constraint.TYPE, constraintType);
+
+                    // create a single element list since property is multi-valued
+                    constraintNode.setProperty(TeiidDdlLexicon.Constraint.REFERENCES, Collections.singletonList(columnNode));
                 } else {
                     throw new TeiidDdlParsingException(tokens, "Unparsable table body unnamed constraint");
                 }

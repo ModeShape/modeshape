@@ -70,11 +70,11 @@ public class CreateTableParserTest extends TeiidDdlTest {
                                + "OPTIONS (CARDINALITY 12, UUID 'uuid2', UPDATABLE 'true', FOO 'BAR', ANNOTATION 'Test Table')";
         final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(tableNode.getName(), is("G1"));
-        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
 
         // columns
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE).size(), is(6));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT).size(), is(6));
 
         { // column e1
             assertThat(tableNode.childrenWithName("e1").size(), is(1));
@@ -145,7 +145,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         }
 
         // constraints
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE).size(), is(3));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT).size(), is(3));
 
         { // e1 primary key
             assertThat(tableNode.childrenWithName(TeiidDdlLexicon.PRIMARY_KEY).size(), is(1));
@@ -185,7 +185,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
             }
         }
 
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE).size(), is(2));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT).size(), is(2));
 
         // options
         assertThat(tableNode.getChildren(StandardDdlLexicon.TYPE_STATEMENT_OPTION).size(), is(5));
@@ -209,18 +209,18 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "CREATE FOREIGN TABLE G1( e1 integer primary key, e2 varchar primary key)";
         final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(tableNode.getName(), is("G1"));
-        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
 
         // columns
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE).size(), is(2));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT).size(), is(2));
         assertThat(tableNode.childrenWithName("e1").size(), is(1));
         assertProperty(tableNode.childrenWithName("e1").get(0), StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.INTEGER.toDdl());
         assertThat(tableNode.childrenWithName("e2").size(), is(1));
         assertProperty(tableNode.childrenWithName("e2").get(0), StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.VARCHAR.toDdl());
 
         // constraints
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE).size(), is(0));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT).size(), is(0));
     }
 
     /**
@@ -231,11 +231,11 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "CREATE FOREIGN TABLE G1( e1 integer auto_increment primary key, e2 varchar)";
         final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(tableNode.getName(), is("G1"));
-        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
 
         // columns
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE).size(), is(2));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT).size(), is(2));
 
         { // column e1
             assertThat(tableNode.childrenWithName("e1").size(), is(1));
@@ -254,8 +254,8 @@ public class CreateTableParserTest extends TeiidDdlTest {
         }
 
         // constraints
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE).size(), is(1));
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE).size(), is(0));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT).size(), is(1));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT).size(), is(0));
     }
 
     /**
@@ -266,11 +266,11 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "CREATE FOREIGN TABLE G1( e1 integer, e2 varchar OPTIONS (UDT 'NMTOKENS(12,13,14)'))";
         final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(tableNode.getName(), is("G1"));
-        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
 
         // columns
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE).size(), is(2));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT).size(), is(2));
 
         { // column e1
             assertThat(tableNode.childrenWithName("e1").size(), is(1));
@@ -289,8 +289,8 @@ public class CreateTableParserTest extends TeiidDdlTest {
         }
 
         // constraints
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE).size(), is(0));
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE).size(), is(0));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT).size(), is(0));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT).size(), is(0));
     }
 
     /**
@@ -301,11 +301,11 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "CREATE FOREIGN TABLE G1(e1 integer, e2 varchar, CONSTRAINT fbi INDEX (UPPER(e2)))";
         final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(tableNode.getName(), is("G1"));
-        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toString());
 
         // columns
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE).size(), is(2));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT).size(), is(2));
 
         { // column e1
             assertThat(tableNode.childrenWithName("e1").size(), is(1));
@@ -323,12 +323,23 @@ public class CreateTableParserTest extends TeiidDdlTest {
             assertProperty(e2, StandardDdlLexicon.NULLABLE, "NULL");
         }
 
-        // constraints
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE).size(), is(0));
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE).size(), is(1));
-        assertProperty(tableNode.getChildren(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE).get(0),
-                       TeiidDdlLexicon.Constraint.EXPRESSION,
-                       "UPPER(e2)");
+        // there are no table element constraints
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT).size(), is(0));
+
+        { // index constraint
+            assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT).size(), is(1));
+            final AstNode indexNode = tableNode.getChildren(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT).get(0);
+            assertThat(indexNode.getName(), is("fbi"));
+            assertProperty(indexNode, TeiidDdlLexicon.Constraint.EXPRESSION, "UPPER(e2)");
+
+            final Object temp = indexNode.getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
+            assertThat(temp, is(instanceOf(List.class)));
+
+            @SuppressWarnings( "unchecked" )
+            final List<AstNode> references = (List<AstNode>)temp;
+            assertThat(references.size(), is(1));
+            assertThat(references.get(0), is(tableNode.childrenWithName("e2").get(0)));
+        }
     }
 
     /**
@@ -339,11 +350,11 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "CREATE FOREIGN TABLE G1( e1 integer, e2 varchar, e3 date, PRIMARY KEY (e1, e2))";
         final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(tableNode.getName(), is("G1"));
-        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
 
         // columns
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE).size(), is(3));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT).size(), is(3));
 
         { // column e1
             assertThat(tableNode.childrenWithName("e1").size(), is(1));
@@ -370,8 +381,8 @@ public class CreateTableParserTest extends TeiidDdlTest {
         }
 
         // constraints
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE).size(), is(1));
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE).size(), is(0));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT).size(), is(1));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT).size(), is(0));
     }
 
     /**
@@ -382,11 +393,11 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "CREATE FOREIGN TABLE G1( e1 integer, e2 varchar, e3 date, UNIQUE (e1) OPTIONS (CUSTOM_PROP 'VALUE'))";
         final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(tableNode.getName(), is("G1"));
-        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
 
         // columns
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE).size(), is(3));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT).size(), is(3));
 
         { // column e1
             assertThat(tableNode.childrenWithName("e1").size(), is(1));
@@ -413,8 +424,8 @@ public class CreateTableParserTest extends TeiidDdlTest {
         }
 
         // constraints
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE).size(), is(1));
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE).size(), is(0));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT).size(), is(1));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT).size(), is(0));
     }
 
     /**
@@ -425,11 +436,11 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "CREATE FOREIGN TABLE G1( e1 integer, e2 varchar, e3 date, PRIMARY KEY (e1, e2), INDEX(e2, e3), ACCESSPATTERN(e1), UNIQUE(e1), ACCESSPATTERN(e2, e3))";
         final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(tableNode.getName(), is("G1"));
-        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
 
         // columns
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE).size(), is(3));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT).size(), is(3));
 
         { // column e1
             assertThat(tableNode.childrenWithName("e1").size(), is(1));
@@ -455,9 +466,69 @@ public class CreateTableParserTest extends TeiidDdlTest {
             assertProperty(e3, StandardDdlLexicon.NULLABLE, "NULL");
         }
 
-        // constraints
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE).size(), is(4));
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE).size(), is(1));
+        { // table element constraints (1 primary key, 2 access patterns, 1 unique)
+            final List<AstNode> tableElementConstraints = tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT);
+            assertThat(tableElementConstraints.size(), is(4));
+
+            { // primary key
+                final AstNode constraintNode = tableElementConstraints.get(0);
+                final Object temp = constraintNode.getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
+                assertThat(temp, is(instanceOf(List.class)));
+
+                @SuppressWarnings( "unchecked" )
+                final List<AstNode> references = (List<AstNode>)temp;
+                assertThat(references.size(), is(2));
+                assertThat(references, hasItems(tableNode.childrenWithName("e1").get(0), tableNode.childrenWithName("e2").get(0)));
+            }
+
+            { // access pattern
+                final AstNode constraintNode = tableElementConstraints.get(1);
+                final Object temp = constraintNode.getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
+                assertThat(temp, is(instanceOf(List.class)));
+
+                @SuppressWarnings( "unchecked" )
+                final List<AstNode> references = (List<AstNode>)temp;
+                assertThat(references.size(), is(1));
+                assertThat(references, hasItems(tableNode.childrenWithName("e1").get(0)));
+            }
+
+            { // unique
+                final AstNode constraintNode = tableElementConstraints.get(2);
+                final Object temp = constraintNode.getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
+                assertThat(temp, is(instanceOf(List.class)));
+
+                @SuppressWarnings( "unchecked" )
+                final List<AstNode> references = (List<AstNode>)temp;
+                assertThat(references.size(), is(1));
+                assertThat(references, hasItems(tableNode.childrenWithName("e1").get(0)));
+            }
+
+            { // access pattern
+                final AstNode constraintNode = tableElementConstraints.get(3);
+                final Object temp = constraintNode.getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
+                assertThat(temp, is(instanceOf(List.class)));
+
+                @SuppressWarnings( "unchecked" )
+                final List<AstNode> references = (List<AstNode>)temp;
+                assertThat(references.size(), is(2));
+                assertThat(references, hasItems(tableNode.childrenWithName("e2").get(0), tableNode.childrenWithName("e3").get(0)));
+            }
+        }
+
+        { // index constraint
+            assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT).size(), is(1));
+            final AstNode indexNode = tableNode.getChildren(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT).get(0);
+            assertProperty(indexNode, TeiidDdlLexicon.Constraint.EXPRESSION, "e2, e3");
+            assertProperty(indexNode, TeiidDdlLexicon.Constraint.TYPE, "INDEX");
+
+            final Object temp = indexNode.getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
+            assertThat(temp, is(instanceOf(List.class)));
+
+            @SuppressWarnings( "unchecked" )
+            final List<AstNode> references = (List<AstNode>)temp;
+            assertThat(references.size(), is(2));
+            assertThat(references, hasItems(tableNode.childrenWithName("e2").get(0), tableNode.childrenWithName("e3").get(0)));
+        }
     }
 
     /**
@@ -468,11 +539,11 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "CREATE FOREIGN TABLE G1( e1 integer, e2 varchar, e3 date, ACCESSPATTERN(e1), UNIQUE(e1), ACCESSPATTERN(e2, e3))";
         final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(tableNode.getName(), is("G1"));
-        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
 
         // columns
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE).size(), is(3));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT).size(), is(3));
 
         { // column e1
             assertThat(tableNode.childrenWithName("e1").size(), is(1));
@@ -499,7 +570,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         }
 
         // constraints
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE).size(), is(3));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT).size(), is(3));
         assertThat(tableNode.childrenWithName(TeiidNonReservedWord.ACCESSPATTERN.toDdl()).size(), is(2));
         assertThat(tableNode.childrenWithName(TeiidReservedWord.UNIQUE.toDdl()).size(), is(1));
         final Object temp = tableNode.childrenWithName(TeiidReservedWord.UNIQUE.toDdl()).get(0).getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
@@ -510,7 +581,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(references.size(), is(1));
         assertThat(references.get(0), is(tableNode.childrenWithName("e1").get(0)));
 
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE).size(), is(0));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT).size(), is(0));
     }
 
     /**
@@ -521,7 +592,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "CREATE FOREIGN TABLE G1( e1 integer, e2 varchar, PRIMARY KEY (missingColumn))";
         final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(tableNode.getName(), is("G1"));
-        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertThat(tableNode.childrenWithName(DdlConstants.PRIMARY_KEY).size(), is(1)); // make sure primary key still created
     }
@@ -531,7 +602,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "CREATE FOREIGN TABLE G1 (e1 integer, e2 varchar, CONSTRAINT fk_1 FOREIGN KEY (e1, e2) REFERENCES missingTable)";
         final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(tableNode.getName(), is("G1"));
-        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertThat(tableNode.childrenWithName("fk_1").size(), is(1)); // make sure foreign key still created
     }
@@ -542,7 +613,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "CREATE FOREIGN TABLE G1 (e1 integer, e2 varchar, CONSTRAINT fk_1 FOREIGN KEY (e1, e2) REFERENCES refTable (t1, missingColumn))";
         final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(tableNode.getName(), is("G1"));
-        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertThat(tableNode.childrenWithName("fk_1").size(), is(1)); // make sure foreign key still created
     }
@@ -555,16 +626,16 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "CREATE VIEW V1 AS SELECT * FROM PM1.G1";
         final AstNode viewNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(viewNode.getName(), is("V1"));
-        assertMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_NODE_TYPE);
+        assertMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
         assertProperty(viewNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertProperty(viewNode, TeiidDdlLexicon.CreateTable.QUERY_EXPRESSION, "SELECT * FROM PM1.G1");
 
         // columns
-        assertThat(viewNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE).size(), is(0));
+        assertThat(viewNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT).size(), is(0));
 
         // constraints
-        assertThat(viewNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE).size(), is(0));
-        assertThat(viewNode.getChildren(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE).size(), is(0));
+        assertThat(viewNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT).size(), is(0));
+        assertThat(viewNode.getChildren(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT).size(), is(0));
     }
 
     /**
@@ -575,12 +646,12 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "CREATE View G1( e1 integer, e2 varchar) OPTIONS (CARDINALITY 12) AS select e1, e2 from foo.bar";
         final AstNode viewNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(viewNode.getName(), is("G1"));
-        assertMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_NODE_TYPE);
+        assertMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
         assertProperty(viewNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         assertProperty(viewNode, TeiidDdlLexicon.CreateTable.QUERY_EXPRESSION, "select e1, e2 from foo.bar");
 
         // columns
-        final List<AstNode> columns = viewNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE);
+        final List<AstNode> columns = viewNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT);
         assertThat(columns.size(), is(2));
 
         if ("e1".equals(columns.get(0).getName())) {
@@ -600,8 +671,8 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertProperty(viewNode.childrenWithName("CARDINALITY").get(0), StandardDdlLexicon.VALUE, "12");
 
         // constraints
-        assertThat(viewNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE).size(), is(0));
-        assertThat(viewNode.getChildren(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE).size(), is(0));
+        assertThat(viewNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT).size(), is(0));
+        assertThat(viewNode.getChildren(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT).size(), is(0));
     }
 
     @Test
@@ -609,15 +680,15 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "CREATE FOREIGN TABLE FOO";
         final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(tableNode.getName(), is("FOO"));
-        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
 
         // columns
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE).size(), is(0));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT).size(), is(0));
 
         // constraints
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE).size(), is(0));
-        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE).size(), is(0));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT).size(), is(0));
+        assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT).size(), is(0));
     }
 
     @Test
@@ -625,15 +696,15 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "CREATE VIEW FOO";
         final AstNode viewNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(viewNode.getName(), is("FOO"));
-        assertMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_NODE_TYPE);
+        assertMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
         assertProperty(viewNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
 
         // columns
-        assertThat(viewNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE).size(), is(0));
+        assertThat(viewNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT).size(), is(0));
 
         // constraints
-        assertThat(viewNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE).size(), is(0));
-        assertThat(viewNode.getChildren(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE).size(), is(0));
+        assertThat(viewNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT).size(), is(0));
+        assertThat(viewNode.getChildren(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT).size(), is(0));
     }
 
     @Test
@@ -641,15 +712,15 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "CREATE VIRTUAL VIEW FOO";
         final AstNode viewNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(viewNode.getName(), is("FOO"));
-        assertMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_NODE_TYPE);
+        assertMixinType(viewNode, TeiidDdlLexicon.CreateTable.VIEW_STATEMENT);
         assertProperty(viewNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
 
         // columns
-        assertThat(viewNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE).size(), is(0));
+        assertThat(viewNode.getChildren(TeiidDdlLexicon.CreateTable.TABLE_ELEMENT).size(), is(0));
 
         // constraints
-        assertThat(viewNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE).size(), is(0));
-        assertThat(viewNode.getChildren(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE).size(), is(0));
+        assertThat(viewNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT).size(), is(0));
+        assertThat(viewNode.getChildren(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT).size(), is(0));
     }
 
     // ********* table element tests ***********
@@ -659,7 +730,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "symbol string";
         final AstNode node = this.parser.parseTableElement(getTokens(content), this.rootNode);
 
-        assertMixinType(node, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE);
+        assertMixinType(node, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT);
         assertThat(node.getName(), is("symbol"));
         assertProperty(node, StandardDdlLexicon.DATATYPE_NAME, TeiidDdlConstants.TeiidDataType.STRING.toDdl());
         assertThat(this.rootNode.getChildCount(), is(1));
@@ -670,7 +741,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "company_name varchar(256)";
         final AstNode node = this.parser.parseTableElement(getTokens(content), this.rootNode);
 
-        assertMixinType(node, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE);
+        assertMixinType(node, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT);
         assertThat(node.getName(), is("company_name"));
         assertProperty(node, StandardDdlLexicon.DATATYPE_NAME, TeiidDdlConstants.TeiidDataType.VARCHAR.toDdl());
         assertProperty(node, StandardDdlLexicon.DATATYPE_LENGTH, 256L);
@@ -681,7 +752,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "ACCOUNT_ID long NOT NULL";
         final AstNode node = this.parser.parseTableElement(getTokens(content), this.rootNode);
 
-        assertMixinType(node, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE);
+        assertMixinType(node, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT);
         assertThat(node.getName(), is("ACCOUNT_ID"));
         assertProperty(node, StandardDdlLexicon.DATATYPE_NAME, TeiidDdlConstants.TeiidDataType.LONG.toDdl());
         assertProperty(node, StandardDdlLexicon.NULLABLE, "NOT NULL");
@@ -692,7 +763,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "DATEOPENED timestamp DEFAULT 'CURRENT_TIMESTAMP'";
         final AstNode node = this.parser.parseTableElement(getTokens(content), this.rootNode);
 
-        assertMixinType(node, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE);
+        assertMixinType(node, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT);
         assertThat(node.getName(), is("DATEOPENED"));
         assertProperty(node, StandardDdlLexicon.DATATYPE_NAME, TeiidDdlConstants.TeiidDataType.TIMESTAMP.toDdl());
         assertProperty(node, StandardDdlLexicon.DEFAULT_OPTION, StandardDdlLexicon.DEFAULT_ID_DATETIME);
@@ -704,7 +775,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "DATECLOSED timestamp OPTIONS (ANNOTATION 'This is the date closed', NAMEINSOURCE '`DATECLOSED`', NATIVE_TYPE 'TIMESTAMP')";
         final AstNode node = this.parser.parseTableElement(getTokens(content), this.rootNode);
 
-        assertMixinType(node, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE);
+        assertMixinType(node, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT);
         assertThat(node.getName(), is("DATECLOSED"));
         assertProperty(node, StandardDdlLexicon.DATATYPE_NAME, TeiidDdlConstants.TeiidDataType.TIMESTAMP.toDdl());
 
@@ -722,7 +793,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "KEY STRING(9) PRIMARY KEY";
         final AstNode columnNode = this.parser.parseTableElement(getTokens(content), this.rootNode);
 
-        assertMixinType(columnNode, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE);
+        assertMixinType(columnNode, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT);
         assertThat(columnNode.getName(), is("KEY"));
         assertProperty(columnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDdlConstants.TeiidDataType.STRING.toDdl());
         assertProperty(columnNode, StandardDdlLexicon.DATATYPE_LENGTH, 9L);
@@ -732,7 +803,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(kids.size(), is(2)); // one for column, one for constraint
 
         final AstNode constraintNode = ((kids.get(0) == columnNode) ? kids.get(1) : kids.get(0));
-        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE));
+        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TYPE, DdlConstants.PRIMARY_KEY);
 
         final Object temp = constraintNode.getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
@@ -749,7 +820,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "KEY VARCHAR(9) UNIQUE";
         final AstNode columnNode = this.parser.parseTableElement(getTokens(content), this.rootNode);
 
-        assertMixinType(columnNode, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE);
+        assertMixinType(columnNode, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT);
         assertThat(columnNode.getName(), is("KEY"));
         assertProperty(columnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDdlConstants.TeiidDataType.VARCHAR.toDdl());
         assertProperty(columnNode, StandardDdlLexicon.DATATYPE_LENGTH, 9L);
@@ -759,7 +830,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(kids.size(), is(2)); // one for column, one for constraint
 
         final AstNode constraintNode = ((kids.get(0) == columnNode) ? kids.get(1) : kids.get(0));
-        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE));
+        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TYPE, DdlConstants.UNIQUE);
 
         final Object temp = constraintNode.getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
@@ -776,7 +847,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "KEY STRING(9) INDEX";
         final AstNode columnNode = this.parser.parseTableElement(getTokens(content), this.rootNode);
 
-        assertMixinType(columnNode, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE);
+        assertMixinType(columnNode, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT);
         assertThat(columnNode.getName(), is("KEY"));
         assertProperty(columnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDdlConstants.TeiidDataType.STRING.toDdl());
 
@@ -785,7 +856,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(kids.size(), is(2)); // one for column, one for constraint
 
         final AstNode constraintNode = ((kids.get(0) == columnNode) ? kids.get(1) : kids.get(0));
-        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE));
+        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TYPE, DdlConstants.INDEX);
         assertThat(constraintNode.getProperty(TeiidDdlLexicon.Constraint.EXPRESSION), is(nullValue()));
     }
@@ -795,7 +866,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final String content = "e5 integer auto_increment INDEX";
         final AstNode columnNode = this.parser.parseTableElement(getTokens(content), this.rootNode);
 
-        assertMixinType(columnNode, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT_NODE_TYPE);
+        assertMixinType(columnNode, TeiidDdlLexicon.CreateTable.TABLE_ELEMENT);
         assertThat(columnNode.getName(), is("e5"));
         assertProperty(columnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDdlConstants.TeiidDataType.INTEGER.toDdl());
         assertProperty(columnNode, TeiidDdlLexicon.CreateTable.AUTO_INCREMENT, true);
@@ -806,7 +877,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(kids.size(), is(2)); // one for column, one for constraint
 
         final AstNode constraintNode = ((kids.get(0) == columnNode) ? kids.get(1) : kids.get(0));
-        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE));
+        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TYPE, DdlConstants.INDEX);
         assertThat(constraintNode.getProperty(TeiidDdlLexicon.Constraint.EXPRESSION), is(nullValue()));
     }
@@ -842,7 +913,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
 
         // check constraint
         final AstNode constraintNode = ((rootKids.get(0) == columnNode) ? rootKids.get(1) : rootKids.get(0));
-        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE));
+        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TYPE, DdlConstants.INDEX);
         assertThat(constraintNode.getProperty(TeiidDdlLexicon.Constraint.EXPRESSION), is(nullValue()));
 
@@ -867,7 +938,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(kids.size(), is(1));
 
         final AstNode constraintNode = kids.get(0);
-        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE));
+        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT));
         assertThat(constraintNode.getName(), is("fbi"));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TYPE, DdlConstants.INDEX);
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.EXPRESSION, "UPPER(e2)");
@@ -883,7 +954,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(kids.size(), is(1));
 
         final AstNode constraintNode = kids.get(0);
-        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.EXPRESSION_NODE_TYPE));
+        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TYPE, DdlConstants.INDEX);
         assertThat(constraintNode.getName(), is(DdlConstants.INDEX));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.EXPRESSION, "UPPER(e2)");
@@ -902,7 +973,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(kids.size(), is(1)); // constraint node
 
         final AstNode constraintNode = kids.get(0);
-        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE));
+        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT));
         assertThat(constraintNode.getName(), is("pk_1"));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TYPE, DdlConstants.PRIMARY_KEY);
 
@@ -926,7 +997,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(kids.size(), is(1)); // constraint node
 
         final AstNode constraintNode = kids.get(0);
-        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE));
+        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TYPE, DdlConstants.PRIMARY_KEY);
 
         // referenced columns
@@ -947,7 +1018,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(kids.size(), is(1)); // constraint node
 
         final AstNode constraintNode = kids.get(0);
-        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE));
+        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TYPE, TeiidReservedWord.UNIQUE.toDdl());
 
         // referenced columns
@@ -968,7 +1039,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(kids.size(), is(1)); // constraint node
 
         final AstNode constraintNode = kids.get(0);
-        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE));
+        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TYPE, TeiidReservedWord.UNIQUE.toDdl());
 
         // referenced columns
@@ -990,7 +1061,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(kids.size(), is(1)); // constraint node
 
         final AstNode constraintNode = kids.get(0);
-        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE));
+        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TYPE, TeiidNonReservedWord.ACCESSPATTERN.toDdl());
 
         // referenced columns
@@ -1012,7 +1083,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(kids.size(), is(1)); // constraint node
 
         final AstNode constraintNode = kids.get(0);
-        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_NODE_TYPE));
+        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TYPE, TeiidNonReservedWord.ACCESSPATTERN.toDdl());
 
         // referenced columns
@@ -1033,7 +1104,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
 
         final String refTable = "refTable";
         final AstNode refTableNode = new AstNode(this.rootNode, refTable);
-        refTableNode.setProperty(JcrConstants.JCR_PRIMARY_TYPE, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        refTableNode.setProperty(JcrConstants.JCR_PRIMARY_TYPE, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
 
         final String refCol1 = "refCol1";
         final String refCol2 = "refCol2";
@@ -1050,7 +1121,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(kids.size(), is(1)); // constraint node
 
         final AstNode constraintNode = kids.get(0);
-        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_REFERENCES_NODE_TYPE));
+        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.FOREIGN_KEY_CONSTRAINT));
         assertThat(constraintNode.getName(), is(name));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TYPE, DdlConstants.FOREIGN_KEY);
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TABLE_REFERENCE, refTableNode);
@@ -1081,7 +1152,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
 
         final String refTable = "refTable";
         final AstNode refTableNode = new AstNode(this.rootNode, refTable);
-        refTableNode.setProperty(JcrConstants.JCR_PRIMARY_TYPE, TeiidDdlLexicon.CreateTable.TABLE_NODE_TYPE);
+        refTableNode.setProperty(JcrConstants.JCR_PRIMARY_TYPE, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
 
         final String name = "fk_1";
         final String content = "CONSTRAINT " + name + " FOREIGN KEY (" + col1 + ", " + col2 + ") REFERENCES " + refTable;
@@ -1092,7 +1163,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(kids.size(), is(1)); // constraint node
 
         final AstNode constraintNode = kids.get(0);
-        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.TABLE_ELEMENT_REFERENCES_NODE_TYPE));
+        assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.FOREIGN_KEY_CONSTRAINT));
         assertThat(constraintNode.getName(), is(name));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TYPE, DdlConstants.FOREIGN_KEY);
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TABLE_REFERENCE, refTableNode);
@@ -1155,6 +1226,16 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(idList.get(0), is(a));
         assertThat(idList.get(1), is(b));
         assertThat(idList.get(2), is(c));
+    }
+
+    @Test
+    public void shouldParseExpressionLists() {
+        assertThat(CreateTableParser.contains("UPPER(e2)", "e2"), is(true));
+        assertThat(CreateTableParser.contains("UPPER(e2)", "E2"), is(true));
+        assertThat(CreateTableParser.contains("UPPER(e1, e2)", "e3"), is(false));
+
+        assertThat(CreateTableParser.contains("abc, def", "def"), is(true));
+        assertThat(CreateTableParser.contains("abc, def", "DEF"), is(true));
     }
 
     //
