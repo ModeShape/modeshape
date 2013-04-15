@@ -71,15 +71,6 @@ public interface ConnectorChangedSet {
 			String oldRelativePath, String reorderedBeforeRelativePath);
 
 	/**
-	 * Create an event signifying that something about the node resource (other
-	 * than the properties or location) changed.
-	 * 
-	 * @param key
-	 *            the node key; may not be null
-	 */
-	void nodeChanged(String key);
-
-	/**
 	 * Signal that a property was added to a node resource.
 	 * 
 	 * @param key
