@@ -1228,6 +1228,16 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(idList.get(2), is(c));
     }
 
+    @Test
+    public void shouldParseExpressionLists() {
+        assertThat(CreateTableParser.contains("UPPER(e2)", "e2"), is(true));
+        assertThat(CreateTableParser.contains("UPPER(e2)", "E2"), is(true));
+        assertThat(CreateTableParser.contains("UPPER(e1, e2)", "e3"), is(false));
+
+        assertThat(CreateTableParser.contains("abc, def", "def"), is(true));
+        assertThat(CreateTableParser.contains("abc, def", "DEF"), is(true));
+    }
+
     //
     // @Test
     // public void shouldTestWhitespace() {
