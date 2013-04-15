@@ -49,6 +49,21 @@ import org.modeshape.sequencer.ddl.node.AstNode;
  */
 final class CreateTableParser extends StatementParser {
 
+    /**
+     * Sequence is any number of characters, word boundary, column name, word boundary, and any number of characters.
+     */
+    private static final String REGEX = ".*\\b(?i)%s(?-i)\\b.*";
+
+    /**
+     * @param expression the expression being looked at (cannot be <code>null</code>)
+     * @param columnName the name of the column being looked for in the expression (cannot be <code>null</code>)
+     * @return <code>true</code> if the expression contains the column name
+     */
+    static boolean contains( final String expression,
+                             final String columnName ) {
+        return expression.matches(String.format(REGEX, columnName));
+    }
+
     CreateTableParser( final TeiidDdlParser teiidDdlParser ) {
         super(teiidDdlParser);
     }
@@ -430,9 +445,7 @@ final class CreateTableParser extends StatementParser {
                 final Set<AstNode> referencedColumns = new HashSet<AstNode>(columns.size());
 
                 for (final AstNode column : columns) {
-                    final String regex = ".*\\b" + column.getName() + "\\b.*";
-
-                    if (expression.matches(regex)) {
+                    if (contains(expression, column.getName())) {
                         referencedColumns.add(column);
                     }
                 }
