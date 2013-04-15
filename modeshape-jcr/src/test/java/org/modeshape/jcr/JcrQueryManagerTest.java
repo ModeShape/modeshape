@@ -1967,15 +1967,15 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveRows(result, "jcr:path", "/Other/NodeA[2]");
     }
 
-    @Ignore
     @FixFor( "MODE-1829" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchUsingLeadingWildcard() throws RepositoryException {
         String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, '*earing')";
-        // String sql = "select [jcr:path] from [nt:unstructured] as n where n.[something] LIKE '*earing*'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         // print = true;
+        sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, '*earing*')";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1L);
