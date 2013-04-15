@@ -16,7 +16,7 @@ import org.modeshape.jcr.value.Property;
  * @author ajs6f
  * 
  */
-public interface FederatedChangeSet {
+public interface ConnectorChangedSet {
 
 	/**
 	 * Signal that a new node resource was created.
@@ -24,7 +24,7 @@ public interface FederatedChangeSet {
 	 * @param key
 	 *            the key for the new node; may not be null
 	 * @param parentKey
-	 *            the key for the parent of the new node; may not be null
+	 *            the key (node ID) for the parent of the new node; may not be null
 	 */
 	void nodeCreated(String key, String parentKey);
 
@@ -42,9 +42,9 @@ public interface FederatedChangeSet {
 	 * @param key
 	 *            the key for the node; may not be null
 	 * @param newParent
-	 *            the new parent for the node; may not be null
+	 *            the node ID of the new parent for the node; may not be null
 	 * @param oldParent
-	 *            the old parent for the node; may not be null
+	 *            the node ID of the old parent for the node; may not be null
 	 */
 	void nodeMoved(String key, String newParent, String oldParent);
 
@@ -55,7 +55,7 @@ public interface FederatedChangeSet {
 	 * @param key
 	 *            the key for the node; may not be null
 	 * @param parent
-	 *            the key for the parent of the node; may not be null
+	 *            the key (node ID) for the parent of the node; may not be null
 	 * @param newPath
 	 *            the new relative path for the node after it has been
 	 *            reordered; may not be null
@@ -117,5 +117,10 @@ public interface FederatedChangeSet {
 	 * publication into the repository.
 	 */
 	void publish();
+
+	/**
+	 * Removes any recorded change events.
+	 */
+	void reset();
 
 }
