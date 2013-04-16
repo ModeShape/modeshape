@@ -278,6 +278,23 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
     }
 
     /**
+     * JCR names related to the option namespace DDL statement.
+     */
+    public interface OptionNamespace {
+
+        /**
+         * An option namespace DDL statement mixin name.
+         */
+        String STATEMENT = Namespace.PREFIX + ":optionNamespace";
+
+        /**
+         * The namespace URI property name.
+         */
+        String URI = Namespace.PREFIX + ":uri";
+
+    }
+
+    /**
      * The JCR Teiid namespace mapping.
      */
     public interface Namespace {

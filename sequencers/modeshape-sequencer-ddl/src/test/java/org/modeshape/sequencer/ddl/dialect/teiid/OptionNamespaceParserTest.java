@@ -57,18 +57,23 @@ public class OptionNamespaceParserTest extends TeiidDdlTest {
     }
 
     @Test
-    public void shouldParseOptionNamespaceAliasedIdentifier() {
+    public void shouldParseOptionNamespaceQuotedAliasedIdentifier() {
         // register the alias
-        final String uri = "http://teiid.org/rest";
-        final String alias = "REST";
-        final String content = "SET NAMESPACE '" + uri + "' AS " + alias + ';';
+        final String content = "SET NAMESPACE 'http://teiid.org/rest' AS REST;";
         this.parser.parse(getTokens(content), this.rootNode);
 
         // qualify the identifier with the namespace alias
-        final String unqualifiedId = "name";
-        final String aliasedId = alias + ':' + unqualifiedId;
-        final String id = uri + ':' + unqualifiedId;
-        assertThat(this.parser.parseIdentifier(getTokens(aliasedId)), is(id));
+        assertThat(this.parser.parseIdentifier(getTokens("'REST:name'")), is("{http://teiid.org/rest}name"));
+    }
+
+    @Test
+    public void shouldParseOptionNamespaceUnquotedAliasedIdentifier() {
+        // register the alias
+        final String content = "SET NAMESPACE 'http://teiid.org/rest' AS REST;";
+        this.parser.parse(getTokens(content), this.rootNode);
+
+        // qualify the identifier with the namespace alias
+        assertThat(this.parser.parseIdentifier(getTokens("REST:name")), is("{http://teiid.org/rest}name"));
     }
 
     @Test
@@ -98,7 +103,7 @@ public class OptionNamespaceParserTest extends TeiidDdlTest {
 
         final String unqualifiedId = "name";
         final String aliasedId = alias + ':' + unqualifiedId;
-        final String id = uri + ':' + unqualifiedId;
+        final String id = '{' + uri + '}' + unqualifiedId;
         assertThat(this.parser.parseIdentifier(getTokens(aliasedId)), is(id));
     }
 

@@ -51,8 +51,40 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
     }
 
     @Test
+    public void shouldSequenceOptionNamespace() throws Exception {
+        this.statementsNode = sequenceDdl("ddl/dialect/teiid/optionNamespace.ddl");
+        assertThat(this.statementsNode.getNodes().getSize(), is(2L));
+
+        { // option namespace
+            final Node optionNamespaceNode = this.statementsNode.getNode("REST");
+            verifyMixinType(optionNamespaceNode, TeiidDdlLexicon.OptionNamespace.STATEMENT);
+            verifyProperty(optionNamespaceNode, TeiidDdlLexicon.OptionNamespace.URI, "http://teiid.org/rest");
+        }
+
+        { // create procedure
+            final Node optionNamespaceNode = this.statementsNode.getNode("g1Table");
+            verifyMixinType(optionNamespaceNode, TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
+            verifyProperty(optionNamespaceNode,
+                           TeiidDdlLexicon.CreateProcedure.STATEMENT,
+                           "BEGIN\nSELECT XMLELEMENT(NAME \"all\", XMLAGG(XMLELEMENT(NAME \"row\", XMLFOREST(e1, e2)))) AS xml_out FROM Txns.G1;\nEND");
+
+            { // REST:METHOD option
+                final Node optionNode = optionNamespaceNode.getNode("{http://teiid.org/rest}METHOD");
+                verifyMixinType(optionNode, StandardDdlLexicon.TYPE_STATEMENT_OPTION);
+                verifyProperty(optionNode, StandardDdlLexicon.VALUE, "GET");
+            }
+
+            { // REST:URI option
+                final Node optionNode = optionNamespaceNode.getNode("{http://teiid.org/rest}URI");
+                verifyMixinType(optionNode, StandardDdlLexicon.TYPE_STATEMENT_OPTION);
+                verifyProperty(optionNode, StandardDdlLexicon.VALUE, "g1");
+            }
+        }
+    }
+
+    @Test
     public void shouldSequenceFlatFileDdl() throws Exception {
-        this.statementsNode = sequenceDdl("ddl/dialect/teiid/flatFile.ddl", 300);
+        this.statementsNode = sequenceDdl("ddl/dialect/teiid/flatFile.ddl");
         assertThat(this.statementsNode.getNodes().getSize(), is(3L));
 
         { // getFiles

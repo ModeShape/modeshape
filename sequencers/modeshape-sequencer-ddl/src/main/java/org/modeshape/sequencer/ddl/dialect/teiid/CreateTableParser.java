@@ -49,6 +49,12 @@ import org.modeshape.sequencer.ddl.node.AstNode;
  */
 final class CreateTableParser extends StatementParser {
 
+    protected static final String PRIMARY_KEY_PREFIX = "PK_";
+    protected static final String FOREIGN_KEY_PREFIX = "FK_";
+    protected static final String UNIQUE_CONSTRAINT_PREFIX = "UC_";
+    protected static final String INDEX_PREFIX = "NDX_";
+    protected static final String ACCESS_PATTERN_PREFIX = "AP_";
+
     /**
      * Sequence is any number of characters, word boundary, column name, word boundary, and any number of characters.
      */
@@ -66,6 +72,36 @@ final class CreateTableParser extends StatementParser {
 
     CreateTableParser( final TeiidDdlParser teiidDdlParser ) {
         super(teiidDdlParser);
+    }
+
+    private String createConstraintName( final String constraintType,
+                                         final AstNode tableNode ) {
+        String prefix = null;
+
+        if (PRIMARY_KEY.equals(constraintType)) {
+            prefix = PRIMARY_KEY_PREFIX;
+        } else if (FOREIGN_KEY.equals(constraintType)) {
+            prefix = FOREIGN_KEY_PREFIX;
+        } else if (TeiidReservedWord.UNIQUE.toDdl().equals(constraintType)) {
+            prefix = UNIQUE_CONSTRAINT_PREFIX;
+        } else if (TeiidNonReservedWord.INDEX.toDdl().equals(constraintType)) {
+            prefix = INDEX_PREFIX;
+        } else if (TeiidNonReservedWord.ACCESSPATTERN.toDdl().equals(constraintType)) {
+            prefix = ACCESS_PATTERN_PREFIX;
+        }
+
+        int index = 1;
+
+        while (true) {
+            final String name = prefix + index;
+            final List<AstNode> kids = tableNode.childrenWithName(name);
+
+            if (kids.isEmpty()) {
+                return name;
+            }
+
+            ++index;
+        }
     }
 
     /**
@@ -388,7 +424,7 @@ final class CreateTableParser extends StatementParser {
 
                 // set a constraint ID if needed
                 if (StringUtil.isBlank(constraintId)) {
-                    constraintId = constraintType;
+                    constraintId = createConstraintName(constraintType, tableNode);
                 }
 
                 // create constraint node
@@ -431,7 +467,7 @@ final class CreateTableParser extends StatementParser {
                 constraintType = TeiidNonReservedWord.INDEX.toDdl();
 
                 if (StringUtil.isBlank(constraintId)) {
-                    constraintId = constraintType;
+                    constraintId = createConstraintName(constraintType, tableNode);
                 }
 
                 constraintNode = getNodeFactory().node(constraintId, tableNode, TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT);

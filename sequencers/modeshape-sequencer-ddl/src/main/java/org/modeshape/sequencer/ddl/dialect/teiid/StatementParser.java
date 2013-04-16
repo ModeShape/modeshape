@@ -110,15 +110,16 @@ abstract class StatementParser implements DdlConstants {
 
         int prevIndent = previous.getIndexInContent();
         int prevLine = previous.getLine();
+        final int lfCount = (currLine - prevLine);
+
         int whitespaceCount = 0;
 
         if (currIndent > prevIndent) {
-            whitespaceCount = (currIndent - prevValue.length() - prevIndent);
+            whitespaceCount = (currIndent - prevValue.length() - prevIndent - lfCount);
         } else if (prevIndent > currIndent) {
             whitespaceCount = (prevIndent + prevValue.length() - currIndent);
         }
 
-        final int lfCount = (currLine - prevLine);
 
         if ((lfCount == 0) && (whitespaceCount == 0)) {
             return "";
@@ -177,8 +178,8 @@ abstract class StatementParser implements DdlConstants {
             id = id.substring(1, (id.length() - 1));
         }
 
-        // check for namespaced-prefixed ID
-        if (tokens.matches(':')) {
+        // check for namespaced-prefixed ID (colon will be a token if identifier is not quoted)
+        if (tokens.canConsume(':')) {
             // namespace found
             String uri = this.teiidDdlParser.getNamespaceUri(id);
 
@@ -187,7 +188,22 @@ abstract class StatementParser implements DdlConstants {
                 uri = id;
             }
 
-            id = uri + tokens.consume() + tokens.consume();
+            id = '{' + uri + '}' + tokens.consume();
+        } else {
+            int index =  id.indexOf(':');
+    
+            if (index != -1) {
+                // namespace found
+                final String prefix = id.substring(0, index);
+                String uri = this.teiidDdlParser.getNamespaceUri(prefix);
+    
+                if (StringUtil.isBlank(uri)) {
+                    // assume prefix is the uri
+                    uri = prefix;
+                }
+    
+                id = '{' + uri + '}' + id.substring(index + 1);
+            }
         }
 
         if (tokens.canConsume('.')) {
