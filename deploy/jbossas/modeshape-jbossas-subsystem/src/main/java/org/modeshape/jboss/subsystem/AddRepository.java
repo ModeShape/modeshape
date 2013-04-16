@@ -185,11 +185,6 @@ public class AddRepository extends AbstractAddStepHandler {
                                   repositoryService.getChannelFactoryInjector());
         }
 
-        // Add dependency to the transaction manager ...
-        builder.addDependency(ServiceName.JBOSS.append("txn", "TransactionManager"),
-                              TransactionManager.class,
-                              repositoryService.getTransactionManagerInjector());
-
         // Add dependency to the Infinispan cache container used for content ...
         builder.addDependency(ServiceName.JBOSS.append("infinispan", namedContainer),
                               CacheContainer.class,
@@ -412,7 +407,6 @@ public class AddRepository extends AbstractAddStepHandler {
                                                     EditableDocument configDoc ) {
         EditableDocument storage = configDoc.getOrCreateDocument(FieldName.STORAGE);
         storage.set(FieldName.CACHE_NAME, cacheName);
-        storage.set(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP, JBossTransactionManagerLookup.class.getName());
         // The proper container will be injected into the RepositoryService, so use the fixed container name ...
         storage.set(FieldName.CACHE_CONFIGURATION, RepositoryService.CONTENT_CONTAINER_NAME);
     }
