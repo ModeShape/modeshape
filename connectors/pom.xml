@@ -76,7 +76,7 @@
 
     <modules>
         <module>modeshape-connector-git</module>
-	<module>modeshape-connector-cmis</module>
+        <module>modeshape-connector-cmis</module>
     </modules>
 
     <profiles>

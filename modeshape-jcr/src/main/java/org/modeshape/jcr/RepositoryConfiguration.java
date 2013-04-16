@@ -713,6 +713,7 @@ public class RepositoryConfiguration {
 
         String fileSystemConnector = FileSystemConnector.class.getName();
         String gitConnector = "org.modeshape.connector.git.GitConnector";
+        String cmisConnector = "org.modeshape.connector.cmis.CmisConnector";
 
         aliases = new HashMap<String, String>();
         aliases.put("files", fileSystemConnector);
@@ -720,6 +721,8 @@ public class RepositoryConfiguration {
         aliases.put("filesystemconnector", fileSystemConnector);
         aliases.put("git", gitConnector);
         aliases.put("gitconnector", gitConnector);
+        aliases.put("cmis", cmisConnector);
+        aliases.put("cmisconnector", cmisConnector);
 
         CONNECTOR_ALIASES = Collections.unmodifiableMap(aliases);
 

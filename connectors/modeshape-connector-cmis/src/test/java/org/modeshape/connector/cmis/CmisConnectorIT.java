@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.connector;
+package org.modeshape.connector.cmis;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

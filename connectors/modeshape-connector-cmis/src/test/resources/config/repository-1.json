@@ -13,7 +13,7 @@
     },
     "externalSources" : {
         "cmis" : {
-            "classname" : "org.modeshape.connector.CmisConnector",
+            "classname" : "org.modeshape.connector.cmis.CmisConnector",
             "cacheTtlSeconds" : 5,
             "aclService" : "http://localhost:8090/services/ACLService?wsdl",
             "discoveryService" : "http://localhost:8090/services/DiscoveryService?wsdl",
