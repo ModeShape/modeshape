@@ -571,9 +571,10 @@ public class CreateTableParserTest extends TeiidDdlTest {
 
         // constraints
         assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.TABLE_ELEMENT).size(), is(3));
-        assertThat(tableNode.childrenWithName(TeiidNonReservedWord.ACCESSPATTERN.toDdl()).size(), is(2));
-        assertThat(tableNode.childrenWithName(TeiidReservedWord.UNIQUE.toDdl()).size(), is(1));
-        final Object temp = tableNode.childrenWithName(TeiidReservedWord.UNIQUE.toDdl()).get(0).getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
+        assertThat(tableNode.childrenWithName(CreateTableParser.ACCESS_PATTERN_PREFIX + "1").size(), is(1));
+        assertThat(tableNode.childrenWithName(CreateTableParser.ACCESS_PATTERN_PREFIX + "2").size(), is(1));
+        assertThat(tableNode.childrenWithName(CreateTableParser.UNIQUE_CONSTRAINT_PREFIX + "1").size(), is(1));
+        final Object temp = tableNode.childrenWithName(CreateTableParser.UNIQUE_CONSTRAINT_PREFIX + "1").get(0).getProperty(TeiidDdlLexicon.Constraint.REFERENCES);
         assertThat(temp, is(instanceOf(List.class)));
 
         @SuppressWarnings( "unchecked" )
@@ -594,7 +595,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(tableNode.getName(), is("G1"));
         assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
-        assertThat(tableNode.childrenWithName(DdlConstants.PRIMARY_KEY).size(), is(1)); // make sure primary key still created
+        assertThat(tableNode.childrenWithName(CreateTableParser.PRIMARY_KEY_PREFIX + "1").size(), is(1)); // make sure primary key still created
     }
 
     @Test
@@ -956,7 +957,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         final AstNode constraintNode = kids.get(0);
         assertThat(constraintNode.getMixins(), hasItem(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.TYPE, DdlConstants.INDEX);
-        assertThat(constraintNode.getName(), is(DdlConstants.INDEX));
+        assertThat(constraintNode.getName(), is(CreateTableParser.INDEX_PREFIX + "1"));
         assertProperty(constraintNode, TeiidDdlLexicon.Constraint.EXPRESSION, "UPPER(e2)");
     }
 
@@ -993,7 +994,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(this.parser.parseTableBodyConstraint(getTokens(content), this.rootNode), is(true));
         assertThat(this.rootNode.getChildCount(), is(3)); // 2 columns, 1 constraint
 
-        final List<AstNode> kids = this.rootNode.childrenWithName(DdlConstants.PRIMARY_KEY);
+        final List<AstNode> kids = this.rootNode.childrenWithName(CreateTableParser.PRIMARY_KEY_PREFIX + "1");
         assertThat(kids.size(), is(1)); // constraint node
 
         final AstNode constraintNode = kids.get(0);
@@ -1035,7 +1036,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(this.parser.parseTableBodyConstraint(getTokens(content), this.rootNode), is(true));
         assertThat(this.rootNode.getChildCount(), is(2)); // 1 column, 1 constraint
 
-        final List<AstNode> kids = this.rootNode.childrenWithName(TeiidReservedWord.UNIQUE.toDdl());
+        final List<AstNode> kids = this.rootNode.childrenWithName(CreateTableParser.UNIQUE_CONSTRAINT_PREFIX + "1");
         assertThat(kids.size(), is(1)); // constraint node
 
         final AstNode constraintNode = kids.get(0);
@@ -1079,7 +1080,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(this.parser.parseTableBodyConstraint(getTokens(content), this.rootNode), is(true));
         assertThat(this.rootNode.getChildCount(), is(3)); // 2 columns, 1 constraint
 
-        final List<AstNode> kids = this.rootNode.childrenWithName(TeiidNonReservedWord.ACCESSPATTERN.toDdl());
+        final List<AstNode> kids = this.rootNode.childrenWithName(CreateTableParser.ACCESS_PATTERN_PREFIX + "1");
         assertThat(kids.size(), is(1)); // constraint node
 
         final AstNode constraintNode = kids.get(0);

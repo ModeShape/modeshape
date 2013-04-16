@@ -62,12 +62,14 @@ final class OptionNamespaceParser extends StatementParser {
     AstNode parse( final DdlTokenStream tokens,
                    final AstNode parentNode ) throws ParsingException {
         if (tokens.canConsume(DdlStatement.OPTION_NAMESPACE.tokens())) {
-            final String uri = parseIdentifier(tokens);
+            final String uri = parseValue(tokens);
 
             if (tokens.canConsume(TeiidReservedWord.AS.toDdl())) {
                 final String alias = parseIdentifier(tokens);
                 addNamespaceAlias(alias, uri);
-                return null;
+                final AstNode optionNamespaceNode = getNodeFactory().node(alias, parentNode, TeiidDdlLexicon.OptionNamespace.STATEMENT);
+                optionNamespaceNode.setProperty(TeiidDdlLexicon.OptionNamespace.URI, uri);
+                return optionNamespaceNode;
             }
         }
 

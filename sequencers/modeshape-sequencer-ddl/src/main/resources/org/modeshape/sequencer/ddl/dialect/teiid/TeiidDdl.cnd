@@ -149,3 +149,10 @@
 - teiidddl:atomic (boolean) = 'true' autocreated
 + rowAction (teiidddl:triggerRowAction) = teiidddl:triggerRowAction multiple sns
 + * (ddl:statementOption) = ddl:statementOption
+
+// =============================================================================
+// OPTION NAMESPACE
+// =============================================================================
+
+[teiidddl:optionNamespace] > ddl:statement mixin
+- teiidddl:uri (string) mandatory
