@@ -32,11 +32,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import javax.transaction.HeuristicMixedException;
-import javax.transaction.HeuristicRollbackException;
 import javax.transaction.NotSupportedException;
-import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
+import javax.transaction.TransactionManager;
+import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.manager.CacheContainer;
@@ -48,6 +47,7 @@ import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.jcr.ConfigurationException;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
@@ -314,6 +314,9 @@ public class RepositoryCache implements Observable {
                 V result = operation.call();
                 txn.commit();
                 return result;
+            } catch (RuntimeException re) {
+                txn.rollback();
+                throw re;
             } catch (Exception e) {
                 txn.rollback();
                 throw new RuntimeException(e);
@@ -575,6 +578,11 @@ public class RepositoryCache implements Observable {
                 runInTransaction(new Callable<Void>() {
                     @Override
                     public Void call() throws Exception {
+                        // Create/get the Infinispan workspaceCache that we'll use within the WorkspaceCache, using the workspaceCache manager's
+                        // default configuration ...
+                        Cache<NodeKey, CachedNode> nodeCache = cacheForWorkspace(name);
+
+
                         // Compute the root key for this workspace ...
                         String workspaceKey = NodeKey.keyForWorkspaceName(name);
                         NodeKey rootKey = new NodeKey(sourceKey, workspaceKey, rootNodeId);
@@ -588,9 +596,6 @@ public class RepositoryCache implements Observable {
                         trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKey.toString()),
                                           null);
 
-                        // Create/get the Infinispan workspaceCache that we'll use within the WorkspaceCache, using the workspaceCache manager's
-                        // default configuration ...
-                        Cache<NodeKey, CachedNode> nodeCache = workspaceCacheManager.getCache(cacheNameForWorkspace(name));
                         WorkspaceCache workspaceCache = new WorkspaceCache(context, getKey(), name, documentStore, translator,
                                                                            rootKey,
                                                                            nodeCache, changeBus);
@@ -617,6 +622,17 @@ public class RepositoryCache implements Observable {
         }
 
         return workspaceCachesByName.get(name);
+    }
+
+    private Cache<NodeKey, CachedNode> cacheForWorkspace( String name ) {
+        Cache<NodeKey, CachedNode> cache = workspaceCacheManager.getCache(cacheNameForWorkspace(name));
+        if (cache instanceof AdvancedCache) {
+            TransactionManager txManager = ((AdvancedCache<?,?>)cache).getTransactionManager();
+            if (txManager != null) {
+                throw new ConfigurationException(JcrI18n.workspaceCacheShouldNotBeTransactional.text(name));
+            }
+        }
+        return cache;
     }
 
     protected final String cacheNameForWorkspace( String workspaceName ) {

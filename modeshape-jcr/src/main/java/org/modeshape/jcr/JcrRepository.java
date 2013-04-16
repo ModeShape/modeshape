@@ -1200,7 +1200,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                                    MonitorFactory monitorFactory,
                                                    TransactionManager txnMgr ) {
             if (txnMgr == null) {
-                throw new IllegalStateException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName()));
+                throw new ConfigurationException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName()));
             }
 
             switch (mode) {
