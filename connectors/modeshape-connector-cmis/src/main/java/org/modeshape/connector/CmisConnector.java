@@ -60,6 +60,74 @@ import java.math.BigInteger;
 import java.util.*;
 
 /**
+ * This connector exposes the content of a CMIS repository. 
+ * 
+ * <p>
+ * The Content Management Interoperability Services (CMIS) standard deﬁnes a 
+ * domain model and Web Services that can be used by applications to work 
+ * with one or more Content Management repositories/systems.
+ * </p>
+ * 
+ * <p>
+ * The CMIS connector is designed to be layered on top of existing Content 
+ * Management systems. It is intended to use Apache Chemistry API to access 
+ * services provided by Content Management system and incorporate those services 
+ * into Modeshape content repository.
+ * </p>
+ * 
+ * <p>
+ * There are several attributes that should be configured on each 
+ * external source:
+ * <ul>
+ * <li><strong><code></code></strong></li>
+ * <li><strong><code>aclService</code></strong>
+ *      URL of the Access list service binding entry point. 
+ *      The ACL Services are used to discover and manage Access Control Lists.</li>
+ * <li><strong><code>discoveryService</code></strong>
+ *      URL of the Discovery service binding entry point. Discovery service 
+ *      executes a CMIS query statement against the contents of the repository.</li>
+ * <li><strong><code>multifilingService</code></strong>
+ *	URL of the Multi-filing service binding entry point. 
+ *      The Multi-ﬁling Services are used to ﬁle/un-ﬁle objects into/from folders.</li>
+ *<li><strong><code>navigationService</code></strong>
+ *      URL of the Navigation service binding entry point. 
+ *      The Navigation service gets the list of child objects contained in the 
+ *      speciﬁed folder.</li>
+ * <li><strong><code>objectService</code></strong> 	
+ *      URL of the Object service binding entry point. 
+ *      Creates a document object of the speciﬁed type (given by the cmis:objectTypeId 
+ *      property) in the (optionally) speciﬁed location</li>
+ * <li><strong><code>policyService</code></strong> 	
+ *      URL of the Policy service binding entry point. 
+ *      Applies a speciﬁed policy to an object.</li>
+ * <li><strong><code>relationshipService</code></strong>
+ *      URL of the Relationship service binding entry point. Gets all or a 
+ *      subset of relationships associated with an independent object.</li>
+ * <li><strong><code>repositoryService</code></strong>
+ *      URL of the Repository service binding entry point. Returns a list of 
+ *      CMIS repositories available from this CMIS service endpoint.</li>
+ * <li><strong><code>versioningService</code></strong>
+ *      URL of the Policy service binding entry point. Create a private 
+ *      working copy (PWC) of the document. </li>
+ * </ul>
+ * </p>
+ * 
+ * <p>
+ * The connector results in the following form
+ * </p>
+ * 
+ * <table cellspacing="0" cellpadding="1" border="1">
+ * <tr><th>Path</th><th>Description</th></tr>
+ * <tr>
+ * <td><code>/repository_info</code></td>
+ * <td>Repository description</td>
+ * </tr>
+ * <tr>
+ * <td><code>/filesAndFolder</code></td>
+ * <td>The structure of the folders and files in the projected repository</td>
+ * </tr>
+ * <table>
+ * 
  * @author Oleg Kulikov
  * @author Ivan Vasyliev
  */
