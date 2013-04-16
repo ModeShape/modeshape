@@ -23,6 +23,22 @@
  */
 package org.modeshape.connector;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+import javax.jcr.Binary;
+import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
+import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.NodeTypeIterator;
+import javax.jcr.nodetype.NodeTypeManager;
 import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.api.SessionFactory;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
@@ -34,26 +50,9 @@ import org.junit.Test;
 import org.modeshape.jcr.MultiUseAbstractTest;
 import org.modeshape.jcr.RepositoryConfiguration;
 
-import javax.jcr.Binary;
-import javax.jcr.Node;
-import javax.jcr.Property;
-import javax.jcr.PropertyIterator;
-import javax.jcr.nodetype.NodeType;
-import javax.jcr.nodetype.NodeTypeIterator;
-import javax.jcr.nodetype.NodeTypeManager;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.junit.Assert.*;
-
 /**
- * Provide integration testing of the CMIS connector with OpenCMIS InMemory
- * Repository.
- *
+ * Provide integration testing of the CMIS connector with OpenCMIS InMemory Repository.
+ * 
  * @author Alexander Voloshyn
  * @version 1.0 2/20/2013
  */
@@ -61,8 +60,7 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
     /**
      * Test OpenCMIS InMemory Server URL.
      * <p/>
-     * This OpenCMIS InMemory server instance should be started by maven cargo
-     * plugin at pre integration stage.
+     * This OpenCMIS InMemory server instance should be started by maven cargo plugin at pre integration stage.
      */
     private static final String CMIS_URL = "http://localhost:8090/";
 
@@ -109,6 +107,7 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         NodeTypeIterator it = manager.getNodeType("nt:file").getDeclaredSubtypes();
         while (it.hasNext()) {
             NodeType nodeType = it.nextNodeType();
+            assertTrue(nodeType != null);
         }
     }
 
@@ -143,8 +142,7 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         Node node2 = getSession().getNode("/cmis/My_Folder-0-0/My_Folder-1-0");
         assertTrue(node2 != null);
 
-        Node node3 = getSession().getNode(
-                "/cmis/My_Folder-0-0/My_Folder-1-0/My_Folder-2-0");
+        Node node3 = getSession().getNode("/cmis/My_Folder-0-0/My_Folder-1-0/My_Folder-2-0");
         assertTrue(node3 != null);
     }
 
@@ -179,9 +177,9 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         assertFalse("Content shouldn't be empty.", s.trim().isEmpty());
     }
 
-    //-----------------------------------------------------------------------/
+    // -----------------------------------------------------------------------/
     // Folder cmis build-in properties
-    //-----------------------------------------------------------------------/
+    // -----------------------------------------------------------------------/
     @Test
     public void shouldAccessObjectIdPropertyForFolder() throws Exception {
         Node node = getSession().getNode("/cmis/My_Folder-0-0");
@@ -210,16 +208,16 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         assertTrue(date != null);
     }
 
-    //@Test
+    // @Test
     public void shouldAccessModificationDatePropertyForFolder() throws Exception {
         Node node = getSession().getNode("/cmis/My_Folder-0-0");
         Calendar date = node.getProperty("jcr:lastModified").getDate();
         assertTrue(date != null);
     }
 
-    //-----------------------------------------------------------------------/
+    // -----------------------------------------------------------------------/
     // Document cmis build-in properties
-    //-----------------------------------------------------------------------/
+    // -----------------------------------------------------------------------/
     @Test
     public void shouldAccessObjectIdPropertyForDocument() throws Exception {
         Node node = getSession().getNode("/cmis/My_Folder-0-0/My_Document-1-0");
@@ -248,7 +246,7 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         String name = "test" + System.currentTimeMillis();
         Node node = root.addNode(name, "nt:folder");
         assertTrue(name.equals(node.getName()));
-        //node.setProperty("name", "test-name");
+        // node.setProperty("name", "test-name");
 
         root = getSession().getNode("/cmis/" + name);
         Node node1 = root.addNode("test-1", "nt:file");

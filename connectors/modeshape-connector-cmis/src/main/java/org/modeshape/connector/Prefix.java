@@ -27,18 +27,17 @@ import java.util.HashMap;
 import org.modeshape.jcr.JcrLexicon;
 
 /**
- *
  * @author kulikov
  */
 public class Prefix {
-    private HashMap<String, String> map = new HashMap();
-    
+    private HashMap<String, String> map = new HashMap<String, String>();
+
     public Prefix() {
         map.put(JcrLexicon.Namespace.URI, JcrLexicon.Namespace.PREFIX);
         map.put(CmisLexicon.Namespace.URI, CmisLexicon.Namespace.PREFIX);
     }
-    
-    public String value(String namespaceUri) {
+
+    public String value( String namespaceUri ) {
         return map.get(namespaceUri);
     }
 }
