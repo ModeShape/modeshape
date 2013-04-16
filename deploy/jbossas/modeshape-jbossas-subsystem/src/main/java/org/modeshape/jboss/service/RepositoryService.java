@@ -26,7 +26,6 @@ package org.modeshape.jboss.service;
 import java.util.ArrayList;
 import java.util.List;
 import javax.jcr.RepositoryException;
-import javax.transaction.TransactionManager;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Changes;
@@ -74,7 +73,6 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     private final InjectedValue<ModeShapeEngine> engineInjector = new InjectedValue<ModeShapeEngine>();
     private final InjectedValue<CacheContainer> cacheManagerInjector = new InjectedValue<CacheContainer>();
     private final InjectedValue<CacheContainer> workspacesCacheContainerInjector = new InjectedValue<CacheContainer>();
-    private final InjectedValue<TransactionManager> txnMgrInjector = new InjectedValue<TransactionManager>();
     private final InjectedValue<ChannelFactory> channelFactoryInjector = new InjectedValue<ChannelFactory>();
     private final InjectedValue<IndexStorage> indexStorageConfigInjector = new InjectedValue<IndexStorage>();
     private final InjectedValue<BinaryStorage> binaryStorageInjector = new InjectedValue<BinaryStorage>();
@@ -491,13 +489,6 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
      */
     public InjectedValue<ModeShapeEngine> getEngineInjector() {
         return engineInjector;
-    }
-
-    /**
-     * @return the injector used to set the TransactionManager reference
-     */
-    public InjectedValue<TransactionManager> getTransactionManagerInjector() {
-        return txnMgrInjector;
     }
 
     /**

@@ -518,12 +518,6 @@ public class RepositoryConfiguration {
         public static final TransactionMode TRANSACTION_MODE = TransactionMode.AUTO;
 
         /**
-         * The default value of the {@link FieldName#CACHE_TRANSACTION_MANAGER_LOOKUP} field is
-         * "org.infinispan.transaction.lookup.GenericTransactionManagerLookup".
-         */
-        public static final String CACHE_TRANSACTION_MANAGER_LOOKUP = GenericTransactionManagerLookup.class.getName();
-
-        /**
          * The default value of the {@link FieldName#JAAS_POLICY_NAME} field is '{@value} '.
          */
         public static final String JAAS_POLICY_NAME = "modeshape-jcr";
