@@ -8,12 +8,13 @@ import org.modeshape.jcr.cache.change.RecordingChanges;
 import org.modeshape.jcr.federation.spi.change.ConnectorChangedSet;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.ValueFactories;
 
 public class ConnectorChangedSetImpl implements ConnectorChangedSet {
 
-	private ValueFactories factories;
+	private PathFactory pathFactory;
 	private String processKey;
 	private String repositoryKey;
 	private ChangeBus bus;
@@ -24,56 +25,58 @@ public class ConnectorChangedSetImpl implements ConnectorChangedSet {
 			final String repositoryKey, final ValueFactories factories,
 			final ChangeBus bus) {
 		this.bus = bus;
-		this.factories = factories;
+		this.pathFactory = factories.getPathFactory();
 		this.processKey = processKey;
 		this.repositoryKey = repositoryKey;
 		this.events = new RecordingChanges(processKey, repositoryKey);
 	}
 
 	@Override
-	public void nodeCreated(String key, String parentKey, String path,
-			Map<Name, Property> properties) {
+	public void nodeCreated(final String key, final String parentKey,
+			final String path, final Map<Name, Property> properties) {
 		events.nodeCreated(nodeKey(key), nodeKey(parentKey), path(path),
 				properties);
 	}
 
 	@Override
-	public void nodeRemoved(String key, String parentKey, String path) {
+	public void nodeRemoved(final String key, final String parentKey,
+			final String path) {
 		events.nodeRemoved(nodeKey(key), nodeKey(parentKey), path(path));
 	}
 
 	@Override
-	public void nodeMoved(String key, String newParent, String oldParent,
-			String newPath, String oldPath) {
-		// TODO Auto-generated method stub
-
+	public void nodeMoved(final String key, final String newParent,
+			final String oldParent, final String newPath, final String oldPath) {
+		events.nodeMoved(nodeKey(key), nodeKey(newParent), nodeKey(oldParent),
+				path(newPath), path(oldPath));
 	}
 
 	@Override
-	public void nodeReordered(String key, String parent,
-			String newRelativePath, String oldRelativePath,
-			String reorderedBeforeRelativePath) {
-		// TODO Auto-generated method stub
-
+	public void nodeReordered(final String key, final String parent,
+			final String newRelativePath, final String oldRelativePath,
+			final String reorderedBeforeRelativePath) {
+		events.nodeReordered(nodeKey(key), nodeKey(parent),
+				path(newRelativePath), path(oldRelativePath),
+				path(reorderedBeforeRelativePath));
 	}
 
 	@Override
-	public void propertyAdded(String key, String nodePath, Property property) {
-		// TODO Auto-generated method stub
-
+	public void propertyAdded(final String key, final String nodePath,
+			final Property property) {
+		events.propertyAdded(nodeKey(key), path(nodePath), property);
 	}
 
 	@Override
-	public void propertyRemoved(String key, String nodePath, Property property) {
-		// TODO Auto-generated method stub
-
+	public void propertyRemoved(final String key, final String nodePath,
+			final Property property) {
+		events.propertyRemoved(nodeKey(key), path(nodePath), property);
 	}
 
 	@Override
-	public void propertyChanged(String key, String nodePath,
+	public void propertyChanged(final String key, final String nodePath,
 			Property newProperty, Property oldProperty) {
-		// TODO Auto-generated method stub
-
+		events.propertyChanged(nodeKey(key), path(nodePath), newProperty,
+				oldProperty);
 	}
 
 	@Override
@@ -88,7 +91,7 @@ public class ConnectorChangedSetImpl implements ConnectorChangedSet {
 	}
 
 	private Path path(final String p) {
-		return factories.getPathFactory().create(p);
+		return pathFactory.create(p);
 	}
 
 	private NodeKey nodeKey(final String k) {
