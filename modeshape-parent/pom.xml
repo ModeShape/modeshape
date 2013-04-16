@@ -665,7 +665,7 @@
                             <value>${skipLongRunningTests}</value>
                         </property>
                     </systemProperties>
-                    <argLine>-Xmx1024M ${debug.argline} -XX:MaxPermSize=256M</argLine>
+                    <argLine>-Xmx1324M ${debug.argline} -XX:MaxPermSize=256M</argLine>
                     <runOrder>alphabetical</runOrder>
                 </configuration>
             </plugin>
