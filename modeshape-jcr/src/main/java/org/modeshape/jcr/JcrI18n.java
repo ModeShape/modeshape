@@ -44,6 +44,7 @@ public final class JcrI18n {
     public static I18n repositoryIsCurrentlyBeingRestored;
     public static I18n repositoryIsBeingRestoredAndCannotBeStarted;
     public static I18n repositoryCannotBeStartedWithoutTransactionalSupport;
+    public static I18n workspaceCacheShouldNotBeTransactional;
     public static I18n repositoryReferencesNonExistantSource;
     public static I18n indexRebuildingStarted;
     public static I18n indexRebuildingComplete;

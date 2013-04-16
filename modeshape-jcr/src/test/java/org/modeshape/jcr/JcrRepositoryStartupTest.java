@@ -170,9 +170,33 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     }
 
     @FixFor( "MODE-1693" )
-    @Test( expected = IllegalStateException.class )
+    @Test( expected = ConfigurationException.class )
     public void shouldNotStartIfTransactionsArentEnabled() throws Exception {
-        startRunStop(null, "config/repo-config-no-transactions.json");
+        startRunStop(null, "config/invalid-repo-config-no-transactions.json");
+    }
+
+    @FixFor( "MODE-1899" )
+    @Test( expected = ConfigurationException.class )
+    public void shouldNotStartIfDefaultWorkspaceCacheIsTransactional() throws Exception {
+        startRunStop(null, "config/invalid-repo-config-tx-default-ws-cache.json");
+    }
+
+    @FixFor( "MODE-1899" )
+    @Test
+    public void shouldFailWhenCreatingWorkspaceWithTransactionalCache() throws Exception {
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+                try {
+                    session.getWorkspace().createWorkspace("ws1");
+                    fail("It should not be possible to create a workspace which has a transactional cache configured");
+                } catch (ConfigurationException e) {
+                    //expected
+                }
+                return null;
+            }
+        }, "config/invalid-repo-config-tx-ws-cache.json");
     }
 
     @Test

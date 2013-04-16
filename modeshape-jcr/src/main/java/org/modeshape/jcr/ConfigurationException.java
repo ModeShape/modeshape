@@ -34,6 +34,15 @@ public class ConfigurationException extends RuntimeException {
 
     private final Problems results;
 
+
+    /**
+     * @param message the message
+     */
+    public ConfigurationException( String message ) {
+        super(message);
+        this.results = null;
+    }
+
     /**
      * @param results the validation results for the configuration
      */

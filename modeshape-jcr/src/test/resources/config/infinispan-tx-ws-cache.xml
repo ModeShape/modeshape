@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<infinispan
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="urn:infinispan:config:5.2 http://www.infinispan.org/schemas/infinispan-config-5.2.xsd"
+        xmlns="urn:infinispan:config:5.2">
+
+    <global>
+        <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
+    </global>
+
+    <namedCache name="test_repo/default"/>
+    <namedCache name="test_repo/ws1">
+        <transaction
+                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
+                transactionMode="TRANSACTIONAL"
+                lockingMode="OPTIMISTIC"/>
+    </namedCache>
+</infinispan>
