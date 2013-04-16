@@ -55,6 +55,7 @@ public class SequencingTest extends AbstractSequencerTest {
 
     @Override
     protected void startRepositoryWithConfiguration( Document doc ) throws Exception {
+        stopRepository();
         config = new RepositoryConfiguration(doc, REPO_NAME, environment);
         repository = new JcrRepository(config);
         repository.start();
@@ -65,6 +66,7 @@ public class SequencingTest extends AbstractSequencerTest {
 
     @Override
     protected void startRepositoryWithConfiguration( InputStream configInputStream ) throws Exception {
+        stopRepository();
         config = RepositoryConfiguration.read(configInputStream, REPO_NAME).with(environment);
         Problems problems = config.validate();
         if (problems.hasProblems()) {

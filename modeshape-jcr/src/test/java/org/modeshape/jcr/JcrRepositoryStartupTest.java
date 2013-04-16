@@ -389,17 +389,16 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @FixFor( "MODE-1872" )
     public void asyncReindexingWithoutSystemContentShouldNotCorruptSystemBranch() throws Exception {
         FileUtil.delete("target/persistent_repository/");
-        RepositoryConfiguration config = RepositoryConfiguration.read(
-                getClass().getClassLoader().getResourceAsStream(
-                        "config/repo-config-persistent-indexes-always-async-without-system.json")
-                , "Persistent Repository");
-        JcrRepository repository = new JcrRepository(config);
-        repository.start();
+       startRunStop(new RepositoryOperation() {
+           @Override
+           public Void call() throws Exception {
+               JcrSession session = repository.login();
 
-        JcrSession session = repository.login();
-
-        javax.jcr.Node root = session.getRootNode();
-        AbstractJcrNode system = (AbstractJcrNode)root.getNode("jcr:system");
-        assertThat(system, is(notNullValue()));
+               javax.jcr.Node root = session.getRootNode();
+               AbstractJcrNode system = (AbstractJcrNode)root.getNode("jcr:system");
+               assertThat(system, is(notNullValue()));
+               return null;
+           }
+       }, "config/repo-config-persistent-indexes-always-async-without-system.json");
     }
 }
