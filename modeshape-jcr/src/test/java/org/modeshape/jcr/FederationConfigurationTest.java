@@ -23,27 +23,23 @@
  */
 package org.modeshape.jcr;
 
-import java.io.InputStream;
-import java.util.UUID;
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.Session;
-import org.junit.Test;
-import org.modeshape.common.FixFor;
-import org.modeshape.common.util.FileUtil;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
-public class FederationConfigurationTest extends SingleUseAbstractTest {
+import java.util.UUID;
 
-    protected InputStream resource( String path ) {
-        InputStream stream = getClass().getClassLoader().getResourceAsStream(path);
-        assertThat(stream, is(notNullValue()));
-        return stream;
-    }
+import javax.jcr.Node;
+import javax.jcr.NodeIterator;
+import javax.jcr.Session;
+
+import org.junit.Test;
+import org.modeshape.common.FixFor;
+import org.modeshape.common.util.FileUtil;
+
+public class FederationConfigurationTest extends SingleUseAbstractTest {
 
     @FixFor( "MODE-1772" )
     @Test

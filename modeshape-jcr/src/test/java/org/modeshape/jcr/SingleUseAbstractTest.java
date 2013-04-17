@@ -308,4 +308,10 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
     protected boolean startRepositoryAutomatically() {
         return startRepositoryAutomatically;
     }
+    
+    protected InputStream resource( String path ) {
+        InputStream stream = getClass().getClassLoader().getResourceAsStream(path);
+        assertThat(stream, is(notNullValue()));
+        return stream;
+    }
 }
