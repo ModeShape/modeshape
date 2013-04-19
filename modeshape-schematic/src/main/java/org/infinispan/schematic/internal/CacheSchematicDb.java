@@ -263,7 +263,7 @@ public class CacheSchematicDb implements SchematicDb {
     @Override
     public SchematicEntry put( Document entryDocument ) {
         Document metadata = entryDocument.getDocument(FieldName.METADATA);
-        Object content = entryDocument.getDocument(FieldName.CONTENT);
+        Object content = entryDocument.get(FieldName.CONTENT);
         if (metadata == null || content == null) {
             throw new IllegalArgumentException("The supplied document is not of the required format");
         }
@@ -306,7 +306,7 @@ public class CacheSchematicDb implements SchematicDb {
     @Override
     public SchematicEntry putIfAbsent( Document entryDocument ) {
         Document metadata = entryDocument.getDocument(FieldName.METADATA);
-        Object content = entryDocument.getDocument(FieldName.CONTENT);
+        Object content = entryDocument.get(FieldName.CONTENT);
         if (metadata == null || content == null) {
             throw new IllegalArgumentException("The supplied document is not of the required format");
         }
