@@ -3256,6 +3256,39 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertEquals("f2", n2.getName());
     }
 
+    @Test
+    @FixFor( "MODE-1900" )
+    public void shouldSelectDistinctNodesWhenJoiningMultiValueReferenceProperties() throws Exception {
+        registerNodeTypes(session, "cnd/mode-1900.cnd");
+        Node nodeA = session.getRootNode().addNode("A", "test:node");
+        nodeA.setProperty("test:name", "A");
+
+        Node nodeB = session.getRootNode().addNode("B", "test:node");
+        nodeB.setProperty("test:name", "B");
+        JcrValue nodeBRef = session.getValueFactory().createValue(nodeB);
+
+        Node nodeC = session.getRootNode().addNode("C", "test:node");
+        nodeC.setProperty("test:name", "C");
+        JcrValue nodeCRef = session.getValueFactory().createValue(nodeC);
+
+        Node relationship = nodeA.addNode("relationship", "test:relationship");
+        relationship.setProperty("test:target", new JcrValue[]{nodeBRef, nodeCRef});
+
+        session.save();
+
+        String queryString =  "SELECT DISTINCT target.* " +
+                            "   FROM [test:node] AS node " +
+                            "   JOIN [test:relationship] AS relationship ON ISCHILDNODE(relationship, node) " +
+                            "   JOIN [test:node] AS target ON relationship.[test:target] = target.[jcr:uuid] " +
+                            "   WHERE node.[test:name] = 'A'";
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        QueryResult queryResult = queryManager.createQuery(queryString, Query.JCR_SQL2).execute();
+        if (print) {
+            System.out.println("queryResult = " + queryResult);
+        }
+        assertEquals(2, queryResult.getNodes().getSize());
+    }
+
     private void assertNodesAreFound( String queryString,
                                       String queryType,
                                       String... expectedNodesPaths ) throws RepositoryException {

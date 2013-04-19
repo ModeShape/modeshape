@@ -70,7 +70,6 @@ public class QueryResultColumns implements Columns {
     }
 
     private final int tupleSize;
-    private final int locationStartIndexInTuple;
     private final List<Column> columns;
     private final List<String> columnNames;
     private final List<String> columnTypes;
@@ -147,7 +146,6 @@ public class QueryResultColumns implements Columns {
 
         // Find all the selector names ...
         Integer selectorIndex = new Integer(columnCount - 1);
-        this.locationStartIndexInTuple = columnCount;
         for (int i = 0, max = this.columns.size(); i != max; ++i) {
             Column column = this.columns.get(i);
             assert column != null;
@@ -223,7 +221,6 @@ public class QueryResultColumns implements Columns {
         List<String> types = new ArrayList<String>(columns.size());
         List<String> names = new ArrayList<String>(columns.size());
         Set<Column> sameNameColumns = findColumnsWithSameNames(this.columns);
-        this.locationStartIndexInTuple = wrappedAround.getLocationStartIndexInTuple();
 
         // Find all the selector names ...
         for (int i = 0, max = this.columns.size(); i != max; ++i) {
@@ -323,11 +320,6 @@ public class QueryResultColumns implements Columns {
             });
         }
         return includeFullTextScores.get();
-    }
-
-    @Override
-    public int getLocationStartIndexInTuple() {
-        return this.locationStartIndexInTuple;
     }
 
     @Override
@@ -584,31 +576,31 @@ public class QueryResultColumns implements Columns {
         return results;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append('[');
-        boolean first = true;
-        Iterator<String> nameIter = this.columnNames.iterator();
-        for (Column column : getColumns()) {
-            if (first) first = false;
-            else sb.append(", ");
-            sb.append(column);
-            sb.append('(').append(getColumnIndexForName(nameIter.next())).append(')');
+        if (this.columnNames != null) {
+            sb.append("Columns[");
+            boolean first = true;
+            Iterator<String> nameIter = this.columnNames.iterator();
+            for (Column column : getColumns()) {
+                if (first) first = false;
+                else sb.append(", ");
+                sb.append(column);
+                sb.append('(').append(getColumnIndexForName(nameIter.next())).append(')');
+            }
+            sb.append("]");
         }
-        sb.append("] => Locations[");
-        first = true;
-        for (int i = 0, count = getColumnCount(); i != count; ++i) {
-            if (first) first = false;
-            else sb.append(", ");
-            sb.append(getLocationIndexForColumn(i));
+        if (this.locationIndexByColumnIndex != null) {
+            sb.append("=> Locations[");
+            boolean first = true;
+            for (int i : locationIndexByColumnIndex.keySet()) {
+                if (first) first = false;
+                else sb.append(", ");
+                sb.append(getLocationIndexForColumn(i));
+            }
+            sb.append(']');
         }
-        sb.append(']');
         return sb.toString();
     }
 }
