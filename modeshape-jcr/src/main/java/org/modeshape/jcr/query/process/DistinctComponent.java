@@ -23,10 +23,12 @@
  */
 package org.modeshape.jcr.query.process;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import org.modeshape.jcr.query.QueryResults;
 import org.modeshape.jcr.query.QueryResults.Location;
 
 /**
@@ -43,34 +45,24 @@ public class DistinctComponent extends DelegatingComponent {
     @Override
     public List<Object[]> execute() {
         List<Object[]> tuples = delegate().execute();
+        QueryResults.Columns columns = getColumns();
+
         if (tuples.size() > 1) {
             // Go through this list and remove any tuples that appear more than once ...
             Iterator<Object[]> iter = tuples.iterator();
 
-            int locationCount = getColumns().getLocationCount();
-            int firstLocationIndex = getColumns().getLocationStartIndexInTuple();
-            if (locationCount == 1) {
-                // We can determine duplicates faster/cheaper using a single Set<Location> ...
-                Set<Location> found = new HashSet<Location>();
-                while (iter.hasNext()) {
-                    Location location = (Location)iter.next()[firstLocationIndex];
-                    if (!found.add(location)) {
-                        // Was already found, so remove this tuple from the results ...
-                        iter.remove();
-                    }
+            int locationCount = columns.getLocationCount();
+            // Duplicate tuples are removed using a Set<Location[]> ...
+            Set<List<Location>> found = new HashSet<List<Location>>();
+            while (iter.hasNext()) {
+                Object[] tuple = iter.next();
+                List<Location> locations = new ArrayList<Location>(locationCount);
+                for (String selectorName : columns.getSelectorNames()) {
+                    locations.add((Location)tuple[columns.getLocationIndex(selectorName)]);
                 }
-            } else {
-                assert locationCount > 1;
-                // Duplicate tuples are removed using a Set<Location[]> ...
-                Set<Location[]> found = new HashSet<Location[]>();
-                while (iter.hasNext()) {
-                    Object[] tuple = iter.next();
-                    Location[] locations = new Location[locationCount];
-                    System.arraycopy(tuple, firstLocationIndex, locations, 0, locationCount);
-                    if (!found.add(locations)) {
-                        // Was already found, so remove this tuple from the results ...
-                        iter.remove();
-                    }
+                if (!found.add(locations)) {
+                    // Was already found, so remove this tuple from the results ...
+                    iter.remove();
                 }
             }
         }
