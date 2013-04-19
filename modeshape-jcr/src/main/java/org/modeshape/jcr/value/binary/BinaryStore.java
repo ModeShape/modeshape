@@ -40,6 +40,12 @@ import org.modeshape.jcr.value.BinaryValue;
  */
 @ThreadSafe
 public interface BinaryStore {
+    /**
+     * Initialize the store and get ready for use.
+     */
+    public void start();
+
+    public void shutdown();
 
     /**
      * Get the minimum number of bytes that a binary value must contain before it can be stored in the binary store.
@@ -88,6 +94,9 @@ public interface BinaryStore {
      *         {@link InputStream} cannot be returned for the given key.
      */
     InputStream getInputStream( BinaryKey key ) throws BinaryStoreException;
+
+
+	boolean hasKey( BinaryKey key );
 
     /**
      * Mark the supplied binary keys as unused, but key them in quarantine until needed again (at which point they're removed from
