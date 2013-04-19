@@ -40,6 +40,12 @@ import org.modeshape.jcr.value.BinaryValue;
  */
 @ThreadSafe
 public interface BinaryStore {
+    /**
+     * Initialize the store and get ready for use.
+     */
+    public void start();
+
+    public void shutdown();
 
     /**
      * Get the minimum number of bytes that a binary value must contain before it can be stored in the binary store.
