@@ -263,7 +263,7 @@ public class CacheSchematicDb implements SchematicDb {
     @Override
     public SchematicEntry put( Document entryDocument ) {
         Document metadata = entryDocument.getDocument(FieldName.METADATA);
-        Document content = entryDocument.getDocument(FieldName.CONTENT);
+        Object content = entryDocument.get(FieldName.CONTENT);
         if (metadata == null || content == null) {
             throw new IllegalArgumentException("The supplied document is not of the required format");
         }
@@ -271,8 +271,12 @@ public class CacheSchematicDb implements SchematicDb {
         if (key == null) {
             throw new IllegalArgumentException("The supplied document is not of the required format");
         }
-        SchematicEntry newEntry = new SchematicEntryLiteral(key, content, metadata, defaultContentTypeForDocument);
-
+        SchematicEntry newEntry = null;
+        if (content instanceof Document) {
+            newEntry = new SchematicEntryLiteral(key, (Document)content, metadata, defaultContentTypeForDocument);
+        } else {
+            newEntry = new SchematicEntryLiteral(key, (Binary)content, metadata, defaultContentTypeForBinary);
+        }
         SchematicEntry oldValue = store.put(key, newEntry);
         return oldValue != null ? removedResult(key, oldValue) : null;
     }
@@ -302,7 +306,7 @@ public class CacheSchematicDb implements SchematicDb {
     @Override
     public SchematicEntry putIfAbsent( Document entryDocument ) {
         Document metadata = entryDocument.getDocument(FieldName.METADATA);
-        Document content = entryDocument.getDocument(FieldName.CONTENT);
+        Object content = entryDocument.get(FieldName.CONTENT);
         if (metadata == null || content == null) {
             throw new IllegalArgumentException("The supplied document is not of the required format");
         }
@@ -310,7 +314,12 @@ public class CacheSchematicDb implements SchematicDb {
         if (key == null) {
             throw new IllegalArgumentException("The supplied document is not of the required format");
         }
-        SchematicEntry newEntry = new SchematicEntryLiteral(key, content, metadata, defaultContentTypeForDocument);
+        SchematicEntry newEntry = null;
+        if (content instanceof Document) {
+            newEntry = new SchematicEntryLiteral(key, (Document)content, metadata, defaultContentTypeForDocument);
+        } else {
+            newEntry = new SchematicEntryLiteral(key, (Binary)content, metadata, defaultContentTypeForBinary);
+        }
         SchematicEntry existingEntry = store.putIfAbsent(key, newEntry);
         if (existingEntry == null) return null;
         return proxy(key, existingEntry);
