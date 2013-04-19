@@ -272,6 +272,210 @@
                         },
                         {
                             "type" : "object",
+                            "additionalProperties" : false,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of a composite binary store.",
+                                    "enum" : [ "composite" ]
+                                },
+                                "namedStores" : {
+                                    "type" : "object",
+                                    "required" : true,
+                                    "description" : "A map of implementer-supplied keys to other binaryStorage types",
+                                    "additionalProperties" : {
+                                        "type" : [
+                                            {
+                                                "type" : "object",
+                                                "additionalProperties" : false,
+                                                "properties" : {
+                                                    "type" : {
+                                                        "type" : "string",
+                                                        "description" : "The specification of the transient binary store, which keeps BINARY values on disk in the temp directory.",
+                                                        "enum" : [ "transient" ]
+                                                    },
+                                                    "storeName" : {
+                                                        "type" : "string",
+                                                        "description" : "A short, implementer-supplied name for this binary store"
+                                                    },
+                                                    "description" : {
+                                                        "type" : "string",
+                                                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                                    },
+                                                }
+                                            },
+                                            {
+                                                "type" : "object",
+                                                "additionalProperties" : false,
+                                                "properties" : {
+                                                    "type" : {
+                                                        "type" : "string",
+                                                        "description" : "The specification of the file-based binary store, which keeps BINARY values on disk in the specified directory.",
+                                                        "enum" : [ "file" ]
+                                                    },
+                                                    "storeName" : {
+                                                        "type" : "string",
+                                                        "description" : "A short, implementer-supplied name for this binary store"
+                                                    },
+                                                    "directory" : {
+                                                        "type" : "string",
+                                                        "required" : true,
+                                                        "description" : "The location of the directory the file system under which the BINARY values should be stored. The value can be an absolute or relative path."
+                                                    },
+                                                    "description" : {
+                                                        "type" : "string",
+                                                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                                    },
+                                                }
+                                            },
+                                            {
+                                                "type" : "object",
+                                                "additionalProperties" : false,
+                                                "properties" : {
+                                                    "type" : {
+                                                        "type" : "string",
+                                                        "description" : "The specification of the database binary store, which stores BINARY values in a JDBC-compatible database accessed through a JDBC DataSource registered in JNDI.",
+                                                        "enum" : [ "database" ]
+                                                    },
+                                                    "storeName" : {
+                                                        "type" : "string",
+                                                        "description" : "A short, implementer-supplied name for this binary store"
+                                                    },
+                                                    "dataSourceJndiName" : {
+                                                        "type" : "string",
+                                                        "description" : "The name in JNDI where the JDBC DataSource is registered that should be used for binary storage.",
+                                                        "required" : true,
+                                                    },
+                                                    "description" : {
+                                                        "type" : "string",
+                                                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                                    },
+                                                }
+                                            },
+                                            {
+                                                "type" : "object",
+                                                "additionalProperties" : true,
+                                                "properties" : {
+                                                    "type" : {
+                                                        "type" : "string",
+                                                        "description" : "The specification of the database binary store, which stores BINARY values in a JDBC-compatible database accessed through a JDBC connection established by specifying the driver class, URL, and other properties",
+                                                        "enum" : [ "database" ]
+                                                    },
+                                                    "storeName" : {
+                                                        "type" : "string",
+                                                        "description" : "A short, implementer-supplied name for this binary store"
+                                                    },
+                                                    "driverClass" : {
+                                                        "type" : "string",
+                                                        "description" : "The full-qualified name of the JDBC driver class.",
+                                                        "required" : true,
+                                                    },
+                                                    "url" : {
+                                                        "type" : "string",
+                                                        "description" : "The URL to be used to establish the database connection.",
+                                                        "required" : true,
+                                                    },
+                                                    "username" : {
+                                                        "type" : "string",
+                                                        "description" : "The (optional) username for the database connection. Many JDBC drivers accept specifying the username in the URL.",
+                                                        "required" : false,
+                                                    },
+                                                    "password" : {
+                                                        "type" : "string",
+                                                        "description" : "The (optional) password for the database connection. Many JDBC drivers accept specifying the password in the URL.",
+                                                        "required" : false,
+                                                    },
+                                                    "description" : {
+                                                        "type" : "string",
+                                                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                                    },
+                                                }
+                                            },
+                                            {
+                                                "type" : "object",
+                                                "additionalProperties" : false,
+                                                "properties" : {
+                                                    "type" : {
+                                                        "type" : "string",
+                                                        "description" : "The specification of the Infinispan binary store, which stores BINARY values in a Infinispan cache.",
+                                                        "enum" : [ "cache" ]
+                                                    },
+                                                    "storeName" : {
+                                                        "type" : "string",
+                                                        "description" : "A short, implementer-supplied name for this binary store"
+                                                    },
+                                                    "dataCacheName" : {
+                                                        "type" : "string",
+                                                        "required" : true,
+                                                        "description" : "The name of the Infinispan cache where BINARY values are stored as chunks."
+                                                    },
+                                                    "metadataCacheName" : {
+                                                        "type" : "string",
+                                                        "required" : true,
+                                                        "description" : "The name of the Infinispan cache where metadata of the values should be stored."
+                                                    },
+                                                    "cacheConfiguration" : {
+                                                        "type" : "string",
+                                                        "description" : "The name of the Infinispan configuration file for creating a new cache manager. If a file could not be found (on the thread context classloader, on the application's classpath, or on the system classpath), then the name is assumed to reference an existing Infinispan CacheContainer instance via a valid JNDI name or as the name of a service as defined by the local environment. If not specified or no such container is found, then the same cache manager used for the content storage will be used."
+                                                    },
+                                                    "description" : {
+                                                        "type" : "string",
+                                                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                                    },
+                                                }
+                                            },
+                                            {
+                                                "type" : "object",
+                                                "additionalProperties" : true,
+                                                "properties" : {
+                                                    "type" : {
+                                                        "type" : "string",
+                                                        "description" : "The specification of a custom binary store.",
+                                                        "enum" : [ "custom" ]
+                                                    },
+                                                    "classname" : {
+                                                        "type" : "string",
+                                                        "required" : true,
+                                                        "description" : "The fully-qualified name of the 'org.modeshape.jcr.value.binary.BinaryStore' implementation class."
+                                                    },
+                                                    "classloader" : {
+                                                        "type" : "string",
+                                                        "description" : "The optional name of the classloader that should be used to load the BinaryStore implementation class. If empty or not provided, the classpath accessible to ModeShape will be used."
+                                                    },
+                                                    "description" : {
+                                                        "type" : "string",
+                                                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                                    },
+                                                }
+                                            }
+
+                                        ]
+                                    },
+                                    "properties": {
+                                        "default" : {
+                                            "type" : "object",
+                                            "required" : true,
+                                            "description" : "a binaryStorage configuration element for the binaryStore that is used in the absence of applicable storage hints"
+                                        }
+                                    }
+                                },
+                                "minimumBinarySizeInBytes" : {
+                                    "type" : "integer",
+                                    "default" : 4096,
+                                    "description" : "The size threshold that dictates whether binary values should be stored in the binary store. Binary values smaller than this value are stored with the node, whereas binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                },
+                                "minimumStringSize" : {
+                                    "type" : "integer",
+                                    "description" : "The size threshold that dictates whether string values should be stored in the binary store. String values shorter than this length are stored with the node, whereas strings with a length equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is to match the 'minimumBinarySizeInBytes' value."
+                                },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                },
+                            }
+                        },
+                        {
+                            "type" : "object",
                             "additionalProperties" : true,
                             "properties" : {
                                 "type" : {

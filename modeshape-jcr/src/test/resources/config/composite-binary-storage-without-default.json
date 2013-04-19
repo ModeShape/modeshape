@@ -1,0 +1,17 @@
+{
+    "name" : "Test Repository",
+    "storage" : {
+        "binaryStorage" : {
+            "type"  : "composite",
+            "namedStores" : {
+                "invalid-configuration-without-a-default-store" : {
+                    "type"  : "database",
+                    "driverClass" : "org.h2.Driver",
+                    "url" : "jdbc:h2:mem:target/test/binary-store-db",
+                    "username" : "sa"
+                }
+            }
+        }
+    }
+    
+}
