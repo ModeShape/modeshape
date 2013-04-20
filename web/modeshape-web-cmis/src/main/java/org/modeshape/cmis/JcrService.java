@@ -99,7 +99,7 @@ public class JcrService extends AbstractCmisService {
     public RepositoryInfo getRepositoryInfo(String repositoryId, ExtensionsData extension) {
         System.out.println("-- getting repository info");
         RepositoryInfo info = jcrRepository(repositoryId).getRepositoryInfo(login(repositoryId));
-        return new RepositoryInfoImpl(repositoryId, info);
+        return new RepositoryInfoLocal(repositoryId, info);
     }
 
     @Override
