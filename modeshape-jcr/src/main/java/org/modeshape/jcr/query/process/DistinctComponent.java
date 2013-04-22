@@ -45,20 +45,22 @@ public class DistinctComponent extends DelegatingComponent {
     @Override
     public List<Object[]> execute() {
         List<Object[]> tuples = delegate().execute();
-        QueryResults.Columns columns = getColumns();
 
-        if (tuples.size() > 1) {
+        if (!tuples.isEmpty()) {
+            QueryResults.Columns columns = getColumns();
+            int locationCount = columns.getLocationCount();
+            int[] locationIndexes = super.getLocationIndexes(columns);
+
             // Go through this list and remove any tuples that appear more than once ...
             Iterator<Object[]> iter = tuples.iterator();
 
-            int locationCount = columns.getLocationCount();
             // Duplicate tuples are removed using a Set<Location[]> ...
             Set<List<Location>> found = new HashSet<List<Location>>();
             while (iter.hasNext()) {
                 Object[] tuple = iter.next();
                 List<Location> locations = new ArrayList<Location>(locationCount);
-                for (String selectorName : columns.getSelectorNames()) {
-                    locations.add((Location)tuple[columns.getLocationIndex(selectorName)]);
+                for (int locationIndex : locationIndexes) {
+                    locations.add((Location)tuple[locationIndex]);
                 }
                 if (!found.add(locations)) {
                     // Was already found, so remove this tuple from the results ...
