@@ -6,7 +6,7 @@
         "allowCreation" : true,
         "initialContent" : {
             "ws1" : "xmlImport/docWithMixins.xml",
-            "ws2" : "xmlImport/docWithCustomType.xml",
+            "ws2" : "target/test-classes/xmlImport/docWithCustomType.xml",
             "default" : "xmlImport/docWithoutNamespaces.xml",
             "ws4" : "",
             "ws5" : "xmlImport/docWithCustomType.xml",

@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.TreeMap;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
@@ -110,13 +111,14 @@ public final class InitialContentImporter {
         }
     }
 
-    private InputStream getInitialContentFileStream( String workspaceName ) {
-        String initialContentFile = initialContentConfig.getInitialContentFile(workspaceName);
-        ClassLoader importLoader = runningState.environment().getClassLoader(InitialContentImporter.class.getClassLoader());
-        InputStream stream = importLoader.getResourceAsStream(initialContentFile);
+    private InputStream getInitialContentFileStream( String workspaceName )  {
+        String initialContentFileString = initialContentConfig.getInitialContentFile(workspaceName);
+        InputStream stream = IoUtil.getResourceAsStream(initialContentFileString,
+                                                        runningState.environment().getClassLoader(
+                                                                InitialContentImporter.class.getClassLoader()),
+                                                        null);
         if (stream == null) {
-            LOGGER.warn(JcrI18n.cannotLoadInitialContentFile, initialContentFile);
-            return null;
+            LOGGER.warn(JcrI18n.cannotLoadInitialContentFile, initialContentFileString);
         }
         return stream;
     }
