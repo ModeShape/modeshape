@@ -10,7 +10,7 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.modeshape.bom</groupId>
-    <artifactId>modeshape-bom-jbossas</artifactId>
+    <artifactId>modeshape-bom-jbosseap</artifactId>
     <version>3.2-SNAPSHOT</version>
     <name>ModeShape BOM for usage within AS7</name>
 
@@ -19,7 +19,7 @@
     <description>ModeShape and AS7 usage Bill of Material (BOM)</description>
 
     <properties>
-      <!-- Version properties are inherited from parent -->
+        <!-- Version properties are inherited from parent -->
     </properties>
 
     <!--

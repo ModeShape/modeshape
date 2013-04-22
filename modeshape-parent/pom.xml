@@ -268,7 +268,7 @@
         <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
         <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
 
-        <infinispan.version>5.2.1.Final</infinispan.version>
+        <infinispan.version>5.2.5.Final</infinispan.version>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
         <jgroups.version>3.2.7.Final</jgroups.version>
         <c3p0.version>0.9.1.2</c3p0.version>

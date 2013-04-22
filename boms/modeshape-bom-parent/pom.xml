@@ -52,7 +52,7 @@
         <!-- Versions of non-ModeShape dependencies -->
         <jcr.version>2.0</jcr.version>
         <joda.time.version>1.6.2</joda.time.version>
-        <infinispan.version>5.2.1.Final</infinispan.version>
+        <infinispan.version>5.2.5.Final</infinispan.version>
         <c3p0.version>0.9.1.2</c3p0.version>  <!-- same as the one used by Infinispan's JDBC cache store -->
         <jgroups.version>3.2.7.Final</jgroups.version> <!-- same as the one used by Infinispan -->
         <hibernate.search.version>4.2.0.Final</hibernate.search.version>
