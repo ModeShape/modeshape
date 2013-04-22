@@ -503,13 +503,13 @@ public abstract class ProcessingComponent {
                                                          final Columns columns ) {
         assert context != null;
         final Comparator<Location> typeComparator = Location.getComparator();
+        final int[] locationIndexes = getLocationIndexes(columns);
         return new Comparator<Object[]>() {
             @Override
             public int compare( Object[] tuple1,
                                 Object[] tuple2 ) {
                 int result = 0;
-                for (String selectorName : columns.getSelectorNames()) {
-                    int locationIndex = columns.getLocationIndex(selectorName);
+                for (int locationIndex : locationIndexes) {
                     Location value1 = (Location)tuple1[locationIndex];
                     Location value2 = (Location)tuple2[locationIndex];
                     result = typeComparator.compare(value1, value2);
@@ -518,5 +518,14 @@ public abstract class ProcessingComponent {
                 return result;
             }
         };
+    }
+
+    protected int[] getLocationIndexes(org.modeshape.jcr.query.QueryResults.Columns columns) {
+        int[] locationIndexes = new int[columns.getLocationCount()];
+        int idx = 0;
+        for (String selectorName : columns.getSelectorNames()) {
+            locationIndexes[idx++] = columns.getLocationIndex(selectorName);
+        }
+        return locationIndexes;
     }
 }
