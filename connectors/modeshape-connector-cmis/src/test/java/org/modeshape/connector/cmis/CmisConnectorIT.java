@@ -126,7 +126,9 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
     @Test
     public void shouldAccessRepositoryInfo() throws Exception {
         Node repoInfo = getSession().getNode("/cmis/repositoryInfo");
-        assertEquals("OpenCMIS InMemory-Server", repoInfo.getProperty("cmis:productName").getString());
+        // Different Chemistry versions return different things ...
+        assertTrue(repoInfo.getProperty("cmis:productName").getString().contains("OpenCMIS"));
+        assertTrue(repoInfo.getProperty("cmis:productName").getString().contains("InMemory"));
         assertEquals("Apache Chemistry", repoInfo.getProperty("cmis:vendorName").getString());
         assertTrue(repoInfo.getProperty("cmis:productVersion").getString() != null);
     }
@@ -250,20 +252,20 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
 
         root = getSession().getNode("/cmis/" + name);
         Node node1 = root.addNode("test-1", "nt:file");
-        System.out.println("Test: creating binary content");
+        // System.out.println("Test: creating binary content");
         byte[] content = "Hello World".getBytes();
         ByteArrayInputStream bin = new ByteArrayInputStream(content);
         bin.reset();
 
-        System.out.println("Test: creating content node");
+        // System.out.println("Test: creating content node");
         Node contentNode = node1.addNode("jcr:content", "nt:resource");
         Binary binary = session.getValueFactory().createBinary(bin);
         contentNode.setProperty("jcr:data", binary);
         contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
 
-        System.out.println("Test: trying to save");
+        // System.out.println("Test: trying to save");
         getSession().save();
-        System.out.println("Test: checking result");
+        // System.out.println("Test: checking result");
 
     }
 
@@ -272,7 +274,8 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         Node file = getSession().getNode("/cmis/My_Folder-0-0/My_Document-1-0");
         PropertyIterator it = file.getProperties();
         while (it.hasNext()) {
-            System.out.println("property=>" + it.nextProperty());
+            Object val = it.nextProperty();
+            // System.out.println("property=>" + val);
         }
         file.setProperty("StringProp", "modeshape");
         getSession().save();

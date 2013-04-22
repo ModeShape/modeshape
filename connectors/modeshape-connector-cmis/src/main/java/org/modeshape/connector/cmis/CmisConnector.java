@@ -770,7 +770,6 @@ public class CmisConnector extends Connector {
      * @return CMIS content stream object
      */
     private ContentStream jcrBinaryContent( Document document ) {
-        System.out.println("Binary content: " + document);
         // pickup node properties
         Document props = document.getDocument("properties").getDocument(JcrLexicon.Namespace.URI);
 
