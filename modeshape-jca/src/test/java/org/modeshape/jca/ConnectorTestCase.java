@@ -33,6 +33,7 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.ResourceAdapterArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.modeshape.jcr.AbstractTransactionalTest;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -41,7 +42,7 @@ import static org.junit.Assert.assertNotNull;
  * @author kulikov
  */
 @RunWith(Arquillian.class)
-public class ConnectorTestCase {
+public class ConnectorTestCase extends AbstractTransactionalTest {
 
     private static Logger log = Logger.getLogger("ConnectorTestCase");
     private static String deploymentName = "ConnectorTestCase";
