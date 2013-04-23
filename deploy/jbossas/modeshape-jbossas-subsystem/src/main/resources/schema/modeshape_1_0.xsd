@@ -77,7 +77,7 @@
         </xs:annotation>
       </xs:element>
 
-      <xs:element name="test-extractors" type="text-extractors" minOccurs="0" maxOccurs="1">
+      <xs:element name="text-extractors" type="text-extractors" minOccurs="0" maxOccurs="1">
         <xs:annotation>
           <xs:documentation>The definition of the custom text extractors.</xs:documentation>
         </xs:annotation>
