@@ -123,6 +123,17 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         storeAndValidate(EMPTY_BINARY_KEY, EMPTY_BINARY);
     }
 
+	@Test
+	public void shouldHaveKey() throws BinaryStoreException, IOException {
+		storeAndValidate(STORED_MEDIUM_KEY, STORED_MEDIUM_BINARY);
+		assertTrue("Expected BinaryStore to contain the key", getBinaryStore().hasKey(STORED_MEDIUM_KEY));
+	}
+
+	@Test
+	public void shouldNotHaveKey() throws BinaryStoreException, IOException {
+		assertTrue("Did not expect BinaryStore to contain the key", !getBinaryStore().hasKey(invalidBinaryKey()));
+	}
+
     private BinaryValue storeAndValidate( BinaryKey key,
                                    byte[] data ) throws BinaryStoreException, IOException {
         BinaryValue res = getBinaryStore().storeValue(new ByteArrayInputStream(data));

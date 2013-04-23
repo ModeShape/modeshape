@@ -95,6 +95,9 @@ public interface BinaryStore {
      */
     InputStream getInputStream( BinaryKey key ) throws BinaryStoreException;
 
+
+	boolean hasKey( BinaryKey key );
+
     /**
      * Mark the supplied binary keys as unused, but key them in quarantine until needed again (at which point they're removed from
      * quarantine) or until {@link #removeValuesUnusedLongerThan(long, TimeUnit)} is called. This method ignores any keys for

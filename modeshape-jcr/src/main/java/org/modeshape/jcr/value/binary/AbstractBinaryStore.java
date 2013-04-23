@@ -36,6 +36,7 @@ import org.modeshape.jcr.TextExtractors;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.NullMimeTypeDetector;
 import org.modeshape.jcr.text.TextExtractorContext;
+import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 
 /**
@@ -166,6 +167,20 @@ public abstract class AbstractBinaryStore implements BinaryStore {
         }
         return detectedMimeType;
     }
+
+	@Override
+	public boolean hasKey( BinaryKey key ) {
+		try {
+			InputStream is = getInputStream(key);
+			is.close();
+		} catch (BinaryStoreException e) {
+			return false;
+		} catch (IOException e) {
+			return false;
+		}
+
+		return true;
+	}
 
     /**
      * Returns the stored mime-type of a binary value.
