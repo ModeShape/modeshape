@@ -28,6 +28,7 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
+import org.modeshape.jcr.cache.change.RecordingChanges;
 import org.modeshape.jcr.value.basic.JodaDateTime;
 
 public class ConnectorChangesTest extends SingleUseAbstractTest {
@@ -55,10 +56,12 @@ public class ConnectorChangesTest extends SingleUseAbstractTest {
 	@Test
 	public void testChangesEmittedWhenNodeCreated() throws Exception {
 		logger.debug("Executing testChangesEmittedWhenNodeCreated()...");
+		
 		/* hmm I guess the deletion is there to remove previously generated state, so I'll leave it in */
 		FileUtil.delete("target/federation_persistent_repository");
 		/* but for the tests to run the following directory must exists it seems */
 		new File("target/federation_persistent_repository/store/persistentRepository").mkdirs();
+		
 		final Session session = session();
 		final Node root = session.getRootNode();
 		logger.debug("Root node is: ");
@@ -66,6 +69,19 @@ public class ConnectorChangesTest extends SingleUseAbstractTest {
 		final Node federation = session.getNode("/federation");
 		federation.addNode("testNode");
 		session.save();
+		
+		/* since the event need some time to propagate to the listener, we'll retry three times */
+		int tries = 0;
+		while (tries++ < 3){
+			long wait = 100l + (tries * tries * 1000l); //1st: 100ms, 2nd: 1100ms, 3rd: 4100ms
+			Thread.sleep(wait);
+			if (listener.receivedChangeSet.size() > 0){
+				break;
+			}else{
+				logger.debug("No event after " + wait + "ms received.");
+			}
+		}
+
 		assertTrue("Didn't receive changes after node creation!",
 				listener.receivedChangeSet.size() > 0);
 		logger.debug("Executed testChangesEmittedWhenNodeCreated().");
@@ -73,7 +89,7 @@ public class ConnectorChangesTest extends SingleUseAbstractTest {
 	}
 
 	protected static class TestListener implements ChangeSetListener {
-		private final List<TestChangeSet> receivedChangeSet;
+		private final List<RecordingChanges> receivedChangeSet;
 		private CountDownLatch latch;
 
 		public TestListener() {
@@ -82,7 +98,7 @@ public class ConnectorChangesTest extends SingleUseAbstractTest {
 
 		protected TestListener(int expectedNumberOfChangeSet) {
 			latch = new CountDownLatch(expectedNumberOfChangeSet);
-			receivedChangeSet = new ArrayList<TestChangeSet>();
+			receivedChangeSet = new ArrayList<RecordingChanges>();
 		}
 
 		public void expectChangeSet(int expectedNumberOfChangeSet) {
@@ -92,11 +108,11 @@ public class ConnectorChangesTest extends SingleUseAbstractTest {
 
 		@Override
 		public void notify(ChangeSet changeSet) {
-			if (!(changeSet instanceof TestChangeSet)) {
+			if (!(changeSet instanceof RecordingChanges)) {
 				throw new IllegalArgumentException(
 						"Invalid type of change set received");
 			}
-			receivedChangeSet.add((TestChangeSet) changeSet);
+			receivedChangeSet.add((RecordingChanges) changeSet);
 			latch.countDown();
 		}
 
@@ -104,95 +120,8 @@ public class ConnectorChangesTest extends SingleUseAbstractTest {
 			latch.await(250, TimeUnit.MILLISECONDS);
 		}
 
-		public List<TestChangeSet> getObservedChangeSet() {
+		public List<RecordingChanges> getObservedChangeSet() {
 			return receivedChangeSet;
-		}
-	}
-
-	protected static class TestChangeSet implements ChangeSet {
-
-		private static final long serialVersionUID = 1L;
-
-		private final String workspaceName;
-		private final DateTime dateTime;
-
-		protected TestChangeSet(String workspaceName) {
-			this.workspaceName = workspaceName;
-			this.dateTime = new JodaDateTime(System.currentTimeMillis());
-		}
-
-		@Override
-		public Set<NodeKey> changedNodes() {
-			return Collections.emptySet();
-		}
-
-		@Override
-		public int size() {
-			return 0;
-		}
-
-		@Override
-		public boolean isEmpty() {
-			return true;
-		}
-
-		@Override
-		public String getUserId() {
-			return null;
-		}
-
-		@Override
-		public Map<String, String> getUserData() {
-			return Collections.emptyMap();
-		}
-
-		@Override
-		public DateTime getTimestamp() {
-			return dateTime;
-		}
-
-		@Override
-		public String getProcessKey() {
-			return null;
-		}
-
-		@Override
-		public String getRepositoryKey() {
-			return null;
-		}
-
-		@Override
-		public String getWorkspaceName() {
-			return workspaceName;
-		}
-
-		@Override
-		public Iterator<Change> iterator() {
-			return Collections.<Change> emptySet().iterator();
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if (this == o)
-				return true;
-			if (o == null || getClass() != o.getClass())
-				return false;
-
-			TestChangeSet changes = (TestChangeSet) o;
-
-			if (!dateTime.equals(changes.dateTime))
-				return false;
-			if (!workspaceName.equals(changes.workspaceName))
-				return false;
-
-			return true;
-		}
-
-		@Override
-		public int hashCode() {
-			int result = workspaceName.hashCode();
-			result = 31 * result + dateTime.hashCode();
-			return result;
 		}
 	}
 }
