@@ -3,6 +3,7 @@ package org.modeshape.jcr;
 import static org.junit.Assert.assertTrue;
 import static org.modeshape.common.logging.Logger.getLogger;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -54,7 +55,10 @@ public class ConnectorChangesTest extends SingleUseAbstractTest {
 	@Test
 	public void testChangesEmittedWhenNodeCreated() throws Exception {
 		logger.debug("Executing testChangesEmittedWhenNodeCreated()...");
+		/* hmm I guess the deletion is there to remove previously generated state, so I'll leave it in */
 		FileUtil.delete("target/federation_persistent_repository");
+		/* but for the tests to run the following directory must exists it seems */
+		new File("target/federation_persistent_repository/store/persistentRepository").mkdirs();
 		final Session session = session();
 		final Node root = session.getRootNode();
 		logger.debug("Root node is: ");
