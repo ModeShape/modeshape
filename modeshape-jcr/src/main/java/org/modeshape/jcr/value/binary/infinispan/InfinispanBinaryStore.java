@@ -216,9 +216,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
                 final String dataKey = dataKeyFrom(binaryKey);
                 final long lastModified = tmpFile.lastModified();
                 final long fileLength = tmpFile.length();
-                int bufferSize = 8192;
-                if (bufferSize > fileLength) bufferSize = 4096;
-                if (bufferSize > fileLength) bufferSize = 2096;
+                int bufferSize = bestBufferSize(fileLength);
                 ChunkOutputStream chunkOutputStream = new ChunkOutputStream(blobCache, dataKey);
                 IoUtil.write(new FileInputStream(tmpFile), chunkOutputStream, bufferSize);
                 // now store metadata
