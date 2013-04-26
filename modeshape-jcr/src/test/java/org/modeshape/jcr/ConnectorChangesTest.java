@@ -43,8 +43,6 @@ public class ConnectorChangesTest extends SingleUseAbstractTest {
 		startRepositoryWithConfiguration(resource("config/repo-config-filesystem-federation-with-persistence.json"));
 		logger.debug("Started repository...");
 		changeBus = repository().changeBus();
-		listener = new TestListener();
-		changeBus.register(listener);
 	}
 
 	@After
@@ -55,6 +53,10 @@ public class ConnectorChangesTest extends SingleUseAbstractTest {
 
 	@Test
 	public void testChangesEmittedWhenNodeCreated() throws Exception {
+		/* set the expected event numbres for the countdown latch and this test */
+		listener = new TestListener(1);
+		changeBus.register(listener);
+
 		logger.debug("Executing testChangesEmittedWhenNodeCreated()...");
 
 		/* hmm I guess the deletion is there to remove previously generated state, so I'll leave it in */
@@ -70,20 +72,10 @@ public class ConnectorChangesTest extends SingleUseAbstractTest {
 		federation.addNode("testNode");
 		session.save();
 
-		/* since the event need some time to propagate to the listener, we'll retry three times */
-		int tries = 0;
-		while (tries++ < 3) {
-			long wait = 100l + (tries * tries * 1000l); // 1st: 100ms, 2nd: 1100ms, 3rd: 4100ms
-			synchronized (this) {
-				Thread.sleep(wait);
-			}
-			if (listener.receivedChangeSet.size() > 0) {
-				break;
-			} else {
-				logger.debug("No event after " + wait + "ms received.");
-			}
-		}
-
+		/* since the event needs some time to propagate TestListener's CountdownLatch*/
+		/* is used to determine the duration to wait for the event */
+		listener.await();
+		
 		assertTrue("Didn't receive changes after node creation!",
 				listener.receivedChangeSet.size() > 0);
 		logger.debug("Executed testChangesEmittedWhenNodeCreated().");
@@ -119,7 +111,7 @@ public class ConnectorChangesTest extends SingleUseAbstractTest {
 		}
 
 		public void await() throws InterruptedException {
-			latch.await(250, TimeUnit.MILLISECONDS);
+			latch.await(1000, TimeUnit.MILLISECONDS);
 		}
 
 		public List<RecordingChanges> getObservedChangeSet() {
