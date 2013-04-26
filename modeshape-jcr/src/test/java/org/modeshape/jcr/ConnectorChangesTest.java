@@ -56,12 +56,12 @@ public class ConnectorChangesTest extends SingleUseAbstractTest {
 	@Test
 	public void testChangesEmittedWhenNodeCreated() throws Exception {
 		logger.debug("Executing testChangesEmittedWhenNodeCreated()...");
-		
+
 		/* hmm I guess the deletion is there to remove previously generated state, so I'll leave it in */
 		FileUtil.delete("target/federation_persistent_repository");
 		/* but for the tests to run the following directory must exists it seems */
 		new File("target/federation_persistent_repository/store/persistentRepository").mkdirs();
-		
+
 		final Session session = session();
 		final Node root = session.getRootNode();
 		logger.debug("Root node is: ");
@@ -69,15 +69,17 @@ public class ConnectorChangesTest extends SingleUseAbstractTest {
 		final Node federation = session.getNode("/federation");
 		federation.addNode("testNode");
 		session.save();
-		
+
 		/* since the event need some time to propagate to the listener, we'll retry three times */
 		int tries = 0;
-		while (tries++ < 3){
-			long wait = 100l + (tries * tries * 1000l); //1st: 100ms, 2nd: 1100ms, 3rd: 4100ms
-			Thread.sleep(wait);
-			if (listener.receivedChangeSet.size() > 0){
+		while (tries++ < 3) {
+			long wait = 100l + (tries * tries * 1000l); // 1st: 100ms, 2nd: 1100ms, 3rd: 4100ms
+			synchronized (this) {
+				Thread.sleep(wait);
+			}
+			if (listener.receivedChangeSet.size() > 0) {
 				break;
-			}else{
+			} else {
 				logger.debug("No event after " + wait + "ms received.");
 			}
 		}
