@@ -236,7 +236,7 @@
         <metadata.collectorClassName>org.modeshape.connector.meta.jdbc.JdbcMetadataCollector</metadata.collectorClassName>
 
         <!--By default, we use whatever the underlying machine supports. However, certain sub-modules may change this -->
-        <preferIpv4>false</preferIpv4>
+        <preferIpv4>true</preferIpv4>
         <preferIpv6>false</preferIpv6>
         <debug.argline/>
         <!--
@@ -392,22 +392,9 @@
               Clustering-related profiles
               ###################################################################
 
-              To use, specify "-DpreferIpv4" or "-DpreferIpv6" on the Maven command line,
+              To use, specify "-DpreferIpv6" on the Maven command line,
               depending upon your environment's network configuration.
           -->
-        <profile>
-            <id>preferIpv4</id>
-            <activation>
-                <property>
-                    <name>preferIpv4</name>
-                </property>
-            </activation>
-            <properties>
-                <preferIpv4>false</preferIpv4>
-                <preferIpv6>true</preferIpv6>
-            </properties>
-        </profile>
-
         <profile>
             <id>preferIpv6</id>
             <activation>
