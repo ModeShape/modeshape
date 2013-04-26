@@ -51,7 +51,7 @@ public final class ClusteringHelper {
     }
 
     private static InetAddress getLocalHost() throws UnknownHostException {
-        boolean preferIpv6 = Boolean.valueOf(System.getProperty(Global.IPv6));
+        boolean preferIpv6 = Boolean.getBoolean(Global.IPv6);
 
         InetAddress localHost = null;
         InetAddress[] localHostAddresses = InetAddress.getAllByName("localhost");
