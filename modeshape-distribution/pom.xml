@@ -426,7 +426,7 @@
                 <dependency>
                     <groupId>org.jboss.as</groupId>
                     <artifactId>jboss-as-controller</artifactId>
-                    <version>${jbossas-version}</version>
+                    <version>${jbossas.version}</version>
                     <scope>compile</scope>
                 </dependency>
             </dependencies>
