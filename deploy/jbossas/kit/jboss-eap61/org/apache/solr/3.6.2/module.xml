@@ -35,7 +35,7 @@
         <resource-root path="commons-lang-2.6.jar" />
     </resources>
     <dependencies>
-        <module name="org.apache.lucene" />
+        <module name="org.apache.lucene" slot="3.6.2"/>
         <module name="org.jboss.logging" />
     </dependencies>
 </module>
