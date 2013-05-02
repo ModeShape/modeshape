@@ -2155,7 +2155,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
             if (primaryType != null) {
                 for (JcrNodeDefinition definition : primaryType.allChildNodeDefinitions(childName, requireSns)) {
                     // Skip protected definitions ...
-                    if (skipProtected && definition.isProtected()) return null;
+                    if (skipProtected && definition.isProtected()) continue;
                     // See if the definition allows a child with the supplied primary type ...
                     if (definition.allowsChildWithType(childType)) return definition;
                 }
@@ -2168,7 +2168,7 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
                     if (mixinType == null) continue;
                     for (JcrNodeDefinition definition : mixinType.allChildNodeDefinitions(childName, requireSns)) {
                         // Skip protected definitions ...
-                        if (skipProtected && definition.isProtected()) return null;
+                        if (skipProtected && definition.isProtected()) continue;
                         // See if the definition allows a child with the supplied primary type ...
                         if (definition.allowsChildWithType(childType)) return definition;
                     }
