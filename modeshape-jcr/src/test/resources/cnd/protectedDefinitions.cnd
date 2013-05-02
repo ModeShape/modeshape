@@ -1,0 +1,13 @@
+[car]
+[privateCar]
+
+[garage] mixin abstract
++ car (privateCar) = privateCar protected
++ car (car) = car
+
+[level]
+[privateLevel]
+
+[parking] > garage
++ level (privateLevel) = privateLevel protected
++ level (level) = level

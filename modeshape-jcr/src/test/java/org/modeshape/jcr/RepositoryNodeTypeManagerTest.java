@@ -23,11 +23,9 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -37,7 +35,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
+import org.modeshape.jcr.value.basic.BasicName;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 public class RepositoryNodeTypeManagerTest extends AbstractTransactionalTest {
 
@@ -112,7 +117,7 @@ public class RepositoryNodeTypeManagerTest extends AbstractTransactionalTest {
     }
 
     @Test
-    @FixFor( "MODE-1807" )
+    @FixFor("MODE-1807")
     public void shouldAllowOverridingChildDefinitionWithSubtypeOfOriginalDefinition() throws Exception {
         InputStream cndStream = getClass().getResourceAsStream("/cnd/orc.cnd");
         assertThat(cndStream, is(notNullValue()));
@@ -120,7 +125,7 @@ public class RepositoryNodeTypeManagerTest extends AbstractTransactionalTest {
     }
 
     @Test
-    @FixFor( "MODE-1857" )
+    @FixFor("MODE-1857")
     public void shouldAllowOverridingOfPropertyDefinitions() throws Exception {
         InputStream cnd = getClass().getClassLoader().getResourceAsStream("cnd/overridingPropertyDefinition.cnd");
         assertThat(cnd, is(notNullValue()));
@@ -147,7 +152,7 @@ public class RepositoryNodeTypeManagerTest extends AbstractTransactionalTest {
     }
 
     @Test
-    @FixFor( "MODE-1857" )
+    @FixFor("MODE-1857")
     public void shouldAllowOverridingOfPropertyDefinitionsWithResidualDefinitions() throws Exception {
         InputStream cnd = getClass().getClassLoader().getResourceAsStream("cnd/overridingPropertyDefinitionWithResidual.cnd");
         assertThat(cnd, is(notNullValue()));
@@ -171,6 +176,35 @@ public class RepositoryNodeTypeManagerTest extends AbstractTransactionalTest {
         } catch (ConstraintViolationException e) {
             // expected ...
         }
+    }
+
+    @Test
+    @FixFor( "MODE-1916" )
+    public void shouldFindPublicChildNodeDefinitionsWhenBothPublicAndProtectedAreDefined() throws Exception {
+        InputStream cndStream = getClass().getResourceAsStream("/cnd/protectedDefinitions.cnd");
+        assertThat(cndStream, is(notNullValue()));
+        nodeTypeManager().registerNodeTypes(cndStream, true);
+
+        Name parking = new BasicName(null, "parking");
+        Name level = new BasicName(null, "level");
+        Collection<Name> garage = Arrays.<Name>asList(new BasicName(null, "garage"));
+
+        JcrNodeDefinition def = repoTypeManager.getNodeTypes().findChildNodeDefinition(parking,
+                                                                                       garage,
+                                                                                       level,
+                                                                                       level,
+                                                                                       0,
+                                                                                       true);
+
+        assertNotNull(def);
+        Name car = new BasicName(null, "car");
+        def = repoTypeManager.getNodeTypes().findChildNodeDefinition(parking,
+                                                                     garage,
+                                                                     car,
+                                                                     car,
+                                                                     0,
+                                                                     true);
+        assertNotNull(def);
     }
 
     private JcrNodeTypeManager nodeTypeManager() throws RepositoryException {
