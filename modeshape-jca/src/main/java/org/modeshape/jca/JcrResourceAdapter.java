@@ -24,9 +24,9 @@
 package org.modeshape.jca;
 
 import java.net.URL;
+
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-
 import javax.resource.ResourceException;
 import javax.resource.spi.ActivationSpec;
 import javax.resource.spi.BootstrapContext;
@@ -36,9 +36,10 @@ import javax.resource.spi.ResourceAdapter;
 import javax.resource.spi.ResourceAdapterInternalException;
 import javax.resource.spi.TransactionSupport;
 import javax.resource.spi.endpoint.MessageEndpointFactory;
-
 import javax.transaction.xa.XAResource;
+
 import org.modeshape.common.collection.Problems;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 
@@ -51,6 +52,8 @@ import org.modeshape.jcr.RepositoryConfiguration;
 transactionSupport = TransactionSupport.TransactionSupportLevel.XATransaction)
 public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable {
 
+    private static final Logger LOGGER = Logger.getLogger(JcrResourceAdapter.class);
+    
     /**
      * The serial version UID
      */
@@ -83,6 +86,7 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
      * @param repositoryURL The value
      */
     public void setRepositoryURL(String repositoryURL) {
+        LOGGER.debug("Set repository URL=[{0}]", repositoryURL);
         this.repositoryURL = repositoryURL;
     }
 
@@ -97,6 +101,7 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
 
     protected synchronized Repository getRepository() throws ResourceException {
         if (this.repository == null) {
+            LOGGER.debug("Deploying repository URL [{0}]", repositoryURL);
             this.repository = deployRepository(repositoryURL);
         }
         return this.repository;
