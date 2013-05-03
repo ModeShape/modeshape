@@ -433,7 +433,7 @@ public class BasicDocument extends LinkedHashMap<String, Object> implements Muta
     public Document clone() {
         BasicDocument clone = new BasicDocument();
         for (Field field : this.fields()) {
-            Object value = field.getValue();
+            Object value = unwrap(field.getValue());
             if (value instanceof Array) {
                 value = ((Array)value).clone();
             } else if (value instanceof Document) {
@@ -449,7 +449,7 @@ public class BasicDocument extends LinkedHashMap<String, Object> implements Muta
         BasicDocument clone = new BasicDocument();
         for (Field field : this.fields()) {
             String name = field.getName();
-            Object newValue = changedFields.get(name);
+            Object newValue = unwrap(changedFields.get(name));
             if (newValue != null) {
                 clone.put(name, newValue);
             } else {
@@ -464,6 +464,7 @@ public class BasicDocument extends LinkedHashMap<String, Object> implements Muta
     public Document with( String fieldName,
                           Object newValue ) {
         BasicDocument clone = new BasicDocument();
+        newValue = unwrap(newValue);
         for (Field field : this.fields()) {
             String name = field.getName();
             if (name.equals(fieldName)) {
@@ -490,7 +491,7 @@ public class BasicDocument extends LinkedHashMap<String, Object> implements Muta
                 newValue = transformer.transform(name, oldValue);
             }
             if (newValue != oldValue) transformed = true;
-            clone.put(name, newValue);
+            clone.put(name, unwrap(newValue));
         }
         return transformed ? clone : this;
     }

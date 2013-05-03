@@ -1,12 +1,10 @@
 {
     "name" : "Test Repository",
-    "storage" : {
-        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
-    },
     "query" : {
         "indexing": {
             "rebuildOnStartup": {
-                "includeSystemContent": true
+                "includeSystemContent": true,
+                "mode" : "sync"
             }
         }
     }

@@ -1,6 +1,6 @@
 # Release Notes for ModeShape &version;
 
-The ModeShape &version; release is the third stable release of our new architecture.
+This document outlines the changes that were made in ModeShape &version;.
 We hope you enjoy it!
 
 ## What's new
@@ -12,7 +12,20 @@ ModeShape 2's JCR-related features. ModeShape 3 has complete integration with JB
 allowing deployed components to simply lookup and use repositories managed by ModeShape's 
 service.
 
-This release is a bug-fix release that includes two dozen fixes (see below for details).
+This release addesses a whopping 119 issues, most of which were bug fixes. Overall, clustering
+has been dramatically improved, both for embedded and EAP-based deployments. Other high-level
+changes include using JBoss EAP 6.1 (rather than JBoss AS7.1.1) and upgrades to 
+Infinispan 5.2.5.Final, JGroups 3.2.7.Final, Lucene 3.6, and newer versions of several 
+other third party libraries.
+
+Note for EAP 6.1.0.Alpha1 users: there is a known issue (https://issues.jboss.org/browse/AS7-6639)
+where EAP intermittenly has problems upon startup concurrently starting Infinispan cache containers.
+If this occurs, simply kill the EAP process and restart. This has been fixed in EAP 6.1.0.Beta1.
+
+Also, note that because we switched from AS7 to EAP, the artifact name for BOM for use in 
+applications has been renamed from 'modeshape-bom-jbossas' to 'modeshape-bom-jbosseap'.
+This is to remain consistent and to help reinforce that ModeShape 3.2 works on EAP 6.1
+now and not on JBoss AS7.1.1.
 
 
 ## Features
@@ -147,6 +160,7 @@ ModeShape also has features that go beyond the JCR API:
 ### ModeShape Federation Connectors
 - File system connector (read and write)
 - Git repository connector (read-only)
+- CMIS reposiotry connector (read and write, tech preview)
 
 ### ModeShape Sequencers
 - Compact Node Definition (CND) Sequencer
@@ -161,8 +175,8 @@ ModeShape also has features that go beyond the JCR API:
 - XML Schema Document (XSD) Sequencer
 - Web Service Definition Lanaguage (WSDL) 1.1 Sequencer
 - Zip File Sequencer (also WARs, JARs, and EARs)
-- Teiid Relational Model Sequencer (coming soon)
-- Teiid VDB Sequencer (coming soon)
+- Teiid Relational Model Sequencer
+- Teiid VDB Sequencer
 
 ### ModeShape Deployment/Access Models
 - JNDI-Based Deployment

@@ -38,6 +38,7 @@ import org.modeshape.jcr.api.Session;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.federation.FederationManager;
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -270,12 +271,12 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         //(indexing everything under /tree/master is way too expensive)
         workspace.reindex(git.getPath() + "/tree/master/.gitignore");
         query = workspace.getQueryManager().createQuery("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '%/tree/master/%'", Query.JCR_SQL2);
-        assertEquals(2, query.execute().getNodes().getSize());
+        assertTrue(query.execute().getNodes().getSize() > 0);
 
         //force reindexing of a file under another configured branch and check that it has been indexed
         workspace.reindex(git.getPath() + "/tree/2.x/.gitignore");
         query = workspace.getQueryManager().createQuery("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '%/tree/2.x/%'", Query.JCR_SQL2);
-        assertEquals(2, query.execute().getNodes().getSize());
+        assertTrue(query.execute().getNodes().getSize() > 0);
     }
 
     protected void assertNodeHasObjectIdProperty( Node node ) throws Exception {

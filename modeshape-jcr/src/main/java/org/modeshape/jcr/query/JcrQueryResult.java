@@ -24,8 +24,10 @@
 package org.modeshape.jcr.query;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -40,6 +42,8 @@ import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.Collections;
+import org.modeshape.common.collection.Problem;
+import org.modeshape.common.collection.Problem.Status;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.QueryResults.Location;
@@ -74,6 +78,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
     protected final Schemata schemata;
     protected final String queryStatement;
     private List<String> columnTables;
+    private List<String> warnings;
 
     protected JcrQueryResult( JcrQueryContext context,
                               String query,
@@ -168,6 +173,25 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
     @Override
     public String getPlan() {
         return results.getPlan();
+    }
+
+    @Override
+    public Collection<String> getWarnings() {
+        if (warnings == null) {
+            // Obtain the warnings ...
+            if (!results.hasWarnings()) {
+                warnings = java.util.Collections.emptyList();
+            } else {
+                List<String> messages = new LinkedList<String>();
+                for (Problem problem : results.getProblems()) {
+                    if (problem.getStatus() == Status.WARNING) {
+                        messages.add(problem.getMessageString());
+                    }
+                }
+                warnings = java.util.Collections.unmodifiableList(messages);
+            }
+        }
+        return warnings;
     }
 
     @Override

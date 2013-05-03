@@ -45,7 +45,6 @@ public class AddDatabaseBinaryStorage extends AbstractAddBinaryStorage {
                                                     OperationContext context,
                                                     ModelNode model,
                                                     EditableDocument binaries ) throws OperationFailedException {
-        super.writeCommonBinaryStorageConfiguration(repositoryName, context, model, binaries);
         binaries.set(FieldName.TYPE, FieldValue.BINARY_STORAGE_TYPE_DATABASE);
         // We don't need to add a dependency since we'll look it up by JNDI and we'll
         // not shutdown if the data source is shutdown

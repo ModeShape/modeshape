@@ -23,8 +23,11 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.File;
@@ -167,9 +170,33 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     }
 
     @FixFor( "MODE-1693" )
-    @Test( expected = IllegalStateException.class )
+    @Test( expected = ConfigurationException.class )
     public void shouldNotStartIfTransactionsArentEnabled() throws Exception {
-        startRunStop(null, "config/repo-config-no-transactions.json");
+        startRunStop(null, "config/invalid-repo-config-no-transactions.json");
+    }
+
+    @FixFor( "MODE-1899" )
+    @Test( expected = ConfigurationException.class )
+    public void shouldNotStartIfDefaultWorkspaceCacheIsTransactional() throws Exception {
+        startRunStop(null, "config/invalid-repo-config-tx-default-ws-cache.json");
+    }
+
+    @FixFor( "MODE-1899" )
+    @Test
+    public void shouldFailWhenCreatingWorkspaceWithTransactionalCache() throws Exception {
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+                try {
+                    session.getWorkspace().createWorkspace("ws1");
+                    fail("It should not be possible to create a workspace which has a transactional cache configured");
+                } catch (ConfigurationException e) {
+                    //expected
+                }
+                return null;
+            }
+        }, "config/invalid-repo-config-tx-ws-cache.json");
     }
 
     @Test
@@ -356,5 +383,22 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         Executors.newSingleThreadExecutor().submit(restartRunnable);
         //wait the repo to restart or fail
         assertTrue("Repository did not restart in the expected amount of time", restartLatch.await(1, TimeUnit.MINUTES));
+    }
+
+    @Test
+    @FixFor( "MODE-1872" )
+    public void asyncReindexingWithoutSystemContentShouldNotCorruptSystemBranch() throws Exception {
+        FileUtil.delete("target/persistent_repository/");
+       startRunStop(new RepositoryOperation() {
+           @Override
+           public Void call() throws Exception {
+               JcrSession session = repository.login();
+
+               javax.jcr.Node root = session.getRootNode();
+               AbstractJcrNode system = (AbstractJcrNode)root.getNode("jcr:system");
+               assertThat(system, is(notNullValue()));
+               return null;
+           }
+       }, "config/repo-config-persistent-indexes-always-async-without-system.json");
     }
 }

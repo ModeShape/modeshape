@@ -23,6 +23,9 @@
  */
 package org.modeshape.jcr.query.lucene;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.Iterator;
 import javax.jcr.query.qom.Constraint;
 import javax.jcr.query.qom.DynamicOperand;
 import javax.jcr.query.qom.Length;
@@ -49,6 +52,7 @@ import org.apache.lucene.util.Version;
 import org.hibernate.search.SearchFactory;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.query.qom.Between;
 import org.modeshape.jcr.api.query.qom.NodeDepth;
 import org.modeshape.jcr.api.query.qom.NodePath;
@@ -71,15 +75,13 @@ import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.SetCriteria;
 import org.modeshape.jcr.query.validate.Schemata;
 import org.modeshape.jcr.query.validate.Schemata.Column;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Iterator;
 
 /**
  * The factory that creates a Lucene {@link Query} object from a Query Object Model {@link Constraint} object.
@@ -170,15 +172,14 @@ public abstract class LuceneQueryFactory {
                         while (iter.hasNext()) {
                             Object resolvedValue = iter.next();
                             if (resolvedValue == null) continue;
-                            StaticOperand elementInRight = null;
-                            if (resolvedValue instanceof Literal) {
-                                elementInRight = (Literal)resolvedValue;
+                            if (resolvedValue instanceof Object[]) {
+                                // The row has multiple values (e.g., a multi-valued property) ...
+                                for (Object val : (Object[])resolvedValue) {
+                                    addQueryForValue(setQuery, selectorName, left, val);
+                                }
                             } else {
-                                elementInRight = new Literal(resolvedValue);
+                                addQueryForValue(setQuery, selectorName, left, resolvedValue);
                             }
-                            Query rightQuery = createQuery(selectorName, left, Operator.EQUAL_TO, elementInRight);
-                            if (rightQuery == null) continue;
-                            setQuery.add(rightQuery, Occur.SHOULD);
                         }
                     }
                     if (value == null) {
@@ -218,6 +219,18 @@ public abstract class LuceneQueryFactory {
             String propertyName = search.getPropertyName();
             if (propertyName != null) propertyName = fieldNameFor(propertyName);
             String fieldName = fullTextFieldName(propertyName);
+            StaticOperand expression = search.getFullTextSearchExpression();
+            if (expression instanceof BindVariableName) {
+                BindVariableName bindVariable = (BindVariableName)expression;
+                Object value = context.getVariables().get(bindVariable.getBindVariableName());
+                if (value == null) {
+                    throw new LuceneException(JcrI18n.missingVariableValue.text(bindVariable.getBindVariableName()));
+                }
+                if (value instanceof Literal) {
+                    value = ((Literal)value).value();
+                }
+                search = search.withFullTextExpression(value.toString());
+            }
             return createQuery(selectorName, fieldName, search.getTerm());
         }
         if (constraint instanceof SameNode) {
@@ -239,6 +252,35 @@ public abstract class LuceneQueryFactory {
         assert false : "Unexpected Constraint instance: class=" + (constraint != null ? constraint.getClass() : "null")
                        + " and instance=" + constraint;
         return null;
+    }
+
+    /**
+     * Some variable values may be obtained from psuedo-columns that are not of the correct class to use as constraint values. So
+     * we need to convert these to value types we can use.
+     * 
+     * @param value the value; may be null
+     * @return the possibly converted value
+     */
+    private Object convertBindVariableValue( Object value ) {
+        if (value instanceof Path || value instanceof Name || value instanceof Binary) {
+            return stringFactory.create(value);
+        }
+        return value;
+    }
+
+    private void addQueryForValue( BooleanQuery setQuery,
+                                   SelectorName selectorName,
+                                   DynamicOperand left,
+                                   Object resolvedValue ) throws IOException {
+        StaticOperand elementInRight = null;
+        if (resolvedValue instanceof Literal) {
+            elementInRight = (Literal)resolvedValue;
+        } else {
+            resolvedValue = convertBindVariableValue(resolvedValue);
+            elementInRight = new Literal(resolvedValue);
+        }
+        Query rightQuery = createQuery(selectorName, left, Operator.EQUAL_TO, elementInRight);
+        if (rightQuery != null) setQuery.add(rightQuery, Occur.SHOULD);
     }
 
     public Query createQuery( SelectorName selectorName,
@@ -329,6 +371,7 @@ public abstract class LuceneQueryFactory {
             if (value == null) {
                 throw new LuceneException(JcrI18n.missingVariableValue.text(variableName));
             }
+            value = convertBindVariableValue(value);
             // if (value instanceof String || value instanceof Binary) {
             // value = caseOperation.execute(stringValueFrom(value));
             // }
@@ -451,14 +494,16 @@ public abstract class LuceneQueryFactory {
             if (simple.containsWildcards()) {
                 // Use the ComplexPhraseQueryParser, but instead of wildcard queries (which don't work with leading
                 // wildcards) we should use our like queries (which often use RegexQuery where applicable) ...
+
+                //as an alternative, for leading wildcards one could call parser.setAllowLeadingWildcard(true);
+                //and use the default Lucene query parser
                 QueryParser parser = new QueryParser(version, fieldName, analyzer) {
                     @Override
                     protected org.apache.lucene.search.Query getWildcardQuery( String field,
                                                                                String termStr ) {
-                        return findNodesLike(selectorName, termStr.toLowerCase(), field, CaseOperations.LOWERCASE);
+                        return findNodesLike(selectorName, field, termStr.toLowerCase(), CaseOperations.LOWERCASE);
                     }
                 };
-                parser.setAllowLeadingWildcard(true);
                 try {
                     String expression = simple.getValue();
                     // The ComplexPhraseQueryParser only understands the '?' and '*' as being wildcards ...

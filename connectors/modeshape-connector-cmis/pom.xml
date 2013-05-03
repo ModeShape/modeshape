@@ -1,0 +1,70 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-connectors</artifactId>
+        <version>3.3-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <!-- The groupId and version values are inherited from parent -->
+    <artifactId>modeshape-connector-cmis</artifactId>
+    <packaging>jar</packaging>
+    <name>ModeShape Connector to CMIS Repositories</name>
+    <description>ModeShape Connector that access the content in a CMIS repository</description>
+    <url>http://www.modeshape.org</url>
+
+    <!--
+    Define the dependencies.  Note that all version and scopes default to those
+    defined in the dependencyManagement section of the parent pom.
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.chemistry.opencmis</groupId>
+            <artifactId>chemistry-opencmis-client-impl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.chemistry.opencmis</groupId>
+            <artifactId>chemistry-opencmis-server-inmemory</artifactId>
+            <type>war</type>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${version.failsafe.plugin}</version>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                    <skip>${skipTests}</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.cargo</groupId>
+                <artifactId>cargo-maven2-plugin</artifactId>
+                <configuration>
+                    <deployables>
+                        <deployable>
+                            <groupId>org.apache.chemistry.opencmis</groupId>
+                            <artifactId>chemistry-opencmis-server-inmemory</artifactId>
+                            <type>war</type>
+                            <properties>
+                                <context>/</context>
+                            </properties>
+                        </deployable>
+                    </deployables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

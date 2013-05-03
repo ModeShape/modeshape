@@ -137,6 +137,15 @@
                     </security>
                 </datasource>
 
+                <datasource jndi-name="java:jboss/datasources/ModeshapeIndexStoreDS" pool-name="ModeshapeIndexStoreDS" enabled="true" use-java-context="true">
+                    <connection-url>jdbc:h2:mem:modeshapeJModeshapeIndexStore;DB_CLOSE_DELAY=-1</connection-url>
+                    <driver>h2</driver>
+                    <security>
+                        <user-name>sa</user-name>
+                        <password>sa</password>
+                    </security>
+                </datasource>
+
                 <drivers>
                     <driver name="h2" module="com.h2database.h2">
                         <xa-datasource-class>org.h2.jdbcx.JdbcDataSource</xa-datasource-class>
@@ -272,6 +281,9 @@
                 <local-cache name="binaryJDBCRepository">
                     <transaction mode="NON_XA"/>
                 </local-cache>
+                <local-cache name="binaryIndexingJDBCRepository">
+                    <transaction mode="NON_XA"/>
+                </local-cache>
             </cache-container>
             <cache-container name="binary-cache-container" default-cache="binary-fs" module="org.modeshape">
                 <local-cache name="binary-fs">
@@ -287,6 +299,19 @@
                 <local-cache name="index-data" batching="true">
                     <transaction mode="NON_XA"/>
                     <file-store passivation="false" path="modeshape/index-cache-container" relative-to="jboss.server.data.dir" purge="false"/>
+                </local-cache>
+                <local-cache name="index-data-jdbc" batching="true">
+                    <transaction mode="NON_XA"/>
+                    <string-keyed-jdbc-store datasource="java:jboss/datasources/ModeshapeIndexStoreDS" shared="false" preload="false" passivation="false" purge="false">
+                        <write-behind flush-lock-timeout="1" modification-queue-size="1024" shutdown-timeout="25000" thread-pool-size="1"/>
+                        <property name="databaseType">H2</property>
+                        <property name="createTableOnStart">true</property>
+                        <string-keyed-table prefix="stringbased">
+                            <id-column name="id" type="VARCHAR(200)"/>
+                            <data-column name="datum" type="BYTEA"/>
+                            <timestamp-column name="version" type="BIGINT"/>
+                        </string-keyed-table>
+                    </string-keyed-jdbc-store>
                 </local-cache>
             </cache-container>
             <cache-container name="jdbc-binary-cache-container">
@@ -316,6 +341,32 @@
                         </string-keyed-table>
                     </string-keyed-jdbc-store>
                 </local-cache>
+                <local-cache name="binaryJDBCRepository-binary-data-wb">
+                    <transaction mode="NON_XA"/>
+                    <string-keyed-jdbc-store datasource="jboss/datasources/ModeshapeBinaryStoreDS" shared="false" preload="false" passivation="false" purge="false">
+                        <write-behind flush-lock-timeout="1" modification-queue-size="1024" shutdown-timeout="25000" thread-pool-size="1"/>
+                        <property name="databaseType">H2</property>
+                        <property name="createTableOnStart">true</property>
+                        <string-keyed-table prefix="stringbased">
+                            <id-column name="id" type="VARCHAR(200)"/>
+                            <data-column name="datum" type="BYTEA"/>
+                            <timestamp-column name="version" type="BIGINT"/>
+                        </string-keyed-table>
+                    </string-keyed-jdbc-store>
+                </local-cache>
+                <local-cache name="binaryJDBCRepository-binary-metadata-wb">
+                    <transaction mode="NON_XA"/>
+                    <eviction strategy="LRU" max-entries="100"/>
+                    <string-keyed-jdbc-store datasource="jboss/datasources/ModeshapeBinaryStoreDS" shared="false" preload="false" passivation="false" purge="false">
+                        <property name="databaseType">H2</property>
+                        <property name="createTableOnStart">true</property>
+                        <string-keyed-table prefix="stringbased">
+                            <id-column name="id" type="VARCHAR(200)"/>
+                            <data-column name="datum" type="BYTEA"/>
+                            <timestamp-column name="version" type="BIGINT"/>
+                        </string-keyed-table>
+                    </string-keyed-jdbc-store>
+                </local-cache>
             </cache-container>
             <!--Sample workspace cache container which should really be used only in special cases, when the provided default is not enough-->
             <cache-container name="ws-cache-container" default-cache="ws-cache" module="org.modeshape">
@@ -335,7 +386,9 @@
             <!-- A sample repository that uses the "sample" cache in the "modeshape" container. All content, binary values,
                  and indexes are stored within the server's data directory. This is the simplest way to configure a repository
                  that uses defaults for everything; feel free to change and specify other configuration options.  -->
-            <repository name="sample"/>
+            <repository name="sample">
+                <indexing rebuild-upon-startup-include-system-content="true" rebuild-upon-startup-mode="sync"/>
+            </repository>
             <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
             <repository name="artifacts">
                 <indexing rebuild-upon-startup="never"/>
@@ -433,6 +486,7 @@
                 <node-types>
                     <node-type>custom.cnd</node-type>
                 </node-types>
+                <local-file-index-storage/>
             </repository>
             <repository name="federatedRepository">
                 <!--Turn off initial indexing for performance reasons-->
@@ -469,12 +523,22 @@
                 <workspaces cache-container="ws-cache-container">
                     <workspace name="default"/>
                 </workspaces>
-                <cache-binary-storage data-cache-name="binary-fs" metadata-cache-name="binary-fs-meta" cache-container="binary-cache-container"/>
+                <cache-binary-storage data-cache-name="binary-fs"
+                                      metadata-cache-name="binary-fs-meta"
+                                      cache-container="binary-cache-container"
+                                      min-string-size="10"
+                                      min-value-size="1024"/>
                 <cache-index-storage cache-container="index-cache-container" data-cache-name="index-data"/>
                 <indexing analyzer-classname="org.apache.lucene.analysis.standard.ClassicAnalyzer"/>
             </repository>
             <repository name="binaryJDBCRepository" enable-queries="false">
                 <cache-binary-storage cache-container="jdbc-binary-cache-container"/>
+            </repository>
+            <repository name="binaryIndexingJDBCRepository">
+                <indexing rebuild-upon-startup-mode="sync"/>
+                <cache-binary-storage cache-container="jdbc-binary-cache-container" data-cache-name="binaryJDBCRepository-binary-data-wb"
+                                      metadata-cache-name="binaryJDBCRepository-binary-metadata-wb"/>
+                <cache-index-storage cache-container="index-cache-container" data-cache-name="index-data-jdbc"/>
             </repository>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>

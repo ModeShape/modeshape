@@ -55,7 +55,8 @@ public class AddMasterFileSystemIndexStorage extends AbstractAddFileSystemIndexS
     @Override
     protected void writeIndexStorageConfiguration( OperationContext context,
                                                    ModelNode storage,
-                                                   EditableDocument indexStorage ) throws OperationFailedException {
+                                                   EditableDocument indexStorage,
+                                                   String repositoryName ) throws OperationFailedException {
         // Set the type of storage ...
         indexStorage.set(FieldName.TYPE, FieldValue.INDEX_STORAGE_FILESYSTEM_MASTER);
 
@@ -67,11 +68,12 @@ public class AddMasterFileSystemIndexStorage extends AbstractAddFileSystemIndexS
         String sourceRelativeTo = ModelAttributes.SOURCE_RELATIVE_TO.resolveModelAttribute(context, storage).asString();
         String sourcePath = ModelAttributes.SOURCE_PATH.resolveModelAttribute(context, storage).asString();
         // Check the ModelNode values **without** resolving any symbols ...
-        if (storage.has(ModelKeys.RELATIVE_TO) && storage.get(ModelKeys.RELATIVE_TO).asString().contains(DATA_DIR_VARIABLE)) {
+        if (storage.has(ModelKeys.RELATIVE_TO) && storage.get(ModelKeys.RELATIVE_TO).asString()
+                                                         .contains(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
             setIndexStoragePathInDataDirectory(path);
         }
         if (storage.has(ModelKeys.SOURCE_RELATIVE_TO)
-            && storage.get(ModelKeys.SOURCE_RELATIVE_TO).asString().contains(DATA_DIR_VARIABLE)) {
+            && storage.get(ModelKeys.SOURCE_RELATIVE_TO).asString().contains(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
             setIndexSourcePathInDataDirectory(sourcePath);
         }
         path = relativeTo + path;

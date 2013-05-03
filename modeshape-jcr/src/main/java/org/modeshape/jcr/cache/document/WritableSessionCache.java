@@ -916,6 +916,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                     }
                 }
 
+                // As we go through the removed and changed properties, we want to keep track of whether there are any
+                // effective modifications to the persisted properties.
+                boolean hasPropertyChanges = false;
+
                 // Save the removed properties ...
                 Set<Name> removedProperties = node.removedProperties();
                 if (!removedProperties.isEmpty()) {
@@ -928,6 +932,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                         if (oldProperty != null) {
                             // the property was removed ...
                             changes.propertyRemoved(key, newPath, oldProperty);
+                            // and we know that there are modifications to the properties ...
+                            hasPropertyChanges = true;
                         }
                     }
                 }
@@ -946,9 +952,20 @@ public class WritableSessionCache extends AbstractSessionCache {
                         if (oldProperty == null) {
                             // the property was created ...
                             changes.propertyAdded(key, newPath, prop);
-                        } else {
-                            // the property was changed ...
+                            // and we know that there are modifications to the properties ...
+                            hasPropertyChanges = true;
+                        } else if (hasPropertyChanges || !oldProperty.equals(prop)) {
+                            // The 'hasPropertyChanges ||' in the above condition is what gives us the "slight optimization"
+                            // mentioned in the longer comment above. This is noticeably more efficient (since the
+                            // '!oldProperty.equals(prop)' has to be called for only some of the changes) and does result
+                            // in correct indexing behavior, but the compromise is that some no-op property changes will
+                            // result in a PROPERTY_CHANGE event. To remove all potential no-op PROPERTY CHANGE events,
+                            // simply remove the 'hasPropertyChanges||' in the above condition.
+                            // See MODE-1856 for details.
+
+                            // the property was changed and is actually different than the persisted property ...
                             changes.propertyChanged(key, newPath, prop, oldProperty);
+                            hasPropertyChanges = true;
                         }
                     }
                 }
@@ -1073,8 +1090,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     boolean isExternal = !workspaceCache().getRootKey()
                                                           .getSourceKey()
                                                           .equalsIgnoreCase(node.getKey().getSourceKey());
-                    boolean hasChanges = node.hasChanges();
-                    boolean externalNodeChanged = isExternal && hasChanges;
+                    boolean externalNodeChanged = isExternal && (hasPropertyChanges || node.hasNonPropertyChanges());
                     if (externalNodeChanged) {
                         // in the case of external nodes, only if there are changes should the update be called
                         documentStore.updateDocument(keyStr, doc, node);
@@ -1082,12 +1098,16 @@ public class WritableSessionCache extends AbstractSessionCache {
                     boolean isSameWorkspace = workspaceCache().getWorkspaceKey()
                                                               .equalsIgnoreCase(node.getKey().getWorkspaceKey());
 
-                    // only update the indexes if the node we're working with is in the same workspace as the current workspace or
+                    // only update the indexes if the node we're working with is in the same workspace as the current workspace
+                    // and has index related changes
+                    // or
                     // if it's an external node (even without changes, because that's how projections will appear)
                     // when linking/un-linking nodes (e.g. shareable node or jcr:system) this condition will be false.
                     // the downside of this is that there may be cases (e.g. back references when working with versions) in which
                     // we might loose information from the indexes
-                    if (monitor != null && queryable && ((isSameWorkspace && hasChanges) || externalNodeChanged)) {
+                    boolean shouldUpdateIndexes = (isSameWorkspace && (hasPropertyChanges || node.hasIndexRelatedChanges())) ||
+                                                  externalNodeChanged;
+                    if (monitor != null && queryable && shouldUpdateIndexes) {
                         // Get the primary and mixin type names; even though we're passing in the session, the two properties
                         // should be there and shouldn't require a looking in the cache...
                         Name primaryType = node.getPrimaryType(this);

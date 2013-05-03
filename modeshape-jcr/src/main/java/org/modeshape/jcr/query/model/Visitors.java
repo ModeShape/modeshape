@@ -662,6 +662,7 @@ public class Visitors {
         @Override
         public void visit( FullTextSearch fullTextSearch ) {
             strategy.visit(fullTextSearch);
+            enqueue(fullTextSearch.getFullTextSearchExpression());
             visitNext();
         }
 

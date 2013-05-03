@@ -838,6 +838,7 @@ public class BasicArray implements MutableArray {
     public Array clone() {
         BasicArray clone = new BasicArray();
         for (Object value : this) {
+            value = unwrap(value);
             if (value instanceof Array) {
                 value = ((Array)value).clone();
             } else if (value instanceof Document) {
@@ -853,7 +854,7 @@ public class BasicArray implements MutableArray {
         BasicArray clone = new BasicArray();
         for (Field field : this.fields()) {
             String name = field.getName();
-            Object newValue = changedFields.get(name);
+            Object newValue = unwrap(changedFields.get(name));
             if (newValue != null) {
                 clone.put(name, newValue);
             } else {
@@ -867,6 +868,7 @@ public class BasicArray implements MutableArray {
     @Override
     public Document with( String fieldName,
                           Object newValue ) {
+        newValue = unwrap(newValue);
         BasicArray clone = new BasicArray();
         for (Field field : this.fields()) {
             String name = field.getName();
@@ -894,7 +896,7 @@ public class BasicArray implements MutableArray {
                 newValue = transformer.transform(name, oldValue);
             }
             if (newValue != oldValue) transformed = true;
-            clone.put(name, newValue);
+            clone.put(name, unwrap(newValue));
         }
         return transformed ? clone : this;
     }

@@ -1,0 +1,35 @@
+{
+    "name" : "Persistent Repository 2",
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "storage" : {
+        "cacheName" : "persistentRepository",
+        "cacheConfiguration" : "config/infinispan-clustered-persistent-2.xml"
+    },
+    "query":{
+        "enabled": true,
+        "rebuildUponStartup":"if_missing",
+        "indexing" : {
+            "rebuildOnStartup": {
+                "when": "if_missing"
+            },
+            "backend" : {
+                "type" : "jgroups-slave",
+                "channelName" : "modeshape-indexing"
+            }
+        },
+        "indexStorage": {
+            "type":"filesystem-slave",
+            "sourceLocation":"target/clustered/master_indexes/",
+            "location": "target/clustered/repository_2/indexes/",
+            "refreshInSeconds" : 1,
+            "lockingStrategy":"simple",
+            "fileSystemAccessType":"auto"
+        }
+    },
+    "clustering" : {
+        "clusterName" : "modeshape-cluster"
+    }
+}

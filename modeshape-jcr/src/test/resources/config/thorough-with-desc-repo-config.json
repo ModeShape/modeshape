@@ -15,7 +15,6 @@
         "description" : "Repository content will be stored in the 'Thorough' cache defined in the specified Infinispan configuration file. If the 'cacheConfiguration' is not specified, the cache will persist content on the file system.",
         "cacheName" : "Thorough",
         "cacheConfiguration" : "infinispan_configuration.xml",
-        "transactionManagerLookup" = "org.infinispan.transaction.lookup.GenericTransactionManagerLookup",
         "binaryStorage" : {
             "description" : "Binary values (>=4096 bytes in size) will be stored on the file system at the relative path 'Thorough/binaries'. Smaller binaries will be stored with the referenced content.",
             "type" : "file",

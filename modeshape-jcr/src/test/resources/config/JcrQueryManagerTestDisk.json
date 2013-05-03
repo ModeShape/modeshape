@@ -1,8 +1,5 @@
 {
     "name" : "Test Repository",
-    "storage" : {
-        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
-    },
     "query" : {
         "indexStorage" : {
             "type" : "filesystem",
@@ -12,7 +9,8 @@
         },
         "indexing": {
             "rebuildOnStartup": {
-                "includeSystemContent": true
+                "includeSystemContent": true,
+                "mode" : "sync"
             }
         }
     }

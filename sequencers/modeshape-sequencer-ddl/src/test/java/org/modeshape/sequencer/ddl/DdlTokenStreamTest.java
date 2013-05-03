@@ -27,10 +27,9 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-
-import org.modeshape.common.text.TokenStream.Tokenizer;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.text.TokenStream.Tokenizer;
 
 /**
  *
@@ -63,21 +62,26 @@ public class DdlTokenStreamTest extends DdlParserTestHelper {
 		"PUNT",
 		"FOOBAR"
 	};
-    
+
     private Tokenizer tokenizer;
 
 	@Before
 	public void beforeEach() {
-		tokenizer = DdlTokenStream.ddlTokenizer(true);
+	    tokenizer = DdlTokenStream.ddlTokenizer(true);
 		setPrintToConsole(false);
 	}
-    
-    private DdlTokenStream getTokens(String content) {
-    	DdlTokenStream tokens = new DdlTokenStream(content, tokenizer, false);
-    	
-    	return tokens;
-    }
-    
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @see org.modeshape.sequencer.ddl.DdlParserTestHelper#getTokens(java.lang.String)
+	 */
+	@Override
+	protected DdlTokenStream getTokens( String content ) {
+        DdlTokenStream tokens = new DdlTokenStream(content, tokenizer, false);
+        return tokens;
+	}
+
     @Test
     public void shouldRegisterKeyWords() {
     	printTest("shouldRegisterKeyWords()");
@@ -132,7 +136,7 @@ public class DdlTokenStreamTest extends DdlParserTestHelper {
     	
     	
     	// Check Results
-    	assertTrue(tokens.isNextStatementStart());
+    	assertThat(tokens.computeNextStatementStartKeywordCount(), is(2)); // CREATE FOOBAR
     	
     	assertTrue(tokens.matches(CREATE, FOOBAR));
     	assertTrue(tokens.matches(STMT_CREATE_FOOBAR));

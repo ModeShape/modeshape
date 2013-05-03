@@ -60,6 +60,7 @@ import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.InvalidNodeTypeDefinitionException;
+import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
@@ -189,8 +190,6 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         return new String[] {"jcr:score"};
     }
 
-    private boolean print;
-
     @SuppressWarnings( "deprecation" )
     @BeforeClass
     public static void beforeAll() throws Exception {
@@ -258,7 +257,9 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
                 c.setProperty("propC", "value1");
                 c.setProperty("notion:singleReference", a);
                 c.setProperty("notion:multipleReferences", refValues);
-                session.getRootNode().addNode("NodeB", "nt:unstructured").setProperty("myUrl", "http://www.acme.com/foo/bar");
+                Node b = session.getRootNode().addNode("NodeB", "nt:unstructured");
+                b.setProperty("myUrl", "http://www.acme.com/foo/bar");
+                b.setProperty("pathProperty", a.getPath());
                 session.save();
 
                 // Initialize the nodes count
@@ -556,6 +557,102 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     // ----------------------------------------------------------------------------------------------------------------
     // JCR-SQL2 Queries
     // ----------------------------------------------------------------------------------------------------------------
+
+    @FixFor( "MODE-1888" )
+    @Test
+    public void shouldCaptureWarningsAboutPotentialTypos() throws RepositoryException {
+        String sql = "SELECT [jcr.uuid] FROM [nt:file]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        // print = true;
+        printMessage(result.getWarnings());
+        assertThat(result.getWarnings().size(), is(1));
+        assertResults(query, result, 0L);
+    }
+
+    @FixFor( "MODE-1888" )
+    @Test
+    public void shouldCaptureWarningsAboutUsingMisspelledColumnOnWrongSelector() throws RepositoryException {
+        String sql = "SELECT file.[jcr.uuid] FROM [nt:file] AS file JOIN [mix:referenceable] AS ref ON ISSAMENODE(file,ref)";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        // print = true;
+        printMessage(result.getWarnings());
+        assertThat(result.getWarnings().size(), is(1));
+        assertResults(query, result, 0L);
+    }
+
+    @FixFor( "MODE-1888" )
+    @Test
+    public void shouldCaptureWarningsAboutUsingColumnOnWrongSelector() throws RepositoryException {
+        String sql = "SELECT file.[jcr:uuid] FROM [nt:file] AS file JOIN [mix:referenceable] AS ref ON ISSAMENODE(file,ref)";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        // print = true;
+        printMessage(result.getWarnings());
+        assertThat(result.getWarnings().size(), is(1));
+        assertResults(query, result, 0L);
+    }
+
+    @FixFor( "MODE-1888" )
+    @Test
+    public void shouldCaptureWarningAboutUseOfResidualProperties() throws RepositoryException {
+        String sql = "SELECT [foo_bar] FROM [nt:unstructured]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        assertThat(result.getWarnings().size(), is(1));
+        // print = true;
+        printMessage(result.getWarnings());
+        assertResults(query, result, 24L);
+    }
+
+    @FixFor( "MODE-1888" )
+    @Test
+    public void shouldNotCaptureWarningAboutUseOfPseudoColumns() throws RepositoryException {
+        String sql = "SELECT [jcr:path] FROM [nt:unstructured]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        assertThat(result.getWarnings().size(), is(0));
+        // print = true;
+        printMessage(result.getWarnings());
+        assertResults(query, result, 24L);
+    }
+
+    @FixFor( "MODE-1888" )
+    @Test
+    public void shouldCaptureWarningAboutUseOfPseudoColumnWithPeriodInsteadOfColonDelimiter() throws RepositoryException {
+        String sql = "SELECT [jcr.path] FROM [nt:unstructured]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        assertThat(result.getWarnings().size(), is(1));
+        // print = true;
+        printMessage(result.getWarnings());
+        assertResults(query, result, 24L);
+    }
+
+    @FixFor( "MODE-1888" )
+    @Test
+    public void shouldCaptureWarningAboutUseOfPseudoColumnWithUnderscoreInsteadOfColonDelimiter() throws RepositoryException {
+        String sql = "SELECT [jcr_path] FROM [nt:unstructured]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        assertThat(result.getWarnings().size(), is(1));
+        // print = true;
+        printMessage(result.getWarnings());
+        assertResults(query, result, 24L);
+    }
+
+    @FixFor( "MODE-1888" )
+    @Test
+    public void shouldCaptureWarningAboutUseOfNonPluralJcrMixinTypeColumn() throws RepositoryException {
+        String sql = "SELECT [jcr:mixinType] FROM [nt:unstructured]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = (org.modeshape.jcr.api.query.QueryResult)query.execute();
+        assertThat(result.getWarnings().size(), is(1));
+        // print = true;
+        printMessage(result.getWarnings());
+        assertResults(query, result, 24L);
+    }
 
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllNodes() throws RepositoryException {
@@ -1348,6 +1445,21 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         assertResultsHaveColumns(result, carColumnNames("car:Car"));
     }
 
+    @FixFor( "MODE-1873" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithSubqueryInCriteriaWhenSubquerySelectsPseudoColumn()
+        throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT [jcr:path] FROM [nt:unstructured] WHERE [pathProperty] IN (SELECT [jcr:path] FROM [nt:unstructured] WHERE PATH() LIKE '/Other/%')",
+                                          Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1); // the 4 types of cars made by makers that make hybrids
+        assertResultsHaveColumns(result, new String[] {"jcr:path"});
+    }
+
     @FixFor( "MODE-909" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderBy() throws RepositoryException {
@@ -1852,17 +1964,18 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1L);
+        assertResultsHaveRows(result, "jcr:path", "/Other/NodeA[2]");
     }
 
-    @Ignore
     @FixFor( "MODE-1829" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithFullTextSearchUsingLeadingWildcard() throws RepositoryException {
         String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, '*earing')";
-        // String sql = "select [jcr:path] from [nt:unstructured] as n where n.[something] LIKE '*earing*'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         // print = true;
+        sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, '*earing*')";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1L);
@@ -1920,6 +2033,33 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, JcrRepository.QueryLanguage.JCR_SQL2);
         QueryResult result = query.execute();
         assertResults(query, result, 1);
+    }
+
+    @FixFor( "MODE-1840" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithBindVariableInsideContains() throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, $expression)";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        query.bindValue("expression", session.getValueFactory().createValue("cat wearing"));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1L);
+        assertResultsHaveColumns(result, new String[] {"jcr:path"});
+        assertResultsHaveRows(result, "jcr:path", "/Other/NodeA[2]");
+    }
+
+    @FixFor( "MODE-1840" )
+    @Test( expected = InvalidQueryException.class )
+    public void shouldNotBeAbleToCreateAndExecuteJcrSql2QueryWithBindVariableInsideContainsIfVariableIsNotBound()
+        throws RepositoryException {
+        String sql = "select [jcr:path] from [nt:unstructured] as n where contains(n.something, $expression)";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // do not bind a value
+        // query.bindValue("expression", session.getValueFactory().createValue("cat wearing"));
+        query.execute();
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -3114,6 +3254,39 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
         assertEquals("f1", n1.getName());
         assertEquals("f2", n2.getName());
+    }
+
+    @Test
+    @FixFor( "MODE-1900" )
+    public void shouldSelectDistinctNodesWhenJoiningMultiValueReferenceProperties() throws Exception {
+        registerNodeTypes(session, "cnd/mode-1900.cnd");
+        Node nodeA = session.getRootNode().addNode("A", "test:node");
+        nodeA.setProperty("test:name", "A");
+
+        Node nodeB = session.getRootNode().addNode("B", "test:node");
+        nodeB.setProperty("test:name", "B");
+        JcrValue nodeBRef = session.getValueFactory().createValue(nodeB);
+
+        Node nodeC = session.getRootNode().addNode("C", "test:node");
+        nodeC.setProperty("test:name", "C");
+        JcrValue nodeCRef = session.getValueFactory().createValue(nodeC);
+
+        Node relationship = nodeA.addNode("relationship", "test:relationship");
+        relationship.setProperty("test:target", new JcrValue[]{nodeBRef, nodeCRef});
+
+        session.save();
+
+        String queryString =  "SELECT DISTINCT target.* " +
+                            "   FROM [test:node] AS node " +
+                            "   JOIN [test:relationship] AS relationship ON ISCHILDNODE(relationship, node) " +
+                            "   JOIN [test:node] AS target ON relationship.[test:target] = target.[jcr:uuid] " +
+                            "   WHERE node.[test:name] = 'A'";
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        QueryResult queryResult = queryManager.createQuery(queryString, Query.JCR_SQL2).execute();
+        if (print) {
+            System.out.println("queryResult = " + queryResult);
+        }
+        assertEquals(2, queryResult.getNodes().getSize());
     }
 
     private void assertNodesAreFound( String queryString,

@@ -1,12 +1,9 @@
 {
     "name" : "Repository with node types",
-    "storage" : {
-        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
-    },
     "workspaces" : {
         "predefined" : ["ws1", "ws2"],
         "default" : "default",
         "allowCreation" : true
     },
-    "node-types" : ["cnd/cars.cnd", "cnd/aircraft.cnd", "cnd/unusedNamespaces.cnd"]
+    "node-types" : ["cnd/cars.cnd", "target/test-classes/cnd/aircraft.cnd", "cnd/unusedNamespaces.cnd"]
 }

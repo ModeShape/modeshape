@@ -24,9 +24,15 @@
 
 package org.modeshape.connector.filesystem;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
@@ -37,12 +43,10 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.SingleUseAbstractTest;
+import org.modeshape.jcr.api.Binary;
+import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.Session;
 import org.modeshape.jcr.api.federation.FederationManager;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 public class FileSystemConnectorTest extends SingleUseAbstractTest {
 
@@ -57,9 +61,11 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     private Projection legacyProjection;
     private Projection noneProjection;
     private Projection[] projections;
+    private JcrTools tools;
 
     @Before
     public void before() throws Exception {
+        tools = new JcrTools();
         readOnlyProjection = new Projection("readonly-files", "target/federation/files-read");
         storeProjection = new Projection("mutable-files-store", "target/federation/files-store");
         jsonProjection = new Projection("mutable-files-json", "target/federation/files-json");
@@ -178,6 +184,22 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     }
 
     @Test
+    @FixFor( "MODE-1882" )
+    public void shouldAllowCreatingNodesInWritablStoreBasedProjection() throws Exception {
+        String actualContent = "This is the content of the file.";
+        tools.uploadFile(session, "/testRoot/store/dir3/newFile.txt", new ByteArrayInputStream(actualContent.getBytes()));
+        session.save();
+
+        // Make sure the file on the file system contains what we put in ...
+        assertFileContains(storeProjection, "dir3/newFile.txt", actualContent.getBytes());
+
+        // Make sure that we can re-read the binary content via JCR ...
+        Node contentNode = session.getNode("/testRoot/store/dir3/newFile.txt/jcr:content");
+        Binary value = (Binary)contentNode.getProperty("jcr:data").getBinary();
+        assertBinaryContains(value, actualContent.getBytes());
+    }
+
+    @Test
     @FixFor( "MODE-1802" )
     public void shouldSupportRootProjection() throws Exception {
         // Clean up the folder that the test creates
@@ -209,12 +231,10 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         assertNotNull(root.getNode("test"));
     }
 
-
     protected void assertNoSidecarFile( Projection projection,
                                         String filePath ) {
         assertThat(projection.getTestFile(filePath + JsonSidecarExtraPropertyStore.DEFAULT_EXTENSION).exists(), is(false));
-        assertThat(projection.getTestFile(filePath + LegacySidecarExtraPropertyStore.DEFAULT_EXTENSION).exists(),
-                   is(false));
+        assertThat(projection.getTestFile(filePath + LegacySidecarExtraPropertyStore.DEFAULT_EXTENSION).exists(), is(false));
         assertThat(projection.getTestFile(filePath + JsonSidecarExtraPropertyStore.DEFAULT_RESOURCE_EXTENSION).exists(),
                    is(false));
         assertThat(projection.getTestFile(filePath + LegacySidecarExtraPropertyStore.DEFAULT_RESOURCE_EXTENSION).exists(),
@@ -227,6 +247,27 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         if (sidecarFile.exists()) return;
         sidecarFile = projection.getTestFile(filePath + JsonSidecarExtraPropertyStore.DEFAULT_RESOURCE_EXTENSION);
         assertThat(sidecarFile.exists(), is(true));
+    }
+
+    protected void assertFileContains( Projection projection,
+                                       String filePath,
+                                       InputStream expectedContent ) throws IOException {
+        assertFileContains(projection, filePath, IoUtil.readBytes(expectedContent));
+    }
+
+    protected void assertFileContains( Projection projection,
+                                       String filePath,
+                                       byte[] expectedContent ) throws IOException {
+        File contentFile = projection.getTestFile(filePath);
+        assertThat(contentFile.exists(), is(true));
+        byte[] actual = IoUtil.readBytes(contentFile);
+        assertThat(actual, is(expectedContent));
+    }
+
+    protected void assertBinaryContains( Binary binaryValue,
+                                         byte[] expectedContent ) throws IOException, RepositoryException {
+        byte[] actual = IoUtil.readBytes(binaryValue.getStream());
+        assertThat(actual, is(expectedContent));
     }
 
     protected void assertLegacySidecarFile( Projection projection,

@@ -44,11 +44,11 @@ class RemoveIndexStorage extends AbstractModeShapeRemoveStepHandler {
 
         // Now see if we need to remove the path service ...
         if (model.has(ModelKeys.RELATIVE_TO)
-                && model.get(ModelKeys.RELATIVE_TO).asString().contains(AddLocalFileSystemIndexStorage.DATA_DIR_VARIABLE)) {
+                && model.get(ModelKeys.RELATIVE_TO).asString().contains(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
             servicesToRemove.add(ModeShapeServiceNames.indexStorageDirectoryServiceName(repositoryName));
         }
         if (model.has(ModelKeys.SOURCE_RELATIVE_TO)
-                && model.get(ModelKeys.SOURCE_RELATIVE_TO).asString().contains(AddLocalFileSystemIndexStorage.DATA_DIR_VARIABLE)) {
+                && model.get(ModelKeys.SOURCE_RELATIVE_TO).asString().contains(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
             servicesToRemove.add(ModeShapeServiceNames.indexSourceStorageDirectoryServiceName(repositoryName));
         }
 

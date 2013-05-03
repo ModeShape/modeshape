@@ -102,12 +102,10 @@ public class ModeShapeLexicon {
     public static final Name DEPTH = new BasicName(Namespace.URI, "depth");
     public static final Name LOCALNAME = new BasicName(Namespace.URI, "localName");
 
-
     /**
-     * The name of the post initialization node which is used to synchronize a cluster of repositories
+     * The name of the node which is used for running 1-time operations
      */
     public static final Name REPOSITORY= new BasicName(Namespace.URI, "repository");
-    public static final Name INITIALIZATION_STATE = new BasicName(Namespace.URI, "initializationState");
 
     /**
      * Federation related items
@@ -118,8 +116,4 @@ public class ModeShapeLexicon {
     public static final Name EXTERNAL_NODE_KEY = new BasicName(Namespace.URI, "externalNodeKey");
     public static final Name PROJECTED_NODE_KEY = new BasicName(Namespace.URI, "projectedNodeKey");
     public static final Name PROJECTION_ALIAS = new BasicName(Namespace.URI, "alias");
-
-    public enum InitializationState {
-        STARTED, FINISHED
-    }
 }

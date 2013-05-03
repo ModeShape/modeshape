@@ -82,7 +82,7 @@
                 "transactionManagerLookup" : {
                     "type" : "string",
                     "default" : "org.infinispan.transaction.lookup.GenericTransactionManagerLookup",
-                    "description" : "The name of the Infinispan class that should be used to find the JTA transaction manager instance. It defaults to 'org.infinispan.transaction.lookup.GenericTransactionManagerLookup'"
+                    "description" : "DEPRECATED: This is no longer used. The transaction manager lookup class should be specified in the Infinispan cache configuration (or in a custom Environment subclass for default caches)."
                 },
                 "binaryStorage" : {
                     "type" : [
@@ -934,8 +934,8 @@
                                         },
                                         "channelConfiguration" : { 
                                             "type" : "string",
-                                            "required" : true,
-                                            "description" : "The JGroups channel configuration. The value should be the path to a resource file on the classpath containing the JGroups configuration."
+                                            "required" : false,
+                                            "description" : "The optional JGroups channel configuration. The value should be the path to a resource file on the classpath containing the JGroups configuration."
                                         },
                                         "description" : {
                                             "type" : "string",
@@ -961,8 +961,8 @@
                                         },
                                         "channelConfiguration" : {
                                             "type" : "string",
-                                            "required" : true,
-                                            "description" : "The JGroups channel configuration. The value should be the path to a resource file on the classpath containing the JGroups configuration."
+                                            "required" : false,
+                                            "description" : "The optional JGroups channel configuration. The value should be the path to a resource file on the classpath containing the JGroups configuration."
                                         },
                                         "description" : {
                                             "type" : "string",

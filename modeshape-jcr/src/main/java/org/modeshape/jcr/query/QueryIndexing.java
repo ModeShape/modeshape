@@ -82,11 +82,12 @@ public interface QueryIndexing {
                       TransactionContext txnCtx );
 
     /**
-     * Retrieve the set of keys of the nodes that are currently stored in the index.
-     *
-     * @return a {@code Set} of {@code NodeKey} instances; never {@code null}
+     * Retrieve whether the indexes were initialized and empty upon startup.
+     * 
+     * @return true if the index(es) initially had no content, or false if there was already at least some content in the indexes
+     *         upon startup
      */
-    Set<NodeKey> indexedNodes();
+    boolean initializedIndexes();
 
     void removeFromIndex( String workspace,
                           Iterable<NodeKey> keys,

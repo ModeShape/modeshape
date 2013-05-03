@@ -328,7 +328,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             // Always update the configuration ...
             RunningState oldState = this.runningState.get();
-            this.config.set(new RepositoryConfiguration(copy, copy.getString(FieldName.NAME), oldConfiguration.environment()));
+            this.config.set(new RepositoryConfiguration(copy.unwrap(), copy.getString(FieldName.NAME), oldConfiguration.environment()));
             if (oldState != null) {
                 assert state.get() == State.RUNNING;
                 // Repository is running, so create a new running state ...
@@ -491,7 +491,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             start();
             logger.debug("Started '{0}' after content has been restored; beginning indexing of content", getName());
             // Reindex all content ...
-            queryManager().reindexContent(false, true, false);
+            queryManager().reindexContent(true, false, false);
             logger.debug("Completed reindexing all content in '{0}' after restore.", getName());
         }
     }
@@ -1200,7 +1200,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                                    MonitorFactory monitorFactory,
                                                    TransactionManager txnMgr ) {
             if (txnMgr == null) {
-                throw new IllegalStateException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName()));
+                throw new ConfigurationException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName()));
             }
 
             switch (mode) {
@@ -1231,7 +1231,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 if (repositoryCache().isInitializingRepository()) {
                     // import initial content for each of the workspaces (this has to be done after the running state has
                     // "started"
-                    this.cache.runSystemOneTimeInitializationOperation(new Callable<Void>() {
+                    this.cache.runOneTimeSystemInitializationOperation(new Callable<Void>() {
                         @Override
                         public Void call() throws Exception {
                             for (String workspaceName : repositoryCache().getWorkspaceNames()) {
@@ -1271,22 +1271,15 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                     switch (when) {
                         case ALWAYS: {
-                            this.repositoryQueryManager.reindexContent(false, includeSystemContent, async);
+                            this.repositoryQueryManager.reindexContent(includeSystemContent, async, false);
                             break;
                         }
                         case IF_MISSING: {
-                            this.repositoryQueryManager.reindexContent(true, includeSystemContent, async);
+                            this.repositoryQueryManager.reindexContent(includeSystemContent, async, true);
                             break;
                         }
                         case NEVER: {
-                            Set<NodeKey> existingIndexes = queryManager().getIndexes().indexedNodes();
-                            if (existingIndexes.isEmpty()) {
-                                logger.info(JcrI18n.noReindex, getName());
-                            } else {
-                                logger.debug("Index rebuild option is 'never' for repository {0} so nothing will be re-indexed. The existing indexed node are: {1}",
-                                             name(),
-                                             existingIndexes);
-                            }
+                            logger.debug(JcrI18n.noReindex.text(getName()));
                             break;
                         }
                     }
@@ -1507,6 +1500,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         protected void shutdown() {
+            //if  reindexing was asynchronous and is still going on, we need to terminate it before we stop any of caches
+            //or we do anything that affects the nodes
+            if (repositoryQueryManager != null) {
+                repositoryQueryManager.stopReindexing();
+            }
+
             // shutdown the connectors
             this.connectors.shutdown();
 
@@ -1733,8 +1732,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                        boolean separateThreadForSystemWorkspace ) {
             RepositoryChangeBus standaloneBus = new RepositoryChangeBus(executor, systemWorkspaceName,
                                                                         separateThreadForSystemWorkspace);
-            return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration,
-                                                                                          standaloneBus) : standaloneBus;
+            return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration, standaloneBus) : standaloneBus;
         }
 
         void suspendExistingUserTransaction() throws SystemException {
@@ -1791,7 +1789,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             final RepositoryNodeTypeManager nodeTypeManager = this.runningState.nodeTypeManager();
             final RepositoryQueryManager queryManager = this.runningState.queryManager();
             if (nodeTypeManager == null || queryManager == null) {
-                //query isn't enabled most likely, so we'll only record statistics
+                // query isn't enabled most likely, so we'll only record statistics
                 return statisticsMonitor();
             }
             return indexingMonitor(nodeTypeManager, queryManager);
@@ -1801,7 +1799,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                          RepositoryQueryManager queryManager ) {
             final NodeTypeSchemata schemata = nodeTypeManager.getRepositorySchemata();
             final QueryIndexing indexes = queryManager.getIndexes();
-            //a transaction will be returned only if it exists and is in ACTIVE status
+            // a transaction will be returned only if it exists and is in ACTIVE status
             final Transaction txn = currentTransaction();
             final TransactionContext txnCtx = new TransactionContext() {
                 @Override
@@ -1828,11 +1826,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 }
             };
             // Create a monitor that forwards everything to the correct component ...
+            final RunningState runningState = this.runningState;
             return new Monitor() {
                 @Override
                 public void recordChanged( long changedNodesCount ) {
                     // ValueMetric.SESSION_SAVES are tracked in JcrSession.save() ...
-                    runningState.statistics.increment(ValueMetric.NODE_CHANGES, changedNodesCount);
+                    runningState.statistics().increment(ValueMetric.NODE_CHANGES, changedNodesCount);
                 }
 
                 @Override
@@ -1866,11 +1865,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private Monitor statisticsMonitor() {
             // Happens only when the repository's initial content is being initialized,
             // so return a monitor that captures statistics but does not index ...
+            final RunningState runningState = this.runningState;
             return new Monitor() {
                 @Override
                 public void recordChanged( long changedNodesCount ) {
                     // ValueMetric.SESSION_SAVES are tracked in JcrSession.save() ...
-                    runningState.statistics.increment(ValueMetric.NODE_CHANGES, changedNodesCount);
+                    runningState.statistics().increment(ValueMetric.NODE_CHANGES, changedNodesCount);
                 }
 
                 @Override

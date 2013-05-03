@@ -95,6 +95,48 @@ public class StringUtil {
     }
 
     /**
+     * Combine the supplied values into a single string, using the supplied string to delimit values.
+     * 
+     * @param values the values to be combined; may not be null, but may contain null values (which are skipped)
+     * @param delimiter the characters to place between each of the values; may not be null
+     * @return the joined string; never null
+     * @see String#split(String)
+     */
+    public static String join( Object[] values,
+                               String delimiter ) {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (Object segment : values) {
+            if (segment == null) continue;
+            if (first) first = false;
+            else sb.append(delimiter);
+            sb.append(segment);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Combine the supplied values into a single string, using the supplied string to delimit values.
+     * 
+     * @param values the values to be combined; may not be null, but may contain null values (which are skipped)
+     * @param delimiter the characters to place between each of the values; may not be null
+     * @return the joined string; never null
+     * @see String#split(String)
+     */
+    public static String join( Iterable<?> values,
+                               String delimiter ) {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (Object segment : values) {
+            if (segment == null) continue;
+            if (first) first = false;
+            else sb.append(delimiter);
+            sb.append(segment);
+        }
+        return sb.toString();
+    }
+
+    /**
      * Create a string by substituting the parameters into all key occurrences in the supplied format. The pattern consists of
      * zero or more keys of the form <code>{n}</code>, where <code>n</code> is an integer starting at 0. Therefore, the first
      * parameter replaces all occurrences of "{0}", the second parameter replaces all occurrences of "{1}", etc.

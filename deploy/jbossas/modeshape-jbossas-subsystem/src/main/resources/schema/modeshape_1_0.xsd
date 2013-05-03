@@ -686,7 +686,7 @@
           each ModeShape process starts up.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
-    <xs:attribute name="rebuild-upon-startup-mode" type="synchronous-enum" use="optional" default="sync">
+    <xs:attribute name="rebuild-upon-startup-mode" type="synchronous-enum" use="optional" default="async">
       <xs:annotation>
         <xs:documentation>Specifies whether the rebuild process should be done synchronously or asynchronously</xs:documentation>
       </xs:annotation>
@@ -831,15 +831,6 @@
       </xs:annotation>
     </xs:attribute>
   </xs:attributeGroup>
-
-  <xs:attributeGroup name="jgroups-backend-attributes">
-    <xs:attribute name="channel-name" type="xs:string" use="required">
-      <xs:annotation>
-        <xs:documentation>The name of the JGroups channel used for indexing updates.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-  </xs:attributeGroup>
-
 
   <!-- Global simple types -->
   <xs:simpleType name="index-format">

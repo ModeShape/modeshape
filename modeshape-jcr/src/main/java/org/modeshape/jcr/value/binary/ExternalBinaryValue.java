@@ -40,6 +40,7 @@ public abstract class ExternalBinaryValue extends AbstractBinary {
     private transient MimeTypeDetector mimeTypeDetector;
     private transient String nameHint; // only needed for MIME type detection; not needed once MIME type is known
 
+    private final String id;
     private String mimeType;
     private long size;
     private boolean detectedMimeType = false;
@@ -48,19 +49,41 @@ public abstract class ExternalBinaryValue extends AbstractBinary {
     /**
      * Creates a new instance, with the given params
      * 
-     * @param id the binary id, never {@code null}
+     * @param sha1 the SHA-1 of the binary, never {@code null}
      * @param sourceName name of the external source which owns the value, {@code never null}
+     * @param id the source-specific identifier of the binary, never {@code null}
      * @param size the length of the binary
      * @param nameHint optional name which can help with mime-type detection
      * @param mimeTypeDetector the repository's {@link MimeTypeDetector}
      */
-    public ExternalBinaryValue( String id,
-                                String sourceName,
-                                long size,
-                                String nameHint,
-                                MimeTypeDetector mimeTypeDetector ) {
-        super(new BinaryKey(id));
+    protected ExternalBinaryValue( String sha1,
+                                   String sourceName,
+                                   String id,
+                                   long size,
+                                   String nameHint,
+                                   MimeTypeDetector mimeTypeDetector ) {
+        this(new BinaryKey(sha1), id, sourceName, size, nameHint, mimeTypeDetector);
+    }
 
+    /**
+     * Creates a new instance, with the given params
+     * 
+     * @param key the binary key, never {@code null}
+     * @param sourceName name of the external source which owns the value, {@code never null}
+     * @param id the source-specific identifier of the binary, never {@code null}
+     * @param size the length of the binary
+     * @param nameHint optional name which can help with mime-type detection
+     * @param mimeTypeDetector the repository's {@link MimeTypeDetector}
+     */
+    protected ExternalBinaryValue( BinaryKey key,
+                                   String sourceName,
+                                   String id,
+                                   long size,
+                                   String nameHint,
+                                   MimeTypeDetector mimeTypeDetector ) {
+        super(key);
+        assert id != null;
+        this.id = id;
         this.sourceName = sourceName;
         this.size = size;
         this.nameHint = nameHint;
@@ -68,12 +91,12 @@ public abstract class ExternalBinaryValue extends AbstractBinary {
     }
 
     /**
-     * Returns this binary's id.
+     * Returns this binary's source-specific identifier.
      * 
      * @return a non-null string
      */
     public String getId() {
-        return getKey().toString();
+        return id;
     }
 
     /**

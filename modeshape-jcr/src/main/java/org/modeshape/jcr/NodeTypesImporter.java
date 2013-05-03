@@ -36,6 +36,7 @@ import javax.jcr.nodetype.NodeTypeDefinition;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.value.NamespaceRegistry;
 
 /**
@@ -88,18 +89,16 @@ public final class NodeTypesImporter {
         }
 
         void execute( String cndFile ) {
-            InputStream cndFileStream = runningState.environment()
-                                                    .getClassLoader(NodeTypesImporter.class.getClassLoader())
-                                                    .getResourceAsStream(cndFile);
-
-            if (cndFileStream == null) {
-                LOGGER.warn(JcrI18n.cannotLoadCndFile, cndFile);
-                return;
-            }
-
-            CndImporter cndImporter = new CndImporter(runningState.context(), true);
-            Problems importProblems = new SimpleProblems();
             try {
+                InputStream cndFileStream = getInputStreamForFile(cndFile);
+
+                if (cndFileStream == null) {
+                    LOGGER.warn(JcrI18n.cannotLoadCndFile, cndFile);
+                    return;
+                }
+
+                CndImporter cndImporter = new CndImporter(runningState.context(), true);
+                Problems importProblems = new SimpleProblems();
                 cndImporter.importFrom(cndFileStream, importProblems, cndFile);
                 if (importProblems.hasErrors()) {
                     importProblems.writeTo(LOGGER);
@@ -110,6 +109,13 @@ public final class NodeTypesImporter {
             } catch (IOException e) {
                 LOGGER.error(e, JcrI18n.errorReadingCndFile, cndFile);
             }
+        }
+
+        private InputStream getInputStreamForFile( String cndFileString ) {
+            return IoUtil.getResourceAsStream(cndFileString,
+                                              runningState.environment().getClassLoader(
+                                                      NodeTypesImporter.class.getClassLoader()),
+                                              null);
         }
 
         Set<NamespaceRegistry.Namespace> getNamespaces() {

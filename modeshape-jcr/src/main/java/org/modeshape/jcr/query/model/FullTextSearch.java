@@ -35,7 +35,6 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-import javax.jcr.query.qom.StaticOperand;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.util.CheckArg;
@@ -266,6 +265,10 @@ public class FullTextSearch implements Constraint, javax.jcr.query.qom.FullTextS
             return true;
         }
         return false;
+    }
+
+    public FullTextSearch withFullTextExpression( String expression ) {
+        return new FullTextSearch(selectorName, propertyName, expression);
     }
 
     @Override

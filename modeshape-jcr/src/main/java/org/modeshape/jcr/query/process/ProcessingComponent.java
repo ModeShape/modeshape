@@ -499,32 +499,17 @@ public abstract class ProcessingComponent {
         return null;
     }
 
-    protected Comparator<Object[]> createSortComparator( QueryContext context,
-                                                         Columns columns ) {
+    protected Comparator<Object[]> createSortComparator( final QueryContext context,
+                                                         final Columns columns ) {
         assert context != null;
-        final int numLocations = columns.getLocationCount();
-        assert numLocations > 0;
         final Comparator<Location> typeComparator = Location.getComparator();
-        if (numLocations == 1) {
-            // We can do this a tad faster if we know there is only one Location object ...
-            final int locationIndex = columns.getLocationStartIndexInTuple();
-            return new Comparator<Object[]>() {
-                @Override
-                public int compare( Object[] tuple1,
-                                    Object[] tuple2 ) {
-                    Location value1 = (Location)tuple1[locationIndex];
-                    Location value2 = (Location)tuple2[locationIndex];
-                    return typeComparator.compare(value1, value2);
-                }
-            };
-        }
-        final int firstLocationIndex = columns.getLocationStartIndexInTuple();
+        final int[] locationIndexes = getLocationIndexes(columns);
         return new Comparator<Object[]>() {
             @Override
             public int compare( Object[] tuple1,
                                 Object[] tuple2 ) {
                 int result = 0;
-                for (int locationIndex = firstLocationIndex; locationIndex != numLocations; ++locationIndex) {
+                for (int locationIndex : locationIndexes) {
                     Location value1 = (Location)tuple1[locationIndex];
                     Location value2 = (Location)tuple2[locationIndex];
                     result = typeComparator.compare(value1, value2);
@@ -533,5 +518,14 @@ public abstract class ProcessingComponent {
                 return result;
             }
         };
+    }
+
+    protected int[] getLocationIndexes(org.modeshape.jcr.query.QueryResults.Columns columns) {
+        int[] locationIndexes = new int[columns.getLocationCount()];
+        int idx = 0;
+        for (String selectorName : columns.getSelectorNames()) {
+            locationIndexes[idx++] = columns.getLocationIndex(selectorName);
+        }
+        return locationIndexes;
     }
 }

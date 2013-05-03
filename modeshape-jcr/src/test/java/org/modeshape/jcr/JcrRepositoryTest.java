@@ -87,13 +87,19 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
                 session.logout();
             } finally {
                 session = null;
-                try {
-                    TestingUtil.killRepositories(repository);
-                } finally {
-                    repository = null;
-                    config = null;
-                    environment.shutdown();
-                }
+            }
+        }
+        shutdownDefaultRepository();
+        environment.shutdown();
+    }
+
+    private void shutdownDefaultRepository() {
+        if (repository != null) {
+            try {
+                TestingUtil.killRepositories(repository);
+            } finally {
+                repository = null;
+                config = null;
             }
         }
     }
@@ -104,8 +110,9 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
 
     @Test
     public void shouldCreateRepositoryInstanceWithoutPassingInCacheManager() throws Exception {
+        shutdownDefaultRepository();
         RepositoryConfiguration config = new RepositoryConfiguration("repoName");
-        JcrRepository repository = new JcrRepository(config);
+        repository = new JcrRepository(config);
         repository.start();
         try {
             Session session = repository.login();
@@ -169,8 +176,10 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
     @FixFor( "MODE-1834" )
     @Test
     public void shouldAllowCreatingNewWorkspacesByDefaultWhenUsingTransactionManagerWithOptimisticLocking() throws Exception {
+        shutdownDefaultRepository();
+
         RepositoryConfiguration config = RepositoryConfiguration.read("config/repo-config-inmemory-jbosstxn-optimistic.json");
-        JcrRepository repository = new JcrRepository(config);
+        repository = new JcrRepository(config);
         repository.start();
 
         // Verify the workspace does not exist yet ...
@@ -191,8 +200,10 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
     @FixFor( "MODE-1834" )
     @Test
     public void shouldAllowCreatingNewWorkspacesByDefaultWhenUsingTransactionManagerWithPessimisticLocking() throws Exception {
+        shutdownDefaultRepository();
+
         RepositoryConfiguration config = RepositoryConfiguration.read("config/repo-config-inmemory-jbosstxn.json");
-        JcrRepository repository = new JcrRepository(config);
+        repository = new JcrRepository(config);
         repository.start();
 
         // Verify the workspace does not exist yet ...
@@ -521,6 +532,8 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
 
     @Test
     public void shouldAllowCreatingWorkspaces() throws Exception {
+        shutdownDefaultRepository();
+
         RepositoryConfiguration config = null;
         config = RepositoryConfiguration.read("{ \"name\" : \"repoName\", \"workspaces\" : { \"allowCreation\" : true } }");
         config = new RepositoryConfiguration(config.getDocument(), "repoName", environment);
@@ -944,8 +957,10 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
     @FixFor( "MODE-1805" )
     @Test
     public void shouldCreateRepositoryInstanceWithQueriesDisabled() throws Exception {
+        shutdownDefaultRepository();
+
         RepositoryConfiguration config = RepositoryConfiguration.read("{ 'name' : 'noQueries', 'query' : { 'enabled' : false } }");
-        JcrRepository repository = new JcrRepository(config);
+        repository = new JcrRepository(config);
         repository.start();
         try {
             Session session = repository.login();

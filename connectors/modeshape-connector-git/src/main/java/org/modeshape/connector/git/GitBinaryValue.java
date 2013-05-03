@@ -48,7 +48,7 @@ public class GitBinaryValue extends ExternalBinaryValue {
                            String sourceName,
                            String nameHint,
                            MimeTypeDetector mimeTypeDetector ) {
-        super(id.getName(), sourceName, loader.getSize(), nameHint, mimeTypeDetector);
+        super(id.getName(), sourceName, id.getName(), loader.getSize(), nameHint, mimeTypeDetector);
         this.loader = loader;
     }
 

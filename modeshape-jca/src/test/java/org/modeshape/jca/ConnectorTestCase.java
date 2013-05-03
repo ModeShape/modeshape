@@ -23,23 +23,18 @@ package org.modeshape.jca;
 
 import java.util.UUID;
 import java.util.logging.Logger;
-
 import javax.annotation.Resource;
 import javax.jcr.Node;
 import javax.jcr.Session;
-
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
-
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.ResourceAdapterArchive;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static org.junit.Assert.*;
-
-import org.modeshape.jca.*;
+import org.modeshape.jcr.AbstractTransactionalTest;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * ConnectorTestCase
@@ -47,7 +42,7 @@ import org.modeshape.jca.*;
  * @author kulikov
  */
 @RunWith(Arquillian.class)
-public class ConnectorTestCase {
+public class ConnectorTestCase extends AbstractTransactionalTest {
 
     private static Logger log = Logger.getLogger("ConnectorTestCase");
     private static String deploymentName = "ConnectorTestCase";

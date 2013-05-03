@@ -44,6 +44,7 @@ public final class JcrI18n {
     public static I18n repositoryIsCurrentlyBeingRestored;
     public static I18n repositoryIsBeingRestoredAndCannotBeStarted;
     public static I18n repositoryCannotBeStartedWithoutTransactionalSupport;
+    public static I18n workspaceCacheShouldNotBeTransactional;
     public static I18n repositoryReferencesNonExistantSource;
     public static I18n indexRebuildingStarted;
     public static I18n indexRebuildingComplete;
@@ -216,6 +217,7 @@ public final class JcrI18n {
     public static I18n unableToSetFieldOnInstance;
     public static I18n missingFieldOnInstance;
     public static I18n missingComponentType;
+    public static I18n repositoryConfigurationContainsDeprecatedField;
 
     public static I18n typeMissingWhenRegisteringEngineInJndi;
     public static I18n repositoryNameNotProvidedWhenRegisteringRepositoryInJndi;
@@ -362,6 +364,7 @@ public final class JcrI18n {
     public static I18n cannotCheckinNodeWithAbortProperty;
     public static I18n cannotCheckinNodeWithAbortChildNode;
     public static I18n noExistingVersionForRestore;
+    public static I18n invalidVersionForRestore;
     public static I18n versionNotInMergeFailed;
     public static I18n unrootedVersionsInRestore;
     public static I18n errorDuringCheckinNode;

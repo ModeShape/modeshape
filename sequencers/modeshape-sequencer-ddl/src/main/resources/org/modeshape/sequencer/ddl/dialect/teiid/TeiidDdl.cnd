@@ -1,0 +1,158 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors. 
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<ddl='http://www.modeshape.org/ddl/1.0'>
+<teiidddl='http://www.modeshape.org/ddl/teiid/1.0'>
+
+// =============================================================================
+// Table Constraint
+// =============================================================================
+
+[teiidddl:constraint] abstract mixin
+- teiidddl:constraintType (string) < 'PRIMARY KEY', 'UNIQUE', 'ACCESSPATTERN', 'FOREIGN KEY', 'INDEX'
+- teiidddl:tableElementRefs (reference) multiple
+ 
+[teiidddl:tableElementConstraint] > teiidddl:constraint mixin
+- teiidddl:constraintType (string) mandatory < 'PRIMARY KEY', 'UNIQUE', 'ACCESSPATTERN'
+
+[teiidddl:foreignKeyConstraint] > teiidddl:constraint mixin
+- teiidddl:constraintType (string) = 'FOREIGN KEY' mandatory autocreated < 'FOREIGN KEY'
+- teiidddl:tableRef (reference) mandatory
+- teiidddl:tableRefElementRefs (reference) multiple
+ 
+[teiidddl:indexConstraint] > teiidddl:constraint mixin
+- teiidddl:constraintType (string) = 'INDEX' mandatory autocreated < 'INDEX'
+- teiidddl:expression (string)
+
+// =============================================================================
+// SCHEMA ELEMENT
+// =============================================================================
+
+[teiidddl:schemaElement] mixin
+- teiidddl:schemaElementType (string) = 'FOREIGN' mandatory autocreated < 'FOREIGN', 'VIRTUAL'
+
+// =============================================================================
+// CREATE TABLE
+// =============================================================================
+
+[teiidddl:tableElement] > ddl:columnDefinition, mix:referenceable mixin
+- teiidddl:autoIncrement (boolean) = 'false'
+- ddl:nullable (string) = 'NULL' mandatory autocreated < 'NULL', 'NOT NULL'
++ * (ddl:statementOption) = ddl:statementOption 
+
+[teiidddl:abstractCreateTable] > ddl:createTableStatement, teiidddl:schemaElement, mix:referenceable abstract mixin
+- teiidddl:queryExpression (string)
++ * (teiidddl:constraint) = teiidddl:constraint sns
+
+[teiidddl:createTable] > teiidddl:abstractCreateTable mixin
+[teiidddl:createView] > teiidddl:abstractCreateTable mixin
+
+// =============================================================================
+// CREATE PROCEDURE
+// =============================================================================
+
+[teiidddl:procedureParameter] > mix:referenceable mixin
+- teiidddl:parameterType (string) = 'IN' mandatory autocreated < 'IN', 'OUT', 'INOUT', 'VARIADIC'
+- teiidddl:result (boolean) = 'false' autocreated
+- ddl:nullable (string) = 'NULL' mandatory autocreated < 'NULL', 'NOT NULL'
+- ddl:datatypeName (STRING)
+- ddl:datatypeLength (LONG)
+- ddl:datatypePrecision (LONG)
+- ddl:datatypeScale (LONG)
+- ddl:defaultOption (STRING) < 'LITERAL', 'DATETIME', 'USER', 'CURRENT_USER', 'SESSION_USER', 'SYSTEM_USER', 'NULL'
+- ddl:defaultValue (STRING)
+- ddl:defaultPrecision (LONG)
++ * (ddl:statementOption) = ddl:statementOption
+
+[teiidddl:resultColumn] mixin
+- ddl:datatypeName (string)
+- ddl:datatypeLength (long)
+- ddl:datatypePrecision (long)
+- ddl:datatypeScale (long)
+- ddl:nullable (string) = 'NULL' mandatory autocreated < 'NULL', 'NOT NULL'
++ * (ddl:statementOption) = ddl:statementOption
+
+[teiidddl:resultSet] abstract mixin
+
+[teiidddl:resultDataType] > teiidddl:resultSet, teiidddl:resultColumn mixin
+
+[teiidddl:resultColumns] > teiidddl:resultSet mixin
+- teiidddl:table (boolean) = 'false' autocreated
++ * (teiidddl:resultColumn) = teiidddl:resultColumn
+
+[teiidddl:abstractCreateProcedure] > ddl:creatable, ddl:statement, teiidddl:schemaElement abstract mixin
++ * (teiidddl:procedureParameter) = teiidddl:procedureParameter
++ resultSet (teiidddl:resultSet)
++ * (ddl:statementOption) = ddl:statementOption
+
+[teiidddl:createFunction] > teiidddl:abstractCreateProcedure mixin
+
+[teiidddl:createProcedure] > teiidddl:abstractCreateProcedure, mix:referenceable mixin
+- teiidddl:statement (string)
+
+// =============================================================================
+// ALTER OPTIONS
+// =============================================================================
+
+[teiidddl:alterOptionsList] mixin
+- teiidddl:dropped (string) multiple
++ * (ddl:statementOption) = ddl:statementOption
+
+[teiidddl:alterOptions] > ddl:creatable, ddl:statement, teiidddl:schemaElement abstract mixin
+- teiidddl:reference (reference) mandatory
++ alters (teiidddl:alterOptionsList)
+
+[teiidddl:alterTable] > teiidddl:alterOptions mixin
+[teiidddl:alterView] > teiidddl:alterOptions mixin
+[teiidddl:alterProcedure] > teiidddl:alterOptions mixin
+
+[teiidddl:alterColumn] > teiidddl:alterOptionsList, mix:referenceable mixin
+- teiidddl:reference (reference) mandatory
+
+[teiidddl:alterParameter] > teiidddl:alterOptionsList, mix:referenceable mixin
+- teiidddl:reference (reference) mandatory
+
+// =============================================================================
+// CREATE TRIGGER - use node type name as name of trigger
+// =============================================================================
+
+[teiidddl:triggerRowAction] mixin
+- teiidddl:action (string) mandatory
+
+[teiidddl:createTrigger] > ddl:creatable, ddl:statement mixin
+- teiidddl:insteadOf (string) mandatory < 'INSERT', 'UPDATE', 'DELETE'
+- teiidddl:tableRef (reference) mandatory
+- teiidddl:atomic (boolean) = 'true' autocreated
++ rowAction (teiidddl:triggerRowAction) = teiidddl:triggerRowAction multiple sns
++ * (ddl:statementOption) = ddl:statementOption
+
+// =============================================================================
+// OPTION NAMESPACE
+// =============================================================================
+
+[teiidddl:optionNamespace] > ddl:statement mixin
+- teiidddl:uri (string) mandatory

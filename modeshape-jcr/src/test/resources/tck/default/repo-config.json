@@ -5,15 +5,13 @@
         "default" : "default",
         "allowCreation" : true
     },
-    "storage" : {
-        "transactionManagerLookup" : "org.infinispan.transaction.lookup.DummyTransactionManagerLookup"
-    },
     "query" : {
         "enabled" : true,
         "enableFullTextSearch" : true,
         "indexing": {
             "rebuildOnStartup": {
-                "includeSystemContent": true
+                "includeSystemContent": true,
+                "mode" : "sync"
             }
         }
     },

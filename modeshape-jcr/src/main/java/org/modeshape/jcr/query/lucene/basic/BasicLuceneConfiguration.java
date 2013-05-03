@@ -126,6 +126,9 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
                 if (configFile.exists() && configFile.isFile() && configFile.canRead() && configFile.getName().endsWith(".xml")) {
                     // Looks like a file and ends in ".xml", so we'll assume a file ...
                     setProperty("hibernate.search.infinispan.configuration_resourcename", configFile.getAbsolutePath());
+                } else if (getClass().getClassLoader().getResourceAsStream(cacheConfigValue) != null) {
+                    // it's a resource accessible via this CL, so Hibernate Search should find it
+                    setProperty("hibernate.search.infinispan.configuration_resourcename", cacheConfigValue);
                 } else {
                     // Must be a JNDI reference ??
                     setProperty("hibernate.search.infinispan.cachemanager_jndiname", cacheConfigValue.trim());

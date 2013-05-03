@@ -185,11 +185,6 @@ public class AddRepository extends AbstractAddStepHandler {
                                   repositoryService.getChannelFactoryInjector());
         }
 
-        // Add dependency to the transaction manager ...
-        builder.addDependency(ServiceName.JBOSS.append("txn", "TransactionManager"),
-                              TransactionManager.class,
-                              repositoryService.getTransactionManagerInjector());
-
         // Add dependency to the Infinispan cache container used for content ...
         builder.addDependency(ServiceName.JBOSS.append("infinispan", namedContainer),
                               CacheContainer.class,
@@ -254,7 +249,7 @@ public class AddRepository extends AbstractAddStepHandler {
         ServiceName dataDirServiceName = ModeShapeServiceNames.dataDirectoryServiceName(repositoryName);
         ServiceController<String> dataDirServiceController = RelativePathService.addService(dataDirServiceName,
                                                                                             "modeshape/" + repositoryName,
-                                                                                            ModeShapeExtension.DATA_DIR_VARIABLE,
+                                                                                            ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE,
                                                                                             target);
         newControllers.add(dataDirServiceController);
         builder.addDependency(dataDirServiceName, String.class, repositoryService.getDataDirectoryPathInjector());
@@ -383,7 +378,7 @@ public class AddRepository extends AbstractAddStepHandler {
         }
 
         if (model.hasDefined(ModelKeys.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT)) {
-            boolean rebuildIncludeSystemContent = ModelAttributes.REBUILD_INDEXES_UPON_INCLUDE_SYSTEM_CONTENT.resolveModelAttribute(context,
+            boolean rebuildIncludeSystemContent = ModelAttributes.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT.resolveModelAttribute(context,
                                                                                                                                     model)
                                                                                                              .asBoolean();
             rebuildIndexingOptions.setBoolean(FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT, rebuildIncludeSystemContent);
@@ -412,7 +407,6 @@ public class AddRepository extends AbstractAddStepHandler {
                                                     EditableDocument configDoc ) {
         EditableDocument storage = configDoc.getOrCreateDocument(FieldName.STORAGE);
         storage.set(FieldName.CACHE_NAME, cacheName);
-        storage.set(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP, JBossTransactionManagerLookup.class.getName());
         // The proper container will be injected into the RepositoryService, so use the fixed container name ...
         storage.set(FieldName.CACHE_CONFIGURATION, RepositoryService.CONTENT_CONTAINER_NAME);
     }

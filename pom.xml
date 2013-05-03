@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.modeshape</groupId>
     <artifactId>modeshape-parent</artifactId>
-	  <version>3.2-SNAPSHOT</version>
+	  <version>3.3-SNAPSHOT</version>
     <relativePath>modeshape-parent/pom.xml</relativePath>
   </parent>
 
@@ -41,12 +41,18 @@
         <!-- 
           JCA Resource adapter
     	-->
-    	<module>modeshape-jca</module> 
+    	<module>modeshape-jca</module>
+
+        <!--
+          The JBoss AS7 subsystem needs the web components and (local) JDBC drivers.
+        -->
+        <module>deploy/jbossas</module>
+        <module>modeshape-distribution</module>
 
         <!-- Finally the BOMs -->
         <module>boms/modeshape-bom-parent</module>
         <module>boms/modeshape-bom-api</module>
-        <module>boms/modeshape-bom-jbossas</module>
+        <module>boms/modeshape-bom-jbosseap</module>
         <module>boms/modeshape-bom-embedded</module>
         <module>boms/modeshape-bom-remote-client</module>
     </modules>
@@ -77,11 +83,6 @@
 			    Build the distribution before running the integration tests, 
 			    as some of the integration tests rely upon the distributions
 			  -->
-                <!--
-                  The JBoss AS7 subsystem needs the web components and (local) JDBC drivers.
-                -->
-                <module>deploy/jbossas</module>
-                <module>modeshape-distribution</module>
 				<module>integration</module>
 			</modules>
 		</profile>
@@ -96,8 +97,6 @@
                 <!--
                     The JBoss AS7 subsystem needs the web components and (local) JDBC drivers.
                 -->
-                <module>deploy/jbossas</module>
-                <module>modeshape-distribution</module>
                 <module>modeshape-performance-tests</module>
             </modules>
         </profile>
@@ -109,13 +108,8 @@
         <profile>
             <id>assembly</id>
             <modules>
-                <!--
-                   The JBoss AS7 subsystem needs the web components and (local) JDBC drivers.
-                 -->
-                <module>deploy/jbossas</module>
                 <module>modeshape-client</module>
                 <module>demos</module>
-                <module>modeshape-distribution</module>
                 <module>integration</module>
             </modules>
         </profile>

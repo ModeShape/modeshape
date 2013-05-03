@@ -34,6 +34,7 @@ import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlParser;
 import org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlParser;
 import org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlParser;
+import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlParser;
 import org.modeshape.sequencer.ddl.node.AstNode;
 import org.modeshape.sequencer.ddl.node.AstNodeFactory;
 
@@ -59,6 +60,7 @@ public class DdlParsers {
         parsers.add(new OracleDdlParser());
         parsers.add(new DerbyDdlParser());
         parsers.add(new PostgresDdlParser());
+        parsers.add(new TeiidDdlParser());
         BUILTIN_PARSERS = Collections.unmodifiableList(parsers);
     }
 

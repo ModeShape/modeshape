@@ -31,6 +31,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
@@ -197,6 +199,11 @@ public class TestUtil {
             @Override
             public String getPlan() {
                 return null;
+            }
+
+            @Override
+            public Collection<String> getWarnings() {
+                return Collections.emptySet();
             }
 
             @Override

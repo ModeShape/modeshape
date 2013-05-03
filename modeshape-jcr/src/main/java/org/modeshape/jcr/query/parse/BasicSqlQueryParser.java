@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.CommonI18n;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
@@ -697,11 +698,23 @@ public class BasicSqlQueryParser implements QueryParser {
             }
             tokens.consume(',');
 
-            // Followed by the full text search expression (don't remove nested quotes!!!) ...
-            String expression = removeBracketsAndQuotes(tokens.consume(), false, tokens.previousPosition());
-            Term term = parseFullTextSearchExpression(expression, tokens.previousPosition());
+            if (tokens.canConsume('$')) {
+                // The value parameter is a bind variable ...
+                BindVariableName var = parseBindVariableName(tokens, typeSystem);
+                try {
+                    constraint = fullTextSearch(selectorName, propertyName, var);
+                } catch (RepositoryException e) {
+                    String msg = GraphI18n.functionHasInvalidBindVariable.text("CONTAINS()", pos.getLine(), pos.getColumn(), var);
+                    throw new ParsingException(pos, msg);
+                }
+
+            } else {
+                // It's just a full text search expression (don't remove nested quotes!!!) ...
+                String expression = removeBracketsAndQuotes(tokens.consume(), false, tokens.previousPosition());
+                Term term = parseFullTextSearchExpression(expression, tokens.previousPosition());
+                constraint = fullTextSearch(selectorName, propertyName, expression, term);
+            }
             tokens.consume(")");
-            constraint = fullTextSearch(selectorName, propertyName, expression, term);
         } else if (tokens.canConsume("ISSAMENODE", "(")) {
             SelectorName selectorName = null;
             if (tokens.matches(ANY_VALUE, ")")) {
@@ -905,14 +918,7 @@ public class BasicSqlQueryParser implements QueryParser {
     protected StaticOperand parseStaticOperand( TokenStream tokens,
                                                 TypeSystem typeSystem ) {
         if (tokens.canConsume('$')) {
-            // The variable name must conform to a valid prefix, which is defined as a valid NCName ...
-            String value = tokens.consume();
-            if (!XmlCharacters.isValidNcName(value)) {
-                Position pos = tokens.previousPosition();
-                String msg = GraphI18n.bindVariableMustConformToNcName.text(value, pos.getLine(), pos.getColumn());
-                throw new ParsingException(pos, msg);
-            }
-            return bindVariableName(value);
+            return parseBindVariableName(tokens, typeSystem);
         }
         if (tokens.canConsume('(')) {
             // Sometimes the subqueries are wrapped with parentheses ...
@@ -926,6 +932,18 @@ public class BasicSqlQueryParser implements QueryParser {
             return subquery(subqueryExpression);
         }
         return parseLiteral(tokens, typeSystem);
+    }
+
+    protected BindVariableName parseBindVariableName( TokenStream tokens,
+                                                      TypeSystem typeSystem ) {
+        // The variable name must conform to a valid prefix, which is defined as a valid NCName ...
+        String value = tokens.consume();
+        if (!XmlCharacters.isValidNcName(value)) {
+            Position pos = tokens.previousPosition();
+            String msg = GraphI18n.bindVariableMustConformToNcName.text(value, pos.getLine(), pos.getColumn());
+            throw new ParsingException(pos, msg);
+        }
+        return bindVariableName(value);
     }
 
     protected Subquery subquery( QueryCommand queryCommand ) {
@@ -1468,6 +1486,12 @@ public class BasicSqlQueryParser implements QueryParser {
                                              String expression,
                                              Term term ) {
         return new FullTextSearch(name, propertyName, expression, term);
+    }
+
+    protected FullTextSearch fullTextSearch( SelectorName name,
+                                             String propertyName,
+                                             StaticOperand expression ) throws RepositoryException {
+        return new FullTextSearch(name, propertyName, expression, null);
     }
 
     protected SameNode sameNode( SelectorName name,

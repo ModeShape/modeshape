@@ -28,6 +28,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -39,10 +40,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.collection.LinkedListMultimap;
+import org.modeshape.common.collection.Multimap;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.api.value.DateTime;
+import org.modeshape.jcr.value.basic.BasicName;
+import org.modeshape.jcr.value.basic.BasicPath;
+import org.modeshape.jcr.value.basic.ChildPath;
+import org.modeshape.jcr.value.basic.IdentifierPath;
 import org.modeshape.jcr.value.basic.JodaDateTime;
+import org.modeshape.jcr.value.basic.NodeKeyReference;
+import org.modeshape.jcr.value.basic.RootPath;
+import org.modeshape.jcr.value.basic.StringReference;
+import org.modeshape.jcr.value.basic.UuidReference;
 
 /**
  * The data types for property values.
@@ -57,11 +68,14 @@ public enum PropertyType {
     DECIMAL("Decimal", ValueComparators.DECIMAL_COMPARATOR, new ObjectCanonicalizer(), BigDecimal.class),
     DATE("Date", ValueComparators.DATE_TIME_COMPARATOR, new DateCanonicalizer(), DateTime.class, Calendar.class, Date.class),
     BOOLEAN("Boolean", ValueComparators.BOOLEAN_COMPARATOR, new ObjectCanonicalizer(), Boolean.class),
-    NAME("Name", ValueComparators.NAME_COMPARATOR, new ObjectCanonicalizer(), Name.class),
-    PATH("Path", ValueComparators.PATH_COMPARATOR, new ObjectCanonicalizer(), Path.class),
+    NAME("Name", ValueComparators.NAME_COMPARATOR, new ObjectCanonicalizer(), Name.class, BasicName.class),
+    PATH("Path", ValueComparators.PATH_COMPARATOR, new ObjectCanonicalizer(), Path.class, BasicPath.class, ChildPath.class,
+         IdentifierPath.class, RootPath.class),
     UUID("UUID", ValueComparators.UUID_COMPARATOR, new ObjectCanonicalizer(), UUID.class),
-    REFERENCE("Reference", ValueComparators.REFERENCE_COMPARATOR, new ObjectCanonicalizer(), Reference.class),
-    WEAKREFERENCE("WeakReference", ValueComparators.REFERENCE_COMPARATOR, new ObjectCanonicalizer(), Reference.class),
+    REFERENCE("Reference", ValueComparators.REFERENCE_COMPARATOR, new ObjectCanonicalizer(), Reference.class,
+              NodeKeyReference.class, StringReference.class, UuidReference.class),
+    WEAKREFERENCE("WeakReference", ValueComparators.REFERENCE_COMPARATOR, new ObjectCanonicalizer(), Reference.class,
+                  NodeKeyReference.class, StringReference.class, UuidReference.class),
     URI("URI", ValueComparators.URI_COMPARATOR, new ObjectCanonicalizer(), URI.class),
     OBJECT("Object", ValueComparators.OBJECT_COMPARATOR, new ObjectCanonicalizer(), Object.class);
 
@@ -141,16 +155,30 @@ public enum PropertyType {
 
     private static final List<PropertyType> ALL_PROPERTY_TYPES;
     private static final Map<String, PropertyType> PROPERTY_TYPE_BY_LOWERCASE_NAME;
+    private static final Multimap<Class<?>, PropertyType> PROPERTY_TYPES_BY_INSTANCE_CLASS;
     static {
         List<PropertyType> types = new ArrayList<PropertyType>();
         Map<String, PropertyType> byLowerCaseName = new HashMap<String, PropertyType>();
+        Multimap<Class<?>, PropertyType> propTypesByClass = LinkedListMultimap.create();
         for (PropertyType type : PropertyType.values()) {
             types.add(type);
             byLowerCaseName.put(type.getName().toLowerCase(), type);
+            for (Class<?> clazz : type.castableValueClasses) {
+                propTypesByClass.put(clazz, type);
+            }
+            propTypesByClass.put(type.valueClass, type);
         }
+        // Add the primitive classes ...
+        propTypesByClass.put(Long.TYPE, PropertyType.LONG);
+        propTypesByClass.put(Short.TYPE, PropertyType.LONG);
+        propTypesByClass.put(Integer.TYPE, PropertyType.LONG);
+        propTypesByClass.put(Double.TYPE, PropertyType.DOUBLE);
+        propTypesByClass.put(Float.TYPE, PropertyType.DOUBLE);
+        propTypesByClass.put(Boolean.TYPE, PropertyType.BOOLEAN);
         byLowerCaseName.put("undefined", PropertyType.OBJECT);
         ALL_PROPERTY_TYPES = Collections.unmodifiableList(types);
         PROPERTY_TYPE_BY_LOWERCASE_NAME = Collections.unmodifiableMap(byLowerCaseName);
+        PROPERTY_TYPES_BY_INSTANCE_CLASS = propTypesByClass;
     }
 
     private final String name;
@@ -222,6 +250,14 @@ public enum PropertyType {
         return false;
     }
 
+    public final boolean isTypeFor( Class<?> clazz ) {
+        // Is the value castable to this type ...
+        for (Class<?> valueClass : castableValueClasses) {
+            if (valueClass.isAssignableFrom(clazz)) return true;
+        }
+        return false;
+    }
+
     public final boolean isTypeForEach( Iterable<?> values ) {
         for (Object value : values) {
             if (!isTypeFor(value)) return false;
@@ -241,9 +277,24 @@ public enum PropertyType {
         if (value == null) {
             throw new IllegalArgumentException(GraphI18n.unableToDiscoverPropertyTypeForNullValue.text());
         }
+        PropertyType classBasedType = discoverType(value.getClass());
+        if (classBasedType != null) {
+            if (classBasedType == PropertyType.REFERENCE && value instanceof Reference) {
+                Reference ref = (Reference)value;
+                return ref.isWeak() ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE;
+            }
+            return classBasedType;
+        }
+
         for (PropertyType type : PropertyType.values()) {
             if (type == OBJECT) continue;
-            if (type.isTypeFor(value)) return type;
+            if (type.isTypeFor(value)) {
+                if (classBasedType == PropertyType.REFERENCE && value instanceof Reference) {
+                    Reference ref = (Reference)value;
+                    return ref.isWeak() ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE;
+                }
+                return type;
+            }
         }
         return OBJECT;
     }
@@ -264,29 +315,22 @@ public enum PropertyType {
             // Then just call extract the component type that of which we have an array ...
             clazz = clazz.getComponentType();
         }
-        // Try each property type, and see if its value type is an exact match ...
-        for (PropertyType type : PropertyType.values()) {
-            if (type.valueClass.equals(clazz)) return type;
-            // If the property type is capable of handling a primitive ...
-            switch (type) {
-                case LONG:
-                    if (Long.TYPE.equals(clazz) || Integer.TYPE.equals(clazz) || Short.TYPE.equals(clazz)) return type;
-                    if (Integer.class.equals(clazz) || Short.class.equals(clazz)) return type;
-                    break;
-                case DOUBLE:
-                    if (Double.TYPE.equals(clazz) || Float.TYPE.equals(clazz)) return type;
-                    if (Float.class.equals(clazz)) return type;
-                    break;
-                case BOOLEAN:
-                    if (Boolean.TYPE.equals(clazz)) return type;
-                    break;
-                default:
-                    break;
+
+        // Check non-primitives ...
+        Collection<PropertyType> types = PROPERTY_TYPES_BY_INSTANCE_CLASS.get(clazz);
+        int num = types.size();
+        if (num == 1) {
+            return types.iterator().next();
+        } else if (num > 1) {
+            // Look at all of the types ...
+            for (PropertyType aType : types) {
+                if (aType.isTypeFor(clazz)) return aType;
             }
         }
+
         // No value class of the property type matched exactly, so now see if any property type is assignable to 'clazz' ...
-        for (PropertyType type : PropertyType.values()) {
-            if (clazz.isAssignableFrom(type.valueClass)) return type;
+        for (PropertyType aType : PropertyType.values()) {
+            if (aType.isTypeFor(clazz)) return aType;
         }
         // Nothing works, ...
         return null;

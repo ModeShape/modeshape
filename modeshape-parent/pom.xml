@@ -9,7 +9,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.modeshape</groupId>
     <artifactId>modeshape-parent</artifactId>
-    <version>3.2-SNAPSHOT</version>
+    <version>3.3-SNAPSHOT</version>
     <name>ModeShape Parent</name>
 
     <url>http://www.modeshape.org</url>
@@ -236,7 +236,7 @@
         <metadata.collectorClassName>org.modeshape.connector.meta.jdbc.JdbcMetadataCollector</metadata.collectorClassName>
 
         <!--By default, we use whatever the underlying machine supports. However, certain sub-modules may change this -->
-        <preferIpv4>false</preferIpv4>
+        <preferIpv4>true</preferIpv4>
         <preferIpv6>false</preferIpv6>
         <debug.argline/>
         <!--
@@ -268,7 +268,7 @@
         <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
         <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
 
-        <infinispan.version>5.2.1.Final</infinispan.version>
+        <infinispan.version>5.2.5.Final</infinispan.version>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
         <jgroups.version>3.2.7.Final</jgroups.version>
         <c3p0.version>0.9.1.2</c3p0.version>
@@ -329,7 +329,7 @@
         <spring.mock>2.0.7</spring.mock>
 
         <!-- Apache chemistry version -->
-        <chemistry.version>0.7.0</chemistry.version>
+        <chemistry.version>0.9.0-beta-1</chemistry.version>
 
         <!--
             JBOSS AS/EAP constants
@@ -369,10 +369,11 @@
           Maven plugin versions
           -->
         <cargo.container>jetty7x</cargo.container>
-        <maven.codehaus.cargo.plugin.version>1.2.2</maven.codehaus.cargo.plugin.version>
+        <maven.codehaus.cargo.plugin.version>1.3.3</maven.codehaus.cargo.plugin.version>
         <version.jar.plugin>2.4</version.jar.plugin>
         <version.javadoc.plugin>2.8.1</version.javadoc.plugin>
         <version.bundle.plugin>2.3.7</version.bundle.plugin>
+        <version.failsafe.plugin>2.13</version.failsafe.plugin> 
 
         <!--The name of the modeshape-client artifact used by tools-->
         <client.artifactId>modeshape-client</client.artifactId>
@@ -391,22 +392,9 @@
               Clustering-related profiles
               ###################################################################
 
-              To use, specify "-DpreferIpv4" or "-DpreferIpv6" on the Maven command line,
+              To use, specify "-DpreferIpv6" on the Maven command line,
               depending upon your environment's network configuration.
           -->
-        <profile>
-            <id>preferIpv4</id>
-            <activation>
-                <property>
-                    <name>preferIpv4</name>
-                </property>
-            </activation>
-            <properties>
-                <preferIpv4>false</preferIpv4>
-                <preferIpv6>true</preferIpv6>
-            </properties>
-        </profile>
-
         <profile>
             <id>preferIpv6</id>
             <activation>
@@ -665,7 +653,7 @@
                             <value>${skipLongRunningTests}</value>
                         </property>
                     </systemProperties>
-                    <argLine>-Xmx1024M ${debug.argline} -XX:MaxPermSize=256M</argLine>
+                    <argLine>-Xmx1324M ${debug.argline} -XX:MaxPermSize=256M</argLine>
                     <runOrder>alphabetical</runOrder>
                 </configuration>
             </plugin>
@@ -1141,6 +1129,12 @@
                 <version>${chemistry.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.apache.chemistry.opencmis</groupId>
+                <artifactId>chemistry-opencmis-server-inmemory</artifactId>
+                <version>${chemistry.version}</version>
+                <type>war</type>
+            </dependency>
             <!--
                 Demo module
             -->

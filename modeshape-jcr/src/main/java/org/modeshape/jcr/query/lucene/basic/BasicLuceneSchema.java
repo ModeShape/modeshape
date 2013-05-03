@@ -28,8 +28,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -96,6 +94,7 @@ public class BasicLuceneSchema implements LuceneSchema {
     private final BinaryStore binaryStore;
     private final ValueFactory<String> stringFactory;
     private final boolean enableFullTextSearch;
+    private final boolean indexesWereEmpty;
 
     /**
      * @param context the execution context for the repository
@@ -117,6 +116,8 @@ public class BasicLuceneSchema implements LuceneSchema {
         this.namespaces = context.getNamespaceRegistry();
         this.logger = Logger.getLogger(getClass());
         assert this.searchFactory != null;
+        // Determine if the indexes are empty ...
+        this.indexesWereEmpty = indexesEmpty();
     }
 
     public void shutdown() {
@@ -517,35 +518,43 @@ public class BasicLuceneSchema implements LuceneSchema {
     }
 
     @Override
-    public Set<NodeKey> indexedNodes() {
+    public boolean initializedIndexes() {
+        return indexesWereEmpty;
+    }
+
+    private boolean indexesEmpty() {
         IndexManager indexManager = searchFactory.getAllIndexesManager().getIndexManager(NodeInfoIndex.INDEX_NAME);
         if (indexManager == null) {
-            return Collections.emptySet();
+            // Usually the case when there are no indexes yet ...
+            return true;
         }
 
+        // There are indexes, but make sure there is content in them ...
         ReaderProvider readerProvider = indexManager.getReaderProvider();
         IndexReader indexReader = readerProvider.openIndexReader();
-        Set<NodeKey> indexedNodes = new HashSet<NodeKey>();
 
         FieldSelector fieldSelector = new FieldSelector() {
             private static final long serialVersionUID = 1L;
 
             @Override
             public FieldSelectorResult accept( String fieldName ) {
-                return FieldName.ID.equalsIgnoreCase(fieldName) ?
-                       FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
+                return FieldName.ID.equalsIgnoreCase(fieldName) ? FieldSelectorResult.LOAD_AND_BREAK : FieldSelectorResult.NO_LOAD;
             }
         };
 
         try {
-            for (int docNumber = 0; docNumber < indexReader.numDocs(); docNumber++) {
+            int numDocs = indexReader.numDocs();
+            for (int docNumber = 0; docNumber < numDocs; docNumber++) {
                 if (indexReader.isDeleted(docNumber)) {
                     continue;
                 }
                 Document doc = indexReader.document(docNumber, fieldSelector);
-                indexedNodes.add(new NodeKey(doc.get(FieldName.ID)));
+                assert doc != null;
+                // We know it's not deleted, so we should always get something back ...
+                return false; // therefore not empty
             }
-            return indexedNodes;
+            // Didn't find a single document, so it must be empty
+            return true;
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {

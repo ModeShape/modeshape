@@ -12,7 +12,7 @@ Include the following in your POM file:
         <dependencies>
           <dependency>
             <groupId>org.modeshape.bom</groupId>
-            <artifactId>modeshape-bom-jbossas</artifactId>
+            <artifactId>modeshape-bom-jbosseap</artifactId>
             <version>3.0.0.Final</version>
             <type>pom</type>
             <scope>import</scope>

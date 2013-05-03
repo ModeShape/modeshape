@@ -155,10 +155,13 @@ public class SessionNode implements MutableCachedNode {
 
     @Override
     public boolean hasChanges() {
+        return hasPropertyChanges() || hasNonPropertyChanges();
+    }
+
+    @Override
+    public boolean hasNonPropertyChanges() {
         if (isNew) return true;
         if (newParent != null) return true;
-        if (!changedProperties.isEmpty()) return true;
-        if (!removedProperties.isEmpty()) return true;
         ChangedChildren changedChildren = changedChildren();
         if (changedChildren != null && !changedChildren.isEmpty()) return true;
         MutableChildReferences childRefChanges = appended(false);
@@ -168,6 +171,23 @@ public class SessionNode implements MutableCachedNode {
         ReferrerChanges referrerChanges = referrerChanges(false);
         if (referrerChanges != null && !referrerChanges.isEmpty()) return true;
         return false;
+    }
+
+    @Override
+    public boolean hasPropertyChanges() {
+        if (isNew) return true;
+        if (!changedProperties.isEmpty()) return true;
+        if (!removedProperties.isEmpty()) return true;
+        return false;
+    }
+
+    @Override
+    public boolean hasIndexRelatedChanges() {
+        if (isNew) return true;
+        if (newParent != null) return true;
+        ChangedAdditionalParents additionalParents = additionalParents();
+        if (additionalParents != null && !additionalParents.isEmpty()) return true;
+        return hasPropertyChanges();
     }
 
     @Override
@@ -686,7 +706,10 @@ public class SessionNode implements MutableCachedNode {
                 List<Property> values = new LinkedList<Property>();
                 for (Iterator<Property> iter = raw.getProperties(workspace(cache)); iter.hasNext();) {
                     Property prop = iter.next();
-                    if (isPropertyRemoved(prop.getName())) continue;
+                    //we need to reflect transient state, so ignore removed and changed properties from the raw values
+                    if (isPropertyRemoved(prop.getName()) || changedProperties.containsKey(prop.getName())) {
+                        continue;
+                    }
                     values.add(prop);
                 }
                 return values.iterator();
