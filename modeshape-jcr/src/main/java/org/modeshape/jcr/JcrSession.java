@@ -58,7 +58,9 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.retention.RetentionManager;
 import javax.jcr.security.AccessControlManager;
+import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
+import javax.jcr.version.VersionIterator;
 import org.infinispan.schematic.SchematicEntry;
 import org.modeshape.common.collection.LinkedListMultimap;
 import org.modeshape.common.collection.Multimap;
@@ -1731,6 +1733,50 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                     node.setReference(cache,
                                       propertyFactory.create(JcrLexicon.PREDECESSORS, new Object[] {baseVersionRef}),
                                       systemContent.cache());
+                } else {
+                    //we're dealing with node which has a version history, check if there any versionable properties present
+                    boolean hasVersioningProperties = node.hasProperty(JcrLexicon.IS_CHECKED_OUT, cache) ||
+                            node.hasProperty(JcrLexicon.VERSION_HISTORY, cache) ||
+                            node.hasProperty(JcrLexicon.BASE_VERSION, cache) ||
+                            node.hasProperty(JcrLexicon.PREDECESSORS, cache);
+
+                    if (!hasVersioningProperties) {
+                        //the node doesn't have any versionable properties, so this is a case of mix:versionable removed at some
+                        //point and then re-added. If it had any versioning properties, we might've been dealing with something else
+                        //e.g. a restore
+
+                        // Re-link the versionable properties, based on the existing version history
+                        node.setProperty(cache, propertyFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
+
+                        JcrVersionHistoryNode versionHistoryNode = versionManager().getVersionHistory(node(node.getKey(), null));
+                        Reference historyRef = referenceFactory.create(versionHistoryNode.key(), true);
+                        node.setReference(cache,
+                                          propertyFactory.create(JcrLexicon.VERSION_HISTORY, historyRef),
+                                          systemContent.cache());
+
+                        //set the base version to the last existing version
+                        JcrVersionNode baseVersion = null;
+                        for (VersionIterator versionIterator = versionHistoryNode.getAllVersions(); versionIterator.hasNext();) {
+                            JcrVersionNode version = (JcrVersionNode) versionIterator.nextVersion();
+                            if (baseVersion == null || version.isSuccessorOf(baseVersion)) {
+                                baseVersion = version;
+                            }
+                        }
+                        Reference baseVersionRef = referenceFactory.create(baseVersion.key(), true);
+                        node.setReference(cache,
+                                          propertyFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef),
+                                          systemContent.cache());
+
+                        //set the predecessors to the same list as the base version's predecessors
+                        Version[] baseVersionPredecessors = baseVersion.getPredecessors();
+                        Reference[] predecessors = new Reference[baseVersionPredecessors.length];
+                        for (int i = 0; i < baseVersionPredecessors.length; i++) {
+                            predecessors[i] = referenceFactory.create(((JcrVersionNode) baseVersionPredecessors[i]).key(), true);
+                        }
+                        node.setReference(cache,
+                                          propertyFactory.create(JcrLexicon.PREDECESSORS, predecessors),
+                                          systemContent.cache());
+                    }
                 }
             }
 
