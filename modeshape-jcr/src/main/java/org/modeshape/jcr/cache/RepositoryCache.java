@@ -263,9 +263,9 @@ public class RepositoryCache implements Observable {
         SchematicEntry repositoryInfoEntry = this.documentStore.localStore().get(REPOSITORY_INFO_KEY);
         if (repositoryInfoEntry != null) {
             Document repoInfoDoc = repositoryInfoEntry.getContentAsDocument();
-            //we should only remove the repository info if it wasn't initialized successfully previously
-            //in a cluster, it may happen that another node finished initialization while this node crashed (in which case we
-            //should not remove the entry)
+            // we should only remove the repository info if it wasn't initialized successfully previously
+            // in a cluster, it may happen that another node finished initialization while this node crashed (in which case we
+            // should not remove the entry)
             if (!repoInfoDoc.containsField(REPOSITORY_INITIALIZED_AT_FIELD_NAME)) {
                 this.documentStore.localStore().remove(REPOSITORY_INFO_KEY);
             }
@@ -284,18 +284,26 @@ public class RepositoryCache implements Observable {
         return initializingRepository;
     }
 
+    protected final DocumentStore documentStore() {
+        return this.documentStore;
+    }
+
+    protected final ExecutionContext context() {
+        return this.context;
+    }
+
     public void completeInitialization() {
         if (initializingRepository) {
             LOGGER.debug("Marking repository '{0}' as fully initialized", name);
             runInTransaction(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
-                    LocalDocumentStore store = RepositoryCache.this.documentStore.localStore();
+                    LocalDocumentStore store = documentStore().localStore();
                     store.prepareDocumentsForUpdate(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
                     SchematicEntry repositoryInfo = store.get(REPOSITORY_INFO_KEY);
                     EditableDocument editor = repositoryInfo.editDocumentContent();
                     if (editor.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) == null) {
-                        DateTime now = context.getValueFactories().getDateFactory().create();
+                        DateTime now = context().getValueFactories().getDateFactory().create();
                         editor.setDate(REPOSITORY_INITIALIZED_AT_FIELD_NAME, now.toDate());
                     }
                     return null;
@@ -305,7 +313,7 @@ public class RepositoryCache implements Observable {
         }
     }
 
-    private <V> V runInTransaction(Callable<V> operation) {
+    private <V> V runInTransaction( Callable<V> operation ) {
         // Start a transaction ...
         Transactions txns = sessionContext.getTransactions();
         try {
@@ -441,7 +449,7 @@ public class RepositoryCache implements Observable {
      */
     public void runOneTimeSystemInitializationOperation( Callable<Void> initOperation ) throws Exception {
         if (!isInitializingRepository()) {
-            //we should only perform this operation if this is the node (in a cluster) that's initializing the repository
+            // we should only perform this operation if this is the node (in a cluster) that's initializing the repository
             return;
         }
 
@@ -451,7 +459,7 @@ public class RepositoryCache implements Observable {
         // look for the node which acts as a "global monitor"
         ChildReference repositoryReference = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.REPOSITORY);
         if (repositoryReference != null) {
-            //the presence of the repository node indicates that the operation has been run on this repository
+            // the presence of the repository node indicates that the operation has been run on this repository
             return;
         }
 
@@ -571,17 +579,19 @@ public class RepositoryCache implements Observable {
             throw new WorkspaceNotFoundException(name);
         }
 
-        //when multiple threads (e.g. re-indexing threads) are performing ws cache initialization, we want this to be atomic
+        // when multiple threads (e.g. re-indexing threads) are performing ws cache initialization, we want this to be atomic
         synchronized (this) {
-            //after we have the lock, check if maybe another thread has already finished
+            // after we have the lock, check if maybe another thread has already finished
             if (!workspaceCachesByName.containsKey(name)) {
                 runInTransaction(new Callable<Void>() {
+                    @SuppressWarnings( "synthetic-access" )
                     @Override
                     public Void call() throws Exception {
-                        // Create/get the Infinispan workspaceCache that we'll use within the WorkspaceCache, using the workspaceCache manager's
+                        // Create/get the Infinispan workspaceCache that we'll use within the WorkspaceCache, using the
+                        // workspaceCache manager's
                         // default configuration ...
                         Cache<NodeKey, CachedNode> nodeCache = cacheForWorkspace(name);
-
+                        ExecutionContext context = context();
 
                         // Compute the root key for this workspace ...
                         String workspaceKey = NodeKey.keyForWorkspaceName(name);
@@ -590,27 +600,23 @@ public class RepositoryCache implements Observable {
                         // Create the root document for this workspace ...
                         EditableDocument rootDoc = Schematic.newDocument();
                         DocumentTranslator trans = new DocumentTranslator(context, documentStore, Long.MAX_VALUE);
-                        trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE,
-                                                                                       ModeShapeLexicon.ROOT),
+                        trans.setProperty(rootDoc,
+                                          context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.ROOT),
                                           null);
-                        trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKey.toString()),
-                                          null);
+                        trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKey.toString()), null);
 
                         WorkspaceCache workspaceCache = new WorkspaceCache(context, getKey(), name, documentStore, translator,
-                                                                           rootKey,
-                                                                           nodeCache, changeBus);
+                                                                           rootKey, nodeCache, changeBus);
 
                         if (documentStore.localStore().putIfAbsent(rootKey.toString(), rootDoc) == null) {
-                            //we are the first node to perform the initialization, so we need to link the system node
+                            // we are the first node to perform the initialization, so we need to link the system node
                             if (!RepositoryCache.this.systemWorkspaceName.equals(name)) {
                                 logger.debug("Creating '{0}' workspace in repository '{1}'", name, getName());
-                                SessionCache workspaceSession = new WritableSessionCache(context, workspaceCache,
-                                                                                         sessionContext);
+                                SessionCache workspaceSession = new WritableSessionCache(context, workspaceCache, sessionContext);
                                 MutableCachedNode workspaceRootNode = workspaceSession.mutable(workspaceSession.getRootKey());
-                                workspaceRootNode.linkChild(workspaceSession, RepositoryCache.this.systemKey,
-                                                            JcrLexicon.SYSTEM);
+                                workspaceRootNode.linkChild(workspaceSession, RepositoryCache.this.systemKey, JcrLexicon.SYSTEM);
 
-                                //this will be enrolled in the active transaction
+                                // this will be enrolled in the active transaction
                                 workspaceSession.save();
                             }
                         }
@@ -624,10 +630,10 @@ public class RepositoryCache implements Observable {
         return workspaceCachesByName.get(name);
     }
 
-    private Cache<NodeKey, CachedNode> cacheForWorkspace( String name ) {
+    protected Cache<NodeKey, CachedNode> cacheForWorkspace( String name ) {
         Cache<NodeKey, CachedNode> cache = workspaceCacheManager.getCache(cacheNameForWorkspace(name));
         if (cache instanceof AdvancedCache) {
-            TransactionManager txManager = ((AdvancedCache<?,?>)cache).getTransactionManager();
+            TransactionManager txManager = ((AdvancedCache<?, ?>)cache).getTransactionManager();
             if (txManager != null) {
                 throw new ConfigurationException(JcrI18n.workspaceCacheShouldNotBeTransactional.text(name));
             }
