@@ -155,7 +155,7 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
             assertThat(session2.getWorkspace().getNodeTypeManager().getNodeType("car:Car"), is(notNullValue()));
             assertThat(session2.getWorkspace().getNodeTypeManager().getNodeType("air:Aircraft"), is(notNullValue()));
 
-            //in this setup, index changes are local so they *will not* be sent across to other nodes
+            // in this setup, index changes are local so they *will not* be sent across to other nodes
             assertIndexChangesAreVisibleToOtherProcesses(false, session1, session2);
 
             session1.logout();
@@ -172,10 +172,13 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
     /**
      * Each Infinispan configuration persists data in a separate location, we use replication mode and the indexes are clustered
      * via JGroups.
+     * 
+     * @throws Exception
      */
     @Test
     @FixFor( "MODE-1897" )
-    public void shouldStartClusterWithReplicatedCachePersistedToSeparateAreasForEachProcessAndClusteringJGroupsIndexing() throws Exception {
+    public void shouldStartClusterWithReplicatedCachePersistedToSeparateAreasForEachProcessAndClusteringJGroupsIndexing()
+        throws Exception {
         FileUtil.delete("target/clustered");
         JcrRepository repository1 = null;
         JcrRepository repository2 = null;
@@ -188,7 +191,7 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
             repository2 = TestingUtil.startRepositoryWithConfig("config/repo-config-clustered-indexes-2.json");
             Session session2 = repository2.login();
 
-            //in this setup, index changes clustered, so they *should be* be sent across to other nodes
+            // in this setup, index changes clustered, so they *should be* be sent across to other nodes
             assertIndexChangesAreVisibleToOtherProcesses(true, session1, session2);
 
             session1.logout();
@@ -236,7 +239,8 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
 
     private void assertIndexChangesAreVisibleToOtherProcesses( boolean shouldBeVisible,
                                                                Session process1Session,
-                                                               Session process2Session ) throws RepositoryException, InterruptedException {
+                                                               Session process2Session )
+        throws RepositoryException, InterruptedException {
         JcrTools jcrTools = new JcrTools();
         String query = "select * from [nt:unstructured] as n where n.[jcr:path]='/testNode'";
 
@@ -245,10 +249,10 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
         process1Session.save();
         assertEquals(1, jcrTools.printQuery(process1Session, query).getNodes().getSize());
 
-        //wait a bit for state transfer to complete
+        // wait a bit for state transfer to complete
         Thread.sleep(100);
 
-        //check that the custom jcr node created on the other process, was sent to this one
+        // check that the custom jcr node created on the other process, was sent to this one
         assertNotNull(process2Session.getNode("/testNode"));
         int expectedSize = shouldBeVisible ? 1 : 0;
         assertEquals(expectedSize, jcrTools.printQuery(process2Session, query).getNodes().getSize());
