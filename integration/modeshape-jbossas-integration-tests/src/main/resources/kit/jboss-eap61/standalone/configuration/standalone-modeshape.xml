@@ -3,6 +3,7 @@
 <server xmlns="urn:jboss:domain:1.4">
     <extensions>
         <extension module="org.jboss.as.clustering.infinispan"/>
+        <extension module="org.jboss.as.clustering.jgroups"/>
         <extension module="org.jboss.as.configadmin"/>
         <extension module="org.jboss.as.connector"/>
         <extension module="org.jboss.as.deployment-scanner"/>
@@ -100,7 +101,8 @@
         <subsystem xmlns="urn:jboss:domain:configadmin:1.0"/>
         <subsystem xmlns="urn:jboss:domain:datasources:1.1">
             <datasources>
-                <datasource jndi-name="java:jboss/datasources/ExampleDS" pool-name="ExampleDS" enabled="true" use-java-context="true">
+                <datasource jndi-name="java:jboss/datasources/ExampleDS" pool-name="ExampleDS" enabled="true"
+                            use-java-context="true">
                     <connection-url>jdbc:h2:mem:test;DB_CLOSE_DELAY=-1</connection-url>
                     <driver>h2</driver>
                     <security>
@@ -109,7 +111,8 @@
                     </security>
                 </datasource>
 
-                <datasource jndi-name="java:/datasources/ModeShapeDS" enabled="true" use-java-context="true" pool-name="ModeShapeDS">
+                <datasource jndi-name="java:/datasources/ModeShapeDS" enabled="true" use-java-context="true"
+                            pool-name="ModeShapeDS">
                     <connection-url>jdbc:jcr:jndi:jcr?repositoryName=artifacts</connection-url>
                     <driver>modeshape</driver>
                     <connection-property name="workspace">extra</connection-property>
@@ -119,7 +122,8 @@
                     </security>
                 </datasource>
 
-                <datasource jndi-name="java:jboss/datasources/ModeshapeJDBCStoreDS" pool-name="ModeshapeJDBCStoreDS" enabled="true" use-java-context="true">
+                <datasource jndi-name="java:jboss/datasources/ModeshapeJDBCStoreDS" pool-name="ModeshapeJDBCStoreDS"
+                            enabled="true" use-java-context="true">
                     <connection-url>jdbc:h2:mem:modeshapeJDBCStore;DB_CLOSE_DELAY=-1</connection-url>
                     <driver>h2</driver>
                     <security>
@@ -128,7 +132,8 @@
                     </security>
                 </datasource>
 
-                <datasource jndi-name="java:jboss/datasources/ModeshapeBinaryStoreDS" pool-name="ModeshapeBinaryStoreDS" enabled="true" use-java-context="true">
+                <datasource jndi-name="java:jboss/datasources/ModeshapeBinaryStoreDS" pool-name="ModeshapeBinaryStoreDS"
+                            enabled="true" use-java-context="true">
                     <connection-url>jdbc:h2:mem:modeshapeJModeshapeBinaryStore;DB_CLOSE_DELAY=-1</connection-url>
                     <driver>h2</driver>
                     <security>
@@ -137,7 +142,8 @@
                     </security>
                 </datasource>
 
-                <datasource jndi-name="java:jboss/datasources/ModeshapeIndexStoreDS" pool-name="ModeshapeIndexStoreDS" enabled="true" use-java-context="true">
+                <datasource jndi-name="java:jboss/datasources/ModeshapeIndexStoreDS" pool-name="ModeshapeIndexStoreDS"
+                            enabled="true" use-java-context="true">
                     <connection-url>jdbc:h2:mem:modeshapeJModeshapeIndexStore;DB_CLOSE_DELAY=-1</connection-url>
                     <driver>h2</driver>
                     <security>
@@ -174,8 +180,10 @@
             <default-security-domain value="other"/>
             <pools>
                 <bean-instance-pools>
-                    <strict-max-pool name="slsb-strict-max-pool" max-pool-size="20" instance-acquisition-timeout="5" instance-acquisition-timeout-unit="MINUTES"/>
-                    <strict-max-pool name="mdb-strict-max-pool" max-pool-size="20" instance-acquisition-timeout="5" instance-acquisition-timeout-unit="MINUTES"/>
+                    <strict-max-pool name="slsb-strict-max-pool" max-pool-size="20" instance-acquisition-timeout="5"
+                                     instance-acquisition-timeout-unit="MINUTES"/>
+                    <strict-max-pool name="mdb-strict-max-pool" max-pool-size="20" instance-acquisition-timeout="5"
+                                     instance-acquisition-timeout-unit="MINUTES"/>
                 </bean-instance-pools>
             </pools>
             <caches>
@@ -222,19 +230,22 @@
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store passivation="false" path="modeshape/store/sample" relative-to="jboss.server.data.dir" purge="false"/>
+                    <file-store passivation="false" path="modeshape/store/sample" relative-to="jboss.server.data.dir"
+                                purge="false"/>
                 </local-cache>
                 <local-cache name="artifacts">
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store passivation="false" path="modeshape/store/artifacts" relative-to="jboss.server.data.dir" purge="false"/>
+                    <file-store passivation="false" path="modeshape/store/artifacts" relative-to="jboss.server.data.dir"
+                                purge="false"/>
                 </local-cache>
                 <local-cache name="preconfiguredRepository">
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store passivation="false" path="modeshape/store/preconfiguredRepository" relative-to="jboss.server.data.dir" purge="false"/>
+                    <file-store passivation="false" path="modeshape/store/preconfiguredRepository"
+                                relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
                 <local-cache name="federatedRepository">
                     <!-- ModeShape requires transactions -->
@@ -244,19 +255,23 @@
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store passivation="false" path="modeshape/store/noQueryRepository" relative-to="jboss.server.data.dir" purge="false"/>
+                    <file-store passivation="false" path="modeshape/store/noQueryRepository" relative-to="jboss.server.data.dir"
+                                purge="false"/>
                 </local-cache>
                 <local-cache name="infinispanRepository">
                     <!-- ModeShape requires transactions -->
                     <transaction mode="NON_XA"/>
                     <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store passivation="false" path="modeshape/store/infinispanRepository" relative-to="jboss.server.data.dir" purge="false"/>
+                    <file-store passivation="false" path="modeshape/store/infinispanRepository"
+                                relative-to="jboss.server.data.dir" purge="false"/>
                 </local-cache>
                 <!--ModeShape using JDBC persistence-->
                 <local-cache name="jdbcRepository">
                     <transaction mode="NON_XA"/>
-                    <string-keyed-jdbc-store datasource="java:jboss/datasources/ModeshapeJDBCStoreDS" shared="false" preload="false" passivation="false" purge="false">
-                        <write-behind flush-lock-timeout="1" modification-queue-size="1024" shutdown-timeout="25000" thread-pool-size="1"/>
+                    <string-keyed-jdbc-store datasource="java:jboss/datasources/ModeshapeJDBCStoreDS" shared="false"
+                                             preload="false" passivation="false" purge="false">
+                        <write-behind flush-lock-timeout="1" modification-queue-size="1024" shutdown-timeout="25000"
+                                      thread-pool-size="1"/>
                         <property name="databaseType">H2</property>
                         <string-keyed-table prefix="JDG_MC_SK">
                             <id-column name="id" type="VARCHAR(200)"/>
@@ -268,8 +283,10 @@
                 <local-cache name="jdbcRepositoryWithEviction">
                     <transaction mode="NON_XA" locking="PESSIMISTIC"/>
                     <eviction strategy="LRU" max-entries="100"/>
-                    <string-keyed-jdbc-store datasource="java:jboss/datasources/ModeshapeJDBCStoreDS" shared="false" preload="false" passivation="false" purge="false">
-                        <write-behind flush-lock-timeout="1" modification-queue-size="1024" shutdown-timeout="25000" thread-pool-size="1"/>
+                    <string-keyed-jdbc-store datasource="java:jboss/datasources/ModeshapeJDBCStoreDS" shared="false"
+                                             preload="false" passivation="false" purge="false">
+                        <write-behind flush-lock-timeout="1" modification-queue-size="1024" shutdown-timeout="25000"
+                                      thread-pool-size="1"/>
                         <property name="databaseType">H2</property>
                         <string-keyed-table prefix="JDG_MC_SK">
                             <id-column name="id" type="VARCHAR(200)"/>
@@ -288,22 +305,27 @@
             <cache-container name="binary-cache-container" default-cache="binary-fs" module="org.modeshape">
                 <local-cache name="binary-fs">
                     <transaction mode="NON_XA"/>
-                    <file-store passivation="false" path="modeshape/binary-store/ispn-data" relative-to="jboss.server.data.dir" purge="false"/>
+                    <file-store passivation="false" path="modeshape/binary-store/ispn-data" relative-to="jboss.server.data.dir"
+                                purge="false"/>
                 </local-cache>
                 <local-cache name="binary-fs-meta">
                     <transaction mode="NON_XA"/>
-                    <file-store passivation="false" path="modeshape/binary-store/ispn-meta" relative-to="jboss.server.data.dir" purge="false"/>
+                    <file-store passivation="false" path="modeshape/binary-store/ispn-meta" relative-to="jboss.server.data.dir"
+                                purge="false"/>
                 </local-cache>
             </cache-container>
             <cache-container name="index-cache-container" default-cache="index-data" module="org.modeshape">
                 <local-cache name="index-data" batching="true">
                     <transaction mode="NON_XA"/>
-                    <file-store passivation="false" path="modeshape/index-cache-container" relative-to="jboss.server.data.dir" purge="false"/>
+                    <file-store passivation="false" path="modeshape/index-cache-container" relative-to="jboss.server.data.dir"
+                                purge="false"/>
                 </local-cache>
                 <local-cache name="index-data-jdbc" batching="true">
                     <transaction mode="NON_XA"/>
-                    <string-keyed-jdbc-store datasource="java:jboss/datasources/ModeshapeIndexStoreDS" shared="false" preload="false" passivation="false" purge="false">
-                        <write-behind flush-lock-timeout="1" modification-queue-size="1024" shutdown-timeout="25000" thread-pool-size="1"/>
+                    <string-keyed-jdbc-store datasource="java:jboss/datasources/ModeshapeIndexStoreDS" shared="false"
+                                             preload="false" passivation="false" purge="false">
+                        <write-behind flush-lock-timeout="1" modification-queue-size="1024" shutdown-timeout="25000"
+                                      thread-pool-size="1"/>
                         <property name="databaseType">H2</property>
                         <property name="createTableOnStart">true</property>
                         <string-keyed-table prefix="stringbased">
@@ -318,7 +340,8 @@
                 <local-cache name="binaryJDBCRepository-binary-data">
                     <transaction mode="NON_XA"/>
                     <eviction strategy="LIRS" max-entries="5"/>
-                    <string-keyed-jdbc-store datasource="jboss/datasources/ModeshapeBinaryStoreDS" passivation="false" purge="false">
+                    <string-keyed-jdbc-store datasource="jboss/datasources/ModeshapeBinaryStoreDS" passivation="false"
+                                             purge="false">
                         <property name="databaseType">H2</property>
                         <property name="createTableOnStart">true</property>
                         <string-keyed-table prefix="stringbased">
@@ -331,7 +354,8 @@
                 <local-cache name="binaryJDBCRepository-binary-metadata">
                     <transaction mode="NON_XA"/>
                     <eviction strategy="LIRS" max-entries="2000"/>
-                    <string-keyed-jdbc-store datasource="jboss/datasources/ModeshapeBinaryStoreDS" passivation="false" purge="false">
+                    <string-keyed-jdbc-store datasource="jboss/datasources/ModeshapeBinaryStoreDS" passivation="false"
+                                             purge="false">
                         <property name="databaseType">H2</property>
                         <property name="createTableOnStart">true</property>
                         <string-keyed-table prefix="stringbased">
@@ -343,8 +367,10 @@
                 </local-cache>
                 <local-cache name="binaryJDBCRepository-binary-data-wb">
                     <transaction mode="NON_XA"/>
-                    <string-keyed-jdbc-store datasource="jboss/datasources/ModeshapeBinaryStoreDS" shared="false" preload="false" passivation="false" purge="false">
-                        <write-behind flush-lock-timeout="1" modification-queue-size="1024" shutdown-timeout="25000" thread-pool-size="1"/>
+                    <string-keyed-jdbc-store datasource="jboss/datasources/ModeshapeBinaryStoreDS" shared="false"
+                                             preload="false" passivation="false" purge="false">
+                        <write-behind flush-lock-timeout="1" modification-queue-size="1024" shutdown-timeout="25000"
+                                      thread-pool-size="1"/>
                         <property name="databaseType">H2</property>
                         <property name="createTableOnStart">true</property>
                         <string-keyed-table prefix="stringbased">
@@ -357,7 +383,8 @@
                 <local-cache name="binaryJDBCRepository-binary-metadata-wb">
                     <transaction mode="NON_XA"/>
                     <eviction strategy="LRU" max-entries="100"/>
-                    <string-keyed-jdbc-store datasource="jboss/datasources/ModeshapeBinaryStoreDS" shared="false" preload="false" passivation="false" purge="false">
+                    <string-keyed-jdbc-store datasource="jboss/datasources/ModeshapeBinaryStoreDS" shared="false"
+                                             preload="false" passivation="false" purge="false">
                         <property name="databaseType">H2</property>
                         <property name="createTableOnStart">true</property>
                         <string-keyed-table prefix="stringbased">
@@ -375,6 +402,16 @@
                     <eviction strategy="LRU" max-entries="100"/>
                     <expiration lifespan="10000" interval="1000" max-idle="5000"/>
                 </local-cache>
+            </cache-container>
+            <!--Clustered cache container-->
+            <cache-container name="modeshape-repository-clustered" aliases="modeshape-repository-cache"
+                             default-cache="clustered-repo" module="org.modeshape">
+                <transport lock-timeout="60000"/>
+                <replicated-cache name="repo-clustered" mode="SYNC" batching="true">
+                    <transaction mode="NON_XA"/>
+                    <file-store relative-to="jboss.server.data.dir" path="modeshape/store/repo-clustered" passivation="false"
+                                purge="false"/>
+                </replicated-cache>
             </cache-container>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:modeshape:1.0">
@@ -408,12 +445,14 @@
                 <sequencers>
                     <sequencer name="delimited-text-sequencer" classname="org.modeshape.sequencer.text.DelimitedTextSequencer"
                                module="org.modeshape.sequencer.text" splitPattern=",">
-                        <path-expression>/files(//*.csv[*])/jcr:content[@jcr:data] => /derived/text/delimited/$1</path-expression>
+                        <path-expression>/files(//*.csv[*])/jcr:content[@jcr:data] => /derived/text/delimited/$1
+                        </path-expression>
                     </sequencer>
                     <sequencer name="fixed-width-text-sequencer"
                                classname="org.modeshape.sequencer.text.FixedWidthTextSequencer"
                                module="org.modeshape.sequencer.text" commentMarker="#">
-                        <path-expression>/files(//*.txt[*])/jcr:content[@jcr:data] => /derived/text/fixedWidth/$1</path-expression>
+                        <path-expression>/files(//*.txt[*])/jcr:content[@jcr:data] => /derived/text/fixedWidth/$1
+                        </path-expression>
                     </sequencer>
                     <sequencer name="ddl-sequencer" classname="org.modeshape.sequencer.ddl.DdlSequencer"
                                module="org.modeshape.sequencer.ddl">
@@ -434,13 +473,14 @@
                         <path-expression>default:/files(//*.cnd[*])/jcr:content[@jcr:data] => /derived/cnd/$1</path-expression>
                     </sequencer>
                     <sequencer name="msoffice-sequencer" classname="msoffice" module="org.modeshape.sequencer.msoffice">
-                        <path-expression>/files(//*.(xls|ppt|doc)[*])/jcr:content[@jcr:data] => /derived/msoffice/$1</path-expression>
+                        <path-expression>/files(//*.(xls|ppt|doc)[*])/jcr:content[@jcr:data] => /derived/msoffice/$1
+                        </path-expression>
                     </sequencer>
                     <sequencer name="teiid-model-sequencer" classname="model" module="org.modeshape.sequencer.teiid">
-                      <path-expression>/files(//*.xmi[*])/jcr:content[@jcr:data] => /derived/teiid/models/$1</path-expression>
+                        <path-expression>/files(//*.xmi[*])/jcr:content[@jcr:data] => /derived/teiid/models/$1</path-expression>
                     </sequencer>
                     <sequencer name="teiid-vdb-sequencer" classname="vdb" module="org.modeshape.sequencer.teiid">
-                      <path-expression>/files(//*.vdb[*])/jcr:content[@jcr:data] => /derived/teiid/vdbs/$1</path-expression>
+                        <path-expression>/files(//*.vdb[*])/jcr:content[@jcr:data] => /derived/teiid/vdbs/$1</path-expression>
                     </sequencer>
                     <!--
                      The XSD, XML, WSDL, and ZIP sequencers all generate a node for the input documents, and so we don't want the filename to
@@ -459,7 +499,8 @@
                         <path-expression>/files(//*.zip[*])/jcr:content[@jcr:data] => /derived/zip/$1</path-expression>
                     </sequencer>
                     <sequencer name="image-sequencer" classname="image" module="org.modeshape.sequencer.image">
-                        <path-expression>/files(//*.(png|jpg|gif)[*])/jcr:content[@jcr:data] => /derived/image/$1</path-expression>
+                        <path-expression>/files(//*.(png|jpg|gif)[*])/jcr:content[@jcr:data] => /derived/image/$1
+                        </path-expression>
                     </sequencer>
                     <sequencer name="mp3-sequencer" classname="mp3" module="org.modeshape.sequencer.mp3">
                         <path-expression>/files(//*.mp3[*])/jcr:content[@jcr:data] => /derived/mp3/$1</path-expression>
@@ -490,7 +531,8 @@
             </repository>
             <repository name="federatedRepository">
                 <!--Turn off initial indexing for performance reasons-->
-                <indexing rebuild-upon-startup="never" rebuild-upon-startup-include-system-content="false" rebuild-upon-startup-mode="sync"/>
+                <indexing rebuild-upon-startup="never" rebuild-upon-startup-include-system-content="false"
+                          rebuild-upon-startup-mode="sync"/>
                 <workspaces allow-workspace-creation="true" default-workspace="default">
                     <workspace name="default"/>
                     <workspace name="other"/>
@@ -502,11 +544,12 @@
                         <projection>other:/projection1 => /</projection>
                     </source>
                     <source name="git" classname="org.modeshape.connector.git.GitConnector" module="org.modeshape.connector.git"
-                            directoryPath="${gitRepositoryRootPath}" remoteName="upstream,origin" cacheTtlSeconds="1" readonly="true"
+                            directoryPath="${gitRepositoryRootPath}" remoteName="upstream,origin" cacheTtlSeconds="1"
+                            readonly="true"
                             queryableBranches="master,2.x"/>
                 </external-sources>
             </repository>
-            <repository name="noQueryRepository" enable-queries="false" />
+            <repository name="noQueryRepository" enable-queries="false"/>
             <repository name="jdbcRepository">
                 <workspaces allow-workspace-creation="true" default-workspace="default">
                     <workspace name="default"/>
@@ -536,10 +579,48 @@
             </repository>
             <repository name="binaryIndexingJDBCRepository">
                 <indexing rebuild-upon-startup-mode="sync"/>
-                <cache-binary-storage cache-container="jdbc-binary-cache-container" data-cache-name="binaryJDBCRepository-binary-data-wb"
+                <cache-binary-storage cache-container="jdbc-binary-cache-container"
+                                      data-cache-name="binaryJDBCRepository-binary-data-wb"
                                       metadata-cache-name="binaryJDBCRepository-binary-metadata-wb"/>
                 <cache-index-storage cache-container="index-cache-container" data-cache-name="index-data-jdbc"/>
             </repository>
+            <repository name="repo-clustered" cache-container="modeshape-repository-clustered" cache-name="repo-clustered">
+                <indexing rebuild-upon-startup="never"/>
+            </repository>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:jgroups:1.1" default-stack="tcp">
+            <stack name="udp">
+                <transport type="UDP" socket-binding="jgroups-udp"/>
+                <protocol type="PING"/>
+                <protocol type="MERGE3"/>
+                <protocol type="FD_SOCK" socket-binding="jgroups-udp-fd"/>
+                <protocol type="FD"/>
+                <protocol type="VERIFY_SUSPECT"/>
+                <protocol type="pbcast.NAKACK2"/>
+                <protocol type="UNICAST2"/>
+                <protocol type="pbcast.STABLE"/>
+                <protocol type="pbcast.GMS"/>
+                <protocol type="UFC"/>
+                <protocol type="MFC"/>
+                <protocol type="FRAG2"/>
+                <protocol type="RSVP"/>
+            </stack>
+            <stack name="tcp">
+                <transport type="TCP" socket-binding="jgroups-tcp"/>
+                <protocol type="MPING" socket-binding="jgroups-mping"/>
+                <protocol type="MERGE2"/>
+                <protocol type="FD_SOCK" socket-binding="jgroups-tcp-fd"/>
+                <protocol type="FD"/>
+                <protocol type="VERIFY_SUSPECT"/>
+                <protocol type="pbcast.NAKACK2"/>
+                <protocol type="UNICAST2"/>
+                <protocol type="pbcast.STABLE"/>
+                <protocol type="pbcast.GMS"/>
+                <protocol type="UFC"/>
+                <protocol type="MFC"/>
+                <protocol type="FRAG2"/>
+                <protocol type="RSVP"/>
+            </stack>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>
         <subsystem xmlns="urn:jboss:domain:jca:1.1">
@@ -661,7 +742,8 @@
             <wsdl-host>${jboss.bind.address:127.0.0.1}</wsdl-host>
             <endpoint-config name="Standard-Endpoint-Config"/>
             <endpoint-config name="Recording-Endpoint-Config">
-                <pre-handler-chain name="recording-handlers" protocol-bindings="##SOAP11_HTTP ##SOAP11_HTTP_MTOM ##SOAP12_HTTP ##SOAP12_HTTP_MTOM">
+                <pre-handler-chain name="recording-handlers"
+                                   protocol-bindings="##SOAP11_HTTP ##SOAP11_HTTP_MTOM ##SOAP12_HTTP ##SOAP12_HTTP_MTOM">
                     <handler name="RecordingHandler" class="org.jboss.ws.common.invocation.RecordingServerHandler"/>
                 </pre-handler-chain>
             </endpoint-config>
@@ -685,7 +767,8 @@
             <inet-address value="${jboss.bind.address.unsecure:127.0.0.1}"/>
         </interface>
     </interfaces>
-    <socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">
+    <socket-binding-group name="standard-sockets" default-interface="public"
+                          port-offset="${jboss.socket.binding.port-offset:0}">
         <socket-binding name="management-native" interface="management" port="${jboss.management.native.port:9999}"/>
         <socket-binding name="management-http" interface="management" port="${jboss.management.http.port:9990}"/>
         <socket-binding name="management-https" interface="management" port="${jboss.management.https.port:9443}"/>
@@ -695,6 +778,12 @@
         <socket-binding name="remoting" port="4447"/>
         <socket-binding name="txn-recovery-environment" port="4712"/>
         <socket-binding name="txn-status-manager" port="4713"/>
+        <socket-binding name="jgroups-mping" port="0" multicast-address="${jboss.default.multicast.address:230.0.0.4}" multicast-port="45700"/>
+        <socket-binding name="jgroups-tcp" port="7600"/>
+        <socket-binding name="jgroups-tcp-fd" port="57600"/>
+        <socket-binding name="jgroups-udp" port="55200" multicast-address="${jboss.default.multicast.address:230.0.0.4}" multicast-port="45688"/>
+        <socket-binding name="jgroups-udp-fd" port="54200"/>
+        <socket-binding name="modcluster" port="0" multicast-address="224.0.1.105" multicast-port="23364"/>
         <outbound-socket-binding name="mail-smtp">
             <remote-destination host="localhost" port="25"/>
         </outbound-socket-binding>
