@@ -584,7 +584,8 @@
                                       metadata-cache-name="binaryJDBCRepository-binary-metadata-wb"/>
                 <cache-index-storage cache-container="index-cache-container" data-cache-name="index-data-jdbc"/>
             </repository>
-            <repository name="repo-clustered" cache-container="modeshape-repository-clustered" cache-name="repo-clustered">
+            <repository name="repo-clustered" cache-container="modeshape-repository-clustered" cache-name="repo-clustered"
+                        cluster-name="modeshape-cluster" cluster-stack="tcp">
                 <indexing rebuild-upon-startup="never"/>
             </repository>
         </subsystem>
