@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.JcrConstants;
@@ -42,6 +43,72 @@ import org.modeshape.jcr.api.JcrConstants;
  */
 @NotThreadSafe
 public final class AstNode implements Iterable<AstNode>, Cloneable {
+
+    private static final Map<Character, Character> JCR_ILLEGAL_ID_CHARS;
+
+    static {
+        JCR_ILLEGAL_ID_CHARS = new HashMap<Character, Character>(6);
+        JCR_ILLEGAL_ID_CHARS.put('*', '\uF02A');
+        JCR_ILLEGAL_ID_CHARS.put('/', '\uF02F');
+        JCR_ILLEGAL_ID_CHARS.put(':', '\uF03A');
+        JCR_ILLEGAL_ID_CHARS.put('[', '\uF05B');
+        JCR_ILLEGAL_ID_CHARS.put(']', '\uF05D');
+        JCR_ILLEGAL_ID_CHARS.put('|', '\uF07C');
+    }
+
+    /**
+     * @param c the character being checked
+     * @return <code>true</code> if the character is an illegal JCR identifier character
+     */
+    public static boolean isIllegalJcrIdentifierCharacter(final char c) {
+        return JCR_ILLEGAL_ID_CHARS.containsKey(c);
+    }
+
+    /**
+     * @param id the identifier whose JCR substitution characters are being replaced with their original characters (cannot be
+     *        <code>null</code> or empty)
+     * @return the identifier with all JCR substitution characters replaced with their original characters (never
+     *         <code>null</code> or empty)
+     */
+    public static String replaceJcrSubstitutionCharacters( final String id ) {
+        CheckArg.isNotEmpty(id, "id");
+        String newId = id;
+
+        for (final Entry<Character, Character> entry : JCR_ILLEGAL_ID_CHARS.entrySet()) {
+            newId.replace(entry.getValue(), entry.getKey());
+        }
+
+        return newId;
+    }
+
+    /**
+     * @param id the identifier whose illegal JCR characters are being replaced with their JCR substitution characters (cannot be
+     *        <code>null</code> or empty)
+     * @return the identifier with all illegal JCR characters replace with their substitution characters (never <code>null</code>
+     *         or empty)
+     */
+    public static String replaceJcrIllegalCharacters( final String id ) {
+        CheckArg.isNotEmpty(id, "id");
+        String jcrId = id;
+
+        // if first character is a '{' then the name is prefixed by the namespace URL
+        if ((jcrId.charAt(0) == '{') && (jcrId.indexOf('}') != -1)) {
+            final int index = jcrId.indexOf('}');
+            String localName = jcrId.substring(index + 1);
+
+            for (final Entry<Character, Character> entry : JCR_ILLEGAL_ID_CHARS.entrySet()) {
+                localName = localName.replace(entry.getKey(), entry.getValue());
+            }
+
+            jcrId = jcrId.substring(0, (index + 1)) + localName;
+        } else {
+            for (final Entry<Character, Character> entry : JCR_ILLEGAL_ID_CHARS.entrySet()) {
+                jcrId = jcrId.replace(entry.getKey(), entry.getValue());
+            }
+        }
+
+        return jcrId;
+    }
 
     private AstNode parent;
 
@@ -56,8 +123,7 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
      * @param name the name of the node; may not be null
      */
     AstNode( String name ) {
-        CheckArg.isNotNull(name, "name");
-        this.name = name;
+        this(null, name);
     }
 
     /**
@@ -109,6 +175,13 @@ public final class AstNode implements Iterable<AstNode>, Cloneable {
      */
     public String getName() {
         return name;
+    }
+
+    /**
+     * @return the node name with all illegal JCR characters replaced with their substitution character (never <code>null</code> or empty)
+     */
+    public String getJcrSafeName() {
+        return AstNode.replaceJcrIllegalCharacters(this.name);
     }
 
     public String getPrimaryType() {

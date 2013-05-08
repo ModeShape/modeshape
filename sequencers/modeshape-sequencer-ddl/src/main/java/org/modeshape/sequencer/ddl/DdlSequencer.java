@@ -250,7 +250,7 @@ public class DdlSequencer extends Sequencer {
         if (parentNode == null) {
             sequenceNode = parent.addNode(relativePath, astNode.getPrimaryType());
         } else {
-            sequenceNode = parentNode.addNode(astNode.getName(), astNode.getPrimaryType());
+            sequenceNode = parentNode.addNode(astNode.getJcrSafeName(), astNode.getPrimaryType());
         }
 
         this.nodeMap.put(astNode, sequenceNode);
