@@ -48,7 +48,11 @@ import java.util.*;
 @NotThreadSafe
 public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.StatementStartPhrases {
 
-    private final String parserId = "SQL92";
+    /**
+     * The Standard DDL parser identifier.
+     */
+    public static final String PARSE_ID = "SQL92";
+
     private boolean testMode = false;
     private final List<DdlParserProblem> problems;
     private final AstNodeFactory nodeFactory;
@@ -2851,7 +2855,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      */
     @Override
     public String getId() {
-        return parserId;
+        return PARSE_ID;
     }
 
     /**
@@ -2861,7 +2865,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      */
     @Override
     public int hashCode() {
-        return this.parserId.hashCode();
+        return getId().hashCode();
     }
 
     /**

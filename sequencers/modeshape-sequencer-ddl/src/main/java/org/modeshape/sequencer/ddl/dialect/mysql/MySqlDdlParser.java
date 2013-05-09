@@ -43,7 +43,10 @@ import java.util.List;
  * MySql-specific DDL Parser. Includes custom data types as well as custom DDL statements.
  */
 public class MySqlDdlParser extends StandardDdlParser implements MySqlDdlConstants, MySqlDdlConstants.MySqlStatementStartPhrases {
-    private final String parserId = "MYSQL";
+    /**
+     * The MySQL parser identifier.
+     */
+    private static final String ID = "MYSQL";
 
     static List<String[]> mysqlDataTypeStrings = new ArrayList<String[]>();
     /*
@@ -202,7 +205,7 @@ public class MySqlDdlParser extends StandardDdlParser implements MySqlDdlConstan
      */
     @Override
     public String getId() {
-        return this.parserId;
+        return ID;
     }
 
     private void initialize() {

@@ -78,7 +78,11 @@ import java.util.List;
  */
 public class PostgresDdlParser extends StandardDdlParser
     implements PostgresDdlConstants, PostgresDdlConstants.PostgresStatementStartPhrases {
-    private final String parserId = "POSTGRES";
+
+    /**
+     * The Postress parser identifier.
+     */
+    public static final String ID = "POSTGRES";
 
     static List<String[]> postgresDataTypeStrings = new ArrayList<String[]>();
 
@@ -107,7 +111,7 @@ public class PostgresDdlParser extends StandardDdlParser
      */
     @Override
     public String getId() {
-        return this.parserId;
+        return ID;
     }
 
     /**
