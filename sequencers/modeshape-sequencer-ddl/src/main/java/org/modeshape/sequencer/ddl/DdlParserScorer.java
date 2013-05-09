@@ -34,6 +34,13 @@ public class DdlParserScorer {
     private int score = 0;
 
     /**
+     * Reset the score back to zero.
+     */
+    public void reset() {
+        this.score = 0;
+    }
+
+    /**
      * Increment the score because another statement was matched.
      * 
      * @param count the number of statements

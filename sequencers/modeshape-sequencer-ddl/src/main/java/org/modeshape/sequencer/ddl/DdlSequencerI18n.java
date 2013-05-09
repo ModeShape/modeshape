@@ -43,6 +43,8 @@ public final class DdlSequencerI18n {
     public static I18n unsupportedProcedureParameterDeclaration;
     public static I18n errorInstantiatingParserForGrammarUsingDefaultClasspath;
     public static I18n errorInstantiatingParserForGrammarClasspath;
+    public static I18n ddlNotScoredByParsers;
+    public static I18n unknownParser;
 
     static {
         try {

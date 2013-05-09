@@ -43,7 +43,11 @@ import org.modeshape.sequencer.ddl.node.AstNode;
  * Derby-specific DDL Parser. Includes custom data types as well as custom DDL statements.
  */
 public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstants, DerbyDdlConstants.DerbyStatementStartPhrases {
-    private final String parserId = "DERBY";
+
+    /**
+     * The Derby parser identifier.
+     */
+    private static final String ID = "DERBY";
 
     protected static final List<String[]> derbyDataTypeStrings = new ArrayList<String[]>(
                                                                                          DerbyDataTypes.CUSTOM_DATATYPE_START_PHRASES);
@@ -79,7 +83,7 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
      */
     @Override
     public String getId() {
-        return this.parserId;
+        return ID;
     }
 
     /**

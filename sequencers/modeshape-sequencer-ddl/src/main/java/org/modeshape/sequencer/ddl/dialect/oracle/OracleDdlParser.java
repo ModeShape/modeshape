@@ -56,7 +56,11 @@ import org.modeshape.sequencer.ddl.node.AstNode;
  */
 public class OracleDdlParser extends StandardDdlParser
     implements OracleDdlConstants, OracleDdlConstants.OracleStatementStartPhrases {
-    private final String parserId = "ORACLE";
+
+    /**
+     * The Oracle parser identifier.
+     */
+    private static final String ID = "ORACLE";
 
     static List<String[]> oracleDataTypeStrings = new ArrayList<String[]>();
 
@@ -82,7 +86,7 @@ public class OracleDdlParser extends StandardDdlParser
      */
     @Override
     public String getId() {
-        return this.parserId;
+        return ID;
     }
 
     /**

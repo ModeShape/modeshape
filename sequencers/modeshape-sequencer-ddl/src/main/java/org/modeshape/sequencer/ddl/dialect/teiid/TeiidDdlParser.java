@@ -38,7 +38,10 @@ import org.modeshape.sequencer.ddl.node.AstNode;
  */
 public final class TeiidDdlParser extends StandardDdlParser implements TeiidDdlConstants {
 
-    private static final String ID = "TEIID";
+    /**
+     * The Teiid parser identifier.
+     */
+    public static final String ID = "TEIID";
 
     private final Map<String, String> namespaceAliases;
     private final Collection<StatementParser> parsers;
