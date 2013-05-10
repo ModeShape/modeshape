@@ -263,7 +263,10 @@ public class JcrManagedConnectionFactory implements ManagedConnectionFactory, Re
      */
     @Override
     public int hashCode() {
-        return repositoryURL.hashCode();
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((repositoryURL == null) ? 0 : repositoryURL.hashCode());
+        return result;
     }
 
     /**
@@ -274,13 +277,19 @@ public class JcrManagedConnectionFactory implements ManagedConnectionFactory, Re
      * otherwise.
      */
     @Override
-    public boolean equals(Object other) {
-        if (other == this) {
+    public boolean equals(Object obj) {
+        if (this == obj)
             return true;
-        }
-        if (other instanceof JcrManagedConnectionFactory) {
-            return this == other;
-        }
-        return false;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        JcrManagedConnectionFactory other = (JcrManagedConnectionFactory) obj;
+        if (repositoryURL == null) {
+            if (other.repositoryURL != null)
+                return false;
+        } else if (!repositoryURL.equals(other.repositoryURL))
+            return false;
+        return true;
     }
 }

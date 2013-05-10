@@ -135,4 +135,13 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
         }
         return false;
     }
+
+
+    /**
+     * Calculates the hashcode for this object.
+     */
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
 }
