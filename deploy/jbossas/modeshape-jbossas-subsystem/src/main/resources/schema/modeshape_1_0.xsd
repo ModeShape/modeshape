@@ -811,7 +811,7 @@
       <xs:annotation>
         <xs:documentation>
           The path within "source-relative-to" in which to store the copy of the indexes for master/slave refreshing.
-          If undefined, the path defaults to 'modeshape/{repositoryName}/indexes'.
+          If undefined, the path defaults to 'modeshape/{repositoryName}/master_indexes'.
             </xs:documentation>
       </xs:annotation>
     </xs:attribute>

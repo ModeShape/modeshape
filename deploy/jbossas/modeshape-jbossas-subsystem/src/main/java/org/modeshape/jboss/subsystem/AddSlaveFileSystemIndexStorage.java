@@ -31,7 +31,7 @@ import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
 
 /**
- * 
+ * Handler for slave-file-index-storage
  */
 public class AddSlaveFileSystemIndexStorage extends AbstractAddFileSystemIndexStorage {
 
@@ -57,36 +57,28 @@ public class AddSlaveFileSystemIndexStorage extends AbstractAddFileSystemIndexSt
                                                    ModelNode storage,
                                                    EditableDocument indexStorage,
                                                    String repositoryName ) throws OperationFailedException {
-        String relativeTo = ModelAttributes.RELATIVE_TO.resolveModelAttribute(context, storage).asString();
-        String path = ModelAttributes.PATH.resolveModelAttribute(context, storage).asString();
-        String accessType = ModelAttributes.ACCESS_TYPE.resolveModelAttribute(context, storage).asString();
-        String locking = ModelAttributes.LOCKING_STRATEGY.resolveModelAttribute(context, storage).asString();
-        String sourceRelativeTo = ModelAttributes.SOURCE_RELATIVE_TO.resolveModelAttribute(context, storage).asString();
-        String sourcePath = ModelAttributes.SOURCE_PATH.resolveModelAttribute(context, storage).asString();
-        int refresh = ModelAttributes.REFRESH_PERIOD.resolveModelAttribute(context, storage).asInt();
-        int copyBufferSize = ModelAttributes.COPY_BUFFER_SIZE.resolveModelAttribute(context, storage).asInt();
-        int retryLookup = ModelAttributes.RETRY_MARKER_LOOKUP.resolveModelAttribute(context, storage).asInt();
-        int retryPeriod = ModelAttributes.RETRY_INITIALIZE_PERIOD.resolveModelAttribute(context, storage).asInt();
-        // Check the ModelNode values **without** resolving any symbols ...
-        if (storage.has(ModelKeys.RELATIVE_TO) && storage.get(ModelKeys.RELATIVE_TO).asString().contains(
-                ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
-            setIndexStoragePathInDataDirectory(path);
-        }
-        if (storage.has(ModelKeys.SOURCE_RELATIVE_TO)
-            && storage.get(ModelKeys.SOURCE_RELATIVE_TO).asString().contains(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
-            setIndexSourcePathInDataDirectory(sourcePath);
-        }
-        path = relativeTo + path;
-        sourcePath = sourceRelativeTo + sourcePath;
         indexStorage.set(FieldName.TYPE, FieldValue.INDEX_STORAGE_FILESYSTEM_SLAVE);
-        indexStorage.set(FieldName.INDEX_STORAGE_LOCATION, path);
-        indexStorage.set(FieldName.INDEX_STORAGE_LOCKING_STRATEGY, locking.toLowerCase());
+
+        processLocalIndexStorageLocation(context, storage, repositoryName, indexStorage);
+        processSourceIndexStorageLocation(context, storage, repositoryName, indexStorage);
+
+        String accessType = ModelAttributes.ACCESS_TYPE.resolveModelAttribute(context, storage).asString();
         indexStorage.set(FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE, accessType.toLowerCase());
+
+        String locking = ModelAttributes.LOCKING_STRATEGY.resolveModelAttribute(context, storage).asString();
+        indexStorage.set(FieldName.INDEX_STORAGE_LOCKING_STRATEGY, locking.toLowerCase());
+
+        int refresh = ModelAttributes.REFRESH_PERIOD.resolveModelAttribute(context, storage).asInt();
         indexStorage.set(FieldName.INDEX_STORAGE_REFRESH_IN_SECONDS, refresh);
-        indexStorage.set(FieldName.INDEX_STORAGE_SOURCE_LOCATION, sourcePath);
+
+        int copyBufferSize = ModelAttributes.COPY_BUFFER_SIZE.resolveModelAttribute(context, storage).asInt();
         indexStorage.set(FieldName.INDEX_STORAGE_COPY_BUFFER_SIZE_IN_MEGABYTES, copyBufferSize);
-        indexStorage.set(FieldName.INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS, retryPeriod);
+
+        int retryLookup = ModelAttributes.RETRY_MARKER_LOOKUP.resolveModelAttribute(context, storage).asInt();
         indexStorage.set(FieldName.INDEX_STORAGE_RETRY_MARKER_LOOKUP, retryLookup);
+
+        int retryPeriod = ModelAttributes.RETRY_INITIALIZE_PERIOD.resolveModelAttribute(context, storage).asInt();
+        indexStorage.set(FieldName.INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS, retryPeriod);
     }
     
     @Override
