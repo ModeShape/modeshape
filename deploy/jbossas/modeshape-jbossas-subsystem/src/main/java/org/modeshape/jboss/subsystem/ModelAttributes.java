@@ -699,7 +699,7 @@ public class ModelAttributes {
                                                                                                      ModelType.STRING).setXmlName(Attribute.RELATIVE_TO.getLocalName())
                                                                                                                       .setAllowExpression(true)
                                                                                                                       .setAllowNull(true)
-                                                                                                                      .setDefaultValue(new ModelNode().set("jboss.server.data.dir"))
+                                                                                                                      .setDefaultValue(new ModelNode().set(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE))
                                                                                                                       .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                       .build();
 
@@ -768,7 +768,7 @@ public class ModelAttributes {
                                                                                                             ModelType.STRING).setXmlName(Attribute.SOURCE_RELATIVE_TO.getLocalName())
                                                                                                                              .setAllowExpression(true)
                                                                                                                              .setAllowNull(true)
-                                                                                                                             .setDefaultValue(new ModelNode().set("jboss.server.data.dir"))
+                                                                                                                             .setDefaultValue(new ModelNode().set(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE))
                                                                                                                              .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                              .build();
 
