@@ -37,7 +37,7 @@
 
   <resourceadapter>
     <resourceadapter-class>
-      org.modeshape.jcr.jca.JcrResourceAdapter
+      org.modeshape.jca.JcrResourceAdapter
     </resourceadapter-class>
     <outbound-resourceadapter>
       <connection-definition>
@@ -46,10 +46,9 @@
         </managedconnectionfactory-class>
 
         <config-property>
-          <config-property-name>RepositoryURI</config-property-name>
+          <config-property-name>RepositoryURL</config-property-name>
           <config-property-type>java.lang.String</config-property-type>
         </config-property>
-
 
         <connectionfactory-interface>
           javax.jcr.Repository

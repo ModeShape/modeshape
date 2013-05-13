@@ -23,24 +23,17 @@
  */
 package org.modeshape.jca;
 
-import java.net.URL;
-import javax.jcr.Repository;
-import javax.jcr.RepositoryException;
-
 import javax.resource.ResourceException;
 import javax.resource.spi.ActivationSpec;
 import javax.resource.spi.BootstrapContext;
-import javax.resource.spi.ConfigProperty;
 import javax.resource.spi.Connector;
 import javax.resource.spi.ResourceAdapter;
 import javax.resource.spi.ResourceAdapterInternalException;
 import javax.resource.spi.TransactionSupport;
 import javax.resource.spi.endpoint.MessageEndpointFactory;
-
 import javax.transaction.xa.XAResource;
-import org.modeshape.common.collection.Problems;
+
 import org.modeshape.jcr.ModeShapeEngine;
-import org.modeshape.jcr.RepositoryConfiguration;
 
 /**
  * JcrResourceAdapter
@@ -55,17 +48,6 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
      * The serial version UID
      */
     private static final long serialVersionUID = 1L;
-    /**
-     * repositoryURL
-     */
-    @ConfigProperty
-    private String repositoryURL;
-
-    /**
-     * Repository instance
-     */
-    private Repository repository;
-
     //XA
     private final XAResource[] xaResources = new XAResource[0];
 
@@ -77,62 +59,6 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
     public JcrResourceAdapter() {
     }
 
-    /**
-     * Set repositoryURL
-     *
-     * @param repositoryURL The value
-     */
-    public void setRepositoryURL(String repositoryURL) {
-        this.repositoryURL = repositoryURL;
-    }
-
-    /**
-     * Get repositoryURL
-     *
-     * @return The value
-     */
-    public String getRepositoryURL() {
-        return repositoryURL;
-    }
-
-    protected synchronized Repository getRepository() throws ResourceException {
-        if (this.repository == null) {
-            this.repository = deployRepository(repositoryURL);
-        }
-        return this.repository;
-    }
-
-    private boolean isAbsolutePath(String uri) {
-        return !(uri.startsWith("jndi") || uri.startsWith("file"));
-    }
-
-    private Repository deployRepository(String uri) throws ResourceException {
-        if (engine == null) {
-            engine = new ModeShapeEngine();
-            engine.start();
-        }
-
-        //load configuration
-        RepositoryConfiguration config = null;
-        try {
-            URL url = isAbsolutePath(uri) ? getClass().getClassLoader().getResource(uri) : new URL(uri);
-            config = RepositoryConfiguration.read(url);
-        } catch (Exception e) {
-            throw new ResourceException(e);
-        }
-
-        //check configuration
-        Problems problems = config.validate();
-        if (problems.hasErrors()) {
-            throw new ResourceException(problems.toString());
-        }
-
-        try {
-            return engine.deploy(config);
-        } catch (RepositoryException e) {
-            throw new ResourceException(e);
-        }
-    }
 
     /**
      * This is called during the activation of a message endpoint.
@@ -193,16 +119,6 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
     }
 
     /**
-     * Returns a hash code value for the object.
-     *
-     * @return A hash code value for this object.
-     */
-    @Override
-    public int hashCode() {
-        return repositoryURL.hashCode();
-    }
-
-    /**
      * Indicates whether some other object is equal to this one.
      *
      * @param other The reference object with which to compare.
@@ -218,5 +134,14 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
             return this == other;
         }
         return false;
+    }
+
+
+    /**
+     * Calculates the hashcode for this object.
+     */
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 }
