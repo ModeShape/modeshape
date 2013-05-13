@@ -52,11 +52,11 @@ public class JcrRepositoryHandle implements Referenceable, Serializable, Reposit
      * @param mcf Managed connection factory interface
      * @param cm Connection manager.
      */
-    public JcrRepositoryHandle(JcrResourceAdapter ra, JcrManagedConnectionFactory mcf, ConnectionManager cm) throws ResourceException {
+    public JcrRepositoryHandle(JcrManagedConnectionFactory mcf, ConnectionManager cm) throws ResourceException {
         this.mcf = mcf;
         this.cm = cm;
         try {
-            this.repository = ra.getRepository();
+            this.repository = mcf.getRepository();
         } catch (Exception e) {
             throw new ResourceException(e);
         }

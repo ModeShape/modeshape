@@ -24,12 +24,14 @@
 package org.modeshape.jca;
 
 import java.io.PrintWriter;
+import java.net.URL;
 import java.util.Set;
 
 import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-
 import javax.resource.ResourceException;
+import javax.resource.spi.ConfigProperty;
 import javax.resource.spi.ConnectionDefinition;
 import javax.resource.spi.ConnectionManager;
 import javax.resource.spi.ConnectionRequestInfo;
@@ -37,8 +39,12 @@ import javax.resource.spi.ManagedConnection;
 import javax.resource.spi.ManagedConnectionFactory;
 import javax.resource.spi.ResourceAdapter;
 import javax.resource.spi.ResourceAdapterAssociation;
-
 import javax.security.auth.Subject;
+
+import org.modeshape.common.collection.Problems;
+import org.modeshape.common.logging.Logger;
+import org.modeshape.jcr.ModeShapeEngine;
+import org.modeshape.jcr.RepositoryConfiguration;
 
 /**
  * Provides implementation for Managed Connection Factory.
@@ -51,6 +57,7 @@ connection = Session.class,
 connectionImpl = JcrSessionHandle.class)
 public class JcrManagedConnectionFactory implements ManagedConnectionFactory, ResourceAdapterAssociation {
 
+    private static final Logger LOGGER = Logger.getLogger(JcrManagedConnectionFactory.class);
     /**
      * The serial version UID
      */
@@ -63,6 +70,18 @@ public class JcrManagedConnectionFactory implements ManagedConnectionFactory, Re
      * The logwriter
      */
     private PrintWriter logwriter;
+    /**
+     * repositoryURL
+     */
+    @ConfigProperty
+    private String repositoryURL;
+
+    /**
+     * Repository instance
+     */
+    private Repository repository;
+
+    private ModeShapeEngine engine;
 
     /**
      * Creates new factory instance.
@@ -70,13 +89,67 @@ public class JcrManagedConnectionFactory implements ManagedConnectionFactory, Re
     public JcrManagedConnectionFactory() {
     }
 
+    private boolean isAbsolutePath(String uri) {
+        return !(uri.startsWith("jndi") || uri.startsWith("file"));
+    }
+
+    private Repository deployRepository(String uri) throws ResourceException {
+        if (engine == null) {
+            engine = new ModeShapeEngine();
+            engine.start();
+        }
+
+        //load configuration
+        RepositoryConfiguration config = null;
+        try {
+            URL url = isAbsolutePath(uri) ? getClass().getClassLoader().getResource(uri) : new URL(uri);
+            config = RepositoryConfiguration.read(url);
+        } catch (Exception e) {
+            throw new ResourceException(e);
+        }
+
+        //check configuration
+        Problems problems = config.validate();
+        if (problems.hasErrors()) {
+            throw new ResourceException(problems.toString());
+        }
+
+        try {
+            return engine.deploy(config);
+        } catch (RepositoryException e) {
+            throw new ResourceException(e);
+        }
+    }
+
+    /**
+     * Set repositoryURL
+     *
+     * @param repositoryURL The value
+     */
+    public void setRepositoryURL(String repositoryURL) {
+        LOGGER.debug("Set repository URL=[{0}]", repositoryURL);
+        this.repositoryURL = repositoryURL;
+    }
+
+    /**
+     * Get repositoryURL
+     *
+     * @return The value
+     */
+    public String getRepositoryURL() {
+        return repositoryURL;
+    }
     /**
      * Provides access to the configured repository.
      *
      * @return repository specified by resource adapter configuration.
      */
-    public Repository getRepository() throws ResourceException {
-        return ra.getRepository();
+    public synchronized Repository getRepository() throws ResourceException {
+        if (this.repository == null) {
+            LOGGER.debug("Deploying repository URL [{0}]", repositoryURL);
+            this.repository = deployRepository(repositoryURL);
+        }
+        return this.repository;
     }
 
     /**
@@ -89,7 +162,7 @@ public class JcrManagedConnectionFactory implements ManagedConnectionFactory, Re
      * @throws ResourceException Generic exception
      */
     public Object createConnectionFactory(ConnectionManager cxManager) throws ResourceException {
-        JcrRepositoryHandle handle = new JcrRepositoryHandle(ra, this, cxManager);
+        JcrRepositoryHandle handle = new JcrRepositoryHandle(this, cxManager);
         return handle;
     }
 
@@ -190,7 +263,9 @@ public class JcrManagedConnectionFactory implements ManagedConnectionFactory, Re
      */
     @Override
     public int hashCode() {
-        int result = 17;
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((repositoryURL == null) ? 0 : repositoryURL.hashCode());
         return result;
     }
 
@@ -202,13 +277,19 @@ public class JcrManagedConnectionFactory implements ManagedConnectionFactory, Re
      * otherwise.
      */
     @Override
-    public boolean equals(Object other) {
-        if (other == this) {
+    public boolean equals(Object obj) {
+        if (this == obj)
             return true;
-        }
-        if (other instanceof JcrManagedConnectionFactory) {
-            return this == other;
-        }
-        return false;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        JcrManagedConnectionFactory other = (JcrManagedConnectionFactory) obj;
+        if (repositoryURL == null) {
+            if (other.repositoryURL != null)
+                return false;
+        } else if (!repositoryURL.equals(other.repositoryURL))
+            return false;
+        return true;
     }
 }

@@ -26,12 +26,12 @@
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              xsi:schemaLocation="http://www.jboss.org/ironjacamar/schema 
              http://www.jboss.org/ironjacamar/schema/ironjacamar_1_0.xsd">
-  <config-property name="repositoryURL">my-repository-config.json</config-property>
 
   <transaction-support>XATransaction</transaction-support>
   
   <connection-definitions>
     <connection-definition class-name="org.modeshape.jca.JcrManagedConnectionFactory" jndi-name="java:/eis/JcrCciConnectionFactory" pool-name="JcrCciConnectionFactory">
+      <config-property name="RepositoryURL">my-repository-config.json</config-property>
     </connection-definition>
   </connection-definitions>
 
