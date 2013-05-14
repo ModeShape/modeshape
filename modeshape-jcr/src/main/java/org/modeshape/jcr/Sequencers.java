@@ -208,7 +208,10 @@ public class Sequencers implements ChangeSetListener {
                                      repository.name());
                     }
                 } catch (Throwable t) {
-                    LOGGER.error(JcrI18n.unableToInitializeSequencer, sequencer, repository.name(), t.getMessage());
+                    if (t.getCause() != null) {
+                        t = t.getCause();
+                    }
+                    LOGGER.error(t, JcrI18n.unableToInitializeSequencer, sequencer, repository.name(), t.getMessage());
                     sequencersIterator.remove();
                 }
             }

@@ -23,15 +23,49 @@
  */
 package org.modeshape.sequencer.classfile;
 
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.ABSTRACT;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.ANNOTATION;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.ANNOTATIONS;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.ANNOTATION_MEMBER;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.CLASS;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.CONSTRUCTORS;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.ENUM;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.ENUM_VALUES;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.FIELD;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.FIELDS;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.FINAL;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.INTERFACE;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.INTERFACES;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHOD;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHODS;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHOD_PARAMETERS;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.NAME;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.NATIVE;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.PARAMETER;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.PARAMETERS;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.RETURN_TYPE_CLASS_NAME;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.SEQUENCED_DATE;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.STATIC;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.STRICT_FP;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.SUPER_CLASS_NAME;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.SYNCHRONIZED;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.TRANSIENT;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.TYPE_CLASS_NAME;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.VALUE;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.VISIBILITY;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.VOLATILE;
+import java.util.List;
+import java.util.Map;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.*;
-import org.modeshape.sequencer.classfile.metadata.*;
-import java.util.List;
-import java.util.Map;
+import org.modeshape.sequencer.classfile.metadata.AnnotationMetadata;
+import org.modeshape.sequencer.classfile.metadata.ClassMetadata;
+import org.modeshape.sequencer.classfile.metadata.EnumMetadata;
+import org.modeshape.sequencer.classfile.metadata.FieldMetadata;
+import org.modeshape.sequencer.classfile.metadata.MethodMetadata;
 
 public class DefaultClassFileRecorder implements ClassFileRecorder {
 
@@ -55,18 +89,18 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
 
     private void writeClassMetaInformation( Sequencer.Context context, ClassMetadata classMetadata, Node classNode ) throws RepositoryException {
         /*
-       - class:name (string) mandatory
-       - class:superClassName (string)
-       - class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
-       - class:abstract (boolean) mandatory
-       - class:interface (boolean) mandatory
-       - class:final (boolean) mandatory
-       - class:strictFp (boolean) mandatory
-       - class:interfaces (string) multiple
-       + class:annotations (class:annotations) = class:annotations
-       + class:constructors (class:constructors) = class:constructors
-       + class:methods (class:methods) = class:methods
-       + class:fields (class:fields) = class:fields
+        - class:name (string) mandatory
+        - class:superClassName (string)
+        - class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
+        - class:abstract (boolean) mandatory
+        - class:interface (boolean) mandatory
+        - class:final (boolean) mandatory
+        - class:strictFp (boolean) mandatory
+        - class:interfaces (string) multiple
+        + class:annotations (class:annotations) = class:annotations
+        + class:constructors (class:constructors) = class:constructors
+        + class:methods (class:methods) = class:methods
+        + class:fields (class:fields) = class:fields
         */
 
         classNode.setProperty(NAME, classMetadata.getClassName());
@@ -140,6 +174,16 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
             - class:native (boolean) mandatory
             - class:synchronized (boolean) mandatory
             - class:parameters (string) multiple
+            + class:methodParameters (class:parameters) = class:parameters
+            + class:annotations (class:annotations) = class:annotations
+
+            [class:parameters]
+            + * (class:parameter) = class:parameter
+
+            [class:parameter]
+            - class:name (string) mandatory 
+            - class:typeClassName (string) mandatory 
+            - class:final (boolean) mandatory
             + class:annotations (class:annotations) = class:annotations
          */
 
@@ -154,8 +198,15 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
             methodNode.setProperty(STRICT_FP, method.isStrictFp());
             methodNode.setProperty(NATIVE, method.isNative());
             methodNode.setProperty(SYNCHRONIZED, method.isSynchronized());
-            methodNode.setProperty(PARAMETERS, method.getParameters().toArray(new String[0]));
-
+            Node parametersNode = methodNode.addNode(METHOD_PARAMETERS, PARAMETERS);
+            int num = 0;
+            for (String paramType : method.getParameters()) {
+                String paramName = "p" + (++num); // not included in bytecode
+                Node field = parametersNode.addNode(paramName, PARAMETER);
+                field.setProperty(NAME, paramName);
+                field.setProperty(TYPE_CLASS_NAME, paramType);
+                field.setProperty(FINAL, false);
+            }
             writeAnnotationsNode(methodNode, method.getAnnotations());
         }
     }

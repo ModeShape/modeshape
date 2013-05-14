@@ -51,9 +51,6 @@
 [class:interfaces]
 - * (string)
 
-[class:parameters]
-- * (string)
-
 [class:method]
 - class:name (string) mandatory 
 - class:returnTypeClassName (string) mandatory 
@@ -66,12 +63,22 @@
 - class:synchronized (boolean) mandatory
 - class:parameters (string) multiple
 + class:annotations (class:annotations) = class:annotations
++ class:methodParameters (class:parameters) = class:parameters
 
 [class:methods]
 + * (class:method) = class:method
 
 [class:constructors]
 + * (class:method) = class:method
+
+[class:parameters]
++ * (class:parameter) = class:parameter
+
+[class:parameter]
+- class:name (string) mandatory 
+- class:typeClassName (string) mandatory 
+- class:final (boolean) mandatory
++ class:annotations (class:annotations) = class:annotations
 
 [class:class]
 - class:name (string) mandatory
