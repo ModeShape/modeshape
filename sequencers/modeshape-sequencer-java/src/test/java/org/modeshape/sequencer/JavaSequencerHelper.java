@@ -39,9 +39,9 @@ import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.INTERF
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.INTERFACES;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHOD;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHODS;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHOD_PARAMETERS;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.NAME;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.NATIVE;
-import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.PARAMETERS;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.RETURN_TYPE_CLASS_NAME;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.STATIC;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.STRICT_FP;
@@ -56,6 +56,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -278,8 +279,15 @@ public abstract class JavaSequencerHelper {
         assertEquals(isStrictFP, method.getProperty(STRICT_FP).getBoolean());
         assertEquals(isNative, method.getProperty(NATIVE).getBoolean());
         assertEquals(isSynchronized, method.getProperty(SYNCHRONIZED).getBoolean());
-        List<String> parameters = valuesToStringList(method.getProperty(PARAMETERS).getValues());
-        assertEquals(expectedParameters, parameters);
+        if (!expectedParameters.isEmpty()) {
+            Node parameters = method.getNode(METHOD_PARAMETERS);
+            NodeIterator iter = parameters.getNodes();
+            Iterator<String> expectedNameIter = expectedParameters.iterator();
+            while (iter.hasNext()) {
+                Node parameter = iter.nextNode();
+                assertEquals(expectedNameIter.next(), parameter.getProperty(TYPE_CLASS_NAME).getString());
+            }
+        }
     }
 
     private void assertField( Node field,
