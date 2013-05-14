@@ -75,6 +75,7 @@ class JMSMasterIndexingListener implements MessageListener, ExceptionListener {
         try {
             this.queueConnection = establishConnection(connectionFactory);
             startSession(queue);
+            LOGGER.debug("Started JMS indexing listener on master node...");
         } catch (JMSException e) {
             LOGGER.error(e.getLinkedException(), JcrI18n.errorWhileStartingUpListener, e.getErrorCode(), e.getMessage());
         }
