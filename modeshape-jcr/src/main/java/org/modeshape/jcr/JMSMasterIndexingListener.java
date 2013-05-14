@@ -75,6 +75,7 @@ class JMSMasterIndexingListener implements MessageListener, ExceptionListener {
         try {
             this.queueConnection = establishConnection(connectionFactory);
             startSession(queue);
+            LOGGER.debug("Started JMS indexing listener on master node...");
         } catch (JMSException e) {
             LOGGER.error(e.getLinkedException(), JcrI18n.errorWhileStartingUpListener, e.getErrorCode(), e.getMessage());
         }
@@ -90,7 +91,7 @@ class JMSMasterIndexingListener implements MessageListener, ExceptionListener {
 
     @Override
     public void onMessage( Message message ) {
-        LOGGER.debug("Received JMS message");
+        LOGGER.trace("Received JMS message");
         if (!(message instanceof ObjectMessage)) {
             LOGGER.error(JcrI18n.incorrectJMSMessageType, ObjectMessage.class.getName(), message.getClass().getName());
             return;
@@ -105,8 +106,8 @@ class JMSMasterIndexingListener implements MessageListener, ExceptionListener {
                 return;
             }
             List<LuceneWork> workQueue = indexManager.getSerializer().toLuceneWorks((byte[])objectMessage.getObject());
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Received " + workQueue.size() + " lucene work item(s) from JMS message. Submitting to the index manager");
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Received " + workQueue.size() + " lucene work item(s) from JMS message. Submitting to the index manager");
             }
             indexManager.performOperations(workQueue, null);
         } catch (JMSException e) {
@@ -116,10 +117,11 @@ class JMSMasterIndexingListener implements MessageListener, ExceptionListener {
 
     @Override
     public void onException( JMSException exception ) {
-        LOGGER.error(JcrI18n.unexpectedJMSException);
+        LOGGER.error(exception.getLinkedException(), JcrI18n.unexpectedJMSException, exception.getErrorCode(), exception.getMessage());
     }
 
     void shutdown()  {
+        LOGGER.debug("Stopping JMS indexing listener on master node...");
         try {
             queueConnection.close();
             this.allIndexManager = null;
