@@ -108,7 +108,7 @@ class RepositoryDisabledQueryManager extends RepositoryQueryManager {
 
     RepositoryDisabledQueryManager( RunningState runningState,
                                     QuerySystem querySystem ) {
-        super(runningState, querySystem);
+        super(runningState);
     }
 
     @Override

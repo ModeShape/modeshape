@@ -478,6 +478,15 @@ public final class JcrI18n {
 
     public static I18n errorCreatingDatabaseTable;
 
+    public static I18n cannotLocateConnectionFactory;
+    public static I18n cannotLocateQueue;
+    public static I18n unexpectedJMSException;
+    public static I18n incorrectJMSMessageType;
+    public static I18n unknownIndexName;
+    public static I18n cannotReadJMSMessage;
+    public static I18n errorWhileShuttingDownListener;
+    public static I18n errorWhileStartingUpListener;
+
     static {
         try {
             I18n.initialize(JcrI18n.class);

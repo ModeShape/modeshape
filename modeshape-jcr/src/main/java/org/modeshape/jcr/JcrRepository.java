@@ -1146,7 +1146,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     Properties backendProps = query.getIndexingBackendProperties();
                     Properties indexingProps = query.getIndexingProperties();
                     Properties indexStorageProps = query.getIndexStorageProperties();
-                    this.repositoryQueryManager = new RepositoryQueryManager(this, config.getQuery(), indexingExecutor,
+                    this.repositoryQueryManager = new RepositoryQueryManager(this, indexingExecutor,
                                                                              backendProps, indexingProps, indexStorageProps);
                     this.indexRebuildOptions = query.getIndexRebuildOptions();
                 } else {

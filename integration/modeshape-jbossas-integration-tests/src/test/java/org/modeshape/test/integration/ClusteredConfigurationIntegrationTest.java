@@ -27,6 +27,9 @@ package org.modeshape.test.integration;
 import java.io.File;
 import javax.annotation.Resource;
 import javax.jcr.Session;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryManager;
+import javax.jcr.query.QueryResult;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ArchivePaths;
@@ -34,12 +37,14 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.RepositoryConfiguration;
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -62,11 +67,14 @@ public class ClusteredConfigurationIntegrationTest {
     @Resource( mappedName = "java:/jcr/repo-clustered" )
     private JcrRepository clusteredRepository;
 
+    @Before
+    public void before() {
+        assertNotNull(clusteredRepository);
+    }
+
     @Test
     @FixFor({"MODE-1923", "MODE-1929"})
     public void clusteredRepositoryShouldHaveStartedUp() throws Exception {
-        assertNotNull(clusteredRepository);
-
         RepositoryConfiguration.Clustering clusteringConfiguration = clusteredRepository.getConfiguration().getClustering();
         assertEquals("modeshape-cluster", clusteringConfiguration.getClusterName());
         Assert.assertNotNull(clusteringConfiguration.getChannel());
@@ -76,4 +84,16 @@ public class ClusteredConfigurationIntegrationTest {
         session.logout();
     }
 
+    @Test
+    @FixFor( "MODE-1935" )
+    public void shouldIndexNodesOnMaster() throws Exception {
+        Session session = clusteredRepository.login();
+        session.getRootNode().addNode("test");
+        session.save();
+
+        String queryString = "select * from [nt:unstructured] where [jcr:name] like '%test%'";
+        QueryManager queryManager = session.getWorkspace().getQueryManager();
+        QueryResult result = queryManager.createQuery(queryString, Query.JCR_SQL2).execute();
+        assertTrue(result.getNodes().getSize() > 0);
+    }
 }

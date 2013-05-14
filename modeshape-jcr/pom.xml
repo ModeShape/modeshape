@@ -60,6 +60,10 @@
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-regex</artifactId>
         </dependency>
+        <dependency>
+            <groupId>javax.jms</groupId>
+            <artifactId>jms-api</artifactId>
+        </dependency>
 
         <!-- MIME-type detection. This can be excluded in applications and components that depend on ModeShape
              if MIME type detection is to be disabled in ModeShape. -->

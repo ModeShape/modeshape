@@ -44,6 +44,7 @@ import org.hibernate.search.backend.spi.Work;
 import org.hibernate.search.backend.spi.WorkType;
 import org.hibernate.search.backend.spi.Worker;
 import org.hibernate.search.engine.spi.SearchFactoryImplementor;
+import org.hibernate.search.indexes.impl.IndexManagerHolder;
 import org.hibernate.search.indexes.spi.IndexManager;
 import org.hibernate.search.indexes.spi.ReaderProvider;
 import org.modeshape.common.logging.Logger;
@@ -146,6 +147,15 @@ public class BasicLuceneSchema implements LuceneSchema {
 
     protected final String stringFrom( Name name ) {
         return name.getString(namespaces);
+    }
+
+    /**
+     * Returns the global index manager.
+     *
+     * @return  a {@code IndexManagerHolder} instance.
+     */
+    public IndexManagerHolder getAllIndexesManager() {
+        return searchFactory.getAllIndexesManager();
     }
 
     protected final NodeInfo nodeInfo( String id,

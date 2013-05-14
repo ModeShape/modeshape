@@ -71,6 +71,8 @@
 
         <!--Needed for clustering configurations-->
         <module name="org.jboss.as.clustering.infinispan"/>
+        <!--Needed for indexing via JMS-->
+        <module name="javax.jms.api"/>
     </dependencies>
 
 </module>
