@@ -291,6 +291,10 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                 started = startAndWriteAttribute(writer, storage, ModelAttributes.REFRESH_PERIOD, element, started);
             } else if (ModelKeys.COPY_BUFFER_SIZE.equals(key)) {
                 started = startAndWriteAttribute(writer, storage, ModelAttributes.COPY_BUFFER_SIZE, element, started);
+            } else if (ModelKeys.RETRY_MARKER_LOOKUP.equals(key)) {
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.RETRY_MARKER_LOOKUP, element, started);
+            } else if (ModelKeys.RETRY_INITIALIZE_PERIOD.equals(key)) {
+                started = startAndWriteAttribute(writer, storage, ModelAttributes.RETRY_INITIALIZE_PERIOD, element, started);
             }
             // JMS-backend (for master & slave file storage only) ...
             else if (ModelKeys.CONNECTION_FACTORY_JNDI_NAME.equals(key)) {
