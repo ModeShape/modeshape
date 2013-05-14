@@ -43,6 +43,11 @@ public class MySource {
 
     MySource() {
     }
+    public MySource(int i, int j) {
+        this.i = i;
+        this.j = j;
+    }
+    
     public MySource(int i, int j, Object o) {
         this.i = i;
         this.j = j;
@@ -66,6 +71,11 @@ public class MySource {
         l.add("N1");
     }
     
+    public void doSomething(int p1, double p2, float p3, Object o) {
+        l = new ArrayList<String>();
+        l.add("N1");
+    }
+    
     private double doSomething2(Object[] oa, int[] ia) {
         System.out.println("genial");
         return 1.0;
@@ -81,6 +91,10 @@ public class MySource {
 
         A( E e ) {
             this.e = e;
+        }
+
+        A() {
+            this.e = null;
         }
 
         @Override

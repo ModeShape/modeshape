@@ -135,7 +135,30 @@ public abstract class JavaSequencerHelper {
         assertEquals(CONSTRUCTORS, constructors.getProperty(JCR_PRIMARY_TYPE).getString());
         NodeIterator constructorMethodsIt = constructors.getNodes();
         Node constructorMethod = constructorMethodsIt.nextNode();
-        assertFalse(constructorMethodsIt.hasNext());
+        assertMethod(constructorMethod,
+                     getExpectedTypeName(MockClass.class),
+                     "void",
+                     "public",
+                     false,
+                     false,
+                     false,
+                     false,
+                     false,
+                     false,
+                     Arrays.<String>asList());
+        constructorMethod = constructorMethodsIt.nextNode();
+        assertMethod(constructorMethod,
+                     getExpectedTypeName(MockClass.class),
+                     "void",
+                     "public",
+                     false,
+                     false,
+                     false,
+                     false,
+                     false,
+                     false,
+                     Arrays.asList("boolean"));
+        constructorMethod = constructorMethodsIt.nextNode();
         assertMethod(constructorMethod,
                      getExpectedTypeName(MockClass.class),
                      "void",
@@ -147,6 +170,7 @@ public abstract class JavaSequencerHelper {
                      false,
                      false,
                      Arrays.asList(getExpectedTypeName(Boolean.class)));
+        assertFalse(constructorMethodsIt.hasNext());
         assertNoAnnotationsOnNode(constructorMethod);
     }
 
@@ -156,8 +180,15 @@ public abstract class JavaSequencerHelper {
         assertEquals(METHODS, methods.getProperty(JCR_PRIMARY_TYPE).getString());
         NodeIterator methodsIterator = methods.getNodes();
         Node method = methodsIterator.nextNode();
+        assertMethod(method, "doSomething", "void", "public", false, false, false, false, false, false, Arrays.asList("double"));
+        method = methodsIterator.nextNode();
+        assertMethod(method, "doSomething", "void", "public", false, false, false, false, false, false, Arrays.asList("float"));
+        method = methodsIterator.nextNode();
+        assertMethod(method, "setField", "void", "public", false, false, false, false, false, false, new ArrayList<String>());
+        method = methodsIterator.nextNode();
+        assertMethod(method, "setField", "void", "public", false, false, false, false, false, false, Arrays.asList(getExpectedTypeName(Boolean.class)));
+        method = methodsIterator.nextNode();
         assertMethod(method, "voidMethod", "void", "package", false, false, false, false, false, true, new ArrayList<String>());
-
         assertNodeHasAnnotation(method, Deprecated.class);
         assertFalse(methodsIterator.hasNext());
     }

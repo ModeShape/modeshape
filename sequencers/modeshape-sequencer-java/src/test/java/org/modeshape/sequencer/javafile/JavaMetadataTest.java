@@ -124,43 +124,57 @@ public class JavaMetadataTest {
     private void assertClassMethods( TypeMetadata typeMetadata ) {
         // get methods (member functions)
         List<MethodMetadata> methods = typeMetadata.getMethods();
-        assertEquals(8, methods.size());
+        assertEquals(10, methods.size());
 
         assertMethodMetadata(methods.get(0), MethodMetadata.Type.CONSTRUCTOR, new String[0], null, "MySource", 0);
 
         MethodMetadata methodMetadata = methods.get(1);
-        assertMethodMetadata(methodMetadata, MethodMetadata.Type.CONSTRUCTOR, new String[] {PUBLIC}, null, "MySource", 3);
+        assertMethodMetadata(methodMetadata, MethodMetadata.Type.CONSTRUCTOR, new String[] {PUBLIC}, null, "MySource", 2);
         List<FieldMetadata> parameters = methodMetadata.getParameters();
+        assertFieldMetadata(parameters.get(0), FieldMetadata.Type.PRIMITIVE, new String[0], "int", new String[] {"i"});
+        assertFieldMetadata(parameters.get(1), FieldMetadata.Type.PRIMITIVE, new String[0], "int", new String[] {"j"});
+
+        methodMetadata = methods.get(2);
+        assertMethodMetadata(methodMetadata, MethodMetadata.Type.CONSTRUCTOR, new String[] {PUBLIC}, null, "MySource", 3);
+        parameters = methodMetadata.getParameters();
         assertFieldMetadata(parameters.get(0), FieldMetadata.Type.PRIMITIVE, new String[0], "int", new String[] {"i"});
         assertFieldMetadata(parameters.get(1), FieldMetadata.Type.PRIMITIVE, new String[0], "int", new String[] {"j"});
         assertFieldMetadata(parameters.get(2), FieldMetadata.Type.SIMPLE, new String[0], "Object", new String[] {"o"});
 
-        assertMethodMetadata(methods.get(2), MethodMetadata.Type.METHOD_TYPE_MEMBER, new String[] {PUBLIC}, "int", "getI", 0);
+        assertMethodMetadata(methods.get(3), MethodMetadata.Type.METHOD_TYPE_MEMBER, new String[] {PUBLIC}, "int", "getI", 0);
 
-        methodMetadata = methods.get(3);
+        methodMetadata = methods.get(4);
         assertMethodMetadata(methodMetadata, MethodMetadata.Type.METHOD_TYPE_MEMBER, new String[] {PUBLIC}, "void", "setI", 1);
         parameters = methodMetadata.getParameters();
         assertFieldMetadata(parameters.get(0), FieldMetadata.Type.PRIMITIVE, new String[0], "int", new String[] {"i"});
 
-        methodMetadata = methods.get(4);
+        methodMetadata = methods.get(5);
         assertMethodMetadata(methodMetadata, MethodMetadata.Type.METHOD_TYPE_MEMBER, new String[] {PUBLIC}, "void", "setJ", 1);
         parameters = methodMetadata.getParameters();
         assertFieldMetadata(parameters.get(0), FieldMetadata.Type.PRIMITIVE, new String[0], "int", new String[] {"j"});
 
-        methodMetadata = methods.get(5);
+        methodMetadata = methods.get(6);
         assertMethodMetadata(methodMetadata, MethodMetadata.Type.METHOD_TYPE_MEMBER, new String[] {PUBLIC}, "void", "doSomething", 3);
         parameters = methodMetadata.getParameters();
         assertFieldMetadata(parameters.get(0), FieldMetadata.Type.PRIMITIVE, new String[0], "int", new String[] {"p1"});
         assertFieldMetadata(parameters.get(1), FieldMetadata.Type.PRIMITIVE, new String[0], "double", new String[] {"p2"});
         assertFieldMetadata(parameters.get(2), FieldMetadata.Type.SIMPLE, new String[0], "Object", new String[] {"o"});
 
-        methodMetadata = methods.get(6);
+        methodMetadata = methods.get(7);
+        assertMethodMetadata(methodMetadata, MethodMetadata.Type.METHOD_TYPE_MEMBER, new String[] {PUBLIC}, "void", "doSomething", 4);
+        parameters = methodMetadata.getParameters();
+        assertFieldMetadata(parameters.get(0), FieldMetadata.Type.PRIMITIVE, new String[0], "int", new String[] {"p1"});
+        assertFieldMetadata(parameters.get(1), FieldMetadata.Type.PRIMITIVE, new String[0], "double", new String[] {"p2"});
+        assertFieldMetadata(parameters.get(2), FieldMetadata.Type.PRIMITIVE, new String[0], "float", new String[] {"p3"});
+        assertFieldMetadata(parameters.get(3), FieldMetadata.Type.SIMPLE, new String[0], "Object", new String[] {"o"});
+
+        methodMetadata = methods.get(8);
         assertMethodMetadata(methodMetadata, MethodMetadata.Type.METHOD_TYPE_MEMBER, new String[] {PRIVATE}, "double", "doSomething2", 2);
         parameters = methodMetadata.getParameters();
         assertFieldMetadata(parameters.get(0), FieldMetadata.Type.ARRAY, new String[0], "Object", new String[] {"oa"});
         assertFieldMetadata(parameters.get(1), FieldMetadata.Type.ARRAY, new String[0], "int", new String[] {"ia"});
 
-        methodMetadata = methods.get(7);
+        methodMetadata = methods.get(9);
         assertMethodMetadata(methodMetadata, MethodMetadata.Type.METHOD_TYPE_MEMBER, new String[] {PUBLIC}, "Object", "doSomething3", 0);
     }
 
