@@ -90,7 +90,7 @@ public class MethodMetadata extends AbstractMetadata {
                 buff.append(", ");
             }
 
-            buff.append(shortNameFor(parameter.getName()).replace("[]", " array"));
+            buff.append(shortNameFor(parameter.getType()).replace("[]", " array"));
         }
 
         buff.append(')');
