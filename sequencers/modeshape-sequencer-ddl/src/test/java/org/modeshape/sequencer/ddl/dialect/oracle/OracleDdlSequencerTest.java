@@ -115,4 +115,10 @@ public class OracleDdlSequencerTest extends AbstractDdlSequencerTest {
         verifyProperty(paramNode, DATATYPE_NAME, "CLOB");
     }
 
+    @Test
+    public void shouldSequenceOracleIndexes() throws Exception {
+        Node statementsNode = sequenceDdl("ddl/dialect/oracle/oracle_indexes.ddl");
+        assertThat(statementsNode.getNodes().getSize(), is(10L));
+    }
+
 }

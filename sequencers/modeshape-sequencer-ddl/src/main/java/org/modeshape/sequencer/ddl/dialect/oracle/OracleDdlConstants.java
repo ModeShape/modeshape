@@ -42,7 +42,7 @@ public interface OracleDdlConstants extends DdlConstants {
 		"DIRECTORY", "DATABASE", "CONTROLFILE", "DISKGROUP", "INDEXTYPE", "SYNONYM", "SEQUENCE", "LIBRARY", "CLUSTER", "OUTLINE",
 		"PACKAGE", "SPFILE", "PFILE", "AUDIT", "COMMIT", "PURGE", "MERGE", "RENAME", "FLASHBACK", "NOAUDIT", "DISASSOCIATE", 
 		"NESTED", "REVOKE", "COMMENT", INDEX, "VARCHAR2", "NVARCHAR2", "NUMBER",
-	  	"BINARY_FLOAT", "BINARY_DOUBLE", "LONG", "RAW", "BLOB", "CLOB", "NCLOB", "BFILE", "INTERVAL"
+	  	"BINARY_FLOAT", "BINARY_DOUBLE", "LONG", "RAW", "BLOB", "CLOB", "NCLOB", "BFILE", "INTERVAL", "UNUSABLE"
 	};
 	
 	interface OracleStatementStartPhrases {
@@ -284,5 +284,11 @@ public interface OracleDdlConstants extends DdlConstants {
 	  	static final List<String> CUSTOM_DATATYPE_START_WORDS = 
 	  		Arrays.asList("VARCHAR2", "NVARCHAR2", "NUMBER",
                             "BINARY_FLOAT", "BINARY_DOUBLE", "LONG", "RAW", "BLOB", "CLOB", "NCLOB", "BFILE", "INTERVAL");
+	}
+
+	interface IndexTypes {
+	    String BITMAP_JOIN = "BITMAP";
+	    String CLUSTER = "CLUSTER";
+	    String TABLE = "TABLE";
 	}
 }
