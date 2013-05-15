@@ -23,6 +23,7 @@
  */
 package org.modeshape.sequencer.ddl.dialect.oracle;
 
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.VALUE;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CREATE_VIEW_QUERY_EXPRESSION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_BEHAVIOR;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_OPTION;
@@ -35,6 +36,7 @@ import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_CON
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT_OPTION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_TABLE_REFERENCE;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
 import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.*;
 import java.util.ArrayList;
@@ -69,6 +71,45 @@ public class OracleDdlParser extends StandardDdlParser
 
         setDatatypeParser(new OracleDataTypeParser());
         initialize();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see org.modeshape.sequencer.ddl.StandardDdlParser#areNextTokensCreateTableOptions(org.modeshape.sequencer.ddl.DdlTokenStream)
+     */
+    @Override
+    protected boolean areNextTokensCreateTableOptions( final DdlTokenStream tokens ) throws ParsingException {
+        return (tokens.hasNext() && !isTerminator(tokens));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseNextCreateTableOption(org.modeshape.sequencer.ddl.DdlTokenStream, org.modeshape.sequencer.ddl.node.AstNode)
+     */
+    @Override
+    protected void parseNextCreateTableOption( final DdlTokenStream tokens,
+                                               final AstNode tableNode ) throws ParsingException {
+        final String tableProperty = tokens.consume();
+        boolean processed = false;
+
+        // if token is a number add it to previous option
+        if (tableProperty.matches("\\b\\d+\\b")) {
+            final List<AstNode> options = tableNode.getChildren(TYPE_STATEMENT_OPTION);
+
+            if (!options.isEmpty()) {
+                final AstNode option = options.get(options.size() - 1);
+                final String currValue = (String)option.getProperty(VALUE);
+                option.setProperty(VALUE, currValue + SPACE + tableProperty);
+                processed = true;
+            }
+        }
+        
+        if (!processed) {
+            final AstNode tableOption = nodeFactory().node("option", tableNode, TYPE_STATEMENT_OPTION);
+            tableOption.setProperty(VALUE, tableProperty);
+        }
     }
 
     private void initialize() {
@@ -1170,71 +1211,382 @@ public class OracleDdlParser extends StandardDdlParser
     }
 
     /**
+     * The tokens must start with a left paren, end with a right paren, and have content between. Any parens in the content must
+     * have matching parens.
+     * 
+     * @param tokens the tokens being processed (cannot be <code>null</code> but or empty)
+     * @return the content (never <code>null</code> or empty.
+     * @throws ParsingException if there is a problem parsing the query expression
+     */
+    private String parseContentBetweenParens( final DdlTokenStream tokens ) throws ParsingException {
+        tokens.consume(L_PAREN); // don't include first paren in expression
+
+        int numLeft = 1;
+        int numRight = 0;
+
+        final StringBuilder text = new StringBuilder();
+
+        while (tokens.hasNext()) {
+            if (tokens.matches(L_PAREN)) {
+                ++numLeft;
+            } else if (tokens.matches(R_PAREN)) {
+                if (numLeft == ++numRight) {
+                    tokens.consume(R_PAREN); // don't include last paren in expression
+                    break;
+                }
+            }
+
+            final String token = tokens.consume();
+
+            // don't add space if empty or if this token or previous token is a period
+            if (!PERIOD.equals(token) && (text.length() != 0) && (PERIOD.charAt(0) != (text.charAt(text.length() - 1)))) {
+                text.append(SPACE);
+            }
+
+            text.append(token);
+        }
+
+        if ((numLeft != numRight) || (text.length() == 0)) {
+            throw new ParsingException(tokens.nextPosition());
+        }
+
+        return text.toString();
+    }
+
+    /**
+     * If the index type is a bitmap-join the columns are from the dimension tables which are defined in the FROM clause. All other
+     * index types the columns are from the table the index in on.
+     * <p>
+     * <code>
+     * column-expression == left-paren column-name [ASC | DESC] | constant | function [, column-name [ASC | DESC] | constant | function ]* right-paren
+     * </code>
+     * 
+     * @param columnExpressionList the comma separated column expression list (cannot be <code>null</code>)
+     * @param indexNode the index node whose column expression list is being processed (cannot be <code>null</code>)
+     */
+    private void parseIndexColumnExpressionList( final String columnExpressionList,
+                                                 final AstNode indexNode ) {
+        final DdlTokenStream tokens = new DdlTokenStream(columnExpressionList, DdlTokenStream.ddlTokenizer(false), false);
+        tokens.start();
+
+        tokens.consume(L_PAREN); // must have opening paren
+        int numLeft = 1;
+        int numRight = 0;
+
+        // must have content between the parens
+        if (!tokens.matches(R_PAREN)) {
+            final List<String> possibleColumns = new ArrayList<String>(); // dimension table columns
+            final List<String> functions = new ArrayList<String>(); // functions, constants
+            final StringBuilder text = new StringBuilder();
+            boolean isFunction = false;
+
+            while (tokens.hasNext()) {
+                if (tokens.canConsume(COMMA)) {
+                    if (isFunction) {
+                        functions.add(text.toString());
+                    } else {
+                        possibleColumns.add(text.toString());
+                    }
+
+                    text.setLength(0); // clear out
+                    isFunction = false;
+                    continue;
+                }
+
+                if (tokens.matches(L_PAREN)) {
+                    isFunction = true;
+                    ++numLeft;
+                } else if (tokens.matches("ASC") || tokens.matches("DESC")) {
+                    text.append(SPACE);
+                } else if (tokens.matches(R_PAREN)) {
+                    if (numLeft == ++numRight) {
+                        if (isFunction) {
+                            functions.add(text.toString());
+                        } else {
+                            possibleColumns.add(text.toString());
+                        }
+
+                        break;
+                    }
+                }
+
+                text.append(tokens.consume());
+            }
+
+            if (!possibleColumns.isEmpty()) {
+                List<AstNode> tableNodes = null;
+                final boolean tableIndex = indexNode.hasMixin(OracleDdlLexicon.TYPE_CREATE_TABLE_INDEX_STATEMENT);
+
+                // find appropriate table nodes
+                if (tableIndex) {
+                    // table index so find table node
+                    final String tableName = (String)indexNode.getProperty(OracleDdlLexicon.TABLE_NAME);
+                    final AstNode parent = indexNode.getParent();
+                    final List<AstNode> nodes = parent.childrenWithName(tableName);
+
+                    if (!nodes.isEmpty()) {
+                        if (nodes.size() == 1) {
+                            tableNodes = nodes;
+                        } else {
+                            // this should not be possible but check none the less
+                            for (final AstNode node : nodes) {
+                                if (node.hasMixin(OracleDdlLexicon.TYPE_CREATE_TABLE_STATEMENT)) {
+                                    tableNodes = new ArrayList<AstNode>(1);
+                                    tableNodes.add(node);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // must be bitmap-join
+                    tableNodes = indexNode.getChildren(OracleDdlLexicon.TYPE_TABLE_REFERENCE);
+                }
+
+                if ((tableNodes != null) && !tableNodes.isEmpty()) {
+                    boolean processed = false;
+
+                    for (String possibleColumn : possibleColumns) {
+                        // first determine any ordering
+                        final int ascIndex = possibleColumn.toUpperCase().indexOf(" ASC");
+                        final boolean asc = (ascIndex != -1);
+                        final int descIndex = possibleColumn.toUpperCase().indexOf(" DESC");
+                        boolean desc = (descIndex != -1);
+    
+                        // adjust column name if there is ordering
+                        if (asc) {
+                            possibleColumn = possibleColumn.substring(0, ascIndex);
+                        } else if (desc) {
+                            possibleColumn = possibleColumn.substring(0, descIndex);
+                        }
+
+                        if (tableIndex) {
+                            if (tableNodes.isEmpty()) {
+                                if (asc) {
+                                    functions.add(possibleColumn + SPACE + "ASC");
+                                } else if (desc) {
+                                    functions.add(possibleColumn + SPACE + "DESC");
+                                } else {
+                                    functions.add(possibleColumn);
+                                }
+                            } else {
+                                // only one table reference. need to find column.
+                                final AstNode tableNode = tableNodes.get(0);
+                                final List<AstNode> columnNodes = tableNode.getChildren(OracleDdlLexicon.TYPE_COLUMN_DEFINITION);
+
+                                if (!columnNodes.isEmpty()) {
+                                    // find column
+                                    for (final AstNode colNode : columnNodes) {
+                                        if (colNode.getName().toUpperCase().equals(possibleColumn.toUpperCase())) {
+                                            final AstNode colRef = nodeFactory().node(possibleColumn, indexNode, TYPE_COLUMN_REFERENCE);
+                                            
+                                            if (asc || desc) {
+                                                colRef.addMixin(OracleDdlLexicon.TYPE_INDEX_ORDERABLE);
+                
+                                                if (asc) {
+                                                    colRef.setProperty(OracleDdlLexicon.INDEX_ORDER, "ASC");
+                                                } else {
+                                                    colRef.setProperty(OracleDdlLexicon.INDEX_ORDER, "DESC");
+                                                }
+                                            }
+                
+                                            processed = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                if (!processed) {
+                                    if (asc) {
+                                        functions.add(possibleColumn + SPACE + "ASC");
+                                    } else if (desc) {
+                                        functions.add(possibleColumn + SPACE + "DESC");
+                                    } else {
+                                        functions.add(possibleColumn);
+                                    }
+
+                                    processed = true;
+                                }
+                            }
+                        } else {
+                            // bitmap-join
+                            for (final AstNode dimensionTableNode : tableNodes) {
+                                if (possibleColumn.toUpperCase().startsWith(dimensionTableNode.getName().toUpperCase() + PERIOD)) {
+                                    final AstNode colRef = nodeFactory().node(possibleColumn, indexNode, TYPE_COLUMN_REFERENCE);
+                                    
+                                    if (asc || desc) {
+                                        colRef.addMixin(OracleDdlLexicon.TYPE_INDEX_ORDERABLE);
+        
+                                        if (asc) {
+                                            colRef.setProperty(OracleDdlLexicon.INDEX_ORDER, "ASC");
+                                        } else {
+                                            colRef.setProperty(OracleDdlLexicon.INDEX_ORDER, "DESC");
+                                        }
+                                    }
+        
+                                    processed = true;
+                                    break;
+                                }
+                            }
+
+                            // probably a constant or function
+                            if (!processed) {
+                                if (asc) {
+                                    functions.add(possibleColumn + SPACE + "ASC");
+                                } else if (desc) {
+                                    functions.add(possibleColumn + SPACE + "DESC");
+                                } else {
+                                    functions.add(possibleColumn);
+                                }
+
+                                processed = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!functions.isEmpty()) {
+                indexNode.setProperty(OracleDdlLexicon.OTHER_INDEX_REFS, functions);
+            }
+        }
+
+        if (numLeft != numRight) {
+            throw new ParsingException(tokens.nextPosition());
+        }
+
+        tokens.consume(R_PAREN); // must have closing paren
+    }
+    
+    /**
      * Parses DDL CREATE INDEX
+     * <p>
+     * <code>
+     * CREATE [ UNIQUE | BITMAP ] INDEX index-name ON { cluster_index_clause | table_index_clause | bitmap_join_index_clause } [index_attributes] [UNUSABLE]
+     * 
+     * cluster_index_clause = CLUSTER cluster-name
+     * table_index_clause = table-name [table-alias] ( { column | constant | function } [ ASC | DESC ] [ , { column | column_expression } [ ASC | DESC ]] * )
+     * bitmap_join_index_clause = table-name ( column [ASC | DESC] [, column [ASC | DESC]] ) FROM table-name [, table-name] WHERE condition [local-partition-index]
+     * 
+     * </code>
      * 
      * @param tokens the tokenized {@link DdlTokenStream} of the DDL input content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
      * @return the parsed CREATE INDEX
      * @throws ParsingException
      */
-    private AstNode parseCreateIndex( DdlTokenStream tokens,
-                                      AstNode parentNode ) throws ParsingException {
+    private AstNode parseCreateIndex( final DdlTokenStream tokens,
+                                      final AstNode parentNode ) throws ParsingException {
         assert tokens != null;
         assert parentNode != null;
+        assert (tokens.matches(STMT_CREATE_INDEX) || tokens.matches(STMT_CREATE_UNIQUE_INDEX) || tokens.matches(STMT_CREATE_BITMAP_INDEX));
 
-        // markStartOfStatement(tokens);
-        //
-        // // CREATE [ UNIQUE | BITMAP ] INDEX index-name ON
-        // // { cluster_index_clause | table_index_clause | bitmap_join_index_clause }
-        // // cluster_index_clause = CLUSTER cluster-name index_attributes
-        // // table_index_clause =
-        // // CREATE [UNIQUE] INDEX index-Name
-        // // ON table-Name ( Simple-column-Name [ ASC | DESC ] [ , Simple-column-Name [ ASC | DESC ]] * )
-        // tokens.consume(CREATE); // CREATE
-        //
-        // boolean isUnique = tokens.canConsume("UNIQUE");
-        // boolean isBitmap = tokens.canConsume("BITMAP");
-        // tokens.consume("INDEX");
-        // String indexName = parseName(tokens);
-        //
-        // AstNode indexNode = nodeFactory().node(indexName, parentNode, TYPE_CREATE_INDEX_STATEMENT);
-        //
-        // tokens.consume("ON");
-        // boolean isCluster = tokens.canConsume("CLUSTER");
-        //
-        // String objName = parseName(tokens);
-        //
-        // indexNode.setProperty(UNIQUE_INDEX, isUnique);
-        // indexNode.setProperty(BITMAP_INDEX, isBitmap);
-        // if( !isCluster ) {
-        // indexNode.setProperty(OracleDdlLexicon.TABLE_NAME, objName);
-        // }
-        //
-        // parseUntilTerminator(tokens);
-        //
-        // markEndOfStatement(tokens, indexNode);
-        //
-        // return indexNode;
-        // atm only unique and bitmap attributes are parsed
-        boolean isUnique = tokens.canConsume("CREATE", "UNIQUE");
-        boolean isBitmap = tokens.canConsume("CREATE", "BITMAP");
-        if (isUnique || isBitmap) {
-            StringBuilder builder = new StringBuilder(CREATE);
-            builder.append(parseUntilTerminatorIgnoreEmbeddedStatements(tokens));
-            // we need to include the terminator as well
-            builder.append(tokens.consume());
-            DdlTokenStream localTokens = new DdlTokenStream(builder.toString(), DdlTokenStream.ddlTokenizer(false), false);
-            localTokens.start();
-            AstNode createIndexStmt = parseStatement(localTokens, STMT_CREATE_INDEX, parentNode, TYPE_CREATE_INDEX_STATEMENT);
-            if (isUnique) {
-                createIndexStmt.setProperty(UNIQUE_INDEX, Boolean.TRUE);
+        markStartOfStatement(tokens);
+        tokens.consume(CREATE);
+
+        final boolean isUnique = tokens.canConsume(UNIQUE);
+        final boolean isBitmap = tokens.canConsume("BITMAP");
+
+        tokens.consume(INDEX);
+        final String indexName = parseName(tokens);
+
+        tokens.consume(ON);
+
+        AstNode indexNode = null;
+
+        if (tokens.canConsume("CLUSTER")) {
+            // table-cluster_index_clause
+            indexNode = nodeFactory().node(indexName, parentNode, TYPE_CREATE_CLUSTER_INDEX_STATEMENT);
+            indexNode.setProperty(OracleDdlLexicon.INDEX_TYPE, OracleDdlConstants.IndexTypes.CLUSTER);
+
+            final String clusterName = parseName(tokens);
+            indexNode.setProperty(OracleDdlLexicon.CLUSTER_NAME, clusterName);
+        } else {
+            final String tableName = parseName(tokens);
+
+            if (!tokens.matches('(')) {
+                // must be a table-index-clause as this has to be table-alias
+                final String tableAlias = tokens.consume();
+                indexNode = nodeFactory().node(indexName, parentNode, TYPE_CREATE_TABLE_INDEX_STATEMENT);
+                indexNode.setProperty(OracleDdlLexicon.INDEX_TYPE, OracleDdlConstants.IndexTypes.TABLE);
+                indexNode.setProperty(OracleDdlLexicon.TABLE_ALIAS, tableAlias);
             }
-            if (isBitmap) {
-                createIndexStmt.setProperty(BITMAP_INDEX, Boolean.TRUE);
+
+            // parse left-paren content right-paren
+            final String columnExpressionList = parseContentBetweenParens(tokens);
+
+            // must have FROM and WHERE clauses
+            if (tokens.canConsume("FROM")) {
+                indexNode = nodeFactory().node(indexName, parentNode, TYPE_CREATE_BITMAP_JOIN_INDEX_STATEMENT);
+                indexNode.setProperty(OracleDdlLexicon.INDEX_TYPE, OracleDdlConstants.IndexTypes.BITMAP_JOIN);
+                parseTableReferenceList(tokens, indexNode);
+
+                tokens.consume("WHERE");
+                final String whereClause = parseUntilTerminator(tokens); // this will have index attributes also:-(
+                indexNode.setProperty(OracleDdlLexicon.WHERE_CLAUSE, whereClause);
+            } else {
+                indexNode = nodeFactory().node(indexName, parentNode, TYPE_CREATE_TABLE_INDEX_STATEMENT);
+                indexNode.setProperty(OracleDdlLexicon.INDEX_TYPE, OracleDdlConstants.IndexTypes.TABLE);
             }
-            return createIndexStmt;
+
+            indexNode.setProperty(OracleDdlLexicon.TABLE_NAME, tableName);
+            parseIndexColumnExpressionList('(' + columnExpressionList + ')', indexNode);
         }
-        return parseStatement(tokens, STMT_CREATE_INDEX, parentNode, TYPE_CREATE_INDEX_STATEMENT);
+
+        indexNode.setProperty(UNIQUE_INDEX, isUnique);
+        indexNode.setProperty(BITMAP_INDEX, isBitmap);
+
+        // index attributes are optional as is UNUSABLE
+        if (tokens.hasNext()) {
+            boolean unusable = false;
+            final List<String> indexAttributes = new ArrayList<String>();
+
+            while (tokens.hasNext() && !isTerminator(tokens)) {
+                String token = tokens.consume();
+
+                if ("UNUSABLE".equals(token.toUpperCase())) {
+                    unusable = true;
+                    break; // must be last token found before terminator
+                }
+
+                // if number add it to previous
+                boolean processed = false;
+
+                if (token.matches("\\b\\d+\\b")) {
+                    if (!indexAttributes.isEmpty()) {
+                        final int index = (indexAttributes.size() - 1);
+                        final String value = indexAttributes.get(index);
+                        final String newValue = (value + SPACE + token);
+                        indexAttributes.set(index, newValue);
+                        processed = true;
+                    }
+                }
+
+                if (!processed) {
+                    indexAttributes.add(token);
+                }
+            }
+
+            if (!indexAttributes.isEmpty()) {
+                indexNode.setProperty(OracleDdlLexicon.INDEX_ATTRIBUTES, indexAttributes);
+            }
+
+            indexNode.setProperty(OracleDdlLexicon.UNUSABLE_INDEX, unusable);
+        }
+
+        markEndOfStatement(tokens, indexNode);
+        return indexNode;
+    }
+
+    private void parseTableReferenceList( final DdlTokenStream tokens,
+                                          final AstNode parentNode ) {
+        final List<String> tableRefs = parseNameList(tokens);
+
+        if (!tableRefs.isEmpty()) {
+            for (String tableName : tableRefs) {
+                nodeFactory().node(tableName, parentNode, TYPE_TABLE_REFERENCE);
+            }
+        }
     }
 
     private AstNode parseCommentStatement( DdlTokenStream tokens,

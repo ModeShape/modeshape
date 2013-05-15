@@ -33,6 +33,7 @@ import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
 import java.util.List;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlParser;
@@ -127,6 +128,7 @@ public class DdlParsersTest extends DdlParserTestHelper {
         assertThat("POSTGRES", is((String)rootNode.getProperty(StandardDdlLexicon.PARSER_ID)));
     }
 
+    @Ignore
     @Test
     public void shouldParseUnterminatedOracleFile() {
         printTest("shouldParseUnterminatedOracleFile()");

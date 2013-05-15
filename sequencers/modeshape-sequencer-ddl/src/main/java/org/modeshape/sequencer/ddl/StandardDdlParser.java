@@ -2431,36 +2431,41 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         List<String> columnNameList = new ArrayList<String>();
         if (tokens.matches(L_PAREN)) {
             tokens.consume(L_PAREN);
-            columnNameList = parseColumnNameList(tokens);
+            columnNameList = parseNameList(tokens);
+
+            if (!columnNameList.isEmpty()) {
+                parsedColumns = true;
+            }
+
             tokens.consume(R_PAREN);
         }
 
         for (String columnName : columnNameList) {
             nodeFactory().node(columnName, parentNode, referenceType);
-            parsedColumns = true;
         }
 
         return parsedColumns;
     }
 
     /**
-     * Parses a comma separated list of column names.
+     * Parses a comma separated list of names.
      * 
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
-     * @return list of column names.
+     * @return list of names (never <code>null</code>)
      * @throws ParsingException
      */
-    protected List<String> parseColumnNameList( DdlTokenStream tokens ) throws ParsingException {
-        List<String> columnNames = new LinkedList<String>();
+    protected List<String> parseNameList( DdlTokenStream tokens ) throws ParsingException {
+        List<String> names = new LinkedList<String>();
 
         while (true) {
-            columnNames.add(parseName(tokens));
+            names.add(parseName(tokens));
+
             if (!tokens.canConsume(COMMA)) {
                 break;
             }
         }
 
-        return columnNames;
+        return names;
     }
 
     /**
