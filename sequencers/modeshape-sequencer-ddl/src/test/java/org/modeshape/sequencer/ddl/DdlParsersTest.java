@@ -128,7 +128,6 @@ public class DdlParsersTest extends DdlParserTestHelper {
         assertThat("POSTGRES", is((String)rootNode.getProperty(StandardDdlLexicon.PARSER_ID)));
     }
 
-    @Ignore
     @Test
     public void shouldParseUnterminatedOracleFile() {
         printTest("shouldParseUnterminatedOracleFile()");

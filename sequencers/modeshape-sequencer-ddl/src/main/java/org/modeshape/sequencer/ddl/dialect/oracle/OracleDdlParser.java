@@ -80,7 +80,8 @@ public class OracleDdlParser extends StandardDdlParser
      */
     @Override
     protected boolean areNextTokensCreateTableOptions( final DdlTokenStream tokens ) throws ParsingException {
-        return (tokens.hasNext() && !isTerminator(tokens));
+        // current token can't be a terminator or the next n-tokens can't be a statement  
+        return (tokens.hasNext() && !isTerminator(tokens) && (tokens.computeNextStatementStartKeywordCount() == 0));
     }
 
     /**
