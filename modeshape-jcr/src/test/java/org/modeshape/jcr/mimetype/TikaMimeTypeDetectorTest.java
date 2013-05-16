@@ -30,6 +30,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.jcr.InMemoryTestBinary;
 
@@ -81,6 +82,7 @@ public class TikaMimeTypeDetectorTest {
     }
 
     @Test
+    @Ignore("MODE-1934")
     public void shouldDetectMsWordWithoutName() throws Exception {
         assertEquals(MimeTypeConstants.MICROSOFT_APPLICATION_MS_WORD, detector.mimeTypeOf(null, binaryFromFile(WORD_FILE)));
     }
@@ -91,22 +93,26 @@ public class TikaMimeTypeDetectorTest {
     }
 
     @Test
+    @Ignore("MODE-1934")
     public void shouldDetectMsWordOpenXMLWithoutName() throws Exception {
         assertEquals(MimeTypeConstants.MICROSOFT_WORD_OPEN_XML, detector.mimeTypeOf(null, binaryFromFile(WORD_OPEN_XML_FILE)));
     }
 
     @Test
+    @Ignore("MODE-1934")
     public void shouldDetectMsWordOpenXMLWithName() throws Exception {
         assertEquals(MimeTypeConstants.MICROSOFT_WORD_OPEN_XML,
                      detector.mimeTypeOf(WORD_OPEN_XML_FILE, binaryFromFile(WORD_OPEN_XML_FILE)));
     }
 
     @Test
+    @Ignore("MODE-1934")
     public void shouldDetectExcelDocumentWithoutName() throws Exception {
         assertEquals(MimeTypeConstants.MICROSOFT_EXCEL, detector.mimeTypeOf(null, binaryFromFile(EXCEL_FILE)));
     }
 
     @Test
+    @Ignore("MODE-1934")
     public void shouldDetectExcelDocumentWithName() throws Exception {
         assertEquals(MimeTypeConstants.MICROSOFT_EXCEL, detector.mimeTypeOf(EXCEL_FILE, binaryFromFile(EXCEL_FILE)));
     }

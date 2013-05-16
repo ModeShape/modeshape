@@ -80,11 +80,14 @@
                 <artifactId>modeshape-sequencer-mp3</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-sequencer-msoffice</artifactId>
-                <version>${project.version}</version>
-            </dependency>
+            <!--
+                //TODO author=Horia Chiorean date=5/16/13 description=MODE-1934
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-sequencer-msoffice</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            -->
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-sramp</artifactId>
@@ -354,7 +357,8 @@
                 <artifactId>jaudiotagger</artifactId>
                 <version>${jaudiotagger.version}</version>
             </dependency>
-            <!--MsOffice sequencer-->
+            <!--MsOffice sequencer
+            //TODO author=Horia Chiorean date=5/16/13 description=MODE-1934
             <dependency>
                 <groupId>org.apache.poi</groupId>
                 <artifactId>poi</artifactId>
@@ -365,6 +369,7 @@
                 <artifactId>poi-scratchpad</artifactId>
                 <version>${poi.version}</version>
             </dependency>
+            -->
             <!--Teiid sequencer-->
             <dependency>
                 <groupId>com.beust</groupId>

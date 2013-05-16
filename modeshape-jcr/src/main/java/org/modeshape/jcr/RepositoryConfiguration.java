@@ -692,8 +692,13 @@ public class RepositoryConfiguration {
         aliases.put("modelsequencer", modelSequencer);
         aliases.put("vdb", vdbSequencer);
         aliases.put("vdbsequencer", vdbSequencer);
-        aliases.put("msoffice", msofficeSequencer);
-        aliases.put("msofficesequencer", msofficeSequencer);
+        /**
+         * //TODO author=Horia Chiorean date=5/16/13 description=MODE-1934
+         *
+         * aliases.put("msoffice", msofficeSequencer);
+         * aliases.put("msofficesequencer", msofficeSequencer);
+         *
+         **/
         aliases.put("wsdl", wsdlSequencer);
         aliases.put("wsdlsequencer", wsdlSequencer);
         aliases.put("xsd", xsdSequencer);

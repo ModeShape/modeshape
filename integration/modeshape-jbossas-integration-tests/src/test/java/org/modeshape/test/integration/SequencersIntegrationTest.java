@@ -46,6 +46,7 @@ import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.jcr.JcrRepository;
@@ -131,6 +132,7 @@ public class SequencersIntegrationTest {
     }
 
     @Test
+    @Ignore( "MODE-1934" )
     public void shouldSequenceMsOfficeFile() throws Exception {
         uploadFileAndAssertSequenced("/msoffice_file.xls",
                                      "/derived/msoffice",

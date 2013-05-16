@@ -65,10 +65,13 @@
             <artifactId>modeshape-sequencer-java</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-sequencer-msoffice</artifactId>
-        </dependency>
+        <!--
+          //TODO author=Horia Chiorean date=5/16/13 description=MODE-1934
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-msoffice</artifactId>
+            </dependency>
+       -->
 
         <dependency>
             <groupId>org.modeshape</groupId>
@@ -232,6 +235,8 @@
                     <type>zip</type>
                 </dependency>
 
+                <!--
+                //TODO author=Horia Chiorean date=5/16/13 description=MODE-1934
                 <dependency>
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-msoffice</artifactId>
@@ -239,7 +244,7 @@
                     <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
-
+                -->
                 <dependency>
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-teiid</artifactId>

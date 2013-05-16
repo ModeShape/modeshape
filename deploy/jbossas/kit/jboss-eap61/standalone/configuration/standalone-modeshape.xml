@@ -258,9 +258,7 @@
                     <sequencer name="cnd-sequencer" classname="cnd" module="org.modeshape">
                         <path-expression>default:/files(//*.cnd[*])/jcr:content[@jcr:data] => /derived/cnd/$1</path-expression>
                     </sequencer>
-                    <sequencer name="msoffice-sequencer" classname="msoffice" module="org.modeshape.sequencer.msoffice">
-                        <path-expression>/files(//*.(xls|ppt|doc)[*])/jcr:content[@jcr:data] => /derived/msoffice/$1</path-expression>
-                    </sequencer>
+                    <!--Ms Office sequencer has been removed since MODE-1934-->
                     <sequencer name="teiid-model-sequencer" classname="model" module="org.modeshape.sequencer.teiid">
                       <path-expression>/files(//*.xmi[*])/jcr:content[@jcr:data] => /derived/teiid/models/$1</path-expression>
                     </sequencer>
