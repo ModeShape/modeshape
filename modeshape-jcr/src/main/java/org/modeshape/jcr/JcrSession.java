@@ -543,7 +543,17 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                 node = child;
             }
         }
-        checkPermission(path, actions);
+        // Find the absolute path, based upon the parent ...
+        Path absPath = path.isAbsolute() ? path : null;
+        if (absPath == null) {
+            try {
+                // We need to look up the absolute path ..
+                absPath = node.getPath(cache);
+                checkPermission(absPath, actions);
+            } catch (NodeNotFoundException e) {
+                throw new PathNotFoundException(JcrI18n.nodeNotFound.text(stringFactory().create(path), workspaceName()));
+            }
+        }
         return node;
     }
 
@@ -1121,6 +1131,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     private final boolean hasPermission( String workspaceName,
                                          Path path,
                                          String... actions ) {
+        assert path == null ? true : path.isAbsolute() : "The path (if provided) must be absolute";
         final String repositoryName = this.repository.repositoryName();
         SecurityContext sec = context.getSecurityContext();
         if (sec instanceof AuthorizationProvider) {
@@ -1190,7 +1201,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
      * The {@code path} parameter is included for future use and is currently ignored
      * </p>
      * 
-     * @param path the path on which the actions are occurring
+     * @param path the absolute path on which the actions are occurring
      * @param actions a comma-delimited list of actions to check
      * @throws AccessDeniedException if the actions cannot be performed on the node at the specified path
      */
@@ -1207,7 +1218,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
      * </p>
      * 
      * @param workspaceName the name of the workspace in which the path exists
-     * @param path the path on which the actions are occurring
+     * @param path the absolute path on which the actions are occurring
      * @param actions a comma-delimited list of actions to check
      * @throws AccessDeniedException if the actions cannot be performed on the node at the specified path
      */
