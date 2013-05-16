@@ -31,6 +31,7 @@ import java.io.InputStream;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.SingleUseAbstractTest;
@@ -56,6 +57,7 @@ public class TikaTextExtractorRepositoryTest extends SingleUseAbstractTest {
     }
 
     @Test
+    @Ignore ("MODE-1934")
     public void shouldExtractAndIndexContentFromDocFile() throws Exception {
         startRepositoryWithConfiguration(getResource("repo-config.json"));
         uploadFile("modeshape.doc");

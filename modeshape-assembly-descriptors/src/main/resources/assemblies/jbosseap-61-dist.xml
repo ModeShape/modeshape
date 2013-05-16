@@ -28,6 +28,8 @@
 			<outputDirectory>${jboss.eap.modules.location}</outputDirectory>
             <excludes>
                 <exclude>standalone/**</exclude>
+                <!-- See MODE-1934-->
+                <exclude>**/msoffice/**</exclude>
             </excludes>
             <filtered>true</filtered>
 		</fileSet>
@@ -125,7 +127,7 @@
                 <include>org.apache.james:apache-mime4j-core:jar</include>
                 <include>org.apache.james:apache-mime4j-dom:jar</include>
                 <include>org.apache.pdfbox:*:jar</include>
-                <include>org.apache.poi:*:jar</include>
+                <!--<include>org.apache.poi:*:jar</include> See MODE-1934 -->
                 <include>org.apache.xmlbeans:*:jar</include>
                 <include>org.apache.geronimo.specs:*:jar</include>
                 <include>dom4j:dom4j:jar</include>
@@ -201,15 +203,18 @@
             </includes>
         </dependencySet>
 
-        <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/sequencer/msoffice/main</outputDirectory>
-            <includes>
-                <include>org.modeshape:modeshape-sequencer-msoffice:jar</include>
-                <include>org.apache*:poi:jar</include>
-                <include>org.apache*:poi-scratchpad:jar</include>
-            </includes>
-        </dependencySet>
+        <!--
+            See MODE-1934
+            <dependencySet>
+                <useProjectArtifact>false</useProjectArtifact>
+                <outputDirectory>${jboss.eap.modules.location}/org/modeshape/sequencer/msoffice/main</outputDirectory>
+                <includes>
+                    <include>org.modeshape:modeshape-sequencer-msoffice:jar</include>
+                    <include>org.apache*:poi:jar</include>
+                    <include>org.apache*:poi-scratchpad:jar</include>
+                </includes>
+            </dependencySet>
+         -->
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
