@@ -40,7 +40,7 @@
         <resource-root path="juniversalchardet-1.0.3.jar" />
         <resource-root path="pdfbox-1.7.1.jar" />
         <!--
-         //TODO author=Horia Chiorean date=5/16/13 description=MODE-1934
+          See MODE-1934
         <resource-root path="poi-3.8.jar" />
         <resource-root path="poi-ooxml-3.8.jar" />
         <resource-root path="poi-ooxml-schemas-3.8.jar" />

@@ -693,7 +693,7 @@ public class RepositoryConfiguration {
         aliases.put("vdb", vdbSequencer);
         aliases.put("vdbsequencer", vdbSequencer);
         /**
-         * //TODO author=Horia Chiorean date=5/16/13 description=MODE-1934
+         * See MODE-1934
          *
          * aliases.put("msoffice", msofficeSequencer);
          * aliases.put("msofficesequencer", msofficeSequencer);

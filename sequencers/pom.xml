@@ -83,7 +83,7 @@
 
     <modules>
         <!--
-            //TODO author=Horia Chiorean date=5/16/13 description=MODE-1934
+            See MODE-1934
             <module>modeshape-sequencer-msoffice</module>
         -->
         <module>modeshape-sequencer-images</module>

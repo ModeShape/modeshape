@@ -28,7 +28,7 @@
 			<outputDirectory>${jboss.eap.modules.location}</outputDirectory>
             <excludes>
                 <exclude>standalone/**</exclude>
-                <!-- //TODO author=Horia Chiorean date=5/16/13 description=MODE-1934-->
+                <!-- See MODE-1934-->
                 <exclude>**/msoffice/**</exclude>
             </excludes>
             <filtered>true</filtered>
@@ -127,7 +127,7 @@
                 <include>org.apache.james:apache-mime4j-core:jar</include>
                 <include>org.apache.james:apache-mime4j-dom:jar</include>
                 <include>org.apache.pdfbox:*:jar</include>
-                <!--<include>org.apache.poi:*:jar</include> //TODO author=Horia Chiorean date=5/16/13 description=MODE-1934 -->
+                <!--<include>org.apache.poi:*:jar</include> See MODE-1934 -->
                 <include>org.apache.xmlbeans:*:jar</include>
                 <include>org.apache.geronimo.specs:*:jar</include>
                 <include>dom4j:dom4j:jar</include>
@@ -204,7 +204,7 @@
         </dependencySet>
 
         <!--
-            //TODO author=Horia Chiorean date=5/16/13 description=MODE-1934
+            See MODE-1934
             <dependencySet>
                 <useProjectArtifact>false</useProjectArtifact>
                 <outputDirectory>${jboss.eap.modules.location}/org/modeshape/sequencer/msoffice/main</outputDirectory>

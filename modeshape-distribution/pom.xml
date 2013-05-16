@@ -66,7 +66,8 @@
         </dependency>
 
         <!--
-          //TODO author=Horia Chiorean date=5/16/13 description=MODE-1934
+            See MODE-1934
+
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-msoffice</artifactId>
@@ -236,7 +237,8 @@
                 </dependency>
 
                 <!--
-                //TODO author=Horia Chiorean date=5/16/13 description=MODE-1934
+                See MODE-1934
+
                 <dependency>
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-msoffice</artifactId>
