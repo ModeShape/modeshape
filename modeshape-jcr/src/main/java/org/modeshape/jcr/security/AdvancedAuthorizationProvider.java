@@ -40,7 +40,8 @@ import org.modeshape.jcr.value.Path;
  * <p>
  * In these cases, calls to the session to access nodes will result in their own calls to
  * {@link #hasPermission(Context, Path, String...)}. Therefore, such implementations need to handle these special
- * authorization-specific content permissions in an explicit fashion.
+ * authorization-specific content permissions in an explicit fashion. It is also adviced that such providers cache as much of the
+ * authorization-specifc content as possible, as the {@link #hasPermission(Context, Path, String...)} method is called frequently.
  * </p>
  */
 public interface AdvancedAuthorizationProvider {
@@ -89,12 +90,12 @@ public interface AdvancedAuthorizationProvider {
      * actions are allowed, the method returns false.
      * 
      * @param context the context in which the subject is performing the actions on the supplied workspace
-     * @param path the path on which the actions are occurring, or null if the permissions are at the workspace-level
+     * @param absPath the absolute path on which the actions are occurring, or null if the permissions are at the workspace-level
      * @param actions the list of {@link ModeShapePermissions actions} to check
      * @return true if the subject has privilege to perform all of the named actions on the content at the supplied path in the
      *         given workspace within the repository, or false otherwise
      */
     boolean hasPermission( Context context,
-                           Path path,
+                           Path absPath,
                            String... actions );
 }
