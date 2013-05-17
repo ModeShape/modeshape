@@ -23,20 +23,19 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
 /**
  *
  */
-public class ModeShapeFileBinaryStorageResource extends SimpleResourceDefinition {
-    protected final static ModeShapeFileBinaryStorageResource INSTANCE = new ModeShapeFileBinaryStorageResource();
+public class ModeShapeNamedFileBinaryStorageResource extends SimpleResourceDefinition {
+    protected final static ModeShapeNamedFileBinaryStorageResource INSTANCE = new ModeShapeNamedFileBinaryStorageResource();
 
-    private ModeShapeFileBinaryStorageResource() {
-        super(ModeShapeExtension.FILE_BINARY_STORAGE_PATH,
+    private ModeShapeNamedFileBinaryStorageResource() {
+        super(ModeShapeExtension.NAMED_FILE_BINARY_STORAGE_PATH,
               ModeShapeExtension.getResourceDescriptionResolver(ModelKeys.REPOSITORY, ModelKeys.FILE_BINARY_STORAGE),
-              AddFileBinaryStorage.INSTANCE, RemoveBinaryStorage.INSTANCE);
+              AddNamedFileBinaryStorage.INSTANCE, RemoveNamedBinaryStorage.INSTANCE);
     }
 
     @Override

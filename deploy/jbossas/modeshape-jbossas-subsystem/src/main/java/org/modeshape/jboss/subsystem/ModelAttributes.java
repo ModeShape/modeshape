@@ -29,6 +29,7 @@ import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleListAttributeDefinition;
+import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
@@ -679,7 +680,7 @@ public class ModelAttributes {
                                                                                                      ModelType.STRING).setXmlName(Attribute.RELATIVE_TO.getLocalName())
                                                                                                                       .setAllowExpression(true)
                                                                                                                       .setAllowNull(true)
-                                                                                                                      .setDefaultValue(new ModelNode().set(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE))
+                                                                                                                      .setDefaultValue(new ModelNode().set("jboss.server.data.dir"))
                                                                                                                       .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                       .build();
 
@@ -711,6 +712,13 @@ public class ModelAttributes {
                                                                                                                                                                      FieldName.SEQUENCERS,
                                                                                                                                                                      FieldName.CLASSNAME)
                                                                                                                               .build();
+    public static final SimpleAttributeDefinition STORE_NAME = new MappedAttributeDefinitionBuilder(
+                                                                                                                    ModelKeys.STORE_NAME,
+                                                                                                                    ModelType.STRING).setXmlName(Attribute.STORE_NAME.getLocalName())
+                                                                                .setAllowExpression(false)
+                                                                                .setAllowNull(true)
+                                                                                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                .build();
 
     public static final SimpleAttributeDefinition TEXT_EXTRACTOR_CLASSNAME = new MappedAttributeDefinitionBuilder(
                                                                                                                   ModelKeys.TEXT_EXTRACTOR_CLASSNAME,
@@ -748,7 +756,7 @@ public class ModelAttributes {
                                                                                                             ModelType.STRING).setXmlName(Attribute.SOURCE_RELATIVE_TO.getLocalName())
                                                                                                                              .setAllowExpression(true)
                                                                                                                              .setAllowNull(true)
-                                                                                                                             .setDefaultValue(new ModelNode().set(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE))
+                                                                                                                             .setDefaultValue(new ModelNode().set("jboss.server.data.dir"))
                                                                                                                              .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                              .build();
 
@@ -808,16 +816,27 @@ public class ModelAttributes {
         MODULE,};
 
     public static final AttributeDefinition[] FILE_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
-        MINIMUM_STRING_SIZE, PATH, RELATIVE_TO,};
+        MINIMUM_STRING_SIZE, PATH, RELATIVE_TO,STORE_NAME,};
 
     public static final AttributeDefinition[] CACHE_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
-        MINIMUM_STRING_SIZE, DATA_CACHE_NAME, METADATA_CACHE_NAME, CACHE_CONTAINER,};
+        MINIMUM_STRING_SIZE, DATA_CACHE_NAME, METADATA_CACHE_NAME, CACHE_CONTAINER, STORE_NAME,};
 
     public static final AttributeDefinition[] DATABASE_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
-        MINIMUM_STRING_SIZE, DATA_SOURCE_JNDI_NAME,};
+        MINIMUM_STRING_SIZE, DATA_SOURCE_JNDI_NAME,STORE_NAME,};
+
+    public static final AttributeDefinition[] COMPOSITE_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
+                                                                                           MINIMUM_STRING_SIZE,STORE_NAME,};
 
     public static final AttributeDefinition[] CUSTOM_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
-        MINIMUM_STRING_SIZE, CLASSNAME, MODULE,};
+        MINIMUM_STRING_SIZE, CLASSNAME, MODULE,STORE_NAME,};
+
+    public static final AttributeDefinition[] NAMED_FILE_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, PATH, RELATIVE_TO,STORE_NAME,};
+
+    public static final AttributeDefinition[] NAMED_CACHE_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, DATA_CACHE_NAME, METADATA_CACHE_NAME, CACHE_CONTAINER, STORE_NAME,};
+
+    public static final AttributeDefinition[] NAMED_DATABASE_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, DATA_SOURCE_JNDI_NAME,STORE_NAME,};
+
+    public static final AttributeDefinition[] NAMED_CUSTOM_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, CLASSNAME, MODULE,STORE_NAME,};
 
     public static final AttributeDefinition[] SEQUENCER_ATTRIBUTES = {PATH_EXPRESSIONS, SEQUENCER_CLASSNAME, MODULE, PROPERTIES};
     public static final AttributeDefinition[] SOURCE_ATTRIBUTES = {PROJECTIONS, CONNECTOR_CLASSNAME, READONLY, CACHE_TTL_SECONDS,

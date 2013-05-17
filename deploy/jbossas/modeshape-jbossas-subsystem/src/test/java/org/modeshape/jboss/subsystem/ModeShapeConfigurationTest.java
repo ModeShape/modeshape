@@ -76,6 +76,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
+    public void testOutputPersistenceOfConfigurationWithCompositeBinaryStores() throws Exception {
+        parse(readResource("modeshape-composite-binary-storage.xml"));
+    }
+
+    @Test
     public void testOutputPersistenceOfConfigurationWithWorkspaceInitialContent() throws Exception {
         parse(readResource("modeshape-initial-content-config.xml"));
     }
@@ -119,6 +124,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     public void testOutputPersistenceOfConfigurationWithWebapps() throws Exception {
         parse(readResource("modeshape-webapp-config.xml"));
     }
+
 
     /* // todo replace with dmr format not json
     @Test

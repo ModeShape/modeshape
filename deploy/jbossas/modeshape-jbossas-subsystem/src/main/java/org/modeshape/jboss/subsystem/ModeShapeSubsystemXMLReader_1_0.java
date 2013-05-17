@@ -198,6 +198,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         List<ModelNode> externalSources = new ArrayList<ModelNode>();
         List<ModelNode> textExtractors = new ArrayList<ModelNode>();
         List<ModelNode> authenticators = new ArrayList<ModelNode>();
+        List<ModelNode> otherStorageNodes = new ArrayList<ModelNode>();
         while (reader.hasNext() && (reader.nextTag() != XMLStreamConstants.END_ELEMENT)) {
             Element element = Element.forName(reader.getLocalName());
             switch (element) {
@@ -246,6 +247,11 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                     addBinaryStorageConfiguration(repositories, repositoryName);
                     binaryStorage = parseCacheBinaryStorage(reader, repositoryName);
                     break;
+                case COMPOSITE_BINARY_STORAGE:
+                    addBinaryStorageConfiguration(repositories, repositoryName);
+                    otherStorageNodes = parseCompositeBinaryStorage(reader, repositoryName, repositories);
+                    binaryStorage = otherStorageNodes.remove(0);
+                    break;
                 case CUSTOM_BINARY_STORAGE:
                     addBinaryStorageConfiguration(repositories, repositoryName);
                     binaryStorage = parseCustomBinaryStorage(reader, repositoryName);
@@ -278,6 +284,7 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
 
         if (indexStorage != null) repositories.add(indexStorage);
         if (binaryStorage != null) repositories.add(binaryStorage);
+        repositories.addAll(otherStorageNodes);
         repositories.addAll(sequencers);
         repositories.addAll(externalSources);
         repositories.addAll(textExtractors);
@@ -701,6 +708,9 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                     case MIN_STRING_SIZE:
                         ModelAttributes.MINIMUM_STRING_SIZE.parseAndSetParameter(attrValue, storageType, reader);
                         break;
+                    case STORE_NAME:
+                        ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
                     default:
                         throw ParseUtils.unexpectedAttribute(reader, i);
                 }
@@ -743,6 +753,9 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                     case MIN_STRING_SIZE:
                         ModelAttributes.MINIMUM_STRING_SIZE.parseAndSetParameter(attrValue, storageType, reader);
                         break;
+                    case STORE_NAME:
+                        ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
                     default:
                         throw ParseUtils.unexpectedAttribute(reader, i);
                 }
@@ -779,6 +792,9 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                     case MIN_STRING_SIZE:
                         ModelAttributes.MINIMUM_STRING_SIZE.parseAndSetParameter(attrValue, storageType, reader);
                         break;
+                    case STORE_NAME:
+                        ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
                     default:
                         throw ParseUtils.unexpectedAttribute(reader, i);
                 }
@@ -787,6 +803,97 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
         requireNoElements(reader);
 
         return storageType;
+    }
+
+    private List<ModelNode> parseCompositeBinaryStorage( final XMLExtendedStreamReader reader,
+                                                final String repositoryName, List<ModelNode> repositories ) throws XMLStreamException {
+
+        final List<ModelNode> stores = new ArrayList<ModelNode>();
+        final ModelNode storageType = new ModelNode();
+
+
+        storageType.get(OP).set(ADD);
+        storageType.get(OP_ADDR)
+                .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                .add(ModelKeys.REPOSITORY, repositoryName)
+                .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE)
+                .add(ModelKeys.STORAGE_TYPE, ModelKeys.COMPOSITE_BINARY_STORAGE);
+
+        if (reader.getAttributeCount() > 0) {
+            for (int i = 0; i < reader.getAttributeCount(); i++) {
+                String attrName = reader.getAttributeLocalName(i);
+                String attrValue = reader.getAttributeValue(i);
+                Attribute attribute = Attribute.forName(attrName);
+                switch (attribute) {
+                    case MIN_VALUE_SIZE:
+                        ModelAttributes.MINIMUM_BINARY_SIZE.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case MIN_STRING_SIZE:
+                        ModelAttributes.MINIMUM_STRING_SIZE.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case STORE_NAME:
+                        ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    default:
+                        throw ParseUtils.unexpectedAttribute(reader, i);
+                }
+            }
+        }
+
+
+        List<ModelNode> namedBinaryStores = new ArrayList<ModelNode>();
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            final ModelNode binaryStorage;
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                // Binary storage ...
+                case FILE_BINARY_STORAGE:
+                    binaryStorage = parseFileBinaryStorage(reader, repositoryName);
+                    break;
+                case DB_BINARY_STORAGE:
+                    binaryStorage = parseDatabaseBinaryStorage(reader, repositoryName);
+                    break;
+                case CACHE_BINARY_STORAGE:
+                    binaryStorage = parseCacheBinaryStorage(reader, repositoryName);
+                    break;
+                case CUSTOM_BINARY_STORAGE:
+                    binaryStorage = parseCustomBinaryStorage(reader, repositoryName);
+                    break;
+                default:
+                    throw ParseUtils.unexpectedElement(reader);
+            }
+
+            final String namedStore = binaryStorage.get(ModelKeys.STORE_NAME).asString();
+            final String namedStoreStorageType = binaryStorage.get(OP_ADDR).asObject().get(ModelKeys.STORAGE_TYPE).asString();
+
+            final ModelNode blankParentNode = new ModelNode();
+
+            blankParentNode.get(OP).set(ADD);
+            blankParentNode.get(OP_ADDR).add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                    .add(ModelKeys.REPOSITORY, repositoryName)
+                    .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE)
+                    .add(ModelKeys.STORAGE_TYPE, ModelKeys.COMPOSITE_BINARY_STORAGE)
+                    .add(ModelKeys.NAMED_BINARY_STORE, namedStore);
+
+            namedBinaryStores.add(blankParentNode);
+
+            binaryStorage.remove(OP_ADDR);
+            binaryStorage.get(OP_ADDR)
+                    .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                    .add(ModelKeys.REPOSITORY, repositoryName)
+                    .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE)
+                    .add(ModelKeys.STORAGE_TYPE, ModelKeys.COMPOSITE_BINARY_STORAGE)
+                    .add(ModelKeys.NAMED_BINARY_STORE, namedStore)
+                    .add(ModelKeys.NAMED_BINARY_STORE_TYPE, namedStoreStorageType);
+
+            namedBinaryStores.add(binaryStorage);
+
+        }
+
+        stores.add(storageType);
+        stores.addAll(namedBinaryStores);
+
+        return stores;
     }
 
     private ModelNode parseCustomBinaryStorage( final XMLExtendedStreamReader reader,
@@ -816,6 +923,9 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                         break;
                     case MIN_STRING_SIZE:
                         ModelAttributes.MINIMUM_STRING_SIZE.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case STORE_NAME:
+                        ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, storageType, reader);
                         break;
                     default:
                         storageType.get(attrName).set(attrValue);

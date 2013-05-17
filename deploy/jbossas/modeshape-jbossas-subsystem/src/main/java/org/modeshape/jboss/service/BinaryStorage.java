@@ -61,4 +61,8 @@ public class BinaryStorage {
         return new BinaryStorage(binaries);
     }
 
+    public String getStoreName() {
+        return getBinaryConfiguration().getString(RepositoryConfiguration.FieldName.BINARY_STORE_NAME);
+    }
+
 }
