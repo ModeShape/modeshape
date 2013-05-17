@@ -583,10 +583,10 @@ public class RepositoryCache implements Observable {
         synchronized (this) {
             // after we have the lock, check if maybe another thread has already finished
             if (!workspaceCachesByName.containsKey(name)) {
-                runInTransaction(new Callable<Void>() {
+                WorkspaceCache initializedWsCache = runInTransaction(new Callable<WorkspaceCache>() {
                     @SuppressWarnings( "synthetic-access" )
                     @Override
-                    public Void call() throws Exception {
+                    public WorkspaceCache call() throws Exception {
                         // Create/get the Infinispan workspaceCache that we'll use within the WorkspaceCache, using the
                         // workspaceCache manager's
                         // default configuration ...
@@ -620,13 +620,12 @@ public class RepositoryCache implements Observable {
                                 workspaceSession.save();
                             }
                         }
-                        workspaceCachesByName.putIfAbsent(name, workspaceCache);
-                        return null;
+                        return workspaceCache;
                     }
                 });
+                workspaceCachesByName.put(name, initializedWsCache);
             }
         }
-
         return workspaceCachesByName.get(name);
     }
 

@@ -44,11 +44,19 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.security.JaasSecurityContext.UserPasswordCallbackHandler;
+import org.modeshape.junit.SkipLongRunning;
+import org.modeshape.junit.SkipLongRunningRule;
 
 public class AuthenticationAndAuthorizationTest {
+
+    @Rule
+    public TestRule skipLongRunningRule = new SkipLongRunningRule();
 
     private static final String REPO_NAME = "testRepo";
 
@@ -388,4 +396,15 @@ public class AuthenticationAndAuthorizationTest {
         });
     }
 
+    @Test
+    @FixFor( "MODE-1938" )
+    @SkipLongRunning
+    public void shouldNotLeakUninitializedWorkspaceCaches() throws Exception {
+        int runCount = 200;
+        for (int i = 0; i < runCount; i++) {
+            beforeEach();
+            shouldLogInAsAnonymousUserIfNoProviderAuthenticatesCredentials();
+            afterEach();
+        }
+    }
 }
