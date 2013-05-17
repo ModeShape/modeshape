@@ -633,6 +633,18 @@
                                            connection-factory-jndi-name="java:/RemoteConnectionFactory"
                                            refresh-period="1"/>
             </repository>
+
+          <repository name="compositeBinaryStoreRepository">
+            <composite-binary-storage min-value-size="5000" >
+              <file-binary-storage store-name="other"
+                                   path="modeshape/sample/binaries"
+                                   relative-to="jboss.server.data.dir" />
+              <cache-binary-storage store-name="default"
+                                    data-cache-name="datacache"
+                                    metadata-cache-name="metadatacache"
+                                    cache-container="binary-container"/>
+            </composite-binary-storage>
+          </repository>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jgroups:1.1" default-stack="tcp">
             <stack name="udp">

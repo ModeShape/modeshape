@@ -147,6 +147,11 @@
             <xs:documentation>The binary files are stored in a relational database.</xs:documentation>
           </xs:annotation>
         </xs:element>
+        <xs:element name="composite-binary-storage" type="composite-binary-storage">
+          <xs:annotation>
+            <xs:documentation>The binary files are stored in a one of any number of named binary stores.</xs:documentation>
+          </xs:annotation>
+        </xs:element>
         <xs:element name="custom-binary-storage" type="custom-binary-storage">
           <xs:annotation>
             <xs:documentation>The binary files are stored in a custom system.</xs:documentation>
@@ -596,6 +601,38 @@
     </xs:attribute>
   </xs:complexType>
 
+  <xs:complexType name="composite-binary-storage">
+
+    <xs:sequence minOccurs="1" maxOccurs="unbounded">
+      <xs:choice minOccurs="1" maxOccurs="1">
+        <xs:element name="file-binary-storage" type="file-binary-storage">
+          <xs:annotation>
+            <xs:documentation>The binary files are stored on the local file system.</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="cache-binary-storage" type="cache-binary-storage">
+          <xs:annotation>
+            <xs:documentation>The binary files are stored in an Infinispan cache.</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="db-binary-storage" type="db-binary-storage">
+          <xs:annotation>
+            <xs:documentation>The binary files are stored in a relational database.</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="custom-binary-storage" type="custom-binary-storage">
+          <xs:annotation>
+            <xs:documentation>The binary files are stored in a custom system.</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+      </xs:choice>
+    </xs:sequence>
+
+    <xs:attributeGroup ref="binary-storage-attributes" />
+    <xs:attributeGroup ref="composite-storage-attributes" />
+
+  </xs:complexType>
+
   <xs:complexType name="custom-binary-storage">
     <xs:attributeGroup ref="implementation-class-attributes" />
     <xs:attributeGroup ref="binary-storage-attributes" />
@@ -618,6 +655,11 @@
   </xs:attributeGroup>
 
   <xs:attributeGroup name="binary-storage-attributes">
+    <xs:attribute name="store-name" type="xs:string" use="optional">
+      <xs:annotation>
+        <xs:documentation>A unique name for the binary store.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
     <xs:attribute name="min-value-size" type="xs:int" use="optional" default="4096">
       <xs:annotation>
         <xs:documentation>The size threshold that dictates whether binary values
@@ -666,6 +708,10 @@
             </xs:documentation>
       </xs:annotation>
     </xs:attribute>
+  </xs:attributeGroup>
+
+  <xs:attributeGroup name="composite-storage-attributes">
+
   </xs:attributeGroup>
 
   <xs:attributeGroup name="persisted-indexing-attributes">

@@ -23,26 +23,24 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
 /**
- *
+ * 
  */
-public class ModeShapeFileBinaryStorageResource extends SimpleResourceDefinition {
-    protected final static ModeShapeFileBinaryStorageResource INSTANCE = new ModeShapeFileBinaryStorageResource();
+public class ModeShapeNamedCacheBinaryStorageResource extends SimpleResourceDefinition {
+    protected final static ModeShapeNamedCacheBinaryStorageResource INSTANCE = new ModeShapeNamedCacheBinaryStorageResource();
 
-    private ModeShapeFileBinaryStorageResource() {
-        super(ModeShapeExtension.FILE_BINARY_STORAGE_PATH,
-              ModeShapeExtension.getResourceDescriptionResolver(ModelKeys.REPOSITORY, ModelKeys.FILE_BINARY_STORAGE),
-              AddFileBinaryStorage.INSTANCE, RemoveBinaryStorage.INSTANCE);
+    private ModeShapeNamedCacheBinaryStorageResource() {
+        super(ModeShapeExtension.NAMED_CACHE_BINARY_STORAGE_PATH,
+              ModeShapeExtension.getResourceDescriptionResolver(ModelKeys.REPOSITORY, ModelKeys.CACHE_BINARY_STORAGE),
+              AddNamedCacheBinaryStorage.INSTANCE, RemoveNamedBinaryStorage.INSTANCE);
     }
 
     @Override
     public void registerAttributes( ManagementResourceRegistration resourceRegistration ) {
         super.registerAttributes(resourceRegistration);
-        BinaryStorageWriteAttributeHandler.FILE_BINARY_STORAGE_INSTANCE.registerAttributes(resourceRegistration);
+        BinaryStorageWriteAttributeHandler.CACHE_BINARY_STORAGE_INSTANCE.registerAttributes(resourceRegistration);
     }
-
 }

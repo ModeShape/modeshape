@@ -73,8 +73,21 @@ public class ModeShapeExtension implements Extension {
     static final PathElement CACHE_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
                                                                                  ModelKeys.CACHE_BINARY_STORAGE);
     static final PathElement DB_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE, ModelKeys.DB_BINARY_STORAGE);
+    static final PathElement COMPOSITE_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
+                                                                                            ModelKeys.COMPOSITE_BINARY_STORAGE);
     static final PathElement CUSTOM_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
                                                                                   ModelKeys.CUSTOM_BINARY_STORAGE);
+
+
+    static final PathElement NAMED_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.NAMED_BINARY_STORE);
+
+    static final PathElement NAMED_FILE_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.NAMED_BINARY_STORE_TYPE,
+                                                                                       ModelKeys.FILE_BINARY_STORAGE);
+    static final PathElement NAMED_CACHE_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.NAMED_BINARY_STORE_TYPE,
+                                                                                        ModelKeys.CACHE_BINARY_STORAGE);
+    static final PathElement NAMED_DB_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.NAMED_BINARY_STORE_TYPE, ModelKeys.DB_BINARY_STORAGE);
+    static final PathElement NAMED_CUSTOM_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.NAMED_BINARY_STORE_TYPE,
+                                                                                         ModelKeys.CUSTOM_BINARY_STORAGE);
 
     static StandardResourceDescriptionResolver getResourceDescriptionResolver( final String... keyPrefix ) {
         StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);
@@ -128,6 +141,15 @@ public class ModeShapeExtension implements Extension {
         binaryStorageSubmodel.registerSubModel(ModeShapeCacheBinaryStorageResource.INSTANCE);
         binaryStorageSubmodel.registerSubModel(ModeShapeDatabaseBinaryStorageResource.INSTANCE);
         binaryStorageSubmodel.registerSubModel(ModeShapeCustomBinaryStorageResource.INSTANCE);
+
+        final ManagementResourceRegistration compositeStorageSubmodel = binaryStorageSubmodel.registerSubModel(ModeShapeCompositeBinaryStorageResource.INSTANCE);
+        final ManagementResourceRegistration parentNamedBinaryStore = compositeStorageSubmodel.registerSubModel(ModeShapeNamedBinaryStorageResource.INSTANCE);
+
+        parentNamedBinaryStore.registerSubModel(ModeShapeNamedFileBinaryStorageResource.INSTANCE);
+        parentNamedBinaryStore.registerSubModel(ModeShapeNamedCacheBinaryStorageResource.INSTANCE);
+        parentNamedBinaryStore.registerSubModel(ModeShapeNamedDatabaseBinaryStorageResource.INSTANCE);
+        parentNamedBinaryStore.registerSubModel(ModeShapeNamedCustomBinaryStorageResource.INSTANCE);
+
 
     }
 

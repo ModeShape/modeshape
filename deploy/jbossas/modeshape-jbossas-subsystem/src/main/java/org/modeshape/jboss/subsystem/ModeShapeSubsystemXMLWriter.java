@@ -291,10 +291,6 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                 started = startAndWriteAttribute(writer, storage, ModelAttributes.REFRESH_PERIOD, element, started);
             } else if (ModelKeys.COPY_BUFFER_SIZE.equals(key)) {
                 started = startAndWriteAttribute(writer, storage, ModelAttributes.COPY_BUFFER_SIZE, element, started);
-            } else if (ModelKeys.RETRY_MARKER_LOOKUP.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.RETRY_MARKER_LOOKUP, element, started);
-            } else if (ModelKeys.RETRY_INITIALIZE_PERIOD.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.RETRY_INITIALIZE_PERIOD, element, started);
             }
             // JMS-backend (for master & slave file storage only) ...
             else if (ModelKeys.CONNECTION_FACTORY_JNDI_NAME.equals(key)) {
@@ -364,49 +360,87 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         if (has(repository, ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE)) {
             ModelNode configuration = repository.get(ModelKeys.CONFIGURATION);
             ModelNode binaryStorage = configuration.get(ModelKeys.BINARY_STORAGE);
-            ModelNode binaryStorageType = binaryStorage.get(ModelKeys.STORAGE_TYPE);
-            String storageType = binaryStorageType.isDefined() && binaryStorageType.keys().size() == 1 ? (String)binaryStorageType.keys()
-                                                                                                                                  .toArray()[0] : null;
-            ModelNode storage = storageType != null ? binaryStorageType.get((String)binaryStorageType.keys().toArray()[0]) : new ModelNode();
-            if (ModelKeys.FILE_BINARY_STORAGE.equals(storageType)) {
-                // This is the default, but there is no default value for the ModelAttributes.PATH (which is required),
-                // which means we always have to write this out. If it is the default binary storage, then there
-                // won't even be a 'binary-storage=BINARIES' model node.
-                writer.writeStartElement(Element.FILE_BINARY_STORAGE.getLocalName());
-                ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
-                ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
-                ModelAttributes.PATH.marshallAsAttribute(storage, false, writer);
-                ModelAttributes.RELATIVE_TO.marshallAsAttribute(storage, false, writer);
-                writer.writeEndElement();
-            } else if (ModelKeys.CACHE_BINARY_STORAGE.equals(storageType)) {
-                writer.writeStartElement(Element.CACHE_BINARY_STORAGE.getLocalName());
-                ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
-                ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
-                ModelAttributes.DATA_CACHE_NAME.marshallAsAttribute(storage, false, writer);
-                ModelAttributes.METADATA_CACHE_NAME.marshallAsAttribute(storage, false, writer);
-                ModelAttributes.CACHE_CONTAINER.marshallAsAttribute(storage, false, writer);
-                writer.writeEndElement();
-            } else if (ModelKeys.DB_BINARY_STORAGE.equals(storageType)) {
-                writer.writeStartElement(Element.DB_BINARY_STORAGE.getLocalName());
-                ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
-                ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
-                ModelAttributes.DATA_SOURCE_JNDI_NAME.marshallAsAttribute(storage, false, writer);
-                writer.writeEndElement();
-            } else if (ModelKeys.CUSTOM_BINARY_STORAGE.equals(storageType)) {
-                ModelNode custom_storage = binaryStorage.get(ModelKeys.CUSTOM_BINARY_STORAGE);
-                writer.writeStartElement(Element.CUSTOM_BINARY_STORAGE.getLocalName());
-                ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(repository, false, writer);
-                ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
-                for (String key : storage.keys()) {
-                    if (key.equals(ModelKeys.CLASSNAME)) {
-                        ModelAttributes.CLASSNAME.marshallAsAttribute(storage, false, writer);
-                    } else if (key.equals(ModelKeys.MODULE)) {
-                        ModelAttributes.MODULE.marshallAsAttribute(storage, false, writer);
-                    } else {
-                        writer.writeAttribute(key, custom_storage.get(key).asString());
-                    }
+
+            writeBinaryStorageModel(writer, binaryStorage);
+        }
+    }
+
+    private void writeBinaryStorageModel(XMLExtendedStreamWriter writer, ModelNode binaryStorage) throws XMLStreamException {
+        ModelNode binaryStorageType = binaryStorage.get(ModelKeys.STORAGE_TYPE);
+        String storageType = binaryStorageType.isDefined() && binaryStorageType.keys().size() == 1 ? (String)binaryStorageType.keys()
+                                                                                                                              .toArray()[0] : null;
+        ModelNode storage = storageType != null ? binaryStorageType.get((String)binaryStorageType.keys().toArray()[0]) : new ModelNode();
+        if (ModelKeys.FILE_BINARY_STORAGE.equals(storageType)) {
+            // This is the default, but there is no default value for the ModelAttributes.PATH (which is required),
+            // which means we always have to write this out. If it is the default binary storage, then there
+            // won't even be a 'binary-storage=BINARIES' model node.
+            writer.writeStartElement(Element.FILE_BINARY_STORAGE.getLocalName());
+            ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.PATH.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.RELATIVE_TO.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.STORE_NAME.marshallAsAttribute(storage, false, writer);
+            writer.writeEndElement();
+        } else if (ModelKeys.CACHE_BINARY_STORAGE.equals(storageType)) {
+            writer.writeStartElement(Element.CACHE_BINARY_STORAGE.getLocalName());
+            ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.DATA_CACHE_NAME.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.METADATA_CACHE_NAME.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.CACHE_CONTAINER.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.STORE_NAME.marshallAsAttribute(storage, false, writer);
+            writer.writeEndElement();
+        } else if (ModelKeys.DB_BINARY_STORAGE.equals(storageType)) {
+            writer.writeStartElement(Element.DB_BINARY_STORAGE.getLocalName());
+            ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.DATA_SOURCE_JNDI_NAME.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.STORE_NAME.marshallAsAttribute(storage, false, writer);
+            writer.writeEndElement();
+        } else if (ModelKeys.COMPOSITE_BINARY_STORAGE.equals(storageType)) {
+            writer.writeStartElement(Element.COMPOSITE_BINARY_STORAGE.getLocalName());
+            ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.STORE_NAME.marshallAsAttribute(storage, false, writer);
+
+            writeNamedBinaryStorage(writer, storage);
+
+            writer.writeEndElement();
+        } else if (ModelKeys.CUSTOM_BINARY_STORAGE.equals(storageType)) {
+            ModelNode custom_storage = binaryStorage.get(ModelKeys.CUSTOM_BINARY_STORAGE);
+            writer.writeStartElement(Element.CUSTOM_BINARY_STORAGE.getLocalName());
+            ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.STORE_NAME.marshallAsAttribute(storage, false, writer);
+            for (String key : storage.keys()) {
+                if (key.equals(ModelKeys.CLASSNAME)) {
+                    ModelAttributes.CLASSNAME.marshallAsAttribute(storage, false, writer);
+                } else if (key.equals(ModelKeys.MODULE)) {
+                    ModelAttributes.MODULE.marshallAsAttribute(storage, false, writer);
+                } else {
+                    writer.writeAttribute(key, custom_storage.get(key).asString());
                 }
-                writer.writeEndElement();
+            }
+            writer.writeEndElement();
+        }
+    }
+
+    private void writeNamedBinaryStorage(XMLExtendedStreamWriter writer, ModelNode storage) throws XMLStreamException {
+        if (has(storage, ModelKeys.NAMED_BINARY_STORE)) {
+            for (String key : storage.get(ModelKeys.NAMED_BINARY_STORE).keys()) {
+
+                ModelNode namedStoreContainer = storage.get(ModelKeys.NAMED_BINARY_STORE, key);
+
+                final String storageType = namedStoreContainer.keys().iterator().next();
+
+                if (storageType == null) {
+                    continue;
+                }
+
+                ModelNode namedStore = namedStoreContainer.get(storageType);
+
+                writeBinaryStorageModel(writer, namedStore);
+
             }
         }
     }
