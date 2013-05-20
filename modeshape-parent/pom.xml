@@ -1441,6 +1441,14 @@
                         <groupId>org.apache.poi</groupId>
                         <artifactId>poi-scratchpad</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.poi</groupId>
+                        <artifactId>poi-ooxml</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.poi</groupId>
+                        <artifactId>poi-ooxml-schemas</artifactId>
+                    </exclusion>
                     <!--
                     The NetCDF and HDF files are often used in the scientific community, so we exclude this
                     library (and the Commons HTTP Client library) by default.
