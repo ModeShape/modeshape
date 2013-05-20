@@ -359,7 +359,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
                                + "TEST_GROUP_DESCRIPTION  VARCHAR2(50 BYTE),\n" //$NON-NLS-1$
                                + "ACTIVE_IND NUMBER DEFAULT 0 NOT NULL,\n" //$NON-NLS-1$
                                + "ACTIVE_STATUS_CD NUMBER DEFAULT 0 NOT NULL,\n" //$NON-NLS-1$
-// this does not parse                               + "ACTIVE_STATUS_DT_TM DATE DEFAULT TO_DATE ( '01/01/190000:00:00' , 'MM/DD/YYYYHH24:MI:SS' ) NOT NULL,\n" //$NON-NLS-1$
+// this includes PL/SQL and does not parse        + "ACTIVE_STATUS_DT_TM DATE DEFAULT TO_DATE ( '01/01/190000:00:00' , 'MM/DD/YYYYHH24:MI:SS' ) NOT NULL,\n" //$NON-NLS-1$
                                + "ACTIVE_STATUS_PRSNL_ID NUMBER DEFAULT 0 NOT NULL,\n" //$NON-NLS-1$
                                + "UPDT_CNT NUMBER DEFAULT 0 NOT NULL,\n" //$NON-NLS-1$
                                + "UPDT_DT_TM DATE DEFAULT SYSDATE NOT NULL,\n" //$NON-NLS-1$
@@ -581,6 +581,24 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
                 assertThat(tableRefNode.getName(), is("customers"));
             }
         }
+    }
+    
+    @Test
+    public void shouldParseDbObjectNameWithValidSymbols() {
+        final String content = "CREATE TABLE EL$VIS (\n" //$NON-NLS-1$
+                               + "COL_A VARCHAR2(20) NOT NULL,\n" //$NON-NLS-1$
+                               + "COL@B VARCHAR2(10) NOT NULL,\n" //$NON-NLS-1$
+                               + "COL#C NUMBER(10));"; //$NON-NLS-1$
+        this.parser.parse(content, this.rootNode, null);
+        assertThat(this.rootNode.getChildCount(), is(1));
+
+        final AstNode tableNode = this.rootNode.getChildren().get(0);
+        assertThat(tableNode.getName(), is("EL$VIS"));
+        assertThat(tableNode.getChildCount(), is(3)); // 3 columns
+
+        assertThat(tableNode.childrenWithName("COL_A").size(), is(1));
+        assertThat(tableNode.childrenWithName("COL@B").size(), is(1));
+        assertThat(tableNode.childrenWithName("COL#C").size(), is(1));
     }
 
 }
