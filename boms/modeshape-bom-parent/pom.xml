@@ -100,7 +100,7 @@
         <slf4j.log4j.version>1.6.1</slf4j.log4j.version>
         <log4j.version>1.2.16</log4j.version>
         <logback.version>0.9.29</logback.version>
-        <jboss.logging.version>3.1.0.CR2</jboss.logging.version>
+        <jboss.logging.version>3.1.2.GA</jboss.logging.version>
 
         <!-- Versions of non-ModeShape dependencies used for testing -->
         <junit.version>4.10</junit.version>

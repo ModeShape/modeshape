@@ -271,7 +271,7 @@
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
         <jgroups.version>3.2.7.Final</jgroups.version>
         <c3p0.version>0.9.1.2</c3p0.version>
-        <jboss.logging.version>3.1.0.CR2</jboss.logging.version>
+        <jboss.logging.version>3.1.2.GA</jboss.logging.version>
 
         <sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
         <jdbc.mysql.version>5.0.7</jdbc.mysql.version>
