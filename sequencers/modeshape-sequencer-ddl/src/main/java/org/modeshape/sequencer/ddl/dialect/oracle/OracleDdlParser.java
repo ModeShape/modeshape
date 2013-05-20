@@ -42,6 +42,7 @@ import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.*;
 import java.util.ArrayList;
 import java.util.List;
 import org.modeshape.common.text.ParsingException;
+import org.modeshape.common.text.Position;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.sequencer.ddl.DdlParserProblem;
 import org.modeshape.sequencer.ddl.DdlSequencerI18n;
@@ -219,6 +220,35 @@ public class OracleDdlParser extends StandardDdlParser
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @see org.modeshape.sequencer.ddl.StandardDdlParser#consumeIdentifier(org.modeshape.sequencer.ddl.DdlTokenStream)
+     */
+    @Override
+    protected String consumeIdentifier( DdlTokenStream tokens ) throws ParsingException {
+        Position startPosition = tokens.nextPosition();
+        String id = super.consumeIdentifier(tokens);
+        Position nextPosition = tokens.nextPosition();
+
+        while (((nextPosition.getIndexInContent() - startPosition.getIndexInContent() - id.length()) == 0)) {
+            // allowed symbols in an identifier: underscore, dollar sign, pound sign, at sign
+            if (tokens.matches(DdlTokenizer.SYMBOL)) {
+                if (tokens.matches('$') || tokens.matches('#') || tokens.matches('@')) {
+                    id += tokens.consume(); // consume symbol
+                } else {
+                    break; // not a valid ID symbol
+                }
+            } else {
+                id += tokens.consume(); // consume text
+            }
+
+            nextPosition = tokens.nextPosition();
+        }
+
+        return id;
+    }
+    
     private boolean matchesComplexNode( AstNode node ) {
         assert node != null;
 

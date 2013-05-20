@@ -153,4 +153,21 @@ public class OracleDdlSequencerTest extends AbstractDdlSequencerTest {
         }
     }
 
+    @Test
+    public void shouldSequenceDbObjectNameWithValidSymbols() throws Exception {
+        Node statementsNode = sequenceDdl("ddl/dialect/oracle/namesWithSymbols.ddl");
+        verifyPrimaryType(statementsNode, NT_UNSTRUCTURED);
+        verifyProperty(statementsNode, PARSER_ID, "ORACLE");
+        assertThat(statementsNode.getNodes().getSize(), is(2L)); // 1 table, 1 index
+
+        { // table node
+            final Node tableNode = findNode(statementsNode, "EL$VIS", StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT);
+            findNode(tableNode, "COL_A", StandardDdlLexicon.TYPE_COLUMN_DEFINITION);
+            findNode(tableNode, "COL@B", StandardDdlLexicon.TYPE_COLUMN_DEFINITION);
+            findNode(tableNode, "COL#C", StandardDdlLexicon.TYPE_COLUMN_DEFINITION);
+        }
+
+        findNode(statementsNode, "IDX$A", OracleDdlLexicon.TYPE_CREATE_TABLE_INDEX_STATEMENT);        
+    }
+
 }
