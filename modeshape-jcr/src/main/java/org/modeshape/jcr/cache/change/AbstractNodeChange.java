@@ -27,7 +27,7 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Path;
 
 /**
- * 
+ * Abstract base class for all internal events.
  */
 public abstract class AbstractNodeChange extends Change {
 
@@ -38,7 +38,6 @@ public abstract class AbstractNodeChange extends Change {
 
     protected AbstractNodeChange( NodeKey key,
                                   Path path ) {
-        super();
         assert key != null;
         assert path != null;
         this.key = key;

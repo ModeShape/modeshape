@@ -1,14 +1,5 @@
 package org.modeshape.jcr;
 
-import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCING_FAILURE;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.OUTPUT_PATH;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.SELECTED_PATH;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_ID;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_PATH;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCER_NAME;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCING_FAILURE_CAUSE;
-import static org.modeshape.jcr.api.observation.Event.Sequencing.USER_ID;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,6 +31,7 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.monitor.ValueMetric;
+import org.modeshape.jcr.api.observation.PropertyEvent;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.AbstractNodeChange;
@@ -61,6 +53,15 @@ import org.modeshape.jcr.cache.change.PropertyRemoved;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCED;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.NODE_SEQUENCING_FAILURE;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.OUTPUT_PATH;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SELECTED_PATH;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_ID;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_PATH;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCER_NAME;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCING_FAILURE_CAUSE;
+import static org.modeshape.jcr.api.observation.Event.Sequencing.USER_ID;
 
 /**
  * The implementation of JCR {@link ObservationManager}.
@@ -405,12 +406,6 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             return element;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @throws UnsupportedOperationException if called
-         * @see java.util.Iterator#remove()
-         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -600,11 +595,6 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             return info != null ? Collections.unmodifiableMap(info) : Collections.<String, String>emptyMap();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#toString()
-         */
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
@@ -658,6 +648,83 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             }
             sb.append(" at ").append(path).append(" by ").append(getUserID());
             return sb.toString();
+        }
+    }
+
+    class JcrPropertyEvent extends JcrEvent implements PropertyEvent {
+        private final Object currentValue;
+        private final Object oldValue;
+
+        JcrPropertyEvent( JcrEventBundle bundle,
+                          int type,
+                          String path,
+                          String id,
+                          Object currentValue,
+                          Object oldValue ) {
+            super(bundle, type, path, id);
+            this.currentValue = currentValue;
+            this.oldValue = oldValue;
+        }
+
+        JcrPropertyEvent( JcrEventBundle bundle,
+                          int type,
+                          String path,
+                          String id,
+                          Object currentValue ) {
+            this(bundle, type, path, id, currentValue, null);
+        }
+
+        @Override
+        public Object getCurrentValue() {
+            return firstValueFrom(currentValue);
+        }
+
+
+        @Override
+        public boolean isMultiValue() {
+            return currentValue instanceof Object[];
+        }
+
+        @Override
+        public List<?> getCurrentValues() {
+           return listValueFrom(currentValue);
+        }
+
+        @Override
+        public boolean wasMultiValue() {
+            return oldValue instanceof Object[];
+        }
+
+        @Override
+        public Object getPreviousValue() {
+            return firstValueFrom(oldValue);
+        }
+
+        @Override
+        public List<?> getPreviousValues() {
+            return listValueFrom(oldValue);
+        }
+
+        private List<?> listValueFrom(Object value) {
+            if (value == null) {
+                return null;
+            }
+            if (value instanceof Object[]) {
+                return ((Object[]) value).length > 0 ? Arrays.asList((Object[])value) : Collections.emptyList();
+            } else {
+                return Arrays.asList(value);
+            }
+        }
+
+        private Object firstValueFrom( Object value ) {
+            if (value == null) {
+                return null;
+            }
+            if (value instanceof Object[]) {
+                return ((Object[])value).length > 0 ? ((Object[])value)[0] : null;
+            } else {
+                return value;
+            }
         }
     }
 
@@ -823,19 +890,42 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 events.add(new JcrEvent(bundle, Event.NODE_REMOVED, stringFor(newPath), nodeId));
             } else if (nodeChange instanceof PropertyChanged && eventListenedFor(Event.PROPERTY_CHANGED)) {
                 // create event for changed property
-                Name propertyName = ((PropertyChanged)nodeChange).getNewProperty().getName();
+                PropertyChanged propertyChanged = (PropertyChanged)nodeChange;
+                Name propertyName = propertyChanged.getNewProperty().getName();
                 Path propertyPath = pathFactory().create(newPath, stringFor(propertyName));
-                events.add(new JcrEvent(bundle, Event.PROPERTY_CHANGED, stringFor(propertyPath), nodeId));
+
+                boolean isMultiValue = propertyChanged.getNewProperty().isMultiple();
+                Object currentValue = isMultiValue ? propertyChanged.getNewProperty().getValuesAsArray() :
+                                      propertyChanged.getNewProperty().getFirstValue();
+
+                boolean wasMultiValue = propertyChanged.getOldProperty().isMultiple();
+                Object oldValue = wasMultiValue ? propertyChanged.getOldProperty().getValuesAsArray() :
+                                  propertyChanged.getOldProperty().getFirstValue();
+
+                events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_CHANGED, stringFor(propertyPath), nodeId, currentValue,
+                                                oldValue));
             } else if (nodeChange instanceof PropertyAdded && eventListenedFor(Event.PROPERTY_ADDED)) {
-                Name propertyName = ((PropertyAdded)nodeChange).getProperty().getName();
+                PropertyAdded propertyAdded = (PropertyAdded)nodeChange;
+                Name propertyName = propertyAdded.getProperty().getName();
                 Path propertyPath = pathFactory().create(newPath, stringFor(propertyName));
-                events.add(new JcrEvent(bundle, Event.PROPERTY_ADDED, stringFor(propertyPath), nodeId));
+
+                boolean isMultiValue = propertyAdded.getProperty().isMultiple();
+                Object currentValue = isMultiValue ? propertyAdded.getProperty().getValuesAsArray() :
+                                      propertyAdded.getProperty().getFirstValue();
+
+                events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_ADDED, stringFor(propertyPath), nodeId, currentValue));
 
             } else if (nodeChange instanceof PropertyRemoved && eventListenedFor(Event.PROPERTY_REMOVED)) {
                 // create event for removed property
-                Name propertyName = ((PropertyRemoved)nodeChange).getProperty().getName();
+                PropertyRemoved propertyRemoved = (PropertyRemoved)nodeChange;
+                Name propertyName = propertyRemoved.getProperty().getName();
                 Path propertyPath = pathFactory().create(newPath, propertyName);
-                events.add(new JcrEvent(bundle, Event.PROPERTY_REMOVED, stringFor(propertyPath), nodeId));
+
+                boolean isMultiValue = propertyRemoved.getProperty().isMultiple();
+                Object currentValue = isMultiValue ? propertyRemoved.getProperty().getValuesAsArray() :
+                                      propertyRemoved.getProperty().getFirstValue();
+
+                events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_REMOVED, stringFor(propertyPath), nodeId, currentValue));
             } else if (nodeChange instanceof NodeSequenced && eventListenedFor(NODE_SEQUENCED)) {
                 // create event for the sequenced node
                 NodeSequenced sequencedChange = (NodeSequenced)nodeChange;
@@ -905,7 +995,7 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
          * lock owner and lock isDeep, which will be fired from the locked node. Therefore, we should exclude property
          * notifications from the lock node from the system workspace.
          * 
-         * @param nodeChange
+         * @param nodeChange the internal event
          * @return true if the change should be accepted/propagated
          */
         private boolean acceptIfLockChange( AbstractNodeChange nodeChange ) {
@@ -1034,22 +1124,12 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
             return changePath.isRoot() ? changePath : changePath.getParent();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#equals(java.lang.Object)
-         */
         @Override
         public boolean equals( Object obj ) {
             return (obj != null) && (obj instanceof JcrListenerAdapter) && (this.delegate == ((JcrListenerAdapter)obj).delegate);
 
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#hashCode()
-         */
         @Override
         public int hashCode() {
             return this.delegate.hashCode();
