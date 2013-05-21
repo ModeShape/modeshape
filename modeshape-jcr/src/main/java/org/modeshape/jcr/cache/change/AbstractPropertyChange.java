@@ -28,50 +28,39 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
 
 /**
- * Internal event fired when a property is changed on a node
+ * Base class for all property related changes.
  */
-public class PropertyChanged extends AbstractPropertyChange {
+public abstract class AbstractPropertyChange extends AbstractNodeChange {
 
     private static final long serialVersionUID = 1L;
 
-    private final Property oldProperty;
+    protected final Property property;
 
-    public PropertyChanged( NodeKey key,
-                            Path nodePath,
-                            Property newProperty,
-                            Property oldProperty ) {
-        super(key, nodePath, newProperty);
-        this.oldProperty = oldProperty;
+    /**
+     * Creates a new property change event
+     *
+     * @param key the internal identifier of the node on which on which the change occurred
+     * @param nodePath the path of the node of the node on which on which the change occurred
+     * @param property the {@link Property} instance for which the event is fired
+     */
+    public AbstractPropertyChange( NodeKey key,
+                                   Path nodePath,
+                                   Property property ) {
+        super(key, nodePath);
+        this.property = property;
     }
 
     /**
-     * @return newPath
+     * @return property
      */
-    public Property getNewProperty() {
+    public Property getProperty() {
         return property;
     }
 
     /**
-     * @return oldPath
+     * @return path
      */
-    public Property getOldProperty() {
-        return oldProperty;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("Changed property ");
-        stringBuilder.append(property.getName());
-        stringBuilder.append(" on node '");
-        stringBuilder.append(this.getKey());
-        stringBuilder.append("' at path ");
-        stringBuilder.append(getPathToNode().getString());
-        stringBuilder.append(" from:");
-        stringBuilder.append(oldProperty);
-        stringBuilder.append(" to:");
-        stringBuilder.append(property);
-
-        return stringBuilder.toString();
+    public Path getPathToNode() {
+        return path;
     }
 }

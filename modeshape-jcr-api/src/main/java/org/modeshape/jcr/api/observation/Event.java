@@ -66,11 +66,11 @@ public interface Event extends javax.jcr.observation.Event {
          * Generated when the sequencing of an input node fails.
          *
          * <ul>
-         *  <li>{@link #getPath} returns the absolute path of the input node that triggered the sequencing.</li>
-         *  <li>{@link #getIdentifier} returns the identifier of the input node that triggered the sequencing</li>
-         *  <li>{@link #getInfo} returns an <code>Map</code> object, which under the {@link org.modeshape.jcr.api.observation.Event.Sequencing#SEQUENCING_FAILURE_CAUSE} key
-         *  contains the {@link Throwable} instance which caused the failure.
-         *  </li>
+         * <li>{@link #getPath} returns the absolute path of the input node that triggered the sequencing.</li>
+         * <li>{@link #getIdentifier} returns the identifier of the input node that triggered the sequencing</li>
+         * <li>{@link #getInfo} returns an <code>Map</code> object, which under the {@link org.modeshape.jcr.api.observation.Event.Sequencing#SEQUENCING_FAILURE_CAUSE} key
+         * contains the {@link Throwable} instance which caused the failure.
+         * </li>
          * </ul>
          */
         int NODE_SEQUENCING_FAILURE = 0x100;
