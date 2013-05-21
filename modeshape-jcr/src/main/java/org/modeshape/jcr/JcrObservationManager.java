@@ -652,64 +652,79 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
     }
 
     class JcrPropertyEvent extends JcrEvent implements PropertyEvent {
-        private final boolean isMultiValue;
-        private final List<?> currentValues;
-        private final boolean wasMultiValue;
-        private final List<?> oldValues;
+        private final Object currentValue;
+        private final Object oldValue;
 
         JcrPropertyEvent( JcrEventBundle bundle,
                           int type,
                           String path,
                           String id,
-                          boolean isMultiValue,
-                          List<?> currentValues,
-                          boolean wasMultiValue,
-                          List<?> oldValues ) {
+                          Object currentValue,
+                          Object oldValue ) {
             super(bundle, type, path, id);
-            this.currentValues = currentValues;
-            this.isMultiValue = isMultiValue;
-            this.wasMultiValue = wasMultiValue;
-            this.oldValues = oldValues;
+            this.currentValue = currentValue;
+            this.oldValue = oldValue;
         }
 
         JcrPropertyEvent( JcrEventBundle bundle,
                           int type,
                           String path,
                           String id,
-                          boolean isMultiValue,
-                          List<?> currentValues ) {
-            this(bundle, type, path, id, isMultiValue, currentValues, false, null);
+                          Object currentValue ) {
+            this(bundle, type, path, id, currentValue, null);
         }
-
 
         @Override
         public Object getCurrentValue() {
-            return currentValues.isEmpty() ? null : currentValues.get(0);
+            return firstValueFrom(currentValue);
         }
+
 
         @Override
         public boolean isMultiValue() {
-            return isMultiValue;
+            return currentValue instanceof Object[];
         }
 
         @Override
         public List<?> getCurrentValues() {
-            return currentValues;
+           return listValueFrom(currentValue);
         }
 
         @Override
         public boolean wasMultiValue() {
-            return wasMultiValue;
+            return oldValue instanceof Object[];
         }
 
         @Override
         public Object getPreviousValue() {
-            return oldValues != null && !oldValues.isEmpty() ? oldValues.get(0) : null;
+            return firstValueFrom(oldValue);
         }
 
         @Override
         public List<?> getPreviousValues() {
-            return oldValues;
+            return listValueFrom(oldValue);
+        }
+
+        private List<?> listValueFrom(Object value) {
+            if (value == null) {
+                return null;
+            }
+            if (value instanceof Object[]) {
+                return ((Object[]) value).length > 0 ? Arrays.asList((Object[])value) : Collections.emptyList();
+            } else {
+                return Arrays.asList(value);
+            }
+        }
+
+        private Object firstValueFrom( Object value ) {
+            if (value == null) {
+                return null;
+            }
+            if (value instanceof Object[]) {
+                return ((Object[])value).length > 0 ? ((Object[])value)[0] : null;
+            } else {
+                return value;
+            }
         }
     }
 
@@ -880,26 +895,25 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 Path propertyPath = pathFactory().create(newPath, stringFor(propertyName));
 
                 boolean isMultiValue = propertyChanged.getNewProperty().isMultiple();
-                List<?> currentValues = isMultiValue ? Arrays.asList(propertyChanged.getNewProperty().getValuesAsArray()) :
-                                                       Arrays.asList(propertyChanged.getNewProperty().getFirstValue());
+                Object currentValue = isMultiValue ? propertyChanged.getNewProperty().getValuesAsArray() :
+                                      propertyChanged.getNewProperty().getFirstValue();
 
                 boolean wasMultiValue = propertyChanged.getOldProperty().isMultiple();
-                List<?> oldValues = isMultiValue ? Arrays.asList(propertyChanged.getOldProperty().getValuesAsArray()) :
-                                                       Arrays.asList(propertyChanged.getOldProperty().getFirstValue());
+                Object oldValue = wasMultiValue ? propertyChanged.getOldProperty().getValuesAsArray() :
+                                  propertyChanged.getOldProperty().getFirstValue();
 
-
-                events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_CHANGED, stringFor(propertyPath), nodeId, isMultiValue, currentValues,
-                                                wasMultiValue, oldValues));
+                events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_CHANGED, stringFor(propertyPath), nodeId, currentValue,
+                                                oldValue));
             } else if (nodeChange instanceof PropertyAdded && eventListenedFor(Event.PROPERTY_ADDED)) {
                 PropertyAdded propertyAdded = (PropertyAdded)nodeChange;
                 Name propertyName = propertyAdded.getProperty().getName();
                 Path propertyPath = pathFactory().create(newPath, stringFor(propertyName));
 
                 boolean isMultiValue = propertyAdded.getProperty().isMultiple();
-                List<?> currentValues = isMultiValue ? Arrays.asList(propertyAdded.getProperty().getValuesAsArray()) :
-                                        Arrays.asList(propertyAdded.getProperty().getFirstValue());
+                Object currentValue = isMultiValue ? propertyAdded.getProperty().getValuesAsArray() :
+                                      propertyAdded.getProperty().getFirstValue();
 
-                events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_ADDED, stringFor(propertyPath), nodeId, isMultiValue, currentValues));
+                events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_ADDED, stringFor(propertyPath), nodeId, currentValue));
 
             } else if (nodeChange instanceof PropertyRemoved && eventListenedFor(Event.PROPERTY_REMOVED)) {
                 // create event for removed property
@@ -908,11 +922,10 @@ class JcrObservationManager implements ObservationManager, ChangeSetListener {
                 Path propertyPath = pathFactory().create(newPath, propertyName);
 
                 boolean isMultiValue = propertyRemoved.getProperty().isMultiple();
-                List<?> currentValues = isMultiValue ? Arrays.asList(propertyRemoved.getProperty().getValuesAsArray()) :
-                                        Arrays.asList(propertyRemoved.getProperty().getFirstValue());
+                Object currentValue = isMultiValue ? propertyRemoved.getProperty().getValuesAsArray() :
+                                      propertyRemoved.getProperty().getFirstValue();
 
-
-                events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_REMOVED, stringFor(propertyPath), nodeId, isMultiValue, currentValues));
+                events.add(new JcrPropertyEvent(bundle, Event.PROPERTY_REMOVED, stringFor(propertyPath), nodeId, currentValue));
             } else if (nodeChange instanceof NodeSequenced && eventListenedFor(NODE_SEQUENCED)) {
                 // create event for the sequenced node
                 NodeSequenced sequencedChange = (NodeSequenced)nodeChange;
