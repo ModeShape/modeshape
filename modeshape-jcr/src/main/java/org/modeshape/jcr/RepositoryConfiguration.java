@@ -290,6 +290,8 @@ public class RepositoryConfiguration {
          */
         public static final String MINIMUM_STRING_SIZE = "minimumStringSize";
 
+        public static final String BINARY_STORE_NAME = "storeName";
+
         /**
          * The name for the field whose value is a document containing workspace information.
          */

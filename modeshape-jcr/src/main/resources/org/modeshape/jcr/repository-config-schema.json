@@ -95,6 +95,10 @@
                                     "description" : "The specification of the transient binary store, which keeps BINARY values on disk in the temp directory.",
                                     "enum" : [ "transient" ]
                                 },
+                                "storeName" : {
+                                    "type" : "string",
+                                    "description" : "A short, implementer-supplied name for this binary store"
+                                },
                                 "minimumBinarySizeInBytes" : {
                                     "type" : "integer",
                                     "default" : 4096,
@@ -118,6 +122,10 @@
                                     "type" : "string",
                                     "description" : "The specification of the file-based binary store, which keeps BINARY values on disk in the specified directory.",
                                     "enum" : [ "file" ]
+                                },
+                                "storeName" : {
+                                    "type" : "string",
+                                    "description" : "A short, implementer-supplied name for this binary store"
                                 },
                                 "directory" : {
                                     "type" : "string",
@@ -148,6 +156,10 @@
                                     "description" : "The specification of the database binary store, which stores BINARY values in a JDBC-compatible database accessed through a JDBC DataSource registered in JNDI.",
                                     "enum" : [ "database" ]
                                 },
+                                "storeName" : {
+                                    "type" : "string",
+                                    "description" : "A short, implementer-supplied name for this binary store"
+                                },
                                 "dataSourceJndiName" : {
                                     "type" : "string",
                                     "description" : "The name in JNDI where the JDBC DataSource is registered that should be used for binary storage.",
@@ -176,6 +188,10 @@
                                     "type" : "string",
                                     "description" : "The specification of the database binary store, which stores BINARY values in a JDBC-compatible database accessed through a JDBC connection established by specifying the driver class, URL, and other properties",
                                     "enum" : [ "database" ]
+                                },
+                                "storeName" : {
+                                    "type" : "string",
+                                    "description" : "A short, implementer-supplied name for this binary store"
                                 },
                                 "driverClass" : {
                                     "type" : "string",
@@ -220,6 +236,10 @@
                                     "type" : "string",
                                     "description" : "The specification of the Infinispan binary store, which stores BINARY values in a Infinispan cache.",
                                     "enum" : [ "cache" ]
+                                },
+                                "storeName" : {
+                                    "type" : "string",
+                                    "description" : "A short, implementer-supplied name for this binary store"
                                 },
                                 "dataCacheName" : {
                                     "type" : "string",
