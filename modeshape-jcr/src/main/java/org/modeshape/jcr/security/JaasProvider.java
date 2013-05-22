@@ -52,7 +52,7 @@ public class JaasProvider implements AuthenticationProvider {
     /**
      * Create a JAAS provider for authentication and authorization, using the supplied name for the login configuration.
      * 
-     * @param policyName
+     * @param policyName the name that will be used for the login context
      * @exception LoginException if the caller-specified <code>name</code> does not appear in the <code>Configuration</code> and
      *            there is no <code>Configuration</code> entry for "<i>other</i>", or if the
      *            <i>auth.login.defaultCallbackHandler</i> security property was set, but the implementation class could not be
@@ -83,12 +83,6 @@ public class JaasProvider implements AuthenticationProvider {
         this.subjectResolver = subjectResolver;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.security.AuthenticationProvider#authenticate(javax.jcr.Credentials, java.lang.String,
-     *      java.lang.String, org.modeshape.jcr.ExecutionContext, java.util.Map)
-     */
     @Override
     public ExecutionContext authenticate( final Credentials credentials,
                                           String repositoryName,

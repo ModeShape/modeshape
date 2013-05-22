@@ -39,6 +39,12 @@ public class AnonymousProvider implements AuthenticationProvider {
 
     private final SecurityContext anonymousContext;
 
+    /**
+     * Creates a new anonymous provider.
+     *
+     * @param anonymousUsername the anonymous user name
+     * @param userRoles the set of roles for the anonymous user
+     */
     public AnonymousProvider( final String anonymousUsername,
                               final Set<String> userRoles ) {
         CheckArg.isNotEmpty(anonymousUsername, "anonymousUsername");
@@ -46,12 +52,6 @@ public class AnonymousProvider implements AuthenticationProvider {
         this.anonymousContext = new AnonymousSecurityContext(userRoles, anonymousUsername);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.security.AuthenticationProvider#authenticate(javax.jcr.Credentials, java.lang.String,
-     *      java.lang.String, org.modeshape.jcr.ExecutionContext, java.util.Map)
-     */
     @Override
     public ExecutionContext authenticate( Credentials credentials,
                                           String repositoryName,
