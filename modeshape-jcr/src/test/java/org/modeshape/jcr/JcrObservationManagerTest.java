@@ -1853,7 +1853,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         String oldPath = n1.getPath();
         String renamedPath = getRoot().getPath() + "/node3";
         getWorkspace().move(oldPath, renamedPath);
-        save();
 
         // event handling
         moveNodeListener.waitForEvents();

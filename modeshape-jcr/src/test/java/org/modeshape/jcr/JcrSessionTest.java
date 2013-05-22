@@ -1133,6 +1133,53 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         assertEquals(1, queryResult.getNodes().getSize());
     }
 
+    @Test
+    @FixFor( "MODE-1940" )
+    public void shouldIndexRenamedNodes() throws Exception {
+        initializeData();
+
+        //create a/d
+        session.getNode("/a").addNode("d");
+        session.save();
+        //rename /a/b to /a/d
+        session.getWorkspace().move("/a/b", "/a/d");
+
+        queryForAbsent("b");
+        queryForExistingNode("d", "/a/d");
+        queryForExistingNode("c", "/a/d/c");
+    }
+
+    @Test
+    @FixFor( "MODE-1940" )
+    public void shouldIndexMovedNodes() throws Exception {
+        initializeData();
+
+        //create /w/q
+        session.getNode("/").addNode("w").addNode("q");
+        session.save();
+        //move /a to /w/q
+        session.getWorkspace().move("/a", "/w/x");
+
+        queryForAbsent("a");
+        queryForExistingNode("x", "/w/x");
+        queryForExistingNode("b", "/w/x/b");
+        queryForExistingNode("c", "/w/x/b/c");
+    }
+
+    private void queryForAbsent(String localNodeName) throws RepositoryException {
+        QueryResult queryResult = tools.printQuery(session, "select n from [nt:unstructured] as n where localname(n)='" + localNodeName + "'");
+        assertEquals(0, queryResult.getNodes().getSize());
+    }
+
+    private void queryForExistingNode( String localNodeName, String expectedPath ) throws RepositoryException {
+        QueryResult queryResult = tools.printQuery(session, "select n from [nt:unstructured] as n where localname(n)='" + localNodeName + "'");
+        NodeIterator  nodeIterator = queryResult.getNodes();
+        assertEquals(1, nodeIterator.getSize());
+        Node node = nodeIterator.nextNode();
+        assertEquals(localNodeName, node.getName());
+        assertEquals(expectedPath, node.getPath());
+    }
+
     protected static class PropertyListener implements EventListener {
         protected int adds, removes, changes;
 
