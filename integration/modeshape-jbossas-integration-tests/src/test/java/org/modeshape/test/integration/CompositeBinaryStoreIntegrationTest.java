@@ -27,6 +27,7 @@ package org.modeshape.test.integration;
 import javax.annotation.Resource;
 import javax.jcr.Session;
 import static junit.framework.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -38,9 +39,16 @@ import org.junit.runner.RunWith;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.ValueFactory;
+import org.modeshape.jcr.value.BinaryValue;
+import org.modeshape.jcr.value.binary.BinaryStore;
+import org.modeshape.jcr.value.binary.CompositeBinaryStore;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 /**
  * Test which verifies that the ModeShape composite binary store configuration inside of AS7 is correct.
  *
@@ -76,8 +84,20 @@ public class CompositeBinaryStoreIntegrationTest {
         final Binary binaryInOtherStore = ((ValueFactory) session.getValueFactory()).createBinary(new ByteArrayInputStream("123456789101112".getBytes()), "other");
         final Binary binaryInAnotherStore = ((ValueFactory) session.getValueFactory()).createBinary(new ByteArrayInputStream("qwertyuiopasdfghjklzxcvbnm".getBytes()), "another-fsbs");
 
-        // TODO: should check if the binaries made it to the right place, or that we even have the right kind of store configured..
+        final BinaryStore binaryStore = ((JcrRepository) repository).runningState().binaryStore();
 
+        assertTrue(binaryStore instanceof CompositeBinaryStore);
+        final Iterator<Map.Entry<String, BinaryStore>> namedStoreIterator = ((CompositeBinaryStore) binaryStore).getNamedStoreIterator();
+        Map<String,BinaryStore> namedStoreMap = new HashMap<String,BinaryStore>();
+
+        while (namedStoreIterator.hasNext()) {
+            final Map.Entry<String, BinaryStore> entry = namedStoreIterator.next();
+            namedStoreMap.put(entry.getKey(), entry.getValue());
+        }
+
+        assertTrue(namedStoreMap.get("default").hasBinary(((BinaryValue)binaryInDefaultStore).getKey()));
+        assertTrue(namedStoreMap.get("other").hasBinary(((BinaryValue)binaryInOtherStore).getKey()));
+        assertTrue(namedStoreMap.get("another-fsbs").hasBinary(((BinaryValue)binaryInAnotherStore).getKey()));
         session.save();
     }
 

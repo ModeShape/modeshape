@@ -445,7 +445,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return runningState().repositoryKey();
     }
 
-    protected final JcrRepository.RunningState runningState() {
+    public final JcrRepository.RunningState runningState() {
         RunningState running = runningState.get();
         if (running == null) {
             throw new IllegalStateException(JcrI18n.repositoryIsNotRunningOrHasBeenShutDown.text(repositoryName()));
@@ -876,7 +876,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     }
 
     @Immutable
-    protected class RunningState {
+    public class RunningState {
 
         private final RepositoryConfiguration config;
         private final DocumentStore documentStore;
@@ -1348,7 +1348,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return documentStore;
         }
 
-        protected final BinaryStore binaryStore() {
+        public final BinaryStore binaryStore() {
             return binaryStore;
         }
 

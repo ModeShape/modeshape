@@ -344,6 +344,11 @@
                 <local-cache name="binaryIndexingJDBCRepository">
                     <transaction mode="NON_XA"/>
                 </local-cache>
+
+              <local-cache name="compositeBinaryStoreRepository">
+                <!-- ModeShape requires transactions -->
+                <transaction mode="NON_XA"/>
+              </local-cache>
             </cache-container>
             <cache-container name="binary-cache-container" default-cache="binary-fs" module="org.modeshape">
                 <local-cache name="binary-fs">
@@ -635,9 +640,12 @@
             </repository>
 
           <repository name="compositeBinaryStoreRepository">
-            <composite-binary-storage min-value-size="5000" >
+            <composite-binary-storage min-value-size="12" >
               <file-binary-storage store-name="other"
                                    path="modeshape/sample/binaries"
+                                   relative-to="jboss.server.data.dir" />
+              <file-binary-storage store-name="another-fsbs"
+                                   path="modeshape/sample/binaries-another"
                                    relative-to="jboss.server.data.dir" />
               <cache-binary-storage store-name="default"
                                     data-cache-name="datacache"
