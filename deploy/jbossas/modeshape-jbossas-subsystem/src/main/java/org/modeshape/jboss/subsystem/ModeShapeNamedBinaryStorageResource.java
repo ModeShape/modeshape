@@ -23,26 +23,19 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
 /**
- *
+ * 
  */
-public class ModeShapeFileBinaryStorageResource extends SimpleResourceDefinition {
-    protected final static ModeShapeFileBinaryStorageResource INSTANCE = new ModeShapeFileBinaryStorageResource();
+public class ModeShapeNamedBinaryStorageResource extends SimpleResourceDefinition {
+    protected final static ModeShapeNamedBinaryStorageResource INSTANCE = new ModeShapeNamedBinaryStorageResource();
 
-    private ModeShapeFileBinaryStorageResource() {
-        super(ModeShapeExtension.FILE_BINARY_STORAGE_PATH,
-              ModeShapeExtension.getResourceDescriptionResolver(ModelKeys.REPOSITORY, ModelKeys.FILE_BINARY_STORAGE),
-              AddFileBinaryStorage.INSTANCE, RemoveBinaryStorage.INSTANCE);
-    }
-
-    @Override
-    public void registerAttributes( ManagementResourceRegistration resourceRegistration ) {
-        super.registerAttributes(resourceRegistration);
-        BinaryStorageWriteAttributeHandler.FILE_BINARY_STORAGE_INSTANCE.registerAttributes(resourceRegistration);
+    private ModeShapeNamedBinaryStorageResource() {
+        super(ModeShapeExtension.NAMED_BINARY_STORAGE_PATH,
+              ModeShapeExtension.getResourceDescriptionResolver(ModelKeys.REPOSITORY, ModelKeys.COMPOSITE_BINARY_STORAGE, ModelKeys.NAMED_BINARY_STORE),
+              AddParentNamedBinaryStorage.INSTANCE, RemoveParentNamedBinaryStorage.INSTANCE);
     }
 
 }

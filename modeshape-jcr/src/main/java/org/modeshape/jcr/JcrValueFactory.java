@@ -147,6 +147,19 @@ public class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
         return valueFactories.getBinaryFactory().create(value);
     }
 
+    /**
+     * Creates a JCR {@link org.modeshape.jcr.api.Binary} value from the given input stream
+     * with a hint to the factory (which is passed to the storage layer)
+     *
+     * @param value a non-null input stream
+     * @param hint a hint that the storage layer may use to make persistence decisions
+     * @return a Binary implementation instance
+     */
+    public BinaryValue createBinary( InputStream value, String hint ) {
+        if (value == null) return null;
+        return valueFactories.getBinaryFactory().create(value, hint);
+    }
+
     @Override
     public JcrValue createValue( Calendar value ) {
         if (value == null) return null;
@@ -201,7 +214,7 @@ public class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
 
     @Override
     public String createName( String localName ) {
-        return valueFactories.getNameFactory().create(null, localName).getString();
+        return valueFactories.getNameFactory().create((String)null, localName).getString();
     }
 
     @Override

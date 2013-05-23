@@ -79,11 +79,20 @@ public class ModeShapeServiceNames {
         return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "binaries");
     }
 
+    public static ServiceName binaryStorageServiceName(String repositoryName, String binaryStore) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, binaryStore, "binaries");
+    }
+
     public static ServiceName binaryStorageDirectoryServiceName( String repositoryName ) {
         return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "binaries.dir");
+    }
+
+    public static ServiceName binaryStorageDirectoryServiceName( String repositoryName, String binaryStore ) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, binaryStore, "binaries.dir");
     }
 
     public static ServiceName referenceFactoryServiceName( String repositoryName ) {
         return repositoryServiceName(repositoryName).append("reference-factory");
     }
+
 }

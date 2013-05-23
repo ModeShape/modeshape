@@ -123,6 +123,17 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         storeAndValidate(EMPTY_BINARY_KEY, EMPTY_BINARY);
     }
 
+    @Test
+    public void shouldHaveKey() throws BinaryStoreException, IOException {
+        storeAndValidate(STORED_MEDIUM_KEY, STORED_MEDIUM_BINARY);
+        assertTrue("Expected BinaryStore to contain the key", getBinaryStore().hasBinary(STORED_MEDIUM_KEY));
+    }
+
+    @Test
+    public void shouldNotHaveKey() throws BinaryStoreException, IOException {
+        assertTrue("Did not expect BinaryStore to contain the key", !getBinaryStore().hasBinary(invalidBinaryKey()));
+    }
+
     private BinaryValue storeAndValidate( BinaryKey key,
                                    byte[] data ) throws BinaryStoreException, IOException {
         BinaryValue res = getBinaryStore().storeValue(new ByteArrayInputStream(data));
@@ -151,6 +162,12 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
             fail("Key was not removed");
         } catch (BinaryStoreException ex) {
         }
+    }
+
+    @Test
+    public void shouldAcceptStrategyHintsForStoringValues() throws Exception {
+        BinaryValue res = getBinaryStore().storeValue(new ByteArrayInputStream(STORED_MEDIUM_BINARY), null);
+        assertTrue(getBinaryStore().hasBinary(res.getKey()));
     }
 
     @Test( expected = BinaryStoreException.class )
@@ -183,10 +200,8 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
     public void shouldExtractAndStoreMimeTypeWhenDetectorConfigured() throws RepositoryException, IOException {
         getBinaryStore().setMimeTypeDetector(new DummyMimeTypeDetector());
         BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(IN_MEMORY_BINARY));
-        assertNull(((AbstractBinaryStore)getBinaryStore()).getStoredMimeType(binaryValue));
         // unclean stuff... a getter modifies silently data
         assertEquals(DummyMimeTypeDetector.DEFAULT_TYPE, getBinaryStore().getMimeType(binaryValue, "foobar.txt"));
-        assertEquals(DummyMimeTypeDetector.DEFAULT_TYPE, ((AbstractBinaryStore)getBinaryStore()).getStoredMimeType(binaryValue));
     }
 
     @Test
@@ -204,7 +219,6 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
             extractedText = binaryStore.getText(binaryValue);
         }
         assertEquals(DummyTextExtractor.EXTRACTED_TEXT, extractedText);
-        assertEquals(DummyTextExtractor.EXTRACTED_TEXT, ((AbstractBinaryStore)binaryStore).getExtractedText(binaryValue));
     }
 
     protected static final class DummyMimeTypeDetector implements MimeTypeDetector {

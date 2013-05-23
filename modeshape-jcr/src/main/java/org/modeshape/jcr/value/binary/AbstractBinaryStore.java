@@ -24,6 +24,7 @@
 package org.modeshape.jcr.value.binary;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -36,6 +37,7 @@ import org.modeshape.jcr.TextExtractors;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.NullMimeTypeDetector;
 import org.modeshape.jcr.text.TextExtractorContext;
+import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 
 /**
@@ -167,6 +169,20 @@ public abstract class AbstractBinaryStore implements BinaryStore {
         return detectedMimeType;
     }
 
+	@Override
+	public boolean hasBinary(BinaryKey key) {
+		try {
+			InputStream is = getInputStream(key);
+			is.close();
+		} catch (BinaryStoreException e) {
+			return false;
+		} catch (IOException e) {
+			return false;
+		}
+
+		return true;
+	}
+
     /**
      * Returns the stored mime-type of a binary value.
      * 
@@ -225,6 +241,18 @@ public abstract class AbstractBinaryStore implements BinaryStore {
      */
     protected final MimeTypeDetector detector() {
         return detector;
+    }
+
+	/**
+	 * By default, ignore the strategy hint and store the content as normal
+	 * @param stream the stream containing the content to be used to create the value
+	 * @param hint a hint that the BinaryStore may use
+	 *                     to make storage decisions about this input stream
+	 * @return the binary value representing the stored binary value; never null
+	 * @throws BinaryStoreException if there any unexpected problem
+	 */
+    public BinaryValue storeValue(InputStream stream, String hint) throws BinaryStoreException {
+        return storeValue(stream);
     }
 
     /**

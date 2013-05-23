@@ -258,6 +258,20 @@ public class BinaryStoreValueFactory extends AbstractValueFactory<BinaryValue> i
         }
     }
 
+    @Override
+    public BinaryValue create( InputStream stream, String hint ) throws IoException {
+        if (stream == null) return null;
+        try {
+            // Store the value in the store ...
+            return store.storeValue(stream, hint);
+        } catch (BinaryStoreException e) {
+            throw new ValueFormatException(PropertyType.BINARY,
+                    GraphI18n.errorConvertingIo.text(InputStream.class.getSimpleName(),
+                            BinaryValue.class.getSimpleName()), e);
+        }
+
+    }
+
     @SuppressWarnings( "unused" )
     @Override
     public BinaryValue find( BinaryKey secureHash,

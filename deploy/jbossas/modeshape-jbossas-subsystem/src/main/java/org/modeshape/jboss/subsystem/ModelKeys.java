@@ -98,6 +98,7 @@ public class ModelKeys {
     static final String TEXT_EXTRACTOR_CLASSNAME = "classname";
     static final String SOURCE_PATH = "source-path";
     static final String SOURCE_RELATIVE_TO = "source-relative-to";
+    static final String STORE_NAME = "store-name";
     static final String THREAD_POOL = "indexing-thread-pool";
     static final String USE_ANONYMOUS_IF_AUTH_FAILED = "use-anonymous-upon-failed-authentication";
 
@@ -107,9 +108,14 @@ public class ModelKeys {
     static final String BINARY_STORAGE = "binary-storage";
     static final String FILE_BINARY_STORAGE = "file-binary-storage";
     static final String DB_BINARY_STORAGE = "db-binary-storage";
+    static final String COMPOSITE_BINARY_STORAGE = "composite-binary-storage";
     static final String CACHE_BINARY_STORAGE = "cache-binary-storage";
     static final String CUSTOM_BINARY_STORAGE = "custom-binary-storage";
     static final String REMOVE_BINARY_STORAGE = "remove-binary-storage";
+
+
+    static final String NAMED_BINARY_STORE = "named-binary-stores-container";
+    static final String NAMED_BINARY_STORE_TYPE = "named-binary-stores";
 
     static final String SEQUENCER = "sequencer";
     static final String SOURCE = "source";

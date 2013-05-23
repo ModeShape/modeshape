@@ -88,6 +88,7 @@ public enum Attribute {
     SECURITY_DOMAIN("security-domain"),
     SOURCE_PATH("source-path"),
     SOURCE_RELATIVE_TO("source-relative-to"),
+    STORE_NAME("store-name"),
     THREAD_POOL("thread-pool"),
     USE_ANONYMOUS_IF_AUTH_FAILED("use-anonymous-upon-failed-authentication"),
     WORKSPACE_NAMES("workspace-names"),
