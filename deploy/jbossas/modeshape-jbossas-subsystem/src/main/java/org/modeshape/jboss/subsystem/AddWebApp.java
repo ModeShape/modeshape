@@ -38,6 +38,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
+import org.jboss.logging.Logger;
 import org.jboss.modules.Module;
 
 /**
@@ -46,6 +47,8 @@ import org.jboss.modules.Module;
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 class AddWebApp extends AbstractAddStepHandler {
+
+    private static final Logger LOGGER = Logger.getLogger(AddWebApp.class.getPackage().getName());
 
     static final AddWebApp INSTANCE = new AddWebApp();
 
@@ -56,11 +59,6 @@ class AddWebApp extends AbstractAddStepHandler {
         resource.getModel().setEmptyObject();
 
         if (requiresRuntime(context)) {
-            boolean autoDeploy = attribute(context, resource.getModel(), ModelAttributes.AUTO_DEPLOY).asBoolean();
-            if (!autoDeploy) {
-                return;
-            }
-
             ModelNode address = operation.require(ModelDescriptionConstants.OP_ADDR);
             PathAddress pathAddress = PathAddress.pathAddress(address);
             String webappName = pathAddress.getLastElement().getValue();
@@ -74,6 +72,10 @@ class AddWebApp extends AbstractAddStepHandler {
 
             Module module = Module.forClass(getClass());
             URL url = module.getExportedResource(webappName);
+            if (url == null) {
+                LOGGER.error("Cannot deploy ModeShape webapp: " + webappName + " because it cannot be located by the main modeshape module");
+                return;
+            }
             ModelNode contentItem = new ModelNode();
 
             if (exploded) {
@@ -86,7 +88,7 @@ class AddWebApp extends AbstractAddStepHandler {
                 contentItem.get(ModelDescriptionConstants.PATH).set(urlString);
                 contentItem.get(ModelDescriptionConstants.ARCHIVE).set(false);
             } else {
-                contentItem.set(ModelDescriptionConstants.URL).set(url.toExternalForm());
+                contentItem.get(ModelDescriptionConstants.URL).set(url.toExternalForm());
             }
 
             op.get(ModelDescriptionConstants.CONTENT).add(contentItem);

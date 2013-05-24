@@ -73,7 +73,6 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         writer.writeStartElement(Element.WEBAPP.getLocalName());
         writer.writeAttribute(Attribute.NAME.getLocalName(), repositoryName);
         ModelAttributes.EXPLODED.marshallAsAttribute(webapp, false, writer);
-        ModelAttributes.AUTO_DEPLOY.marshallAsAttribute(webapp, false, writer);
         writer.writeEndElement();
     }
 
