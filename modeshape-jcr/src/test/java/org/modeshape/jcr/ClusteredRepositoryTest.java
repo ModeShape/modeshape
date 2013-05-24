@@ -127,11 +127,9 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
 
     /**
      * Each Infinispan configuration persists data in a separate location, and we use replication mode.
-     * 
-     * @throws Exception
      */
     @Test
-    @FixFor( "MODE-1733" )
+    @FixFor( {"MODE-1733", "MODE-1943"} )
     public void shouldStartClusterWithReplicatedCachePersistedToSeparateAreasForEachProcess() throws Exception {
         FileUtil.delete("target/clustered");
         JcrRepository repository1 = null;
@@ -140,23 +138,15 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
             // Start the first process completely ...
             repository1 = TestingUtil.startRepositoryWithConfig("config/repo-config-clustered-persistent-1.json");
             Session session1 = repository1.login();
-            assertThat(session1.getRootNode(), is(notNullValue()));
-            assertThat(session1.getNode("/Cars"), is(notNullValue()));
-            assertThat(session1.getNode("/Cars/Hybrid"), is(notNullValue()));
-            assertThat(session1.getNode("/Cars/Hybrid/Toyota Prius"), is(notNullValue()));
-            assertThat(session1.getWorkspace().getNodeTypeManager().getNodeType("car:Car"), is(notNullValue()));
-            assertThat(session1.getWorkspace().getNodeTypeManager().getNodeType("air:Aircraft"), is(notNullValue()));
+            assertInitialContentPersisted(session1);
 
             // Start the second process completely ...
             repository2 = TestingUtil.startRepositoryWithConfig("config/repo-config-clustered-persistent-2.json");
             Session session2 = repository2.login();
-            assertThat(session2.getRootNode(), is(notNullValue()));
-            assertThat(session2.getNode("/Cars/Hybrid/Toyota Prius"), is(notNullValue()));
-            assertThat(session2.getWorkspace().getNodeTypeManager().getNodeType("car:Car"), is(notNullValue()));
-            assertThat(session2.getWorkspace().getNodeTypeManager().getNodeType("air:Aircraft"), is(notNullValue()));
+            assertInitialContentPersisted(session2);
 
-            // in this setup, index changes are local so they *will not* be sent across to other nodes
-            assertIndexChangesAreVisibleToOtherProcesses(false, session1, session2);
+            // in this setup, index changes are local but we are in clustered mode, so changes should also be indexed
+            assertIndexChangesAreVisibleToOtherProcesses(session1, session2);
 
             session1.logout();
             session2.logout();
@@ -167,6 +157,15 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
             FileUtil.delete("target/clustered");
         }
 
+    }
+
+    private void assertInitialContentPersisted( Session session ) throws RepositoryException {
+        assertThat(session.getRootNode(), is(notNullValue()));
+        assertThat(session.getNode("/Cars"), is(notNullValue()));
+        assertThat(session.getNode("/Cars/Hybrid"), is(notNullValue()));
+        assertThat(session.getNode("/Cars/Hybrid/Toyota Prius"), is(notNullValue()));
+        assertThat(session.getWorkspace().getNodeTypeManager().getNodeType("car:Car"), is(notNullValue()));
+        assertThat(session.getWorkspace().getNodeTypeManager().getNodeType("air:Aircraft"), is(notNullValue()));
     }
 
     /**
@@ -192,7 +191,7 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
             Session session2 = repository2.login();
 
             // in this setup, index changes clustered, so they *should be* be sent across to other nodes
-            assertIndexChangesAreVisibleToOtherProcesses(true, session1, session2);
+            assertIndexChangesAreVisibleToOtherProcesses(session1, session2);
 
             session1.logout();
             session2.logout();
@@ -208,8 +207,6 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
     /**
      * Each Infinispan configuration persists data to the SAME location, including indexes. This is NOT a valid option because the
      * indexes get corrupted, so we will ignore this
-     * 
-     * @throws Exception
      */
     @Ignore
     @Test
@@ -237,25 +234,45 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
         }
     }
 
-    private void assertIndexChangesAreVisibleToOtherProcesses( boolean shouldBeVisible,
-                                                               Session process1Session,
+    private void assertIndexChangesAreVisibleToOtherProcesses( Session process1Session,
                                                                Session process2Session )
         throws RepositoryException, InterruptedException {
         JcrTools jcrTools = new JcrTools();
-        String query = "select * from [nt:unstructured] as n where n.[jcr:path]='/testNode'";
+        String pathQuery = "select * from [nt:unstructured] as n where n.[jcr:path]='/testNode'";
 
         // Add a jcr node in the 1st process and check it can be queried
-        process1Session.getRootNode().addNode("testNode");
+        Node testNode = process1Session.getRootNode().addNode("testNode");
         process1Session.save();
-        assertEquals(1, jcrTools.printQuery(process1Session, query).getNodes().getSize());
+        assertEquals(1, jcrTools.printQuery(process1Session, pathQuery).getNodes().getSize());
 
         // wait a bit for state transfer to complete
         Thread.sleep(100);
 
         // check that the custom jcr node created on the other process, was sent to this one
         assertNotNull(process2Session.getNode("/testNode"));
-        int expectedSize = shouldBeVisible ? 1 : 0;
-        assertEquals(expectedSize, jcrTools.printQuery(process2Session, query).getNodes().getSize());
+        assertEquals(1, jcrTools.printQuery(process2Session, pathQuery).getNodes().getSize());
+
+        //Update a property of that node and check it's send through the cluster
+        testNode = process1Session.getNode("/testNode");
+        testNode.setProperty("testProp", "test value");
+        process1Session.save();
+        String propertyQuery = "select * from [nt:unstructured] as n where n.[testProp]='test value'";
+        assertEquals(1, jcrTools.printQuery(process1Session, propertyQuery).getNodes().getSize());
+
+        // wait a bit for state transfer to complete
+        Thread.sleep(100);
+        //check the property change was made in the indexes on the second node
+        assertEquals(1, jcrTools.printQuery(process2Session, propertyQuery).getNodes().getSize());
+
+        //Remove the node in the first process and check it's removed from the indexes across the cluster
+        testNode = process1Session.getNode("/testNode");
+        testNode.remove();
+        process1Session.save();
+        assertEquals(0, jcrTools.printQuery(process1Session, pathQuery).getNodes().getSize());
+        // wait a bit for state transfer to complete
+        Thread.sleep(100);
+        //check the node was removed from the indexes in the second cluster node
+        assertEquals(0, jcrTools.printQuery(process2Session, pathQuery).getNodes().getSize());
     }
 
     protected class ClusteringEventListener implements EventListener {

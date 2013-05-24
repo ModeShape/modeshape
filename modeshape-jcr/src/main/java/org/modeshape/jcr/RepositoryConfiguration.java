@@ -1709,6 +1709,21 @@ public class RepositoryConfiguration {
         }
 
         /**
+         * Reads the indexing configuration, checking if the indexing is configured in clustered mode or not.
+         *
+         * @return {@code true} if the indexing is configured in clustered mode, {@code false} otherwise
+         */
+        public boolean indexingClustered() {
+            Document indexStorage = query.getDocument(FieldName.INDEX_STORAGE);
+            if (indexStorage == null) {
+                return false;
+            }
+            String indexStorageType = indexStorage.getString(FieldName.TYPE);
+            return indexStorageType.equalsIgnoreCase(FieldValue.INDEX_STORAGE_FILESYSTEM_MASTER) ||
+                    indexStorageType.equalsIgnoreCase(FieldValue.INDEX_STORAGE_FILESYSTEM_SLAVE);
+        }
+
+        /**
          * Returns the options that should be used for rebuilding indexes when the repository starts up.
          * 
          * @return a {@code non-null} {@link IndexRebuildOptions} instance.

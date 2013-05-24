@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -400,11 +399,11 @@ public class BasicLuceneSchema implements LuceneSchema {
                             Path path,
                             Name primaryType,
                             Set<Name> mixinTypes,
-                            Collection<Property> properties,
+                            Iterator<Property> propertiesIterator,
                             NodeTypeSchemata schemata,
                             TransactionContext txnCtx ) {
         String id = key.toString();
-        NodeInfo nodeInfo = nodeInfo(id, workspace, path, primaryType, mixinTypes, properties.iterator(), schemata);
+        NodeInfo nodeInfo = nodeInfo(id, workspace, path, primaryType, mixinTypes, propertiesIterator, schemata);
         logger.trace("index for \"{0}\" workspace: ADD    {1} ", workspace, nodeInfo);
         Work<NodeInfo> work = new Work<NodeInfo>(nodeInfo, id, WorkType.ADD);
         searchFactory.getWorker().performWork(work, txnCtx);

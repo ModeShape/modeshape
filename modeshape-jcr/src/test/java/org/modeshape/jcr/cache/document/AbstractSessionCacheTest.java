@@ -89,6 +89,11 @@ public abstract class AbstractSessionCacheTest extends AbstractNodeCacheTest {
             public TransactionalWorkspaceCaches getTransactionalWorkspaceCacheFactory() {
                 return transactionalWorkspaceCacheFactory;
             }
+
+            @Override
+            public boolean indexingClustered() {
+                return false;
+            }
         };
     }
 
