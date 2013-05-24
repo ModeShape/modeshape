@@ -66,7 +66,7 @@ class RepositoryDisabledQueryManager extends RepositoryQueryManager {
                                 Path path,
                                 Name primaryType,
                                 Set<Name> mixinTypes,
-                                Collection<Property> properties,
+                                Iterator<Property> propertiesIterator,
                                 NodeTypeSchemata schemata,
                                 TransactionContext txnCtx ) {
         }

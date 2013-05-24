@@ -1039,11 +1039,15 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                     // Create the event bus
                     this.changeDispatchingQueue = this.context().getCachedTreadPool("modeshape-event-dispatcher");
-                    this.changeBus = createBus(config.getClustering(), this.changeDispatchingQueue, systemWorkspaceName(), false);
+                    this.changeBus = createBus(config.getClustering(), this.changeDispatchingQueue, systemWorkspaceName(), false,
+                                               context.getProcessId());
                     this.changeBus.start();
 
                     // Set up the repository cache ...
-                    final SessionEnvironment sessionEnv = new RepositorySessionEnvironment(this.transactions);
+                    QuerySystem query = config.getQuery();
+                    boolean indexingClustered = query.queriesEnabled() && query.indexingClustered();
+
+                    final SessionEnvironment sessionEnv = new RepositorySessionEnvironment(this.transactions, indexingClustered);
                     CacheContainer workspaceCacheContainer = this.config.getWorkspaceContentCacheContainer();
                     this.cache = new RepositoryCache(context, documentStore, config, systemContentInitializer, sessionEnv,
                                                      changeBus, workspaceCacheContainer);
@@ -1729,10 +1733,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected ChangeBus createBus( RepositoryConfiguration.Clustering clusteringConfiguration,
                                        ExecutorService executor,
                                        String systemWorkspaceName,
-                                       boolean separateThreadForSystemWorkspace ) {
+                                       boolean separateThreadForSystemWorkspace,
+                                       String processId ) {
             RepositoryChangeBus standaloneBus = new RepositoryChangeBus(executor, systemWorkspaceName,
                                                                         separateThreadForSystemWorkspace);
-            return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration, standaloneBus) : standaloneBus;
+            return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration, standaloneBus, processId) : standaloneBus;
         }
 
         void suspendExistingUserTransaction() throws SystemException {
@@ -1751,10 +1756,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     protected static class RepositorySessionEnvironment implements SessionEnvironment {
         private final Transactions transactions;
         private final TransactionalWorkspaceCaches transactionalWorkspaceCacheFactory;
+        private final boolean indexingClustered;
 
-        protected RepositorySessionEnvironment( Transactions transactions ) {
+        protected RepositorySessionEnvironment( Transactions transactions, boolean indexingClustered ) {
             this.transactions = transactions;
             this.transactionalWorkspaceCacheFactory = new TransactionalWorkspaceCaches(transactions);
+            this.indexingClustered = indexingClustered;
         }
 
         @Override
@@ -1765,6 +1772,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         @Override
         public TransactionalWorkspaceCaches getTransactionalWorkspaceCacheFactory() {
             return transactionalWorkspaceCacheFactory;
+        }
+
+        @Override
+        public boolean indexingClustered() {
+            return indexingClustered;
         }
     }
 
@@ -1840,8 +1852,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                        org.modeshape.jcr.value.Path path,
                                        Name primaryType,
                                        Set<Name> mixinTypes,
-                                       Collection<Property> properties ) {
-                    indexes.addToIndex(workspace, key, path, primaryType, mixinTypes, properties, schemata, txnCtx);
+                                       Iterator<Property> propertiesIterator ) {
+                    indexes.addToIndex(workspace, key, path, primaryType, mixinTypes, propertiesIterator, schemata, txnCtx);
                 }
 
                 @Override
@@ -1879,7 +1891,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                        org.modeshape.jcr.value.Path path,
                                        Name primaryType,
                                        Set<Name> mixinTypes,
-                                       Collection<Property> properties ) {
+                                       Iterator<Property> propertiesIterator ) {
                 }
 
                 @Override

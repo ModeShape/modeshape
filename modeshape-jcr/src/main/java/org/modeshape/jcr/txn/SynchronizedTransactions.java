@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr.txn;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -235,8 +234,8 @@ public final class SynchronizedTransactions extends Transactions {
                                Path path,
                                Name primaryType,
                                Set<Name> mixinTypes,
-                               Collection<Property> properties ) {
-            delegate.recordAdd(workspace, key, path, primaryType, mixinTypes, properties);
+                               Iterator<Property> propertiesIterator ) {
+            delegate.recordAdd(workspace, key, path, primaryType, mixinTypes, propertiesIterator);
         }
 
         @Override

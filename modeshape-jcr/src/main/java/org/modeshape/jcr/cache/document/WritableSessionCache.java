@@ -1085,7 +1085,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // should be there and shouldn't require a looking in the cache...
                         Name primaryType = node.getPrimaryType(this);
                         Set<Name> mixinTypes = node.getMixinTypes(this);
-                        monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties().values());
+                        monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties().values().iterator());
                     }
                 } else {
                     boolean isExternal = !workspaceCache().getRootKey()
