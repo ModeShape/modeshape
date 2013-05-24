@@ -71,6 +71,11 @@ public class ExcelMetadataReader {
                 for (int cellNum = row.getFirstCellNum(); cellNum < lastCellNum; cellNum++) {
                     HSSFCell cell = row.getCell(cellNum);
 
+                    // Undefined cells are returned as null
+                    if (cell == null) {
+                        continue;
+                    }
+
                     /*
                      * Builds a string of body content from all string, numeric,
                      * and formula values in the body of each worksheet.
