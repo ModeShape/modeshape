@@ -1106,8 +1106,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // when linking/un-linking nodes (e.g. shareable node or jcr:system) this condition will be false.
                     // the downside of this is that there may be cases (e.g. back references when working with versions) in which
                     // we might loose information from the indexes
-                    Path oldPath = workspacePaths.getPath(workspaceCache.getNode(node.getKey()));
-                    boolean pathChanged = !oldPath.equals(newPath);
+                    Path oldNodePath = workspacePaths.getPath(workspaceCache.getNode(node.getKey()));
+                    Path newNodePath = sessionPaths.getPath(node);
+                    boolean pathChanged = !oldNodePath.equals(newNodePath);
                     boolean shouldUpdateIndexes = (isSameWorkspace && (hasPropertyChanges || node.hasIndexRelatedChanges() || pathChanged))
                                                   || externalNodeChanged;
                     if (monitor != null && queryable && shouldUpdateIndexes) {
@@ -1115,14 +1116,14 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // should be there and shouldn't require a looking in the cache...
                         Name primaryType = node.getPrimaryType(this);
                         Set<Name> mixinTypes = node.getMixinTypes(this);
-                        monitor.recordUpdate(workspaceName, key, newPath, primaryType, mixinTypes, node.getProperties(this));
+                        monitor.recordUpdate(workspaceName, key, newNodePath, primaryType, mixinTypes, node.getProperties(this));
 
                         if (pathChanged) {
                             //we're dealing with a path change, so in case there is a persisted node at "new path" we need to remove
                             //it from the indexes, because the current node will take its place
                             CachedNode persistedParent = workspaceCache.getNode(node.getParentKey(this));
                             ChildReference persistedNodeAtNewPath = persistedParent.getChildReferences(workspaceCache).getChild(
-                                    newPath.getLastSegment().getName(), newPath.getLastSegment().getIndex());
+                                    newNodePath.getLastSegment().getName(), newNodePath.getLastSegment().getIndex());
                             if (persistedNodeAtNewPath != null) {
                                 monitor.recordRemove(workspaceName, Arrays.asList(persistedNodeAtNewPath.getKey()));
                             }

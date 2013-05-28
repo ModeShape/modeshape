@@ -1916,18 +1916,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             Collection<JcrNodeDefinition> mandatoryChildDefns = null;
             mandatoryChildDefns = nodeTypeCapabilities.getMandatoryChildNodeDefinitions(primaryType, mixinTypes);
             if (!mandatoryChildDefns.isEmpty()) {
-                // There is at least one auto-created child node definition on this node, so figure out if they are all
-                // covered by existing children ...
-                Set<NodeKey> allChildren = cache().getNodeKeysAtAndBelow(node.getKey());
-                allChildren.addAll(cache().getChangedNodeKeysAtOrBelow(node));
-                // remove the current node
-                allChildren.remove(node.getKey());
-                // remove all the keys of the nodes which are removed
-                allChildren.removeAll(node.getNodeChanges().removedChildren());
                 Set<Name> childrenNames = new HashSet<Name>();
-
-                for (NodeKey childKey : allChildren) {
-                    childrenNames.add(cache().getNode(childKey).getName(cache()));
+                for (ChildReference childRef : node.getChildReferences(cache())) {
+                    childrenNames.add(childRef.getName());
                 }
 
                 for (JcrNodeDefinition defn : mandatoryChildDefns) {
