@@ -343,11 +343,6 @@ class JcrContentHandler extends DefaultHandler {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xml.sax.ContentHandler#characters(char[], int, int)
-     */
     @Override
     public void characters( char[] ch,
                             int start,
@@ -356,11 +351,6 @@ class JcrContentHandler extends DefaultHandler {
         delegate.characters(ch, start, length);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xml.sax.helpers.DefaultHandler#endDocument()
-     */
     @Override
     public void endDocument() throws SAXException {
         postProcessNodes();
@@ -375,11 +365,6 @@ class JcrContentHandler extends DefaultHandler {
         super.endDocument();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xml.sax.ContentHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
-     */
     @Override
     public void endElement( String uri,
                             String localName,
@@ -388,11 +373,6 @@ class JcrContentHandler extends DefaultHandler {
         delegate.endElement(uri, localName, name);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xml.sax.ContentHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
-     */
     @Override
     public void startElement( String uri,
                               String localName,
@@ -428,11 +408,6 @@ class JcrContentHandler extends DefaultHandler {
         return new String(decoded, "UTF-8");
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xml.sax.ContentHandler#startPrefixMapping(java.lang.String, java.lang.String)
-     */
     @Override
     public void startPrefixMapping( String prefix,
                                     String uri ) throws SAXException {
@@ -463,13 +438,8 @@ class JcrContentHandler extends DefaultHandler {
 
     class EnclosingSAXException extends SAXException {
 
-        /**
-         */
         private static final long serialVersionUID = -1044992767566435542L;
 
-        /**
-         * @param e
-         */
         EnclosingSAXException( Exception e ) {
             super(e);
 
@@ -514,11 +484,6 @@ class JcrContentHandler extends DefaultHandler {
             }
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see java.lang.Object#toString()
-         */
         @Override
         public String toString() {
             NodeHandler parent = parentHandler();
@@ -610,11 +575,6 @@ class JcrContentHandler extends DefaultHandler {
             return ignoreAllChildren;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#name()
-         */
         @Override
         protected String name() {
             return stringFor(nodeName);
@@ -873,31 +833,16 @@ class JcrContentHandler extends DefaultHandler {
             this.parentHandler = parentHandler;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#node()
-         */
         @Override
         public AbstractJcrNode node() {
             return node;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#parentHandler()
-         */
         @Override
         public NodeHandler parentHandler() {
             return parentHandler;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#addPropertyValue(Name, String, boolean, int, TextDecoder)
-         */
         @Override
         public void addPropertyValue( Name propertyName,
                                       String value,
@@ -913,11 +858,6 @@ class JcrContentHandler extends DefaultHandler {
             super(root, null);
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#addPropertyValue(Name, String, boolean, int, TextDecoder)
-         */
         @Override
         public void addPropertyValue( Name propertyName,
                                       String value,
@@ -935,11 +875,6 @@ class JcrContentHandler extends DefaultHandler {
             this.parentHandler = parentHandler;
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.jcr.JcrContentHandler.NodeHandler#parentHandler()
-         */
         @Override
         public NodeHandler parentHandler() {
             return parentHandler;
@@ -1005,12 +940,6 @@ class JcrContentHandler extends DefaultHandler {
             this.currentPropertyValue = new StringBuilder();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.xml.sax.ContentHandler#startElement(java.lang.String, java.lang.String, java.lang.String,
-         *      org.xml.sax.Attributes)
-         */
         @Override
         public void startElement( String uri,
                                   String localName,
@@ -1051,11 +980,6 @@ class JcrContentHandler extends DefaultHandler {
             }
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.xml.sax.ContentHandler#characters(char[], int, int)
-         */
         @Override
         public void characters( char[] ch,
                                 int start,
@@ -1097,21 +1021,12 @@ class JcrContentHandler extends DefaultHandler {
         private NodeHandler current;
         private final NodeHandlerFactory nodeHandlerFactory;
 
-        /**
-         * @param currentNode
-         */
         DocumentViewContentHandler( AbstractJcrNode currentNode ) {
             super();
             this.current = new ExistingNodeHandler(currentNode, null);
             this.nodeHandlerFactory = new StandardNodeHandlerFactory();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.xml.sax.ContentHandler#startElement(java.lang.String, java.lang.String, java.lang.String,
-         *      org.xml.sax.Attributes)
-         */
         @Override
         public void startElement( String uri,
                                   String localName,
@@ -1155,11 +1070,6 @@ class JcrContentHandler extends DefaultHandler {
             current = current.parentHandler();
         }
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.xml.sax.ContentHandler#characters(char[], int, int)
-         */
         @Override
         public void characters( char[] ch,
                                 int start,
