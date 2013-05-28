@@ -121,15 +121,11 @@ public class ModelKeys {
     static final String LOCAL_FILE_INDEX_STORAGE = "local-file-index-storage";
     static final String MASTER_FILE_INDEX_STORAGE = "master-file-index-storage";
     static final String SLAVE_FILE_INDEX_STORAGE = "slave-file-index-storage";
-    static final String CACHE_INDEX_STORAGE = "cache-index-storage";
     static final String CUSTOM_INDEX_STORAGE = "custom-index-storage";
     static final String ADD_RAM_INDEX_STORAGE = "add-ram-index-storage";
     static final String ADD_LOCAL_FILE_INDEX_STORAGE = "add-local-file-index-storage";
     static final String ADD_MASTER_FILE_INDEX_STORAGE = "add-master-file-index-storage";
     static final String ADD_SLAVE_FILE_INDEX_STORAGE = "add-slave-file-index-storage";
-    static final String ADD_CACHE_INDEX_STORAGE = "add-cache-index-storage";
-    static final String ADD_CUSTOM_INDEX_STORAGE = "add-custom-index-storage";
-    static final String REMOVE_INDEX_STORAGE = "remove-index-storage";
 
     static final String DEFAULT_INITIAL_CONTENT = "default-initial-content";
     static final String WORKSPACES_INITIAL_CONTENT = "workspaces-initial-content";

@@ -305,20 +305,5 @@
 			</includes>
 			<unpack>false</unpack>
 		</dependencySet>
-
-        <!-- Module for Hibernate Search (Engine) -->
-        <!--
-            //TODO author=Horia Chiorean date=2/28/13 description=MODE-1838 - This should change after HSearch provides an EAP kit
-        -->
-        <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>${jboss.eap.modules.location}/org/hibernate/search/engine/main</outputDirectory>
-            <unpack>false</unpack>
-            <useTransitiveFiltering>true</useTransitiveFiltering>
-            <includes>
-                <include>org.infinispan:infinispan-lucene-directory</include>
-            </includes>
-        </dependencySet>
-
     </dependencySets>
 </assembly>

@@ -228,10 +228,6 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                     addIndexStorageConfiguration(repositories, repositoryName);
                     indexStorage = parseFileIndexStorage(reader, repositoryName, ModelKeys.SLAVE_FILE_INDEX_STORAGE);
                     break;
-                case CACHE_INDEX_STORAGE:
-                    addIndexStorageConfiguration(repositories, repositoryName);
-                    indexStorage = parseCacheIndexStorage(reader, repositoryName);
-                    break;
                 case CUSTOM_INDEX_STORAGE:
                     addIndexStorageConfiguration(repositories, repositoryName);
                     indexStorage = parseCustomIndexStorage(reader, repositoryName);
@@ -598,51 +594,6 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                         break;
                     case QUEUE_JNDI_NAME:
                         ModelAttributes.QUEUE_JNDI_NAME.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    default:
-                        storageType.get(attrName).set(attrValue);
-                        break;
-                }
-            }
-        }
-        requireNoElements(reader);
-
-        return storageType;
-    }
-
-    private ModelNode parseCacheIndexStorage( final XMLExtendedStreamReader reader,
-                                              final String repositoryName ) throws XMLStreamException {
-        final ModelNode storageType = new ModelNode();
-        storageType.get(OP).set(ADD);
-        storageType.get(OP_ADDR)
-                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-                   .add(ModelKeys.REPOSITORY, repositoryName)
-                   .add(ModelKeys.CONFIGURATION, ModelKeys.INDEX_STORAGE)
-                   .add(ModelKeys.STORAGE_TYPE, ModelKeys.CACHE_INDEX_STORAGE);
-
-        if (reader.getAttributeCount() > 0) {
-            for (int i = 0; i < reader.getAttributeCount(); i++) {
-                String attrName = reader.getAttributeLocalName(i);
-                String attrValue = reader.getAttributeValue(i);
-                Attribute attribute = Attribute.forName(attrName);
-                switch (attribute) {
-                    case FORMAT:
-                        ModelAttributes.INDEX_FORMAT.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case LOCK_CACHE_NAME:
-                        ModelAttributes.LOCK_CACHE_NAME.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case DATA_CACHE_NAME:
-                        ModelAttributes.DATA_CACHE_NAME.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case META_CACHE_NAME:
-                        ModelAttributes.METADATA_CACHE_NAME.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case CACHE_CONTAINER:
-                        ModelAttributes.CACHE_CONTAINER.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case CHUNK_SIZE:
-                        ModelAttributes.CHUNK_SIZE.parseAndSetParameter(attrValue, storageType, reader);
                         break;
                     default:
                         storageType.get(attrName).set(attrValue);

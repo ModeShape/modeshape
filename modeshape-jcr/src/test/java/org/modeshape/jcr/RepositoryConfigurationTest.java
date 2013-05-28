@@ -133,11 +133,6 @@ public class RepositoryConfigurationTest {
     }
 
     @Test
-    public void shouldSuccessfullyValidateSampleRepositoryConfigurationWithIndexStorageInInfinispan() {
-        assertValid("config/index-storage-config-infinispan.json");
-    }
-
-    @Test
     public void shouldSuccessfullyValidateThoroughRepositoryConfiguration() {
         assertValid("config/thorough-repo-config.json");
     }
