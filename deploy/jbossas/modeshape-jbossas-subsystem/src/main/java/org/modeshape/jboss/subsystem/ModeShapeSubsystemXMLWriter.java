@@ -73,7 +73,6 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         writer.writeStartElement(Element.WEBAPP.getLocalName());
         writer.writeAttribute(Attribute.NAME.getLocalName(), repositoryName);
         ModelAttributes.EXPLODED.marshallAsAttribute(webapp, false, writer);
-        ModelAttributes.AUTO_DEPLOY.marshallAsAttribute(webapp, false, writer);
         writer.writeEndElement();
     }
 
@@ -313,8 +312,6 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                 started = startAndWriteAttribute(writer, storage, ModelAttributes.CACHE_CONTAINER, element, started);
             } else if (ModelKeys.DATA_CACHE_NAME.equals(key)) {
                 started = startAndWriteAttribute(writer, storage, ModelAttributes.DATA_CACHE_NAME, element, started);
-            } else if (ModelKeys.CHUNK_SIZE.equals(key)) {
-                started = startAndWriteAttribute(writer, storage, ModelAttributes.CHUNK_SIZE, element, started);
             }
 
             // Custom ...
@@ -351,8 +348,6 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                 writeIndexStorageAttributes(writer, indexStorageType, Element.MASTER_FILE_INDEX_STORAGE, false);
             } else if (ModelKeys.SLAVE_FILE_INDEX_STORAGE.equals(storageType)) {
                 writeIndexStorageAttributes(writer, indexStorageType, Element.SLAVE_FILE_INDEX_STORAGE, false);
-            } else if (ModelKeys.CACHE_INDEX_STORAGE.equals(storageType)) {
-                writeIndexStorageAttributes(writer, indexStorageType, Element.CACHE_INDEX_STORAGE, false);
             } else if (ModelKeys.CUSTOM_INDEX_STORAGE.equals(storageType)) {
                 writeIndexStorageAttributes(writer, indexStorageType, Element.CUSTOM_INDEX_STORAGE, false);
             }

@@ -61,8 +61,6 @@ public class ModeShapeExtension implements Extension {
                                                                                       ModelKeys.MASTER_FILE_INDEX_STORAGE);
     static final PathElement SLAVE_FILE_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
                                                                                      ModelKeys.SLAVE_FILE_INDEX_STORAGE);
-    static final PathElement CACHE_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
-                                                                                ModelKeys.CACHE_INDEX_STORAGE);
     static final PathElement CUSTOM_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
                                                                                  ModelKeys.CUSTOM_INDEX_STORAGE);
 
@@ -118,7 +116,6 @@ public class ModeShapeExtension implements Extension {
         indexStorageSubmodel.registerSubModel(ModeShapeRamIndexStorageResource.INSTANCE);
         indexStorageSubmodel.registerSubModel(ModeShapeMasterFileIndexStorageResource.INSTANCE);
         indexStorageSubmodel.registerSubModel(ModeShapeSlaveFileIndexStorageResource.INSTANCE);
-        indexStorageSubmodel.registerSubModel(ModeShapeCacheIndexStorageResource.INSTANCE);
         indexStorageSubmodel.registerSubModel(ModeShapeCustomIndexStorageResource.INSTANCE);
         indexStorageSubmodel.registerSubModel(ModeShapeLocalFileIndexStorageResource.INSTANCE);
 

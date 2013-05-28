@@ -1095,19 +1095,6 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         assertThat(listener.changes, is(0));
     }
 
-
-    @FixFor( "MODE-1870")
-    @Test
-    public void shouldAllowInfinispanIndexStorageUsingClasspathConfiguration() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/index-storage-config-infinispan-classpath.json"));
-        session.getRootNode().addNode("node1");
-        session.save();
-
-        JcrQueryManager queryManager = session.getWorkspace().getQueryManager();
-        QueryResult result = queryManager.createQuery("select [jcr:path] from [nt:unstructured] as n where n.[jcr:path] = '/node1'", Query.JCR_SQL2).execute();
-        assertEquals(1, result.getNodes().getSize());
-    }
-
     @Test
     @FixFor( "MODE-1894" )
     public void shouldReplaceOldPropertyValuesInIndexesWhenUpdating() throws Exception {

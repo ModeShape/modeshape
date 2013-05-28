@@ -357,28 +357,6 @@
                                 purge="false"/>
                 </local-cache>
             </cache-container>
-            <cache-container name="index-cache-container" default-cache="index-data" module="org.modeshape">
-                <local-cache name="index-data" batching="true">
-                    <transaction mode="NON_XA"/>
-                    <file-store passivation="false" path="modeshape/index-cache-container" relative-to="jboss.server.data.dir"
-                                purge="false"/>
-                </local-cache>
-                <local-cache name="index-data-jdbc" batching="true">
-                    <transaction mode="NON_XA"/>
-                    <string-keyed-jdbc-store datasource="java:jboss/datasources/ModeshapeIndexStoreDS" shared="false"
-                                             preload="false" passivation="false" purge="false">
-                        <write-behind flush-lock-timeout="1" modification-queue-size="1024" shutdown-timeout="25000"
-                                      thread-pool-size="1"/>
-                        <property name="databaseType">H2</property>
-                        <property name="createTableOnStart">true</property>
-                        <string-keyed-table prefix="stringbased">
-                            <id-column name="id" type="VARCHAR(200)"/>
-                            <data-column name="datum" type="BYTEA"/>
-                            <timestamp-column name="version" type="BIGINT"/>
-                        </string-keyed-table>
-                    </string-keyed-jdbc-store>
-                </local-cache>
-            </cache-container>
             <cache-container name="jdbc-binary-cache-container">
                 <local-cache name="binaryJDBCRepository-binary-data">
                     <transaction mode="NON_XA"/>
@@ -611,7 +589,6 @@
                                       cache-container="binary-cache-container"
                                       min-string-size="10"
                                       min-value-size="1024"/>
-                <cache-index-storage cache-container="index-cache-container" data-cache-name="index-data"/>
                 <indexing analyzer-classname="org.apache.lucene.analysis.standard.ClassicAnalyzer"/>
             </repository>
             <repository name="binaryJDBCRepository" enable-queries="false">
@@ -622,7 +599,6 @@
                 <cache-binary-storage cache-container="jdbc-binary-cache-container"
                                       data-cache-name="binaryJDBCRepository-binary-data-wb"
                                       metadata-cache-name="binaryJDBCRepository-binary-metadata-wb"/>
-                <cache-index-storage cache-container="index-cache-container" data-cache-name="index-data-jdbc"/>
             </repository>
             <repository name="repo-clustered" cache-container="modeshape-repository-clustered" cache-name="repo-clustered"
                         cluster-name="modeshape-cluster" cluster-stack="tcp">

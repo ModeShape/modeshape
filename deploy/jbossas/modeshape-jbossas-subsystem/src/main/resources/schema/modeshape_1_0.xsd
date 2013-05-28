@@ -113,11 +113,6 @@
               periodically updated from the master.</xs:documentation>
           </xs:annotation>
         </xs:element>
-        <xs:element name="cache-index-storage" type="cache-index-storage">
-          <xs:annotation>
-            <xs:documentation>The indexes are stored in an Infinispan cache.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
         <xs:element name="ram-index-storage" type="ram-index-storage">
           <xs:annotation>
             <xs:documentation>The indexes are stored only in memory. This option is not appropriate in a cluster.
@@ -510,46 +505,7 @@
     </xs:attribute>
   </xs:complexType>
 
-  <xs:complexType name="cache-index-storage">
-    <xs:attributeGroup ref="persisted-indexing-attributes" />
-    <xs:attribute name="lock-cache-name" type="xs:string">
-      <xs:annotation>
-        <xs:documentation>The name of the Infinispan cache where index locks will be stored.
-          If not provided, the default will be '{repositoryName}-index-locks'
-        </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="data-cache-name" type="xs:string">
-      <xs:annotation>
-        <xs:documentation>The name of the Infinispan cache where index data will be stored.
-          If not provided, the default will be '{repositoryName}-index-data'
-        </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="metadata-cache-name" type="xs:string">
-      <xs:annotation>
-        <xs:documentation>The name of the Infinispan cache where index metadata will be stored.
-          If not provided, the default will be '{repositoryName}-index-metadata'
-        </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="cache-container" type="xs:string" use="required">
-      <xs:annotation>
-        <xs:documentation>The name of the Infinispan cache container in which the caches can be found
-            for storing the indexes. This should be different from the repository cache and should have batching enabled</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="chunk-size" type="xs:int" default="16834">
-      <xs:annotation>
-        <xs:documentation>The maximum size in bytes for each chunk of data. Larger sizes offer 
-        better search performance but might be problematic during network replication or storage. 
-        The default is 16KB, or 16834.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-  </xs:complexType>
-
-  <xs:complexType name="ram-index-storage">
-  </xs:complexType>
+  <xs:complexType name="ram-index-storage"/>
 
   <xs:complexType name="custom-index-storage">
     <xs:attributeGroup ref="persisted-indexing-attributes" />

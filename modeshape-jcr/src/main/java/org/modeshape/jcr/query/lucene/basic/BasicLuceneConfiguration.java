@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr.query.lucene.basic;
 
-import java.io.File;
 import java.util.Properties;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.hibernate.search.Environment;
@@ -113,34 +112,6 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
             setProperty("hibernate.search.default.retry_initialize_period", retryInitializePeriod);
             setProperty("hibernate.search.default.locking_strategy", lockingStrategy);
             setProperty("hibernate.search.default.filesystem_access_type", accessType);
-        } else if (storageType.equals(FieldValue.INDEX_STORAGE_INFINISPAN)) {
-            // Filesystem-master directory provider ...
-            String lockCacheName = repositoryName + "-index-lock";
-            String dataCacheName = repositoryName + "-index-data";
-            String metaCacheName = repositoryName + "-index-meta";
-            String chunkSize = storage.getProperty(FieldName.INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES);
-            setProperty("hibernate.search.default.directory_provider", "infinispan");
-            setProperty("hibernate.search.default.locking_cachename", storage.getProperty(
-                    FieldName.INDEX_STORAGE_INFINISPAN_LOCK_CACHE), lockCacheName);
-            setProperty("hibernate.search.default.data_cachename", storage.getProperty(
-                    FieldName.INDEX_STORAGE_INFINISPAN_DATA_CACHE), dataCacheName);
-            setProperty("hibernate.search.default.metadata_cachename", storage.getProperty(
-                    FieldName.INDEX_STORAGE_INFINISPAN_META_CACHE), metaCacheName);
-            setProperty("hibernate.search.default.chunk_size", chunkSize);
-            String cacheConfigValue = storage.getProperty(FieldName.CACHE_CONFIGURATION);
-            if (cacheConfigValue != null && cacheConfigValue.trim().length() != 0) {
-                File configFile = new File(cacheConfigValue);
-                if (configFile.exists() && configFile.isFile() && configFile.canRead() && configFile.getName().endsWith(".xml")) {
-                    // Looks like a file and ends in ".xml", so we'll assume a file ...
-                    setProperty("hibernate.search.infinispan.configuration_resourcename", configFile.getAbsolutePath());
-                } else if (getClass().getClassLoader().getResourceAsStream(cacheConfigValue) != null) {
-                    // it's a resource accessible via this CL, so Hibernate Search should find it
-                    setProperty("hibernate.search.infinispan.configuration_resourcename", cacheConfigValue);
-                } else {
-                    // Must be a JNDI reference ??
-                    setProperty("hibernate.search.infinispan.cachemanager_jndiname", cacheConfigValue.trim());
-                }
-            }
         } else if (storageType.equals(FieldValue.INDEX_STORAGE_CUSTOM)) {
             storageType = storage.getProperty(FieldName.CLASSNAME);
             setProperty("hibernate.search.default.directory_provider", storageType);

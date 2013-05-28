@@ -679,45 +679,6 @@
                         },
                         {
                             "type" : "object",
-                            "description" : "The specification for storing the indexes for a (typically clustered) repository in an Infinispan data grid, making index changes visible to all elements of the cluster very quickly.",
-                            "additionalProperties" : false,
-                            "properties" : {
-                                "type" : {
-                                    "type" : "string",
-                                    "description" : "The specification of the Infinispan index storage type.",
-                                    "required" : true,
-                                    "enum" : ["infinispan"]
-                                },
-                                "lockCacheName" : {
-                                    "type" : "string",
-                                    "description" : "The name of the Infinispan cache where the index locks will be stored. If not provided, the default will be '<repositoryName>-index-locks'."
-                                },
-                                "dataCacheName" : {
-                                    "type" : "string",
-                                    "description" : "The name of the Infinispan cache where the index data will be stored. If not provided, the default will be '<repositoryName>-index-data'."
-                                },
-                                "metadataCacheName" : {
-                                    "type" : "string",
-                                    "description" : "The name of the Infinispan cache where the index metadata will be stored. If not provided, the default will be '<repositoryName>-index-metadata'."
-                                },
-                                "cacheConfiguration" : {
-                                    "type" : "string",
-                                    "description" : "The name of the Infinispan configuration file for creating a new cache manager. If a file could not be found (on the thread context classloader, on the application's classpath, or on the system classpath), then the name is assumed to reference an existing Infinispan CacheContainer instance via a valid JNDI name or as the name of a service as defined by the local environment. If no such container is found, then the cache container used by the 'storage' configuration is used."
-                                },
-                                "chunkSizeInBytes" : {
-                                    "type" : "integer",
-                                    "exclusiveMinimum" : 0,
-                                    "default" : 16834,
-                                    "description" : "The maximum size in bytes for each chunk of data. Larger sizes offer better search performance but might be problematic during network replication or storage. The default is 16KB, or 16834."
-                                },
-                                "description" : {
-                                    "type" : "string",
-                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                                },
-                            }
-                        },
-                        {
-                            "type" : "object",
                             "description" : "The specification for storing the indexes in a custom directory provider.",
                             "additionalProperties" : true,
                             "properties" : {
