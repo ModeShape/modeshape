@@ -446,11 +446,6 @@ public class RepositoryConfiguration {
         public static final String INDEX_STORAGE_COPY_BUFFER_SIZE_IN_MEGABYTES = "copyBufferSizeInMegabytes";
         public static final String INDEX_STORAGE_RETRY_MARKER_LOOKUP = "retryMarkerLookup";
         public static final String INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS = "retryInitializePeriodInSeconds";
-        public static final String INDEX_STORAGE_INFINISPAN_LOCK_CACHE = "lockCacheName";
-        public static final String INDEX_STORAGE_INFINISPAN_DATA_CACHE = "dataCacheName";
-        public static final String INDEX_STORAGE_INFINISPAN_META_CACHE = "metadataCacheName";
-        public static final String INDEX_STORAGE_INFINISPAN_CONTAINER = "cacheConfiguration";
-        public static final String INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES = "chunkSizeInBytes";
 
         public static final String INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME = "connectionFactoryJndiName";
         public static final String INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME = "queueJndiName";
@@ -568,7 +563,6 @@ public class RepositoryConfiguration {
         public static final String INDEX_STORAGE_COPY_BUFFER_SIZE_IN_MEGABYTES = "16";
         public static final String INDEX_STORAGE_RETRY_MARKER_LOOKUP = "0";
         public static final String INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS = "0";
-        public static final String INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES = "16834";
 
         public static final String INDEXING_BACKEND_TYPE = "lucene";
 
@@ -584,7 +578,6 @@ public class RepositoryConfiguration {
         public static final String INDEX_STORAGE_FILESYSTEM = "filesystem";
         public static final String INDEX_STORAGE_FILESYSTEM_MASTER = "filesystem-master";
         public static final String INDEX_STORAGE_FILESYSTEM_SLAVE = "filesystem-slave";
-        public static final String INDEX_STORAGE_INFINISPAN = "infinispan";
         public static final String INDEX_STORAGE_CUSTOM = "custom";
 
         public static final String INDEXING_BACKEND_TYPE_LUCENE = "lucene";
@@ -1764,13 +1757,6 @@ public class RepositoryConfiguration {
                 setDefProp(props,
                            FieldName.INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS,
                            Default.INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS);
-            } else if (FieldValue.INDEX_STORAGE_INFINISPAN.equalsIgnoreCase(type)) {
-                setDefProp(props,
-                           FieldName.INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES,
-                           Default.INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES);
-                setDefProp(props, FieldName.CACHE_CONFIGURATION, getCacheConfiguration());
-                // The cache names will be set when the Hibernate Search configuration is created; that way we don't have
-                // the repository name hard-coded in the properties ...
             }
             return props;
         }

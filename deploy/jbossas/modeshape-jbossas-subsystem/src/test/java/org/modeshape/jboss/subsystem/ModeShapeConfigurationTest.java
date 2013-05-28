@@ -66,11 +66,6 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithCacheIndexStorage() throws Exception {
-        parse(readResource("modeshape-cache-index-storage.xml"));
-    }
-
-    @Test
     public void testOutputPersistenceOfConfigurationWithFileBinaryStorage() throws Exception {
         parse(readResource("modeshape-file-binary-storage.xml"));
     }
@@ -173,11 +168,6 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         @Test
         public void testOutputPersistenceOfConfigurationWithLocalFileIndexStorage() throws Exception {
         roundTrip("modeshape-local-file-index-storage.xml", "modeshape-local-file-index-storage.json");
-        }
-
-        @Test
-        public void testOutputPersistenceOfConfigurationWithCacheIndexStorage() throws Exception {
-        roundTrip("modeshape-cache-index-storage.xml", "modeshape-cache-index-storage.json");
         }
 
         @Test

@@ -48,9 +48,6 @@ public class IndexStorageWriteAttributeHandler extends AbstractRepositoryConfigW
     static final IndexStorageWriteAttributeHandler SLAVE_FILE_INDEX_STORAGE_INSTANCE = new IndexStorageWriteAttributeHandler(
             ModelAttributes.SLAVE_FILE_INDEX_STORAGE_ATTRIBUTES);
     
-    static final IndexStorageWriteAttributeHandler CACHE_INDEX_STORAGE_INSTANCE = new IndexStorageWriteAttributeHandler(
-            ModelAttributes.CACHE_INDEX_STORAGE_ATTRIBUTES);
-    
     static final IndexStorageWriteAttributeHandler CUSTOM_INDEX_STORAGE_INSTANCE = new IndexStorageWriteAttributeHandler(
             ModelAttributes.CUSTOM_INDEX_STORAGE_ATTRIBUTES);
 

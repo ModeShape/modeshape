@@ -23,15 +23,6 @@
               analyzer-classname="org.apache.lucene.analysis.standard.StandardAnalyzer"
               analyzer-module="something" />
     <!-- Choose one of the following '*-index-storage' fragments -->
-    <!--
-    <cache-index-storage 
-              format="LUCENE_CURRENT"
-              data-cache-name="sample-index-data"
-              metadata-cache-name="sample-index-metadata"
-              lock-cache-name="sample-index-locks"
-              cache-container-name="modeshape">
-    </cache-index-storage>
-    -->
     <local-file-index-storage 
               format="LUCENE_CURRENT"
               path="modeshape/sample/indexes" 

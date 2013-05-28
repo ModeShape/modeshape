@@ -36,7 +36,6 @@ public enum Element {
     AUTHENTICATORS("authenticators"),
     AUTHENTICATOR("authenticator"),
     CACHE_BINARY_STORAGE("cache-binary-storage"),
-    CACHE_INDEX_STORAGE("cache-index-storage"),
     CUSTOM_BINARY_STORAGE("file-binary-storage"),
     CUSTOM_INDEX_STORAGE("custom-index-storage"),
     DB_BINARY_STORAGE("db-binary-storage"),
