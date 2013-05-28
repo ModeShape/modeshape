@@ -267,7 +267,7 @@
         <hibernate.search.jackson-mapper-asl.version>1.9.2</hibernate.search.jackson-mapper-asl.version>
         <hibernate.search.jackson-core-asl.version>1.9.2</hibernate.search.jackson-core-asl.version>
 
-        <infinispan.version>5.2.5.Final</infinispan.version>
+        <infinispan.version>5.2.6.Final</infinispan.version>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
         <jgroups.version>3.2.7.Final</jgroups.version>
         <c3p0.version>0.9.1.2</c3p0.version>
@@ -289,7 +289,8 @@
         <javax.servlet.version>2.5</javax.servlet.version>
         <javax.jms.version>1.1-rev-1</javax.jms.version>
         <javax.jacc.version>1.0.0.Final</javax.jacc.version>
-        <resteasy.version>2.3.5.Final</resteasy.version>
+        <resteasy.version>2.3.6.Final</resteasy.version>
+        <commons.logging.version>1.1.1</commons.logging.version>
         <jettison.version>1.3.1</jettison.version>
         <httpclient.version>4.1.2</httpclient.version>
         <sardine.version>146</sardine.version>
@@ -335,12 +336,11 @@
         -->
 
         <!--Version of the artifacts (API) needed by the AS7 subsystem and provided as part of EAP-->
-        <jbossas.version>7.2.0.Final-redhat-4</jbossas.version>
-        <jbossas.model-test.version>7.2.0.Final</jbossas.model-test.version>
+        <jbossas.version>7.2.0.Final-redhat-8</jbossas.version>
         <!--Properties which must be used when installing locally an EAP ZIP distribution -->
         <jboss.eap.groupId>org.jboss.as</jboss.eap.groupId>
         <jboss.eap.artifactId>jboss-eap</jboss.eap.artifactId>
-        <jboss.eap.version>6.1.0.Beta</jboss.eap.version>
+        <jboss.eap.version>6.1.0.GA</jboss.eap.version>
         <jboss.eap.root.folder>jboss-eap-6.1</jboss.eap.root.folder>
 
         <!--The root folder under EAP/AS where the ModeShape & related modules should be placed-->
@@ -353,7 +353,7 @@
         <javax.jta.version>1.1</javax.jta.version>
 
         <!--Versions used by the integration/kit tests an -->
-        <jboss-javaee-6.0-with-tools.version>1.0.4.Final-redhat-3</jboss-javaee-6.0-with-tools.version>
+        <jboss-javaee-6.0-with-tools.version>1.0.4.Final-redhat-4</jboss-javaee-6.0-with-tools.version>
         <jboss-as-arquillian-container-managed.version>7.2.0.Final</jboss-as-arquillian-container-managed.version>
 
         <!--
@@ -1257,6 +1257,17 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <!--
+                Since 2.3.6, RestEASY excludes the following dependency because of https://issues.jboss.org/browse/RESTEASY-848
+                This is most likely a bug in RestEASY, because commons-logging is needed by resteasy-multipart-provider via
+                its org.apache.james dependency
+            -->
+            <dependency>
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>${commons.logging.version}</version>
+                <scope>runtime</scope>
+            </dependency>
             <dependency>
                 <groupId>org.codehaus.jettison</groupId>
                 <artifactId>jettison</artifactId>
@@ -1726,15 +1737,11 @@
                 <version>${jbossas.version}</version>
                 <scope>test</scope>
             </dependency>
-            
-            <!--
-                //TODO author=Horia Chiorean date=4/30/13 description=For the time being, the EAP Beta repository is *incomplete* and this artifact is missing,
-                so we need another version. Note that isn't a direct dependency of ours, but a transitive one of the above.
-            -->
+
             <dependency>
                 <groupId>org.jboss.as</groupId>
                 <artifactId>jboss-as-model-test</artifactId>
-                <version>${jbossas.model-test.version}</version>
+                <version>${jbossas.version}</version>
                 <scope>test</scope>
             </dependency>
 

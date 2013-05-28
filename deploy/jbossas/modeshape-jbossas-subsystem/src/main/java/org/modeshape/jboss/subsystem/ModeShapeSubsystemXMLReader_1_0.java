@@ -113,10 +113,6 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
                     ModelAttributes.EXPLODED.parseAndSetParameter(attrValue, webapp, reader);
                     break;
                 }
-                case AUTO_DEPLOY: {
-                    ModelAttributes.AUTO_DEPLOY.parseAndSetParameter(attrValue, webapp, reader);
-                    break;
-                }
                 default:
                     throw ParseUtils.unexpectedAttribute(reader, i);
             }

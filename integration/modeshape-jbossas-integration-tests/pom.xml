@@ -127,8 +127,7 @@
         </dependency>
 
         <!--
-            //TODO author=Horia Chiorean date=3/12/13 description=This is not defined in any of the above mentioned BOMs, but is
-            critical for working with managed EAP containers
+            This is not defined in any of the above mentioned BOMs, but is critical for working with managed EAP containers
           -->
         <dependency>
             <groupId>org.jboss.as</groupId>
