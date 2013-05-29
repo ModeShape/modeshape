@@ -111,7 +111,8 @@ public class JBossASKitTest {
         });
         assertURIisAccessible("http://localhost:8080/modeshape-webdav", httpClient);
         assertURIisAccessible("http://localhost:8080/modeshape-rest", httpClient);
-        assertURIisAccessible("http://localhost:8080/modeshape-cmis", httpClient);
+
+//        assertURIisAccessible("http://localhost:8080/modeshape-cmis", httpClient); -- see MODE-1913
     }
 
     private void assertURIisAccessible( String uri,
