@@ -196,6 +196,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         roundTrip("modeshape-custom-authenticators-config.xml", "modeshape-custom-authenticators-config.json");
     }
 
+    @SuppressWarnings( "deprecation" )
     protected void roundTrip( String filenameOfInputXmlConfig,
                               String filenameOfExpectedJson ) throws Exception {
         String subsystemXml = readResource(filenameOfInputXmlConfig);
@@ -224,6 +225,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         // Assert.assertEquals(normalizeXML(subsystemXml), normalizeXML(marshalled));
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void testSchema() throws Exception {
         String subsystemXml = readResource("modeshape-sample-config.xml");
@@ -313,6 +315,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
 
     }
 
+    @SuppressWarnings( "deprecation" )
     private KernelServices buildSubsystem() throws IOException, FileNotFoundException, Exception {
         String subsystemXml = readResource("modeshape-sample-config.xml");
 

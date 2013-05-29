@@ -65,24 +65,24 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
      */
     private static final String CMIS_URL = "http://localhost:8090/";
     private static Logger logger = Logger.getLogger(CmisConnectorIT.class);
-    
+
     @BeforeClass
     public static void beforeAll() throws Exception {
         RepositoryConfiguration config = RepositoryConfiguration.read("config/repository-1.json");
         startRepository(config);
-        
-        //waiting when CMIS repository will be ready
+
+        // waiting when CMIS repository will be ready
         boolean isReady = false;
-        
-        //max time for waiting in milliseconds
+
+        // max time for waiting in milliseconds
         long maxTime = 30000L;
-        
-        //actially waiting time in milliseconds
+
+        // actially waiting time in milliseconds
         long waitingTime = 0L;
-        
-        //time quant in milliseconds
+
+        // time quant in milliseconds
         long timeQuant = 500L;
-        
+
         logger.info("Waiting for CMIS repository...");
         do {
             try {
@@ -93,10 +93,10 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
                 waitingTime += timeQuant;
             }
         } while (!isReady && waitingTime < maxTime);
-        
-        //checking status
+
+        // checking status
         if (!isReady) {
-            throw new IllegalStateException("CMIS repository did not respond withing " + maxTime  + " milliseconds");
+            throw new IllegalStateException("CMIS repository did not respond withing " + maxTime + " milliseconds");
         }
         logger.info("CMIS repository has been started successfuly");
     }
@@ -305,7 +305,7 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         PropertyIterator it = file.getProperties();
         while (it.hasNext()) {
             Object val = it.nextProperty();
-            // System.out.println("property=>" + val);
+            printMessage("property=>" + val);
         }
         file.setProperty("StringProp", "modeshape");
         getSession().save();

@@ -27,7 +27,25 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessControlException;
-import javax.jcr.*;
+import javax.jcr.AccessDeniedException;
+import javax.jcr.Credentials;
+import javax.jcr.InvalidItemStateException;
+import javax.jcr.InvalidSerializedDataException;
+import javax.jcr.Item;
+import javax.jcr.ItemExistsException;
+import javax.jcr.ItemNotFoundException;
+import javax.jcr.LoginException;
+import javax.jcr.NamespaceException;
+import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
+import javax.jcr.Property;
+import javax.jcr.ReferentialIntegrityException;
+import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.ValueFactory;
+import javax.jcr.Workspace;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
@@ -42,10 +60,10 @@ import org.xml.sax.SAXException;
 
 /**
  * CCI connection.
- *
+ * 
  * @author kulikov
  */
-public class JcrSessionHandle implements Session, XAResource{
+public class JcrSessionHandle implements Session, XAResource {
 
     /**
      * Managed connection.
@@ -54,24 +72,18 @@ public class JcrSessionHandle implements Session, XAResource{
 
     /**
      * Construct a new session.
-     *
+     * 
      * @param mc Managed connection instance.
      */
-    public JcrSessionHandle(JcrManagedConnection mc) {
+    public JcrSessionHandle( JcrManagedConnection mc ) {
         this.mc = mc;
     }
 
-    /**
-     * Return the managed connection.
-     */
     public JcrManagedConnection getManagedConnection() {
         return mc;
     }
 
-    /**
-     * Set the managed connection.
-     */
-    public void setManagedConnection(JcrManagedConnection mc) {
+    public void setManagedConnection( JcrManagedConnection mc ) {
         this.mc = mc;
     }
 
@@ -95,7 +107,7 @@ public class JcrSessionHandle implements Session, XAResource{
     }
 
     @Override
-    public Object getAttribute(String name) {
+    public Object getAttribute( String name ) {
         return session().getAttribute(name);
     }
 
@@ -110,67 +122,74 @@ public class JcrSessionHandle implements Session, XAResource{
     }
 
     @Override
-    public Session impersonate(Credentials c) throws LoginException, RepositoryException {
+    public Session impersonate( Credentials c ) throws LoginException, RepositoryException {
         return session().impersonate(c);
     }
 
+    @SuppressWarnings( "deprecation" )
     @Override
-    public Node getNodeByUUID(String string) throws ItemNotFoundException, RepositoryException {
+    public Node getNodeByUUID( String string ) throws ItemNotFoundException, RepositoryException {
         return session().getNodeByUUID(string);
     }
 
     @Override
-    public Node getNodeByIdentifier(String string) throws ItemNotFoundException, RepositoryException {
+    public Node getNodeByIdentifier( String string ) throws ItemNotFoundException, RepositoryException {
         return session().getNodeByIdentifier(string);
     }
 
     @Override
-    public Item getItem(String string) throws PathNotFoundException, RepositoryException {
+    public Item getItem( String string ) throws PathNotFoundException, RepositoryException {
         return session().getItem(string);
     }
 
     @Override
-    public Node getNode(String string) throws PathNotFoundException, RepositoryException {
+    public Node getNode( String string ) throws PathNotFoundException, RepositoryException {
         return session().getNode(string);
     }
 
     @Override
-    public Property getProperty(String string) throws PathNotFoundException, RepositoryException {
+    public Property getProperty( String string ) throws PathNotFoundException, RepositoryException {
         return session().getProperty(string);
     }
 
     @Override
-    public boolean itemExists(String string) throws RepositoryException {
+    public boolean itemExists( String string ) throws RepositoryException {
         return session().itemExists(string);
     }
 
     @Override
-    public boolean nodeExists(String string) throws RepositoryException {
+    public boolean nodeExists( String string ) throws RepositoryException {
         return session().nodeExists(string);
     }
 
     @Override
-    public boolean propertyExists(String string) throws RepositoryException {
+    public boolean propertyExists( String string ) throws RepositoryException {
         return session().propertyExists(string);
     }
 
     @Override
-    public void move(String string, String string1) throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException, RepositoryException {
+    public void move( String string,
+                      String string1 )
+        throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException,
+        RepositoryException {
         session().move(string, string1);
     }
 
     @Override
-    public void removeItem(String string) throws VersionException, LockException, ConstraintViolationException, AccessDeniedException, RepositoryException {
+    public void removeItem( String string )
+        throws VersionException, LockException, ConstraintViolationException, AccessDeniedException, RepositoryException {
         session().removeItem(string);
     }
 
     @Override
-    public void save() throws AccessDeniedException, ItemExistsException, ReferentialIntegrityException, ConstraintViolationException, InvalidItemStateException, VersionException, LockException, NoSuchNodeTypeException, RepositoryException {
+    public void save()
+        throws AccessDeniedException, ItemExistsException, ReferentialIntegrityException, ConstraintViolationException,
+        InvalidItemStateException, VersionException, LockException, NoSuchNodeTypeException, RepositoryException {
         session().save();
     }
 
     @Override
-    public void refresh(boolean bln) throws RepositoryException {
+    public void refresh( boolean bln ) throws RepositoryException {
         session().refresh(bln);
     }
 
@@ -185,52 +204,75 @@ public class JcrSessionHandle implements Session, XAResource{
     }
 
     @Override
-    public boolean hasPermission(String string, String string1) throws RepositoryException {
+    public boolean hasPermission( String string,
+                                  String string1 ) throws RepositoryException {
         return session().hasPermission(string, string1);
     }
 
     @Override
-    public void checkPermission(String string, String string1) throws AccessControlException, RepositoryException {
+    public void checkPermission( String string,
+                                 String string1 ) throws AccessControlException, RepositoryException {
         session().checkPermission(string, string1);
     }
 
     @Override
-    public boolean hasCapability(String string, Object o, Object[] os) throws RepositoryException {
+    public boolean hasCapability( String string,
+                                  Object o,
+                                  Object[] os ) throws RepositoryException {
         return session().hasCapability(string, o, os);
     }
 
     @Override
-    public ContentHandler getImportContentHandler(String string, int i) throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, RepositoryException {
+    public ContentHandler getImportContentHandler( String string,
+                                                   int i )
+        throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, RepositoryException {
         return session().getImportContentHandler(string, i);
     }
 
     @Override
-    public void importXML(String string, InputStream in, int i) throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException, VersionException, InvalidSerializedDataException, LockException, RepositoryException {
+    public void importXML( String string,
+                           InputStream in,
+                           int i )
+        throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException, VersionException,
+        InvalidSerializedDataException, LockException, RepositoryException {
         session().importXML(string, in, i);
     }
 
     @Override
-    public void exportSystemView(String string, ContentHandler ch, boolean bln, boolean bln1) throws PathNotFoundException, SAXException, RepositoryException {
+    public void exportSystemView( String string,
+                                  ContentHandler ch,
+                                  boolean bln,
+                                  boolean bln1 ) throws PathNotFoundException, SAXException, RepositoryException {
         session().exportSystemView(string, ch, bln, bln1);
     }
 
     @Override
-    public void exportSystemView(String string, OutputStream out, boolean bln, boolean bln1) throws IOException, PathNotFoundException, RepositoryException {
+    public void exportSystemView( String string,
+                                  OutputStream out,
+                                  boolean bln,
+                                  boolean bln1 ) throws IOException, PathNotFoundException, RepositoryException {
         session().exportDocumentView(string, out, bln, bln1);
     }
 
     @Override
-    public void exportDocumentView(String string, ContentHandler ch, boolean bln, boolean bln1) throws PathNotFoundException, SAXException, RepositoryException {
+    public void exportDocumentView( String string,
+                                    ContentHandler ch,
+                                    boolean bln,
+                                    boolean bln1 ) throws PathNotFoundException, SAXException, RepositoryException {
         session().exportDocumentView(string, ch, bln, bln1);
     }
 
     @Override
-    public void exportDocumentView(String string, OutputStream out, boolean bln, boolean bln1) throws IOException, PathNotFoundException, RepositoryException {
+    public void exportDocumentView( String string,
+                                    OutputStream out,
+                                    boolean bln,
+                                    boolean bln1 ) throws IOException, PathNotFoundException, RepositoryException {
         session().exportDocumentView(string, out, bln, bln1);
     }
 
     @Override
-    public void setNamespacePrefix(String string, String string1) throws NamespaceException, RepositoryException {
+    public void setNamespacePrefix( String string,
+                                    String string1 ) throws NamespaceException, RepositoryException {
         session().setNamespacePrefix(string, string1);
     }
 
@@ -240,12 +282,12 @@ public class JcrSessionHandle implements Session, XAResource{
     }
 
     @Override
-    public String getNamespaceURI(String string) throws NamespaceException, RepositoryException {
+    public String getNamespaceURI( String string ) throws NamespaceException, RepositoryException {
         return session().getNamespaceURI(string);
     }
 
     @Override
-    public String getNamespacePrefix(String string) throws NamespaceException, RepositoryException {
+    public String getNamespacePrefix( String string ) throws NamespaceException, RepositoryException {
         return session().getNamespacePrefix(string);
     }
 
@@ -259,18 +301,21 @@ public class JcrSessionHandle implements Session, XAResource{
         return session().isLive();
     }
 
+    @SuppressWarnings( "deprecation" )
     @Override
-    public void addLockToken(String string) {
+    public void addLockToken( String string ) {
         session().addLockToken(string);
     }
 
+    @SuppressWarnings( "deprecation" )
     @Override
     public String[] getLockTokens() {
         return session().getLockTokens();
     }
 
+    @SuppressWarnings( "deprecation" )
     @Override
-    public void removeLockToken(String string) {
+    public void removeLockToken( String string ) {
         session().removeLockToken(string);
     }
 
@@ -284,22 +329,24 @@ public class JcrSessionHandle implements Session, XAResource{
         return session().getRetentionManager();
     }
 
-    private XAResource getXAResource() throws XAException {
-        return (XAResource) session();
+    private XAResource getXAResource() {
+        return (XAResource)session();
     }
 
     @Override
-    public void commit(Xid xid, boolean bln) throws XAException {
+    public void commit( Xid xid,
+                        boolean bln ) throws XAException {
         getXAResource().commit(xid, bln);
     }
 
     @Override
-    public void end(Xid xid, int i) throws XAException {
+    public void end( Xid xid,
+                     int i ) throws XAException {
         getXAResource().end(xid, i);
     }
 
     @Override
-    public void forget(Xid xid) throws XAException {
+    public void forget( Xid xid ) throws XAException {
         getXAResource().forget(xid);
     }
 
@@ -309,32 +356,33 @@ public class JcrSessionHandle implements Session, XAResource{
     }
 
     @Override
-    public boolean isSameRM(XAResource xar) throws XAException {
+    public boolean isSameRM( XAResource xar ) throws XAException {
         return getXAResource().isSameRM(xar);
     }
 
     @Override
-    public int prepare(Xid xid) throws XAException {
+    public int prepare( Xid xid ) throws XAException {
         return getXAResource().prepare(xid);
     }
 
     @Override
-    public Xid[] recover(int i) throws XAException {
+    public Xid[] recover( int i ) throws XAException {
         return getXAResource().recover(i);
     }
 
     @Override
-    public void rollback(Xid xid) throws XAException {
+    public void rollback( Xid xid ) throws XAException {
         getXAResource().rollback(xid);
     }
 
     @Override
-    public boolean setTransactionTimeout(int i) throws XAException {
+    public boolean setTransactionTimeout( int i ) throws XAException {
         return getXAResource().setTransactionTimeout(i);
     }
 
     @Override
-    public void start(Xid xid, int i) throws XAException {
+    public void start( Xid xid,
+                       int i ) throws XAException {
         getXAResource().start(xid, i);
     }
 

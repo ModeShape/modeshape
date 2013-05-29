@@ -119,7 +119,7 @@ public class RepositoryCache implements Observable {
     private final NodeKey systemKey;
     private final Set<String> workspaceNames;
     private final String systemWorkspaceName;
-    private final Logger logger;
+    protected final Logger logger;
     private final SessionEnvironment sessionContext;
     private final String processKey;
     private final CacheContainer workspaceCacheManager;
@@ -276,6 +276,10 @@ public class RepositoryCache implements Observable {
                 this.documentStore.localStore().remove(REPOSITORY_INFO_KEY);
             }
         }
+    }
+
+    protected final SessionEnvironment sessionContext() {
+        return sessionContext;
     }
 
     protected final String processKey() {
@@ -495,7 +499,7 @@ public class RepositoryCache implements Observable {
             boolean isLocalEvent = processKey().equals(changeSet.getProcessKey());
             String workspaceName = changeSet.getWorkspaceName();
             if (workspaceName != null) {
-                //notify the workspace caches first, so they flush their data
+                // notify the workspace caches first, so they flush their data
                 for (WorkspaceCache cache : workspaces()) {
                     if (!isLocalEvent || !cache.getWorkspaceName().equalsIgnoreCase(workspaceName)) {
                         // If the event did not originate in this process, we always process it. Otherwise, it did originate
@@ -504,13 +508,15 @@ public class RepositoryCache implements Observable {
                         cache.notify(changeSet);
                     }
                 }
-                if (sessionContext.indexingClustered()) {
+                if (sessionContext().indexingClustered()) {
                     if (logger.isTraceEnabled()) {
-                        logger.trace("Process {0} ignoring {1} because indexing is configured in clustered mode", processKey(), changeSet);
+                        logger.trace("Process {0} ignoring {1} because indexing is configured in clustered mode",
+                                     processKey(),
+                                     changeSet);
                     }
                     return;
                 }
-                //process index changes for remote events
+                // process index changes for remote events
                 if (!isLocalEvent) {
                     updateIndexesForRemoteEvent(changeSet);
                 }
@@ -544,12 +550,12 @@ public class RepositoryCache implements Observable {
             }
         }
 
-        private void updateIndexesForRemoteEvent( ChangeSet event) {
+        private void updateIndexesForRemoteEvent( ChangeSet event ) {
             String workspaceName = event.getWorkspaceName();
             WorkspaceCache workspaceCache = workspace(workspaceName);
             Transaction tx = null;
             try {
-                tx = sessionContext.getTransactions().begin();
+                tx = sessionContext().getTransactions().begin();
                 SessionEnvironment.Monitor monitor = tx.createMonitor();
 
                 Set<NodeKey> nodesWithUpdatedIndexes = new HashSet<NodeKey>();
@@ -565,35 +571,44 @@ public class RepositoryCache implements Observable {
                         continue;
                     }
 
-                    boolean shouldUpdateIndexes = (change instanceof NodeMoved) || (change instanceof NodeRenamed) ||
-                            (change instanceof NodeReordered) || (change instanceof NodeChanged) || (change instanceof AbstractPropertyChange);
+                    boolean shouldUpdateIndexes = (change instanceof NodeMoved) || (change instanceof NodeRenamed)
+                                                  || (change instanceof NodeReordered) || (change instanceof NodeChanged)
+                                                  || (change instanceof AbstractPropertyChange);
 
-                    //retrieve the node from the local workspace cache - the workspace should already have the
-                    //updated version of the node
+                    // retrieve the node from the local workspace cache - the workspace should already have the
+                    // updated version of the node
                     AbstractNodeChange nodeChange = (AbstractNodeChange)change;
                     CachedNode node = workspaceCache.getNode(nodeChange.getKey());
                     if (node != null) {
                         NodeKey nodeKey = node.getKey();
                         if (change instanceof NodeAdded) {
-                            monitor.recordAdd(workspaceName, nodeKey, node.getPath(workspaceCache),
-                                              node.getPrimaryType(workspaceCache), node.getMixinTypes(workspaceCache),
+                            monitor.recordAdd(workspaceName,
+                                              nodeKey,
+                                              node.getPath(workspaceCache),
+                                              node.getPrimaryType(workspaceCache),
+                                              node.getMixinTypes(workspaceCache),
                                               node.getProperties(workspaceCache));
-                        }  else if (shouldUpdateIndexes && !nodesWithUpdatedIndexes.contains(nodeKey)) {
+                        } else if (shouldUpdateIndexes && !nodesWithUpdatedIndexes.contains(nodeKey)) {
                             nodesWithUpdatedIndexes.add(nodeKey);
-                            //since for an updated node any number of property change events can be received, we only want to update the indexes once
-                            //because the persistent state should already have been updated
-                            monitor.recordUpdate(workspaceName, nodeKey, node.getPath(workspaceCache), node.getPrimaryType(
-                                    workspaceCache), node.getMixinTypes(workspaceCache), node.getProperties(workspaceCache));
+                            // since for an updated node any number of property change events can be received, we only want to
+                            // update the indexes once
+                            // because the persistent state should already have been updated
+                            monitor.recordUpdate(workspaceName,
+                                                 nodeKey,
+                                                 node.getPath(workspaceCache),
+                                                 node.getPrimaryType(workspaceCache),
+                                                 node.getMixinTypes(workspaceCache),
+                                                 node.getProperties(workspaceCache));
                         }
                     } else {
                         if (change instanceof NodeRemoved) {
-                            //collect what needs to be removed from the indexes as we'll do that at the end
+                            // collect what needs to be removed from the indexes as we'll do that at the end
                             nodesToBeRemovedFromIndexes.add(nodeChange.getKey());
-                         }
+                        }
                     }
                 }
 
-                //remove indexes in one batch
+                // remove indexes in one batch
                 if (!nodesToBeRemovedFromIndexes.isEmpty()) {
                     monitor.recordRemove(workspaceName, nodesToBeRemovedFromIndexes);
                 }
