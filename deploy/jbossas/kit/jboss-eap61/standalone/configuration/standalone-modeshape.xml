@@ -207,7 +207,6 @@
         <subsystem xmlns="urn:jboss:domain:modeshape:1.0">
             <!--The list of web applications that is packaged inside the kit and should be deployed when the subsystem starts up-->
             <webapp name="modeshape-rest.war"/>
-            <webapp name="modeshape-cmis.war"/>
             <webapp name="modeshape-webdav.war"/>
 
             <!-- A sample repository that uses the "sample" cache in the "modeshape" container. All content, binary values,
