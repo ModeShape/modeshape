@@ -33,7 +33,6 @@ import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
 import java.util.List;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlParser;
@@ -169,7 +168,7 @@ public class DdlParsersTest extends DdlParserTestHelper {
         assertThat(TeiidDdlParser.ID, is((String)this.rootNode.getProperty(StandardDdlLexicon.PARSER_ID)));
     }
 
-    @Test(expected = ParsingException.class)
+    @Test( expected = ParsingException.class )
     public void shouldErrorWhenInvalidParserId() {
         printTest("shouldParseTeiidFile()");
 

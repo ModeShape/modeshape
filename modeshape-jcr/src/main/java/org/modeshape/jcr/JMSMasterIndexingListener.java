@@ -47,9 +47,9 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.StringUtil;
 
 /**
- * JMS listener that is created & run on nodes which have {@code jms-master} backend configured for indexing. Its primary responsibility
- * is to read Hibernate Search indexing jobs from a configured queue and pass those jobs to the index manager.
- *
+ * JMS listener that is created & run on nodes which have {@code jms-master} backend configured for indexing. Its primary
+ * responsibility is to read Hibernate Search indexing jobs from a configured queue and pass those jobs to the index manager.
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 class JMSMasterIndexingListener implements MessageListener, ExceptionListener {
@@ -63,11 +63,11 @@ class JMSMasterIndexingListener implements MessageListener, ExceptionListener {
     private QueueConnection queueConnection;
     private IndexManagerHolder allIndexManager;
 
-    JMSMasterIndexingListener( Properties configuration) {
+    JMSMasterIndexingListener( Properties configuration ) {
         this.configuration = configuration;
     }
 
-    void start(IndexManagerHolder allIndexManager)  {
+    void start( IndexManagerHolder allIndexManager ) {
         this.allIndexManager = allIndexManager;
 
         QueueConnectionFactory connectionFactory = getConnectionFactory();
@@ -96,7 +96,7 @@ class JMSMasterIndexingListener implements MessageListener, ExceptionListener {
             LOGGER.error(JcrI18n.incorrectJMSMessageType, ObjectMessage.class.getName(), message.getClass().getName());
             return;
         }
-        final ObjectMessage objectMessage = (ObjectMessage) message;
+        final ObjectMessage objectMessage = (ObjectMessage)message;
 
         try {
             String indexName = objectMessage.getStringProperty(JmsBackendQueueTask.INDEX_NAME_JMS_PROPERTY);
@@ -107,7 +107,8 @@ class JMSMasterIndexingListener implements MessageListener, ExceptionListener {
             }
             List<LuceneWork> workQueue = indexManager.getSerializer().toLuceneWorks((byte[])objectMessage.getObject());
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Received " + workQueue.size() + " lucene work item(s) from JMS message. Submitting to the index manager");
+                LOGGER.trace("Received " + workQueue.size()
+                             + " lucene work item(s) from JMS message. Submitting to the index manager");
             }
             indexManager.performOperations(workQueue, null);
         } catch (JMSException e) {
@@ -117,10 +118,13 @@ class JMSMasterIndexingListener implements MessageListener, ExceptionListener {
 
     @Override
     public void onException( JMSException exception ) {
-        LOGGER.error(exception.getLinkedException(), JcrI18n.unexpectedJMSException, exception.getErrorCode(), exception.getMessage());
+        LOGGER.error(exception.getLinkedException(),
+                     JcrI18n.unexpectedJMSException,
+                     exception.getErrorCode(),
+                     exception.getMessage());
     }
 
-    void shutdown()  {
+    void shutdown() {
         LOGGER.debug("Stopping JMS indexing listener on master node...");
         try {
             queueConnection.close();
@@ -132,10 +136,9 @@ class JMSMasterIndexingListener implements MessageListener, ExceptionListener {
     }
 
     private QueueConnectionFactory getConnectionFactory() {
-        String connectionFactoryJndiName = configuration.getProperty(
-                RepositoryConfiguration.FieldName.INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME);
+        String connectionFactoryJndiName = configuration.getProperty(RepositoryConfiguration.FieldName.INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME);
         try {
-            //create the initial context so that additional (custom) jndi properties can be passed down
+            // create the initial context so that additional (custom) jndi properties can be passed down
             InitialContext initialContext = new InitialContext(configuration);
             return (QueueConnectionFactory)initialContext.lookup(connectionFactoryJndiName);
         } catch (NamingException e) {
@@ -144,11 +147,10 @@ class JMSMasterIndexingListener implements MessageListener, ExceptionListener {
     }
 
     private Queue getQueue() {
-        String queueJndiName = configuration.getProperty(
-                RepositoryConfiguration.FieldName.INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME);
+        String queueJndiName = configuration.getProperty(RepositoryConfiguration.FieldName.INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME);
 
         try {
-            //create the initial context so that additional (custom) jndi properties can be passed down
+            // create the initial context so that additional (custom) jndi properties can be passed down
             InitialContext initialContext = new InitialContext(configuration);
             return (Queue)initialContext.lookup(queueJndiName);
         } catch (NamingException e) {
@@ -156,14 +158,13 @@ class JMSMasterIndexingListener implements MessageListener, ExceptionListener {
         }
     }
 
-    private QueueConnection establishConnection( QueueConnectionFactory factory) throws JMSException {
+    private QueueConnection establishConnection( QueueConnectionFactory factory ) throws JMSException {
         String login = configuration.getProperty(CONNECTION_LOGIN);
         String password = configuration.getProperty(CONNECTION_PASSWORD);
 
         if (StringUtil.isBlank(login) && StringUtil.isBlank(password)) {
             return factory.createQueueConnection();
-        } else {
-            return factory.createQueueConnection(login, password);
         }
+        return factory.createQueueConnection(login, password);
     }
 }

@@ -29,40 +29,39 @@ import java.util.Set;
 
 /**
  * Splits common configuration map into set of repository specific parameters.
- *
+ * 
  * @author kulikov
  */
 public class RepositoryConfig {
     private static final String REPO_PARAMETER_PREFIX = "jcr.";
-    private static final String MOUNT_PATH_CONFIG = "mount-path";
 
-    public static Map<String, Map<String, String>> load(Map<String, String> params) {
-        //create map for results
-        Map<String, Map<String, String>> set  = new HashMap();
+    public static Map<String, Map<String, String>> load( Map<String, String> params ) {
+        // create map for results
+        Map<String, Map<String, String>> set = new HashMap<String, Map<String, String>>();
 
-        //extract parameter's keys
+        // extract parameter's keys
         Set<String> keys = params.keySet();
         for (String key : keys) {
-            //search for repositories parameters
+            // search for repositories parameters
             if (key.startsWith(REPO_PARAMETER_PREFIX)) {
-                //found repository parameter, cut prefix
+                // found repository parameter, cut prefix
                 String fqn = key.substring(REPO_PARAMETER_PREFIX.length());
 
-                //cut repository ID from the begining of parameter
+                // cut repository ID from the begining of parameter
                 String repositoryId = fqn.substring(0, fqn.indexOf("."));
 
-                //get or create map for this repository Id
+                // get or create map for this repository Id
                 Map<String, String> map = set.get(repositoryId);
                 if (map == null) {
-                    map = new HashMap();
+                    map = new HashMap<String, String>();
                     set.put(repositoryId, map);
                 }
 
-                //extract clean parameter name and value
+                // extract clean parameter name and value
                 String name = fqn.substring(fqn.indexOf(".") + 1, fqn.length());
                 String value = params.get(key);
 
-                //store parameter
+                // store parameter
                 map.put(name, replaceSystemProperties(value));
             }
         }
@@ -70,7 +69,7 @@ public class RepositoryConfig {
         return set;
     }
 
-    private static String replaceSystemProperties(String s) {
+    private static String replaceSystemProperties( String s ) {
         if (s == null) {
             return null;
         }
@@ -83,6 +82,7 @@ public class RepositoryConfig {
             char c = s.charAt(i);
 
             if (inProperty) {
+                assert property != null;
                 if (c == '}') {
                     String value = System.getProperty(property.toString());
                     if (value != null) {

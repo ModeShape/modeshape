@@ -17,7 +17,7 @@ import org.w3c.dom.Element;
  * 
  * @author kulikov
  */
-public class ModeShapeCmisClientTest  {
+public class ModeShapeCmisClientTest {
 
     private Session session;
 
@@ -28,8 +28,8 @@ public class ModeShapeCmisClientTest  {
         Map<String, String> parameter = new HashMap<String, String>();
 
         // user credentials
-        //parameter.put(SessionParameter.USER, user);
-        //parameter.put(SessionParameter.PASSWORD, passw);
+        // parameter.put(SessionParameter.USER, user);
+        // parameter.put(SessionParameter.PASSWORD, passw);
 
         // connection settings
         parameter.put(SessionParameter.BINDING_TYPE, BindingType.WEBSERVICES.value());
@@ -46,11 +46,12 @@ public class ModeShapeCmisClientTest  {
         parameter.put(SessionParameter.REPOSITORY_ID, "cmis_repo:default");
 
         // create session
-        session =  factory.createSession(parameter, null, new StandardAuthenticationProvider() {
+        session = factory.createSession(parameter, null, new StandardAuthenticationProvider() {
+            private static final long serialVersionUID = 1L;
 
             @Override
-            public Element getSOAPHeaders(Object portObject) {
-                //Place headers here
+            public Element getSOAPHeaders( Object portObject ) {
+                // Place headers here
                 return super.getSOAPHeaders(portObject);
             }
         }, null);
@@ -62,7 +63,7 @@ public class ModeShapeCmisClientTest  {
         System.out.println("Root: " + root);
     }
 
-    private String serviceUrl(String serviceMethod) {
-        return  "http://localhost:8090/modeshape-cmis/services/" +  serviceMethod;
+    private String serviceUrl( String serviceMethod ) {
+        return "http://localhost:8090/modeshape-cmis/services/" + serviceMethod;
     }
 }

@@ -125,7 +125,7 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
         TestingUtil.startRepositoryWithConfig("config/clustered-repo-config-invalid-jgroups-file.json");
     }
 
-    /**
+    /*
      * Each Infinispan configuration persists data in a separate location, and we use replication mode.
      */
     @Test
@@ -204,7 +204,7 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
 
     }
 
-    /**
+    /*
      * Each Infinispan configuration persists data to the SAME location, including indexes. This is NOT a valid option because the
      * indexes get corrupted, so we will ignore this
      */
@@ -252,7 +252,7 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
         assertNotNull(process2Session.getNode("/testNode"));
         assertEquals(1, jcrTools.printQuery(process2Session, pathQuery).getNodes().getSize());
 
-        //Update a property of that node and check it's send through the cluster
+        // Update a property of that node and check it's send through the cluster
         testNode = process1Session.getNode("/testNode");
         testNode.setProperty("testProp", "test value");
         process1Session.save();
@@ -261,17 +261,17 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
 
         // wait a bit for state transfer to complete
         Thread.sleep(100);
-        //check the property change was made in the indexes on the second node
+        // check the property change was made in the indexes on the second node
         assertEquals(1, jcrTools.printQuery(process2Session, propertyQuery).getNodes().getSize());
 
-        //Remove the node in the first process and check it's removed from the indexes across the cluster
+        // Remove the node in the first process and check it's removed from the indexes across the cluster
         testNode = process1Session.getNode("/testNode");
         testNode.remove();
         process1Session.save();
         assertEquals(0, jcrTools.printQuery(process1Session, pathQuery).getNodes().getSize());
         // wait a bit for state transfer to complete
         Thread.sleep(100);
-        //check the node was removed from the indexes in the second cluster node
+        // check the node was removed from the indexes in the second cluster node
         assertEquals(0, jcrTools.printQuery(process2Session, pathQuery).getNodes().getSize());
     }
 

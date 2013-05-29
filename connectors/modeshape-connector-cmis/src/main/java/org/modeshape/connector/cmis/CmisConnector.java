@@ -613,6 +613,8 @@ public class CmisConnector extends Connector {
                 return cmisDocument(cmisObject);
             case CMIS_POLICY:
             case CMIS_RELATIONSHIP:
+            case CMIS_SECONDARY:
+            case CMIS_ITEM:
         }
 
         // unexpected object type

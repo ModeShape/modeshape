@@ -28,10 +28,11 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
 
 /**
- *  Internal event fired when a property is removed from a node.
+ * Internal event fired when a property is removed from a node.
  */
 public class PropertyRemoved extends AbstractPropertyChange {
 
+    private static final long serialVersionUID = 1L;
 
     public PropertyRemoved( NodeKey key,
                             Path nodePath,
