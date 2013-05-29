@@ -23,6 +23,11 @@
  */
 package org.modeshape.jca;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import javax.resource.ResourceException;
 import javax.resource.spi.ActivationSpec;
 import javax.resource.spi.BootstrapContext;
@@ -32,6 +37,9 @@ import javax.resource.spi.ResourceAdapterInternalException;
 import javax.resource.spi.TransactionSupport;
 import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.transaction.xa.XAResource;
+
+import org.modeshape.common.logging.Logger;
+import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.ModeShapeEngine;
 
 /**
@@ -48,6 +56,8 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
     private static final long serialVersionUID = 1L;
     // XA
     private final XAResource[] xaResources = new XAResource[0];
+    
+    private static final Logger LOGGER = Logger.getLogger(JcrResourceAdapter.class);
 
     private ModeShapeEngine engine;
 
@@ -100,7 +110,19 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
     @Override
     public synchronized void stop() {
         if (engine != null) {
-            engine.shutdown();
+            Future<Boolean> shutdown = engine.shutdown();
+            try {
+                LOGGER.debug("Shutting down engine to stop resource adapter");
+                if ( ! shutdown.get(30, TimeUnit.SECONDS)) {
+                    LOGGER.error(JcrI18n.errorWhileShuttingDownEngineInJndi, "");
+                }
+            } catch (InterruptedException e) {
+                LOGGER.error(e, JcrI18n.errorWhileShuttingDownEngineInJndi, "");
+            } catch (ExecutionException e) {
+                LOGGER.error(e, JcrI18n.errorWhileShuttingDownEngineInJndi, "");
+            } catch (TimeoutException e) {
+                LOGGER.error(e, JcrI18n.timeoutWhileShuttingRepositoryDown);
+            }
             engine = null;
         }
     }
@@ -140,5 +162,9 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
     @Override
     public int hashCode() {
         return super.hashCode();
+    }
+
+    public synchronized ModeShapeEngine getEngine() {
+        return engine;
     }
 }

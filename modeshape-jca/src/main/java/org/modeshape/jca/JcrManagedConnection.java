@@ -39,6 +39,9 @@ import javax.resource.spi.ManagedConnectionMetaData;
 import javax.security.auth.Subject;
 import javax.transaction.xa.XAResource;
 
+import org.modeshape.common.logging.Logger;
+
+
 /**
  * JcrManagedConnection
  * 
@@ -46,6 +49,7 @@ import javax.transaction.xa.XAResource;
  */
 public class JcrManagedConnection implements ManagedConnection {
 
+    private static final Logger LOGGER = Logger.getLogger(JcrManagedConnection.class);
     /**
      * The logwriter
      */
@@ -186,6 +190,7 @@ public class JcrManagedConnection implements ManagedConnection {
      */
     @Override
     public void destroy() throws ResourceException {
+        LOGGER.debug("Shutting down connection to repo '{0}'", mcf.getRepositoryURL());
         this.session.logout();
         this.handles.clear();
     }
