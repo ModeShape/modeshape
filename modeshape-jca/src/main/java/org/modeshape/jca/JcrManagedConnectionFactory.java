@@ -95,8 +95,10 @@ public class JcrManagedConnectionFactory implements ManagedConnectionFactory, Re
 
     private Repository deployRepository(String uri) throws ResourceException {
         if (engine == null) {
-            engine = new ModeShapeEngine();
-            engine.start();
+            engine = ra.getEngine();
+            if (engine == null) {
+                throw new ResourceException("Engine not started by resource adapter!");
+            }
         }
 
         //load configuration
