@@ -80,4 +80,14 @@ public class WorkspaceNode extends JsonNode {
         return new URL(url.toString());
 
     }
+
+    public URL getQueryPlanUrl() throws Exception {
+        RepositoryNode repositoryNode = new RepositoryNode(this.workspace.getRepository());
+        StringBuilder url = new StringBuilder(repositoryNode.getUrl().toString());
+
+        // add workspace path
+        url.append('/').append(JsonUtils.encode(workspace.getName())).append(IJsonConstants.QUERY_PLAN_CONTEXT);
+        return new URL(url.toString());
+
+    }
 }

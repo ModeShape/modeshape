@@ -329,6 +329,13 @@ public class JcrStatementTest {
             return queryResult;
         }
 
+        @SuppressWarnings( "synthetic-access" )
+        @Override
+        public String explain( String query,
+                               String language ) {
+            return ((org.modeshape.jcr.api.query.QueryResult)queryResult).getPlan();
+        }
+
         @Override
         public ConnectionInfo getConnectionInfo() {
             return null;

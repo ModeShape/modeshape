@@ -558,6 +558,21 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     // JCR-SQL2 Queries
     // ----------------------------------------------------------------------------------------------------------------
 
+    @FixFor( "MODE-1901" )
+    @Test
+    public void shouldExplainQueryWithoutExecutingQuery() throws RepositoryException {
+        String sql = "SELECT * FROM [nt:file]";
+        org.modeshape.jcr.api.query.Query query = (org.modeshape.jcr.api.query.Query)session.getWorkspace()
+                                                                                            .getQueryManager()
+                                                                                            .createQuery(sql, Query.JCR_SQL2);
+        org.modeshape.jcr.api.query.QueryResult result = query.explain();
+        // print = true;
+        printMessage(result.getWarnings());
+        assertThat(result.getWarnings().size(), is(0));
+        assertResults(query, result, 0L);
+        assertThat(result.getPlan().trim().length() != 0, is(true));
+    }
+
     @FixFor( "MODE-1888" )
     @Test
     public void shouldCaptureWarningsAboutPotentialTypos() throws RepositoryException {
@@ -3272,15 +3287,14 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         JcrValue nodeCRef = session.getValueFactory().createValue(nodeC);
 
         Node relationship = nodeA.addNode("relationship", "test:relationship");
-        relationship.setProperty("test:target", new JcrValue[]{nodeBRef, nodeCRef});
+        relationship.setProperty("test:target", new JcrValue[] {nodeBRef, nodeCRef});
 
         session.save();
 
-        String queryString =  "SELECT DISTINCT target.* " +
-                            "   FROM [test:node] AS node " +
-                            "   JOIN [test:relationship] AS relationship ON ISCHILDNODE(relationship, node) " +
-                            "   JOIN [test:node] AS target ON relationship.[test:target] = target.[jcr:uuid] " +
-                            "   WHERE node.[test:name] = 'A'";
+        String queryString = "SELECT DISTINCT target.* " + "   FROM [test:node] AS node "
+                             + "   JOIN [test:relationship] AS relationship ON ISCHILDNODE(relationship, node) "
+                             + "   JOIN [test:node] AS target ON relationship.[test:target] = target.[jcr:uuid] "
+                             + "   WHERE node.[test:name] = 'A'";
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         QueryResult queryResult = queryManager.createQuery(queryString, Query.JCR_SQL2).execute();
         if (print) {

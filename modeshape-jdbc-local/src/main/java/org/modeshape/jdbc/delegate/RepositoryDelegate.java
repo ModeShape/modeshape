@@ -77,15 +77,26 @@ public interface RepositoryDelegate {
     List<NodeType> nodeTypes() throws RepositoryException;
 
     /**
-     * Call to execute the sql <code>query</code> based on the specified Jcr language.
+     * Call to execute the <code>query</code> based on the specified JCR language.
      * 
-     * @param query is the sql query to execute
+     * @param query is the query expression to execute
      * @param language is the JCR language the <code>query</code> should be executed based on.
      * @return QueryResult is the JCR query result
      * @throws RepositoryException
      */
     QueryResult execute( String query,
                          String language ) throws RepositoryException;
+
+    /**
+     * Generate the plan for the <code>query</code> based on the specified JCR language.
+     * 
+     * @param query is the query expression to execute
+     * @param language is the JCR language the <code>query</code> should be executed based on.
+     * @return the string representation of the query plan
+     * @throws RepositoryException
+     */
+    String explain( String query,
+                    String language ) throws RepositoryException;
 
     /**
      * Call to create the connection based on the implementation of this interface.

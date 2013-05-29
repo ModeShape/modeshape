@@ -55,12 +55,14 @@ public final class RestHelper {
     public static final String ITEMS_METHOD_NAME = "items";
     public static final String NODES_METHOD_NAME = "nodes";
     public static final String QUERY_METHOD_NAME = "query";
+    public static final String QUERY_PLAN_METHOD_NAME = "queryPlan";
     public static final String NODE_TYPES_METHOD_NAME = "nodetypes";
 
     private static final List<String> ALL_METHODS = Arrays.asList(BINARY_METHOD_NAME,
                                                                   ITEMS_METHOD_NAME,
                                                                   NODES_METHOD_NAME,
                                                                   QUERY_METHOD_NAME,
+                                                                  QUERY_PLAN_METHOD_NAME,
                                                                   NODE_TYPES_METHOD_NAME);
 
     private static final Logger LOGGER = WebLogger.getLogger(RestHelper.class);

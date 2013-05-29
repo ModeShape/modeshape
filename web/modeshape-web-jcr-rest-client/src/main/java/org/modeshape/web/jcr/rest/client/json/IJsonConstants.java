@@ -75,6 +75,11 @@ public interface IJsonConstants {
     String QUERY_CONTEXT = "/query";
 
     /**
+     * The segment added to the URLs for queries.
+     */
+    String QUERY_PLAN_CONTEXT = "/queryPlan";
+
+    /**
      * The suffix appended to properties whose values are base64-encoded
      */
     String BASE64_SUFFIX = "/base64/";
