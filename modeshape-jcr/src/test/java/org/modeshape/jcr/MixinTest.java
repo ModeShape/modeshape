@@ -420,6 +420,41 @@ public class MixinTest extends SingleUseAbstractTest {
         }
     }
 
+    @Test
+    @FixFor( "MODE-1949")
+    public void shouldNotAllowMixinRemovalIfPropertiesDefinedInParentMixinArePresent() throws Exception {
+        Node folder = session.getNode("/").addNode("folder", "nt:folder");
+        //add the publishArea mixin which inherits from mix:title
+        folder.addMixin("mode:publishArea");
+        folder.setProperty("jcr:title", "title");
+        folder.setProperty("jcr:description", "description");
+        session.save();
+
+        try {
+            folder.removeMixin("mode:publishArea");
+            session.save();
+            fail("The mixin should not be removed because there are still properties defined from the parent mixin");
+        } catch (ConstraintViolationException e) {
+            //expected
+        }
+
+        folder.setProperty("jcr:title", (Value)null);
+        session.save();
+
+        try {
+            folder.removeMixin("mode:publishArea");
+            session.save();
+            fail("The mixin should not be removed because there are still properties defined from the parent mixin");
+        } catch (ConstraintViolationException e) {
+            //expected
+        }
+
+        folder.setProperty("jcr:description", (Value)null);
+        session.save();
+        folder.removeMixin("mode:publishArea");
+        session.save();
+    }
+
     protected NodeTypeDefinition[] getTestTypes() throws RepositoryException {
         NodeTypeManager mgr = session.getWorkspace().getNodeTypeManager();
 

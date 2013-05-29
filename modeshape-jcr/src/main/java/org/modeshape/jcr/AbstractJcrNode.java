@@ -2542,7 +2542,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 continue;
             }
 
-            if (mixinName.equals(propertyDeclaredNodeTypeName)) {
+            if (mixinType.isNodeType(propertyDeclaredNodeTypeName)) {
 
                 JcrPropertyDefinition match;
 
@@ -2592,7 +2592,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 continue;
             }
 
-            if (mixinName.equals(childDeclaredNodeType)) {
+            if (mixinType.isNodeType(childDeclaredNodeType)) {
                 // Only the residual definition would work - if there were any other definition for this name,
                 // the mixin type would not have been added due to the conflict
                 JcrNodeDefinition match = nodeTypes.findChildNodeDefinition(primaryTypeName,
