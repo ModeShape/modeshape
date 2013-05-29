@@ -55,10 +55,11 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
      * The serial version UID
      */
     private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = Logger.getLogger(JcrResourceAdapter.class);
+
     //XA
     private final XAResource[] xaResources = new XAResource[0];
     
-    private static final Logger LOGGER = Logger.getLogger(JcrResourceAdapter.class);
 
     private ModeShapeEngine engine;
 
@@ -114,14 +115,14 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
             try {
                 LOGGER.debug("Shutting down engine to stop resource adapter");
                 if ( ! shutdown.get(30, TimeUnit.SECONDS)) {
-                    LOGGER.error(JcrI18n.errorWhileShuttingDownEngineInJndi, "");
+                    LOGGER.error(JcaI18n.unableToStopEngineWithinThirtySeconds);
                 }
             } catch (InterruptedException e) {
-                LOGGER.error(e, JcrI18n.errorWhileShuttingDownEngineInJndi, "");
+                LOGGER.error(e, JcaI18n.interruptedWhileStoppingJcaAdapter,e.getMessage());
             } catch (ExecutionException e) {
-                LOGGER.error(e, JcrI18n.errorWhileShuttingDownEngineInJndi, "");
+                LOGGER.error(e, JcaI18n.errorWhileStoppingJcaAdapter,e.getMessage());
             } catch (TimeoutException e) {
-                LOGGER.error(e, JcrI18n.timeoutWhileShuttingRepositoryDown);
+                LOGGER.error(e, JcaI18n.timeoutWhileStoppingJcaAdapter,e.getMessage());
             }
             engine = null;
         }
