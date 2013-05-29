@@ -709,6 +709,91 @@ public final class JsonRestClient implements IRestClient {
         }
     }
 
+    @Override
+    public String planForQuery( Workspace workspace,
+                                String language,
+                                String statement,
+                                int offset,
+                                int limit,
+                                Map<String, String> variables ) throws Exception {
+        assert workspace != null;
+        assert language != null;
+        assert statement != null;
+
+        LOGGER.trace("plan query: workspace={0}, language={1}, file={2}, offset={3}, limit={4}",
+                     workspace.getName(),
+                     language,
+                     statement,
+                     offset,
+                     limit);
+
+        HttpClientConnection connection = null;
+
+        try {
+            WorkspaceNode workspaceNode = new WorkspaceNode(workspace);
+            StringBuilder url = new StringBuilder(workspaceNode.getQueryPlanUrl().toString());
+
+            boolean hasOffset = offset > 0;
+            boolean firstQueryParam = true;
+            if (hasOffset) {
+                url.append("?offset=").append(offset);
+                firstQueryParam = false;
+            }
+
+            if (limit >= 0) {
+                if (hasOffset) {
+                    url.append("&");
+                } else {
+                    url.append("?");
+                }
+
+                url.append("limit=").append(limit);
+                firstQueryParam = false;
+            }
+
+            if (variables != null && !variables.isEmpty()) {
+                for (Map.Entry<String, String> varEntry : variables.entrySet()) {
+                    String varName = varEntry.getKey();
+                    String varValue = varEntry.getValue();
+                    if (varName == null || varName.trim().length() == 0) continue;
+                    if (varValue == null || varValue.trim().length() == 0) continue;
+                    if (firstQueryParam) {
+                        firstQueryParam = false;
+                        url.append("?");
+                    } else {
+                        url.append("&");
+                    }
+                    url.append(varName);
+                    url.append('=');
+                    url.append(varValue);
+                }
+            }
+
+            connection = connect(workspace.getServer(), new URL(url.toString()), RequestMethod.POST);
+            connection.setContentType(contentTypeFor(language));
+            connection.write(statement.getBytes());
+
+            // A query only succeeds if the response is 200 ...
+            int responseCode = connection.getResponseCode();
+            LOGGER.trace("responseCode={0}", responseCode);
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                // Something other than 200, so fail ...
+                String response = connection.read();
+                String msg = "Error while planning {0} query \"{1}\" with offset {2} and limit {3}: {4}";
+                LOGGER.debug(msg, language, statement, offset, limit, response);
+                throw new RuntimeException(RestClientI18n.invalidQueryMsg.text(response));
+            }
+
+            String response = connection.read();
+            return response;
+        } finally {
+            if (connection != null) {
+                LOGGER.trace("query: leaving");
+                connection.disconnect();
+            }
+        }
+    }
+
     private String contentTypeFor( String language ) throws Exception {
         if (IJcrConstants.XPATH.equalsIgnoreCase(language)) {
             return "application/jcr+xpath";

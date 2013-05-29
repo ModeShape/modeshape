@@ -23,6 +23,10 @@
  */
 package org.modeshape.jcr.api.query;
 
+import javax.jcr.RepositoryException;
+import javax.jcr.query.InvalidQueryException;
+import javax.jcr.query.QueryResult;
+
 /**
  * A specialization of the standard JCR {@link javax.jcr.query.Query} interface that adds the ModeShape-specific constant for the
  * {@link #FULL_TEXT_SEARCH full-text search} query language.
@@ -42,4 +46,26 @@ public interface Query extends javax.jcr.query.Query {
      *         finished successfully or had already been cancelled) and could not be cancelled.
      */
     public boolean cancel();
+
+    /**
+     * Get the underlying and immutable Abstract Query Model representation of this query.
+     * 
+     * @return the string representation of this query's abstract query model; never null
+     */
+    public String getAbstractQueryModelRepresentation();
+
+    /**
+     * Generates a plan for the this query and returns a <code>{@link QueryResult}</code> object that contains no results (nodes
+     * or rows) but does have a query plan.
+     * <p>
+     * If this <code>Query</code> contains a variable (see {@link javax.jcr.query.qom.BindVariableValue BindVariableValue}) which
+     * has not been bound to a value (see {@link Query#bindValue}) then this method throws an <code>InvalidQueryException</code>.
+     * 
+     * @return a <code>QueryResult</code> object
+     * @throws InvalidQueryException if the query contains an unbound variable.
+     * @throws RepositoryException if another error occurs.
+     * @see #execute()
+     */
+    public org.modeshape.jcr.api.query.QueryResult explain() throws InvalidQueryException, RepositoryException;
+
 }

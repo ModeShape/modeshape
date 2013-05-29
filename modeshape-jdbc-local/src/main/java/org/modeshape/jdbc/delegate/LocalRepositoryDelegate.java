@@ -141,6 +141,21 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
     }
 
     @Override
+    public String explain( String query,
+                           String language ) throws RepositoryException {
+        logger.trace("Explaining query: {0}", query);
+
+        // Create the query ...
+
+        final org.modeshape.jcr.api.query.Query jcrQuery = (org.modeshape.jcr.api.query.Query)getLocalSession().getSession()
+                                                                                                               .getWorkspace()
+                                                                                                               .getQueryManager()
+                                                                                                               .createQuery(query,
+                                                                                                                            language);
+        return jcrQuery.explain().getPlan();
+    }
+
+    @Override
     protected void retrieveRepository() throws SQLException {
         logger.debug("Creating repository for LocalRepositoryDelegte");
 

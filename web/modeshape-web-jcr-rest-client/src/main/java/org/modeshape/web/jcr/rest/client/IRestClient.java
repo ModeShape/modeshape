@@ -153,6 +153,25 @@ public interface IRestClient {
                       File file );
 
     /**
+     * Compute the plan for the supplied query in the workspace. This method does not return any results.
+     * 
+     * @param workspace the workspace where the resource will be unpublished (never <code>null</code>)
+     * @param language the JCR query language to use (never <code>null</code>)
+     * @param statement the query itself (never <code>null</code>)
+     * @param offset the first row to be returned; if this value is negative, rows are returned starting with the first row
+     * @param limit the maximum number of rows to be returned; if this value is negative, all rows are returned
+     * @param variables the query variables; may be null
+     * @return the string representation of the query plan
+     * @throws Exception if there is a problem obtaining the workspaces
+     */
+    String planForQuery( Workspace workspace,
+                         String language,
+                         String statement,
+                         int offset,
+                         int limit,
+                         Map<String, String> variables ) throws Exception;
+
+    /**
      * Executes the given query in the workspace.
      * 
      * @param workspace the workspace where the resource will be unpublished (never <code>null</code>)
