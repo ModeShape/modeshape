@@ -29,12 +29,11 @@ import org.modeshape.common.i18n.I18n;
  * The internationalized string constants for the <code>org.modeshape.cnd*</code> packages.
  */
 public final class JcaI18n {
-
-    public static I18n unableToStopEngineWithinThirtySeconds;
+    public static I18n unableToStopEngine;
+    public static I18n unableToStopEngineWithinTimeLimit;
     public static I18n interruptedWhileStoppingJcaAdapter;
     public static I18n errorWhileStoppingJcaAdapter;
-    public static I18n timeoutWhileStoppingJcaAdapter;
-
+    
     static {
         try {
             I18n.initialize(JcaI18n.class);

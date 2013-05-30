@@ -39,7 +39,6 @@ import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.transaction.xa.XAResource;
 
 import org.modeshape.common.logging.Logger;
-import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.ModeShapeEngine;
 
 /**
@@ -112,17 +111,20 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
     public synchronized void stop() {
         if (engine != null) {
             Future<Boolean> shutdown = engine.shutdown();
+            final int SHUTDOWN_TIMEOUT = 30;
             try {
                 LOGGER.debug("Shutting down engine to stop resource adapter");
-                if ( ! shutdown.get(30, TimeUnit.SECONDS)) {
-                    LOGGER.error(JcaI18n.unableToStopEngineWithinThirtySeconds);
+                if ( ! shutdown.get(SHUTDOWN_TIMEOUT, TimeUnit.SECONDS)) {
+                    // ModeShapeEngine somehow remained running, nothing to be done about it.
+                    LOGGER.error(JcaI18n.unableToStopEngine);
                 }
+            } catch (TimeoutException e) {
+                // Exception can be expected, but stack trace is logged to find where limit was defined
+                LOGGER.error(e, JcaI18n.unableToStopEngineWithinTimeLimit, SHUTDOWN_TIMEOUT);
             } catch (InterruptedException e) {
                 LOGGER.error(e, JcaI18n.interruptedWhileStoppingJcaAdapter,e.getMessage());
             } catch (ExecutionException e) {
                 LOGGER.error(e, JcaI18n.errorWhileStoppingJcaAdapter,e.getMessage());
-            } catch (TimeoutException e) {
-                LOGGER.error(e, JcaI18n.timeoutWhileStoppingJcaAdapter,e.getMessage());
             }
             engine = null;
         }
