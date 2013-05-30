@@ -1,0 +1,10 @@
+{
+    "properties": {
+        "jcr:primaryType": "nt:unstructured",
+        "stringValue": "string",
+        "integerValue": 2,
+        "doubleValue": 2.2,
+        "booleanValue": false,
+        "multiValuedProperty": [1.1, 1.2]
+    }
+}

@@ -102,6 +102,16 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     }
 
     @Override
+    protected String differentPropertyTypesRequest() {
+        return "v2/post/node_different_property_types_request.json";
+    }
+
+    @Override
+    protected String differentPropertyTypesResponse() {
+        return "v2/post/node_different_property_types_response.json";
+    }
+
+    @Override
     protected String nodeWithPrimaryTypeRequest() {
         return "v2/post/node_without_primaryType_request.json";
     }
@@ -214,6 +224,26 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @Override
     protected String propertiesEdit() {
         return "v2/put/properties_edit.json";
+    }
+
+    @Override
+    protected String publishArea() {
+        return "v2/put/publish_area.json";
+    }
+
+    @Override
+    protected String publishAreaInvalidUpdate() {
+        return "v2/put/publish_area_invalid_update.json";
+    }
+
+    @Override
+    protected String publishAreaResponse() {
+        return "v2/put/publish_area_response.json";
+    }
+
+    @Override
+    protected String publishAreaValidUpdate() {
+        return "v2/put/publish_area_valid_update.json";
     }
 
     @Override

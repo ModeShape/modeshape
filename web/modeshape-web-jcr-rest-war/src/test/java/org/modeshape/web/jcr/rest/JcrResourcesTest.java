@@ -47,6 +47,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.web.jcr.rest.handler.AbstractHandler;
@@ -251,6 +252,22 @@ public class JcrResourcesTest {
     }
 
     @Test
+    @FixFor( "MODE-1950" )
+    public void shouldConvertValueTypesFromJSONPrimitives() throws Exception {
+        //note that
+        doPost(differentPropertyTypesRequest(), itemsUrl(TEST_NODE)).isCreated()
+                .isJSONObjectLikeFile(differentPropertyTypesResponse());
+    }
+
+    protected String differentPropertyTypesResponse() {
+        return "v1/post/node_different_property_types_response.json";
+    }
+
+    protected String differentPropertyTypesRequest() {
+        return "v1/post/node_different_property_types_request.json";
+    }
+
+    @Test
     public void shouldPostNodeToValidPathWithMixinTypes() throws Exception {
         // http://localhost:8090/resources/v1/repo/default/items/testNode
         doPost(nodeWithMixinRequest(), itemsUrl(TEST_NODE)).isCreated().isJSONObjectLikeFile(nodeWithMixinResponse());
@@ -433,6 +450,30 @@ public class JcrResourcesTest {
 
     protected String nodeWithoutMixins() {
         return "v1/put/node_with_properties.json";
+    }
+
+    @Test
+    @FixFor( "MODE-1950" )
+    public void shouldBeAbleToRemoveMixinByRemovingProperties() throws Exception {
+        doPost(publishArea(), itemsUrl(TEST_NODE)).isCreated();
+        doPut(publishAreaInvalidUpdate(), itemsUrl(TEST_NODE)).isBadRequest();
+        doPut(publishAreaValidUpdate(), itemsUrl(TEST_NODE)).isOk().isJSONObjectLikeFile(publishAreaResponse());
+    }
+
+    protected String publishAreaResponse() {
+        return "v1/put/publish_area_response.json";
+    }
+
+    protected String publishAreaValidUpdate() {
+        return "v1/put/publish_area_valid_update.json";
+    }
+
+    protected String publishAreaInvalidUpdate() {
+        return "v1/put/publish_area_invalid_update.json";
+    }
+
+    protected String publishArea() {
+        return "v1/put/publish_area.json";
     }
 
     @Test
