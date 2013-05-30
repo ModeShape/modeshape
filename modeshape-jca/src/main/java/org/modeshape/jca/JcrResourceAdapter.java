@@ -168,6 +168,11 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
     }
 
     public synchronized ModeShapeEngine getEngine() {
+        if (engine == null) {
+            ModeShapeEngine engine = new ModeShapeEngine();
+            engine.start();
+            this.engine = engine;
+        }
         return engine;
     }
 }
