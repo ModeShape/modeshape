@@ -131,6 +131,7 @@ import org.modeshape.jcr.query.parse.JcrSql2QueryParser;
 import org.modeshape.jcr.query.parse.JcrSqlQueryParser;
 import org.modeshape.jcr.query.parse.QueryParsers;
 import org.modeshape.jcr.query.xpath.XPathQueryParser;
+import org.modeshape.jcr.security.AbstractSecurityContext;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.jcr.security.AuthenticationProviders;
@@ -651,6 +652,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 session = new JcrSession(this, workspaceName, sessionContext, attributes, !writable);
             }
 
+            //initialze JCR defined Access Control Management
+//            securityContext.with(new AccessControlManagerImpl(sessionContext, session));
+            securityContext.with((SecurityContext) session.getAccessControlManager());
+            
             // Need to make sure that the user has access to this session
             session.checkPermission(workspaceName, null, ModeShapePermissions.READ);
 
@@ -1955,7 +1960,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     }
 
-    private final class InternalSecurityContext implements SecurityContext {
+    private final class InternalSecurityContext extends AbstractSecurityContext {
         private final String username;
 
         protected InternalSecurityContext( String username ) {

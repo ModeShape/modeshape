@@ -60,7 +60,7 @@ public class ServletProvider implements AuthenticationProvider {
         return null;
     }
 
-    protected static class ServletSecurityContext implements SecurityContext {
+    protected static class ServletSecurityContext extends AbstractSecurityContext {
         private HttpServletRequest request;
         private final String username;
 
