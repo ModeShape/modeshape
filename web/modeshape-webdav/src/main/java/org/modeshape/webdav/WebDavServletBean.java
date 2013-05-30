@@ -13,6 +13,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.modeshape.common.i18n.TextI18n;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.webdav.exceptions.AccessDeniedException;
+import org.modeshape.webdav.exceptions.LockFailedException;
+import org.modeshape.webdav.exceptions.ObjectAlreadyExistsException;
+import org.modeshape.webdav.exceptions.ObjectNotFoundException;
 import org.modeshape.webdav.exceptions.UnauthenticatedException;
 import org.modeshape.webdav.exceptions.WebdavException;
 import org.modeshape.webdav.locking.ResourceLocks;
@@ -159,17 +163,42 @@ public class WebDavServletBean extends HttpServlet {
 
         } catch (UnauthenticatedException e) {
             resp.sendError(WebdavStatus.SC_FORBIDDEN);
+        } catch (AccessDeniedException e) {
+            resp.sendError(WebdavStatus.SC_FORBIDDEN);
+        } catch (LockFailedException e) {
+            resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
+        } catch (ObjectAlreadyExistsException e) {
+            resp.sendError(WebdavStatus.SC_PRECONDITION_FAILED);
+        } catch (ObjectNotFoundException e) {
+            resp.sendError(WebdavStatus.SC_NOT_FOUND);
         } catch (WebdavException e) {
-            LOG.error(e, new TextI18n("WebdavException"));
             throw new ServletException(e);
         } catch (Throwable t) {
-            LOG.error(t, new TextI18n("Exception"));
-            resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
+            t = translate(t);
+            if (t instanceof UnauthenticatedException) {
+                resp.sendError(WebdavStatus.SC_FORBIDDEN);
+            } else if (t instanceof AccessDeniedException) {
+                resp.sendError(WebdavStatus.SC_FORBIDDEN);
+            } else if (t instanceof LockFailedException) {
+                resp.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
+            } else if (t instanceof ObjectAlreadyExistsException) {
+                resp.sendError(WebdavStatus.SC_PRECONDITION_FAILED);
+            } else if (t instanceof ObjectNotFoundException) {
+                resp.sendError(WebdavStatus.SC_NOT_FOUND);
+            } else if (t instanceof WebdavException) {
+                throw new ServletException(t);
+            } else {
+                throw new ServletException(t);
+            }
         } finally {
             if (needRollback) {
                 store.rollback(transaction);
             }
         }
+    }
+
+    protected Throwable translate( Throwable t ) {
+        return t;
     }
 
     private void debugRequest( String methodName,
