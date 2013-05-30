@@ -1,0 +1,10 @@
+{
+    "self":"http://localhost:8090/resources/repo/default/items/testNode",
+    "up":"http://localhost:8090/resources/repo/default/items/",
+    "jcr:primaryType": "nt:unstructured",
+    "stringValue": "string",
+    "integerValue": 2,
+    "doubleValue": 2.2,
+    "booleanValue": false,
+    "multiValuedProperty": [1.1, 1.2]
+}
