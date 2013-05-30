@@ -33,7 +33,16 @@
             <artifactId>jboss-connector-api_1.6_spec</artifactId>
             <scope>provided</scope>
         </dependency>
-        <!-- Test dependencies -->
+        <!--
+        Testing (note the scope)
+        -->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-common</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
