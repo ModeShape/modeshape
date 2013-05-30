@@ -161,6 +161,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         }
     };
 
+    private AccessControlManagerImpl acm;
+    
     protected JcrSession( JcrRepository repository,
                           String workspaceName,
                           ExecutionContext context,
@@ -200,6 +202,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         // Increment the statistics ...
         this.nanosCreated = System.nanoTime();
         repository.statistics().increment(ValueMetric.SESSION_COUNT);
+        
+        this.acm = new AccessControlManagerImpl(this);
     }
 
     protected JcrSession( JcrSession original,
@@ -220,6 +224,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         // Increment the statistics ...
         this.nanosCreated = System.nanoTime();
         repository.statistics().increment(ValueMetric.SESSION_COUNT);
+        
+        this.acm = new AccessControlManagerImpl(this);
     }
 
     final JcrWorkspace workspace() {
@@ -771,6 +777,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         CheckArg.isNotEmpty(absPath, "absolutePath");
         Path path = absolutePathFor(absPath);
 
+        checkPermission(path, ModeShapePermissions.READ);
         // Return root node if path is "/" ...
         if (path.isRoot()) {
             return getRootNode();
@@ -1215,12 +1222,38 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
      * @return true if the subject has privilege to perform all of the named actions on the content at the supplied path in the
      *         given workspace within the repository, or false otherwise
      */
-    private final boolean hasPermission( String workspaceName,
+    private boolean hasPermission( String workspaceName,
+                                   Path path,
+                                   String... actions ) {
+        assert path == null ? true : path.isAbsolute() : "The path (if provided) must be absolute";
+        SecurityContext sec = context.getSecurityContext();
+        while (sec != null) {
+            boolean res = hasPermission(sec, workspaceName, path, actions);
+            if (!res) {
+                return false;
+            }
+            sec = sec.subordinated();
+        }
+        return true;
+    }
+    
+    /**
+     * Determine if the current user does not have permission for all of the 
+     * named actions in the named workspace in the given context, otherwise
+     * returns silently.
+     * 
+     * @param sec security context
+     * @param workspaceName the name of the workspace in which the path exists
+     * @param path the path on which the actions are occurring
+     * @param actions the list of {@link ModeShapePermissions actions} to check
+     * @return true if the subject has privilege to perform all of the named actions on the content at the supplied path in the
+     *         given workspace within the repository, or false otherwise
+     */
+    private final boolean hasPermission( SecurityContext sec,
+            String workspaceName,
                                          Path path,
                                          String... actions ) {
-        assert path == null ? true : path.isAbsolute() : "The path (if provided) must be absolute";
         final String repositoryName = this.repository.repositoryName();
-        SecurityContext sec = context.getSecurityContext();
         if (sec instanceof AuthorizationProvider) {
             // Delegate to the security context ...
             AuthorizationProvider authorizer = (AuthorizationProvider)sec;
@@ -1318,6 +1351,11 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                           Path path,
                           String... actions ) throws AccessDeniedException {
         CheckArg.isNotEmpty(actions, "actions");
+        
+        if (callInContextOfAccessManager()) {
+            return;
+        }
+        
         if (hasPermission(workspaceName, path, actions)) return;
 
         String pathAsString = path != null ? path.getString(this.namespaces()) : "<unknown>";
@@ -1562,7 +1600,16 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     @Override
     public AccessControlManager getAccessControlManager() throws UnsupportedRepositoryOperationException, RepositoryException {
+/*        SecurityContext sec = context.getSecurityContext();
+        while (sec != null) {
+            if (sec instanceof AccessControlManager) {
+                return (AccessControlManager)sec;
+            }
+            sec = sec.subordinated();
+        }
         throw new UnsupportedRepositoryOperationException();
+        */
+        return acm;
     }
 
     @Override
@@ -1714,6 +1761,16 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return Path.JSR283_ENCODER.encode(localName);
     }
 
+    /**
+     * Tests session context.
+     * 
+     * @return true if this session executes call of the access manager.
+     */
+    protected boolean callInContextOfAccessManager() {
+        String role = context.getData().get("role");
+        return (role != null && role.equals("ACCESS_CONTROL"));
+    }
+    
     /**
      * Define the operations that are to be performed on all the nodes that were created or modified within this session. This
      * class was designed to be as efficient as possible for most nodes, since most nodes do not need any additional processing.

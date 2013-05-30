@@ -44,6 +44,7 @@ import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.ThreadPoolFactory;
 import org.modeshape.common.util.ThreadPools;
 import org.modeshape.jcr.query.model.TypeSystem;
+import org.modeshape.jcr.security.AbstractSecurityContext;
 import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.value.BinaryFactory;
 import org.modeshape.jcr.value.DateTimeFactory;
@@ -657,8 +658,8 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
     /**
      * Default security context that confers no roles.
      */
-    private static class NullSecurityContext implements SecurityContext {
-
+    private static class NullSecurityContext extends AbstractSecurityContext {
+        
         @Override
         public boolean isAnonymous() {
             return true;

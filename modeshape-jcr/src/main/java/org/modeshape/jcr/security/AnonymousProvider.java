@@ -72,7 +72,7 @@ public class AnonymousProvider implements AuthenticationProvider {
         return null;
     }
 
-    protected final class AnonymousSecurityContext implements SecurityContext {
+    protected final class AnonymousSecurityContext extends AbstractSecurityContext {
         private final Set<String> userRoles;
         private final String anonymousUsername;
 

@@ -41,5 +41,19 @@ public interface SecurityContext {
      * </p>
      */
     void logout();
+    
+    /**
+     * Adds subordinated security context.
+     * 
+     * @param context subordinated security context
+     * @return this context with attached subordinated context
+     */
+    SecurityContext with(SecurityContext context);
 
+    /**
+     * Gets access to the subordinated security context.
+     * 
+     * @return subordinated security context if attached or null otherwise.
+     */
+    SecurityContext subordinated();
 }
