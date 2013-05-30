@@ -25,12 +25,20 @@ package org.modeshape.web.jcr.webdav;
 
 import java.io.File;
 import java.io.IOException;
+import javax.jcr.AccessDeniedException;
+import javax.jcr.ItemExistsException;
+import javax.jcr.ItemNotFoundException;
+import javax.jcr.LoginException;
+import javax.jcr.PathNotFoundException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.webdav.IWebdavStore;
 import org.modeshape.webdav.WebdavServlet;
+import org.modeshape.webdav.exceptions.ObjectAlreadyExistsException;
+import org.modeshape.webdav.exceptions.ObjectNotFoundException;
+import org.modeshape.webdav.exceptions.WebdavException;
 
 /**
  * Custom servlet implementation that provides WebDAV access to a JCR repository. Nodes in the repository with a specified primary
@@ -121,6 +129,27 @@ public class ModeShapeWebdavServlet extends WebdavServlet {
             super.service(req, resp);
         } finally {
             ModeShapeWebdavStore.setRequest(null);
+        }
+    }
+
+    @Override
+    protected Throwable translate( Throwable t ) {
+        return translateError(t);
+    }
+
+    protected static WebdavException translateError( Throwable t ) {
+        if (t instanceof AccessDeniedException) {
+            return new org.modeshape.webdav.exceptions.AccessDeniedException(t.getMessage(), t);
+        } else if (t instanceof LoginException) {
+            return new org.modeshape.webdav.exceptions.AccessDeniedException(t.getMessage(), t);
+        } else if (t instanceof ItemExistsException) {
+            return new ObjectAlreadyExistsException(t.getMessage(), t);
+        } else if (t instanceof PathNotFoundException) {
+            return new ObjectNotFoundException(t.getMessage(), t);
+        } else if (t instanceof ItemNotFoundException) {
+            return new ObjectNotFoundException(t.getMessage(), t);
+        } else {
+            return new WebdavException(t.getMessage(), t);
         }
     }
 }

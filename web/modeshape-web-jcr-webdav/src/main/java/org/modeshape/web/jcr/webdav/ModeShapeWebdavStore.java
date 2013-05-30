@@ -34,9 +34,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
-import javax.jcr.AccessDeniedException;
 import javax.jcr.Item;
-import javax.jcr.LoginException;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -54,7 +52,6 @@ import org.modeshape.web.jcr.RepositoryManager;
 import org.modeshape.webdav.ITransaction;
 import org.modeshape.webdav.IWebdavStore;
 import org.modeshape.webdav.StoredObject;
-import org.modeshape.webdav.exceptions.ObjectNotFoundException;
 import org.modeshape.webdav.exceptions.WebdavException;
 
 /**
@@ -568,7 +565,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                 try {
                     result = RepositoryManager.getSession(request.getRequest(), repositoryName, workspaceName);
                 } catch (RepositoryException e) {
-                    logger().error(e, WebdavI18n.cannotGetRepositorySession, repositoryName);
+                    logger().debug(e, "Cannot obtain a session for the repository '{0}': {1}", repositoryName, e.getMessage());
                     throw e;
                 }
                 sessions.put(key, result);
@@ -637,7 +634,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                         session = RepositoryManager.getSession(request.getRequest(), repositoryName, null);
                         return session.getWorkspace().getAccessibleWorkspaceNames();
                     } catch (RepositoryException e) {
-                        logger().error(e, WebdavI18n.cannotGetRepositorySession, repositoryName);
+                        logger().debug(e, "Cannot obtain a session for the repository '{0}': {1}", repositoryName, e.getMessage());
                         throw e;
                     } finally {
                         if (session != null) {
@@ -687,15 +684,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
      * @return the WebDAV exception
      */
     private WebdavException translate( RepositoryException exception ) {
-        if (exception instanceof AccessDeniedException) {
-            return new org.modeshape.webdav.exceptions.AccessDeniedException(exception);
-        } else if (exception instanceof LoginException) {
-            return new org.modeshape.webdav.exceptions.AccessDeniedException(exception);
-        } else if (exception instanceof PathNotFoundException) {
-            return new ObjectNotFoundException(exception);
-        } else {
-            return new WebdavException(exception);
-        }
+        return ModeShapeWebdavServlet.translateError(exception);
     }
 
     protected static final class SessionKey {
