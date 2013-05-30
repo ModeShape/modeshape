@@ -24,10 +24,15 @@
 package org.modeshape.web.jcr.rest.client.json;
 
 import java.net.URL;
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.web.jcr.rest.client.IJcrConstants;
 import org.modeshape.web.jcr.rest.client.domain.Workspace;
+import static org.modeshape.web.jcr.rest.client.IJcrConstants.MIXIN_TYPES_PROPERTY;
+import static org.modeshape.web.jcr.rest.client.IJcrConstants.PUBLISH_AREA_DESCRIPTION;
+import static org.modeshape.web.jcr.rest.client.IJcrConstants.PUBLISH_AREA_TITLE;
+import static org.modeshape.web.jcr.rest.client.IJcrConstants.PUBLISH_AREA_TYPE;
 
 /**
  * The <code>FolderNode</code> class is responsible for knowing how to create a URL for a folder, create a JSON representation of
@@ -63,11 +68,7 @@ public final class FolderNode extends JsonNode {
         assert fullPath != null;
 
         this.workspace = workspace;
-
-        // add properties
-        JSONObject properties = new JSONObject();
-        properties.put(IJcrConstants.PRIMARY_TYPE_PROPERTY, IJcrConstants.FOLDER_NODE_TYPE);
-        put(IJsonConstants.PROPERTIES_KEY, properties);
+        withPrimaryType(IJcrConstants.FOLDER_NODE_TYPE);
     }
 
     // ===========================================================================================================================
@@ -81,13 +82,6 @@ public final class FolderNode extends JsonNode {
         return getId();
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The URL will NOT end in '/'.
-     * 
-     * @see org.modeshape.web.jcr.rest.client.json.JsonNode#getUrl()
-     */
     @Override
     public URL getUrl() throws Exception {
         WorkspaceNode workspaceNode = new WorkspaceNode(this.workspace);
@@ -111,4 +105,12 @@ public final class FolderNode extends JsonNode {
         return new URL(url.toString());
     }
 
+    void markAsPublishArea(String title, String description) throws Exception {
+        withMixin(PUBLISH_AREA_TYPE).withProperty(PUBLISH_AREA_TITLE, title).withProperty(PUBLISH_AREA_DESCRIPTION, description);
+    }
+
+    void unmarkAsPublishArea() throws Exception {
+        withProperty(MIXIN_TYPES_PROPERTY, new JSONArray()).withProperty(PUBLISH_AREA_TITLE, JSONObject.NULL).withProperty(
+                PUBLISH_AREA_DESCRIPTION, JSONObject.NULL);
+    }
 }

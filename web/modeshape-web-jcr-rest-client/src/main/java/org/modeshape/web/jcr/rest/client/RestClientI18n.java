@@ -45,6 +45,9 @@ public final class RestClientI18n {
     public static I18n createFileFailedMsg;
     public static I18n updateFileFailedMsg;
     public static I18n createFolderFailedMsg;
+    public static I18n markPublishAreaFailedMsg;
+    public static I18n unmarkPublishAreaFailedMsg;
+    public static I18n updateFolderFailedMsg;
     public static I18n validateFailedMsg;
     public static I18n getRepositoriesFailedMsg;
     public static I18n getWorkspacesFailedMsg;

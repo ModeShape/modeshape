@@ -71,11 +71,6 @@ public class Workspace implements IModeShapeObject {
     // Methods
     // ===========================================================================================================================
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     @Override
     public boolean equals( Object obj ) {
         if (this == obj) return true;
@@ -85,11 +80,6 @@ public class Workspace implements IModeShapeObject {
         return (this.name.equals(otherWorkspace.name) && this.repository.equals(otherWorkspace.repository));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getName()
-     */
     @Override
     public String getName() {
         return this.name;
@@ -109,31 +99,16 @@ public class Workspace implements IModeShapeObject {
         return this.repository.getServer();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getShortDescription()
-     */
     @Override
     public String getShortDescription() {
         return RestClientI18n.workspaceShortDescription.text(this.name, this.repository.getName());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#hashCode()
-     */
     @Override
     public int hashCode() {
         return HashCode.compute(this.name, this.repository);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         return getShortDescription();
