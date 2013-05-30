@@ -23,6 +23,11 @@
  */
 package org.modeshape.jca;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import javax.resource.ResourceException;
 import javax.resource.spi.ActivationSpec;
 import javax.resource.spi.BootstrapContext;
@@ -32,6 +37,8 @@ import javax.resource.spi.ResourceAdapterInternalException;
 import javax.resource.spi.TransactionSupport;
 import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.transaction.xa.XAResource;
+
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ModeShapeEngine;
 
 /**
@@ -46,8 +53,11 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
      * The serial version UID
      */
     private static final long serialVersionUID = 1L;
-    // XA
+    private static final Logger LOGGER = Logger.getLogger(JcrResourceAdapter.class);
+
+    //XA
     private final XAResource[] xaResources = new XAResource[0];
+    
 
     private ModeShapeEngine engine;
 
@@ -100,7 +110,22 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
     @Override
     public synchronized void stop() {
         if (engine != null) {
-            engine.shutdown();
+            Future<Boolean> shutdown = engine.shutdown();
+            final int SHUTDOWN_TIMEOUT = 30;
+            try {
+                LOGGER.debug("Shutting down engine to stop resource adapter");
+                if ( ! shutdown.get(SHUTDOWN_TIMEOUT, TimeUnit.SECONDS)) {
+                    // ModeShapeEngine somehow remained running, nothing to be done about it.
+                    LOGGER.error(JcaI18n.unableToStopEngine);
+                }
+            } catch (TimeoutException e) {
+                // Exception can be expected, but stack trace is logged to find where limit was defined
+                LOGGER.error(e, JcaI18n.unableToStopEngineWithinTimeLimit, SHUTDOWN_TIMEOUT);
+            } catch (InterruptedException e) {
+                LOGGER.error(e, JcaI18n.interruptedWhileStoppingJcaAdapter,e.getMessage());
+            } catch (ExecutionException e) {
+                LOGGER.error(e, JcaI18n.errorWhileStoppingJcaAdapter,e.getMessage());
+            }
             engine = null;
         }
     }
@@ -140,5 +165,14 @@ public class JcrResourceAdapter implements ResourceAdapter, java.io.Serializable
     @Override
     public int hashCode() {
         return super.hashCode();
+    }
+
+    public synchronized ModeShapeEngine getEngine() {
+        if (engine == null) {
+            ModeShapeEngine engine = new ModeShapeEngine();
+            engine.start();
+            this.engine = engine;
+        }
+        return engine;
     }
 }
