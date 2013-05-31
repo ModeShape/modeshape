@@ -44,6 +44,8 @@ import org.modeshape.jcr.cache.DocumentNotFoundException;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.federation.FederatedDocumentReader;
 import org.modeshape.jcr.federation.FederatedDocumentWriter;
+import org.modeshape.jcr.federation.spi.change.ConnectorChangedSet;
+import org.modeshape.jcr.federation.spi.change.ConnectorChangedSetFactory;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
@@ -139,6 +141,14 @@ public abstract class Connector {
      * </p>
      */
     private TransactionManager transactionManager;
+
+    /**
+     * The {@link ConnectorChangedSetFactory} instance which allows a connector to create {@link ConnectorChangedSets}.
+     * <p>
+     * The field is assigned via reflection before ModeShape calls {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
+     * </p>
+     */
+    private ConnectorChangedSetFactory connectorChangedSetFactory;
 
     /**
      * Ever connector is expected to have a no-argument constructor, although the class should never initialize any of the data at
@@ -544,6 +554,13 @@ public abstract class Connector {
                                    String localName,
                                    TextDecoder decoder ) {
         return factories().getNameFactory().create(namespaceUri, localName, decoder);
+    }
+
+    /**
+     * @return a fresh {@link ConnectorChangedSet} for use in recording changes
+     */
+    protected ConnectorChangedSet newConnectorChangedSet() {
+        return connectorChangedSetFactory.newChangeSet();
     }
 
     public final class ExtraProperties {

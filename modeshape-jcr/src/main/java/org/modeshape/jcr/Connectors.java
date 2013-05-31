@@ -55,6 +55,8 @@ import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
 import org.modeshape.jcr.federation.spi.Connector;
 import org.modeshape.jcr.federation.spi.ExtraPropertiesStore;
+import org.modeshape.jcr.federation.spi.change.ConnectorChangedSetFactory;
+import org.modeshape.jcr.federation.spi.change.impl.ConnectorChangedSetFactoryImpl;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
@@ -472,6 +474,9 @@ public class Connectors {
         // Set the transaction manager
         ReflectionUtil.setValue(connector, "transactionManager", repository.txnManager());
 
+        // Set the ConnectorChangedSet factory
+        ReflectionUtil.setValue(connector, "connectorChangedSetFactory", createConnectorChangedSetFactory(connector));
+
         // Set the ExtraPropertiesStore instance, which is unique to this connector ...
         LocalDocumentStore store = repository.documentStore().localStore();
         String name = connector.getSourceName();
@@ -658,5 +663,9 @@ public class Connectors {
             }
             localStore.storeDocument(key, doc);
         }
+    }
+
+    private ConnectorChangedSetFactory createConnectorChangedSetFactory( final Connector c ) {
+        return new ConnectorChangedSetFactoryImpl("", repository.repositoryKey(), c, repository.changeBus());
     }
 }
