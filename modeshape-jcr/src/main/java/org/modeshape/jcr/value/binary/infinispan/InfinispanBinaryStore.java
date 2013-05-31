@@ -115,20 +115,6 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         return key.toString();
     }
 
-    protected final BinaryKey binaryKeyFromCacheKey( String key ) {
-        String plainKey;
-        if ( key.endsWith(META_SUFFIX) ) {
-            plainKey = key.replace(META_SUFFIX, "");
-        } else if ( key.contains(DATA_SUFFIX) ) {
-            plainKey = key.replaceFirst(DATA_SUFFIX + "-\\d+$", "");
-        } else if ( key.contains(TEXT_SUFFIX) ) {
-            plainKey = key.replaceFirst(TEXT_SUFFIX + "-\\d+$", "");
-        } else {
-            plainKey = key;
-        }
-        return new BinaryKey(plainKey);
-    }
-
     protected final String metadataKeyFrom( BinaryKey key ) {
         return key.toString() + META_SUFFIX;
     }
@@ -148,6 +134,22 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
         if (!str.endsWith(META_SUFFIX)) return false;
         String key = str.substring(0, len - SUFFIX_LENGTH);
         return BinaryKey.isProperlyFormattedKey(key);
+    }
+
+    protected final BinaryKey binaryKeyFromCacheKey( String key ) {
+        String plainKey;
+
+        if ( isMetadataKey(key) ) {
+            plainKey = key.replace(META_SUFFIX, "");
+        } else if ( key.contains(DATA_SUFFIX) ) {
+            plainKey = key.replaceFirst(DATA_SUFFIX + "-\\d+$", "");
+        } else if ( key.contains(TEXT_SUFFIX) ) {
+            plainKey = key.replaceFirst(TEXT_SUFFIX + "-\\d+$", "");
+        } else {
+            plainKey = key;
+        }
+
+        return new BinaryKey(plainKey);
     }
 
     @Override
@@ -532,6 +534,7 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
             for (Cache<String, ?> c : caches) {
                 final InfinispanUtil.Sequence<String> allKeys = InfinispanUtil.getAllKeys(c);
 
+                // some of these keys are for the same BinaryKey; de-duplicate the list
                 while (allKeys.hasNext()) {
                     final String key = allKeys.next();
 
