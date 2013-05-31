@@ -158,6 +158,8 @@ public class InfinispanUtil {
          * @throws InterruptedException if the operation finding the values has been interrupted
          */
         T next() throws ExecutionException, CancellationException, InterruptedException;
+
+        boolean hasNext();
     }
 
     private static final class IteratorSequence<T> implements Sequence<T> {
@@ -170,6 +172,11 @@ public class InfinispanUtil {
         @Override
         public T next() {
             return iterator.hasNext() ? iterator.next() : null;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return iterator.hasNext();
         }
     }
 

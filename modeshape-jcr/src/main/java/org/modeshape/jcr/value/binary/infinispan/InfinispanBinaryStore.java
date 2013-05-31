@@ -30,13 +30,16 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
@@ -55,6 +58,7 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.SecureHash;
+import org.modeshape.jcr.InfinispanUtil;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.value.BinaryKey;
@@ -109,6 +113,20 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
 
     protected final String lockKeyFrom( BinaryKey key ) {
         return key.toString();
+    }
+
+    protected final BinaryKey binaryKeyFromCacheKey( String key ) {
+        String plainKey;
+        if ( key.endsWith(META_SUFFIX) ) {
+            plainKey = key.replace(META_SUFFIX, "");
+        } else if ( key.contains(DATA_SUFFIX) ) {
+            plainKey = key.replaceFirst(DATA_SUFFIX + "-\\d+$", "");
+        } else if ( key.contains(TEXT_SUFFIX) ) {
+            plainKey = key.replaceFirst(TEXT_SUFFIX + "-\\d+$", "");
+        } else {
+            plainKey = key;
+        }
+        return new BinaryKey(plainKey);
     }
 
     protected final String metadataKeyFrom( BinaryKey key ) {
@@ -506,8 +524,33 @@ public class InfinispanBinaryStore extends AbstractBinaryStore {
 
     @Override
     public Iterable<BinaryKey> getAllBinaryKeys() throws BinaryStoreException {
-        throw new BinaryStoreException("Not implemented");
+        Set<BinaryKey> allBinaryKeys = new HashSet<BinaryKey>();
+
+        try {
+            final List<Cache<String, ? extends Serializable>> caches = Arrays.asList(metadataCache, blobCache);
+
+            for (Cache<String, ?> c : caches) {
+                final InfinispanUtil.Sequence<String> allKeys = InfinispanUtil.getAllKeys(c);
+
+                while (allKeys.hasNext()) {
+                    final String key = allKeys.next();
+
+                    final BinaryKey binaryKey = binaryKeyFromCacheKey(key);
+                    allBinaryKeys.add(binaryKey);
+                }
+
+            }
+        } catch (CacheLoaderException ex) {
+            throw new BinaryStoreException(JcrI18n.problemsGettingBinaryKeysFromBinaryStore.text(ex.getCause().getMessage()));
+        } catch (InterruptedException ex) {
+            throw new BinaryStoreException(JcrI18n.problemsGettingBinaryKeysFromBinaryStore.text(ex.getCause().getMessage()));
+        } catch (ExecutionException ex) {
+            throw new BinaryStoreException(JcrI18n.problemsGettingBinaryKeysFromBinaryStore.text(ex.getCause().getMessage()));
+        }
+
+        return allBinaryKeys;
     }
+
 
     /**
      * Locks are created based upon metadata cache configuration
