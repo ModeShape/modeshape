@@ -212,7 +212,7 @@ public class FileSystemConnector extends WritableConnector {
         // Initialize the filename filter ...
         filenameFilter = new InclusionExclusionFilenameFilter();
         if (exclusionPattern != null) filenameFilter.setExclusionPattern(exclusionPattern);
-        if (inclusionPattern != null) filenameFilter.setInclusionPattern(exclusionPattern);
+        if (inclusionPattern != null) filenameFilter.setInclusionPattern(inclusionPattern);
 
         // Set up the extra properties storage ...
         if (EXTRA_PROPERTIES_JSON.equalsIgnoreCase(extraPropertiesStorage)) {

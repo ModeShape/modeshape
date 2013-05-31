@@ -50,12 +50,12 @@ import org.modeshape.jcr.api.federation.FederationManager;
 
 public class FileSystemConnectorTest extends SingleUseAbstractTest {
 
-    protected static final String PATH_TO_FILESYSTEM_SOURCE = "target/federation/files";
-    protected static final String FILESYSTEM_SOURCE_NAME = "file-resources";
     protected static final String TEXT_CONTENT = "Some text content";
 
     private Node testRoot;
     private Projection readOnlyProjection;
+    private Projection readOnlyProjectionWithExclusion;
+    private Projection readOnlyProjectionWithInclusion;
     private Projection storeProjection;
     private Projection jsonProjection;
     private Projection legacyProjection;
@@ -67,12 +67,15 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     public void before() throws Exception {
         tools = new JcrTools();
         readOnlyProjection = new Projection("readonly-files", "target/federation/files-read");
+        readOnlyProjectionWithExclusion = new Projection("readonly-files-with-exclusion", "target/federation/files-read-exclusion");
+        readOnlyProjectionWithInclusion = new Projection("readonly-files-with-inclusion", "target/federation/files-read-inclusion");
         storeProjection = new Projection("mutable-files-store", "target/federation/files-store");
         jsonProjection = new Projection("mutable-files-json", "target/federation/files-json");
         legacyProjection = new Projection("mutable-files-legacy", "target/federation/files-legacy");
         noneProjection = new Projection("mutable-files-none", "target/federation/files-none");
 
-        projections = new Projection[] {readOnlyProjection, storeProjection, jsonProjection, legacyProjection, noneProjection};
+        projections = new Projection[] {readOnlyProjection, readOnlyProjectionWithInclusion, readOnlyProjectionWithExclusion,
+                storeProjection, jsonProjection, legacyProjection, noneProjection};
 
         // Remove and then make the directory for our federation test ...
         for (Projection projection : projections) {
@@ -84,7 +87,6 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         registerNodeTypes("cnd/flex.cnd");
 
         Session session = (Session)jcrSession();
-        testRoot = session.getRootNode().addNode("testFilesRoot");
         testRoot = session.getRootNode().addNode("testRoot");
         testRoot.addNode("node1");
         session.save();
@@ -103,6 +105,33 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         jsonProjection.testContent(testRoot, "json");
         legacyProjection.testContent(testRoot, "legacy");
         noneProjection.testContent(testRoot, "none");
+    }
+
+    @Test
+    @FixFor( "MODE-1951" )
+    public void shouldReadNodesInProjectionWithInclusionFilter() throws Exception {
+        readOnlyProjectionWithInclusion.create(testRoot, "readonly-inclusion");
+
+        assertNotNull(session.getNode("/testRoot/readonly-inclusion"));
+        assertNotNull(session.getNode("/testRoot/readonly-inclusion/dir3"));
+        assertNotNull(session.getNode("/testRoot/readonly-inclusion/dir3/simple.json"));
+        assertNotNull(session.getNode("/testRoot/readonly-inclusion/dir3/simple.txt"));
+
+        assertPathNotFound("/testRoot/readonly-inclusion/dir1");
+        assertPathNotFound("/testRoot/readonly-inclusion/dir2");
+    }
+
+    @Test
+    @FixFor( "MODE-1951" )
+    public void shouldReadNodesInProjectionWithExclusionFilter() throws Exception {
+        readOnlyProjectionWithExclusion.create(testRoot, "readonly-exclusion");
+
+        assertNotNull(session.getNode("/testRoot/readonly-exclusion"));
+        assertNotNull(session.getNode("/testRoot/readonly-exclusion/dir3"));
+        assertNotNull(session.getNode("/testRoot/readonly-exclusion/dir1"));
+        assertNotNull(session.getNode("/testRoot/readonly-exclusion/dir2"));
+        assertPathNotFound("/testRoot/readonly-exclusion/dir3/simple.json");
+        assertPathNotFound("/testRoot/readonly-exclusion/dir3/simple.txt");
     }
 
     @Test
@@ -301,6 +330,15 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         assertThat(content.getIndex(), is(1));
         assertThat(content.getPrimaryNodeType().getName(), is("nt:resource"));
         assertThat(content.getProperty("jcr:lastModified").getLong(), is(lastModified));
+    }
+
+    private void assertPathNotFound(String path) throws Exception {
+        try {
+            session.getNode(path);
+            fail(path + " was found, even though it shouldn't have been");
+        } catch (PathNotFoundException e) {
+            //expected
+        }
     }
 
     @Immutable
