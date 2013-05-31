@@ -71,9 +71,4 @@ public abstract class AbstractInfinispanStoreTest extends AbstractBinaryStoreTes
         return binaryStore;
     }
 
-    @Override
-    @Ignore( "The infinispan binary stored do no support this operation" )
-    public void shouldReturnAllStoredKeys() throws Exception {
-
-    }
 }
