@@ -93,11 +93,6 @@ public class Repository implements IModeShapeObject {
     // Methods
     // ===========================================================================================================================
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     @Override
     public boolean equals( Object obj ) {
         if (this == obj) return true;
@@ -107,11 +102,6 @@ public class Repository implements IModeShapeObject {
         return (this.name.equals(otherRepository.name) && this.server.equals(otherRepository.server));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getName()
-     */
     @Override
     public String getName() {
         return this.name;
@@ -134,31 +124,16 @@ public class Repository implements IModeShapeObject {
         return metadata;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.web.jcr.rest.client.domain.IModeShapeObject#getShortDescription()
-     */
     @Override
     public String getShortDescription() {
         return RestClientI18n.repositoryShortDescription.text(this.name, this.server.getName());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#hashCode()
-     */
     @Override
     public int hashCode() {
         return HashCode.compute(this.name, this.server);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         return getShortDescription();

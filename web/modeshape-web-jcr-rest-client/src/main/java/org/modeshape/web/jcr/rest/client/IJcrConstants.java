@@ -82,6 +82,21 @@ public interface IJcrConstants {
     String RESOURCE_NODE_TYPE = "nt:resource";
 
     /**
+     * The the publish area mixin
+     */
+    String PUBLISH_AREA_TYPE = "mode:publishArea";
+
+    /**
+     * Title property for the publish area mixin
+     */
+    String PUBLISH_AREA_TITLE = "jcr:title";
+
+    /**
+     * Title property for the publish area mixin
+     */
+    String PUBLISH_AREA_DESCRIPTION = "jcr:description";
+
+    /**
      * The query language value for XPath queries
      */
     String XPATH = "xpath";

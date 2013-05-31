@@ -27,6 +27,9 @@ package org.modeshape.test.kit;
 import java.io.File;
 import java.io.IOException;
 import javax.annotation.Resource;
+import javax.jcr.Node;
+import javax.jcr.Session;
+import javax.jcr.nodetype.NodeType;
 import javax.sql.DataSource;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -49,6 +52,7 @@ import org.jboss.shrinkwrap.resolver.api.maven.MavenDependencyResolver;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.jcr.api.Repository;
+import junit.framework.Assert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -61,13 +65,13 @@ import static org.junit.Assert.assertNotNull;
 @RunWith( Arquillian.class )
 public class JBossASKitTest {
 
-    @Resource( mappedName = "datasources/ModeShapeDS" )
+    @Resource( mappedName = "java:/datasources/ModeShapeDS" )
     private DataSource modeshapeDS;
 
-    @Resource( mappedName = "/jcr/artifacts" )
+    @Resource( mappedName = "java:/jcr/artifacts" )
     private Repository artifactsRepo;
 
-    @Resource( mappedName = "/jcr/sample" )
+    @Resource( mappedName = "java:/jcr/sample" )
     private Repository sampleRepo;
 
 
@@ -90,6 +94,18 @@ public class JBossASKitTest {
         assertNotNull(artifactsRepo.login("default"));
         assertNotNull(sampleRepo);
         assertNotNull(sampleRepo.login("default"));
+    }
+
+
+    @Test
+    public void artifactsRepositoryShouldBePublishArea() throws Exception {
+        Session session = artifactsRepo.login();
+        Node filesFolder = session.getNode("/files");
+        Assert.assertNotNull(filesFolder);
+        Assert.assertEquals("nt:folder", filesFolder.getPrimaryNodeType().getName());
+        NodeType[] mixins = filesFolder.getMixinNodeTypes();
+        Assert.assertEquals(1, mixins.length);
+        Assert.assertEquals("mode:publishArea", mixins[0].getName());
     }
 
     @Test
