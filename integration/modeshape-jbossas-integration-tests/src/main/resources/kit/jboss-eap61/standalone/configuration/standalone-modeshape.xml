@@ -451,7 +451,9 @@
                 <indexing rebuild-upon-startup="never"/>
                 <!-- Define 3 workspaces to exist upon startup -->
                 <workspaces default-workspace="default" allow-workspace-creation="false">
-                    <workspace name="default"/>
+                    <workspace name="default">
+                        <initial-content>initial-content-default.xml</initial-content>
+                    </workspace>
                     <workspace name="other"/>
                     <workspace name="extra"/>
                 </workspaces>

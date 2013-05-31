@@ -31,6 +31,7 @@ import java.io.File;
 import javax.annotation.Resource;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.NodeType;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -38,6 +39,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.api.JcrConstants;
@@ -52,8 +54,11 @@ import org.modeshape.jcr.api.JcrConstants;
 @RunWith( Arquillian.class )
 public class PreconfiguredRepositoryIntegrationTest {
 
-    @Resource( mappedName = "/jcr/preconfiguredRepository" )
-    private JcrRepository repository;
+    @Resource( mappedName = "java:/jcr/preconfiguredRepository" )
+    private JcrRepository preconfiguredRepository;
+
+    @Resource( mappedName = "java:/jcr/artifacts" )
+    private JcrRepository artifactsRepository;
 
     @Deployment
     public static WebArchive createDeployment() {
@@ -65,7 +70,8 @@ public class PreconfiguredRepositoryIntegrationTest {
 
     @Before
     public void before() {
-        assertNotNull("JNDI repository not found", repository);
+        assertNotNull("preconfiguredRepository repository not found", preconfiguredRepository);
+        assertNotNull("artifactsRepository repository not found", artifactsRepository);
     }
 
     @Test
@@ -76,7 +82,7 @@ public class PreconfiguredRepositoryIntegrationTest {
 
     @Test
     public void shouldImportCustomInitialContentIntoWorkspace() throws Exception {
-        JcrSession session = repository.login("extra");
+        JcrSession session = preconfiguredRepository.login("extra");
 
         Node folder = session.getNode("/folder");
         assertEquals(JcrConstants.NT_FOLDER, folder.getPrimaryNodeType().getName());
@@ -94,13 +100,13 @@ public class PreconfiguredRepositoryIntegrationTest {
 
     @Test
     public void shouldNotImportContentIntoWorkspaceConfiguredWithEmptyContent() throws Exception {
-        JcrSession session = repository.login("empty");
+        JcrSession session = preconfiguredRepository.login("empty");
         Node rootNode = session.getRootNode();
         assertEquals("Only the system node is expected under the root node", 1, rootNode.getNodes().getSize());
     }
 
     private void assertDefaultContentImportedInWorkspace( String workspaceName ) throws RepositoryException {
-        JcrSession session = repository.login(workspaceName);
+        JcrSession session = preconfiguredRepository.login(workspaceName);
 
         Node cars = session.getNode("/cars");
         assertEquals(JcrConstants.NT_UNSTRUCTURED, cars.getPrimaryNodeType().getName());
@@ -108,7 +114,7 @@ public class PreconfiguredRepositoryIntegrationTest {
 
     @Test
     public void shouldImportNodeTypes() throws Exception {
-        Session session = repository.login();
+        Session session = preconfiguredRepository.login();
         session.getRootNode().addNode("car", "car:Car");
         session.save();
 
@@ -116,4 +122,15 @@ public class PreconfiguredRepositoryIntegrationTest {
         assertEquals("car:Car", car.getPrimaryNodeType().getName());
     }
 
+    @Test
+    @FixFor( "MODE-1919" )
+    public void artifactsRepositoryShouldBePublishArea() throws Exception {
+        Session session = artifactsRepository.login();
+        Node filesFolder = session.getNode("/files");
+        assertNotNull(filesFolder);
+        assertEquals("nt:folder", filesFolder.getPrimaryNodeType().getName());
+        NodeType[] mixins = filesFolder.getMixinNodeTypes();
+        assertEquals(1, mixins.length);
+        assertEquals("mode:publishArea", mixins[0].getName());
+    }
 }
