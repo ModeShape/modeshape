@@ -210,7 +210,7 @@ class RepositoryQueryManager {
     protected void reindexContent( final boolean includeSystemContent,
                                    boolean async,
                                    boolean onlyIfEmpty ) {
-        if (onlyIfEmpty && !getIndexes().initializedIndexes()) {
+        if (onlyIfEmpty && !indexesEmpty()) {
             // There already was some indexed content, so there's nothing to do ...
             return;
         }
@@ -227,6 +227,10 @@ class RepositoryQueryManager {
         } else {
             reindexContent(includeSystemContent);
         }
+    }
+
+    protected boolean indexesEmpty() {
+        return getIndexes().initializedIndexes();
     }
 
     /**

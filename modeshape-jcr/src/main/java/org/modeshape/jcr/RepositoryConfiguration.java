@@ -1639,7 +1639,8 @@ public class RepositoryConfiguration {
     public enum QueryRebuild {
         ALWAYS,
         NEVER,
-        IF_MISSING;
+        IF_MISSING,
+        FAIL_IF_MISSING
     }
 
     /**
@@ -1647,7 +1648,7 @@ public class RepositoryConfiguration {
      */
     public enum TransactionMode {
         AUTO,
-        NONE;
+        NONE
     }
 
     /**

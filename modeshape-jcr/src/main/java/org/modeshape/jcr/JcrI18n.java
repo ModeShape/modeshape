@@ -475,6 +475,7 @@ public final class JcrI18n {
     public static I18n reindexMissingNoIndexesExist;
     public static I18n noReindex;
     public static I18n reindexAll;
+    public static I18n noIndexesExist;
 
     public static I18n errorCreatingDatabaseTable;
 

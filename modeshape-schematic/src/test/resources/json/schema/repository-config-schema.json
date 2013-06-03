@@ -651,7 +651,7 @@
                             "additionalProperties" : false,
                             "properties" : {
                                 "when" : {
-                                    "enum" : ["if_missing","always","never"],
+                                    "enum" : ["if_missing","always","never", "fail_if_missing"],
                                     "default" : "if_missing",
                                     "description" : "Specifies whether the indexes need to be rebuilt immediately when each ModeShape process starts up, or only missing indexes are to be rebuilt or nothing should be rebuilt"
                                 },
