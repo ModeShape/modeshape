@@ -818,6 +818,7 @@
       <xs:enumeration value="if_missing" />
       <xs:enumeration value="always" />
       <xs:enumeration value="never" />
+      <xs:enumeration value="fail_if_missing" />
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="file-system-access-type-enum">
