@@ -55,7 +55,6 @@ import org.modeshape.web.jcr.rest.client.json.IJsonConstants.RequestMethod;
  * The <code>JsonRestClient</code> class is an implementation of <code>IRestClient</code> that works with the ModeShape REST
  * server that uses JSON as its interface protocol.
  */
-@SuppressWarnings( "deprecation" )
 public final class JsonRestClient implements IRestClient {
 
     // ===========================================================================================================================
@@ -179,7 +178,9 @@ public final class JsonRestClient implements IRestClient {
         createFolderNode(workspace, path, folderNode);
     }
 
-    private void createFolderNode(Workspace workspace, String path, FolderNode folderNode) throws Exception {
+    private void createFolderNode( Workspace workspace,
+                                   String path,
+                                   FolderNode folderNode ) throws Exception {
         HttpClientConnection connection = connect(workspace.getServer(), folderNode.getUrl(), RequestMethod.POST);
         try {
             LOGGER.trace("createFolderNode={0}", folderNode);
@@ -578,8 +579,11 @@ public final class JsonRestClient implements IRestClient {
                                      String description ) {
         assert workspace != null;
         assert path != null;
-        LOGGER.trace("mark as publish area: workspace={0}, path={1}, title={2}, description={3}", workspace.getName(), path,
-                     title, description);
+        LOGGER.trace("mark as publish area: workspace={0}, path={1}, title={2}, description={3}",
+                     workspace.getName(),
+                     path,
+                     title,
+                     description);
 
         if (path.endsWith("/")) {
             path = path.substring(0, path.lastIndexOf("/"));

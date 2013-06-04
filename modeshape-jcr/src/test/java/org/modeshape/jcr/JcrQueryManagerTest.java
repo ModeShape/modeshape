@@ -325,6 +325,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         session.getWorkspace().getNodeTypeManager().registerNodeTypes(url, true);
     }
 
+    @Override
     protected Name name( String name ) {
         return session.nameFactory().create(name);
     }

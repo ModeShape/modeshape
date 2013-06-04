@@ -88,7 +88,6 @@ public final class FileNode extends JsonNode {
      * @param versionable true if the file node should be versionable
      * @throws Exception if there is a problem constructing the file node
      */
-    @SuppressWarnings( "deprecation" )
     public FileNode( Workspace workspace,
                      String path,
                      File file,

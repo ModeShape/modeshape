@@ -506,9 +506,8 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
                 // Use only the first value of a multi-valued property (if it has values)
                 Value[] values = property.getValues();
                 return values.length > 0 ? values[0] : null;
-            } else {
-                return property.getValue();
             }
+            return property.getValue();
         }
 
         @Override
