@@ -31,6 +31,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Pattern;
 import javax.jcr.NamespaceRegistry;
@@ -477,6 +479,12 @@ public class FileSystemConnector extends WritableConnector {
         String id = path; // this connector treats the ID as the path
         File file = fileFor(id);
         return file.exists() ? id : null;
+    }
+
+    @Override
+    public Collection<String> getDocumentPathsById( String id ) {
+        // this connector treats the ID as the path
+        return Collections.singletonList(id);
     }
 
     @Override

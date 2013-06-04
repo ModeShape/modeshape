@@ -329,7 +329,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             // Always update the configuration ...
             RunningState oldState = this.runningState.get();
-            this.config.set(new RepositoryConfiguration(copy.unwrap(), copy.getString(FieldName.NAME), oldConfiguration.environment()));
+            this.config.set(new RepositoryConfiguration(copy.unwrap(), copy.getString(FieldName.NAME),
+                                                        oldConfiguration.environment()));
             if (oldState != null) {
                 assert state.get() == State.RUNNING;
                 // Repository is running, so create a new running state ...
@@ -1040,7 +1041,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                     // Create the event bus
                     this.changeDispatchingQueue = this.context().getCachedTreadPool("modeshape-event-dispatcher");
-                    this.changeBus = createBus(config.getClustering(), this.changeDispatchingQueue, systemWorkspaceName(), false,
+                    this.changeBus = createBus(config.getClustering(),
+                                               this.changeDispatchingQueue,
+                                               systemWorkspaceName(),
+                                               false,
                                                context.getProcessId());
                     this.changeBus.start();
 
@@ -1151,8 +1155,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     Properties backendProps = query.getIndexingBackendProperties();
                     Properties indexingProps = query.getIndexingProperties();
                     Properties indexStorageProps = query.getIndexStorageProperties();
-                    this.repositoryQueryManager = new RepositoryQueryManager(this, indexingExecutor,
-                                                                             backendProps, indexingProps, indexStorageProps);
+                    this.repositoryQueryManager = new RepositoryQueryManager(this, indexingExecutor, backendProps, indexingProps,
+                                                                             indexStorageProps);
                     this.indexRebuildOptions = query.getIndexRebuildOptions();
                 } else {
                     this.repositoryQueryManager = new RepositoryDisabledQueryManager(this, config.getQuery());
@@ -1426,6 +1430,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return changeBus;
         }
 
+        final Connectors connectors() {
+            return connectors;
+        }
+
         protected final String repositoryKey() {
             return cache.getKey();
         }
@@ -1516,8 +1524,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         protected void shutdown() {
-            //if  reindexing was asynchronous and is still going on, we need to terminate it before we stop any of caches
-            //or we do anything that affects the nodes
+            // if reindexing was asynchronous and is still going on, we need to terminate it before we stop any of caches
+            // or we do anything that affects the nodes
             if (repositoryQueryManager != null) {
                 repositoryQueryManager.stopReindexing();
             }
@@ -1749,7 +1757,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                        String processId ) {
             RepositoryChangeBus standaloneBus = new RepositoryChangeBus(executor, systemWorkspaceName,
                                                                         separateThreadForSystemWorkspace);
-            return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration, standaloneBus, processId) : standaloneBus;
+            return clusteringConfiguration.isEnabled() ? new ClusteredRepositoryChangeBus(clusteringConfiguration, standaloneBus,
+                                                                                          processId) : standaloneBus;
         }
 
         void suspendExistingUserTransaction() throws SystemException {
@@ -1770,7 +1779,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final TransactionalWorkspaceCaches transactionalWorkspaceCacheFactory;
         private final boolean indexingClustered;
 
-        protected RepositorySessionEnvironment( Transactions transactions, boolean indexingClustered ) {
+        protected RepositorySessionEnvironment( Transactions transactions,
+                                                boolean indexingClustered ) {
             this.transactions = transactions;
             this.transactionalWorkspaceCacheFactory = new TransactionalWorkspaceCaches(transactions);
             this.indexingClustered = indexingClustered;

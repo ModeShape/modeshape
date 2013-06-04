@@ -262,17 +262,17 @@ public class RecordingChanges implements Changes, ChangeSet {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Save by ")
+        sb.append("Save by '")
           .append(getUserId())
-          .append(" at ")
+          .append("' at ")
           .append(getTimestamp())
           .append(" with user data = ")
           .append(userData)
-          .append(" in repository ")
+          .append(" in repository with key '")
           .append(repositoryKey)
-          .append(" and workspace ")
+          .append("' and workspace '")
           .append(workspaceName)
-          .append("\n");
+          .append("'\n");
 
         for (Change change : this) {
             sb.append("  ").append(change).append("\n");

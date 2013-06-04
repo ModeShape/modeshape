@@ -49,6 +49,7 @@ import org.junit.rules.TestRule;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrTools;
+import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.junit.SkipLongRunningRule;
@@ -71,6 +72,10 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
 
     protected Path path( String path ) {
         return session().context().getValueFactories().getPathFactory().create(path);
+    }
+
+    protected Name name( String name ) {
+        return session().context().getValueFactories().getNameFactory().create(name);
     }
 
     protected String relativePath( String path ) {

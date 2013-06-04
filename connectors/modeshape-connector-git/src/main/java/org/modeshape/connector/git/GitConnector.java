@@ -27,6 +27,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -231,7 +233,7 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
             String parentId = callSpec.getParentId();
             assert parentId != null;
             writer.setParent(parentId);
-            //check if the document should be indexed or not, based on the global connector setting and the specific function
+            // check if the document should be indexed or not, based on the global connector setting and the specific function
             if (!this.isQueryable() || !function.isQueryable(callSpec)) {
                 writer.setNotQueryable();
             }
@@ -274,6 +276,12 @@ public class GitConnector extends ReadOnlyConnector implements Pageable {
     public String getDocumentId( String path ) {
         // Our paths are basically used as IDs ...
         return path;
+    }
+
+    @Override
+    public Collection<String> getDocumentPathsById( String id ) {
+        // Our paths are basically used as IDs, so the ID is the path ...
+        return Collections.singletonList(id);
     }
 
     @Override

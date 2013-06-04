@@ -1,0 +1,19 @@
+{
+    "name" : "Federated repository with projections",
+    "workspaces" : {
+        "predefined" : ["ws1", "ws2"],
+        "default" : "default",
+        "allowCreation" : true,
+    },
+    "externalSources" : {
+        "mock-source" : {
+            "classname" : "org.modeshape.connector.mock.MockConnectorWithChanges",
+            "cacheTtlSeconds" : 1,
+            "projections" : [
+                "default:/projection1 => /doc1",
+                "default:/projection2 => /doc2/generate",
+                "default:/projection3 => /doc2/generated-out",
+            ]
+        }
+    }
+}
