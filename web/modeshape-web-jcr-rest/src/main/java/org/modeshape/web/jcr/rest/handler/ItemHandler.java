@@ -407,7 +407,7 @@ public class ItemHandler extends AbstractHandler {
 
         Value[] values = convertToJcrValues(node, value, encoded);
         if (values.length == 0) {
-            //remove the property
+            // remove the property
             node.setProperty(propName, (Value[])null);
         } else if (values.length == 1) {
             node.setProperty(propName, values[0]);
@@ -416,7 +416,8 @@ public class ItemHandler extends AbstractHandler {
         }
     }
 
-    private Set<String> updateMixins(Node node, Object mixinsJsonValue) throws JSONException, RepositoryException {
+    private Set<String> updateMixins( Node node,
+                                      Object mixinsJsonValue ) throws JSONException, RepositoryException {
         Value[] values = convertToJcrValues(node, mixinsJsonValue, false);
 
         Set<String> jsonMixins = new HashSet<String>(values.length);
@@ -437,20 +438,18 @@ public class ItemHandler extends AbstractHandler {
             node.addMixin(nodeType);
         }
 
-        //return the list of mixins to be removed, as that needs to be processed last due to type validation
+        // return the list of mixins to be removed, as that needs to be processed last due to type validation
         return mixinsToRemove;
     }
 
-    @SuppressWarnings( "unchecked" )
     private Value[] convertToJcrValues( Node node,
                                         Object value,
                                         boolean encoded ) throws RepositoryException, JSONException {
         if (value == JSONObject.NULL || (value instanceof JSONArray && ((JSONArray)value).length() == 0)) {
-            //for any null value of empty json array, return an empty array which will mean the property will be removed
+            // for any null value of empty json array, return an empty array which will mean the property will be removed
             return new Value[0];
         }
-        org.modeshape.jcr.api.ValueFactory valueFactory = (org.modeshape.jcr.api.ValueFactory)node.getSession()
-                .getValueFactory();
+        org.modeshape.jcr.api.ValueFactory valueFactory = (org.modeshape.jcr.api.ValueFactory)node.getSession().getValueFactory();
         if (value instanceof JSONArray) {
             JSONArray jsonValues = (JSONArray)value;
             Value[] values = new Value[jsonValues.length()];
@@ -463,12 +462,11 @@ public class ItemHandler extends AbstractHandler {
                 }
             }
             return values;
-        } else {
-            if (encoded) {
-                return new Value[] { createBinaryValue(value.toString(), valueFactory) };
-            }
-            return new Value[] { RestHelper.jsonValueToJCRValue(value, valueFactory) };
         }
+        if (encoded) {
+            return new Value[] {createBinaryValue(value.toString(), valueFactory)};
+        }
+        return new Value[] {RestHelper.jsonValueToJCRValue(value, valueFactory)};
     }
 
     /**
@@ -684,7 +682,7 @@ public class ItemHandler extends AbstractHandler {
             }
         }
 
-        //after all the children and properties have been processed, remove mixins because that will trigger validation
+        // after all the children and properties have been processed, remove mixins because that will trigger validation
         for (String mixinToRemove : mixinsToRemove) {
             node.removeMixin(mixinToRemove);
         }

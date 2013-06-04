@@ -23,6 +23,15 @@
  */
 package org.modeshape.web.jcr.rest.client.json;
 
+import static junit.framework.Assert.assertNull;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.net.URL;
 import java.util.Collection;
@@ -42,15 +51,6 @@ import org.modeshape.web.jcr.rest.client.domain.QueryRow;
 import org.modeshape.web.jcr.rest.client.domain.Repository;
 import org.modeshape.web.jcr.rest.client.domain.Server;
 import org.modeshape.web.jcr.rest.client.domain.Workspace;
-import static junit.framework.Assert.assertNull;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 /**
  * The <code>JsonRestClientTest</code> class is a test class for the {@link JsonRestClient JSON REST client} object.
@@ -59,7 +59,6 @@ import static org.junit.Assert.assertTrue;
  * <p>
  * Two containers: mvn -P cargo-1,cargo-2 clean install assembly:assembly
  */
-@SuppressWarnings( "deprecation" )
 public final class JsonRestClientTest {
 
     // ===========================================================================================================================
@@ -551,8 +550,11 @@ public final class JsonRestClientTest {
         assertEquals(Status.OK_STATUS, response);
     }
 
-    private void assertFolderMarkedAsPublishArea(String path, String title, String description) throws Exception {
-        String query = "SELECT [jcr:mixinTypes], [jcr:title], [jcr:description] FROM [nt:folder] WHERE [jcr:path] = '" + path + "'";
+    private void assertFolderMarkedAsPublishArea( String path,
+                                                  String title,
+                                                  String description ) throws Exception {
+        String query = "SELECT [jcr:mixinTypes], [jcr:title], [jcr:description] FROM [nt:folder] WHERE [jcr:path] = '" + path
+                       + "'";
         List<QueryRow> results = this.restClient.query(workspace1, IJcrConstants.JCR_SQL2, query);
         assertThat(results.size(), is(1));
 
@@ -571,7 +573,7 @@ public final class JsonRestClientTest {
         }
     }
 
-    private void assertFolderUnmarkedAsPublishArea(String path) throws Exception {
+    private void assertFolderUnmarkedAsPublishArea( String path ) throws Exception {
         String query = "SELECT [jcr:mixinTypes] FROM [nt:folder] WHERE [jcr:path] = '" + path + "'";
         List<QueryRow> results = this.restClient.query(workspace1, IJcrConstants.JCR_SQL2, query);
         assertThat(results.size(), is(1));
