@@ -202,6 +202,24 @@ public class FederatedDocumentWriter implements DocumentWriter {
     }
 
     @Override
+    public DocumentWriter removeChild( String id ) {
+        EditableArray children = federatedDocument.getArray(DocumentTranslator.CHILDREN);
+        if (children != null) {
+            for (int i = 0; i != children.size(); ++i) {
+                Object val = children.get(i);
+                if (val instanceof Document) {
+                    Document child = (Document)val;
+                    if (child.getString(DocumentTranslator.KEY).equals(id)) {
+                        children.remove(i);
+                        return this;
+                    }
+                }
+            }
+        }
+        return this;
+    }
+
+    @Override
     public DocumentWriter setProperties( Map<Name, Property> properties ) {
         // clear the existing values
         federatedDocument.setDocument(DocumentTranslator.PROPERTIES);

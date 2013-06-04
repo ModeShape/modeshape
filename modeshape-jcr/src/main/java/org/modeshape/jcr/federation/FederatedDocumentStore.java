@@ -445,8 +445,8 @@ public class FederatedDocumentStore implements DocumentStore {
         return documentIdToNodeKey(sourceName, documentId).toString();
     }
 
-    private NodeKey documentIdToNodeKey( String sourceName,
-                                         String documentId ) {
+    static NodeKey documentIdToNodeKey( String sourceName,
+                                        String documentId ) {
         String sourceKey = NodeKey.keyForSourceName(sourceName);
         return new NodeKey(sourceKey, FEDERATED_WORKSPACE_KEY, documentId);
     }
@@ -588,6 +588,5 @@ public class FederatedDocumentStore implements DocumentStore {
             throw new ConnectorException(JcrI18n.connectorIsReadOnly.text(connector.getSourceName()));
         }
     }
-
 
 }

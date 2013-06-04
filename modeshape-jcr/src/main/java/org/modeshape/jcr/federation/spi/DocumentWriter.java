@@ -215,10 +215,10 @@ public interface DocumentWriter extends PageWriter {
     DocumentWriter setCacheTtlSeconds( int seconds );
 
     /**
-     * Sets a flag on the underlying document which indicates that it should not be indexed (and therefore will not appear
-     * in queries) by the repository.
-     *
-     * @return this writer; never null;
+     * Sets a flag on the underlying document which indicates that it should not be indexed (and therefore will not appear in
+     * queries) by the repository.
+     * 
+     * @return this writer; never null
      */
     DocumentWriter setNotQueryable();
 
@@ -229,6 +229,9 @@ public interface DocumentWriter extends PageWriter {
     @Override
     DocumentWriter addChild( String id,
                              Name name );
+
+    @Override
+    DocumentWriter removeChild( String id );
 
     @Override
     DocumentWriter setChildren( List<? extends Document> children );

@@ -26,11 +26,17 @@ package org.modeshape.jcr;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
@@ -42,30 +48,43 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.util.ReflectionUtil;
 import org.modeshape.common.SystemFailureException;
+import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.HashCode;
+import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.RepositoryConfiguration.Component;
+import org.modeshape.jcr.RepositoryConfiguration.ProjectionConfiguration;
 import org.modeshape.jcr.api.federation.FederationManager;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
+import org.modeshape.jcr.cache.document.WorkspaceCache;
+import org.modeshape.jcr.federation.ConnectorChangeSetFactory;
+import org.modeshape.jcr.federation.ConnectorChangeSetImpl;
 import org.modeshape.jcr.federation.spi.Connector;
+import org.modeshape.jcr.federation.spi.ConnectorChangeSet;
 import org.modeshape.jcr.federation.spi.ExtraPropertiesStore;
-import org.modeshape.jcr.federation.spi.change.ConnectorChangedSetFactory;
-import org.modeshape.jcr.federation.spi.change.impl.ConnectorChangedSetFactoryImpl;
 import org.modeshape.jcr.value.Name;
+import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
 
 /**
  * Class which maintains (based on the configuration) the list of available connectors for a repository.
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
+ * @author Randall Hauch (rhauch@redhat.com)
  */
+@ThreadSafe
 public class Connectors {
 
     private static final Logger LOGGER = Logger.getLogger(Connectors.class);
@@ -74,72 +93,51 @@ public class Connectors {
     private final Logger logger;
 
     private boolean initialized = false;
-
-    /**
-     * A map of [sourceName, connector] instances.
-     */
-    private Map<String, Connector> sourceKeyToConnectorMap = new HashMap<String, Connector>();
-
-    /**
-     * A map of [workspaceName, projection] instances which holds the preconfigured projections for each workspace
-     */
-    private Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections = new HashMap<String, List<RepositoryConfiguration.ProjectionConfiguration>>();
-
-    /**
-     * A map of (externalNodeKey, Projection) instances holds the existing projections in-memory
-     */
-    private Map<String, Projection> projections;
+    private final AtomicReference<Snapshot> snapshot = new AtomicReference<Snapshot>();
 
     protected Connectors( JcrRepository.RunningState repository,
-                       Collection<Component> components,
-                       Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections) {
+                          Collection<Component> components,
+                          Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections ) {
         this.repository = repository;
         this.logger = Logger.getLogger(getClass());
-        this.preconfiguredProjections = preconfiguredProjections;
-
-        registerConnectors(components);
+        this.snapshot.set(new Snapshot(components, preconfiguredProjections));
     }
 
-
-    private void registerConnectors( Collection<Component> components ) {
-        for (Component component : components) {
-            Connector connector = instantiateConnector(component);
-            if (connector != null) {
-                registerConnector(connector);
-            }
-        }
-    }
-
-    protected void initialize() throws RepositoryException {
+    protected synchronized void initialize() throws RepositoryException {
         if (initialized || !hasConnectors()) {
             // nothing to do ...
             return;
         }
 
-        //initialize the configured connectors
+        // initialize the configured connectors
         initializeConnectors();
-        //load the projection -> node mappings from the system area
+        // load the projection -> node mappings from the system area
         loadStoredProjections();
-        //creates any preconfigured projections
+        // creates any preconfigured projections
         createPreconfiguredProjections();
+        // load the projections, but with all pre-configured projections
+        loadStoredProjections();
 
         initialized = true;
     }
 
-    private void createPreconfiguredProjections() throws RepositoryException {
-        for (String workspaceName : preconfiguredProjections.keySet()) {
+    private synchronized void createPreconfiguredProjections() throws RepositoryException {
+        assert !initialized;
+        Snapshot current = this.snapshot.get();
+        for (String workspaceName : current.getWorkspacesWithProjections()) {
             JcrSession session = repository.loginInternalSession(workspaceName);
             try {
                 FederationManager federationManager = session.getWorkspace().getFederationManager();
-                List<RepositoryConfiguration.ProjectionConfiguration> projections = preconfiguredProjections.get(workspaceName);
+                List<RepositoryConfiguration.ProjectionConfiguration> projections = current.getProjectionConfigurationsForWorkspace(workspaceName);
                 for (RepositoryConfiguration.ProjectionConfiguration projectionCfg : projections) {
                     String repositoryPath = projectionCfg.getRepositoryPath();
                     String alias = projectionCfg.getAlias();
 
                     AbstractJcrNode node = session.getNode(repositoryPath);
-                    //only create the projectionCfg if one doesn't exist with the same alias
-                    if (!projectionExists(alias, node.key().toString()) && !projectedPathExists(session, projectionCfg)) {
-                        federationManager.createProjection(repositoryPath, projectionCfg.getSourceName(),
+                    // only create the projectionCfg if one doesn't exist with the same alias
+                    if (!current.hasProjection(alias, node.key().toString()) && !projectedPathExists(session, projectionCfg)) {
+                        federationManager.createProjection(repositoryPath,
+                                                           projectionCfg.getSourceName(),
                                                            projectionCfg.getExternalPath(),
                                                            alias);
                     }
@@ -151,61 +149,61 @@ public class Connectors {
     }
 
     private boolean projectedPathExists( JcrSession session,
-                                         RepositoryConfiguration.ProjectionConfiguration projectionCfg ) throws RepositoryException {
+                                         RepositoryConfiguration.ProjectionConfiguration projectionCfg )
+        throws RepositoryException {
         try {
             session.getNode(projectionCfg.getProjectedPath());
-            LOGGER.warn(JcrI18n.projectedPathPointsTowardsInternalNode, projectionCfg, projectionCfg.getSourceName(), projectionCfg.getProjectedPath());
+            LOGGER.warn(JcrI18n.projectedPathPointsTowardsInternalNode,
+                        projectionCfg,
+                        projectionCfg.getSourceName(),
+                        projectionCfg.getProjectedPath());
             return true;
         } catch (PathNotFoundException e) {
             return false;
         }
     }
 
-    private boolean projectionExists( String alias,
-                                      String projectedNodeKey ) {
-        for (Projection projection : projections.values()) {
-            if (projection.hasAlias(alias) && projection.hasProjectedNodeKey(projectedNodeKey)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void loadStoredProjections() {
+    private synchronized void loadStoredProjections() {
         assert !initialized;
-        SessionCache systemSession = repository.createSystemSession(repository.context(), false);
+        SessionCache systemSession = repository.createSystemSession(repository.context(), true);
 
         CachedNode systemNode = getSystemNode(systemSession);
         ChildReference federationNodeRef = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.FEDERATION);
-        this.projections = federationNodeRef != null ? loadStoredProjections(systemSession,
-                                                                             federationNodeRef)
-                                                     : new HashMap<String, Projection>();
+        if (federationNodeRef != null) {
+            Collection<Projection> newProjections = loadStoredProjections(systemSession, federationNodeRef);
+            Snapshot current = this.snapshot.get();
+            Snapshot updated = current.withProjections(newProjections);
+            this.snapshot.compareAndSet(current, updated);
+        }
     }
 
-    private Map<String, Projection> loadStoredProjections( SessionCache systemSession,
-                                                           ChildReference federationNodeRef ) {
+    private Collection<Projection> loadStoredProjections( SessionCache systemSession,
+                                                          ChildReference federationNodeRef ) {
         CachedNode federationNode = systemSession.getNode(federationNodeRef.getKey());
         ChildReferences federationChildRefs = federationNode.getChildReferences(systemSession);
-        //the stored projection mappings use SNS
+        // the stored projection mappings use SNS
         int projectionsCount = federationChildRefs.getChildCount(ModeShapeLexicon.PROJECTION);
-        Map<String, Projection> projections = new HashMap<String, Projection>(projectionsCount);
+        Collection<Projection> projections = new ArrayList<Projection>(projectionsCount);
 
-        for (int i = 1; i <= projectionsCount; i++) {
-            ChildReference projectionRef = federationChildRefs.getChild(ModeShapeLexicon.PROJECTION, i);
+        Iterator<ChildReference> iter = federationChildRefs.iterator(ModeShapeLexicon.PROJECTION);
+        while (iter.hasNext()) {
+            ChildReference projectionRef = iter.next();
             NodeKey projectionRefKey = projectionRef.getKey();
             CachedNode projection = systemSession.getNode(projectionRefKey);
-            String externalNodeKey = projection.getProperty(ModeShapeLexicon.EXTERNAL_NODE_KEY, systemSession).getFirstValue()
+            String externalNodeKey = projection.getProperty(ModeShapeLexicon.EXTERNAL_NODE_KEY, systemSession)
+                                               .getFirstValue()
                                                .toString();
             assert externalNodeKey != null;
 
-            String projectedNodeKey = projection.getProperty(ModeShapeLexicon.PROJECTED_NODE_KEY, systemSession).getFirstValue()
+            String projectedNodeKey = projection.getProperty(ModeShapeLexicon.PROJECTED_NODE_KEY, systemSession)
+                                                .getFirstValue()
                                                 .toString();
             assert projectedNodeKey != null;
 
             String alias = projection.getProperty(ModeShapeLexicon.PROJECTION_ALIAS, systemSession).getFirstValue().toString();
             assert alias != null;
 
-            projections.put(externalNodeKey, new Projection(externalNodeKey, projectedNodeKey, alias));
+            projections.add(new Projection(externalNodeKey, projectedNodeKey, alias));
         }
         return projections;
     }
@@ -217,31 +215,36 @@ public class Connectors {
         return systemSession.getNode(systemNodeRef.getKey());
     }
 
-    private void initializeConnectors() {
+    private synchronized void initializeConnectors() {
+        assert !initialized;
         // Get a session that we'll pass to the connectors to use for registering namespaces and node types
         Session session = null;
         try {
-            // Get a session that we'll pass to the sequencers to use for registering namespaces and node types
+            // Get a session that we'll pass to the connectors to use for registering namespaces and node types
             session = repository.loginInternalSession();
             NamespaceRegistry registry = session.getWorkspace().getNamespaceRegistry();
             NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
 
             if (!(nodeTypeManager instanceof org.modeshape.jcr.api.nodetype.NodeTypeManager)) {
                 throw new IllegalStateException("Invalid node type manager (expected modeshape NodeTypeManager): "
-                                                        + nodeTypeManager.getClass().getName());
+                                                + nodeTypeManager.getClass().getName());
             }
 
             // Initialize each connector using the supplied session ...
-            for (Iterator<Map.Entry<String, Connector>> connectorsIterator = sourceKeyToConnectorMap.entrySet()
-                                                                                                    .iterator(); connectorsIterator
-                    .hasNext(); ) {
-                Connector connector = connectorsIterator.next().getValue();
+            Snapshot current = this.snapshot.get();
+            Collection<Connector> connectorsWithErrors = new ArrayList<Connector>();
+            for (Connector connector : current.getConnectors()) {
                 try {
                     initializeConnector(connector, registry, (org.modeshape.jcr.api.nodetype.NodeTypeManager)nodeTypeManager);
                 } catch (Throwable t) {
                     logger.error(t, JcrI18n.unableToInitializeConnector, connector, repository.name(), t.getMessage());
-                    connectorsIterator.remove(); // removes from the map
+                    connectorsWithErrors.add(connector);
                 }
+            }
+            if (!connectorsWithErrors.isEmpty()) {
+                Snapshot updated = current.withoutConnectors(connectorsWithErrors);
+                this.snapshot.compareAndSet(current, updated);
+                // None of the removed connectors were running, so there's no need to remote unused ones from 'updated'
             }
         } catch (RepositoryException e) {
             throw new SystemFailureException(e);
@@ -252,38 +255,23 @@ public class Connectors {
         }
     }
 
-    /**
-     * Stores a mapping from an external node towards an existing, internal node which will become a federated node.
-     * These projections are created via {@link org.modeshape.jcr.api.federation.FederationManager#createProjection(String, String, String, String)}
-     * and need to be stored so that parent back references (from the projection to the external node) are correctly handled.
-     *
-     * @param externalNodeKey a {@code non-null} String representing the {@link NodeKey} format of the projection's id.
-     * @param projectedNodeKey a {@code non-null} String, representing the value of the external node's key
-     * @param alias a {@code non-null} String, representing the alias of the projection.
-     */
-    public void addProjection( String externalNodeKey,
-                               String projectedNodeKey,
-                               String alias ) {
-        Projection projection = new Projection(externalNodeKey, projectedNodeKey, alias);
-        projections.put(externalNodeKey, projection);
-        storeProjection(projection);
-    }
-
     private void storeProjection( Projection projection ) {
         PropertyFactory propertyFactory = repository.context().getPropertyFactory();
 
-        //we need to store the projection mappings so that we don't loose that information
+        // we need to store the projection mappings so that we don't loose that information
         SessionCache systemSession = repository.createSystemSession(repository.context(), false);
         NodeKey systemNodeKey = getSystemNode(systemSession).getKey();
         MutableCachedNode systemNode = systemSession.mutable(systemNodeKey);
         ChildReference federationNodeRef = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.FEDERATION);
 
         if (federationNodeRef == null) {
-            //there isn't a federation node present, so we need to add it
+            // there isn't a federation node present, so we need to add it
             try {
                 Property primaryType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.FEDERATION);
-                systemNode.createChild(systemSession, systemNodeKey.withId("mode:federation"),
-                                       ModeShapeLexicon.FEDERATION, primaryType);
+                systemNode.createChild(systemSession,
+                                       systemNodeKey.withId("mode:federation"),
+                                       ModeShapeLexicon.FEDERATION,
+                                       primaryType);
                 systemSession.save();
                 federationNodeRef = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.FEDERATION);
             } catch (Exception e) {
@@ -300,61 +288,99 @@ public class Connectors {
         Property projectedNodeKeyProp = propertyFactory.create(ModeShapeLexicon.PROJECTED_NODE_KEY,
                                                                projection.getProjectedNodeKey());
         Property alias = propertyFactory.create(ModeShapeLexicon.PROJECTION_ALIAS, projection.getAlias());
-        federationNode.createChild(systemSession, federationNodeKey.withRandomId(), ModeShapeLexicon.PROJECTION,
-                                   primaryType, externalNodeKeyProp, projectedNodeKeyProp, alias);
+        federationNode.createChild(systemSession,
+                                   federationNodeKey.withRandomId(),
+                                   ModeShapeLexicon.PROJECTION,
+                                   primaryType,
+                                   externalNodeKeyProp,
+                                   projectedNodeKeyProp,
+                                   alias);
 
         systemSession.save();
     }
 
     /**
      * Returns the key of the internal (federated) node which has been projected on the external node with the given key.
-     *
+     * 
      * @param externalNodeKey a {@code non-null} String representing the {@link NodeKey} format an external node
      * @return either a {@code non-null} String representing the node key of the projected node, or {@code null} if there is no
      *         projection.
      */
     public String getProjectedNodeKey( String externalNodeKey ) {
-        Projection projection = projections.get(externalNodeKey);
+        Projection projection = snapshot.get().getProjectionForExternalNode(externalNodeKey);
         return projection != null ? projection.getProjectedNodeKey() : null;
     }
 
     /**
+     * Stores a mapping from an external node towards an existing, internal node which will become a federated node. These
+     * projections are created via
+     * {@link org.modeshape.jcr.api.federation.FederationManager#createProjection(String, String, String, String)} and need to be
+     * stored so that parent back references (from the projection to the external node) are correctly handled.
+     * 
+     * @param externalNodeKey a {@code non-null} String representing the {@link NodeKey} format of the projection's id.
+     * @param projectedNodeKey a {@code non-null} String, representing the value of the external node's key
+     * @param alias a {@code non-null} String, representing the alias of the projection.
+     */
+    public synchronized void addProjection( String externalNodeKey,
+                                            String projectedNodeKey,
+                                            String alias ) {
+        Projection projection = new Projection(externalNodeKey, projectedNodeKey, alias);
+        storeProjection(projection);
+        Snapshot current = this.snapshot.get();
+        Snapshot updated = current.withProjection(projection);
+        this.snapshot.compareAndSet(current, updated);
+    }
+
+    /**
      * Signals that an external node with the given key has been removed.
-     *
+     * 
      * @param externalNodeKey a {@code non-null} String
      */
     public void externalNodeRemoved( String externalNodeKey ) {
-        Projection removedProjection = projections.remove(externalNodeKey);
-        if (removedProjection != null) {
-            //the external node was the root of a projection, so we need to remove that projection
-            removeStoredProjection(externalNodeKey);
+        if (this.snapshot.get().containsProjectionForExternalNode(externalNodeKey)) {
+            // the external node was the root of a projection, so we need to remove that projection
+            synchronized (this) {
+                Snapshot current = this.snapshot.get();
+                Snapshot updated = current.withoutProjection(externalNodeKey);
+                if (current != updated) {
+                    this.snapshot.compareAndSet(current, updated);
+                }
+            }
         }
     }
 
     /**
      * Signals that an internal node with the given key has been removed.
-     *
+     * 
      * @param internalNodeKey a {@code non-null} String
      */
     public void internalNodeRemoved( String internalNodeKey ) {
-        //identify all the projections which from this internal (aka. federated node) and remove them
-        for (Iterator<Map.Entry<String, Projection>> projectionsIt = projections.entrySet().iterator(); projectionsIt.hasNext();) {
-            Projection projection = projectionsIt.next().getValue();
-            if (internalNodeKey.equalsIgnoreCase(projection.getProjectedNodeKey())) {
-                String externalNodeKey = projection.getExternalNodeKey();
-                removeStoredProjection(externalNodeKey);
-                projectionsIt.remove();
+        if (this.snapshot.get().containsProjectionForInternalNode(internalNodeKey)) {
+            // identify all the projections which from this internal (aka. federated node) and remove them
+            synchronized (this) {
+                Snapshot current = this.snapshot.get();
+                Snapshot updated = current;
+                for (Projection projection : current.getProjections()) {
+                    if (internalNodeKey.equalsIgnoreCase(projection.getProjectedNodeKey())) {
+                        String externalNodeKey = projection.getExternalNodeKey();
+                        removeStoredProjection(externalNodeKey);
+                        updated.withoutProjection(externalNodeKey);
+                    }
+                }
+                if (current != updated) {
+                    this.snapshot.compareAndSet(current, updated);
+                }
             }
         }
     }
 
-    private void removeStoredProjection(String externalNodeKey) {
+    private void removeStoredProjection( String externalNodeKey ) {
         SessionCache systemSession = repository.createSystemSession(repository.context(), false);
         NodeKey systemNodeKey = getSystemNode(systemSession).getKey();
         MutableCachedNode systemNode = systemSession.mutable(systemNodeKey);
         ChildReference federationNodeRef = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.FEDERATION);
 
-        //if we're removing a projection, one had to be stored previously, so there should be a federation node present
+        // if we're removing a projection, one had to be stored previously, so there should be a federation node present
         assert federationNodeRef != null;
 
         NodeKey federationNodeKey = federationNodeRef.getKey();
@@ -367,7 +393,9 @@ public class Connectors {
             ChildReference projectionRef = federationChildRefs.getChild(ModeShapeLexicon.PROJECTION, i);
             NodeKey projectionRefKey = projectionRef.getKey();
             CachedNode storedProjection = systemSession.getNode(projectionRefKey);
-            String storedProjectionExternalNodeKey = storedProjection.getProperty(ModeShapeLexicon.EXTERNAL_NODE_KEY, systemSession).getFirstValue()
+            String storedProjectionExternalNodeKey = storedProjection.getProperty(ModeShapeLexicon.EXTERNAL_NODE_KEY,
+                                                                                  systemSession)
+                                                                     .getFirstValue()
                                                                      .toString();
             assert storedProjectionExternalNodeKey != null;
             if (storedProjectionExternalNodeKey.equals(externalNodeKey)) {
@@ -383,11 +411,11 @@ public class Connectors {
      * Add a new connector by supplying the component definition. This method instantiates, initializes, and then registers the
      * connector into this manager. If registration is successful, this method will replace any running connector already
      * registered with the same name.
-     *
+     * 
      * @param component the component describing the connector; may not be null
      * @throws RepositoryException if there is a problem initializing the connector
      */
-    public void addConnector( Component component ) throws RepositoryException {
+    public synchronized void addConnector( Component component ) throws RepositoryException {
         Connector connector = instantiateConnector(component);
         if (initialized) {
             // We need to initialize the connector right away ...
@@ -401,7 +429,7 @@ public class Connectors {
 
                 if (!(nodeTypeManager instanceof org.modeshape.jcr.api.nodetype.NodeTypeManager)) {
                     throw new IllegalStateException("Invalid node type manager (expected modeshape NodeTypeManager): "
-                                                            + nodeTypeManager.getClass().getName());
+                                                    + nodeTypeManager.getClass().getName());
                 }
                 initializeConnector(connector, registry, (org.modeshape.jcr.api.nodetype.NodeTypeManager)nodeTypeManager);
             } catch (IOException e) {
@@ -416,23 +444,34 @@ public class Connectors {
                 }
             }
         }
-        registerConnector(connector);
+        // Replace the snapshot atomically ...
+        while (true) {
+            Snapshot currentSnapshot = this.snapshot.get();
+            Snapshot newSnapshot = currentSnapshot.withConnector(connector);
+            if (this.snapshot.compareAndSet(currentSnapshot, newSnapshot)) {
+                // After the new snapshot is available for use, shutdown any Connector instances that were
+                // replaced by the new one ...
+                newSnapshot.shutdownUnusedConnectors();
+                break;
+            }
+        }
     }
 
     /**
      * Remove an existing connector registered with the supplied name.
-     *
+     * 
      * @param connectorName the name of the connector that should be removed; may not be null
      * @return true if the existing connector was found and removed, or false if there was no connector with the given name
      */
-    public boolean removeConnector( String connectorName ) {
-        String key = NodeKey.keyForSourceName(connectorName);
-        Connector existing = sourceKeyToConnectorMap.remove(key);
-        if (existing == null) {
-            return false;
+    public synchronized boolean removeConnector( String connectorName ) {
+        Snapshot current = this.snapshot.get();
+        Snapshot updated = current.withoutConnector(connectorName);
+        if (current != updated) {
+            this.snapshot.compareAndSet(current, updated);
+            updated.shutdownUnusedConnectors();
+            return true;
         }
-        existing.shutdown();
-        return true;
+        return false;
     }
 
     protected Connector instantiateConnector( Component component ) {
@@ -460,7 +499,7 @@ public class Connectors {
     protected void initializeConnector( Connector connector,
                                         NamespaceRegistry registry,
                                         org.modeshape.jcr.api.nodetype.NodeTypeManager nodeTypeManager )
-            throws IOException, RepositoryException {
+        throws IOException, RepositoryException {
 
         // Set the execution context instance ...
         ReflectionUtil.setValue(connector, "context", repository.context());
@@ -489,57 +528,74 @@ public class Connectors {
 
         // If successful, call the 'postInitialize' method reflectively (due to inability to call directly) ...
         Method postInitialize = ReflectionUtil.findMethod(Connector.class, "postInitialize");
-        ReflectionUtil.invokeAccessibly(connector, postInitialize, new Object[] { });
+        ReflectionUtil.invokeAccessibly(connector, postInitialize, new Object[] {});
     }
 
-    protected void registerConnector( Connector connector ) {
-        String key = NodeKey.keyForSourceName(connector.getSourceName());
-        Connector existing = sourceKeyToConnectorMap.put(key, connector);
-        if (existing != null) {
-            existing.shutdown();
-        }
+    protected RunningState repository() {
+        return repository;
     }
 
-    protected void shutdown() {
+    private ConnectorChangeSetFactory createConnectorChangedSetFactory( final Connector c ) {
+        return new ConnectorChangeSetFactory() {
+            @Override
+            public ConnectorChangeSet newChangeSet() {
+                PathMappings mappings = getPathMappings(c);
+                RunningState repository = repository();
+                return new ConnectorChangeSetImpl(Connectors.this, mappings, repository.context().getProcessId(),
+                                                  repository.repositoryKey(), repository.changeBus(),
+                                                  repository.context().getValueFactories().getDateFactory());
+            }
+        };
+    }
+
+    protected final Set<String> getWorkspacesWithProjectionsFor( Connector connector ) {
+        return this.snapshot.get().getWorkspacesWithProjectionsFor(connector);
+    }
+
+    protected synchronized void shutdown() {
         if (!initialized || !hasConnectors()) {
             return;
         }
-        shutdownConnectors();
-        projections.clear();
-    }
-
-    private void shutdownConnectors() {
-        for (String sourceName : sourceKeyToConnectorMap.keySet()) {
-            sourceKeyToConnectorMap.get(sourceName).shutdown();
+        Snapshot current = this.snapshot.get();
+        for (Connector connector : current.getConnectors()) {
+            connector.shutdown();
         }
-        sourceKeyToConnectorMap.clear();
-        sourceKeyToConnectorMap = null;
+        this.snapshot.set(current.withOnlyProjectionConfigurations());
     }
 
     /**
      * Returns the connector which is mapped to the given source key.
-     *
+     * 
      * @param sourceKey a {@code non-null} {@link String}
      * @return either a {@link Connector} instance of {@code null}
      */
     public Connector getConnectorForSourceKey( String sourceKey ) {
-        return sourceKeyToConnectorMap.get(sourceKey);
+        return this.snapshot.get().getConnectorWithSourceKey(sourceKey);
     }
 
     /**
      * Returns a connector which was registered for the given source name.
-     *
+     * 
      * @param sourceName a {@code non-null} String; the name of a source
      * @return either a {@link Connector} instance or {@code null}
      */
     public Connector getConnectorForSourceName( String sourceName ) {
         assert sourceName != null;
-        return sourceKeyToConnectorMap.get(NodeKey.keyForSourceName(sourceName));
+        return this.snapshot.get().getConnectorWithSourceKey(NodeKey.keyForSourceName(sourceName));
+    }
+
+    /**
+     * Checks if there are any registered connectors.
+     * 
+     * @return {@code true} if any connectors are registered, {@code false} otherwise.
+     */
+    public boolean hasConnectors() {
+        return this.snapshot.get().hasConnectors();
     }
 
     /**
      * Returns the repository's document translator.
-     *
+     * 
      * @return a {@link DocumentTranslator} instance.
      */
     public DocumentTranslator getDocumentTranslator() {
@@ -547,14 +603,683 @@ public class Connectors {
     }
 
     /**
-     * Checks if there are any registered connectors.
-     *
-     * @return {@code true} if any connectors are registered, {@code false} otherwise.
+     * Get the immutable mappings from connector-specific external paths to projected, repository paths. The supplied object is
+     * intended to be used for a specific activity (where a consistent set of mappings is expected), discarded, and then
+     * reacquired the next time mappings are needed.
+     * 
+     * @param connector the connector for which the path mappings are requested; may not be null
+     * @return the path mappings; never null
      */
-    public boolean hasConnectors() {
-        return !sourceKeyToConnectorMap.isEmpty();
+    public PathMappings getPathMappings( Connector connector ) {
+        return this.snapshot.get().getPathMappings(connector);
     }
 
+    /**
+     * An immutable class used internally to provide a consistent (immutable) view of the {@link Connector} instances, along with
+     * various cached data to make it easy to find a {@link Connector} instance by projected or external source keys, etc.
+     * <p>
+     * Instances are publicly immutable.
+     */
+    @Immutable
+    protected class Snapshot {
+
+        /**
+         * A map of [sourceName, connector] instances.
+         */
+        private final Map<String, Connector> sourceKeyToConnectorMap;
+
+        /**
+         * A map of [workspaceName, projection] instances which holds the preconfigured projections for each workspace
+         */
+        private final Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections;
+
+        /**
+         * A map of (externalNodeKey, Projection) instances holds the existing projections in-memory
+         */
+        private final Map<String, Projection> projections;
+
+        /**
+         * A set of internal node keys that are used in the projections.
+         */
+        private final Set<String> projectedInternalNodeKeys;
+
+        private final List<Connector> unusedConnectors = new LinkedList<Connector>();
+
+        private PathFactory pathFactory;
+
+        protected Snapshot( Collection<Component> components,
+                            Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections ) {
+            this.preconfiguredProjections = preconfiguredProjections;
+            this.projections = new HashMap<String, Connectors.Projection>();
+            this.sourceKeyToConnectorMap = new HashMap<String, Connector>();
+            this.projectedInternalNodeKeys = new HashSet<String>();
+            registerConnectors(components);
+        }
+
+        protected Snapshot( Snapshot original ) {
+            this.projections = new HashMap<String, Connectors.Projection>(original.projections);
+            this.sourceKeyToConnectorMap = new HashMap<String, Connector>(original.sourceKeyToConnectorMap);
+            this.preconfiguredProjections = new HashMap<String, List<ProjectionConfiguration>>(original.preconfiguredProjections);
+            this.projectedInternalNodeKeys = new HashSet<String>(original.projectedInternalNodeKeys);
+        }
+
+        protected synchronized void shutdownUnusedConnectors() {
+            for (Connector connector : unusedConnectors) {
+                connector.shutdown();
+            }
+            unusedConnectors.clear();
+        }
+
+        private void registerConnectors( Collection<Component> components ) {
+            for (Component component : components) {
+                Connector connector = instantiateConnector(component);
+                if (connector != null) {
+                    registerConnector(connector);
+                }
+            }
+        }
+
+        private String keyFor( Connector connector ) {
+            return NodeKey.keyForSourceName(connector.getSourceName());
+        }
+
+        /**
+         * Determine if this snapshot contains any {@link Connector} instances.
+         * 
+         * @return true if there is at least one Connector instance, or false otherwise
+         */
+        public boolean hasConnectors() {
+            return !sourceKeyToConnectorMap.isEmpty();
+        }
+
+        /**
+         * Get the {@link Connector} instance that has the same source key (generated from the connector's
+         * {@link Connector#getSourceName() source name}).
+         * 
+         * @param sourceKey the source key
+         * @return the Connector, or null if no such connector exists
+         */
+        public Connector getConnectorWithSourceKey( String sourceKey ) {
+            return sourceKeyToConnectorMap.get(sourceKey);
+        }
+
+        /**
+         * Get the {@link Connector} instances.
+         * 
+         * @return the (immutable) collection of Connector instances
+         */
+        public Collection<Connector> getConnectors() {
+            return Collections.unmodifiableCollection(sourceKeyToConnectorMap.values());
+        }
+
+        /**
+         * Get the names of the workspaces that contain at least one projection.
+         * 
+         * @return the (immutable) collection of workspace names
+         * @see #getProjectionConfigurationsForWorkspace(String)
+         */
+        public Collection<String> getWorkspacesWithProjections() {
+            return Collections.unmodifiableCollection(this.preconfiguredProjections.keySet());
+        }
+
+        /**
+         * Get all of the {@link ProjectionConfiguration}s that apply to the workspace with the given name.
+         * 
+         * @param workspaceName the name of the workspace
+         * @return the (immutable) list of projection configurations
+         * @see #getWorkspacesWithProjections()
+         */
+        public List<RepositoryConfiguration.ProjectionConfiguration> getProjectionConfigurationsForWorkspace( String workspaceName ) {
+            return Collections.unmodifiableList(this.preconfiguredProjections.get(workspaceName));
+        }
+
+        /**
+         * Get the set of workspace names that contain projections of the supplied connector.
+         * 
+         * @param connector the connector
+         * @return the set of workspace names
+         */
+        public Set<String> getWorkspacesWithProjectionsFor( Connector connector ) {
+            String connectorSrcName = connector.getSourceName();
+            Set<String> workspaceNames = new HashSet<String>();
+            for (Map.Entry<String, List<RepositoryConfiguration.ProjectionConfiguration>> entry : preconfiguredProjections.entrySet()) {
+                for (ProjectionConfiguration config : entry.getValue()) {
+                    if (config.getSourceName().equals(connectorSrcName)) {
+                        workspaceNames.add(entry.getKey());
+                    }
+                }
+            }
+            return workspaceNames;
+        }
+
+        /**
+         * Determine if this snapshot contains a projection with the given alias and projected (internal) node key
+         * 
+         * @param alias the alias
+         * @param projectedNodeKey the node key of the projected (internal) node
+         * @return true if there is such a projection, or false otherwise
+         */
+        public boolean hasProjection( String alias,
+                                      String projectedNodeKey ) {
+            for (Projection projection : projections.values()) {
+                if (projection.hasAlias(alias) && projection.hasProjectedNodeKey(projectedNodeKey)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Get the {@link Projection} instances in this snapshot.
+         * 
+         * @return the (immutable) collection of (immutable) Projection instances
+         */
+        public Collection<Projection> getProjections() {
+            return Collections.unmodifiableCollection(projections.values());
+        }
+
+        private void registerConnector( Connector connector ) {
+            String key = keyFor(connector);
+            Connector existing = sourceKeyToConnectorMap.put(key, connector);
+            if (existing != null) {
+                unusedConnectors.add(existing);
+            }
+        }
+
+        private boolean unregisterConnector( Connector connector ) {
+            String key = keyFor(connector);
+            Connector existingConnector = sourceKeyToConnectorMap.get(key);
+            if (existingConnector == connector) {
+                sourceKeyToConnectorMap.remove(key);
+                unusedConnectors.add(connector);
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * Get the projection that uses the supplied external node key.
+         * 
+         * @param externalNodeKey the node key for the external node
+         * @return the projection, or null if there is no such projection
+         */
+        public Projection getProjectionForExternalNode( String externalNodeKey ) {
+            return this.projections.get(externalNodeKey);
+        }
+
+        /**
+         * Determine if this snapshot contains a projection that uses the supplied external node key.
+         * 
+         * @param externalNodeKey the node key for the external node
+         * @return true if there is an existing projection, or false otherwise
+         */
+        public boolean containsProjectionForExternalNode( String externalNodeKey ) {
+            return this.projections.containsKey(externalNodeKey);
+        }
+
+        /**
+         * Determine if this snapshot contains a projection that uses the supplied internal node key.
+         * 
+         * @param internalNodeKey the node key for the internal node
+         * @return true if there is an existing projection, or false otherwise
+         */
+        public boolean containsProjectionForInternalNode( String internalNodeKey ) {
+            return this.projectedInternalNodeKeys.contains(internalNodeKey);
+        }
+
+        /**
+         * Create a new snapshot that excludes any existing projection that uses the supplied external node key.
+         * 
+         * @param externalNodeKey the node key for the external node
+         * @return the new snapshot, or this instance if there is no such projection
+         */
+        protected Snapshot withoutProjection( String externalNodeKey ) {
+            if (this.projections.containsKey(externalNodeKey)) {
+                Snapshot clone = new Snapshot(this);
+                clone.projections.remove(externalNodeKey);
+                return clone;
+            }
+            return this;
+        }
+
+        /**
+         * Create a new snapshot that is a copy of this snapshot but which includes the supplied connector
+         * 
+         * @param connector the connector, which may replace an existing connector with the same {@link Connector#getSourceName()
+         *        source name}.
+         * @return the new snapshot
+         * @see #shutdownUnusedConnectors() should be called after this Snapshot is no longer accessible, so that any previous
+         *      Connector instance is {@link Connector#shutdown()}
+         */
+        protected Snapshot withConnector( Connector connector ) {
+            Snapshot clone = new Snapshot(this);
+            clone.registerConnector(connector);
+            return clone;
+        }
+
+        /**
+         * Create a new snapshot that is a copy of this snapshot but which excludes the connector with the supplied name
+         * 
+         * @param name the name of the connector
+         * @return the new snapshot, or this instance if it contains no such connector
+         * @see #shutdownUnusedConnectors() should be called after this Snapshot is no longer accessible, so that any previous
+         *      Connector instance is {@link Connector#shutdown()}
+         */
+        protected Snapshot withoutConnector( String name ) {
+            Connector connector = sourceKeyToConnectorMap.get(name);
+            if (connector != null) {
+                return withoutConnector(connector);
+            }
+            return this;
+        }
+
+        /**
+         * Create a new snapshot that is a copy of this snapshot but which excludes the supplied connector instance.
+         * 
+         * @param connector the connector
+         * @return the new snapshot, or this instance if it contains no such connector
+         * @see #shutdownUnusedConnectors() should be called after this Snapshot is no longer accessible, so that any previous
+         *      Connector instance is {@link Connector#shutdown()}
+         */
+        protected Snapshot withoutConnector( Connector connector ) {
+            Snapshot clone = new Snapshot(this);
+            return clone.unregisterConnector(connector) ? clone : this;
+        }
+
+        /**
+         * Create a new snapshot that is a copy of this snapshot but which excludes any of the supplied connector instances.
+         * 
+         * @param connectors the connectors
+         * @return the new snapshot, or this instance if it contains none of the supplied connectors
+         * @see #shutdownUnusedConnectors() should be called after this Snapshot is no longer accessible, so that any previous
+         *      Connector instance is {@link Connector#shutdown()}
+         */
+        protected Snapshot withoutConnectors( Iterable<Connector> connectors ) {
+            Snapshot clone = new Snapshot(this);
+            boolean modified = false;
+            for (Connector connector : connectors) {
+                if (clone.unregisterConnector(connector)) modified = true;
+            }
+            return modified ? clone : this;
+        }
+
+        /**
+         * Create a new snapshot that is a copy of this snapshot but which includes the supplied projection.
+         * 
+         * @param projection the projection
+         * @return the new snapshot
+         */
+        protected Snapshot withProjection( Projection projection ) {
+            Snapshot clone = new Snapshot(this);
+            clone.projections.put(projection.getExternalNodeKey(), projection);
+            clone.projectedInternalNodeKeys.add(projection.getProjectedNodeKey());
+            return clone;
+        }
+
+        /**
+         * Create a new snapshot that is a copy of this snapshot but which includes the supplied projections.
+         * 
+         * @param projections the projections
+         * @return the new snapshot
+         */
+        protected Snapshot withProjections( Iterable<Projection> projections ) {
+            Snapshot clone = new Snapshot(this);
+            for (Projection projection : projections) {
+                clone.projections.put(projection.getExternalNodeKey(), projection);
+                clone.projectedInternalNodeKeys.add(projection.getProjectedNodeKey());
+            }
+            return clone;
+        }
+
+        /**
+         * Create a new snapshot that contains only the same {@link ProjectionConfiguration projection configurations} that this
+         * snapshot contains.
+         * 
+         * @return the new snapshot
+         */
+        protected Snapshot withOnlyProjectionConfigurations() {
+            return new Snapshot(Collections.<Component>emptyList(), this.preconfiguredProjections);
+        }
+
+        /**
+         * The set of path mappings for a given connector. Because the connector instance might change, we key these by the
+         * connector {@link Connector#getSourceName() source name}.
+         */
+        private volatile Map<String, BasicPathMappings> mappingsByConnectorSourceName;
+
+        /**
+         * Get the immutable mappings from connector-specific external paths to projected, repository paths. The supplied object
+         * is intended to be used for a specific activity (where a consistent set of mappings is expected), discarded, and then
+         * reacquired the next time mappings are needed.
+         * 
+         * @param connector the connector for which the path mappings are requested; may not be null
+         * @return the path mappings; never null
+         */
+        public PathMappings getPathMappings( Connector connector ) {
+            String connectorSourceName = connector.getSourceName();
+            if (mappingsByConnectorSourceName == null) {
+                // We construct these immutable and idempotent mappings (for all connectors) lazily,
+                // but we still need to synchronize upon the creation of them ...
+                synchronized (this) {
+                    if (mappingsByConnectorSourceName == null) {
+                        final RunningState repository = repository();
+                        final PathFactory pathFactory = repository().context().getValueFactories().getPathFactory();
+                        // Get the map of workspace names by their key (since projections do not contain the workspace names) ...
+                        final Map<String, String> workspaceNamesByKey = new HashMap<String, String>();
+                        final RepositoryCache repositoryCache = repository.repositoryCache();
+                        for (String workspaceName : repository.repositoryCache().getWorkspaceNames()) {
+                            workspaceNamesByKey.put(NodeKey.keyForWorkspaceName(workspaceName), workspaceName);
+                        }
+
+                        Map<String, BasicPathMappings> mappingsByConnectorSourceName = new HashMap<String, BasicPathMappings>();
+                        // Iterate through the projections ...
+                        for (Projection projection : this.projections.values()) {
+                            final String alias = projection.getAlias();
+
+                            String externalKeyStr = projection.getExternalNodeKey(); // contains the source & workspace keys ...
+                            final NodeKey externalKey = new NodeKey(externalKeyStr);
+                            final String externalDocId = externalKey.getIdentifier();
+
+                            // Find the connector that serves up this external key ...
+                            Connector conn = getConnectorForSourceKey(externalKey.getSourceKey());
+                            if (conn == null) continue; // really?
+                            // Find the path mappings ...
+                            BasicPathMappings mappings = mappingsByConnectorSourceName.get(connectorSourceName);
+                            if (mappings == null) {
+                                mappings = new BasicPathMappings(connectorSourceName, pathFactory);
+                                mappingsByConnectorSourceName.put(connectorSourceName, mappings);
+                            }
+                            // Now add the path mapping for this projection. First, find the path of the one projected node ...
+                            String projectedKeyStr = projection.getProjectedNodeKey();
+                            NodeKey projectedKey = new NodeKey(projectedKeyStr);
+                            String workspaceName = workspaceNamesByKey.get(projectedKey.getWorkspaceKey());
+                            if (workspaceName == null) continue;
+                            try {
+                                WorkspaceCache cache = repositoryCache.getWorkspaceCache(workspaceName);
+                                CachedNode node = cache.getNode(projectedKey);
+                                Path internalPath = pathFactory.create(node.getPath(cache), alias);
+
+                                // Then find the path(s) for the external node with the aforementioned key ...
+                                for (String externalPathStr : conn.getDocumentPathsById(externalDocId)) {
+                                    Path externalPath = pathFactory.create(externalPathStr);
+                                    mappings.add(externalPath, internalPath, workspaceName);
+                                }
+                            } catch (WorkspaceNotFoundException e) {
+                                // ignore and continue
+                            }
+                        }
+                        for (BasicPathMappings mappings : mappingsByConnectorSourceName.values()) {
+                            mappings.freeze();
+                        }
+                        // After we're done initialize the map for *all* connectors, assign it ...
+                        this.mappingsByConnectorSourceName = mappingsByConnectorSourceName;
+                    }
+                }
+            }
+            // We know we have the mappings, so simply return them ...
+            PathMappings mappings = mappingsByConnectorSourceName.get(connectorSourceName);
+            return mappings != null ? mappings : new EmptyPathMappings(connectorSourceName, pathFactory);
+        }
+    }
+
+    /**
+     * The immutable mappings between the (federated) repository nodes and the external nodes exposed by a connector that they
+     * project. This view of mappings will remain consistent, but may become out of date.
+     * 
+     * @see #getPathMappings(Connector)
+     */
+    @Immutable
+    public static interface PathMappings {
+        /**
+         * Attempt to resolve the supplied external path (from the point of view of a connector) to the internal repository
+         * path(s) using the connector's projections at the time this object {@link Connectors#getPathMappings(Connector) was
+         * obtained}. This method returns an empty collection if the external node at the given path is not projected into the
+         * repository.
+         * 
+         * @param externalPath the external path of a node in the tree of content exposed by the connector; this path is from the
+         *        point of view of the connector.
+         * @return the resolved repository paths, each in the associated named workspaces, or an empty collection if this mapping
+         *         projected the supplied external path
+         */
+        Collection<WorkspaceAndPath> resolveExternalPathToInternal( Path externalPath );
+
+        /**
+         * Get a path factory that can be used to create new paths.
+         * 
+         * @return the path factory; never null
+         */
+        PathFactory getPathFactory();
+
+        /**
+         * Get the source name of the connector for which this mapping is defined.
+         * 
+         * @return the connector source name; never null
+         */
+        String getConnectorSourceName();
+    }
+
+    /**
+     * A path within a given workspace.
+     */
+    @Immutable
+    public static final class WorkspaceAndPath {
+        protected final String workspaceName;
+        protected final Path path;
+
+        protected WorkspaceAndPath( String workspaceName,
+                                    Path path ) {
+            this.workspaceName = workspaceName;
+            this.path = path;
+            assert this.workspaceName != null;
+            assert this.path != null;
+        }
+
+        /**
+         * Get the path.
+         * 
+         * @return the path; never null
+         */
+        public Path getPath() {
+            return path;
+        }
+
+        /**
+         * Get the workspace name.
+         * 
+         * @return the workspace name; never null
+         */
+        public String getWorkspaceName() {
+            return workspaceName;
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(workspaceName, path);
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj instanceof WorkspaceAndPath) {
+                WorkspaceAndPath that = (WorkspaceAndPath)obj;
+                return this.workspaceName.equals(that.workspaceName) && this.path.equals(that.path);
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return workspaceName + ":/" + path;
+        }
+
+        protected WorkspaceAndPath withPath( Path path ) {
+            return new WorkspaceAndPath(workspaceName, path);
+        }
+    }
+
+    @Immutable
+    protected static abstract class AbstractPathMappings implements PathMappings {
+        protected static final Collection<WorkspaceAndPath> EMPTY = Collections.emptyList();
+        protected final String connectorSourceName;
+        protected final PathFactory pathFactory;
+
+        protected AbstractPathMappings( String connectorSourceName,
+                                        PathFactory pathFactory ) {
+            this.connectorSourceName = connectorSourceName;
+            this.pathFactory = pathFactory;
+            assert this.connectorSourceName != null;
+            assert this.pathFactory != null;
+        }
+
+        @Override
+        public PathFactory getPathFactory() {
+            return pathFactory;
+        }
+
+        @Override
+        public String getConnectorSourceName() {
+            return connectorSourceName;
+        }
+    }
+
+    @Immutable
+    protected static final class EmptyPathMappings extends AbstractPathMappings {
+
+        protected EmptyPathMappings( String connectorSourceName,
+                                     PathFactory pathFactory ) {
+            super(connectorSourceName, pathFactory);
+        }
+
+        @Override
+        public Collection<WorkspaceAndPath> resolveExternalPathToInternal( Path externalPath ) {
+            return EMPTY;
+        }
+
+        @Override
+        public String toString() {
+            return "No mappings";
+        }
+    }
+
+    protected static final class BasicPathMappings extends AbstractPathMappings {
+        private Set<PathMapping> mappings;
+        private volatile boolean frozen;
+
+        protected BasicPathMappings( String connectorSourceName,
+                                     PathFactory pathFactory ) {
+            super(connectorSourceName, pathFactory);
+            this.mappings = new HashSet<PathMapping>();
+        }
+
+        @Override
+        public Collection<WorkspaceAndPath> resolveExternalPathToInternal( Path externalPath ) {
+            assert this.frozen;
+            // Most repository configurations will project a single external node to a single path, so this
+            // method is optimized for that case. We'll keep track of the first WorkspaceAndPath instance and
+            // only if at least one more is created will this method instantiate a List instance ...
+            WorkspaceAndPath first = null;
+            Collection<WorkspaceAndPath> results = null;
+            for (PathMapping mapping : mappings) {
+                WorkspaceAndPath resolved = mapping.resolveExternalPathToInternal(externalPath, pathFactory);
+                if (resolved != null) {
+                    if (first == null) {
+                        first = resolved;
+                    } else {
+                        assert first != null;
+                        if (results == null) {
+                            results = new LinkedList<Connectors.WorkspaceAndPath>();
+                            results.add(first);
+                        }
+                        results.add(resolved);
+                    }
+                }
+            }
+            return results != null ? results : (first != null ? Collections.singletonList(first) : EMPTY);
+        }
+
+        protected void add( Path externalPath,
+                            Path internalPath,
+                            String workspaceName ) {
+            this.mappings.add(new PathMapping(externalPath, internalPath, workspaceName));
+        }
+
+        protected void freeze() {
+            // Slight optimizations for common cases ...
+            if (this.mappings.size() == 0) this.mappings = Collections.emptySet();
+            if (this.mappings.size() == 1) this.mappings = Collections.singleton(mappings.iterator().next());
+            this.frozen = true;
+        }
+
+        @Override
+        public String toString() {
+            return connectorSourceName + " mappings: " + mappings;
+        }
+    }
+
+    protected static final class PathMapping {
+        private final Path externalPath;
+        private final WorkspaceAndPath internalPath;
+        private final int hc;
+
+        protected PathMapping( Path externalPath,
+                               Path internalPath,
+                               String workspaceName ) {
+            this.externalPath = externalPath;
+            this.internalPath = new WorkspaceAndPath(workspaceName, internalPath);
+            this.hc = HashCode.compute(this.externalPath, this.internalPath);
+            assert this.externalPath != null;
+            assert this.internalPath != null;
+        }
+
+        /**
+         * Attempt to resolve the supplied external path to an internal path. This method returns null if this mapping is not
+         * applicable for the given external path.
+         * 
+         * @param externalPath the external path of a node in the tree of content exposed by the connector; this path is from the
+         *        point of view of the connector.
+         * @param pathFactory the path factory; may not be null
+         * @return the resolved repository path in a given workspace, or null if this mapping did not apply to the supplied
+         *         external path
+         */
+        public WorkspaceAndPath resolveExternalPathToInternal( Path externalPath,
+                                                               PathFactory pathFactory ) {
+            if (this.externalPath.isRoot()) {
+                // Simply prepend the supplied path to the internal path ...
+                return internalPath.withPath(pathFactory.create(internalPath.path, externalPath));
+            }
+            if (this.externalPath.isAtOrAbove(externalPath)) {
+                if (this.externalPath.size() == externalPath.size()) {
+                    // The externals are exactly the same, so simply return the internal path ...
+                    return internalPath;
+                }
+                // Simply prepend the external subpath to the internal path ...
+                Path subpath = externalPath.subpath(this.externalPath.size());
+                return internalPath.withPath(pathFactory.create(internalPath.path, subpath));
+            }
+            return null;
+        }
+
+        @Override
+        public int hashCode() {
+            return hc;
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj instanceof PathMapping) {
+                PathMapping that = (PathMapping)obj;
+                if (this.hc != that.hc) return false; // can't be the same
+                return this.externalPath.equals(that.externalPath) && this.internalPath.equals(that.internalPath);
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return internalPath.toString() + " => " + externalPath.toString();
+        }
+    }
+
+    @Immutable
     protected class Projection {
         private final String externalNodeKey;
         private final String projectedNodeKey;
@@ -562,17 +1287,17 @@ public class Connectors {
 
         protected Projection( String externalNodeKey,
                               String projectedNodeKey,
-                              String alias) {
+                              String alias ) {
             this.externalNodeKey = externalNodeKey;
             this.alias = alias;
             this.projectedNodeKey = projectedNodeKey;
         }
 
-        protected boolean hasAlias(String alias) {
+        protected boolean hasAlias( String alias ) {
             return this.alias.equalsIgnoreCase(alias);
         }
 
-        protected boolean hasProjectedNodeKey(String projectedNodeKey) {
+        protected boolean hasProjectedNodeKey( String projectedNodeKey ) {
             return this.projectedNodeKey.equals(projectedNodeKey);
         }
 
@@ -663,9 +1388,5 @@ public class Connectors {
             }
             localStore.storeDocument(key, doc);
         }
-    }
-
-    private ConnectorChangedSetFactory createConnectorChangedSetFactory( final Connector c ) {
-        return new ConnectorChangedSetFactoryImpl("", repository.repositoryKey(), c, repository.changeBus());
     }
 }

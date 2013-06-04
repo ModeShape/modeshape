@@ -67,6 +67,14 @@ public interface PageWriter {
                          Name name );
 
     /**
+     * Remove a child from this document.
+     * 
+     * @param id the identifier of the child
+     * @return this writer; never null
+     */
+    PageWriter removeChild( String id );
+
+    /**
      * Set the list of children for the underlying document. If children previously existed, they will be replaced.
      * 
      * @param children a list of {@link EditableDocument} instances each describing a single child; may not be null
