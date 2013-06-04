@@ -147,14 +147,7 @@ public class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
         return valueFactories.getBinaryFactory().create(value);
     }
 
-    /**
-     * Creates a JCR {@link org.modeshape.jcr.api.Binary} value from the given input stream
-     * with a hint to the factory (which is passed to the storage layer)
-     *
-     * @param value a non-null input stream
-     * @param hint a hint that the storage layer may use to make persistence decisions
-     * @return a Binary implementation instance
-     */
+    @Override
     public BinaryValue createBinary( InputStream value, String hint ) {
         if (value == null) return null;
         return valueFactories.getBinaryFactory().create(value, hint);

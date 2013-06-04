@@ -53,9 +53,10 @@ public class Collections {
      * @param b a non-null Iterable value
      * @return an Iterable that will iterate through all the values from 'a' and then all the values from 'b'
      */
-    public static <T> Iterable<T> concat( final Iterable<T> a, final Iterable<T> b) {
-        assert(a != null);
-        assert(b != null);
+    public static <T> Iterable<T> concat( final Iterable<T> a,
+                                          final Iterable<T> b ) {
+        assert (a != null);
+        assert (b != null);
         return new Iterable<T>() {
             @Override
             public Iterator<T> iterator() {
@@ -70,11 +71,12 @@ public class Collections {
      *
      * @param a a non-null Iterator
      * @param b a non-null Iterator
-     * @return  an Iterator that will iterate through all the values of 'a', and then all the values of 'b'
+     * @return an Iterator that will iterate through all the values of 'a', and then all the values of 'b'
      */
-    public static <T> Iterator<T> concat( final Iterator<T> a, final Iterator<T> b) {
-        assert(a != null);
-        assert(b != null);
+    public static <T> Iterator<T> concat( final Iterator<T> a,
+                                          final Iterator<T> b ) {
+        assert (a != null);
+        assert (b != null);
 
         return new Iterator<T>() {
 

@@ -293,6 +293,9 @@ public class RepositoryConfiguration {
          */
         public static final String MINIMUM_STRING_SIZE = "minimumStringSize";
 
+        /**
+         * The name attribute which can be set on a binary store. It's only used when a {@link CompositeBinaryStore} is configured.
+         */
         public static final String BINARY_STORE_NAME = "storeName";
 
         /**

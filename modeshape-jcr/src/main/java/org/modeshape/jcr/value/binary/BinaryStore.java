@@ -45,6 +45,9 @@ public interface BinaryStore {
      */
     public void start();
 
+    /**
+     * Shuts down the store.
+     */
     public void shutdown();
 
     /**
@@ -107,7 +110,12 @@ public interface BinaryStore {
      */
     InputStream getInputStream( BinaryKey key ) throws BinaryStoreException;
 
-
+    /**
+     * Searches for a binary which has the given key in this store.
+     *
+     * @param key a non-null {@link BinaryKey} instance
+     * @return {@code true} if a binary with this key exists in this store, {@code false} otherwise.
+     */
 	boolean hasBinary(BinaryKey key);
 
     /**

@@ -1,5 +1,12 @@
 package org.modeshape.jcr.value.binary;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import javax.jcr.RepositoryException;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
@@ -10,14 +17,6 @@ import org.modeshape.jcr.mimetype.NullMimeTypeDetector;
 import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
-
-import javax.jcr.RepositoryException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A {@link BinaryStore} implementation that stores files in other BinaryStores.
@@ -46,9 +45,9 @@ public class CompositeBinaryStore implements BinaryStore {
      * are keyed by an implementer-provided key. The named stores must include a
      * default BinaryStore that will be used in the absence of storage hints.
      *
-     * @param namedStores
+     * @param namedStores a {@code Map} of inner stores, grouped by the hint.
      */
-    public CompositeBinaryStore(Map<String, BinaryStore> namedStores) {
+    public CompositeBinaryStore( Map<String, BinaryStore> namedStores ) {
         this.namedStores = namedStores;
         this.defaultBinaryStore = null;
     }
@@ -57,7 +56,7 @@ public class CompositeBinaryStore implements BinaryStore {
      * Initialize the store, and initialize all the named stores.
      */
     public void start() {
-        Iterator<Map.Entry<String,BinaryStore>> it = getNamedStoreIterator();
+        Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
 
         while (it.hasNext()) {
             BinaryStore bs = it.next().getValue();
@@ -70,7 +69,7 @@ public class CompositeBinaryStore implements BinaryStore {
      * Shut down all the named stores
      */
     public void shutdown() {
-        Iterator<Map.Entry<String,BinaryStore>> it = getNamedStoreIterator();
+        Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
 
         while (it.hasNext()) {
             BinaryStore bs = it.next().getValue();
@@ -82,7 +81,7 @@ public class CompositeBinaryStore implements BinaryStore {
     public long getMinimumBinarySizeInBytes() {
         long minimumBinarySize = Long.MAX_VALUE;
 
-        Iterator<Map.Entry<String,BinaryStore>> it = getNamedStoreIterator();
+        Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
 
         while (it.hasNext()) {
             BinaryStore bs = it.next().getValue();
@@ -95,9 +94,9 @@ public class CompositeBinaryStore implements BinaryStore {
     }
 
     @Override
-    public void setMinimumBinarySizeInBytes(long minSizeInBytes) {
+    public void setMinimumBinarySizeInBytes( long minSizeInBytes ) {
 
-        Iterator<Map.Entry<String,BinaryStore>> it = getNamedStoreIterator();
+        Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
 
         while (it.hasNext()) {
             BinaryStore bs = it.next().getValue();
@@ -106,13 +105,11 @@ public class CompositeBinaryStore implements BinaryStore {
     }
 
     @Override
-    public void setTextExtractors(TextExtractors textExtractors) {
-
+    public void setTextExtractors( TextExtractors textExtractors ) {
         CheckArg.isNotNull(textExtractors, "textExtractors");
         this.extractors = textExtractors;
 
-        Iterator<Map.Entry<String,BinaryStore>> it = getNamedStoreIterator();
-
+        Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
         while (it.hasNext()) {
             BinaryStore bs = it.next().getValue();
             bs.setTextExtractors(textExtractors);
@@ -120,10 +117,10 @@ public class CompositeBinaryStore implements BinaryStore {
     }
 
     @Override
-    public void setMimeTypeDetector(MimeTypeDetector mimeTypeDetector) {
+    public void setMimeTypeDetector( MimeTypeDetector mimeTypeDetector ) {
         this.detector = mimeTypeDetector != null ? mimeTypeDetector : NullMimeTypeDetector.INSTANCE;
 
-        Iterator<Map.Entry<String,BinaryStore>> it = getNamedStoreIterator();
+        Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
 
         while (it.hasNext()) {
             BinaryStore bs = it.next().getValue();
@@ -132,28 +129,30 @@ public class CompositeBinaryStore implements BinaryStore {
     }
 
     @Override
-    public BinaryValue storeValue(InputStream stream) throws BinaryStoreException {
+    public BinaryValue storeValue( InputStream stream ) throws BinaryStoreException {
         return storeValue(stream, DEFAULT_STRATEGY_HINT);
     }
 
-    public BinaryValue storeValue(InputStream stream, String hint) throws BinaryStoreException {
+    public BinaryValue storeValue( InputStream stream,
+                                   String hint ) throws BinaryStoreException {
         BinaryStore binaryStore = selectBinaryStore(hint);
-
         BinaryValue bv = binaryStore.storeValue(stream);
-
         logger.debug("Stored binary " + bv.getKey() + " into binary store " + binaryStore);
-
         return bv;
     }
 
     /**
      * Move a value from one named store to another store
+     *
      * @param key Binary key to transfer from the source store to the destination store
      * @param source a hint for discovering the source repository; may be null
      * @param destination a hint for discovering the destination repository
-     * @throws BinaryStoreException
+     * @return the {@link BinaryKey} value of the moved binary, never {@code null}
+     * @throws BinaryStoreException if a source store cannot be found or the source store does not contain the binary key
      */
-    public BinaryKey moveValue(BinaryKey key, String source, String destination) throws BinaryStoreException {
+    public BinaryKey moveValue( BinaryKey key,
+                                String source,
+                                String destination ) throws BinaryStoreException {
         final BinaryStore sourceStore;
 
         if (source == null) {
@@ -182,20 +181,22 @@ public class CompositeBinaryStore implements BinaryStore {
 
     /**
      * Move a BinaryKey to a named store
+     *
      * @param key Binary key to transfer from the source store to the destination store
      * @param destination a hint for discovering the destination repository
-     * @throws BinaryStoreException
+     * @throws BinaryStoreException if anything unexpected fails
      */
-    public void moveValue(BinaryKey key, String destination) throws BinaryStoreException {
+    public void moveValue( BinaryKey key,
+                           String destination ) throws BinaryStoreException {
         moveValue(key, null, destination);
     }
 
     @Override
-    public InputStream getInputStream(BinaryKey key) throws BinaryStoreException {
-        Iterator<Map.Entry<String,BinaryStore>> it = getNamedStoreIterator();
+    public InputStream getInputStream( BinaryKey key ) throws BinaryStoreException {
+        Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
 
         while (it.hasNext()) {
-            final Map.Entry<String,BinaryStore> entry = it.next();
+            final Map.Entry<String, BinaryStore> entry = it.next();
 
             final String binaryStoreKey = entry.getKey();
 
@@ -213,8 +214,8 @@ public class CompositeBinaryStore implements BinaryStore {
     }
 
     @Override
-    public boolean hasBinary(BinaryKey key) {
-        Iterator<Map.Entry<String,BinaryStore>> it = getNamedStoreIterator();
+    public boolean hasBinary( BinaryKey key ) {
+        Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
 
         while (it.hasNext()) {
             BinaryStore bs = it.next().getValue();
@@ -227,43 +228,44 @@ public class CompositeBinaryStore implements BinaryStore {
     }
 
     @Override
-    public void markAsUnused(Iterable<BinaryKey> keys) throws BinaryStoreException {
-        Iterator<Map.Entry<String,BinaryStore>> it = getNamedStoreIterator();
+    public void markAsUnused( Iterable<BinaryKey> keys ) throws BinaryStoreException {
+        Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
 
         while (it.hasNext()) {
-            Map.Entry<String,BinaryStore> entry = it.next();
+            Map.Entry<String, BinaryStore> entry = it.next();
 
             final String binaryStoreKey = entry.getKey();
             BinaryStore bs = entry.getValue();
 
             try {
                 bs.markAsUnused(keys);
-            } catch(BinaryStoreException e) {
+            } catch (BinaryStoreException e) {
                 logger.debug(e, "The named store " + binaryStoreKey + " raised exception");
             }
         }
     }
 
     @Override
-    public void removeValuesUnusedLongerThan(long minimumAge, TimeUnit unit) throws BinaryStoreException {
-        Iterator<Map.Entry<String,BinaryStore>> it = getNamedStoreIterator();
+    public void removeValuesUnusedLongerThan( long minimumAge,
+                                              TimeUnit unit ) throws BinaryStoreException {
+        Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
 
         while (it.hasNext()) {
-            Map.Entry<String,BinaryStore> entry = it.next();
+            Map.Entry<String, BinaryStore> entry = it.next();
 
             final String binaryStoreKey = entry.getKey();
             BinaryStore bs = entry.getValue();
 
             try {
                 bs.removeValuesUnusedLongerThan(minimumAge, unit);
-            } catch(BinaryStoreException e) {
+            } catch (BinaryStoreException e) {
                 logger.debug(e, "The named store " + binaryStoreKey + " raised exception");
             }
         }
     }
 
     @Override
-    public String getText(BinaryValue binary) throws BinaryStoreException {
+    public String getText( BinaryValue binary ) throws BinaryStoreException {
 
         if (binary instanceof InMemoryBinaryValue) {
             if (extractors == null || !extractors.extractionEnabled()) {
@@ -274,10 +276,10 @@ public class CompositeBinaryStore implements BinaryStore {
             return extractors.extract((InMemoryBinaryValue)binary, new TextExtractorContext(detector));
         }
 
-        Iterator<Map.Entry<String,BinaryStore>> it = getNamedStoreIterator();
+        Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
 
         while (it.hasNext()) {
-            Map.Entry<String,BinaryStore> entry = it.next();
+            Map.Entry<String, BinaryStore> entry = it.next();
 
             final String binaryStoreKey = entry.getKey();
             BinaryStore bs = entry.getValue();
@@ -297,7 +299,8 @@ public class CompositeBinaryStore implements BinaryStore {
     }
 
     @Override
-    public String getMimeType(BinaryValue binary, String name) throws IOException, RepositoryException {
+    public String getMimeType( BinaryValue binary,
+                               String name ) throws IOException, RepositoryException {
         if (detector == null) {
             return null;
         }
@@ -307,10 +310,10 @@ public class CompositeBinaryStore implements BinaryStore {
             return detectedMimeType;
         }
 
-        Iterator<Map.Entry<String,BinaryStore>> it = getNamedStoreIterator();
+        Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
 
         while (it.hasNext()) {
-            Map.Entry<String,BinaryStore> entry = it.next();
+            Map.Entry<String, BinaryStore> entry = it.next();
 
             final String binaryStoreKey = entry.getKey();
             BinaryStore bs = entry.getValue();
@@ -321,7 +324,7 @@ public class CompositeBinaryStore implements BinaryStore {
                 }
             } catch (BinaryStoreException e) {
                 logger.debug(e, "The named store " + binaryStoreKey + " raised exception");
-                if(!it.hasNext()) {
+                if (!it.hasNext()) {
                     throw e;
                 }
             }
@@ -334,7 +337,7 @@ public class CompositeBinaryStore implements BinaryStore {
     public Iterable<BinaryKey> getAllBinaryKeys() throws BinaryStoreException {
 
         Iterable<BinaryKey> generatedIterable = new HashSet<BinaryKey>();
-        Iterator<Map.Entry<String,BinaryStore>> binaryStoreIterator = getNamedStoreIterator();
+        Iterator<Map.Entry<String, BinaryStore>> binaryStoreIterator = getNamedStoreIterator();
 
         while (binaryStoreIterator.hasNext()) {
             BinaryStore bs = binaryStoreIterator.next().getValue();
@@ -347,19 +350,21 @@ public class CompositeBinaryStore implements BinaryStore {
 
     /**
      * Get an iterator over all the named stores
+     *
      * @return an iterator over the map of binary stores and their given names
      */
-    public Iterator<Map.Entry<String,BinaryStore>> getNamedStoreIterator() {
+    public Iterator<Map.Entry<String, BinaryStore>> getNamedStoreIterator() {
         return namedStores.entrySet().iterator();
     }
 
     /**
      * Get the named binary store that contains the key
+     *
      * @param key the key to the binary content; never null
      * @return the BinaryStore that contains the given key
      */
-    public BinaryStore findBinaryStoreContainingKey(BinaryKey key) {
-        Iterator<Map.Entry<String,BinaryStore>> binaryStoreIterator = getNamedStoreIterator();
+    public BinaryStore findBinaryStoreContainingKey( BinaryKey key ) {
+        Iterator<Map.Entry<String, BinaryStore>> binaryStoreIterator = getNamedStoreIterator();
 
         while (binaryStoreIterator.hasNext()) {
             BinaryStore bs = binaryStoreIterator.next().getValue();
@@ -373,10 +378,11 @@ public class CompositeBinaryStore implements BinaryStore {
 
     /**
      * Select a named binary store for the given hint
+     *
      * @param hint a hint to a binary store; possibly null
      * @return a named BinaryStore from the hint, or the default store
      */
-    private BinaryStore selectBinaryStore(String hint) {
+    private BinaryStore selectBinaryStore( String hint ) {
 
         BinaryStore namedBinaryStore = null;
 
@@ -396,13 +402,12 @@ public class CompositeBinaryStore implements BinaryStore {
 
 
     private BinaryStore getDefaultBinaryStore() {
-
-        if(defaultBinaryStore == null) {
-
+        if (defaultBinaryStore == null) {
             if (namedStores.containsKey(DEFAULT_STRATEGY_HINT)) {
                 defaultBinaryStore = namedStores.get(DEFAULT_STRATEGY_HINT);
             } else {
-                logger.trace("Did not find a named binary store with the key 'default', picking the first binary store in the list");
+                logger.trace(
+                        "Did not find a named binary store with the key 'default', picking the first binary store in the list");
                 final Iterator<BinaryStore> iterator = namedStores.values().iterator();
 
                 if (iterator.hasNext()) {
@@ -411,9 +416,7 @@ public class CompositeBinaryStore implements BinaryStore {
             }
         }
 
-
         return defaultBinaryStore;
-
     }
 
 }
