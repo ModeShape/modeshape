@@ -356,15 +356,18 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             ModelNode configuration = repository.get(ModelKeys.CONFIGURATION);
             ModelNode binaryStorage = configuration.get(ModelKeys.BINARY_STORAGE);
 
-            writeBinaryStorageModel(writer, binaryStorage);
+            ModelNode binaryStorageType = binaryStorage.get(ModelKeys.STORAGE_TYPE);
+            String storageType = binaryStorageType.isDefined() && binaryStorageType.keys().size() == 1 ?
+                                 (String)binaryStorageType.keys().toArray()[0] : null;
+            ModelNode storage = storageType != null ? binaryStorageType.get((String)binaryStorageType.keys().toArray()[0]) : new ModelNode();
+            writeBinaryStorageModel(writer, storageType, storage);
         }
     }
 
-    private void writeBinaryStorageModel(XMLExtendedStreamWriter writer, ModelNode binaryStorage) throws XMLStreamException {
-        ModelNode binaryStorageType = binaryStorage.get(ModelKeys.STORAGE_TYPE);
-        String storageType = binaryStorageType.isDefined() && binaryStorageType.keys().size() == 1 ? (String)binaryStorageType.keys()
-                                                                                                                              .toArray()[0] : null;
-        ModelNode storage = storageType != null ? binaryStorageType.get((String)binaryStorageType.keys().toArray()[0]) : new ModelNode();
+    private void writeBinaryStorageModel( XMLExtendedStreamWriter writer,
+                                          String storageType,
+                                          ModelNode storage
+                                         ) throws XMLStreamException {
         if (ModelKeys.FILE_BINARY_STORAGE.equals(storageType)) {
             // This is the default, but there is no default value for the ModelAttributes.PATH (which is required),
             // which means we always have to write this out. If it is the default binary storage, then there
@@ -398,11 +401,13 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
             ModelAttributes.STORE_NAME.marshallAsAttribute(storage, false, writer);
 
-            writeNamedBinaryStorage(writer, storage);
+            writeNestedStoresOfType(storage, ModelKeys.NESTED_STORAGE_TYPE_FILE, ModelKeys.FILE_BINARY_STORAGE, writer);
+            writeNestedStoresOfType(storage, ModelKeys.NESTED_STORAGE_TYPE_CACHE, ModelKeys.CACHE_BINARY_STORAGE, writer);
+            writeNestedStoresOfType(storage, ModelKeys.NESTED_STORAGE_TYPE_DB, ModelKeys.DB_BINARY_STORAGE, writer);
+            writeNestedStoresOfType(storage, ModelKeys.NESTED_STORAGE_TYPE_CUSTOM, ModelKeys.CUSTOM_BINARY_STORAGE, writer);
 
             writer.writeEndElement();
         } else if (ModelKeys.CUSTOM_BINARY_STORAGE.equals(storageType)) {
-            ModelNode custom_storage = binaryStorage.get(ModelKeys.CUSTOM_BINARY_STORAGE);
             writer.writeStartElement(Element.CUSTOM_BINARY_STORAGE.getLocalName());
             ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
             ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
@@ -413,29 +418,20 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                 } else if (key.equals(ModelKeys.MODULE)) {
                     ModelAttributes.MODULE.marshallAsAttribute(storage, false, writer);
                 } else {
-                    writer.writeAttribute(key, custom_storage.get(key).asString());
+                    writer.writeAttribute(key, storage.get(key).asString());
                 }
             }
             writer.writeEndElement();
         }
     }
 
-    private void writeNamedBinaryStorage(XMLExtendedStreamWriter writer, ModelNode storage) throws XMLStreamException {
-        if (has(storage, ModelKeys.NAMED_BINARY_STORE)) {
-            for (String key : storage.get(ModelKeys.NAMED_BINARY_STORE).keys()) {
+    private void writeNestedStoresOfType(ModelNode storage, String nestedStorageType, String storeType, XMLExtendedStreamWriter writer) throws XMLStreamException {
+        if (has(storage, nestedStorageType)) {
+            List<ModelNode> nestedCacheStores = storage.get(nestedStorageType).asList();
 
-                ModelNode namedStoreContainer = storage.get(ModelKeys.NAMED_BINARY_STORE, key);
-
-                final String storageType = namedStoreContainer.keys().iterator().next();
-
-                if (storageType == null) {
-                    continue;
-                }
-
-                ModelNode namedStore = namedStoreContainer.get(storageType);
-
-                writeBinaryStorageModel(writer, namedStore);
-
+            for (ModelNode nestedStore : nestedCacheStores) {
+                String storeName = (String)nestedStore.keys().toArray()[0];
+                writeBinaryStorageModel(writer, storeType, nestedStore.get(storeName));
             }
         }
     }

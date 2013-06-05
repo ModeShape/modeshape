@@ -45,7 +45,6 @@ public enum Attribute {
     CACHE_CONTAINER("cache-container"),
     CACHE_NAME("cache-name"),
     CHANNEL_NAME("channel-name"),
-    CHUNK_SIZE("chunk-size"),
     CLASSNAME("classname"),
     CLUSTER_NAME("cluster-name"),
     CLUSTER_STACK("cluster-stack"),

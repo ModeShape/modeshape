@@ -42,13 +42,15 @@ public class ModelKeys {
     static final String ASYNC_MAX_QUEUE_SIZE = "indexing-async-max-queue-size";
     static final String ASYNC_THREAD_POOL_SIZE = "indexing-async-thread-pool-size";
     static final String BATCH_SIZE = "indexing-batch-size";
-    static final String BINARY_STORAGE_TYPE = "binary-storage-type";
     static final String STORAGE_TYPE = "storage-type";
+    static final String NESTED_STORAGE_TYPE_FILE = "nested-storage-type-file";
+    static final String NESTED_STORAGE_TYPE_CACHE = "nested-storage-type-cache";
+    static final String NESTED_STORAGE_TYPE_DB = "nested-storage-type-db";
+    static final String NESTED_STORAGE_TYPE_CUSTOM = "nested-storage-type-custom";
     static final String CACHE_CONTAINER = "cache-container";
     static final String CACHE_NAME = "cache-name";
     static final String CLUSTER_NAME = "cluster-name";
     static final String CLUSTER_STACK = "cluster-stack";
-    static final String CHUNK_SIZE = "chunk-size";
     static final String CLASSNAME = "classname";
     static final String CONNECTION_FACTORY_JNDI_NAME = "connection-factory-jndi-name";
     static final String COPY_BUFFER_SIZE = "copy-buffer-size";
@@ -99,6 +101,7 @@ public class ModelKeys {
     static final String SOURCE_PATH = "source-path";
     static final String SOURCE_RELATIVE_TO = "source-relative-to";
     static final String STORE_NAME = "store-name";
+    static final String NESTED_STORES = "nested-stores";
     static final String THREAD_POOL = "indexing-thread-pool";
     static final String USE_ANONYMOUS_IF_AUTH_FAILED = "use-anonymous-upon-failed-authentication";
 
@@ -111,11 +114,6 @@ public class ModelKeys {
     static final String COMPOSITE_BINARY_STORAGE = "composite-binary-storage";
     static final String CACHE_BINARY_STORAGE = "cache-binary-storage";
     static final String CUSTOM_BINARY_STORAGE = "custom-binary-storage";
-    static final String REMOVE_BINARY_STORAGE = "remove-binary-storage";
-
-
-    static final String NAMED_BINARY_STORE = "named-binary-stores-container";
-    static final String NAMED_BINARY_STORE_TYPE = "named-binary-stores";
 
     static final String SEQUENCER = "sequencer";
     static final String SOURCE = "source";

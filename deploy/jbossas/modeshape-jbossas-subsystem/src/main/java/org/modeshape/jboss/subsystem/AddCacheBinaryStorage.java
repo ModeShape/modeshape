@@ -78,7 +78,8 @@ public class AddCacheBinaryStorage extends AbstractAddBinaryStorage {
                                                   BinaryStorageService service,
                                                   ServiceBuilder<BinaryStorage> builder,
                                                   List<ServiceController<?>> newControllers,
-                                                  ServiceTarget target ) {
+                                                  ServiceTarget target,
+                                                  String binariesServiceName ) {
         if (containerName != null) {
             builder.addDependency(ServiceName.JBOSS.append("infinispan", containerName),
                                   CacheContainer.class,
@@ -90,6 +91,6 @@ public class AddCacheBinaryStorage extends AbstractAddBinaryStorage {
     @Override
     protected void populateModel( ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {
-        populate(operation, model, ModelKeys.CACHE_BINARY_STORAGE, ModelAttributes.CACHE_BINARY_STORAGE_ATTRIBUTES);
+        populate(operation, model, ModelAttributes.CACHE_BINARY_STORAGE_ATTRIBUTES);
     }
 }

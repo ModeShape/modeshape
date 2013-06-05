@@ -133,6 +133,7 @@ public class CompositeBinaryStore implements BinaryStore {
         return storeValue(stream, DEFAULT_STRATEGY_HINT);
     }
 
+    @Override
     public BinaryValue storeValue( InputStream stream,
                                    String hint ) throws BinaryStoreException {
         BinaryStore binaryStore = selectBinaryStore(hint);

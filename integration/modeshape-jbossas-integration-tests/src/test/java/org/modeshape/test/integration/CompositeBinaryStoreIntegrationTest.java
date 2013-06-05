@@ -24,10 +24,12 @@
 
 package org.modeshape.test.integration;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.util.Random;
 import javax.annotation.Resource;
+import javax.jcr.Node;
 import javax.jcr.Session;
-import static junit.framework.Assert.assertNotNull;
-
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -35,22 +37,27 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.JcrRepository;
+import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.ValueFactory;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+import static org.junit.Assert.assertArrayEquals;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
 /**
  * Test which verifies that the ModeShape composite binary store configuration inside of AS7 is correct.
  *
  * @author Chris Beer
+ * @author Horia Chiorean
  */
 @RunWith( Arquillian.class)
 public class CompositeBinaryStoreIntegrationTest {
 
+    private static final Random RANDOM = new Random();
 
-    @Resource( mappedName = "/jcr/compositeBinaryStoreRepository" )
+    @Resource( mappedName = "java:/jcr/compositeBinaryStoreRepository" )
     private JcrRepository repository;
 
     private Session session;
@@ -61,7 +68,6 @@ public class CompositeBinaryStoreIntegrationTest {
                          .setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
     }
 
-
     @Before
     public void before() throws Exception {
         assertNotNull("repository should not be null", repository);
@@ -69,16 +75,39 @@ public class CompositeBinaryStoreIntegrationTest {
 
     @Test
     public void shouldStoreDataInEachOfTheNamedBinaryStores() throws Exception {
-
+        assertEquals(RepositoryConfiguration.FieldValue.BINARY_STORAGE_TYPE_COMPOSITE,
+                     repository.getConfiguration().getBinaryStorage().getType());
         session = repository.login();
+        long minBinarySize = repository.getConfiguration().getBinaryStorage().getMinimumBinarySizeInBytes();
 
-        final Binary binaryInDefaultStore = ((ValueFactory) session.getValueFactory()).createBinary(new ByteArrayInputStream("abcdefghijklmnopqrstuvwxyz".getBytes()), "default");
-        final Binary binaryInOtherStore = ((ValueFactory) session.getValueFactory()).createBinary(new ByteArrayInputStream("123456789101112".getBytes()), "other");
-        final Binary binaryInAnotherStore = ((ValueFactory) session.getValueFactory()).createBinary(new ByteArrayInputStream("qwertyuiopasdfghjklzxcvbnm".getBytes()), "another-fsbs");
+        byte[] defaultBinary = createNodeWithBinaryProperty("default", minBinarySize, "default", session);
+        assertBinaryPropertyStored(defaultBinary, "/default", session);
 
-        // TODO: should check if the binaries made it to the right place, or that we even have the right kind of store configured..
+        byte[] fs1Binary = createNodeWithBinaryProperty("fs1", minBinarySize, "fs1", session);
+        assertBinaryPropertyStored(fs1Binary, "/fs1", session);
 
-        session.save();
+        byte[] fs2Binary = createNodeWithBinaryProperty("fs2", minBinarySize, "fs2", session);
+        assertBinaryPropertyStored(fs2Binary, "/fs2", session);
+
+        byte[] anotherBinary = createNodeWithBinaryProperty("non-existent", minBinarySize, "non-existent", session);
+        assertBinaryPropertyStored(anotherBinary, "/non-existent", session);
     }
 
+    private byte[] createNodeWithBinaryProperty(String nodeName, long minBinarySize, String binaryStoreName, Session session) throws Exception {
+        Node node = session.getNode("/").addNode(nodeName);
+        byte[] randomBytes = new byte[(int)minBinarySize];
+        RANDOM.nextBytes(randomBytes);
+        Binary binary = ((ValueFactory) session.getValueFactory()).createBinary(new ByteArrayInputStream(randomBytes), binaryStoreName);
+        node.setProperty("binary", binary);
+        session.save();
+        return randomBytes;
+    }
+
+    private void assertBinaryPropertyStored(byte[] expectedBinary, String nodePath, Session session) throws Exception {
+        Node node = session.getNode(nodePath);
+        javax.jcr.Binary binary = node.getProperty("binary").getBinary();
+        assertNotNull("Binary property not found", binary);
+        byte[] actualBinary = IoUtil.readBytes(binary.getStream());
+        assertArrayEquals("Expected binary content not retrieved from the property", expectedBinary, actualBinary);
+    }
 }

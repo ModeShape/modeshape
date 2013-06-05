@@ -344,6 +344,9 @@
                 <local-cache name="binaryIndexingJDBCRepository">
                     <transaction mode="NON_XA"/>
                 </local-cache>
+                <local-cache name="compositeBinaryStoreRepository">
+                    <transaction mode="NON_XA"/>
+                </local-cache>
             </cache-container>
             <cache-container name="binary-cache-container" default-cache="binary-fs" module="org.modeshape">
                 <local-cache name="binary-fs">
@@ -354,6 +357,16 @@
                 <local-cache name="binary-fs-meta">
                     <transaction mode="NON_XA"/>
                     <file-store passivation="false" path="modeshape/binary-store/ispn-meta" relative-to="jboss.server.data.dir"
+                                purge="false"/>
+                </local-cache>
+                <local-cache name="binary-nested">
+                    <transaction mode="NON_XA"/>
+                    <file-store passivation="false" path="modeshape/composite-binary-store/ispn-data" relative-to="jboss.server.data.dir"
+                                purge="false"/>
+                </local-cache>
+                <local-cache name="binary-nested-meta">
+                    <transaction mode="NON_XA"/>
+                    <file-store passivation="false" path="modeshape/composite-binary-store/ispn-meta" relative-to="jboss.server.data.dir"
                                 purge="false"/>
                 </local-cache>
             </cache-container>
@@ -611,17 +624,20 @@
                                            refresh-period="1"/>
             </repository>
 
-          <repository name="compositeBinaryStoreRepository">
-            <composite-binary-storage min-value-size="5000" >
-              <file-binary-storage store-name="other"
-                                   path="modeshape/sample/binaries"
-                                   relative-to="jboss.server.data.dir" />
-              <cache-binary-storage store-name="default"
-                                    data-cache-name="datacache"
-                                    metadata-cache-name="metadatacache"
-                                    cache-container="binary-container"/>
-            </composite-binary-storage>
-          </repository>
+            <repository name="compositeBinaryStoreRepository" cache-container="modeshape" enable-queries="false">
+                <composite-binary-storage min-value-size="100">
+                    <file-binary-storage store-name="fs1"
+                                         path="modeshape/compositeBinaryStoreRepository/binaries/fs1"
+                                         relative-to="jboss.server.data.dir"/>
+                    <file-binary-storage store-name="fs2"
+                                         path="modeshape/compositeBinaryStoreRepository/binaries/fs2"
+                                         relative-to="jboss.server.data.dir"/>
+                    <cache-binary-storage store-name="default"
+                                          data-cache-name="binary-nested"
+                                          metadata-cache-name="binary-nested-meta"
+                                          cache-container="binary-cache-container"/>
+                </composite-binary-storage>
+            </repository>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jgroups:1.1" default-stack="tcp">
             <stack name="udp">

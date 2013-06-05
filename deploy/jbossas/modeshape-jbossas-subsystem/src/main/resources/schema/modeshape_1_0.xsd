@@ -1,398 +1,428 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
-           targetNamespace="urn:jboss:domain:modeshape:1.0" 
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="urn:jboss:domain:modeshape:1.0"
            xmlns="urn:jboss:domain:modeshape:1.0"
-           elementFormDefault="qualified" 
-           attributeFormDefault="unqualified" 
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
            version="1.0">
 
-  <!-- The subsystem root element -->
-  <xs:element name="subsystem" type="subsystem">
-    <xs:annotation>
-      <xs:documentation>Enumerates the available repositories.</xs:documentation>
-    </xs:annotation>
-  </xs:element>
-
-  <xs:complexType name="subsystem">
-    <xs:choice minOccurs="0" maxOccurs="unbounded">
-      <xs:element name="webapp" type="webapp">
-          <xs:annotation>
-              <xs:documentation>Defines an embedded web application.</xs:documentation>
-          </xs:annotation>
-      </xs:element>
-      <xs:element name="repository" type="repository">
+    <!-- The subsystem root element -->
+    <xs:element name="subsystem" type="subsystem">
         <xs:annotation>
-          <xs:documentation>Defines an embedded repository.</xs:documentation>
+            <xs:documentation>Enumerates the available repositories.</xs:documentation>
         </xs:annotation>
-      </xs:element>
-    </xs:choice>
-  </xs:complexType>
+    </xs:element>
 
- <xs:complexType name="webapp">
-     <xs:attribute name="name" type="xs:string" use="required">
-         <xs:annotation>
-             <xs:documentation>The name of the web application that is located in the ModeShape's main module, under the deployments directory</xs:documentation>
-         </xs:annotation>
-     </xs:attribute>
+    <xs:complexType name="subsystem">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="webapp" type="webapp">
+                <xs:annotation>
+                    <xs:documentation>Defines an embedded web application.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="repository" type="repository">
+                <xs:annotation>
+                    <xs:documentation>Defines an embedded repository.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+    </xs:complexType>
 
-     <xs:attribute name="exploded" type="xs:boolean" use="optional" default="true">
-         <xs:annotation>
-             <xs:documentation>Indicates if the web application is exploded or not</xs:documentation>
-         </xs:annotation>
-     </xs:attribute>
-
-     <xs:attribute name="auto-deploy" type="xs:boolean" use="optional" default="true">
-         <xs:annotation>
-             <xs:documentation>Indicates if the web application should be auto deployed when the ModeShape subsystem starts up</xs:documentation>
-         </xs:annotation>
-     </xs:attribute>
- </xs:complexType>
-
-  <xs:complexType name="repository">
-
-    <xs:sequence minOccurs="0" maxOccurs="unbounded">
-      <xs:element name="workspaces" type="workspaces" minOccurs="0" maxOccurs="1">
-        <xs:annotation>
-          <xs:documentation>The definition of the pre-existing workspaces that will exist when the repository starts up.
-          </xs:documentation>
-        </xs:annotation>
-      </xs:element>
-      
-     <xs:element name="node-types" type="node-types" minOccurs="0" maxOccurs="1">
-         <xs:annotation>
-             <xs:documentation>The definition of node type (CND) files that should be import on repository start-up
-             </xs:documentation>
-         </xs:annotation>
-     </xs:element>
-
-      <xs:element name="authenticators" type="authenticators" minOccurs="0" maxOccurs="1">
-        <xs:annotation>
-          <xs:documentation>The definition of the custom authenticators.</xs:documentation>
-        </xs:annotation>
-      </xs:element>
-
-      <xs:element name="sequencers" type="sequencers" minOccurs="0" maxOccurs="1">
-        <xs:annotation>
-          <xs:documentation>The definition of the custom sequencers.</xs:documentation>
-        </xs:annotation>
-      </xs:element>
-
-      <xs:element name="text-extractors" type="text-extractors" minOccurs="0" maxOccurs="1">
-        <xs:annotation>
-          <xs:documentation>The definition of the custom text extractors.</xs:documentation>
-        </xs:annotation>
-      </xs:element>
-
-        <xs:element name="external-sources" type="external-sources" minOccurs="0" maxOccurs="1">
+    <xs:complexType name="webapp">
+        <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
-                <xs:documentation>The definition of the external sources</xs:documentation>
+                <xs:documentation>The name of the web application that is located in the ModeShape's main module, under the
+                    deployments directory
+                </xs:documentation>
             </xs:annotation>
-        </xs:element>
+        </xs:attribute>
 
-        <xs:element name="indexing" type="indexing" minOccurs="0" maxOccurs="1">
+        <xs:attribute name="exploded" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>Indicates if the web application is exploded or not</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+
+        <xs:attribute name="auto-deploy" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>Indicates if the web application should be auto deployed when the ModeShape subsystem starts
+                    up
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="repository">
+
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="workspaces" type="workspaces" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>The definition of the pre-existing workspaces that will exist when the repository starts
+                        up.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
+            <xs:element name="node-types" type="node-types" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>The definition of node type (CND) files that should be import on repository start-up
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
+            <xs:element name="authenticators" type="authenticators" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>The definition of the custom authenticators.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
+            <xs:element name="sequencers" type="sequencers" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>The definition of the custom sequencers.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
+            <xs:element name="text-extractors" type="text-extractors" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>The definition of the custom text extractors.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
+            <xs:element name="external-sources" type="external-sources" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>The definition of the external sources</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
+            <xs:element name="indexing" type="indexing" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>The definition of the indexing mechanism.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
+            <xs:choice minOccurs="0" maxOccurs="1">
+                <xs:element name="local-file-index-storage" type="local-file-index-storage">
+                    <xs:annotation>
+                        <xs:documentation>The indexes are stored on the local file system.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="master-file-index-storage" type="master-file-index-storage">
+                    <xs:annotation>
+                        <xs:documentation>The indexes are stored on the local file system and are considered the master indexes
+                            that will be
+                            periodically copied.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="slave-file-index-storage" type="slave-file-index-storage">
+                    <xs:annotation>
+                        <xs:documentation>The indexes are stored on the local file system and are considered the slave indexes
+                            that will be
+                            periodically updated from the master.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="ram-index-storage" type="ram-index-storage">
+                    <xs:annotation>
+                        <xs:documentation>The indexes are stored only in memory. This option is not appropriate in a cluster.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="custom-index-storage" type="custom-index-storage">
+                    <xs:annotation>
+                        <xs:documentation>A custom storage option for the indexes.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:choice>
+
+            <xs:choice minOccurs="0" maxOccurs="1">
+                <xs:element name="file-binary-storage" type="file-binary-storage">
+                    <xs:annotation>
+                        <xs:documentation>The binary files are stored on the local file system.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="cache-binary-storage" type="cache-binary-storage">
+                    <xs:annotation>
+                        <xs:documentation>The binary files are stored in an Infinispan cache.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="db-binary-storage" type="db-binary-storage">
+                    <xs:annotation>
+                        <xs:documentation>The binary files are stored in a relational database.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="composite-binary-storage" type="composite-binary-storage">
+                    <xs:annotation>
+                        <xs:documentation>The binary files are stored in a one of any number of named binary stores.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="custom-binary-storage" type="custom-binary-storage">
+                    <xs:annotation>
+                        <xs:documentation>The binary files are stored in a custom system.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:choice>
+
+        </xs:sequence>
+
+        <!-- Attributes for 'repository' -->
+
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The name of the repository, which must be unique within the subsystem.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cache-name" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The name of the Infinispan cache where repository content will be stored.
+                    If not provided, the repository name is used for the cache name.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cache-container" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The name of the Infinispan cache container in which the cache can be found.
+                    If not provided, the subsystem's default cache container will be used.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="jndi-name" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The name in JNDI where this repository is to be
+                    registered. If no value set, the repository will not be
+                    bound to 'jcr/local/{repositoryName}' (where '{repositoryName}' is the name
+                    of this repository).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="enable-monitoring" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>Specifies whether the repository is to maintain the metrics that can be used
+                    to monitor the performance and activities. The default value is 'true', meaning monitoring is
+                    enabled.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="enable-queries" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>Specifies whether the repository is to enable the query system and text extractors
+                    as configured. The default value is 'true', meaning queries are enabled. If 'false', then all
+                    indexing related attributes, index storage configuration, and text extract configurations are
+                    ignored, while JDBC access and direct queries will not work or will return no data.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="security-domain" type="xs:string" default="modeshape-security">
+            <xs:annotation>
+                <xs:documentation>The name of the security domain that should be used for JAAS authentication.
+                    The default is 'modeshape-security'.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="anonymous-roles" type="roleNames" default="readonly readwrite admin">
+            <xs:annotation>
+                <xs:documentation>The space-separated names of the roles for anonymous users.
+                    Anonymous logins will be disabled if the roles consists of an empty string.
+                    By default, the roles are 'readonly', 'readwrite', and 'admin'.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="anonymous-username" type="xs:string" default="&lt;anonymous&gt;">
+            <xs:annotation>
+                <xs:documentation>The username for all anonymous users.
+                    The username '&lt;anonymous&gt;' is used by default
+                    (that is, 'anonymous' surrounded by angle brackets").
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="use-anonymous-upon-failed-authentication" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>Indicates that failed authentication attempts will not result in a
+                    LoginException but will instead fall back to anonymous access.
+                    If anonymous access is not enabled, then failed login attempts will
+                    throw a LoginException. The default value is 'false'.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cluster-stack" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>Defines the JGroups stack used by the repository when clustered.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cluster-name" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>Defines the name of the communication channel used by this and other clustered repositories
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="garbage-collection-thread-pool" type="xs:string" use="optional" default="modeshape-gc">
+            <xs:annotation>
+                <xs:documentation>Name of the thread pool that should be used for background garbage collection
+                    and recovery of unused storage space. Garbage collection can be relatively expensive, and is
+                    only necessary to recover unused persistent storage space (of binary values). Therefore,
+                    it is recommended to be done at most once per day during less-used time periods.
+                    Thread pools are named globally within a single ModeShape subsystem, and by default all
+                    repositories use the same thread pool for sequencing and indexing.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="garbage-collection-initial-time" type="garbage-collection-initial-time-type" use="optional"
+                      default="00:00">
+            <xs:annotation>
+                <xs:documentation>The local time that the first garbage collection process should be run.
+                    Garbage collection may be relatively expensive, as it involves scanning all persisted content,
+                    so it's recommended that this be done durign off hours if possible. The format is "hh:mm", or
+                    two-digit hours and two-digit minutes. By default, the value is "00:00" garbage
+                    collection is run at midnight (local time) after the repository is started.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="garbage-collection-interval" type="xs:int" use="optional" default="24">
+            <xs:annotation>
+                <xs:documentation>The number of hours between garbage collection runs.
+                    By default the interval is 24 hours (meaning it runs once per day).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="workspaces">
         <xs:annotation>
-          <xs:documentation>The definition of the indexing mechanism.</xs:documentation>
-        </xs:annotation>
-      </xs:element>
-
-      <xs:choice minOccurs="0" maxOccurs="1">
-        <xs:element name="local-file-index-storage" type="local-file-index-storage">
-          <xs:annotation>
-            <xs:documentation>The indexes are stored on the local file system.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
-        <xs:element name="master-file-index-storage" type="master-file-index-storage">
-          <xs:annotation>
-            <xs:documentation>The indexes are stored on the local file system and are considered the master indexes that will be
-              periodically copied.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
-        <xs:element name="slave-file-index-storage" type="slave-file-index-storage">
-          <xs:annotation>
-            <xs:documentation>The indexes are stored on the local file system and are considered the slave indexes that will be
-              periodically updated from the master.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
-        <xs:element name="ram-index-storage" type="ram-index-storage">
-          <xs:annotation>
-            <xs:documentation>The indexes are stored only in memory. This option is not appropriate in a cluster.
+            <xs:documentation>The definition of the predefined workspaces that exist when the repository
+                is started. The 'default-workspace' need not be predefined, since the default workspace
+                must exist.
             </xs:documentation>
-          </xs:annotation>
-        </xs:element>
-        <xs:element name="custom-index-storage" type="custom-index-storage">
-          <xs:annotation>
-            <xs:documentation>A custom storage option for the indexes.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
-      </xs:choice>
-
-      <xs:choice minOccurs="0" maxOccurs="1">
-        <xs:element name="file-binary-storage" type="file-binary-storage">
-          <xs:annotation>
-            <xs:documentation>The binary files are stored on the local file system.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
-        <xs:element name="cache-binary-storage" type="cache-binary-storage">
-          <xs:annotation>
-            <xs:documentation>The binary files are stored in an Infinispan cache.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
-        <xs:element name="db-binary-storage" type="db-binary-storage">
-          <xs:annotation>
-            <xs:documentation>The binary files are stored in a relational database.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
-        <xs:element name="composite-binary-storage" type="composite-binary-storage">
-          <xs:annotation>
-            <xs:documentation>The binary files are stored in a one of any number of named binary stores.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
-        <xs:element name="custom-binary-storage" type="custom-binary-storage">
-          <xs:annotation>
-            <xs:documentation>The binary files are stored in a custom system.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
-      </xs:choice>
-
-    </xs:sequence>
-
-    <!-- Attributes for 'repository' -->
-    
-    <xs:attribute name="name" type="xs:string" use="required">
-      <xs:annotation>
-        <xs:documentation>The name of the repository, which must be unique within the subsystem.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="cache-name" type="xs:string">
-      <xs:annotation>
-        <xs:documentation>The name of the Infinispan cache where repository content will be stored.
-          If not provided, the repository name is used for the cache name.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="cache-container" type="xs:string">
-      <xs:annotation>
-        <xs:documentation>The name of the Infinispan cache container in which the cache can be found.
-          If not provided, the subsystem's default cache container will be used.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="jndi-name" type="xs:string">
-      <xs:annotation>
-        <xs:documentation>The name in JNDI where this repository is to be
-          registered. If no value set, the repository will not be
-          bound to 'jcr/local/{repositoryName}' (where '{repositoryName}' is the name
-          of this repository).
-          </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="enable-monitoring" type="xs:boolean" default="true">
-      <xs:annotation>
-        <xs:documentation>Specifies whether the repository is to maintain the metrics that can be used
-          to monitor the performance and activities. The default value is 'true', meaning monitoring is
-          enabled.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="enable-queries" type="xs:boolean" default="true">
-      <xs:annotation>
-        <xs:documentation>Specifies whether the repository is to enable the query system and text extractors
-          as configured. The default value is 'true', meaning queries are enabled. If 'false', then all
-          indexing related attributes, index storage configuration, and text extract configurations are
-          ignored, while JDBC access and direct queries will not work or will return no data.
-        </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="security-domain" type="xs:string" default="modeshape-security">
-      <xs:annotation>
-        <xs:documentation>The name of the security domain that should be used for JAAS authentication.
-          The default is 'modeshape-security'.
-        </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="anonymous-roles" type="roleNames" default="readonly readwrite admin">
-      <xs:annotation>
-        <xs:documentation>The space-separated names of the roles for anonymous users.
-          Anonymous logins will be disabled if the roles consists of an empty string.
-          By default, the roles are 'readonly', 'readwrite', and 'admin'.
-        </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="anonymous-username" type="xs:string" default="&lt;anonymous&gt;">
-      <xs:annotation>
-        <xs:documentation>The username for all anonymous users.
-          The username '&lt;anonymous&gt;' is used by default
-          (that is, 'anonymous' surrounded by angle brackets").
-        </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="use-anonymous-upon-failed-authentication" type="xs:boolean" default="false">
-      <xs:annotation>
-        <xs:documentation>Indicates that failed authentication attempts will not result in a
-          LoginException but will instead fall back to anonymous access.
-          If anonymous access is not enabled, then failed login attempts will
-          throw a LoginException. The default value is 'false'.
-        </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="cluster-stack" type="xs:string">
-      <xs:annotation>
-        <xs:documentation>Defines the JGroups stack used by the repository when clustered.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="cluster-name" type="xs:string" >
-      <xs:annotation>
-        <xs:documentation>Defines the name of the communication channel used by this and other clustered repositories</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="garbage-collection-thread-pool" type="xs:string" use="optional" default="modeshape-gc">
-      <xs:annotation>
-        <xs:documentation>Name of the thread pool that should be used for background garbage collection 
-          and recovery of unused storage space. Garbage collection can be relatively expensive, and is
-          only necessary to recover unused persistent storage space (of binary values). Therefore,
-          it is recommended to be done at most once per day during less-used time periods.
-          Thread pools are named globally within a single ModeShape subsystem, and by default all
-          repositories use the same thread pool for sequencing and indexing.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="garbage-collection-initial-time" type="garbage-collection-initial-time-type" use="optional" default="00:00">
-      <xs:annotation>
-        <xs:documentation>The local time that the first garbage collection process should be run. 
-          Garbage collection may be relatively expensive, as it involves scanning all persisted content, 
-          so it's recommended that this be done durign off hours if possible. The format is "hh:mm", or
-          two-digit hours and two-digit minutes. By default, the value is "00:00" garbage 
-          collection is run at midnight (local time) after the repository is started.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="garbage-collection-interval" type="xs:int" use="optional" default="24">
-      <xs:annotation>
-        <xs:documentation>The number of hours between garbage collection runs. 
-          By default the interval is 24 hours (meaning it runs once per day).</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-  </xs:complexType>
-
-  <xs:complexType name="workspaces">
-    <xs:annotation>
-      <xs:documentation>The definition of the predefined workspaces that exist when the repository 
-      is started. The 'default-workspace' need not be predefined, since the default workspace 
-      must exist.</xs:documentation>
-    </xs:annotation>
-    <xs:sequence minOccurs="0" maxOccurs="unbounded">
-      <xs:element name="workspace" minOccurs="0" maxOccurs="unbounded">
-        <xs:annotation>
-          <xs:documentation>The definition of a predefined workspace that exists when the repository is started.</xs:documentation>
         </xs:annotation>
-          <xs:complexType>
-              <xs:sequence>
-                  <xs:element name="initial-content" type="initial-content" minOccurs="0" maxOccurs="1">
-                      <xs:annotation>
-                          <xs:documentation>The path to the file which should be imported as initial content for this workspace</xs:documentation>
-                      </xs:annotation>
-                  </xs:element>
-              </xs:sequence>
-              <xs:attribute name="name" type="xs:string" use="required">
-                  <xs:annotation>
-                      <xs:documentation>The name of the workspace.</xs:documentation>
-                  </xs:annotation>
-              </xs:attribute>
-          </xs:complexType>
-      </xs:element>
-        <xs:element name="initial-content" type="initial-content" minOccurs="0" maxOccurs="1">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="workspace" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>The definition of a predefined workspace that exists when the repository is started.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="initial-content" type="initial-content" minOccurs="0" maxOccurs="1">
+                            <xs:annotation>
+                                <xs:documentation>The path to the file which should be imported as initial content for this
+                                    workspace
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:sequence>
+                    <xs:attribute name="name" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>The name of the workspace.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="initial-content" type="initial-content" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>The path to the file which should be imported as initial content by default for all new
+                        workspaces
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="default-workspace" type="xs:string" use="optional" default="default">
             <xs:annotation>
-                <xs:documentation>The path to the file which should be imported as initial content by default for all new workspaces</xs:documentation>
+                <xs:documentation>The name of the workspace that should be used when Sessions are created
+                    without specifying an explicit workspace name.
+                </xs:documentation>
             </xs:annotation>
-        </xs:element>
-    </xs:sequence>
-    <xs:attribute name="default-workspace" type="xs:string" use="optional" default="default">
-      <xs:annotation>
-        <xs:documentation>The name of the workspace that should be used when Sessions are created
-          without specifying an explicit workspace name.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="allow-workspace-creation" type="xs:boolean" use="optional" default="true">
-      <xs:annotation>
-        <xs:documentation>Specifies whether users can create additional workspaces beyond the predefined, system, and default
-          workspaces. The default value is 'true'.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="cache-container" type="xs:string" use="optional">
-          <xs:annotation>
-              <xs:documentation>The name of the Infinispan cache container in which the workspace caches reside. If not provider,
-                  a default configuration file is used.
-              </xs:documentation>
-          </xs:annotation>
-      </xs:attribute>
-  </xs:complexType>
-    
-  <xs:complexType name="node-types">
-      <xs:sequence minOccurs="0" maxOccurs="unbounded">
-        <xs:element name="node-type" type="xs:string" minOccurs="1" maxOccurs="unbounded">
+        </xs:attribute>
+        <xs:attribute name="allow-workspace-creation" type="xs:boolean" use="optional" default="true">
             <xs:annotation>
-                <xs:documentation>The uri of a CND file which will be loaded at repository startup</xs:documentation>
+                <xs:documentation>Specifies whether users can create additional workspaces beyond the predefined, system, and
+                    default
+                    workspaces. The default value is 'true'.
+                </xs:documentation>
             </xs:annotation>
-        </xs:element>
-      </xs:sequence>
-  </xs:complexType>
+        </xs:attribute>
+        <xs:attribute name="cache-container" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The name of the Infinispan cache container in which the workspace caches reside. If not
+                    provider,
+                    a default configuration file is used.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
 
-  <xs:simpleType name="initial-content">
-      <xs:annotation>
-          <xs:documentation>Specifies the path to the initial content file that should be loaded</xs:documentation>
-      </xs:annotation>
-      <xs:restriction base="xs:string"/>
-  </xs:simpleType>
+    <xs:complexType name="node-types">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="node-type" type="xs:string" minOccurs="1" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>The uri of a CND file which will be loaded at repository startup</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
 
-  <xs:complexType name="authenticators">
-    <xs:sequence minOccurs="0" maxOccurs="unbounded">
-      <xs:element name="authenticator" type="authenticator" minOccurs="0" maxOccurs="unbounded">
+    <xs:simpleType name="initial-content">
         <xs:annotation>
-          <xs:documentation>The definition of an authenticator.</xs:documentation>
+            <xs:documentation>Specifies the path to the initial content file that should be loaded</xs:documentation>
         </xs:annotation>
-      </xs:element>
-    </xs:sequence>
-  </xs:complexType>
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
 
-  <xs:complexType name="authenticator">
-    <xs:attributeGroup ref="implementation-class-attributes" />
-    <xs:attribute name="name" type="xs:string" use="optional">
-      <xs:annotation>
-        <xs:documentation>The name of the authenticator.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:anyAttribute namespace="##any" processContents="lax"/>
-  </xs:complexType>
+    <xs:complexType name="authenticators">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="authenticator" type="authenticator" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>The definition of an authenticator.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
 
-  <xs:complexType name="sequencers">
-    <xs:sequence minOccurs="0" maxOccurs="unbounded">
-      <xs:element name="sequencer" type="sequencer" minOccurs="0" maxOccurs="unbounded">
-        <xs:annotation>
-          <xs:documentation>The definition of a sequencer.</xs:documentation>
-        </xs:annotation>
-      </xs:element>
-    </xs:sequence>
-  </xs:complexType>
+    <xs:complexType name="authenticator">
+        <xs:attributeGroup ref="implementation-class-attributes"/>
+        <xs:attribute name="name" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The name of the authenticator.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:anyAttribute namespace="##any" processContents="lax"/>
+    </xs:complexType>
 
-  <xs:complexType name="sequencer">
-    <xs:sequence minOccurs="0" maxOccurs="unbounded">
-      <xs:element name="path-expression" minOccurs="0" maxOccurs="unbounded">
-        <xs:annotation>
-          <xs:documentation>An expression specifying the pattern for the input path of the properties to be sequenced and the resulting output location.</xs:documentation>
-        </xs:annotation>
-        <xs:simpleType>
-          <xs:restriction base="xs:string" />
-        </xs:simpleType>
-      </xs:element>
-    </xs:sequence>
-    <xs:attributeGroup ref="implementation-class-attributes" />
-    <xs:attribute name="name" type="xs:string" use="optional">
-      <xs:annotation>
-        <xs:documentation>The name of the sequencer.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="path-expression" type="xs:string" use="optional">
-      <xs:annotation>
-        <xs:documentation>The description of the sequencer.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:anyAttribute namespace="##any" processContents="lax"/>
-  </xs:complexType>
+    <xs:complexType name="sequencers">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="sequencer" type="sequencer" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>The definition of a sequencer.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="sequencer">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="path-expression" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>An expression specifying the pattern for the input path of the properties to be sequenced
+                        and the resulting output location.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string"/>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attributeGroup ref="implementation-class-attributes"/>
+        <xs:attribute name="name" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The name of the sequencer.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="path-expression" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The description of the sequencer.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:anyAttribute namespace="##any" processContents="lax"/>
+    </xs:complexType>
 
     <xs:complexType name="external-sources">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
@@ -408,10 +438,12 @@
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
             <xs:element name="projection" minOccurs="0" maxOccurs="unbounded">
                 <xs:annotation>
-                    <xs:documentation>An expressions that describes a projection path expression, in the format wsName:/projectedPath => externalPath</xs:documentation>
+                    <xs:documentation>An expressions that describes a projection path expression, in the format
+                        wsName:/projectedPath => externalPath
+                    </xs:documentation>
                 </xs:annotation>
                 <xs:simpleType>
-                    <xs:restriction base="xs:string" />
+                    <xs:restriction base="xs:string"/>
                 </xs:simpleType>
             </xs:element>
         </xs:sequence>
@@ -420,474 +452,529 @@
                 <xs:documentation>The name of the external source.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attributeGroup ref="implementation-class-attributes" />
+        <xs:attributeGroup ref="implementation-class-attributes"/>
         <xs:attribute name="cacheTtlSeconds" type="xs:integer" use="optional">
             <xs:annotation>
-                <xs:documentation>The number of seconds which an external node should be held in the workspace cache. If not specified, the effective TTL is deferred to the workspace cache configuration. If negative, an entry will be cached forever.</xs:documentation>
+                <xs:documentation>The number of seconds which an external node should be held in the workspace cache. If not
+                    specified, the effective TTL is deferred to the workspace cache configuration. If negative, an entry will be
+                    cached forever.
+                </xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="readonly" type="xs:boolean" use="optional" default="false">
             <xs:annotation>
-                <xs:documentation>Flag which indicates whether the external source is readonly or supports writing as well. By default, a source support both reads and writes.</xs:documentation>
+                <xs:documentation>Flag which indicates whether the external source is readonly or supports writing as well. By
+                    default, a source support both reads and writes.
+                </xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="queryable" type="xs:boolean" use="optional" default="true">
             <xs:annotation>
-                <xs:documentation>Flag which indicates whether the entire external content provided by this source should be queryable or not by the repository. By default, it is.</xs:documentation>
+                <xs:documentation>Flag which indicates whether the entire external content provided by this source should be
+                    queryable or not by the repository. By default, it is.
+                </xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:anyAttribute namespace="##any" processContents="lax"/>
     </xs:complexType>
 
     <xs:complexType name="text-extractors">
-    <xs:sequence minOccurs="0" maxOccurs="unbounded">
-      <xs:element name="text-extractor" type="text-extractor" minOccurs="0" maxOccurs="unbounded">
-        <xs:annotation>
-          <xs:documentation>The definition of a text extractor.</xs:documentation>
-        </xs:annotation>
-      </xs:element>
-    </xs:sequence>
-  </xs:complexType>
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="text-extractor" type="text-extractor" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>The definition of a text extractor.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
 
-  <xs:complexType name="text-extractor">
-    <xs:attributeGroup ref="implementation-class-attributes" />
-    <xs:attribute name="name" type="xs:string" use="optional">
-      <xs:annotation>
-        <xs:documentation>The name of the extractor.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:anyAttribute namespace="##any" processContents="lax"/>
-  </xs:complexType>
+    <xs:complexType name="text-extractor">
+        <xs:attributeGroup ref="implementation-class-attributes"/>
+        <xs:attribute name="name" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The name of the extractor.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:anyAttribute namespace="##any" processContents="lax"/>
+    </xs:complexType>
 
-  <xs:complexType name="indexing">
-    <xs:attributeGroup ref="indexing-attributes" />
-    <xs:anyAttribute namespace="##any" processContents="lax"/>
-  </xs:complexType>
+    <xs:complexType name="indexing">
+        <xs:attributeGroup ref="indexing-attributes"/>
+        <xs:anyAttribute namespace="##any" processContents="lax"/>
+    </xs:complexType>
 
-  <xs:complexType name="local-file-index-storage">
-    <xs:attributeGroup ref="persisted-indexing-attributes" />
-    <xs:attributeGroup ref="file-storage-attributes" />
-    <xs:attributeGroup ref="file-index-storage-attributes" />
-  </xs:complexType>
+    <xs:complexType name="local-file-index-storage">
+        <xs:attributeGroup ref="persisted-indexing-attributes"/>
+        <xs:attributeGroup ref="file-storage-attributes"/>
+        <xs:attributeGroup ref="file-index-storage-attributes"/>
+    </xs:complexType>
 
-  <xs:complexType name="master-file-index-storage">
-    <xs:attributeGroup ref="persisted-indexing-attributes" />
-    <xs:attributeGroup ref="file-storage-attributes" />
-    <xs:attributeGroup ref="file-index-storage-attributes" />
-    <xs:attributeGroup ref="file-master-slave-storage-attributes" />
-    <xs:attributeGroup ref="jms-backend-attributes" />
-  </xs:complexType>
+    <xs:complexType name="master-file-index-storage">
+        <xs:attributeGroup ref="persisted-indexing-attributes"/>
+        <xs:attributeGroup ref="file-storage-attributes"/>
+        <xs:attributeGroup ref="file-index-storage-attributes"/>
+        <xs:attributeGroup ref="file-master-slave-storage-attributes"/>
+        <xs:attributeGroup ref="jms-backend-attributes"/>
+    </xs:complexType>
 
-  <xs:complexType name="slave-file-index-storage">
-    <xs:attributeGroup ref="persisted-indexing-attributes" />
-    <xs:attributeGroup ref="file-storage-attributes" />
-    <xs:attributeGroup ref="file-index-storage-attributes" />
-    <xs:attributeGroup ref="file-master-slave-storage-attributes" />
-    <xs:attributeGroup ref="jms-backend-attributes" />
-    <xs:attribute name="copy-buffer-size" type="xs:int" default="16">
-      <xs:annotation>
-        <xs:documentation>The number of megabytes to move in a single low level copy instruction.
-          The default is '16' (or 16MB).</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="retry-marker-lookup" type="xs:int" default="0">
-      <xs:annotation>
-        <xs:documentation>The number of times to look for the marker files in the source
-          directory before failing, waiting 5 seconds between each try. The default is '0'.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="retry-initialize-period" type="xs:int" default="0">
-      <xs:annotation>
-        <xs:documentation>The number of seconds before retrying initialization.
-          If the slave can't find the master index, it will try again (in the background)
-          until it's found, without preventing the application to start. Queries performed
-          before the index is initialized are not blocked but will return empty results.
-          A value of '0' is used by default, signaling that initialization will fail with
-          an exception rather than trying in the background. To prevent the application
-          from starting without an invalid index but still control an initialization timeout,
-          use 'retry-marker-lookup' instead.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-  </xs:complexType>
+    <xs:complexType name="slave-file-index-storage">
+        <xs:attributeGroup ref="persisted-indexing-attributes"/>
+        <xs:attributeGroup ref="file-storage-attributes"/>
+        <xs:attributeGroup ref="file-index-storage-attributes"/>
+        <xs:attributeGroup ref="file-master-slave-storage-attributes"/>
+        <xs:attributeGroup ref="jms-backend-attributes"/>
+        <xs:attribute name="copy-buffer-size" type="xs:int" default="16">
+            <xs:annotation>
+                <xs:documentation>The number of megabytes to move in a single low level copy instruction.
+                    The default is '16' (or 16MB).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="retry-marker-lookup" type="xs:int" default="0">
+            <xs:annotation>
+                <xs:documentation>The number of times to look for the marker files in the source
+                    directory before failing, waiting 5 seconds between each try. The default is '0'.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="retry-initialize-period" type="xs:int" default="0">
+            <xs:annotation>
+                <xs:documentation>The number of seconds before retrying initialization.
+                    If the slave can't find the master index, it will try again (in the background)
+                    until it's found, without preventing the application to start. Queries performed
+                    before the index is initialized are not blocked but will return empty results.
+                    A value of '0' is used by default, signaling that initialization will fail with
+                    an exception rather than trying in the background. To prevent the application
+                    from starting without an invalid index but still control an initialization timeout,
+                    use 'retry-marker-lookup' instead.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
 
-  <xs:complexType name="ram-index-storage"/>
+    <xs:complexType name="ram-index-storage"/>
 
-  <xs:complexType name="custom-index-storage">
-    <xs:attributeGroup ref="persisted-indexing-attributes" />
-    <xs:attributeGroup ref="implementation-class-attributes" />
-    <xs:anyAttribute namespace="##any" processContents="lax"/>
-  </xs:complexType>
+    <xs:complexType name="custom-index-storage">
+        <xs:attributeGroup ref="persisted-indexing-attributes"/>
+        <xs:attributeGroup ref="implementation-class-attributes"/>
+        <xs:anyAttribute namespace="##any" processContents="lax"/>
+    </xs:complexType>
 
-  <xs:complexType name="file-binary-storage">
-    <xs:attributeGroup ref="file-storage-attributes" />
-    <xs:attributeGroup ref="binary-storage-attributes" />
-  </xs:complexType>
+    <xs:complexType name="file-binary-storage">
+        <xs:attributeGroup ref="file-storage-attributes"/>
+        <xs:attributeGroup ref="binary-storage-attributes"/>
+    </xs:complexType>
 
-  <xs:complexType name="cache-binary-storage">
-    <xs:attributeGroup ref="binary-storage-attributes" />
-    <xs:attribute name="data-cache-name" type="xs:string">
-      <xs:annotation>
-        <xs:documentation>The name of the Infinispan cache where index data will be stored.
-          If not provided, the default will be '{repositoryName}-binary-data'
-        </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="metadata-cache-name" type="xs:string">
-      <xs:annotation>
-        <xs:documentation>The name of the Infinispan cache where index metadata will be stored.
-          If not provided, the default will be '{repositoryName}-binary-metadata'
-        </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="cache-container" type="xs:string">
-      <xs:annotation>
-        <xs:documentation>The name of the Infinispan cache container in which the caches can be found
-          for storing the binary values. If not provided, the repository's cache container will be used.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-  </xs:complexType>
+    <xs:complexType name="nested-file-binary-storage">
+        <xs:attributeGroup ref="file-storage-attributes"/>
+        <xs:attributeGroup ref="nested-binary-storage-attributes"/>
+    </xs:complexType>
 
-  <xs:complexType name="db-binary-storage">
-    <xs:attributeGroup ref="binary-storage-attributes" />
-    <xs:attribute name="data-source-jndi-name" type="xs:string" use="required">
-      <xs:annotation>
-        <xs:documentation>Specifies the JNDI name of the JDBC data source that should be used to store the
-          binary values.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-  </xs:complexType>
+    <xs:complexType name="cache-binary-storage">
+        <xs:attributeGroup ref="binary-storage-attributes"/>
+        <xs:attributeGroup ref="cache-binary-storage-attributes"/>
+    </xs:complexType>
 
-  <xs:complexType name="composite-binary-storage">
+    <xs:complexType name="nested-cache-binary-storage">
+        <xs:attributeGroup ref="cache-binary-storage-attributes"/>
+        <xs:attributeGroup ref="nested-binary-storage-attributes"/>
+    </xs:complexType>
 
-    <xs:sequence minOccurs="1" maxOccurs="unbounded">
-      <xs:choice minOccurs="1" maxOccurs="1">
-        <xs:element name="file-binary-storage" type="file-binary-storage">
-          <xs:annotation>
-            <xs:documentation>The binary files are stored on the local file system.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
-        <xs:element name="cache-binary-storage" type="cache-binary-storage">
-          <xs:annotation>
-            <xs:documentation>The binary files are stored in an Infinispan cache.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
-        <xs:element name="db-binary-storage" type="db-binary-storage">
-          <xs:annotation>
-            <xs:documentation>The binary files are stored in a relational database.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
-        <xs:element name="custom-binary-storage" type="custom-binary-storage">
-          <xs:annotation>
-            <xs:documentation>The binary files are stored in a custom system.</xs:documentation>
-          </xs:annotation>
-        </xs:element>
-      </xs:choice>
-    </xs:sequence>
+    <xs:complexType name="db-binary-storage">
+        <xs:attributeGroup ref="binary-storage-attributes"/>
+        <xs:attribute name="data-source-jndi-name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>Specifies the JNDI name of the JDBC data source that should be used to store the
+                    binary values.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
 
-    <xs:attributeGroup ref="binary-storage-attributes" />
-    <xs:attributeGroup ref="composite-storage-attributes" />
+    <xs:complexType name="nested-db-binary-storage">
+        <xs:attributeGroup ref="nested-binary-storage-attributes"/>
+        <xs:attribute name="data-source-jndi-name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>Specifies the JNDI name of the JDBC data source that should be used to store the
+                    binary values.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
 
-  </xs:complexType>
+    <xs:complexType name="custom-binary-storage">
+        <xs:attributeGroup ref="implementation-class-attributes"/>
+        <xs:attributeGroup ref="binary-storage-attributes"/>
+        <xs:anyAttribute namespace="##any" processContents="lax"/>
+    </xs:complexType>
 
-  <xs:complexType name="custom-binary-storage">
-    <xs:attributeGroup ref="implementation-class-attributes" />
-    <xs:attributeGroup ref="binary-storage-attributes" />
-    <xs:anyAttribute namespace="##any" processContents="lax"/>
-  </xs:complexType>
+    <xs:complexType name="nested-custom-binary-storage">
+        <xs:attributeGroup ref="implementation-class-attributes"/>
+        <xs:attributeGroup ref="nested-binary-storage-attributes"/>
+        <xs:anyAttribute namespace="##any" processContents="lax"/>
+    </xs:complexType>
 
-  <!-- Global attribute groups -->
+    <xs:complexType name="composite-binary-storage">
+        <xs:sequence minOccurs="1" maxOccurs="unbounded">
+            <xs:choice minOccurs="1" maxOccurs="1">
+                <xs:element name="file-binary-storage" type="nested-file-binary-storage">
+                    <xs:annotation>
+                        <xs:documentation>The binary files are stored on the local file system.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="cache-binary-storage" type="nested-cache-binary-storage">
+                    <xs:annotation>
+                        <xs:documentation>The binary files are stored in an Infinispan cache.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="db-binary-storage" type="nested-db-binary-storage">
+                    <xs:annotation>
+                        <xs:documentation>The binary files are stored in a relational database.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="custom-binary-storage" type="nested-custom-binary-storage">
+                    <xs:annotation>
+                        <xs:documentation>The binary files are stored in a custom system.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:choice>
+        </xs:sequence>
+        <xs:attributeGroup ref="binary-storage-attributes"/>
+    </xs:complexType>
 
-  <xs:attributeGroup name="implementation-class-attributes">
-    <xs:attribute name="classname" type="xs:string" use="required">
-      <xs:annotation>
-        <xs:documentation>The name of the Java implementation class.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="module" type="xs:string" use="optional">
-      <xs:annotation>
-        <xs:documentation>The name of the module containing the implementation class.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-  </xs:attributeGroup>
+    <!-- Global attribute groups -->
 
-  <xs:attributeGroup name="binary-storage-attributes">
-    <xs:attribute name="store-name" type="xs:string" use="optional">
-      <xs:annotation>
-        <xs:documentation>A unique name for the binary store.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="min-value-size" type="xs:int" use="optional" default="4096">
-      <xs:annotation>
-        <xs:documentation>The size threshold that dictates whether binary values
-          should be stored in the binary store. Binary values smaller than this
-          value are stored with the node, whereas binary values with a size equal
-          to or greater than this limit will be stored separately from the node and in the
-          binary store, keyed by the SHA-1 hash of the value. This is a space and performance
-          optimization that stores each unique large value only once.
-          The default value is '4096' bytes, or 4 kilobytes.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="min-string-size" type="xs:int" use="optional">
-      <xs:annotation>
-        <xs:documentation>The size threshold that dictates whether String values
-          should be stored in the binary store. String values smaller than this
-          value are stored with the node, whereas string values with a size equal
-          to or greater than this limit will be stored separately from the node and in the
-          binary store, keyed by the SHA-1 hash of the value. This is a space and performance
-          optimization that stores each unique large value only once.
-          The default value is the value of 'min-value-size'.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-  </xs:attributeGroup>
+    <xs:attributeGroup name="implementation-class-attributes">
+        <xs:attribute name="classname" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The name of the Java implementation class.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="module" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The name of the module containing the implementation class.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
 
-  <xs:attributeGroup name="file-storage-attributes">
-    <xs:attribute name="relative-to" type="xs:string" default="jboss.server.data.dir">
-      <xs:annotation>
-        <xs:documentation>The base directory in which to store the indexes.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="path" type="xs:string">
-      <xs:annotation>
-        <xs:documentation>The system may maintain a set of indexes that
-          improve the performance of searching and querying the content.
-          These size of these indexes depend upon the size of the content
-          being stored, and thus may consume a significant amount of
-          space. This option defines the path on the file system
-          (within the "relative-to" location) where the indexes are to be stored
-          If specified, the value must be a valid path to a writable directory
-          on the file system. If the path specifies a non-existant location, the
-          repository may attempt to create the missing directories.
-          If the specified location is not a readable and writable
-          directory (or cannot be created as such), then this will
-          generate an exception when the repository is created.
-          If undefined, the path defaults to 'modeshape/{repositoryName}/indexes'.
-            </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-  </xs:attributeGroup>
+    <xs:attributeGroup name="binary-storage-attributes">
+        <xs:attribute name="min-value-size" type="xs:int" use="optional" default="4096">
+            <xs:annotation>
+                <xs:documentation>The size threshold that dictates whether binary values
+                    should be stored in the binary store. Binary values smaller than this
+                    value are stored with the node, whereas binary values with a size equal
+                    to or greater than this limit will be stored separately from the node and in the
+                    binary store, keyed by the SHA-1 hash of the value. This is a space and performance
+                    optimization that stores each unique large value only once.
+                    The default value is '4096' bytes, or 4 kilobytes.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="min-string-size" type="xs:int" use="optional">
+            <xs:annotation>
+                <xs:documentation>The size threshold that dictates whether String values
+                    should be stored in the binary store. String values smaller than this
+                    value are stored with the node, whereas string values with a size equal
+                    to or greater than this limit will be stored separately from the node and in the
+                    binary store, keyed by the SHA-1 hash of the value. This is a space and performance
+                    optimization that stores each unique large value only once.
+                    The default value is the value of 'min-value-size'.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
 
-  <xs:attributeGroup name="composite-storage-attributes">
+    <xs:attributeGroup name="nested-binary-storage-attributes">
+        <xs:attribute name="store-name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>A unique name for the binary store.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
 
-  </xs:attributeGroup>
+    <xs:attributeGroup name="cache-binary-storage-attributes">
+        <xs:attribute name="data-cache-name" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The name of the Infinispan cache where data will be stored.
+                    If not provided, the default will be '{repositoryName}-binary-data'
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="metadata-cache-name" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The name of the Infinispan cache where metadata will be stored.
+                    If not provided, the default will be '{repositoryName}-binary-metadata'
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cache-container" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The name of the Infinispan cache container in which the caches can be found
+                    for storing the binary values. If not provided, the repository's cache container will be used.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
 
-  <xs:attributeGroup name="persisted-indexing-attributes">
-    <xs:attribute name="format" type="index-format" use="optional" default="LUCENE_CURRENT">
-      <xs:annotation>
-        <xs:documentation>Specifies the Lucene version defining the format of the indexes.
-          The default value is 'LUCENE_CURRENT', but for production uses it should be explicitly
-          set to the specific Lucene version used when first creating the versions; changing this
-          value will require a manual rebuilt of all indexes.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-  </xs:attributeGroup>
+    <xs:attributeGroup name="file-storage-attributes">
+        <xs:attribute name="relative-to" type="xs:string" default="jboss.server.data.dir">
+            <xs:annotation>
+                <xs:documentation>The base directory in which to store the indexes.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="path" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The system may maintain a set of indexes that
+                    improve the performance of searching and querying the content.
+                    These size of these indexes depend upon the size of the content
+                    being stored, and thus may consume a significant amount of
+                    space. This option defines the path on the file system
+                    (within the "relative-to" location) where the indexes are to be stored
+                    If specified, the value must be a valid path to a writable directory
+                    on the file system. If the path specifies a non-existant location, the
+                    repository may attempt to create the missing directories.
+                    If the specified location is not a readable and writable
+                    directory (or cannot be created as such), then this will
+                    generate an exception when the repository is created.
+                    If undefined, the path defaults to 'modeshape/{repositoryName}/indexes'.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
 
-  <xs:attributeGroup name="indexing-attributes">
-    <xs:attribute name="rebuild-upon-startup" type="rebuild-upon-startup-enum" use="optional" default="if_missing">
-      <xs:annotation>
-        <xs:documentation>Specifies whether the indexes need to be rebuilt immediately when
-          each ModeShape process starts up.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="rebuild-upon-startup-mode" type="synchronous-enum" use="optional" default="async">
-      <xs:annotation>
-        <xs:documentation>Specifies whether the rebuild process should be done synchronously or asynchronously</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="rebuild-upon-startup-include-system-content" type="xs:boolean" use="optional" default="false">
-      <xs:annotation>
-        <xs:documentation>Specifies whether the index rebuild process should take system content into account or not</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="thread-pool" type="xs:string" use="optional" default="modeshape-workers">
-      <xs:annotation>
-        <xs:documentation>Name of the thread pool that should be used for background re-indexing.
-          Thread pools are named globally within a single ModeShape engine, and by default all
-          repositories use the same thread pool for sequencing and indexing.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="batch-size" type="xs:int" use="optional" default="-1">
-      <xs:annotation>
-        <xs:documentation>Advanced setting that specifies the maximum number of indexing
-          operation batched per transaction. Once the limit is reached indexing will be
-          triggered even though the context has not ended yet. A value of '-1' implies no maximum size.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="reader-strategy" type="reader-strategy-enum" use="optional" default="shared">
-      <xs:annotation>
-        <xs:documentation>Advanced setting that defines whether Lucene index readers can be shared.
-          With the 'shared' strategy, the same IndexReader will be used (for a given Lucene index)
-          across multiple queries and threads, provided that the IndexReader is still up-to-date.
-          If the IndexReader is not up-to-date, a new one is opened and provided.
-          With the 'not-shared' strategy, a new IndexReader is opened every time a query is executed,
-          which can be expensive.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="mode" type="synchronous-enum" use="optional" default="sync">
-      <xs:annotation>
-        <xs:documentation>Specifies whether to apply the index changes synchronously or
-          asynchronously (in separate threads). Synchronous updates have the advantage that the
-          index is at all times in sync with the storec content. Asynchronous updates, on the
-          other hand, can help to minimize Session.save() times since index updates are executed
-          in the background, but may result in potential discrepancies between the saved changes
-          and query results.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="systemContentMode" type="systemContentIndexing-enum" use="optional" default="disabled">
-      <xs:annotation>
-        <xs:documentation>DEPRECATED. Use the [rebuild-upon-startup-mode, rebuild-upon-startup-include-system-content] attributes</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="async-thread-pool-size" type="xs:int" use="optional" default="1">
-      <xs:annotation>
-        <xs:documentation>Specifies the number of threads that may be used for asynchronous
-          application of updates. Defaults to '1', and is not used for synchronous updates.
-        </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="async-max-queue-size" type="xs:int" use="optional" default="0">
-      <xs:annotation>
-        <xs:documentation>Specifies the maximum size of the queue used for making asynchronous
-          updates. When the queue is filled, updates block until the queue catches up.
-          A value of '0' is the default and implies no limit to the queue size.
-        </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="analyzer-classname" type="xs:string" use="optional" default="org.apache.lucene.analysis.standard.StandardAnalyzer">
-      <xs:annotation>
-        <xs:documentation>The full-qualified name of the Java implementation class. By default, the
-          'org.apache.lucene.analysis.standard.StandardAnalyzer' class will be used.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="analyzer-module" type="xs:string" use="optional">
-      <xs:annotation>
-        <xs:documentation>The name of the module containing the implementation class, or
-          a blank module for the built-in analyzers.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-  </xs:attributeGroup>
-  <xs:attributeGroup name="file-index-storage-attributes">
-    <xs:attribute name="access-type" type="file-system-access-type-enum" default="auto">
-      <xs:annotation>
-        <xs:documentation>Specifies the exact type of Lucene FSDirectory implementation to be used.
-          If set to 'auto' (the default), NIOFSDirectory will be used on non Windows systems and
-          SimpleFSDirectory will be used on Windows. If set to 'simple', then SimpleFSDirectory
-          will be used. If set to 'nio', then NIOFSDirectory will be used. If set to 'mmap',
-          then MMapDirectory will be used. Make sure to refer to Javadocs of these Directory
-          implementations before changing this setting. Even though NIOFSDirectory or MMapDirectory
-          can bring substantial performace boosts they also have constraints and limitations.
-            </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="locking-strategy" type="file-system-locking-strategy-enum" default="native">
-      <xs:annotation>
-        <xs:documentation>Species the type of locking used to prevent concurrent writes to the
-          indexes. The default locking strategy works well for most cases. If set to 'simple',
-          a marker file will be created using the Java File API (this file may need to be manually
-          removed if the process is terminated abormally). If set to 'native' (the default), a
-          marker file will be created using native OS file locks (which will never need to be
-          cleaned up). If set to 'single', an in-memory Java object is used for the lock, and
-          therefore not useful in a clustered repository. If 'none' is used, no locking is used
-          to prevent concurrent writes (use with caution).
-            </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-  </xs:attributeGroup>
+    <xs:attributeGroup name="persisted-indexing-attributes">
+        <xs:attribute name="format" type="index-format" use="optional" default="LUCENE_CURRENT">
+            <xs:annotation>
+                <xs:documentation>Specifies the Lucene version defining the format of the indexes.
+                    The default value is 'LUCENE_CURRENT', but for production uses it should be explicitly
+                    set to the specific Lucene version used when first creating the versions; changing this
+                    value will require a manual rebuilt of all indexes.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
 
-  <xs:attributeGroup name="file-master-slave-storage-attributes">
-    <xs:attribute name="refresh-period" type="xs:int" default="3600">
-      <xs:annotation>
-        <xs:documentation>The number of seconds specifying the frequency of copying the master
-          index into the 'source-path' directory. The copy is incremental, so it only copies the
-          changes since the last copy. The recommended value for the refresh period is (at least)
-          50% higher that the time to copy the information, and defaults to 3600 seconds - 60 minutes.
-            </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="source-relative-to" type="xs:string" default="jboss.server.data.dir">
-      <xs:annotation>
-        <xs:documentation>The base directory in which to store the copy of the indexes for master/slave refreshing.
-        </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="source-path" type="xs:string" use="required">
-      <xs:annotation>
-        <xs:documentation>
-          The path within "source-relative-to" in which to store the copy of the indexes for master/slave refreshing.
-          If undefined, the path defaults to 'modeshape/{repositoryName}/master_indexes'.
-            </xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-  </xs:attributeGroup>
+    <xs:attributeGroup name="indexing-attributes">
+        <xs:attribute name="rebuild-upon-startup" type="rebuild-upon-startup-enum" use="optional" default="if_missing">
+            <xs:annotation>
+                <xs:documentation>Specifies whether the indexes need to be rebuilt immediately when
+                    each ModeShape process starts up.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="rebuild-upon-startup-mode" type="synchronous-enum" use="optional" default="async">
+            <xs:annotation>
+                <xs:documentation>Specifies whether the rebuild process should be done synchronously or asynchronously
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="rebuild-upon-startup-include-system-content" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>Specifies whether the index rebuild process should take system content into account or not
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="thread-pool" type="xs:string" use="optional" default="modeshape-workers">
+            <xs:annotation>
+                <xs:documentation>Name of the thread pool that should be used for background re-indexing.
+                    Thread pools are named globally within a single ModeShape engine, and by default all
+                    repositories use the same thread pool for sequencing and indexing.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="batch-size" type="xs:int" use="optional" default="-1">
+            <xs:annotation>
+                <xs:documentation>Advanced setting that specifies the maximum number of indexing
+                    operation batched per transaction. Once the limit is reached indexing will be
+                    triggered even though the context has not ended yet. A value of '-1' implies no maximum size.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="reader-strategy" type="reader-strategy-enum" use="optional" default="shared">
+            <xs:annotation>
+                <xs:documentation>Advanced setting that defines whether Lucene index readers can be shared.
+                    With the 'shared' strategy, the same IndexReader will be used (for a given Lucene index)
+                    across multiple queries and threads, provided that the IndexReader is still up-to-date.
+                    If the IndexReader is not up-to-date, a new one is opened and provided.
+                    With the 'not-shared' strategy, a new IndexReader is opened every time a query is executed,
+                    which can be expensive.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="mode" type="synchronous-enum" use="optional" default="sync">
+            <xs:annotation>
+                <xs:documentation>Specifies whether to apply the index changes synchronously or
+                    asynchronously (in separate threads). Synchronous updates have the advantage that the
+                    index is at all times in sync with the storec content. Asynchronous updates, on the
+                    other hand, can help to minimize Session.save() times since index updates are executed
+                    in the background, but may result in potential discrepancies between the saved changes
+                    and query results.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="systemContentMode" type="systemContentIndexing-enum" use="optional" default="disabled">
+            <xs:annotation>
+                <xs:documentation>DEPRECATED. Use the [rebuild-upon-startup-mode, rebuild-upon-startup-include-system-content]
+                    attributes
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="async-thread-pool-size" type="xs:int" use="optional" default="1">
+            <xs:annotation>
+                <xs:documentation>Specifies the number of threads that may be used for asynchronous
+                    application of updates. Defaults to '1', and is not used for synchronous updates.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="async-max-queue-size" type="xs:int" use="optional" default="0">
+            <xs:annotation>
+                <xs:documentation>Specifies the maximum size of the queue used for making asynchronous
+                    updates. When the queue is filled, updates block until the queue catches up.
+                    A value of '0' is the default and implies no limit to the queue size.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="analyzer-classname" type="xs:string" use="optional"
+                      default="org.apache.lucene.analysis.standard.StandardAnalyzer">
+            <xs:annotation>
+                <xs:documentation>The full-qualified name of the Java implementation class. By default, the
+                    'org.apache.lucene.analysis.standard.StandardAnalyzer' class will be used.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="analyzer-module" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The name of the module containing the implementation class, or
+                    a blank module for the built-in analyzers.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="file-index-storage-attributes">
+        <xs:attribute name="access-type" type="file-system-access-type-enum" default="auto">
+            <xs:annotation>
+                <xs:documentation>Specifies the exact type of Lucene FSDirectory implementation to be used.
+                    If set to 'auto' (the default), NIOFSDirectory will be used on non Windows systems and
+                    SimpleFSDirectory will be used on Windows. If set to 'simple', then SimpleFSDirectory
+                    will be used. If set to 'nio', then NIOFSDirectory will be used. If set to 'mmap',
+                    then MMapDirectory will be used. Make sure to refer to Javadocs of these Directory
+                    implementations before changing this setting. Even though NIOFSDirectory or MMapDirectory
+                    can bring substantial performace boosts they also have constraints and limitations.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="locking-strategy" type="file-system-locking-strategy-enum" default="native">
+            <xs:annotation>
+                <xs:documentation>Species the type of locking used to prevent concurrent writes to the
+                    indexes. The default locking strategy works well for most cases. If set to 'simple',
+                    a marker file will be created using the Java File API (this file may need to be manually
+                    removed if the process is terminated abormally). If set to 'native' (the default), a
+                    marker file will be created using native OS file locks (which will never need to be
+                    cleaned up). If set to 'single', an in-memory Java object is used for the lock, and
+                    therefore not useful in a clustered repository. If 'none' is used, no locking is used
+                    to prevent concurrent writes (use with caution).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
 
-  <xs:attributeGroup name="jms-backend-attributes">
-    <xs:attribute name="connection-factory-jndi-name" type="xs:string" default="/ConnectionFactory">
-      <xs:annotation>
-        <xs:documentation>Defines the name in JNDI where the JMS connection factory can be found.
-          The default value is '/ConnectionFactory', which is the default in JBoss AS.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-    <xs:attribute name="queue-jndi-name" type="xs:string" use="required">
-      <xs:annotation>
-        <xs:documentation>Defines the name in JNDI where JMS queue can be found.
-          The queue will be used to post work messages.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
-  </xs:attributeGroup>
+    <xs:attributeGroup name="file-master-slave-storage-attributes">
+        <xs:attribute name="refresh-period" type="xs:int" default="3600">
+            <xs:annotation>
+                <xs:documentation>The number of seconds specifying the frequency of copying the master
+                    index into the 'source-path' directory. The copy is incremental, so it only copies the
+                    changes since the last copy. The recommended value for the refresh period is (at least)
+                    50% higher that the time to copy the information, and defaults to 3600 seconds - 60 minutes.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="source-relative-to" type="xs:string" default="jboss.server.data.dir">
+            <xs:annotation>
+                <xs:documentation>The base directory in which to store the copy of the indexes for master/slave refreshing.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="source-path" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The path within "source-relative-to" in which to store the copy of the indexes for master/slave refreshing.
+                    If undefined, the path defaults to 'modeshape/{repositoryName}/master_indexes'.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
 
-  <!-- Global simple types -->
-  <xs:simpleType name="index-format">
-    <xs:restriction base="xs:string">
-      <xs:pattern value="LUCENE_(3[0-9]{1,2}|CURRENT)" />
-    </xs:restriction>
-  </xs:simpleType>
-  <xs:simpleType name="reader-strategy-enum">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="shared" />
-      <xs:enumeration value="not-shared" />
-    </xs:restriction>
-  </xs:simpleType>
-  <xs:simpleType name="synchronous-enum">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="sync" />
-      <xs:enumeration value="async" />
-    </xs:restriction>
-  </xs:simpleType>
+    <xs:attributeGroup name="jms-backend-attributes">
+        <xs:attribute name="connection-factory-jndi-name" type="xs:string" default="/ConnectionFactory">
+            <xs:annotation>
+                <xs:documentation>Defines the name in JNDI where the JMS connection factory can be found.
+                    The default value is '/ConnectionFactory', which is the default in JBoss AS.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="queue-jndi-name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>Defines the name in JNDI where JMS queue can be found.
+                    The queue will be used to post work messages.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
+    <!-- Global simple types -->
+    <xs:simpleType name="index-format">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="LUCENE_(3[0-9]{1,2}|CURRENT)"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="reader-strategy-enum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="shared"/>
+            <xs:enumeration value="not-shared"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="synchronous-enum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="sync"/>
+            <xs:enumeration value="async"/>
+        </xs:restriction>
+    </xs:simpleType>
     <xs:simpleType name="systemContentIndexing-enum">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="sync" />
-      <xs:enumeration value="async" />
-      <xs:enumeration value="disabled" />
-    </xs:restriction>
-  </xs:simpleType>
-  <xs:simpleType name="rebuild-upon-startup-enum">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="if_missing" />
-      <xs:enumeration value="always" />
-      <xs:enumeration value="never" />
-      <xs:enumeration value="fail_if_missing" />
-    </xs:restriction>
-  </xs:simpleType>
-  <xs:simpleType name="file-system-access-type-enum">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="auto" />
-      <xs:enumeration value="simple" />
-      <xs:enumeration value="nio" />
-      <xs:enumeration value="mmap" />
-    </xs:restriction>
-  </xs:simpleType>
-  <xs:simpleType name="file-system-locking-strategy-enum">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="simple" />
-      <xs:enumeration value="native" />
-      <xs:enumeration value="single" />
-      <xs:enumeration value="none" />
-    </xs:restriction>
-  </xs:simpleType>
-  <xs:simpleType name="garbage-collection-initial-time-type">
-    <xs:restriction base="xs:string">
-      <xs:pattern value="(([0-1]\d)|([2][0-3])):[0-5]\d" />
-    </xs:restriction>
-  </xs:simpleType>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="sync"/>
+            <xs:enumeration value="async"/>
+            <xs:enumeration value="disabled"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="rebuild-upon-startup-enum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="if_missing"/>
+            <xs:enumeration value="always"/>
+            <xs:enumeration value="never"/>
+            <xs:enumeration value="fail_if_missing"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="file-system-access-type-enum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="auto"/>
+            <xs:enumeration value="simple"/>
+            <xs:enumeration value="nio"/>
+            <xs:enumeration value="mmap"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="file-system-locking-strategy-enum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="simple"/>
+            <xs:enumeration value="native"/>
+            <xs:enumeration value="single"/>
+            <xs:enumeration value="none"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="garbage-collection-initial-time-type">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(([0-1]\d)|([2][0-3])):[0-5]\d"/>
+        </xs:restriction>
+    </xs:simpleType>
     <xs:simpleType name="roleNames">
         <xs:annotation>
             <xs:documentation>A list of role names.</xs:documentation>

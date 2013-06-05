@@ -64,29 +64,6 @@ public class ModeShapeExtension implements Extension {
     static final PathElement CUSTOM_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
                                                                                  ModelKeys.CUSTOM_INDEX_STORAGE);
 
-    // Binary storage PathElements
-    static final PathElement BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE);
-    static final PathElement FILE_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
-                                                                                ModelKeys.FILE_BINARY_STORAGE);
-    static final PathElement CACHE_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
-                                                                                 ModelKeys.CACHE_BINARY_STORAGE);
-    static final PathElement DB_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE, ModelKeys.DB_BINARY_STORAGE);
-    static final PathElement COMPOSITE_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
-                                                                                            ModelKeys.COMPOSITE_BINARY_STORAGE);
-    static final PathElement CUSTOM_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
-                                                                                  ModelKeys.CUSTOM_BINARY_STORAGE);
-
-
-    static final PathElement NAMED_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.NAMED_BINARY_STORE);
-
-    static final PathElement NAMED_FILE_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.NAMED_BINARY_STORE_TYPE,
-                                                                                       ModelKeys.FILE_BINARY_STORAGE);
-    static final PathElement NAMED_CACHE_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.NAMED_BINARY_STORE_TYPE,
-                                                                                        ModelKeys.CACHE_BINARY_STORAGE);
-    static final PathElement NAMED_DB_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.NAMED_BINARY_STORE_TYPE, ModelKeys.DB_BINARY_STORAGE);
-    static final PathElement NAMED_CUSTOM_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.NAMED_BINARY_STORE_TYPE,
-                                                                                         ModelKeys.CUSTOM_BINARY_STORAGE);
-
     static StandardResourceDescriptionResolver getResourceDescriptionResolver( final String... keyPrefix ) {
         StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);
         for (String kp : keyPrefix) {
@@ -134,20 +111,16 @@ public class ModeShapeExtension implements Extension {
 
         // Binary storage submodel and type submodels
         final ManagementResourceRegistration binaryStorageSubmodel = repositorySubmodel.registerSubModel(ModeShapeBinaryStorageResource.INSTANCE);
-        binaryStorageSubmodel.registerSubModel(ModeShapeFileBinaryStorageResource.INSTANCE);
-        binaryStorageSubmodel.registerSubModel(ModeShapeCacheBinaryStorageResource.INSTANCE);
-        binaryStorageSubmodel.registerSubModel(ModeShapeDatabaseBinaryStorageResource.INSTANCE);
-        binaryStorageSubmodel.registerSubModel(ModeShapeCustomBinaryStorageResource.INSTANCE);
+        binaryStorageSubmodel.registerSubModel(ModeShapeFileBinaryStorageResource.DEFAULT);
+        binaryStorageSubmodel.registerSubModel(ModeShapeCacheBinaryStorageResource.DEFAULT);
+        binaryStorageSubmodel.registerSubModel(ModeShapeDatabaseBinaryStorageResource.DEFAULT);
+        binaryStorageSubmodel.registerSubModel(ModeShapeCustomBinaryStorageResource.DEFAULT);
 
-        final ManagementResourceRegistration compositeStorageSubmodel = binaryStorageSubmodel.registerSubModel(ModeShapeCompositeBinaryStorageResource.INSTANCE);
-        final ManagementResourceRegistration parentNamedBinaryStore = compositeStorageSubmodel.registerSubModel(ModeShapeNamedBinaryStorageResource.INSTANCE);
-
-        parentNamedBinaryStore.registerSubModel(ModeShapeNamedFileBinaryStorageResource.INSTANCE);
-        parentNamedBinaryStore.registerSubModel(ModeShapeNamedCacheBinaryStorageResource.INSTANCE);
-        parentNamedBinaryStore.registerSubModel(ModeShapeNamedDatabaseBinaryStorageResource.INSTANCE);
-        parentNamedBinaryStore.registerSubModel(ModeShapeNamedCustomBinaryStorageResource.INSTANCE);
-
-
+        ManagementResourceRegistration compositeStorageSubmodel = binaryStorageSubmodel.registerSubModel(ModeShapeCompositeBinaryStorageResource.INSTANCE);
+        compositeStorageSubmodel.registerSubModel(ModeShapeFileBinaryStorageResource.NESTED);
+        compositeStorageSubmodel.registerSubModel(ModeShapeCacheBinaryStorageResource.NESTED);
+        compositeStorageSubmodel.registerSubModel(ModeShapeDatabaseBinaryStorageResource.NESTED);
+        compositeStorageSubmodel.registerSubModel(ModeShapeCustomBinaryStorageResource.NESTED);
     }
 
     @Override

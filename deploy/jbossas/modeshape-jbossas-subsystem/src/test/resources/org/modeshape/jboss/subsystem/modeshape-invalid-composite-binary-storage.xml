@@ -1,0 +1,10 @@
+<subsystem xmlns="urn:jboss:domain:modeshape:1.0">
+    <repository name="sample">
+        <composite-binary-storage min-value-size="5000">
+            <file-binary-storage store-name="other"
+                                 path="modeshape/sample/binaries"
+                                 relative-to="jboss.server.data.dir"/>
+            <custom-binary-storage classname="other" store-name="other"/>
+        </composite-binary-storage>
+    </repository>
+</subsystem>

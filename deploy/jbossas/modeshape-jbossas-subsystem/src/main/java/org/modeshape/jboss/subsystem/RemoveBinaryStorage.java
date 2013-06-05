@@ -40,13 +40,22 @@ class RemoveBinaryStorage extends AbstractModeShapeRemoveStepHandler {
                                         ModelNode model ) {
         String repositoryName = repositoryName(operation);
         List<ServiceName> servicesToRemove = new ArrayList<ServiceName>();
-        servicesToRemove.add(ModeShapeServiceNames.binaryStorageServiceName(repositoryName));
+        String storeName = null;
+        if (model.hasDefined(ModelKeys.STORE_NAME)) {
+            storeName = model.get(ModelKeys.STORE_NAME).asString();
+        }
+        ServiceName binaryStorageServiceName = storeName != null ?
+                                               ModeShapeServiceNames.binaryStorageNestedServiceName(repositoryName, storeName)
+                                                                 : ModeShapeServiceNames.binaryStorageDefaultServiceName(repositoryName);
+        servicesToRemove.add(binaryStorageServiceName);
 
         //see if we need to remove the path service ...
         if (model.has(ModelKeys.RELATIVE_TO)
                 && model.get(ModelKeys.RELATIVE_TO).asString().contains(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
             // The binaries were stored in the data directory, so we need to remove the path service ...
-            ServiceName dirServiceName = ModeShapeServiceNames.binaryStorageDirectoryServiceName(repositoryName);
+            ServiceName dirServiceName = storeName != null ?
+                                         ModeShapeServiceNames.binaryStorageDirectoryServiceName(repositoryName, storeName) :
+                                         ModeShapeServiceNames.binaryStorageDirectoryServiceName(repositoryName);
             servicesToRemove.add(dirServiceName);
         }
 

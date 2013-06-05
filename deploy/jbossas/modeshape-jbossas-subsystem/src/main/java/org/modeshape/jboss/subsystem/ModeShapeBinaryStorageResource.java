@@ -23,24 +23,18 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
 /**
- *
+ * Empty {@link SimpleResourceDefinition} which is used only as a container for other binary stores.
  */
 public class ModeShapeBinaryStorageResource extends SimpleResourceDefinition {
     protected final static ModeShapeBinaryStorageResource INSTANCE = new ModeShapeBinaryStorageResource();
 
     private ModeShapeBinaryStorageResource() {
-        super(ModeShapeExtension.BINARY_STORAGE_PATH,
+        super(PathElement.pathElement(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE),
               ModeShapeExtension.getResourceDescriptionResolver(ModelKeys.REPOSITORY, ModelKeys.BINARY_STORAGE),
               AddBinaryStorage.INSTANCE, RemoveBinaryStorage.INSTANCE);
     }
-
-    @Override
-    public void registerAttributes( ManagementResourceRegistration resourceRegistration ) {
-        super.registerAttributes(resourceRegistration);
-    }
-
 }

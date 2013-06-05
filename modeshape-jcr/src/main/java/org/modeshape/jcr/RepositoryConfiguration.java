@@ -1163,7 +1163,7 @@ public class RepositoryConfiguration {
         }
 
         public BinaryStore getBinaryStore() throws Exception {
-            String type = binaryStorage.getString(FieldName.TYPE, "transient");
+            String type = getType();
             BinaryStore store = null;
             if (type.equalsIgnoreCase("transient")) {
                 store = TransientBinaryStore.get();
@@ -1233,6 +1233,15 @@ public class RepositoryConfiguration {
             if (store == null) store = TransientBinaryStore.get();
             store.setMinimumBinarySizeInBytes(getMinimumBinarySizeInBytes());
             return store;
+        }
+
+        /**
+         * Returns the type of the configured binary store.
+         *
+         * @return the type of the configured binary store, never {@code null}
+         */
+        public String getType() {
+            return binaryStorage.getString(FieldName.TYPE, "transient");
         }
 
         /*
