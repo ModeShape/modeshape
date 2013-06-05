@@ -25,6 +25,8 @@ package org.modeshape.jboss.subsystem;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 
@@ -36,8 +38,9 @@ class RemoveCompositeBinaryStorage extends AbstractModeShapeRemoveStepHandler {
     }
 
     @Override
-    List<ServiceName> servicesToRemove( ModelNode operation,
-                                        ModelNode model ) {
+    List<ServiceName> servicesToRemove( OperationContext context,
+                                        ModelNode operation,
+                                        ModelNode model ) throws OperationFailedException {
         String repositoryName = repositoryName(operation);
         List<ServiceName> servicesToRemove = new ArrayList<ServiceName>();
         //add the services for each of the nested stores
@@ -55,8 +58,8 @@ class RemoveCompositeBinaryStorage extends AbstractModeShapeRemoveStepHandler {
             for (ModelNode storageNode : storageNodes) {
                 String storeName = (String)storageNode.keys().toArray()[0];
                 ModelNode storageContent = storageNode.get(storeName);
-                if (storageContent.has(ModelKeys.RELATIVE_TO) &&
-                        storageContent.get(ModelKeys.RELATIVE_TO).asString().contains(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
+                String relativeTo = ModelAttributes.RELATIVE_TO.resolveModelAttribute(context, storageContent).asString();
+                if (relativeTo.equalsIgnoreCase(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
                     ServiceName dirServiceName = ModeShapeServiceNames.binaryStorageDirectoryServiceName(repositoryName, storeName);
                     servicesToRemove.add(dirServiceName);
                 }

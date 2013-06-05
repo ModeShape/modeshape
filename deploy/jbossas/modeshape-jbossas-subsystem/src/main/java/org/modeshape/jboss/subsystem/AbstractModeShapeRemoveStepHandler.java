@@ -28,7 +28,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import java.util.List;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceName;
@@ -47,10 +49,10 @@ abstract class AbstractModeShapeRemoveStepHandler extends AbstractRemoveStepHand
     @Override
     protected void performRuntime( OperationContext context,
                                    ModelNode operation,
-                                   ModelNode model ) {
+                                   ModelNode model ) throws OperationFailedException {
         String repositoryName = null;
 
-        for (ServiceName serviceName : servicesToRemove(operation, model)) {
+        for (ServiceName serviceName : servicesToRemove(context, operation, model)) {
             context.removeService(serviceName);
             if (log.isDebugEnabled()) {
                 if (repositoryName == null) {
@@ -64,11 +66,11 @@ abstract class AbstractModeShapeRemoveStepHandler extends AbstractRemoveStepHand
     @Override
     protected void recoverServices( OperationContext context,
                                     ModelNode operation,
-                                    ModelNode model ) {
+                                    ModelNode model ) throws OperationFailedException {
         String repositoryName = null;
 
         ServiceRegistry serviceRegistry = context.getServiceRegistry(false);
-        for (ServiceName serviceName : servicesToRemove(operation, model)) {
+        for (ServiceName serviceName : servicesToRemove(context, operation, model)) {
             context.getServiceTarget().addService(serviceName, serviceRegistry.getService(serviceName).getService());
             if (log.isDebugEnabled()) {
                 if (repositoryName == null) {
@@ -79,13 +81,17 @@ abstract class AbstractModeShapeRemoveStepHandler extends AbstractRemoveStepHand
         }
     }
 
-    abstract List<ServiceName> servicesToRemove( ModelNode operation,
-                                                 ModelNode model );
+    abstract List<ServiceName> servicesToRemove( OperationContext context,
+                                                 ModelNode operation,
+                                                 ModelNode model ) throws OperationFailedException;
 
-    String repositoryName( ModelNode operation ) {
-        // Get the service addresses ...
-        final PathAddress serviceAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
-        // Get the repository name ...
-        return serviceAddress.getLastElement().getValue();
+    String repositoryName( ModelNode operation ) throws OperationFailedException {
+        PathAddress pathAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
+        for (PathElement pathElement : pathAddress) {
+            if (pathElement.getKey().equalsIgnoreCase(ModelKeys.REPOSITORY)) {
+                return pathElement.getValue();
+            }
+        }
+        throw new OperationFailedException("Cannot determine repository name for: " + operation.asString());
     }
 }

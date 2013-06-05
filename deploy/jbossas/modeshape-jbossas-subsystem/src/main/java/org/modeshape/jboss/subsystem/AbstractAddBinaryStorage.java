@@ -103,9 +103,9 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
         ServiceBuilder<BinaryStorage> builder = target.addService(serviceName, service);
 
         // Add dependencies to the various data directories ...
-        String binariesServiceName = binaries.containsField(FieldName.BINARY_STORE_NAME) ? binaries.getString(FieldName.BINARY_STORE_NAME)
+        String binariesStoreName = binaries.containsField(FieldName.BINARY_STORE_NAME) ? binaries.getString(FieldName.BINARY_STORE_NAME)
                                      : null;
-        addControllersAndDependencies(repositoryName, service, builder, newControllers, target, binariesServiceName);
+        addControllersAndDependencies(repositoryName, service, builder, newControllers, target, binariesStoreName);
         builder.setInitialMode(ServiceController.Mode.ACTIVE);
         newControllers.add(builder.install());
     }
@@ -138,6 +138,6 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
                                                   ServiceBuilder<BinaryStorage> builder,
                                                   List<ServiceController<?>> newControllers,
                                                   ServiceTarget target,
-                                                  String binariesServiceName ) throws OperationFailedException {
+                                                  String binariesStoreName ) throws OperationFailedException {
     }
 }

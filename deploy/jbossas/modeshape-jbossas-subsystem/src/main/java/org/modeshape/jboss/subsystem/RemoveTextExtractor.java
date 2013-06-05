@@ -25,6 +25,8 @@ package org.modeshape.jboss.subsystem;
 
 import java.util.Arrays;
 import java.util.List;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
@@ -38,8 +40,9 @@ class RemoveTextExtractor extends AbstractModeShapeRemoveStepHandler {
     }
 
     @Override
-    List<ServiceName> servicesToRemove( ModelNode operation,
-                                        ModelNode model ) {
+    List<ServiceName> servicesToRemove( OperationContext context,
+                                        ModelNode operation,
+                                        ModelNode model ) throws OperationFailedException {
         // Get the service addresses ...
         final PathAddress serviceAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
         // Get the repository name ...

@@ -79,7 +79,7 @@ public class AddCacheBinaryStorage extends AbstractAddBinaryStorage {
                                                   ServiceBuilder<BinaryStorage> builder,
                                                   List<ServiceController<?>> newControllers,
                                                   ServiceTarget target,
-                                                  String binariesServiceName ) {
+                                                  String binariesStoreName ) {
         if (containerName != null) {
             builder.addDependency(ServiceName.JBOSS.append("infinispan", containerName),
                                   CacheContainer.class,
