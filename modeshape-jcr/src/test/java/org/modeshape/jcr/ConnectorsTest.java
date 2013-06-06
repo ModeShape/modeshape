@@ -37,9 +37,9 @@ import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.connector.filesystem.FileSystemConnector;
 import org.modeshape.jcr.Connectors.PathMappings;
-import org.modeshape.jcr.Connectors.WorkspaceAndPath;
 import org.modeshape.jcr.federation.spi.Connector;
 import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.WorkspaceAndPath;
 
 /**
  * Because the {@link Connectors} test expects a {@link JcrRepository.RunningState} instance and directly manipulates the
