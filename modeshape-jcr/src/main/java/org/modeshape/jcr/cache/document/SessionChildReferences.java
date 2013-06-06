@@ -135,14 +135,14 @@ public class SessionChildReferences extends AbstractChildReferences {
         return createIterator(name, context);
     }
 
-    protected Iterator<ChildReference> createIterator( Name name,
+    protected Iterator<ChildReference> createIterator( final Name name,
                                                        final Context context ) {
         Iterator<ChildReference> firstIter = persisted.iterator(name, context);
         final MutableChildReferences appended = this.appended;
         Iterable<ChildReference> second = new Iterable<ChildReference>() {
             @Override
             public Iterator<ChildReference> iterator() {
-                return appended.iterator(context);
+                return appended.iterator(context, name);
             }
         };
         return appended == null ? firstIter : new UnionIterator<ChildReference>(firstIter, second);
