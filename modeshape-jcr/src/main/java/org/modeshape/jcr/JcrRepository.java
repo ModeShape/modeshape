@@ -1293,13 +1293,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         }
                         case FAIL_IF_MISSING: {
                             if (this.repositoryQueryManager.indexesEmpty()) {
-                                throw new RepositoryException(JcrI18n.noIndexesExist.text(getName(),
-                                                                                          FAIL_IF_MISSING.name()));
-                            } else {
-                                logger.debug(
-                                        "Index rebuild mode is '{0}' and there are some indexes present. Nothing will be reindexed.",
-                                        FAIL_IF_MISSING.name());
+                                throw new RepositoryException(JcrI18n.noIndexesExist.text(getName(), FAIL_IF_MISSING.name()));
                             }
+                            logger.debug("Index rebuild mode is '{0}' and there are some indexes present. Nothing will be reindexed.",
+                                         FAIL_IF_MISSING.name());
                             break;
                         }
                     }

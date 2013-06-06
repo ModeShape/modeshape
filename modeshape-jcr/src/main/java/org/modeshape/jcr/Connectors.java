@@ -48,6 +48,7 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.util.ReflectionUtil;
 import org.modeshape.common.SystemFailureException;
+import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
@@ -77,6 +78,7 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
+import org.modeshape.jcr.value.WorkspaceAndPath;
 
 /**
  * Class which maintains (based on the configuration) the list of available connectors for a repository.
@@ -85,7 +87,7 @@ import org.modeshape.jcr.value.PropertyFactory;
  * @author Randall Hauch (rhauch@redhat.com)
  */
 @ThreadSafe
-public class Connectors {
+public final class Connectors {
 
     private static final Logger LOGGER = Logger.getLogger(Connectors.class);
 
@@ -103,6 +105,7 @@ public class Connectors {
         this.snapshot.set(new Snapshot(components, preconfiguredProjections));
     }
 
+    @GuardedBy( "this" )
     protected synchronized void initialize() throws RepositoryException {
         if (initialized || !hasConnectors()) {
             // nothing to do ...
@@ -121,7 +124,7 @@ public class Connectors {
         initialized = true;
     }
 
-    private synchronized void createPreconfiguredProjections() throws RepositoryException {
+    private void createPreconfiguredProjections() throws RepositoryException {
         assert !initialized;
         Snapshot current = this.snapshot.get();
         for (String workspaceName : current.getWorkspacesWithProjections()) {
@@ -163,7 +166,7 @@ public class Connectors {
         }
     }
 
-    private synchronized void loadStoredProjections() {
+    private void loadStoredProjections() {
         assert !initialized;
         SessionCache systemSession = repository.createSystemSession(repository.context(), true);
 
@@ -215,7 +218,7 @@ public class Connectors {
         return systemSession.getNode(systemNodeRef.getKey());
     }
 
-    private synchronized void initializeConnectors() {
+    private void initializeConnectors() {
         assert !initialized;
         // Get a session that we'll pass to the connectors to use for registering namespaces and node types
         Session session = null;
@@ -364,7 +367,7 @@ public class Connectors {
                     if (internalNodeKey.equalsIgnoreCase(projection.getProjectedNodeKey())) {
                         String externalNodeKey = projection.getExternalNodeKey();
                         removeStoredProjection(externalNodeKey);
-                        updated.withoutProjection(externalNodeKey);
+                        updated = updated.withoutProjection(externalNodeKey);
                     }
                 }
                 if (current != updated) {
@@ -374,6 +377,11 @@ public class Connectors {
         }
     }
 
+    /**
+     * This method removes a persisted projection definition, but does not update the {@link #snapshot} instance.
+     * 
+     * @param externalNodeKey the external key for the projection
+     */
     private void removeStoredProjection( String externalNodeKey ) {
         SessionCache systemSession = repository.createSystemSession(repository.context(), false);
         NodeKey systemNodeKey = getSystemNode(systemSession).getKey();
@@ -405,73 +413,6 @@ public class Connectors {
                 break;
             }
         }
-    }
-
-    /**
-     * Add a new connector by supplying the component definition. This method instantiates, initializes, and then registers the
-     * connector into this manager. If registration is successful, this method will replace any running connector already
-     * registered with the same name.
-     * 
-     * @param component the component describing the connector; may not be null
-     * @throws RepositoryException if there is a problem initializing the connector
-     */
-    public synchronized void addConnector( Component component ) throws RepositoryException {
-        Connector connector = instantiateConnector(component);
-        if (initialized) {
-            // We need to initialize the connector right away ...
-            // Get a session that we'll pass to the sequencers to use for registering namespaces and node types
-            Session session = null;
-            try {
-                // Get a session that we'll pass to the sequencers to use for registering namespaces and node types
-                session = repository.loginInternalSession();
-                NamespaceRegistry registry = session.getWorkspace().getNamespaceRegistry();
-                NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
-
-                if (!(nodeTypeManager instanceof org.modeshape.jcr.api.nodetype.NodeTypeManager)) {
-                    throw new IllegalStateException("Invalid node type manager (expected modeshape NodeTypeManager): "
-                                                    + nodeTypeManager.getClass().getName());
-                }
-                initializeConnector(connector, registry, (org.modeshape.jcr.api.nodetype.NodeTypeManager)nodeTypeManager);
-            } catch (IOException e) {
-                String msg = JcrI18n.unableToInitializeConnector.text(component, repository.name(), e.getMessage());
-                throw new RepositoryException(msg, e);
-            } catch (RuntimeException e) {
-                String msg = JcrI18n.unableToInitializeConnector.text(component, repository.name(), e.getMessage());
-                throw new RepositoryException(msg, e);
-            } finally {
-                if (session != null) {
-                    session.logout();
-                }
-            }
-        }
-        // Replace the snapshot atomically ...
-        while (true) {
-            Snapshot currentSnapshot = this.snapshot.get();
-            Snapshot newSnapshot = currentSnapshot.withConnector(connector);
-            if (this.snapshot.compareAndSet(currentSnapshot, newSnapshot)) {
-                // After the new snapshot is available for use, shutdown any Connector instances that were
-                // replaced by the new one ...
-                newSnapshot.shutdownUnusedConnectors();
-                break;
-            }
-        }
-    }
-
-    /**
-     * Remove an existing connector registered with the supplied name.
-     * 
-     * @param connectorName the name of the connector that should be removed; may not be null
-     * @return true if the existing connector was found and removed, or false if there was no connector with the given name
-     */
-    public synchronized boolean removeConnector( String connectorName ) {
-        Snapshot current = this.snapshot.get();
-        Snapshot updated = current.withoutConnector(connectorName);
-        if (current != updated) {
-            this.snapshot.compareAndSet(current, updated);
-            updated.shutdownUnusedConnectors();
-            return true;
-        }
-        return false;
     }
 
     protected Connector instantiateConnector( Component component ) {
@@ -644,8 +585,6 @@ public class Connectors {
         private final Set<String> projectedInternalNodeKeys;
 
         private final List<Connector> unusedConnectors = new LinkedList<Connector>();
-
-        private PathFactory pathFactory;
 
         protected Snapshot( Collection<Component> components,
                             Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections ) {
@@ -843,50 +782,6 @@ public class Connectors {
         }
 
         /**
-         * Create a new snapshot that is a copy of this snapshot but which includes the supplied connector
-         * 
-         * @param connector the connector, which may replace an existing connector with the same {@link Connector#getSourceName()
-         *        source name}.
-         * @return the new snapshot
-         * @see #shutdownUnusedConnectors() should be called after this Snapshot is no longer accessible, so that any previous
-         *      Connector instance is {@link Connector#shutdown()}
-         */
-        protected Snapshot withConnector( Connector connector ) {
-            Snapshot clone = new Snapshot(this);
-            clone.registerConnector(connector);
-            return clone;
-        }
-
-        /**
-         * Create a new snapshot that is a copy of this snapshot but which excludes the connector with the supplied name
-         * 
-         * @param name the name of the connector
-         * @return the new snapshot, or this instance if it contains no such connector
-         * @see #shutdownUnusedConnectors() should be called after this Snapshot is no longer accessible, so that any previous
-         *      Connector instance is {@link Connector#shutdown()}
-         */
-        protected Snapshot withoutConnector( String name ) {
-            Connector connector = sourceKeyToConnectorMap.get(name);
-            if (connector != null) {
-                return withoutConnector(connector);
-            }
-            return this;
-        }
-
-        /**
-         * Create a new snapshot that is a copy of this snapshot but which excludes the supplied connector instance.
-         * 
-         * @param connector the connector
-         * @return the new snapshot, or this instance if it contains no such connector
-         * @see #shutdownUnusedConnectors() should be called after this Snapshot is no longer accessible, so that any previous
-         *      Connector instance is {@link Connector#shutdown()}
-         */
-        protected Snapshot withoutConnector( Connector connector ) {
-            Snapshot clone = new Snapshot(this);
-            return clone.unregisterConnector(connector) ? clone : this;
-        }
-
-        /**
          * Create a new snapshot that is a copy of this snapshot but which excludes any of the supplied connector instances.
          * 
          * @param connectors the connectors
@@ -1018,7 +913,9 @@ public class Connectors {
             }
             // We know we have the mappings, so simply return them ...
             PathMappings mappings = mappingsByConnectorSourceName.get(connectorSourceName);
-            return mappings != null ? mappings : new EmptyPathMappings(connectorSourceName, pathFactory);
+            return mappings != null ? mappings : new EmptyPathMappings(connectorSourceName, repository().context()
+                                                                                                        .getValueFactories()
+                                                                                                        .getPathFactory());
         }
     }
 
@@ -1056,64 +953,6 @@ public class Connectors {
          * @return the connector source name; never null
          */
         String getConnectorSourceName();
-    }
-
-    /**
-     * A path within a given workspace.
-     */
-    @Immutable
-    public static final class WorkspaceAndPath {
-        protected final String workspaceName;
-        protected final Path path;
-
-        protected WorkspaceAndPath( String workspaceName,
-                                    Path path ) {
-            this.workspaceName = workspaceName;
-            this.path = path;
-            assert this.workspaceName != null;
-            assert this.path != null;
-        }
-
-        /**
-         * Get the path.
-         * 
-         * @return the path; never null
-         */
-        public Path getPath() {
-            return path;
-        }
-
-        /**
-         * Get the workspace name.
-         * 
-         * @return the workspace name; never null
-         */
-        public String getWorkspaceName() {
-            return workspaceName;
-        }
-
-        @Override
-        public int hashCode() {
-            return HashCode.compute(workspaceName, path);
-        }
-
-        @Override
-        public boolean equals( Object obj ) {
-            if (obj instanceof WorkspaceAndPath) {
-                WorkspaceAndPath that = (WorkspaceAndPath)obj;
-                return this.workspaceName.equals(that.workspaceName) && this.path.equals(that.path);
-            }
-            return false;
-        }
-
-        @Override
-        public String toString() {
-            return workspaceName + ":/" + path;
-        }
-
-        protected WorkspaceAndPath withPath( Path path ) {
-            return new WorkspaceAndPath(workspaceName, path);
-        }
     }
 
     @Immutable
@@ -1184,9 +1023,8 @@ public class Connectors {
                     if (first == null) {
                         first = resolved;
                     } else {
-                        assert first != null;
                         if (results == null) {
-                            results = new LinkedList<Connectors.WorkspaceAndPath>();
+                            results = new LinkedList<WorkspaceAndPath>();
                             results.add(first);
                         }
                         results.add(resolved);
@@ -1227,7 +1065,6 @@ public class Connectors {
             this.internalPath = new WorkspaceAndPath(workspaceName, internalPath);
             this.hc = HashCode.compute(this.externalPath, this.internalPath);
             assert this.externalPath != null;
-            assert this.internalPath != null;
         }
 
         /**
@@ -1244,7 +1081,7 @@ public class Connectors {
                                                                PathFactory pathFactory ) {
             if (this.externalPath.isRoot()) {
                 // Simply prepend the supplied path to the internal path ...
-                return internalPath.withPath(pathFactory.create(internalPath.path, externalPath));
+                return internalPath.withPath(pathFactory.create(internalPath.getPath(), externalPath));
             }
             if (this.externalPath.isAtOrAbove(externalPath)) {
                 if (this.externalPath.size() == externalPath.size()) {
@@ -1253,7 +1090,7 @@ public class Connectors {
                 }
                 // Simply prepend the external subpath to the internal path ...
                 Path subpath = externalPath.subpath(this.externalPath.size());
-                return internalPath.withPath(pathFactory.create(internalPath.path, subpath));
+                return internalPath.withPath(pathFactory.create(internalPath.getPath(), subpath));
             }
             return null;
         }

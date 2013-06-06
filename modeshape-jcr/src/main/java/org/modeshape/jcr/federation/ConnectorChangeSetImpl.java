@@ -8,7 +8,6 @@ import java.util.Map;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.jcr.Connectors;
 import org.modeshape.jcr.Connectors.PathMappings;
-import org.modeshape.jcr.Connectors.WorkspaceAndPath;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.bus.ChangeBus;
 import org.modeshape.jcr.cache.NodeKey;
@@ -19,6 +18,7 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.WorkspaceAndPath;
 
 @NotThreadSafe
 public class ConnectorChangeSetImpl implements ConnectorChangeSet {
@@ -46,10 +46,12 @@ public class ConnectorChangeSetImpl implements ConnectorChangeSet {
         this.repositoryKey = repositoryKey;
         this.bus = bus;
         assert this.connectors != null;
+        assert this.connectorSourceName != null;
         assert this.pathMappings != null;
         assert this.processId != null;
         assert this.repositoryKey != null;
         assert this.bus != null;
+        assert this.timeFactory != null;
     }
 
     protected final RecordingChanges changesFor( WorkspaceAndPath workspaceAndPath ) {
