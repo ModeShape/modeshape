@@ -18,6 +18,7 @@ import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -31,6 +32,9 @@ import static org.junit.matchers.JUnitMatchers.hasItems;
 @ThreadSafe
 public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
 
+    private static final int MIN_BINARY_SIZE = 20;
+    private static final Random RANDOM = new Random();
+
     static CompositeBinaryStore store;
     static BinaryStore defaultStore;
     static BinaryStore alternativeStore;
@@ -41,13 +45,10 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
     static File altDirectory;
     static File altDirectory2;
 
-    protected static final int MIN_BINARY_SIZE = 20;
-
 
     @BeforeClass
     public static void beforeClass() {
         Map<String, BinaryStore> stores = new LinkedHashMap<String, BinaryStore>();
-
 
         directory = new File("target/cfsbs/");
         FileUtil.delete(directory);
@@ -94,11 +95,11 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
 
     @Test
     public void shouldAggregateBinaryKeysFromAllStores() throws BinaryStoreException, IOException {
-        String text = randomString();
-        BinaryValue v = defaultStore.storeValue(new ByteArrayInputStream(text.getBytes()));
+        byte[] content = randomContent();
+        defaultStore.storeValue(new ByteArrayInputStream(content));
 
-        String text1 = randomString();
-        BinaryValue v1 = alternativeStore.storeValue(new ByteArrayInputStream(text1.getBytes()));
+        byte[] content1 = randomContent();
+        alternativeStore.storeValue(new ByteArrayInputStream(content1));
 
         final Iterable<BinaryKey> allBinaryKeys = store.getAllBinaryKeys();
         final List<BinaryKey> expected = new ArrayList<BinaryKey>();
@@ -118,48 +119,43 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
 
     @Test
     public void shouldPersistContentIntoTheDefaultStore() throws BinaryStoreException, IOException {
-        String text = randomString();
+        byte[] content = randomContent();
 
-        BinaryValue v = store.storeValue(new ByteArrayInputStream(text.getBytes()));
+        BinaryValue v = store.storeValue(new ByteArrayInputStream(content));
 
         InputStream is = store.getInputStream(v.getKey());
-        String s = IoUtil.read(is);
+        byte[] storeContent = IoUtil.readBytes(is);
 
         InputStream is1 = defaultStore.getInputStream(v.getKey());
-        String s1 = IoUtil.read(is1);
+        byte[] defaultStoreContent = IoUtil.readBytes(is1);
 
-        assertThat(s, is(text));
-        assertThat(s1, is(text));
+        assertArrayEquals(content, storeContent);
+        assertArrayEquals(content, defaultStoreContent);
     }
 
     @Test
     public void shouldLookInAllBinaryStoresForAKey() throws BinaryStoreException, IOException {
-        String text = randomString();
+        byte[] content = randomContent();
 
-        BinaryValue v = alternativeStore.storeValue(new ByteArrayInputStream(text.getBytes()));
+        BinaryValue v = alternativeStore.storeValue(new ByteArrayInputStream(content));
 
         InputStream is = store.getInputStream(v.getKey());
-        String s = IoUtil.read(is);
+        byte[] storedContent = IoUtil.readBytes(is);
 
-        assertThat(s, is(text));
+        assertArrayEquals(content, storedContent);
         assertThat(store.hasBinary(v.getKey()), is(true));
     }
 
     @Test
     public void shouldStoreThingsInTheDefaultStoreWhenTheStrategyFails() throws BinaryStoreException, IOException {
-        String text = randomString();
-
-        BinaryValue v = store.storeValue(new ByteArrayInputStream(text.getBytes()), "this-hint-doesnt-reference-a-store");
+        BinaryValue v = store.storeValue(new ByteArrayInputStream(randomContent()), "this-hint-doesnt-reference-a-store");
         assertTrue(defaultStore.hasBinary(v.getKey()));
     }
 
     @Test
     public void shouldKnowWhatBinaryStoreAKeyIsIn() throws BinaryStoreException {
-        String text = randomString();
-        BinaryValue v = defaultStore.storeValue(new ByteArrayInputStream(text.getBytes()));
-
-        String text1 = randomString();
-        BinaryValue v1 = alternativeStore.storeValue(new ByteArrayInputStream(text1.getBytes()));
+        BinaryValue v = defaultStore.storeValue(new ByteArrayInputStream(randomContent()));
+        BinaryValue v1 = alternativeStore.storeValue(new ByteArrayInputStream(randomContent()));
 
         assertEquals(defaultStore, store.findBinaryStoreContainingKey(v.getKey()));
         assertEquals(alternativeStore, store.findBinaryStoreContainingKey(v1.getKey()));
@@ -168,9 +164,7 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
 
     @Test
     public void shouldMoveBinaryKeysBetweenStores() throws BinaryStoreException {
-        String text = randomString();
-        BinaryValue v = defaultStore.storeValue(new ByteArrayInputStream(text.getBytes()));
-
+        BinaryValue v = defaultStore.storeValue(new ByteArrayInputStream(randomContent()));
         assertFalse(alternativeStore.hasBinary(v.getKey()));
 
         store.moveValue(v.getKey(), defaultHint, alternativeHint);
@@ -186,12 +180,9 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
 
     @Test(expected = BinaryStoreException.class)
     public void shouldRaiseAnExceptionWhenMovingAKeyThatDoesntExistInTheSourceStore() throws BinaryStoreException {
-        String text = randomString();
-        BinaryValue v = defaultStore.storeValue(new ByteArrayInputStream(text.getBytes()));
-
+        BinaryValue v = defaultStore.storeValue(new ByteArrayInputStream(randomContent()));
         store.moveValue(v.getKey(), alternativeHint, defaultHint);
     }
-
 
     @Test
     public void shouldStoreThingsInTheFirstStoreWhenTheStrategyFailsAndNoDefaultStoreProvided() throws BinaryStoreException, IOException {
@@ -204,24 +195,16 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
         localStoreWithoutADefaultStore.setMinimumBinarySizeInBytes(MIN_BINARY_SIZE);
         localStoreWithoutADefaultStore.start();
 
-        String text = randomString();
-
-        BinaryValue v = localStoreWithoutADefaultStore.storeValue(new ByteArrayInputStream(text.getBytes()),
+        BinaryValue v = localStoreWithoutADefaultStore.storeValue(new ByteArrayInputStream(randomContent()),
                                                                   "this-hint-doesnt-reference-a-store");
 
         assertTrue(alternativeStore.hasBinary(v.getKey()));
     }
 
-
-    private String randomString() {
-        final String textBase = "The quick brown fox jumps over the lazy dog";
-        StringBuilder builder = new StringBuilder();
-        Random rand = new Random();
-        while (builder.length() <= MIN_BINARY_SIZE) {
-            builder.append(textBase.substring(0, rand.nextInt(textBase.length())));
-        }
-
-        return builder.toString();
+    private byte[] randomContent() {
+        byte[] content = new byte[MIN_BINARY_SIZE + 1];
+        RANDOM.nextBytes(content);
+        return content;
     }
 
     @Override

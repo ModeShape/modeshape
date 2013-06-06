@@ -78,7 +78,7 @@ public class CompositeBinaryStoreIntegrationTest {
         assertEquals(RepositoryConfiguration.FieldValue.BINARY_STORAGE_TYPE_COMPOSITE,
                      repository.getConfiguration().getBinaryStorage().getType());
         session = repository.login();
-        long minBinarySize = repository.getConfiguration().getBinaryStorage().getMinimumBinarySizeInBytes();
+        long minBinarySize = repository.getConfiguration().getBinaryStorage().getMinimumBinarySizeInBytes() + 1;
 
         byte[] defaultBinary = createNodeWithBinaryProperty("default", minBinarySize, "default", session);
         assertBinaryPropertyStored(defaultBinary, "/default", session);
