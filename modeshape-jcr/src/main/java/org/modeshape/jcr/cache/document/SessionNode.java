@@ -964,15 +964,6 @@ public class SessionNode implements MutableCachedNode {
         return new SessionChildReferences(persisted, appended.get(), changedChildren);
     }
 
-    public ChildReferences getPersistedChildReferences( NodeCache cache ) {
-        // Find the persisted information, since the info we have is relative to it ...
-        CachedNode persistedNode = nodeInWorkspace(session(cache));
-        ChildReferences persisted = persistedNode != null ? persistedNode.getChildReferences(cache) : null;
-
-        // And create a transient implementation ...
-        return new SessionChildReferences(persisted, null, null);
-    }
-    
     @Override
     public MutableCachedNode createChild( SessionCache cache,
                                           NodeKey key,

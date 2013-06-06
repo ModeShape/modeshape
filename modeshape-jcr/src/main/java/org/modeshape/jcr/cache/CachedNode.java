@@ -202,14 +202,6 @@ public interface CachedNode {
     ChildReferences getChildReferences( NodeCache cache );
 
     /**
-     * Get the persisted set of child references for this node. Note that each child reference will need to be resolved by the caller.
-     * 
-     * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
-     * @return the representation of the children of this node; never null but possibly empty
-     */
-    ChildReferences getPersistedChildReferences( NodeCache cache );
-    
-    /**
      * Get the keys of the nodes that have JCR REFERENCE and/or WEAK_REFERENCE properties pointing to this node.
      * 
      * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null

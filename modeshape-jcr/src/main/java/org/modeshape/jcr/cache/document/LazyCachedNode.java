@@ -385,15 +385,6 @@ public class LazyCachedNode implements CachedNode, Serializable {
     }
 
     @Override
-    public ChildReferences getPersistedChildReferences( NodeCache cache ) {
-        if (childReferences == null) {
-            WorkspaceCache wsCache = workspaceCache(cache);
-            childReferences = wsCache.translator().getChildReferences(wsCache, document(wsCache));
-        }
-        return childReferences;
-    }
-    
-    @Override
     public Set<NodeKey> getReferrers( NodeCache cache,
                                       ReferenceType type ) {
         // Get the referrers ...

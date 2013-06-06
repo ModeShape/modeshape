@@ -851,10 +851,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (patterns.size() == 1 && patterns.get(0) instanceof String) {
             // This is a literal, so just look up by name ...
             Name literal = nameFrom((String)patterns.get(0));
-            iter = node().getPersistedChildReferences(sessionCache()).iterator(literal);
+            iter = node().getChildReferences(sessionCache()).iterator(literal);
         } else {
             NamespaceRegistry registry = session.namespaces();
-            iter = node().getPersistedChildReferences(sessionCache()).iterator(patterns, registry);
+            iter = node().getChildReferences(sessionCache()).iterator(patterns, registry);
         }
         return new JcrChildNodeIterator(new ChildNodeResolver(session, key()), iter);
     }
