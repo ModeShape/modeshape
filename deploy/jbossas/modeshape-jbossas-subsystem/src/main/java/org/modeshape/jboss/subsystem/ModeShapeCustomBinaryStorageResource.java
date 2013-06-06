@@ -23,24 +23,27 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
 /**
- *
+ * {@link SimpleResourceDefinition} which handles <custom-binary-storage/> elements.
  */
 public class ModeShapeCustomBinaryStorageResource extends SimpleResourceDefinition {
-    protected final static ModeShapeCustomBinaryStorageResource INSTANCE = new ModeShapeCustomBinaryStorageResource();
+    protected final static ModeShapeCustomBinaryStorageResource DEFAULT = new ModeShapeCustomBinaryStorageResource(
+            PathElement.pathElement(ModelKeys.STORAGE_TYPE, ModelKeys.CUSTOM_BINARY_STORAGE));
+    protected final static ModeShapeCustomBinaryStorageResource NESTED = new ModeShapeCustomBinaryStorageResource(
+            PathElement.pathElement(ModelKeys.NESTED_STORAGE_TYPE_CUSTOM, PathElement.WILDCARD_VALUE));
 
-    private ModeShapeCustomBinaryStorageResource() {
-        super(ModeShapeExtension.CUSTOM_BINARY_STORAGE_PATH,
+    private ModeShapeCustomBinaryStorageResource( PathElement pathElement ) {
+        super(pathElement,
               ModeShapeExtension.getResourceDescriptionResolver(ModelKeys.REPOSITORY, ModelKeys.CUSTOM_BINARY_STORAGE),
               AddCustomBinaryStorage.INSTANCE, RemoveBinaryStorage.INSTANCE);
     }
 
     @Override
     public void registerAttributes( ManagementResourceRegistration resourceRegistration ) {
-        super.registerAttributes(resourceRegistration);
         BinaryStorageWriteAttributeHandler.CUSTOM_BINARY_STORAGE_INSTANCE.registerAttributes(resourceRegistration);
     }
 

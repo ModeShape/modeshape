@@ -26,6 +26,8 @@ package org.modeshape.jboss.subsystem;
 import java.util.Arrays;
 import java.util.List;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
@@ -44,8 +46,9 @@ class RemoveSource extends AbstractModeShapeRemoveStepHandler {
     }
 
     @Override
-    List<ServiceName> servicesToRemove( ModelNode operation,
-                                        ModelNode model ) {
+    List<ServiceName> servicesToRemove( OperationContext context,
+                                        ModelNode operation,
+                                        ModelNode model ) throws OperationFailedException {
         final PathAddress serviceAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
         final String sourceName = serviceAddress.getLastElement().getValue();
         return Arrays.asList(ModeShapeServiceNames.sourceServiceName(repositoryName(operation), sourceName));

@@ -152,6 +152,16 @@ public class RepositoryConfigurationTest {
         assertValid("config/database-url-binary-storage.json");
     }
 
+	@Test
+	public void shouldSuccessfullyValidateCompositeBinaryStorageConfiguration() {
+		assertValid("config/composite-binary-storage.json");
+	}
+
+	@Test
+	public void shouldSuccessfullyValidateCompositeBinaryStorageWithoutDefaultNamedStoreConfiguration() {
+		assertNotValid(1, "config/composite-binary-storage-without-default.json");
+	}
+
     @Test
     public void shouldSuccessfullyValidateCustomBinaryStorageConfiguration() {
         assertValid("config/custom-binary-storage.json");

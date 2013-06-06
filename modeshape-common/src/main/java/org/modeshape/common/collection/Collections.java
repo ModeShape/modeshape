@@ -26,6 +26,7 @@ package org.modeshape.common.collection;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -45,4 +46,58 @@ public class Collections {
         return java.util.Collections.unmodifiableSet(values);
     }
 
+    /**
+     * Concatenate two Iterable sources
+     *
+     * @param a a non-null Iterable value
+     * @param b a non-null Iterable value
+     * @return an Iterable that will iterate through all the values from 'a' and then all the values from 'b'
+     */
+    public static <T> Iterable<T> concat( final Iterable<T> a,
+                                          final Iterable<T> b ) {
+        assert (a != null);
+        assert (b != null);
+        return new Iterable<T>() {
+            @Override
+            public Iterator<T> iterator() {
+                return Collections.concat(a.iterator(), b.iterator());
+            }
+        };
+
+    }
+
+    /**
+     * Concatenate two Iterators
+     *
+     * @param a a non-null Iterator
+     * @param b a non-null Iterator
+     * @return an Iterator that will iterate through all the values of 'a', and then all the values of 'b'
+     */
+    public static <T> Iterator<T> concat( final Iterator<T> a,
+                                          final Iterator<T> b ) {
+        assert (a != null);
+        assert (b != null);
+
+        return new Iterator<T>() {
+
+            @Override
+            public boolean hasNext() {
+                return a.hasNext() || b.hasNext();
+            }
+
+            @Override
+            public T next() {
+                if (a.hasNext()) {
+                    return a.next();
+                }
+
+                return b.next();
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+    }
 }

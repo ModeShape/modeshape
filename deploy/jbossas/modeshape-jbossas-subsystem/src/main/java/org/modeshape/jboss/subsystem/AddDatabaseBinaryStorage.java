@@ -55,7 +55,7 @@ public class AddDatabaseBinaryStorage extends AbstractAddBinaryStorage {
     @Override
     protected void populateModel( ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {
-        populate(operation, model, ModelKeys.DB_BINARY_STORAGE, ModelAttributes.DATABASE_BINARY_STORAGE_ATTRIBUTES);
+        populate(operation, model, ModelAttributes.DATABASE_BINARY_STORAGE_ATTRIBUTES);
     }
 
 }

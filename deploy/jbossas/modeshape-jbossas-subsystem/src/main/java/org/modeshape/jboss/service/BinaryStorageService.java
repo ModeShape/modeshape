@@ -72,7 +72,7 @@ public class BinaryStorageService implements Service<BinaryStorage> {
     }
 
     private String appendDirDelim( String value ) {
-        if (value != null && value.endsWith("/")) {
+        if (value != null && !value.endsWith("/")) {
             value = value + "/";
         }
         return value;

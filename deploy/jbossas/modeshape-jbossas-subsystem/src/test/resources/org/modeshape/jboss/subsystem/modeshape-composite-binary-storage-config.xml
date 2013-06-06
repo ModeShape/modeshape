@@ -1,0 +1,18 @@
+<subsystem xmlns="urn:jboss:domain:modeshape:1.0">
+    <repository name="sample">
+        <composite-binary-storage min-value-size="5000">
+            <file-binary-storage store-name="other"
+                                 path="modeshape/sample/binaries"
+                                 relative-to="jboss.server.data.dir"/>
+            <file-binary-storage store-name="another-fsbs"
+                                 path="modeshape/sample/somewhere-else"
+                                 relative-to="jboss.server.data.dir"/>
+            <cache-binary-storage store-name="default"
+                                  data-cache-name="datacache"
+                                  metadata-cache-name="metadatacache"
+                                  cache-container="binary-container"/>
+            <custom-binary-storage classname="someclass" store-name="customBinary"/>
+            <db-binary-storage data-source-jndi-name="jndiName" store-name="dbBinary"/>
+        </composite-binary-storage>
+    </repository>
+</subsystem>

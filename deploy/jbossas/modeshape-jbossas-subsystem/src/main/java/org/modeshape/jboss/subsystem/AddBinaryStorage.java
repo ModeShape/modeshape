@@ -27,9 +27,9 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.dmr.ModelNode;
 
 /**
- * 
+ * Empty {@link AbstractAddStepHandler}, because the binary storage resource is only used as a container.
  */
-public class AddBinaryStorage extends AbstractAddStepHandler {
+class AddBinaryStorage extends AbstractAddStepHandler {
 
     public static final AddBinaryStorage INSTANCE = new AddBinaryStorage();
 

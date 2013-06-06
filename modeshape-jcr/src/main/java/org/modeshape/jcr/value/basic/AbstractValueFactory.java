@@ -370,6 +370,11 @@ public abstract class AbstractValueFactory<T> implements ValueFactory<T> {
         };
     }
 
+    @Override
+    public T create( InputStream stream, String hint ) throws ValueFormatException, IoException {
+        return create(stream);
+    }
+
     protected static class ConvertingIterator<ValueType> implements Iterator<ValueType> {
         private final Iterator<?> delegate;
         private final ValueFactory<ValueType> factory;

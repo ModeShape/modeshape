@@ -30,11 +30,11 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 
-class RemoveBinaryStorage extends AbstractModeShapeRemoveStepHandler {
+class RemoveCompositeBinaryStorage extends AbstractModeShapeRemoveStepHandler {
 
-    static final RemoveBinaryStorage INSTANCE = new RemoveBinaryStorage();
+    static final RemoveCompositeBinaryStorage INSTANCE = new RemoveCompositeBinaryStorage();
 
-    private RemoveBinaryStorage() {
+    private RemoveCompositeBinaryStorage() {
     }
 
     @Override
@@ -43,25 +43,30 @@ class RemoveBinaryStorage extends AbstractModeShapeRemoveStepHandler {
                                         ModelNode model ) throws OperationFailedException {
         String repositoryName = repositoryName(operation);
         List<ServiceName> servicesToRemove = new ArrayList<ServiceName>();
-        String storeName = null;
-        if (model.hasDefined(ModelKeys.STORE_NAME)) {
-            storeName = model.get(ModelKeys.STORE_NAME).asString();
-        }
-        ServiceName binaryStorageServiceName = storeName != null ?
-                                               ModeShapeServiceNames.binaryStorageNestedServiceName(repositoryName, storeName)
-                                               : ModeShapeServiceNames.binaryStorageDefaultServiceName(repositoryName);
-        servicesToRemove.add(binaryStorageServiceName);
-
-        //see if we need to remove the path service ...
-        String relativeTo = ModelAttributes.RELATIVE_TO.resolveModelAttribute(context, model).asString();
-        if (relativeTo.equalsIgnoreCase(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
-            // The binaries were stored in the data directory, so we need to remove the path service ...
-            ServiceName dirServiceName = storeName != null ?
-                                         ModeShapeServiceNames.binaryStorageDirectoryServiceName(repositoryName, storeName) :
-                                         ModeShapeServiceNames.binaryStorageDirectoryServiceName(repositoryName);
-            servicesToRemove.add(dirServiceName);
+        //add the services for each of the nested stores
+        List<ModelNode> nestedStores = model.get(ModelKeys.NESTED_STORES).asList();
+        for (ModelNode nestedStore : nestedStores) {
+            String nestedStoreName = nestedStore.asString();
+            ServiceName nestedServiceName = ModeShapeServiceNames.binaryStorageNestedServiceName(repositoryName,
+                                                                                                 nestedStoreName);
+            servicesToRemove.add(nestedServiceName);
         }
 
+        //iterate through each of nested store nodes to check is the binary path storage service need to be removed as well
+        if (model.has(ModelKeys.NESTED_STORAGE_TYPE_FILE)) {
+            List<ModelNode> storageNodes = model.get(ModelKeys.NESTED_STORAGE_TYPE_FILE).asList();
+            for (ModelNode storageNode : storageNodes) {
+                String storeName = (String)storageNode.keys().toArray()[0];
+                ModelNode storageContent = storageNode.get(storeName);
+                String relativeTo = ModelAttributes.RELATIVE_TO.resolveModelAttribute(context, storageContent).asString();
+                if (relativeTo.equalsIgnoreCase(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
+                    ServiceName dirServiceName = ModeShapeServiceNames.binaryStorageDirectoryServiceName(repositoryName, storeName);
+                    servicesToRemove.add(dirServiceName);
+                }
+            }
+        }
+        //add the main repository service
+        servicesToRemove.add(ModeShapeServiceNames.binaryStorageDefaultServiceName(repositoryName));
         return servicesToRemove;
     }
 }

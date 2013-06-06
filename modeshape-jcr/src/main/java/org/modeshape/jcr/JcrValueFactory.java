@@ -148,6 +148,12 @@ public class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
     }
 
     @Override
+    public BinaryValue createBinary( InputStream value, String hint ) {
+        if (value == null) return null;
+        return valueFactories.getBinaryFactory().create(value, hint);
+    }
+
+    @Override
     public JcrValue createValue( Calendar value ) {
         if (value == null) return null;
         DateTime dateTime = valueFactories.getDateFactory().create(value);
@@ -201,7 +207,7 @@ public class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
 
     @Override
     public String createName( String localName ) {
-        return valueFactories.getNameFactory().create(null, localName).getString();
+        return valueFactories.getNameFactory().create((String)null, localName).getString();
     }
 
     @Override

@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -79,7 +80,9 @@ import org.modeshape.jcr.clustering.DefaultChannelProvider;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.value.binary.AbstractBinaryStore;
+import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
+import org.modeshape.jcr.value.binary.CompositeBinaryStore;
 import org.modeshape.jcr.value.binary.DatabaseBinaryStore;
 import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
@@ -291,6 +294,11 @@ public class RepositoryConfiguration {
         public static final String MINIMUM_STRING_SIZE = "minimumStringSize";
 
         /**
+         * The name attribute which can be set on a binary store. It's only used when a {@link CompositeBinaryStore} is configured.
+         */
+        public static final String BINARY_STORE_NAME = "storeName";
+
+        /**
          * The name for the field whose value is a document containing workspace information.
          */
         public static final String WORKSPACES = "workspaces";
@@ -341,6 +349,12 @@ public class RepositoryConfiguration {
          * The name for the field whose value is a document containing binary storage information.
          */
         public static final String BINARY_STORAGE = "binaryStorage";
+
+
+        /**
+         * The name for the field whose value is a document containing binary storage information.
+         */
+        public static final String COMPOSITE_STORE_NAMED_BINARY_STORES = "namedStores";
 
         /**
          * The name for the field whose value is a document containing security information.
@@ -591,6 +605,7 @@ public class RepositoryConfiguration {
         public static final String BINARY_STORAGE_TYPE_FILE = "file";
         public static final String BINARY_STORAGE_TYPE_CACHE = "cache";
         public static final String BINARY_STORAGE_TYPE_DATABASE = "database";
+        public static final String BINARY_STORAGE_TYPE_COMPOSITE = "composite";
         public static final String BINARY_STORAGE_TYPE_CUSTOM = "custom";
 
     }
@@ -1147,9 +1162,9 @@ public class RepositoryConfiguration {
             return binaryStorage.getLong(FieldName.MINIMUM_STRING_SIZE, getMinimumBinarySizeInBytes());
         }
 
-        public AbstractBinaryStore getBinaryStore() throws Exception {
-            String type = binaryStorage.getString(FieldName.TYPE, "transient");
-            AbstractBinaryStore store = null;
+        public BinaryStore getBinaryStore() throws Exception {
+            String type = getType();
+            BinaryStore store = null;
             if (type.equalsIgnoreCase("transient")) {
                 store = TransientBinaryStore.get();
             } else if (type.equalsIgnoreCase("file")) {
@@ -1185,6 +1200,24 @@ public class RepositoryConfiguration {
                 // String cacheTransactionManagerLookupClass = binaryStorage.getString(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP,
                 // Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
                 store = new InfinispanBinaryStore(cacheContainer, dedicatedCacheContainer, metadataCacheName, blobCacheName);
+            } else if (type.equalsIgnoreCase("composite")) {
+
+                Map<String, BinaryStore> binaryStores = new LinkedHashMap<String, BinaryStore>();
+
+                Document binaryStoresConfiguration = binaryStorage.getDocument(FieldName.COMPOSITE_STORE_NAMED_BINARY_STORES);
+
+                for (String sourceName : binaryStoresConfiguration.keySet()) {
+                    Document binaryStoreConfig = binaryStoresConfiguration.getDocument(sourceName);
+                    binaryStores.put(sourceName, new BinaryStorage(binaryStoreConfig).getBinaryStore());
+                }
+
+                // must have at least one named store
+                if (binaryStores.isEmpty()) {
+                    throw new BinaryStoreException(JcrI18n.missingVariableValue.text("namedStores"));
+                }
+
+                store = new CompositeBinaryStore(binaryStores);
+
             } else if (type.equalsIgnoreCase("custom")) {
                 classname = binaryStorage.getString(FieldName.CLASSNAME);
                 classPath = binaryStorage.getString(FieldName.CLASSLOADER);
@@ -1200,6 +1233,15 @@ public class RepositoryConfiguration {
             if (store == null) store = TransientBinaryStore.get();
             store.setMinimumBinarySizeInBytes(getMinimumBinarySizeInBytes());
             return store;
+        }
+
+        /**
+         * Returns the type of the configured binary store.
+         *
+         * @return the type of the configured binary store, never {@code null}
+         */
+        public String getType() {
+            return binaryStorage.getString(FieldName.TYPE, "transient");
         }
 
         /*

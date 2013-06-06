@@ -23,17 +23,23 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
 /**
- * 
+ * {@link SimpleResourceDefinition} which handles <cache-binary-storage/> elements.
  */
 public class ModeShapeCacheBinaryStorageResource extends SimpleResourceDefinition {
-    protected final static ModeShapeCacheBinaryStorageResource INSTANCE = new ModeShapeCacheBinaryStorageResource();
+    protected final static ModeShapeCacheBinaryStorageResource DEFAULT = new ModeShapeCacheBinaryStorageResource(
+            PathElement.pathElement(ModelKeys.STORAGE_TYPE,
+                                    ModelKeys.CACHE_BINARY_STORAGE));
+    protected final static ModeShapeCacheBinaryStorageResource NESTED = new ModeShapeCacheBinaryStorageResource(
+            PathElement.pathElement(ModelKeys.NESTED_STORAGE_TYPE_CACHE,
+                                    PathElement.WILDCARD_VALUE));
 
-    private ModeShapeCacheBinaryStorageResource() {
-        super(ModeShapeExtension.CACHE_BINARY_STORAGE_PATH,
+    private ModeShapeCacheBinaryStorageResource(PathElement pathElement) {
+        super(pathElement,
               ModeShapeExtension.getResourceDescriptionResolver(ModelKeys.REPOSITORY, ModelKeys.CACHE_BINARY_STORAGE),
               AddCacheBinaryStorage.INSTANCE, RemoveBinaryStorage.INSTANCE);
     }

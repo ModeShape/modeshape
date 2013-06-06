@@ -43,11 +43,14 @@ public class BinaryStorageWriteAttributeHandler extends AbstractRepositoryConfig
 
     static final BinaryStorageWriteAttributeHandler DATABASE_BINARY_STORAGE_INSTANCE = new BinaryStorageWriteAttributeHandler(
             ModelAttributes.DATABASE_BINARY_STORAGE_ATTRIBUTES);
-    
+
+    static final BinaryStorageWriteAttributeHandler COMPOSITE_BINARY_STORAGE_INSTANCE = new BinaryStorageWriteAttributeHandler(
+            ModelAttributes.COMPOSITE_BINARY_STORAGE_ATTRIBUTES);
+
     static final BinaryStorageWriteAttributeHandler CUSTOM_BINARY_STORAGE_INSTANCE = new BinaryStorageWriteAttributeHandler(
             ModelAttributes.CUSTOM_BINARY_STORAGE_ATTRIBUTES);
 
-    private BinaryStorageWriteAttributeHandler( AttributeDefinition[]... modelAttributesArrays ) {
-        super(allBut(unique(modelAttributesArrays), ModelKeys.BINARY_STORAGE_TYPE));
+    private BinaryStorageWriteAttributeHandler( AttributeDefinition... attributes ) {
+        super(attributes);
     }
 }
