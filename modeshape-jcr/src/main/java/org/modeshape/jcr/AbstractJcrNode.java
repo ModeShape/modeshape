@@ -90,6 +90,7 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundInParentException;
 import org.modeshape.jcr.cache.PropertyTypeUtil;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.document.SessionNode;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
@@ -850,10 +851,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (patterns.size() == 1 && patterns.get(0) instanceof String) {
             // This is a literal, so just look up by name ...
             Name literal = nameFrom((String)patterns.get(0));
-            iter = node().getChildReferences(sessionCache()).iterator(literal);
+            iter = node().getPersistedChildReferences(sessionCache()).iterator(literal);
         } else {
             NamespaceRegistry registry = session.namespaces();
-            iter = node().getChildReferences(sessionCache()).iterator(patterns, registry);
+            iter = node().getPersistedChildReferences(sessionCache()).iterator(patterns, registry);
         }
         return new JcrChildNodeIterator(new ChildNodeResolver(session, key()), iter);
     }
