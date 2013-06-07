@@ -12,7 +12,7 @@ ModeShape 2's JCR-related features. ModeShape 3 has complete integration with JB
 allowing deployed components to simply lookup and use repositories managed by ModeShape's 
 service.
 
-This release addesses a whopping 49 issues, most of which were bug fixes. Overall, clustering
+This release addesses 47 issues, most of which are bug fixes in lots of areas. Overall, clustering
 and indexing has been improved, and a new chained binary store is available to allow client
 applications to dictate in which of several stores a particular binary value should be stored.
 
