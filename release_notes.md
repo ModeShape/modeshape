@@ -8,24 +8,18 @@ We hope you enjoy it!
 &version; provides a fast, elastic, distributed hierarchical database that clients
 work with via the standard JCR 2.0 (JSR-283) API. ModeShape 3 is a major upgrade over 2.x
 and offers significant improvements in performance and scalability, while retaining all of
-ModeShape 2's JCR-related features. ModeShape 3 has complete integration with JBoss AS 7.1,
+ModeShape 2's JCR-related features. ModeShape 3 has complete integration with JBoss EAP 6.1,
 allowing deployed components to simply lookup and use repositories managed by ModeShape's 
 service.
 
-This release addesses a whopping 119 issues, most of which were bug fixes. Overall, clustering
-has been dramatically improved, both for embedded and EAP-based deployments. Other high-level
-changes include using JBoss EAP 6.1 (rather than JBoss AS7.1.1) and upgrades to 
-Infinispan 5.2.5.Final, JGroups 3.2.7.Final, Lucene 3.6, and newer versions of several 
-other third party libraries.
+This release addesses a whopping 49 issues, most of which were bug fixes. Overall, clustering
+and indexing has been improved, and a new chained binary store is available to allow client
+applications to dictate in which of several stores a particular binary value should be stored.
 
-Note for EAP 6.1.0.Alpha1 users: there is a known issue (https://issues.jboss.org/browse/AS7-6639)
-where EAP intermittenly has problems upon startup concurrently starting Infinispan cache containers.
-If this occurs, simply kill the EAP process and restart. This has been fixed in EAP 6.1.0.Beta1.
-
-Also, note that because we switched from AS7 to EAP, the artifact name for BOM for use in 
-applications has been renamed from 'modeshape-bom-jbossas' to 'modeshape-bom-jbosseap'.
-This is to remain consistent and to help reinforce that ModeShape 3.2 works on EAP 6.1
-now and not on JBoss AS7.1.1.
+This release also upgrades to EAP 6.1.0.GA. As with 3.2, the artifact name for BOM for use in 
+applications has been renamed from 'modeshape-bom-jbossas' (used in 3.0 and 3.1) to 
+'modeshape-bom-jbosseap' (in 3.2 and 3.3). This is to remain consistent and to help 
+reinforce that ModeShape 3.2 works on EAP 6.1 now and not on JBoss AS7.1.1.
 
 
 ## Features
@@ -154,6 +148,7 @@ All of the JCR 2.0 features previously supported in 2.x are currently supported:
 - JDBC database
 - Infinispan
 - MongoDB
+- Chained binary stores
 
 ModeShape also has features that go beyond the JCR API:
 
