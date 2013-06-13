@@ -39,7 +39,6 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.Logger;
 import org.modeshape.jcr.api.RepositoriesContainer;
-import org.modeshape.jcr.api.RepositoryFactory;
 import org.modeshape.jcr.api.ServletCredentials;
 
 /**
@@ -83,8 +82,8 @@ public class RepositoryManager {
         factoryParams.clear();
         Enumeration<?> names = context.getInitParameterNames();
         if (names == null) {
-            addParameter(RepositoryFactory.URL, context);
-            addParameter(RepositoryFactory.REPOSITORY_NAME, context);
+            addParameter(RepositoriesContainer.URL, context);
+            addParameter(RepositoriesContainer.REPOSITORY_NAME, context);
         } else {
             while (names.hasMoreElements()) {
                 Object next = names.nextElement();
