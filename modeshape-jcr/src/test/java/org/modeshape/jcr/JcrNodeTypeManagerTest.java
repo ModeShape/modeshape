@@ -146,7 +146,7 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
     @SuppressWarnings( "unchecked" )
     @Test
     @FixFor( "MODE-1954" )
-    public void shouldWork() throws Exception {
+    public void shouldRemovePropertyDefinitionViaTemplate() throws Exception {
         session.getWorkspace().getNamespaceRegistry().registerNamespace("dmsmix", "http://myexample.com/dms");
         NodeTypeTemplate fileContent = nodeTypeMgr.createNodeTypeTemplate();
         fileContent.setName("dmsmix:filecontent");
@@ -169,6 +169,24 @@ public class JcrNodeTypeManagerTest extends MultiUseAbstractTest {
                 pit.remove();
             }
         }
+        nodeTypeMgr.registerNodeType(nodeTypeTemplate, true);
+    }
+
+    @Test
+    @FixFor( "MODE-1963" )
+    public void shouldAllowReRegistrationOfMixinViaTemplate() throws Exception {
+        session.getWorkspace().getNamespaceRegistry().registerNamespace("dmsmix", "http://myexample.com/dms");
+        String mixinName = "dmsmix:test";
+        registerMixin(mixinName);
+        nodeTypeMgr.unregisterNodeType(mixinName);
+        registerMixin(mixinName);
+    }
+
+    private void registerMixin( String name ) throws RepositoryException {
+        NodeTypeTemplate nodeTypeTemplate = nodeTypeMgr.createNodeTypeTemplate();
+        nodeTypeTemplate.setMixin(true);
+        nodeTypeTemplate.setName(name);
+        nodeTypeTemplate.setQueryable(true);
         nodeTypeMgr.registerNodeType(nodeTypeTemplate, true);
     }
 }
