@@ -9,10 +9,6 @@ public class NoSuchRepositoryException extends RepositoryException {
 
     private static final long serialVersionUID = 1L;
 
-    public NoSuchRepositoryException() {
-        super();
-    }
-
     public NoSuchRepositoryException( String message,
                                       Throwable rootCause ) {
         super(message, rootCause);
@@ -21,9 +17,4 @@ public class NoSuchRepositoryException extends RepositoryException {
     public NoSuchRepositoryException( String message ) {
         super(message);
     }
-
-    public NoSuchRepositoryException( Throwable rootCause ) {
-        super(rootCause);
-    }
-
 }
