@@ -24,6 +24,7 @@
 package org.modeshape.jcr.api;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -93,7 +94,7 @@ import java.util.concurrent.TimeUnit;
  * 
  * </p>
  */
-public interface RepositoryFactory extends javax.jcr.RepositoryFactory {
+public interface RepositoryFactory extends javax.jcr.RepositoryFactory, Repositories {
 
     /**
      * The name of the key for the ModeShape JCR URL in the parameter map.
@@ -165,6 +166,7 @@ public interface RepositoryFactory extends javax.jcr.RepositoryFactory {
      *
      * @deprecated since 3.4, this method should not be used. Code using it should change to use {@link org.modeshape.jcr.api.RepositoriesContainer} instead
      */
+    @Deprecated
     public Future<Boolean> shutdown();
 
     /**
@@ -193,6 +195,22 @@ public interface RepositoryFactory extends javax.jcr.RepositoryFactory {
      *
      * @deprecated since 3.4, this method should not be used. Code using it should change to use {@link org.modeshape.jcr.api.RepositoriesContainer} instead
      */
+    @Deprecated
     public boolean shutdown( long timeout,
                              TimeUnit unit ) throws InterruptedException;
+
+
+    /**
+     * @deprecated since 3.4, this method should not be used. Code using it should change to use {@link org.modeshape.jcr.api.RepositoriesContainer} instead
+     */
+    @Override
+    @Deprecated
+    Set<String> getRepositoryNames();
+
+    /**
+     * @deprecated since 3.4, this method should not be used. Code using it should change to use {@link org.modeshape.jcr.api.RepositoriesContainer} instead
+     */
+    @Override
+    @Deprecated
+    javax.jcr.Repository getRepository( String repositoryName ) throws javax.jcr.RepositoryException;
 }
