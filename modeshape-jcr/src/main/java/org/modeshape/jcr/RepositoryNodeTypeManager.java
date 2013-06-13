@@ -274,10 +274,9 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
 
             // Remove the node types from persistent storage ...
             SessionCache system = repository.createSystemSession(context, false);
-            for (JcrNodeType nodeType : removedNodeTypes) {
-                system.destroy(nodeType.key());
-            }
-            system.save();
+            SystemContent systemContent = new SystemContent(system);
+            systemContent.unregisterNodeTypes(removedNodeTypes.toArray(new JcrNodeType[removedNodeTypes.size()]));
+            systemContent.save();
 
             // Now change the cache ...
             this.nodeTypesCache = newNodeTypes;
