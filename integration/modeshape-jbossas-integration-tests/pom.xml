@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.modeshape</groupId>
         <artifactId>modeshape-parent</artifactId>
-        <version>3.3-SNAPSHOT</version>
+        <version>3.4-SNAPSHOT</version>
         <relativePath>../../modeshape-parent/pom.xml</relativePath>
     </parent>
     <!-- The groupId and version values are inherited from parent  -->
@@ -127,8 +127,7 @@
         </dependency>
 
         <!--
-            //TODO author=Horia Chiorean date=3/12/13 description=This is not defined in any of the above mentioned BOMs, but is
-            critical for working with managed EAP containers
+            This is not defined in any of the above mentioned BOMs, but is critical for working with managed EAP containers
           -->
         <dependency>
             <groupId>org.jboss.as</groupId>

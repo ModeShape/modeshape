@@ -60,6 +60,7 @@ import org.modeshape.web.jcr.rest.handler.RestServerHandler;
 import org.modeshape.web.jcr.rest.model.RestException;
 import org.modeshape.web.jcr.rest.model.RestItem;
 import org.modeshape.web.jcr.rest.model.RestNodeType;
+import org.modeshape.web.jcr.rest.model.RestQueryPlanResult;
 import org.modeshape.web.jcr.rest.model.RestQueryResult;
 import org.modeshape.web.jcr.rest.model.RestRepositories;
 import org.modeshape.web.jcr.rest.model.RestWorkspaces;
@@ -215,9 +216,7 @@ public final class ModeShapeRestService {
             contentDisposition = binaryHandler.getDefaultContentDisposition(binaryProperty);
         }
 
-        return Response.ok(binary.getStream(), mimeType)
-                       .header("Content-Disposition", contentDisposition)
-                       .build();
+        return Response.ok(binary.getStream(), mimeType).header("Content-Disposition", contentDisposition).build();
     }
 
     /**
@@ -717,6 +716,172 @@ public final class ModeShapeRestService {
                                          offset,
                                          limit,
                                          uriInfo);
+    }
+
+    /**
+     * Executes the XPath query contained in the body of the request against the give repository and workspace.
+     * <p>
+     * The string representation of the query plan will be returned in the response body.
+     * </p>
+     * 
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
+     *        records will be returned. If this value is less than 0, results will be returned starting from the first record in
+     *        the result set.
+     * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
+     *        entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
+     *        results are counted from the record specified in the offset parameter.
+     * @param uriInfo the information about the URI (from which the other query parameters will be obtained)
+     * @param requestContent the query expression
+     * @return a {@code non-null} response containing a string representation of the query plan
+     * @throws RepositoryException if any JCR error occurs
+     */
+    @SuppressWarnings( "deprecation" )
+    @POST
+    @Path( "{repositoryName}/{workspaceName}/queryPlan" )
+    @Consumes( "application/jcr+xpath" )
+    @Produces( {MediaType.APPLICATION_JSON, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN} )
+    public RestQueryPlanResult postXPathQueryPlan( @Context HttpServletRequest request,
+                                                   @PathParam( "repositoryName" ) String rawRepositoryName,
+                                                   @PathParam( "workspaceName" ) String rawWorkspaceName,
+                                                   @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
+                                                   @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
+                                                   @Context UriInfo uriInfo,
+                                                   String requestContent ) throws RepositoryException {
+        return queryHandler.planQuery(request,
+                                      rawRepositoryName,
+                                      rawWorkspaceName,
+                                      Query.XPATH,
+                                      requestContent,
+                                      offset,
+                                      limit,
+                                      uriInfo);
+    }
+
+    /**
+     * Executes the JCR-SQL query contained in the body of the request against the give repository and workspace.
+     * <p>
+     * The string representation of the query plan will be returned in the response body.
+     * </p>
+     * 
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
+     *        records will be returned. If this value is less than 0, results will be returned starting from the first record in
+     *        the result set.
+     * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
+     *        entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
+     *        results are counted from the record specified in the offset parameter.
+     * @param uriInfo the information about the URI (from which the other query parameters will be obtained)
+     * @param requestContent the query expression
+     * @return a {@code non-null} response containing a string representation of the query plan
+     * @throws RepositoryException if any JCR error occurs
+     */
+    @SuppressWarnings( "deprecation" )
+    @POST
+    @Path( "{repositoryName}/{workspaceName}/queryPlan" )
+    @Consumes( "application/jcr+sql" )
+    @Produces( {MediaType.APPLICATION_JSON, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN} )
+    public RestQueryPlanResult postJcrSqlQueryPlan( @Context HttpServletRequest request,
+                                                    @PathParam( "repositoryName" ) String rawRepositoryName,
+                                                    @PathParam( "workspaceName" ) String rawWorkspaceName,
+                                                    @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
+                                                    @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
+                                                    @Context UriInfo uriInfo,
+                                                    String requestContent ) throws RepositoryException {
+        return queryHandler.planQuery(request,
+                                      rawRepositoryName,
+                                      rawWorkspaceName,
+                                      Query.SQL,
+                                      requestContent,
+                                      offset,
+                                      limit,
+                                      uriInfo);
+    }
+
+    /**
+     * Executes the JCR-SQL2 query contained in the body of the request against the give repository and workspace.
+     * <p>
+     * The string representation of the query plan will be returned in the response body.
+     * </p>
+     * 
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
+     *        records will be returned. If this value is less than 0, results will be returned starting from the first record in
+     *        the result set.
+     * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
+     *        entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
+     *        results are counted from the record specified in the offset parameter.
+     * @param uriInfo the information about the URI (from which the other query parameters will be obtained)
+     * @param requestContent the query expression
+     * @return a {@code non-null} response containing a string representation of the query plan
+     * @throws RepositoryException if any JCR error occurs
+     */
+    @POST
+    @Path( "{repositoryName}/{workspaceName}/queryPlan" )
+    @Consumes( "application/jcr+sql2" )
+    @Produces( {MediaType.APPLICATION_JSON, MediaType.TEXT_HTML, MediaType.TEXT_PLAIN} )
+    public RestQueryPlanResult postJcrSql2QueryPlan( @Context HttpServletRequest request,
+                                                     @PathParam( "repositoryName" ) String rawRepositoryName,
+                                                     @PathParam( "workspaceName" ) String rawWorkspaceName,
+                                                     @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
+                                                     @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
+                                                     @Context UriInfo uriInfo,
+                                                     String requestContent ) throws RepositoryException {
+        return queryHandler.planQuery(request,
+                                      rawRepositoryName,
+                                      rawWorkspaceName,
+                                      Query.JCR_SQL2,
+                                      requestContent,
+                                      offset,
+                                      limit,
+                                      uriInfo);
+    }
+
+    /**
+     * Compute the plan for the JCR-SQL query contained in the body of the request against the give repository and workspace.
+     * <p>
+     * The string representation of the query plan will be returned in the response body.
+     * </p>
+     * 
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
+     *        records will be returned. If this value is less than 0, results will be returned starting from the first record in
+     *        the result set.
+     * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
+     *        entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
+     *        results are counted from the record specified in the offset parameter.
+     * @param uriInfo the information about the URI (from which the other query parameters will be obtained)
+     * @param requestContent the query expression
+     * @return a {@code non-null} response containing a string representation of the query plan
+     * @throws RepositoryException if any JCR error occurs
+     */
+    @POST
+    @Path( "{repositoryName}/{workspaceName}/queryPlan" )
+    @Consumes( "application/jcr+search" )
+    @Produces( {MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON, MediaType.TEXT_HTML} )
+    public RestQueryPlanResult postJcrSearchQueryPlan( @Context HttpServletRequest request,
+                                                       @PathParam( "repositoryName" ) String rawRepositoryName,
+                                                       @PathParam( "workspaceName" ) String rawWorkspaceName,
+                                                       @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
+                                                       @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
+                                                       @Context UriInfo uriInfo,
+                                                       String requestContent ) throws RepositoryException {
+        return queryHandler.planQuery(request,
+                                      rawRepositoryName,
+                                      rawWorkspaceName,
+                                      org.modeshape.jcr.api.query.Query.FULL_TEXT_SEARCH,
+                                      requestContent,
+                                      offset,
+                                      limit,
+                                      uriInfo);
     }
 
     /**

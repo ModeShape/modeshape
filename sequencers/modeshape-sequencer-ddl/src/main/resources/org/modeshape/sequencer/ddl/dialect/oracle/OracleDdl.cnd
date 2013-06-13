@@ -136,11 +136,31 @@
   - ddl:datatypePrecision (LONG)
   - ddl:datatypeScale (LONG)
   + oracleddl:parameter (oracleddl:functionParameter) = oracleddl:functionParameter sns
+
+[oracleddl:indexOrderable] mixin
+  - oracleddl:order (string) < 'ASC', 'DESC'
 [oracleddl:createIndexStatement]        > ddl:creatable, ddl:statement, oracleddl:indexOperand mixin
-  - oracleddl:tableName (string)
+  - oracleddl:indexType (string) < 'CLUSTER', 'TABLE', 'BITMAP'
   - oracleddl:unique (boolean)
   - oracleddl:bitmap (boolean)
-  + * (ddl:columnReference) = ddl:columnReference sns
+  - oracleddl:indexAttributes (string) multiple
+  - oracleddl:unusable (boolean) = 'false'
+[oracleddl:createClusterIndexStatement] > oracleddl:createIndexStatement mixin
+  - oracleddl:indexType (string) = 'CLUSTER' mandatory autocreated < 'CLUSTER'
+  - oracleddl:clustereName (string) mandatory
+[oracleddl:createTableIndexStatement] > oracleddl:createIndexStatement mixin
+  - oracleddl:indexType (string) = 'TABLE' mandatory autocreated < 'TABLE'
+  - oracleddl:tableName (string) mandatory
+  - oracleddl:tableAlias (string)
+  - oracleddl:otherRefs (string) multiple
+  + * (ddl:columnReference) = ddl:columnReference
+[oracleddl:createBitmapIndexStatement] > oracleddl:createIndexStatement mixin
+  - oracleddl:indexType (string) = 'BITMAP' mandatory autocreated < 'BITMAP'
+  - oracleddl:tableName (string) mandatory
+  - oracleddl:whereClause (string) mandatory
+  + * (ddl:columnReference) = ddl:columnReference
+  + * (ddl:tableReference) = ddl:tableReference
+
 [oracleddl:createIndexTypeStatement]    > ddl:creatable, ddl:statement, oracleddl:indextypeOperand mixin
 [oracleddl:createJavaStatement]         > ddl:creatable, ddl:statement, oracleddl:javaOperand mixin
 [oracleddl:createLibraryStatement]      > ddl:creatable, ddl:statement, oracleddl:libraryOperand mixin

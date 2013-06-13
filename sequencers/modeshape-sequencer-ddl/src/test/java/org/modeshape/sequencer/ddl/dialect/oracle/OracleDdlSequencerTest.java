@@ -23,16 +23,32 @@
  */
 package org.modeshape.sequencer.ddl.dialect.oracle;
 
-import javax.jcr.Node;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import org.junit.Test;
 import static org.modeshape.jcr.api.JcrConstants.NT_UNSTRUCTURED;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CHECK_SEARCH_CONDITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CONSTRAINT_TYPE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_LENGTH;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_PRECISION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_SCALE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PARSER_ID;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ADD_TABLE_CONSTRAINT_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.IN_OUT_NO_COPY;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ALTER_USER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_DIRECTORY_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_CREATE_PROCEDURE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_FUNCTION_PARAMETER;
+import javax.jcr.Node;
+import javax.jcr.NodeIterator;
+import org.junit.Test;
 import org.modeshape.sequencer.ddl.AbstractDdlSequencerTest;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
-import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.*;
+import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 
 /**
  * Unit test for the {@link org.modeshape.sequencer.ddl.DdlSequencer} when Oracle dialects are parsed.
@@ -113,6 +129,45 @@ public class OracleDdlSequencerTest extends AbstractDdlSequencerTest {
         verifyProperty(node, DATATYPE_NAME, "NUMBER");
         paramNode = findNode(node, "a", TYPE_FUNCTION_PARAMETER);
         verifyProperty(paramNode, DATATYPE_NAME, "CLOB");
+    }
+
+    @Test
+    public void shouldSequenceOracleIndexes() throws Exception {
+        Node statementsNode = sequenceDdl("ddl/dialect/oracle/oracle_indexes.ddl");
+        verifyPrimaryType(statementsNode, NT_UNSTRUCTURED);
+        verifyProperty(statementsNode, PARSER_ID, "ORACLE");
+        assertThat(statementsNode.getNodes().getSize(), is(10L));
+    }
+
+    @Test
+    public void shouldParseUnterminatedStatements() throws Exception {
+        Node statementsNode = sequenceDdl("ddl/dialect/oracle/unterminatedStatements.ddl");
+        verifyPrimaryType(statementsNode, NT_UNSTRUCTURED);
+        verifyProperty(statementsNode, PARSER_ID, "ORACLE");
+        assertThat(statementsNode.getNodes().getSize(), is(3L));
+        
+        final NodeIterator itr = statementsNode.getNodes();
+        
+        while (itr.hasNext()) {
+            verifyMixinType(itr.nextNode(), StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT);
+        }
+    }
+
+    @Test
+    public void shouldSequenceDbObjectNameWithValidSymbols() throws Exception {
+        Node statementsNode = sequenceDdl("ddl/dialect/oracle/namesWithSymbols.ddl");
+        verifyPrimaryType(statementsNode, NT_UNSTRUCTURED);
+        verifyProperty(statementsNode, PARSER_ID, "ORACLE");
+        assertThat(statementsNode.getNodes().getSize(), is(2L)); // 1 table, 1 index
+
+        { // table node
+            final Node tableNode = findNode(statementsNode, "EL$VIS", StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT);
+            findNode(tableNode, "COL_A", StandardDdlLexicon.TYPE_COLUMN_DEFINITION);
+            findNode(tableNode, "COL@B", StandardDdlLexicon.TYPE_COLUMN_DEFINITION);
+            findNode(tableNode, "COL#C", StandardDdlLexicon.TYPE_COLUMN_DEFINITION);
+        }
+
+        findNode(statementsNode, "IDX$A", OracleDdlLexicon.TYPE_CREATE_TABLE_INDEX_STATEMENT);        
     }
 
 }

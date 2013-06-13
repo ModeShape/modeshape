@@ -26,13 +26,18 @@ package org.modeshape.sequencer.ddl;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_SCHEMA_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
+import org.modeshape.common.text.ParsingException;
+import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlParser;
 import org.modeshape.sequencer.ddl.node.AstNode;
 import org.modeshape.sequencer.ddl.node.AstNodeFactory;
-import java.util.List;
 
 /**
  *
@@ -41,21 +46,14 @@ public class DdlParsersTest extends DdlParserTestHelper {
     private DdlParsers parsers;
     public static final String DDL_TEST_FILE_PATH = "ddl/";
 
-    private AstNodeFactory nodeFactory;
-
-    private AstNode rootNode;
-
     @Before
     public void beforeEach() {
         parsers = new DdlParsers();
-        // ddlTest = this.getClass().getClassLoader().getResource("createTablesTest.ddl");
-        nodeFactory = new AstNodeFactory();
-        rootNode = nodeFactory.node("root_node");
     }
 
     @Test
     public void shouldParseUntypedDdlFileWithTypeInFilename() {
-        printTest("shouldParseTypedDdlFile()");
+        printTest("shouldParseUntypedDdlFileWithTypeInFilename()");
         String content = "-- SAMPLE DDL FILE\n"
                          + "CREATE TABLE myTableName (PART_COLOR VARCHAR(255) NOT NULL, PART_ID INTEGER DEFAULT (100))\n"
                          + "DROP TABLE list_customers CASCADE";
@@ -67,7 +65,7 @@ public class DdlParsersTest extends DdlParserTestHelper {
 
     @Test
     public void shouldParseTypedDdlFileWith() {
-        printTest("shouldParseTypedDdlFile()");
+        printTest("shouldParseTypedDdlFileWith()");
         String content = "-- SAMPLE SQL92 DDL FILE\n"
                          + "CREATE TABLE myTableName (PART_COLOR VARCHAR(255) NOT NULL, PART_ID INTEGER DEFAULT (100))\n"
                          + "DROP TABLE list_customers CASCADE";
@@ -139,6 +137,8 @@ public class DdlParsersTest extends DdlParserTestHelper {
 
         // printNodeChildren(rootNode);
         setPrintToConsole(true);
+
+        final AstNodeFactory nodeFactory = new AstNodeFactory();
         List<AstNode> problems = nodeFactory.getChildrenForType(rootNode, TYPE_PROBLEM);
         for (AstNode problem : problems) {
             printTest(problem.toString());
@@ -156,6 +156,33 @@ public class DdlParsersTest extends DdlParserTestHelper {
         assertThat(dropSchemaNodes.size(), is(1));
         List<AstNode> unknownNodes = nodeFactory.getChildrenForType(rootNode, TYPE_UNKNOWN_STATEMENT);
         assertThat(unknownNodes.size(), is(1));
+    }
 
+    @Test
+    public void shouldParseFileUsingTeiidParser() {
+        printTest("shouldParseTeiidFile()");
+
+        final String content = getFileContent(DDL_TEST_FILE_PATH + "dialect/teiid/mySqlBqt.ddl");
+        this.rootNode = this.parsers.parseUsing(content, TeiidDdlParser.ID);
+
+        assertThat(TeiidDdlParser.ID, is((String)this.rootNode.getProperty(StandardDdlLexicon.PARSER_ID)));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldErrorWhenInvalidParserId() {
+        printTest("shouldParseTeiidFile()");
+
+        final String content = getFileContent(DDL_TEST_FILE_PATH + "dialect/teiid/mySqlBqt.ddl");
+        this.parsers.parseUsing(content, "BOGUS");
+    }
+
+    @Test
+    public void shouldParseHugeOracleFile() {
+        printTest("shouldParseHugeOracleFile()");
+
+        final String content = getFileContent(DDL_TEST_FILE_PATH + "dialect/oracle/huge.ddl");
+        this.rootNode = this.parsers.parse(content, null);
+
+        assertThat("ORACLE", is((String)this.rootNode.getProperty(StandardDdlLexicon.PARSER_ID)));
     }
 }

@@ -61,20 +61,8 @@ public class ModeShapeExtension implements Extension {
                                                                                       ModelKeys.MASTER_FILE_INDEX_STORAGE);
     static final PathElement SLAVE_FILE_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
                                                                                      ModelKeys.SLAVE_FILE_INDEX_STORAGE);
-    static final PathElement CACHE_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
-                                                                                ModelKeys.CACHE_INDEX_STORAGE);
     static final PathElement CUSTOM_INDEX_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
                                                                                  ModelKeys.CUSTOM_INDEX_STORAGE);
-
-    // Binary storage PathElements
-    static final PathElement BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE);
-    static final PathElement FILE_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
-                                                                                ModelKeys.FILE_BINARY_STORAGE);
-    static final PathElement CACHE_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
-                                                                                 ModelKeys.CACHE_BINARY_STORAGE);
-    static final PathElement DB_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE, ModelKeys.DB_BINARY_STORAGE);
-    static final PathElement CUSTOM_BINARY_STORAGE_PATH = PathElement.pathElement(ModelKeys.STORAGE_TYPE,
-                                                                                  ModelKeys.CUSTOM_BINARY_STORAGE);
 
     static StandardResourceDescriptionResolver getResourceDescriptionResolver( final String... keyPrefix ) {
         StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);
@@ -118,17 +106,21 @@ public class ModeShapeExtension implements Extension {
         indexStorageSubmodel.registerSubModel(ModeShapeRamIndexStorageResource.INSTANCE);
         indexStorageSubmodel.registerSubModel(ModeShapeMasterFileIndexStorageResource.INSTANCE);
         indexStorageSubmodel.registerSubModel(ModeShapeSlaveFileIndexStorageResource.INSTANCE);
-        indexStorageSubmodel.registerSubModel(ModeShapeCacheIndexStorageResource.INSTANCE);
         indexStorageSubmodel.registerSubModel(ModeShapeCustomIndexStorageResource.INSTANCE);
         indexStorageSubmodel.registerSubModel(ModeShapeLocalFileIndexStorageResource.INSTANCE);
 
         // Binary storage submodel and type submodels
         final ManagementResourceRegistration binaryStorageSubmodel = repositorySubmodel.registerSubModel(ModeShapeBinaryStorageResource.INSTANCE);
-        binaryStorageSubmodel.registerSubModel(ModeShapeFileBinaryStorageResource.INSTANCE);
-        binaryStorageSubmodel.registerSubModel(ModeShapeCacheBinaryStorageResource.INSTANCE);
-        binaryStorageSubmodel.registerSubModel(ModeShapeDatabaseBinaryStorageResource.INSTANCE);
-        binaryStorageSubmodel.registerSubModel(ModeShapeCustomBinaryStorageResource.INSTANCE);
+        binaryStorageSubmodel.registerSubModel(ModeShapeFileBinaryStorageResource.DEFAULT);
+        binaryStorageSubmodel.registerSubModel(ModeShapeCacheBinaryStorageResource.DEFAULT);
+        binaryStorageSubmodel.registerSubModel(ModeShapeDatabaseBinaryStorageResource.DEFAULT);
+        binaryStorageSubmodel.registerSubModel(ModeShapeCustomBinaryStorageResource.DEFAULT);
 
+        ManagementResourceRegistration compositeStorageSubmodel = binaryStorageSubmodel.registerSubModel(ModeShapeCompositeBinaryStorageResource.INSTANCE);
+        compositeStorageSubmodel.registerSubModel(ModeShapeFileBinaryStorageResource.NESTED);
+        compositeStorageSubmodel.registerSubModel(ModeShapeCacheBinaryStorageResource.NESTED);
+        compositeStorageSubmodel.registerSubModel(ModeShapeDatabaseBinaryStorageResource.NESTED);
+        compositeStorageSubmodel.registerSubModel(ModeShapeCustomBinaryStorageResource.NESTED);
     }
 
     @Override

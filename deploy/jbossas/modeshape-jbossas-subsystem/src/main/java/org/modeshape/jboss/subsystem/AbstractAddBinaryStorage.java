@@ -49,7 +49,6 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
 
     static void populate( ModelNode operation,
                           ModelNode model,
-                          String modelName,
                           AttributeDefinition[] attributes ) throws OperationFailedException {
         for (AttributeDefinition attribute : attributes) {
             attribute.validateAndSet(operation, model);
@@ -68,24 +67,45 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
         final ModelNode address = operation.require(OP_ADDR);
         final PathAddress pathAddress = PathAddress.pathAddress(address);
         final String repositoryName = pathAddress.getElement(1).getValue();
-        // final String storageName = pathAddress.getLastElement().getValue(); // always the same: 'indexStorage'
 
         // Build the 'binaryStorage' document ...
         EditableDocument binaries = Schematic.newDocument();
+
         writeCommonBinaryStorageConfiguration(context, model, binaries);
         writeBinaryStorageConfiguration(repositoryName, context, model, binaries);
 
-        // Remove the default service, added by "AddRepository"
-        ServiceName serviceName = ModeShapeServiceNames.binaryStorageServiceName(repositoryName);
-        context.removeService(serviceName);
+        //the store-name attribute is specific only to nested stores, as per schema
+        final boolean isNestedStore = model.hasDefined(ModelKeys.STORE_NAME);
+        ServiceName serviceName = ModeShapeServiceNames.binaryStorageDefaultServiceName(repositoryName);
+        if (isNestedStore) {
+            //if it's part of a composite binary container, we don't want to overwrite the default binary service because
+            //the composite binary storage container will do that
+            String binaryStorageName = binaries.getString(FieldName.BINARY_STORE_NAME);
+            assert binaryStorageName != null;
+            serviceName = ModeShapeServiceNames.binaryStorageNestedServiceName(repositoryName, binaryStorageName);
+        } else {
+            // Remove the default service, added by "AddRepository"
+            context.removeService(serviceName);
+        }
 
+        createBinaryStorageService(context, model, newControllers, target, repositoryName, binaries, serviceName);
+    }
+
+    protected void createBinaryStorageService( OperationContext context,
+                                               ModelNode model,
+                                               List<ServiceController<?>> newControllers,
+                                               ServiceTarget target,
+                                               String repositoryName,
+                                               EditableDocument binaries,
+                                               ServiceName serviceName ) throws OperationFailedException {
         // Now create the new service ...
         BinaryStorageService service = new BinaryStorageService(repositoryName, binaries);
-
         ServiceBuilder<BinaryStorage> builder = target.addService(serviceName, service);
 
         // Add dependencies to the various data directories ...
-        addControllersAndDependencies(repositoryName, service, builder, newControllers, target);
+        String binariesStoreName = binaries.containsField(FieldName.BINARY_STORE_NAME) ? binaries.getString(FieldName.BINARY_STORE_NAME)
+                                     : null;
+        addControllersAndDependencies(repositoryName, service, builder, newControllers, target, binariesStoreName);
         builder.setInitialMode(ServiceController.Mode.ACTIVE);
         newControllers.add(builder.install());
     }
@@ -98,11 +118,17 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
     protected void writeCommonBinaryStorageConfiguration( OperationContext context,
                                                           ModelNode model,
                                                           EditableDocument binaries ) throws OperationFailedException {
-        int minBinSize = ModelAttributes.MINIMUM_BINARY_SIZE.resolveModelAttribute(context, model).asInt();
-        binaries.set(FieldName.MINIMUM_BINARY_SIZE_IN_BYTES, minBinSize);
+        ModelNode minBinarySize = ModelAttributes.MINIMUM_BINARY_SIZE.resolveModelAttribute(context, model);
+        if (minBinarySize.isDefined()) {
+            binaries.set(FieldName.MINIMUM_BINARY_SIZE_IN_BYTES, minBinarySize.asInt());
+        }
         ModelNode stringSize = ModelAttributes.MINIMUM_STRING_SIZE.resolveModelAttribute(context, model);
         if (stringSize.isDefined()) {
             binaries.set(FieldName.MINIMUM_STRING_SIZE, stringSize.asInt());
+        }
+        ModelNode storeName = ModelAttributes.STORE_NAME.resolveModelAttribute(context, model);
+        if (storeName.isDefined()) {
+            binaries.set(FieldName.BINARY_STORE_NAME, storeName.asString());
         }
     }
 
@@ -111,6 +137,7 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
                                                   BinaryStorageService service,
                                                   ServiceBuilder<BinaryStorage> builder,
                                                   List<ServiceController<?>> newControllers,
-                                                  ServiceTarget target ) throws OperationFailedException {
+                                                  ServiceTarget target,
+                                                  String binariesStoreName ) throws OperationFailedException {
     }
 }

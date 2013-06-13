@@ -30,6 +30,7 @@ import javax.ws.rs.ext.Provider;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.modeshape.web.jcr.rest.model.JSONAble;
+import org.modeshape.web.jcr.rest.model.Stringable;
 
 /**
  * Extension of {@link JSONBodyWriter} which produces text output for {@link JSONAble} objects.
@@ -44,6 +45,9 @@ public class TextBodyWriter extends JSONBodyWriter {
 
     @Override
     protected String getString( JSONAble jsonAble ) throws JSONException {
+        if (jsonAble instanceof Stringable) {
+            return ((Stringable)jsonAble).asString();
+        }
         return jsonAble.toJSON().toString(TEXT_INDENT_FACTOR);
     }
 

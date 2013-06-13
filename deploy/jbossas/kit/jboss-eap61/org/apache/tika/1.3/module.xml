@@ -31,7 +31,6 @@
         <resource-root path="apache-mime4j-dom-0.7.2.jar" />
         <resource-root path="commons-codec-1.5.jar" />
         <resource-root path="commons-compress-1.4.1.jar" />
-        <resource-root path="dom4j-1.6.1.jar" />
         <resource-root path="fontbox-1.7.1.jar" />
         <resource-root path="geronimo-stax-api_1.0_spec-1.0.1.jar" />
         <resource-root path="isoparser-1.0-RC-1.jar" />
@@ -39,15 +38,19 @@
         <resource-root path="jempbox-1.7.1.jar" />
         <resource-root path="juniversalchardet-1.0.3.jar" />
         <resource-root path="pdfbox-1.7.1.jar" />
+        <!--
+          See MODE-1934
         <resource-root path="poi-3.8.jar" />
         <resource-root path="poi-ooxml-3.8.jar" />
         <resource-root path="poi-ooxml-schemas-3.8.jar" />
         <resource-root path="poi-scratchpad-3.8.jar" />
+        <resource-root path="dom4j-1.6.1.jar" />
+        <resource-root path="xmlbeans-2.3.0.jar" />
+        -->
         <resource-root path="tagsoup-1.2.1.jar" />
         <resource-root path="vorbis-java-core-0.1.jar" />
         <resource-root path="vorbis-java-core-0.1-tests.jar" />
         <resource-root path="vorbis-java-tika-0.1.jar" />
-        <resource-root path="xmlbeans-2.3.0.jar" />
         <resource-root path="xz-1.0.jar" />
 
         <!-- ModeShape chooses not to include the Bouncy Castle libraries by default. These can be added by users.

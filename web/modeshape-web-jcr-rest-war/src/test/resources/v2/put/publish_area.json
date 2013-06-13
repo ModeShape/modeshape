@@ -1,0 +1,6 @@
+{
+    "jcr:primaryType": "nt:folder",
+    "jcr:mixinTypes": ["mix:referenceable", "mode:publishArea"],
+    "jcr:title": "title",
+    "jcr:description": "description"
+}

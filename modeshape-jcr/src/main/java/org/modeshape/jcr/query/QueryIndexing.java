@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr.query;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 import org.hibernate.search.backend.TransactionContext;
@@ -47,7 +46,7 @@ public interface QueryIndexing {
      * @param path the path of the node; may not be null
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types for the node; may not be null but may be empty
-     * @param properties the properties of the node; may not be null but may be empty
+     * @param propertiesIterator the iterator over the properties of a node; may not be null but may be empty
      * @param schemata the node type schemata that should be used to determine how the node is to be indexed; may not be null
      * @param txnCtx the transaction context in which the index updates should be made; may not be null
      */
@@ -56,7 +55,7 @@ public interface QueryIndexing {
                      Path path,
                      Name primaryType,
                      Set<Name> mixinTypes,
-                     Collection<Property> properties,
+                     Iterator<Property> propertiesIterator,
                      NodeTypeSchemata schemata,
                      TransactionContext txnCtx );
 

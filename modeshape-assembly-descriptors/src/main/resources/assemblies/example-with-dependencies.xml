@@ -40,23 +40,9 @@
             <directory>src/main/resources/</directory>
             <outputDirectory>${project.artifactId}</outputDirectory>
             <includes>
-                <include>*.png</include>
-                <include>*.gif</include>
-                <include>*.jpg</include>
-                <include>*.pict</include>
-                <include>*.mp3</include>
-                <include>*.cnd</include>
-                <include>*.xml</include>
+                <include>logback*.*</include>
+                <include>README*.*</include>
             </includes>
-        </fileSet>
-        <fileSet>
-            <directory>src/main/resources/security/</directory>
-            <outputDirectory>${project.artifactId}</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>workspace/</directory>
-            <outputDirectory>${project.artifactId}</outputDirectory>
-            <useDefaultExcludes>true</useDefaultExcludes>
         </fileSet>
     </fileSets>
     <files>

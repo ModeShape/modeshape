@@ -24,6 +24,7 @@
 package org.modeshape.jcr.cache.document;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -381,7 +382,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // Now persist the changes ...
                     events = persistChanges(this.changedNodesInOrder, monitor);
 
-                    // Register a handler that will execute upon successful commit of the transaction (whever that happens) ...
+                    // Register a handler that will execute upon successful commit of the transaction (whenever that happens) ...
                     final ChangeSet changes = events;
                     txn.uponCompletion(new TransactionFunction() {
                         @Override
@@ -1084,7 +1085,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // should be there and shouldn't require a looking in the cache...
                         Name primaryType = node.getPrimaryType(this);
                         Set<Name> mixinTypes = node.getMixinTypes(this);
-                        monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties().values());
+                        monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties().values().iterator());
                     }
                 } else {
                     boolean isExternal = !workspaceCache().getRootKey()
@@ -1105,14 +1106,28 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // when linking/un-linking nodes (e.g. shareable node or jcr:system) this condition will be false.
                     // the downside of this is that there may be cases (e.g. back references when working with versions) in which
                     // we might loose information from the indexes
-                    boolean shouldUpdateIndexes = (isSameWorkspace && (hasPropertyChanges || node.hasIndexRelatedChanges())) ||
-                                                  externalNodeChanged;
+                    Path oldNodePath = workspacePaths.getPath(workspaceCache.getNode(node.getKey()));
+                    Path newNodePath = sessionPaths.getPath(node);
+                    boolean pathChanged = !oldNodePath.equals(newNodePath);
+                    boolean shouldUpdateIndexes = (isSameWorkspace && (hasPropertyChanges || node.hasIndexRelatedChanges() || pathChanged))
+                                                  || externalNodeChanged;
                     if (monitor != null && queryable && shouldUpdateIndexes) {
                         // Get the primary and mixin type names; even though we're passing in the session, the two properties
                         // should be there and shouldn't require a looking in the cache...
                         Name primaryType = node.getPrimaryType(this);
                         Set<Name> mixinTypes = node.getMixinTypes(this);
-                        monitor.recordUpdate(workspaceName, key, newPath, primaryType, mixinTypes, node.getProperties(this));
+                        monitor.recordUpdate(workspaceName, key, newNodePath, primaryType, mixinTypes, node.getProperties(this));
+
+                        if (pathChanged) {
+                            //we're dealing with a path change, so in case there is a persisted node at "new path" we need to remove
+                            //it from the indexes, because the current node will take its place
+                            CachedNode persistedParent = workspaceCache.getNode(node.getParentKey(this));
+                            ChildReference persistedNodeAtNewPath = persistedParent.getChildReferences(workspaceCache).getChild(
+                                    newNodePath.getLastSegment().getName(), newNodePath.getLastSegment().getIndex());
+                            if (persistedNodeAtNewPath != null) {
+                                monitor.recordRemove(workspaceName, Arrays.asList(persistedNodeAtNewPath.getKey()));
+                            }
+                        }
                     }
                 }
 

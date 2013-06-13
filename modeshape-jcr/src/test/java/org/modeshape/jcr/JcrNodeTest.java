@@ -30,6 +30,7 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
+import javax.jcr.RepositoryException;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -40,6 +41,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 public class JcrNodeTest extends MultiUseAbstractTest {
 
@@ -224,5 +226,18 @@ public class JcrNodeTest extends MultiUseAbstractTest {
 
         nodeA.remove();
         session.save();
+    }
+    
+    @Test
+    public void shouldReturnEmptyIterator() throws RepositoryException {
+        Node jcrRootNode = session.getRootNode();
+        Node rootNode = jcrRootNode.addNode("mapSuperclassTest");
+//        session.save();
+        Node newNode = rootNode.addNode("newNode");
+        NodeIterator nodeIterator = rootNode.getNodes("myMap");
+        assertFalse(nodeIterator.hasNext());
+        session.save();
+        nodeIterator = rootNode.getNodes("myMap");
+        assertFalse(nodeIterator.hasNext());
     }
 }

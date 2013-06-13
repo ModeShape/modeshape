@@ -8,7 +8,11 @@
     "query" : {
         "enabled" : true,
         "enableFullTextSearch" : true,
-        "rebuildUponStartup" : "if_missing",
+        "indexing" : {
+            "rebuildOnStartup": {
+                "when": "if_missing"
+            }
+        },
         "indexStorage" : {
             "type" : "ram"
         },

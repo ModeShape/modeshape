@@ -41,6 +41,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.UriInfo;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.web.jcr.rest.RestHelper;
+import org.modeshape.web.jcr.rest.model.RestQueryPlanResult;
 import org.modeshape.web.jcr.rest.model.RestQueryResult;
 
 /**
@@ -100,6 +101,45 @@ public final class RestQueryHandler extends QueryHandler {
         setRows(offset, limit, session, result, restQueryResult, columnNames, baseUrl);
 
         return restQueryResult;
+    }
+
+    /**
+     * Executes a the given query string (based on the language information) against a JCR repository, returning a rest model
+     * based result.
+     * 
+     * @param request a non-null {@link HttpServletRequest}
+     * @param repositoryName a non-null, URL encoded {@link String} representing the name of a repository
+     * @param workspaceName a non-null, URL encoded {@link String} representing the name of a workspace
+     * @param language a non-null String which should be a valid query language, as recognized by the
+     *        {@link javax.jcr.query.QueryManager}
+     * @param statement a non-null String which should be a valid query string in the above language.
+     * @param offset a numeric value which indicates the index in the result set from where results should be returned.
+     * @param limit a numeric value indicating the maximum number of rows to return.
+     * @param uriInfo a non-null {@link UriInfo} object which is provided by RestEASY, allowing extra request parameters to be
+     *        retrieved.
+     * @return a response containing the string representation of the query plan
+     * @throws RepositoryException if any operation fails at the JCR level
+     */
+    public RestQueryPlanResult planQuery( HttpServletRequest request,
+                                          String repositoryName,
+                                          String workspaceName,
+                                          String language,
+                                          String statement,
+                                          long offset,
+                                          long limit,
+                                          UriInfo uriInfo ) throws RepositoryException {
+        assert repositoryName != null;
+        assert workspaceName != null;
+        assert language != null;
+        assert statement != null;
+
+        Session session = getSession(request, repositoryName, workspaceName);
+        org.modeshape.jcr.api.query.Query query = createQuery(language, statement, session);
+        bindExtraVariables(uriInfo, session.getValueFactory(), query);
+
+        org.modeshape.jcr.api.query.QueryResult result = query.explain();
+        String plan = result.getPlan();
+        return new RestQueryPlanResult(plan, statement, language, query.getAbstractQueryModelRepresentation());
     }
 
     private void setRows( long offset,

@@ -21,8 +21,8 @@
  */
 package org.modeshape.jca;
 
+import static org.junit.Assert.assertNotNull;
 import java.util.UUID;
-import java.util.logging.Logger;
 import javax.annotation.Resource;
 import javax.jcr.Node;
 import javax.jcr.Session;
@@ -34,28 +34,25 @@ import org.jboss.shrinkwrap.api.spec.ResourceAdapterArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.jcr.AbstractTransactionalTest;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * ConnectorTestCase
- *
+ * 
  * @author kulikov
  */
-@RunWith(Arquillian.class)
+@RunWith( Arquillian.class )
 public class ConnectorTestCase extends AbstractTransactionalTest {
 
-    private static Logger log = Logger.getLogger("ConnectorTestCase");
     private static String deploymentName = "ConnectorTestCase";
 
     /**
      * Define the deployment
-     *
+     * 
      * @return The deployment archive
      */
     @Deployment
     public static ResourceAdapterArchive createDeployment() {
-        ResourceAdapterArchive raa =
-                ShrinkWrap.create(ResourceAdapterArchive.class, deploymentName + ".rar");
+        ResourceAdapterArchive raa = ShrinkWrap.create(ResourceAdapterArchive.class, deploymentName + ".rar");
         JavaArchive ja = ShrinkWrap.create(JavaArchive.class, UUID.randomUUID().toString() + ".jar");
         ja.addClasses(JcrResourceAdapter.class, JcrManagedConnectionFactory.class, JcrManagedConnection.class);
         ja.addAsResource("my-repository-config.json");
@@ -65,15 +62,16 @@ public class ConnectorTestCase extends AbstractTransactionalTest {
         raa.addAsResource("my-repository-config.json");
         return raa;
     }
+
     /**
      * Resource
      */
-    @Resource(mappedName = "java:/eis/JcrCciConnectionFactory")
+    @Resource( mappedName = "java:/eis/JcrCciConnectionFactory" )
     private javax.jcr.Repository repository;
 
     /**
      * Test getConnection
-     *
+     * 
      * @exception Throwable Thrown if case of an error
      */
     @Test

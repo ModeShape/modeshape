@@ -29,6 +29,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.TimeZone;
+import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.Base64;
@@ -87,7 +88,6 @@ public final class FileNode extends JsonNode {
      * @param versionable true if the file node should be versionable
      * @throws Exception if there is a problem constructing the file node
      */
-    @SuppressWarnings( "deprecation" )
     public FileNode( Workspace workspace,
                      String path,
                      File file,
@@ -101,24 +101,19 @@ public final class FileNode extends JsonNode {
         this.workspace = workspace;
 
         // add properties
-        JSONObject properties = new JSONObject();
-        put(IJsonConstants.PROPERTIES_KEY, properties);
-        properties.put(IJcrConstants.PRIMARY_TYPE_PROPERTY, IJcrConstants.FILE_NODE_TYPE);
+        withPrimaryType(IJcrConstants.FILE_NODE_TYPE);
         if (versionable) {
-            properties.put(IJcrConstants.MIXIN_TYPES_PROPERTY, IJcrConstants.VERSIONABLE_NODE_TYPE);
+            withMixin(IJcrConstants.VERSIONABLE_NODE_TYPE);
         }
+        JSONObject content = createContent(file);
+        withChild(IJcrConstants.CONTENT_PROPERTY, content);
+    }
 
-        // add children
-        JSONObject children = new JSONObject();
-        put(IJsonConstants.CHILDREN_KEY, children);
+    private JSONObject createContent( File file ) throws JSONException {
+        JSONObject content = new JSONObject();
 
-        // add content child
-        JSONObject kid = new JSONObject();
-        children.put(IJcrConstants.CONTENT_PROPERTY, kid);
-
-        // add child properties
-        properties = new JSONObject();
-        kid.put(IJsonConstants.PROPERTIES_KEY, properties);
+        JSONObject properties = new JSONObject();
+        content.put(IJsonConstants.PROPERTIES_KEY, properties);
         properties.put(IJcrConstants.PRIMARY_TYPE_PROPERTY, IJcrConstants.RESOURCE_NODE_TYPE);
 
         // add required jcr:lastModified property
@@ -130,6 +125,7 @@ public final class FileNode extends JsonNode {
 
         // add required jcr:mimeType property (just use a default value)
         properties.put(IJcrConstants.MIME_TYPE, Utils.getMimeType(file));
+        return content;
     }
 
     // ===========================================================================================================================
@@ -142,7 +138,7 @@ public final class FileNode extends JsonNode {
     @Override
     public byte[] getContent() throws Exception {
         // add required jcr:data property (do this lazily only when the content is requested)
-        JSONObject children = (JSONObject)get(IJsonConstants.CHILDREN_KEY);
+        JSONObject children = children();
         JSONObject kid = (JSONObject)children.get(IJcrConstants.CONTENT_PROPERTY);
         JSONObject props = (JSONObject)kid.get(IJsonConstants.PROPERTIES_KEY);
         props.put(IJcrConstants.DATA_PROPERTY, readFile());
@@ -162,8 +158,7 @@ public final class FileNode extends JsonNode {
         assert jsonResponse != null;
         JSONObject contentNode = new JSONObject(jsonResponse);
         JSONObject props = (JSONObject)contentNode.get(IJsonConstants.PROPERTIES_KEY);
-        String encodedContents = props.getString(IJcrConstants.DATA_PROPERTY);
-        return encodedContents;
+        return props.getString(IJcrConstants.DATA_PROPERTY);
     }
 
     /**

@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -44,6 +43,7 @@ import org.hibernate.search.backend.spi.Work;
 import org.hibernate.search.backend.spi.WorkType;
 import org.hibernate.search.backend.spi.Worker;
 import org.hibernate.search.engine.spi.SearchFactoryImplementor;
+import org.hibernate.search.indexes.impl.IndexManagerHolder;
 import org.hibernate.search.indexes.spi.IndexManager;
 import org.hibernate.search.indexes.spi.ReaderProvider;
 import org.modeshape.common.logging.Logger;
@@ -146,6 +146,15 @@ public class BasicLuceneSchema implements LuceneSchema {
 
     protected final String stringFrom( Name name ) {
         return name.getString(namespaces);
+    }
+
+    /**
+     * Returns the global index manager.
+     *
+     * @return  a {@code IndexManagerHolder} instance.
+     */
+    public IndexManagerHolder getAllIndexesManager() {
+        return searchFactory.getAllIndexesManager();
     }
 
     protected final NodeInfo nodeInfo( String id,
@@ -390,11 +399,11 @@ public class BasicLuceneSchema implements LuceneSchema {
                             Path path,
                             Name primaryType,
                             Set<Name> mixinTypes,
-                            Collection<Property> properties,
+                            Iterator<Property> propertiesIterator,
                             NodeTypeSchemata schemata,
                             TransactionContext txnCtx ) {
         String id = key.toString();
-        NodeInfo nodeInfo = nodeInfo(id, workspace, path, primaryType, mixinTypes, properties.iterator(), schemata);
+        NodeInfo nodeInfo = nodeInfo(id, workspace, path, primaryType, mixinTypes, propertiesIterator, schemata);
         logger.trace("index for \"{0}\" workspace: ADD    {1} ", workspace, nodeInfo);
         Work<NodeInfo> work = new Work<NodeInfo>(nodeInfo, id, WorkType.ADD);
         searchFactory.getWorker().performWork(work, txnCtx);

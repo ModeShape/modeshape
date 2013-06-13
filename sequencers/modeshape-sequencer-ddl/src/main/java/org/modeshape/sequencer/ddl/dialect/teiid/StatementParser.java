@@ -180,29 +180,28 @@ abstract class StatementParser implements DdlConstants {
 
         // check for namespaced-prefixed ID (colon will be a token if identifier is not quoted)
         if (tokens.canConsume(':')) {
-            // namespace found
+            // colon found
             String uri = this.teiidDdlParser.getNamespaceUri(id);
 
             if (StringUtil.isBlank(uri)) {
-                // assume id is the uri
-                uri = id;
+                // assume colon is part of the name
+                id = (id + ':' + tokens.consume());
+            } else {
+                // namespace found
+                id = ('{' + uri + '}' + tokens.consume());
             }
-
-            id = '{' + uri + '}' + tokens.consume();
         } else {
             int index =  id.indexOf(':');
     
             if (index != -1) {
-                // namespace found
                 final String prefix = id.substring(0, index);
                 String uri = this.teiidDdlParser.getNamespaceUri(prefix);
     
-                if (StringUtil.isBlank(uri)) {
-                    // assume prefix is the uri
-                    uri = prefix;
+                // assume colon is part of the name if URI is not found
+                if (!StringUtil.isBlank(uri)) {
+                    // namespace found
+                    id = ('{' + uri + '}' + id.substring(index + 1));
                 }
-    
-                id = '{' + uri + '}' + id.substring(index + 1);
             }
         }
 

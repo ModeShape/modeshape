@@ -25,6 +25,8 @@ package org.modeshape.jboss.subsystem;
 
 import java.util.Arrays;
 import java.util.List;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.naming.deployment.ContextNames;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
@@ -37,8 +39,9 @@ class RemoveRepository extends AbstractModeShapeRemoveStepHandler {
     }
 
     @Override
-    List<ServiceName> servicesToRemove( ModelNode operation,
-                                        ModelNode model ) {
+    List<ServiceName> servicesToRemove( OperationContext context,
+                                        ModelNode operation,
+                                        ModelNode model ) throws OperationFailedException {
         String repositoryName = repositoryName(operation);
 
         final String jndiName = ModeShapeJndiNames.jndiNameFrom(model, repositoryName);
@@ -48,7 +51,7 @@ class RemoveRepository extends AbstractModeShapeRemoveStepHandler {
                              bindInfo.getBinderServiceName(),
                              ModeShapeServiceNames.referenceFactoryServiceName(repositoryName),
                              ModeShapeServiceNames.indexStorageServiceName(repositoryName),
-                             ModeShapeServiceNames.binaryStorageServiceName(repositoryName),
+                             ModeShapeServiceNames.binaryStorageDefaultServiceName(repositoryName),
                              ModeShapeServiceNames.repositoryServiceName(repositoryName),
                              ModeShapeServiceNames.dataDirectoryServiceName(repositoryName));
     }

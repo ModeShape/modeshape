@@ -35,13 +35,14 @@ public class ClassFileSequencerLexicon {
         public static final String PREFIX = "class";
     }
 
-    public static final String ABSTRACT = PREFIX +  ":abstract";
+    public static final String ABSTRACT = PREFIX + ":abstract";
     public static final String ANNOTATION = PREFIX + ":annotation";
     public static final String ANNOTATIONS = PREFIX + ":annotations";
+    public static final String METHOD_PARAMETERS = PREFIX + ":methodParameters";
     public static final String ANNOTATION_MEMBER = PREFIX + ":annotationMember";
     public static final String CLASS = PREFIX + ":class";
     public static final String CONSTRUCTORS = PREFIX + ":constructors";
-    public static final String ENUM_VALUES = PREFIX +  ":enumValues";
+    public static final String ENUM_VALUES = PREFIX + ":enumValues";
     public static final String ENUM = PREFIX + ":enum";
     public static final String FIELD = PREFIX + ":field";
     public static final String FIELDS = PREFIX + ":fields";
@@ -53,6 +54,7 @@ public class ClassFileSequencerLexicon {
     public static final String NAME = PREFIX + ":name";
     public static final String NATIVE = PREFIX + ":native";
     public static final String PARAMETERS = PREFIX + ":parameters";
+    public static final String PARAMETER = PREFIX + ":parameter";
     public static final String RETURN_TYPE_CLASS_NAME = PREFIX + ":returnTypeClassName";
     public static final String SEQUENCED_DATE = PREFIX + ":sequencedDate";
     public static final String STATIC = PREFIX + ":static";

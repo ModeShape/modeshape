@@ -42,11 +42,6 @@ public class JaccSubjectResolver implements SubjectResolver {
 
     private static volatile boolean reportedWarning = false;
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.security.JaasProvider.SubjectResolver#resolveSubject()
-     */
     @Override
     public Subject resolveSubject() {
         try {

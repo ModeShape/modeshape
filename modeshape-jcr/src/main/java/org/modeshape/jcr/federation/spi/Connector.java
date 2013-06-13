@@ -25,6 +25,7 @@
 package org.modeshape.jcr.federation.spi;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import javax.jcr.NamespaceRegistry;
@@ -42,11 +43,14 @@ import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
 import org.modeshape.jcr.cache.DocumentNotFoundException;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
+import org.modeshape.jcr.federation.ConnectorChangeSetFactory;
 import org.modeshape.jcr.federation.FederatedDocumentReader;
 import org.modeshape.jcr.federation.FederatedDocumentWriter;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
+import org.modeshape.jcr.value.Path;
+import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.ValueFactories;
@@ -139,6 +143,14 @@ public abstract class Connector {
      * </p>
      */
     private TransactionManager transactionManager;
+
+    /**
+     * The {@link ConnectorChangeSetFactory} instance which allows a connector to create {@link ConnectorChangeSet}s.
+     * <p>
+     * The field is assigned via reflection before ModeShape calls {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
+     * </p>
+     */
+    private ConnectorChangeSetFactory connectorChangedSetFactory;
 
     /**
      * Ever connector is expected to have a no-argument constructor, although the class should never initialize any of the data at
@@ -319,6 +331,15 @@ public abstract class Connector {
     public abstract String getDocumentId( String path );
 
     /**
+     * Return the path(s) of the external node with the given identifier. The resulting paths are from the point of view of the
+     * connector. For example, the "root" node exposed by the connector wil have a path of "/".
+     * 
+     * @param id a {@code non-null} string
+     * @return the connector-specific path(s) of the node, or an empty document if there is no such document; never null
+     */
+    public abstract Collection<String> getDocumentPathsById( String id );
+
+    /**
      * Indicates if the connector instance has been configured in read-only mode.
      * 
      * @return {@code true} if the connector has been configured in read-only mode, false otherwise.
@@ -453,6 +474,16 @@ public abstract class Connector {
     }
 
     /**
+     * Obtain a new {@link DocumentWriter} that can be used to update a document.
+     * 
+     * @param document the document that should be updated; may not be null
+     * @return the document writer; never null
+     */
+    protected DocumentWriter writeDocument( Document document ) {
+        return new FederatedDocumentWriter(translator, document);
+    }
+
+    /**
      * Obtain a new {@link PageWriter} that can be used to construct a page of children, typically within the
      * {@link Pageable#getChildren(PageKey)} method.
      * 
@@ -486,6 +517,41 @@ public abstract class Connector {
 
     protected final PropertyFactory propertyFactory() {
         return context.getPropertyFactory();
+    }
+
+    protected final PathFactory pathFactory() {
+        return factories().getPathFactory();
+    }
+
+    /**
+     * Helper method that creates a {@link Path} object from a string. This is equivalent to calling "
+     * <code>pathFactory().create(path)</code>", and is simply provided for convenience.
+     * 
+     * @param path the string from which the path is to be created
+     * @return the value, or null if the supplied string is null
+     * @throws ValueFormatException if the conversion from a string could not be performed
+     * @see PathFactory#create(String)
+     * @see #pathFrom(Path, String)
+     */
+    protected final Path pathFrom( String path ) {
+        return factories().getPathFactory().create(path);
+    }
+
+    /**
+     * Helper method that creates a {@link Path} object from a parent path and a child path string. This is equivalent to calling
+     * " <code>pathFactory().create(parentPath,childPath)</code>", and is simply provided for convenience.
+     * 
+     * @param parentPath the parent path
+     * @param childPath the child path as a string
+     * @return the value, or null if the supplied string is null
+     * @throws ValueFormatException if the conversion from a string could not be performed
+     * @see PathFactory#create(String)
+     * @see #pathFrom(String)
+     */
+    protected final Path pathFrom( Path parentPath,
+                                   String childPath ) {
+        Path parent = pathFactory().create(parentPath);
+        return pathFactory().create(parent, childPath);
     }
 
     /**
@@ -544,6 +610,13 @@ public abstract class Connector {
                                    String localName,
                                    TextDecoder decoder ) {
         return factories().getNameFactory().create(namespaceUri, localName, decoder);
+    }
+
+    /**
+     * @return a fresh {@link ConnectorChangeSet} for use in recording changes
+     */
+    protected ConnectorChangeSet newConnectorChangedSet() {
+        return connectorChangedSetFactory.newChangeSet();
     }
 
     public final class ExtraProperties {

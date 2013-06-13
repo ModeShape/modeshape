@@ -36,10 +36,7 @@ import org.modeshape.web.jcr.rest.client.domain.Workspace;
 
 /**
  * The <code>IRestClient</code> interface is the API for all REST clients used by the Eclipse ModeShape plugin.
- * 
- * @deprecated since ModeShape 3.1, this should be obsolete
  */
-@Deprecated
 public interface IRestClient {
 
     /**
@@ -151,6 +148,54 @@ public interface IRestClient {
     Status unpublish( Workspace workspace,
                       String path,
                       File file );
+
+    /**
+     * Marks the last folder of the given path as a publish area, by adding the {@code mode:publishArea} mixin.
+     * <p/>
+     * The path is made up of folder segments. If any folder segment does not exist, it will be created.
+     * The folder corresponding to the last path segment will become the publish area.
+     * If the last folder already is a publish area, the title and/or description will be updated.
+     *
+     * @param workspace the workspace where the operation will be performed (never <code>null</code>)
+     * @param path the unencoded path to the folder which will become the publish area (never <code>null</code>).
+     * @param title an optional {@code String} representing the title of the area (can be {@code null})
+     * @param description an optional {@code String} representing the description of the area (can be {@code null})
+     *
+     * @return the status of the operation (never <code>null</code>).
+     */
+    Status markAsPublishArea(Workspace workspace, String path, String title, String description);
+
+    /**
+     * Unmarks the last folder of the given path as a publish area, by removing the {@code mode:publishArea} mixin.
+     * <p/>
+     * The path is made up of folder segments. If any folder segment does not exist, no changes will be performed
+     * If the last folder segment from the path is not a publish area, no changes will be performed.
+     *
+     * @param workspace the workspace where the operation will be performed (never <code>null</code>)
+     * @param path the unencoded path to the folder which will be cleared as a publish area (never <code>null</code>).
+     *
+     * @return the status of the operation (never <code>null</code>).
+     */
+    Status unmarkAsPublishArea(Workspace workspace, String path);
+
+    /**
+     * Compute the plan for the supplied query in the workspace. This method does not return any results.
+     * 
+     * @param workspace the workspace where the resource will be unpublished (never <code>null</code>)
+     * @param language the JCR query language to use (never <code>null</code>)
+     * @param statement the query itself (never <code>null</code>)
+     * @param offset the first row to be returned; if this value is negative, rows are returned starting with the first row
+     * @param limit the maximum number of rows to be returned; if this value is negative, all rows are returned
+     * @param variables the query variables; may be null
+     * @return the string representation of the query plan
+     * @throws Exception if there is a problem obtaining the workspaces
+     */
+    String planForQuery( Workspace workspace,
+                         String language,
+                         String statement,
+                         int offset,
+                         int limit,
+                         Map<String, String> variables ) throws Exception;
 
     /**
      * Executes the given query in the workspace.

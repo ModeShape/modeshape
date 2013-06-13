@@ -43,7 +43,6 @@ import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrRepository.RunningState;
-import org.modeshape.jcr.RepositoryConfiguration.QuerySystem;
 import org.modeshape.jcr.api.query.qom.QueryCommand;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
@@ -80,16 +79,15 @@ class RepositoryQueryManager {
     private final Logger logger = Logger.getLogger(getClass());
 
     private Future<Void> asyncReindexingResult;
+    private JMSMasterIndexingListener jmsListener;
 
-    protected RepositoryQueryManager( RunningState runningState,
-                                      QuerySystem querySystem ) {
+    protected RepositoryQueryManager( RunningState runningState ) {
         this.runningState = runningState;
         this.indexingExecutorService = null;
         this.config = null;
     }
 
     RepositoryQueryManager( RunningState runningState,
-                            QuerySystem querySystem,
                             ExecutorService indexingExecutorService,
                             Properties backendProps,
                             Properties indexingProps,
@@ -99,6 +97,14 @@ class RepositoryQueryManager {
         // Set up the query engine ...
         String repoName = runningState.name();
         this.config = new BasicLuceneConfiguration(repoName, backendProps, indexingProps, indexStorageProps);
+        checkForJMSMasterConfiguration(backendProps);
+    }
+
+    private void checkForJMSMasterConfiguration( Properties backendProperties ) {
+        String backendType = backendProperties.getProperty(RepositoryConfiguration.FieldName.TYPE);
+        if (backendType.equalsIgnoreCase(RepositoryConfiguration.FieldValue.INDEXING_BACKEND_TYPE_JMS_MASTER)) {
+            this.jmsListener = new JMSMasterIndexingListener(backendProperties);
+        }
     }
 
     void shutdown() {
@@ -112,6 +118,10 @@ class RepositoryQueryManager {
                     } finally {
                         queryEngine = null;
                     }
+                }
+                if (jmsListener != null) {
+                    jmsListener.shutdown();
+                    jmsListener = null;
                 }
             } finally {
                 engineInitLock.unlock();
@@ -176,6 +186,11 @@ class RepositoryQueryManager {
                                                                                        .buildSearchFactory();
                     queryEngine = new LuceneQueryEngine(runningState.context(), runningState.name(), planner, optimizer,
                                                         searchFactory, config.getVersion(), enableFullTextSearch);
+
+                    if (this.jmsListener != null) {
+                        //if we're dealing with a JMS master configuration, we need to start the JMS listener
+                        this.jmsListener.start(this.queryEngine.getAllIndexesManager());
+                    }
                 }
             } finally {
                 engineInitLock.unlock();
@@ -195,7 +210,7 @@ class RepositoryQueryManager {
     protected void reindexContent( final boolean includeSystemContent,
                                    boolean async,
                                    boolean onlyIfEmpty ) {
-        if (onlyIfEmpty && !getIndexes().initializedIndexes()) {
+        if (onlyIfEmpty && !indexesEmpty()) {
             // There already was some indexed content, so there's nothing to do ...
             return;
         }
@@ -212,6 +227,10 @@ class RepositoryQueryManager {
         } else {
             reindexContent(includeSystemContent);
         }
+    }
+
+    protected boolean indexesEmpty() {
+        return getIndexes().initializedIndexes();
     }
 
     /**

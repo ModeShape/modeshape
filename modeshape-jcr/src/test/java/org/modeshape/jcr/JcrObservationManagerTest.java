@@ -23,6 +23,12 @@
  */
 package org.modeshape.jcr;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.UUID;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
@@ -49,20 +55,11 @@ import org.apache.jackrabbit.test.api.observation.PropertyAddedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyChangedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyRemovedTest;
 import org.apache.jackrabbit.test.api.observation.WorkspaceOperationTest;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -70,12 +67,18 @@ import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.JcrObservationManager.JcrEventBundle;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import org.modeshape.jcr.api.observation.PropertyEvent;
 import org.modeshape.jcr.api.value.DateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.UUID;
+import static junit.framework.Assert.assertNull;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * The {@link JcrObservationManager} test class.
@@ -395,9 +398,22 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
         // tests
         checkResults(listener);
-        assertTrue("Path for added property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
+        Event propertyAddedEvent = listener.getEvents().get(0);
+        assertTrue("Path for added property is wrong: actual=" + propertyAddedEvent.getPath() + ", expected="
                    + prop1.getPath(),
                    containsPath(listener, prop1.getPath()));
+
+        assertTrue(propertyAddedEvent instanceof PropertyEvent);
+        PropertyEvent propertyEvent = (PropertyEvent) propertyAddedEvent;
+
+        assertEquals("prop1 content", propertyEvent.getCurrentValue());
+        assertEquals(1, propertyEvent.getCurrentValues().size());
+        assertEquals("prop1 content", propertyEvent.getCurrentValues().get(0));
+        assertFalse(propertyEvent.isMultiValue());
+
+        assertFalse(propertyEvent.wasMultiValue());
+        assertNull(propertyEvent.getPreviousValue());
+        assertNull(propertyEvent.getPreviousValues());
     }
 
     @Test
@@ -420,9 +436,24 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
         // tests
         checkResults(listener);
-        assertTrue("Path for changed property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
+        Event propertyChangedEvent = listener.getEvents().get(0);
+        assertTrue("Path for changed property is wrong: actual=" + propertyChangedEvent.getPath() + ", expected="
                    + prop1.getPath(),
                    containsPath(listener, prop1.getPath()));
+
+
+        assertTrue(propertyChangedEvent instanceof PropertyEvent);
+        PropertyEvent propertyEvent = (PropertyEvent) propertyChangedEvent;
+
+        assertEquals("prop1 modified content", propertyEvent.getCurrentValue());
+        assertEquals(1, propertyEvent.getCurrentValues().size());
+        assertEquals("prop1 modified content", propertyEvent.getCurrentValues().get(0));
+        assertFalse(propertyEvent.isMultiValue());
+
+        assertFalse(propertyEvent.wasMultiValue());
+        assertEquals("prop1 content", propertyEvent.getPreviousValue());
+        assertEquals(1, propertyEvent.getPreviousValues().size());
+        assertEquals("prop1 content", propertyEvent.getPreviousValues().get(0));
     }
 
     @Test
@@ -446,8 +477,22 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
         // tests
         checkResults(listener);
-        assertTrue("Path for removed property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
+        Event propertyRemovedEvent = listener.getEvents().get(0);
+        assertTrue("Path for removed property is wrong: actual=" + propertyRemovedEvent.getPath() + ", expected="
                    + propPath, containsPath(listener, propPath));
+
+        assertTrue(propertyRemovedEvent instanceof PropertyEvent);
+        PropertyEvent propertyEvent = (PropertyEvent) propertyRemovedEvent;
+
+        assertEquals("prop1 content", propertyEvent.getCurrentValue());
+        assertEquals(1, propertyEvent.getCurrentValues().size());
+        assertEquals("prop1 content", propertyEvent.getCurrentValues().get(0));
+        assertFalse(propertyEvent.isMultiValue());
+
+        assertFalse(propertyEvent.wasMultiValue());
+        assertNull(propertyEvent.getPreviousValue());
+        assertNull(propertyEvent.getPreviousValues());
+
     }
 
     @Test
@@ -457,7 +502,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         SimpleListener listener = addListener(1, ALL_EVENTS, null, true, null, nodeTypeNames, false);
 
         // add the property
-        this.session.getRootNode().setProperty("fooProp", "bar");
+        this.session.getRootNode().setProperty("fooProp", new String[]{"foo", "bar"});
         save();
 
         // event handling
@@ -467,8 +512,21 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // tests
         checkResults(listener);
         String propPath = "/fooProp";
-        assertTrue("Path for added property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected=" + propPath,
+        Event propertyAddedEvent = listener.getEvents().get(0);
+        assertTrue("Path for added property is wrong: actual=" + propertyAddedEvent.getPath() + ", expected=" + propPath,
                    containsPath(listener, propPath));
+
+        assertTrue(propertyAddedEvent instanceof PropertyEvent);
+        PropertyEvent propertyEvent = (PropertyEvent) propertyAddedEvent;
+
+        assertEquals("foo", propertyEvent.getCurrentValue());
+        assertEquals(2, propertyEvent.getCurrentValues().size());
+        assertEquals(Arrays.asList("foo", "bar"), propertyEvent.getCurrentValues());
+        assertTrue(propertyEvent.isMultiValue());
+
+        assertFalse(propertyEvent.wasMultiValue());
+        assertNull(propertyEvent.getPreviousValue());
+        assertNull(propertyEvent.getPreviousValues());
     }
 
     // ===========================================================================================================================
@@ -1795,7 +1853,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         String oldPath = n1.getPath();
         String renamedPath = getRoot().getPath() + "/node3";
         getWorkspace().move(oldPath, renamedPath);
-        save();
 
         // event handling
         moveNodeListener.waitForEvents();

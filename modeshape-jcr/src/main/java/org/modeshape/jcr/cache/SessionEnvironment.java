@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr.cache;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 import org.modeshape.jcr.cache.document.TransactionalWorkspaceCaches;
@@ -51,23 +50,30 @@ public interface SessionEnvironment {
      */
     TransactionalWorkspaceCaches getTransactionalWorkspaceCacheFactory();
 
+    /**
+     * Indicates if indexing is configured in a clustered mode of not.
+     *
+     * @return {@code true} if indexing is configured clustered, {@code false} otherwise
+     */
+    boolean indexingClustered();
+
     public static interface Monitor {
         /**
          * Add to the index the information about a node.
-         * 
+         *
          * @param workspace the workspace in which the node information should be available; may not be null
          * @param key the unique key for the node; may not be null
          * @param path the path of the node; may not be null
          * @param primaryType the primary type of the node; may not be null
          * @param mixinTypes the mixin types for the node; may not be null but may be empty
-         * @param properties the properties of the node; may not be null but may be empty
+         * @param propertiesIterator an iterator over a collection of properties
          */
         void recordAdd( String workspace,
                         NodeKey key,
                         Path path,
                         Name primaryType,
                         Set<Name> mixinTypes,
-                        Collection<Property> properties );
+                        Iterator<Property> propertiesIterator );
 
         /**
          * Update the index to reflect the new state of the node.

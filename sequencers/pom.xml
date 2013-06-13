@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.modeshape</groupId>
         <artifactId>modeshape-parent</artifactId>
-        <version>3.3-SNAPSHOT</version>
+        <version>3.4-SNAPSHOT</version>
         <relativePath>../modeshape-parent/pom.xml</relativePath>
     </parent>
     <!-- The groupId and version values are inherited from parent -->
@@ -82,7 +82,10 @@
     </dependencies>
 
     <modules>
-        <module>modeshape-sequencer-msoffice</module>
+        <!--
+            See MODE-1934
+            <module>modeshape-sequencer-msoffice</module>
+        -->
         <module>modeshape-sequencer-images</module>
         <module>modeshape-sequencer-java</module>
         <module>modeshape-sequencer-zip</module>

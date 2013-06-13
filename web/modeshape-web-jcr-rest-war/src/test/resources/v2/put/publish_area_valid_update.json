@@ -1,0 +1,6 @@
+{
+    "jcr:primaryType": "nt:folder",
+    "jcr:mixinTypes": ["mix:referenceable"],
+    "jcr:title": null,
+    "jcr:description": null
+}

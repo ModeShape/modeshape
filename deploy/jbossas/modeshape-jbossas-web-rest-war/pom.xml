@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.modeshape</groupId>
         <artifactId>modeshape-parent</artifactId>
-        <version>3.3-SNAPSHOT</version>
+        <version>3.4-SNAPSHOT</version>
         <relativePath>../../../modeshape-parent/pom.xml</relativePath>
     </parent>
     <artifactId>modeshape-jbossas-web-rest-war</artifactId>
@@ -53,11 +53,10 @@
                     <groupId>org.jboss.resteasy</groupId>
                     <artifactId>resteasy-multipart-provider</artifactId>
                 </exclusion>
-                <!-- ModeShape REST service code uses this directly ...
-                  <exclusion>
-                    <groupId>org.codehaus.jettison</groupId>
-                    <artifactId>jettison</artifactId>
-                  </exclusion-->
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
     </dependencies>

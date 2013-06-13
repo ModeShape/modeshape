@@ -24,12 +24,10 @@
 package org.modeshape.cmis;
 
 import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
 import org.apache.chemistry.opencmis.commons.server.CmisServiceFactory;
 import org.modeshape.web.jcr.ModeShapeJcrDeployer;
 
 /**
- *
  * @author kulikov
  */
 public class CmisContextListener extends ModeShapeJcrDeployer {
@@ -37,21 +35,21 @@ public class CmisContextListener extends ModeShapeJcrDeployer {
     public static final String SERVICES_FACTORY = "org.apache.chemistry.opencmis.servicesfactory";
 
     @Override
-    public void contextInitialized(ServletContextEvent sce) {
+    public void contextInitialized( ServletContextEvent sce ) {
         super.contextInitialized(sce);
 
         // create services factory
         JcrServiceFactory factory = new JcrServiceFactory();
         factory.init();
-        
+
         // set the services factory into the servlet context
         sce.getServletContext().setAttribute(SERVICES_FACTORY, factory);
     }
 
     @Override
-    public void contextDestroyed(ServletContextEvent sce) {
+    public void contextDestroyed( ServletContextEvent sce ) {
         // destroy services factory
-        CmisServiceFactory factory = (CmisServiceFactory) sce.getServletContext().getAttribute(SERVICES_FACTORY);
+        CmisServiceFactory factory = (CmisServiceFactory)sce.getServletContext().getAttribute(SERVICES_FACTORY);
         if (factory != null) {
             factory.destroy();
         }

@@ -267,6 +267,18 @@ public interface ValueFactory<T> {
     T create( InputStream stream ) throws ValueFormatException, IoException;
 
     /**
+     * Create a value from the binary content given by the supplied stream with a hint to the BinaryStore for how to store it
+     *
+     * @param stream the stream containing the content to be used to create the value
+     * @param hint a hint that the BinaryStore may use to make storage decisions about this input stream
+     * @return the value, or null if the supplied stream is null
+     * @throws ValueFormatException if the conversion from an input stream could not be performed
+     * @throws IoException If an unexpected problem occurs while accessing the supplied stream (such as an {@link IOException}).
+     */
+    T create( InputStream stream,
+              String hint ) throws ValueFormatException, IoException;
+
+    /**
      * Create a value from the specified information by determining which other <code>create</code> method applies and delegating
      * to that method. Note that this method only will call <code>create</code> methods that take a single parameter; so this
      * excludes {@link #create(InputStream)} and {@link #create(String, TextDecoder)}.

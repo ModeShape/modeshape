@@ -333,7 +333,9 @@ public class SystemContent {
         // Remove any children that weren't represented by a property definition or child node definition ...
         if (existingChildKeys != null && !existingChildKeys.isEmpty()) {
             for (NodeKey childKey : existingChildKeys) {
+                // Remove the child from the parent, then destrot it ...
                 nodeTypeNode.removeChild(system, childKey);
+                system.destroy(childKey);
             }
         }
     }

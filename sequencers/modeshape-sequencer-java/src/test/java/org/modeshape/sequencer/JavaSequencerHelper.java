@@ -39,9 +39,9 @@ import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.INTERF
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.INTERFACES;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHOD;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHODS;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHOD_PARAMETERS;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.NAME;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.NATIVE;
-import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.PARAMETERS;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.RETURN_TYPE_CLASS_NAME;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.STATIC;
 import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.STRICT_FP;
@@ -56,6 +56,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -135,7 +136,30 @@ public abstract class JavaSequencerHelper {
         assertEquals(CONSTRUCTORS, constructors.getProperty(JCR_PRIMARY_TYPE).getString());
         NodeIterator constructorMethodsIt = constructors.getNodes();
         Node constructorMethod = constructorMethodsIt.nextNode();
-        assertFalse(constructorMethodsIt.hasNext());
+        assertMethod(constructorMethod,
+                     getExpectedTypeName(MockClass.class),
+                     "void",
+                     "public",
+                     false,
+                     false,
+                     false,
+                     false,
+                     false,
+                     false,
+                     Arrays.<String>asList());
+        constructorMethod = constructorMethodsIt.nextNode();
+        assertMethod(constructorMethod,
+                     getExpectedTypeName(MockClass.class),
+                     "void",
+                     "public",
+                     false,
+                     false,
+                     false,
+                     false,
+                     false,
+                     false,
+                     Arrays.asList("boolean"));
+        constructorMethod = constructorMethodsIt.nextNode();
         assertMethod(constructorMethod,
                      getExpectedTypeName(MockClass.class),
                      "void",
@@ -147,6 +171,7 @@ public abstract class JavaSequencerHelper {
                      false,
                      false,
                      Arrays.asList(getExpectedTypeName(Boolean.class)));
+        assertFalse(constructorMethodsIt.hasNext());
         assertNoAnnotationsOnNode(constructorMethod);
     }
 
@@ -156,8 +181,15 @@ public abstract class JavaSequencerHelper {
         assertEquals(METHODS, methods.getProperty(JCR_PRIMARY_TYPE).getString());
         NodeIterator methodsIterator = methods.getNodes();
         Node method = methodsIterator.nextNode();
+        assertMethod(method, "doSomething", "void", "public", false, false, false, false, false, false, Arrays.asList("double"));
+        method = methodsIterator.nextNode();
+        assertMethod(method, "doSomething", "void", "public", false, false, false, false, false, false, Arrays.asList("float"));
+        method = methodsIterator.nextNode();
+        assertMethod(method, "setField", "void", "public", false, false, false, false, false, false, new ArrayList<String>());
+        method = methodsIterator.nextNode();
+        assertMethod(method, "setField", "void", "public", false, false, false, false, false, false, Arrays.asList(getExpectedTypeName(Boolean.class)));
+        method = methodsIterator.nextNode();
         assertMethod(method, "voidMethod", "void", "package", false, false, false, false, false, true, new ArrayList<String>());
-
         assertNodeHasAnnotation(method, Deprecated.class);
         assertFalse(methodsIterator.hasNext());
     }
@@ -247,8 +279,15 @@ public abstract class JavaSequencerHelper {
         assertEquals(isStrictFP, method.getProperty(STRICT_FP).getBoolean());
         assertEquals(isNative, method.getProperty(NATIVE).getBoolean());
         assertEquals(isSynchronized, method.getProperty(SYNCHRONIZED).getBoolean());
-        List<String> parameters = valuesToStringList(method.getProperty(PARAMETERS).getValues());
-        assertEquals(expectedParameters, parameters);
+        if (!expectedParameters.isEmpty()) {
+            Node parameters = method.getNode(METHOD_PARAMETERS);
+            NodeIterator iter = parameters.getNodes();
+            Iterator<String> expectedNameIter = expectedParameters.iterator();
+            while (iter.hasNext()) {
+                Node parameter = iter.nextNode();
+                assertEquals(expectedNameIter.next(), parameter.getProperty(TYPE_CLASS_NAME).getString());
+            }
+        }
     }
 
     private void assertField( Node field,

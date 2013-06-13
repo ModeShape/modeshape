@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -66,7 +65,7 @@ class RepositoryDisabledQueryManager extends RepositoryQueryManager {
                                 Path path,
                                 Name primaryType,
                                 Set<Name> mixinTypes,
-                                Collection<Property> properties,
+                                Iterator<Property> propertiesIterator,
                                 NodeTypeSchemata schemata,
                                 TransactionContext txnCtx ) {
         }
@@ -108,7 +107,7 @@ class RepositoryDisabledQueryManager extends RepositoryQueryManager {
 
     RepositoryDisabledQueryManager( RunningState runningState,
                                     QuerySystem querySystem ) {
-        super(runningState, querySystem);
+        super(runningState);
     }
 
     @Override

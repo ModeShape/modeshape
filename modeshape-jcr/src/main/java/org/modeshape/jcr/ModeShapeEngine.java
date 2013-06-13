@@ -63,6 +63,8 @@ import org.modeshape.jcr.api.Repositories;
 public class ModeShapeEngine implements Repositories {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    
+    private static final Logger LOGGER = Logger.getLogger(ModeShapeEngine.class);
 
     private final Map<String, JcrRepository> repositories = new HashMap<String, JcrRepository>();
     private ExecutorService repositoryStarterService;
@@ -199,7 +201,11 @@ public class ModeShapeEngine implements Repositories {
      *         shutdown
      */
     protected boolean doShutdown() {
-        if (state == State.NOT_RUNNING) return true;
+        if (state == State.NOT_RUNNING) {
+            LOGGER.debug("Engine already shut down.");
+            return true;
+        }
+        LOGGER.debug("Shutting down engine...");
         final Lock lock = this.lock.writeLock();
         try {
             lock.lock();

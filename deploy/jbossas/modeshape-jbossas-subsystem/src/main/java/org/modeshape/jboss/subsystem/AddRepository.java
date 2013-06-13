@@ -25,12 +25,10 @@ package org.modeshape.jboss.subsystem;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import java.util.List;
-import javax.transaction.TransactionManager;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.transaction.lookup.JBossTransactionManagerLookup;
 import org.jboss.as.clustering.jgroups.ChannelFactory;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -211,7 +209,7 @@ public class AddRepository extends AbstractAddStepHandler {
                               repositoryService.getIndexStorageConfigInjector());
 
         // Add dependency to the binaries storage service, which captures the properties for the binaries storage
-        builder.addDependency(ModeShapeServiceNames.binaryStorageServiceName(repositoryName),
+        builder.addDependency(ModeShapeServiceNames.binaryStorageDefaultServiceName(repositoryName),
                               BinaryStorage.class,
                               repositoryService.getBinaryStorageInjector());
 
@@ -263,7 +261,7 @@ public class AddRepository extends AbstractAddStepHandler {
 
         // Add the default binary storage service which will provide the binary configuration
         BinaryStorageService defaultBinaryService = new BinaryStorageService(repositoryName);
-        ServiceBuilder<BinaryStorage> binaryStorageBuilder = target.addService(ModeShapeServiceNames.binaryStorageServiceName(repositoryName),
+        ServiceBuilder<BinaryStorage> binaryStorageBuilder = target.addService(ModeShapeServiceNames.binaryStorageDefaultServiceName(repositoryName),
                                                                                defaultBinaryService);
         binaryStorageBuilder.addDependency(dataDirServiceName, String.class, defaultBinaryService.getDataDirectoryPathInjector());
         binaryStorageBuilder.setInitialMode(ServiceController.Mode.ACTIVE);

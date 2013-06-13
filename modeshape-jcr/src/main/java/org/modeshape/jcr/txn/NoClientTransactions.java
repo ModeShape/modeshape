@@ -23,7 +23,11 @@
  */
 package org.modeshape.jcr.txn;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.transaction.HeuristicMixedException;
+import javax.transaction.HeuristicRollbackException;
 import javax.transaction.NotSupportedException;
+import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 import org.modeshape.jcr.cache.SessionCache;
@@ -36,17 +40,56 @@ import org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory;
  */
 public class NoClientTransactions extends Transactions {
 
+    /**
+     * During ws cache initialization (either when the repo starts up of a new ws is created), there can be a case of semantically
+     * nested simple transactions, so we need effective make sure that only 1 instance of an active transaction can exist at any
+     * given time. We cannot use multiple instance because completion functions are instance-dependent
+     */
+    private NoClientTransaction activeTransaction;
+
     public NoClientTransactions( MonitorFactory monitorFactory,
                                  TransactionManager txnMgr ) {
         super(monitorFactory, txnMgr);
     }
 
     @Override
-    public Transaction begin() throws NotSupportedException, SystemException {
-        // Start a transaction ...
-        txnMgr.begin();
-        logger.trace("Begin transaction");
-        // and return immediately ...
-        return new SimpleTransaction(txnMgr);
+    public synchronized Transaction begin() throws NotSupportedException, SystemException {
+        if (activeTransaction == null) {
+            // Start a transaction ...
+            txnMgr.begin();
+            logger.trace("Begin transaction");
+            // and return immediately ...
+            activeTransaction =  new NoClientTransaction(txnMgr);
+        }
+        return activeTransaction.transactionBegin();
+    }
+
+    protected class NoClientTransaction extends SimpleTransaction {
+        private final AtomicInteger nestedLevel = new AtomicInteger(0);
+
+        public NoClientTransaction( TransactionManager txnMgr ) {
+            super(txnMgr);
+        }
+
+        @Override
+        public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException, IllegalStateException, SystemException {
+            if (nestedLevel.getAndDecrement() == 1) {
+                NoClientTransactions.this.activeTransaction = null;
+                super.commit();
+            } else {
+                logger.trace("Not committing transaction because it's nested within another transaction. Only the top level transaction should commit");
+            }
+        }
+
+        @Override
+        public void rollback() throws IllegalStateException, SecurityException, SystemException {
+            NoClientTransactions.this.activeTransaction = null;
+            super.rollback();
+        }
+
+        private NoClientTransaction transactionBegin() {
+            nestedLevel.incrementAndGet();
+            return this;
+        }
     }
 }

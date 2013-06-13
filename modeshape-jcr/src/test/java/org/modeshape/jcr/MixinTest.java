@@ -26,8 +26,11 @@ package org.modeshape.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -43,6 +46,7 @@ import javax.jcr.version.OnParentVersionAction;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 
 public class MixinTest extends SingleUseAbstractTest {
 
@@ -55,6 +59,7 @@ public class MixinTest extends SingleUseAbstractTest {
      * mixinTypeWithAutoCreatedChildNode with auto-created child node nodeB
      * mixinTypeC with child node nodeA and property propertyB
      * primaryTypeA with child node nodeA and property propertyA
+     * mixinProtected with child node childProtected and property propertyProtected
      */
     static final String MIXIN_TYPE_A = "mixinTypeA";
     static final String MIXIN_TYPE_B = "mixinTypeB";
@@ -63,12 +68,15 @@ public class MixinTest extends SingleUseAbstractTest {
     static final String MIXIN_TYPE_WITH_AUTO_PROP = "mixinTypeWithAutoCreatedProperty";
     static final String MIXIN_TYPE_WITH_AUTO_CHILD = "mixinTypeWithAutoCreatedChildNode";
     static final String PRIMARY_TYPE_A = "primaryTypeA";
+    static final String MIXIN_PROTECTED = "mixinProtected";
 
     static final String PROPERTY_A = "propertyA";
     static final String PROPERTY_B = "propertyB";
+    static final String PROPERTY_PROTECTED = "propertyProtected";
 
     static final String CHILD_NODE_A = "nodeA";
     static final String CHILD_NODE_B = "nodeB";
+    static final String CHILD_PROTECTED = "childProtected";
 
     @Override
     @Before
@@ -304,7 +312,7 @@ public class MixinTest extends SingleUseAbstractTest {
     public void shouldAllowRemovalIfNoConflict() throws Exception {
         Node a = session.getRootNode().addNode("a");
         a.addMixin(MIXIN_TYPE_B);
-        a.addNode("nodeB");
+        a.addNode(CHILD_NODE_B);
         session.save();
 
         Node rootNode = session.getRootNode();
@@ -353,7 +361,7 @@ public class MixinTest extends SingleUseAbstractTest {
     public void shouldAllowRemovalIfExistingChildNodeWouldHaveDefinition() throws Exception {
         Node a = session.getRootNode().addNode("a", "nt:unstructured");
         a.addMixin(MIXIN_TYPE_B);
-        a.addNode("nodeB");
+        a.addNode(CHILD_NODE_B);
         session.save();
 
         Node rootNode = session.getRootNode();
@@ -363,9 +371,9 @@ public class MixinTest extends SingleUseAbstractTest {
 
     @Test( expected = ConstraintViolationException.class )
     public void shouldNotAllowRemovalIfExistingChildNodeWouldHaveNoDefinition() throws Exception {
-        Node a = session.getRootNode().addNode("a", "baseType");
+        Node a = session.getRootNode().addNode("a", BASE_PRIMARY_TYPE);
         a.addMixin(MIXIN_TYPE_B);
-        a.addNode("nodeB");
+        a.addNode(CHILD_NODE_B);
         session.save();
 
         Node rootNode = session.getRootNode();
@@ -373,101 +381,234 @@ public class MixinTest extends SingleUseAbstractTest {
         nodeA.removeMixin(MIXIN_TYPE_B);
     }
 
-    @SuppressWarnings( {"unchecked"} )
+    @Test
+    @FixFor( "MODE-1912" )
+    public void shouldRemoveProtectedChildrenAndPropertiesWhenRemovingMixin() throws Exception {
+        Node protectedNode = session.getRootNode().addNode("protected", BASE_PRIMARY_TYPE);
+        protectedNode.addMixin(MIXIN_PROTECTED);
+        protectedNode.addNode(CHILD_PROTECTED);
+        protectedNode.setProperty(PROPERTY_PROTECTED, "a value");
+
+        session.save();
+
+        //change the item definitions to protected and run the validations
+        NodeTypeManager mgr = session.getWorkspace().getNodeTypeManager();
+        NodeTypeTemplate mixinProtected = createMixinProtected(mgr, true);
+        mgr.registerNodeType(mixinProtected, true);
+
+        String childPath = "/protected/" + CHILD_PROTECTED;
+        String propertyPath = "/protected/" + PROPERTY_PROTECTED;
+
+        protectedNode = session.getNode("/protected");
+        assertNotNull(session.getNode(childPath));
+        assertNotNull(session.getProperty(propertyPath));
+        protectedNode.removeMixin(MIXIN_PROTECTED);
+        session.save();
+
+        try {
+            session.getNode(childPath);
+            fail("Protected child should have been removed");
+        } catch (PathNotFoundException path) {
+            //expected
+        }
+
+        try {
+            session.getProperty(propertyPath);
+            fail("Protected property should have been removed");
+        } catch (PathNotFoundException path) {
+            //expected
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-1949")
+    public void shouldNotAllowMixinRemovalIfPropertiesDefinedInParentMixinArePresent() throws Exception {
+        Node folder = session.getNode("/").addNode("folder", "nt:folder");
+        //add the publishArea mixin which inherits from mix:title
+        folder.addMixin("mode:publishArea");
+        folder.setProperty("jcr:title", "title");
+        folder.setProperty("jcr:description", "description");
+        session.save();
+
+        try {
+            folder.removeMixin("mode:publishArea");
+            session.save();
+            fail("The mixin should not be removed because there are still properties defined from the parent mixin");
+        } catch (ConstraintViolationException e) {
+            //expected
+        }
+
+        folder.setProperty("jcr:title", (Value)null);
+        session.save();
+
+        try {
+            folder.removeMixin("mode:publishArea");
+            session.save();
+            fail("The mixin should not be removed because there are still properties defined from the parent mixin");
+        } catch (ConstraintViolationException e) {
+            //expected
+        }
+
+        folder.setProperty("jcr:description", (Value)null);
+        session.save();
+        folder.removeMixin("mode:publishArea");
+        session.save();
+    }
+
     protected NodeTypeDefinition[] getTestTypes() throws RepositoryException {
         NodeTypeManager mgr = session.getWorkspace().getNodeTypeManager();
 
+        NodeTypeTemplate basePrimaryType = createBasePrimaryType(mgr);
+        NodeTypeTemplate mixinTypeA = createMixinA(mgr);
+        NodeTypeTemplate mixinTypeB = createMixinB(mgr);
+        NodeTypeTemplate mixinTypeC = createMixinC(mgr);
+        NodeTypeTemplate mixinTypeWithAutoChild = createMixinWithAutoChild(mgr);
+        NodeTypeTemplate mixinTypeWithAutoProperty = createMixinWithAutoProperty(mgr);
+        NodeTypeTemplate primaryTypeA = createPrimaryTypeA(mgr);
+        //create the items on mixin protected as "un-protected" first, so we can create children & properties
+        NodeTypeTemplate mixinProtected = createMixinProtected(mgr, false);
+
+        return new NodeTypeDefinition[] { basePrimaryType, mixinTypeA, mixinTypeB, mixinTypeC, mixinTypeWithAutoChild,
+                mixinTypeWithAutoProperty, primaryTypeA, mixinProtected};
+    }
+
+    private NodeTypeTemplate createBasePrimaryType( NodeTypeManager mgr ) throws RepositoryException {
         NodeTypeTemplate basePrimaryType = mgr.createNodeTypeTemplate();
-        basePrimaryType.setName("baseType");
+        basePrimaryType.setName(BASE_PRIMARY_TYPE);
+        return basePrimaryType;
+    }
 
-        NodeTypeTemplate mixinTypeA = mgr.createNodeTypeTemplate();
-        mixinTypeA.setName("mixinTypeA");
-        mixinTypeA.setMixin(true);
-
-        NodeDefinitionTemplate childNodeA = mgr.createNodeDefinitionTemplate();
-        childNodeA.setName("nodeA");
-        childNodeA.setOnParentVersion(OnParentVersionAction.IGNORE);
-        mixinTypeA.getNodeDefinitionTemplates().add(childNodeA);
-
-        PropertyDefinitionTemplate propertyA = mgr.createPropertyDefinitionTemplate();
-        propertyA.setName("propertyA");
-        propertyA.setOnParentVersion(OnParentVersionAction.IGNORE);
-        propertyA.setRequiredType(PropertyType.STRING);
-        mixinTypeA.getPropertyDefinitionTemplates().add(propertyA);
-
-        NodeTypeTemplate mixinTypeB = mgr.createNodeTypeTemplate();
-        mixinTypeB.setName("mixinTypeB");
-        mixinTypeB.setMixin(true);
-
-        NodeDefinitionTemplate childNodeB = mgr.createNodeDefinitionTemplate();
-        childNodeB.setName("nodeB");
-        childNodeB.setDefaultPrimaryTypeName("nt:base");
-        childNodeB.setOnParentVersion(OnParentVersionAction.IGNORE);
-        mixinTypeB.getNodeDefinitionTemplates().add(childNodeB);
-
-        PropertyDefinitionTemplate propertyB = mgr.createPropertyDefinitionTemplate();
-        propertyB.setName("propertyB");
-        propertyB.setOnParentVersion(OnParentVersionAction.IGNORE);
-        propertyB.setRequiredType(PropertyType.BINARY);
-        mixinTypeB.getPropertyDefinitionTemplates().add(propertyB);
-
-        NodeTypeTemplate mixinTypeC = mgr.createNodeTypeTemplate();
-        mixinTypeC.setName("mixinTypeC");
-        mixinTypeC.setMixin(true);
-
-        childNodeA = mgr.createNodeDefinitionTemplate();
-        childNodeA.setName("nodeA");
-        childNodeA.setOnParentVersion(OnParentVersionAction.IGNORE);
-        mixinTypeC.getNodeDefinitionTemplates().add(childNodeA);
-
-        propertyB = mgr.createPropertyDefinitionTemplate();
-        propertyB.setName("propertyB");
-        propertyB.setOnParentVersion(OnParentVersionAction.IGNORE);
-        propertyB.setRequiredType(PropertyType.STRING);
-        mixinTypeC.getPropertyDefinitionTemplates().add(propertyB);
-
-        NodeTypeTemplate mixinTypeWithAutoChild = mgr.createNodeTypeTemplate();
-        mixinTypeWithAutoChild.setName("mixinTypeWithAutoCreatedChildNode");
-        mixinTypeWithAutoChild.setMixin(true);
-
-        childNodeB = mgr.createNodeDefinitionTemplate();
-        childNodeB.setName("nodeB");
-        childNodeB.setOnParentVersion(OnParentVersionAction.IGNORE);
-        childNodeB.setMandatory(true);
-        childNodeB.setAutoCreated(true);
-        childNodeB.setDefaultPrimaryTypeName("nt:unstructured");
-        childNodeB.setRequiredPrimaryTypeNames(new String[] {"nt:unstructured"});
-        mixinTypeWithAutoChild.getNodeDefinitionTemplates().add(childNodeB);
-
+    @SuppressWarnings( {"unchecked"} )
+    private NodeTypeTemplate createMixinWithAutoProperty( NodeTypeManager mgr ) throws RepositoryException {
         NodeTypeTemplate mixinTypeWithAutoProperty = mgr.createNodeTypeTemplate();
         mixinTypeWithAutoProperty.setName("mixinTypeWithAutoCreatedProperty");
         mixinTypeWithAutoProperty.setMixin(true);
 
-        propertyB = mgr.createPropertyDefinitionTemplate();
-        propertyB.setName("propertyB");
+        PropertyDefinitionTemplate propertyB = mgr.createPropertyDefinitionTemplate();
+        propertyB.setName(PROPERTY_B);
         propertyB.setMandatory(true);
         propertyB.setAutoCreated(true);
         propertyB.setOnParentVersion(OnParentVersionAction.IGNORE);
         propertyB.setRequiredType(PropertyType.LONG);
         propertyB.setDefaultValues(new Value[] {session.getValueFactory().createValue("10")});
         mixinTypeWithAutoProperty.getPropertyDefinitionTemplates().add(propertyB);
+        return mixinTypeWithAutoProperty;
+    }
 
+    @SuppressWarnings( {"unchecked"} )
+    private NodeTypeTemplate createMixinWithAutoChild( NodeTypeManager mgr ) throws RepositoryException {
+        NodeTypeTemplate mixinTypeWithAutoChild = mgr.createNodeTypeTemplate();
+        mixinTypeWithAutoChild.setName("mixinTypeWithAutoCreatedChildNode");
+        mixinTypeWithAutoChild.setMixin(true);
+
+        NodeDefinitionTemplate childNodeB = mgr.createNodeDefinitionTemplate();
+        childNodeB.setName(CHILD_NODE_B);
+        childNodeB.setOnParentVersion(OnParentVersionAction.IGNORE);
+        childNodeB.setMandatory(true);
+        childNodeB.setAutoCreated(true);
+        childNodeB.setDefaultPrimaryTypeName("nt:unstructured");
+        childNodeB.setRequiredPrimaryTypeNames(new String[] {"nt:unstructured"});
+        mixinTypeWithAutoChild.getNodeDefinitionTemplates().add(childNodeB);
+        return mixinTypeWithAutoChild;
+    }
+
+    @SuppressWarnings( {"unchecked"} )
+    private NodeTypeTemplate createPrimaryTypeA( NodeTypeManager mgr ) throws RepositoryException {
         NodeTypeTemplate primaryTypeA = mgr.createNodeTypeTemplate();
-        primaryTypeA.setName("primaryTypeA");
+        primaryTypeA.setName(PRIMARY_TYPE_A);
 
-        childNodeA = mgr.createNodeDefinitionTemplate();
-        childNodeA.setName("nodeA");
+        NodeDefinitionTemplate childNodeA = mgr.createNodeDefinitionTemplate();
+        childNodeA.setName(CHILD_NODE_A);
         childNodeA.setOnParentVersion(OnParentVersionAction.IGNORE);
         primaryTypeA.getNodeDefinitionTemplates().add(childNodeA);
 
-        propertyA = mgr.createPropertyDefinitionTemplate();
-        propertyA.setName("propertyA");
+        PropertyDefinitionTemplate propertyA = mgr.createPropertyDefinitionTemplate();
+        propertyA.setName(PROPERTY_A);
         propertyA.setOnParentVersion(OnParentVersionAction.IGNORE);
         propertyA.setRequiredType(PropertyType.STRING);
         primaryTypeA.getPropertyDefinitionTemplates().add(propertyA);
+        return primaryTypeA;
+    }
 
-        return new NodeTypeDefinition[] {basePrimaryType, mixinTypeA, mixinTypeB, mixinTypeC, mixinTypeWithAutoChild,
-            mixinTypeWithAutoProperty, primaryTypeA,};
+    @SuppressWarnings( {"unchecked"} )
+    private NodeTypeTemplate createMixinC( NodeTypeManager mgr ) throws RepositoryException {
+        NodeTypeTemplate mixinTypeC = mgr.createNodeTypeTemplate();
+        mixinTypeC.setName(MIXIN_TYPE_C);
+        mixinTypeC.setMixin(true);
+
+        PropertyDefinitionTemplate propertyB = mgr.createPropertyDefinitionTemplate();
+        propertyB.setName(PROPERTY_B);
+        propertyB.setOnParentVersion(OnParentVersionAction.IGNORE);
+        propertyB.setRequiredType(PropertyType.STRING);
+        mixinTypeC.getPropertyDefinitionTemplates().add(propertyB);
+        return mixinTypeC;
+    }
+
+    @SuppressWarnings( {"unchecked"} )
+    private NodeTypeTemplate createMixinB( NodeTypeManager mgr ) throws RepositoryException {
+        NodeTypeTemplate mixinTypeB = mgr.createNodeTypeTemplate();
+        mixinTypeB.setName(MIXIN_TYPE_B);
+        mixinTypeB.setMixin(true);
+
+        NodeDefinitionTemplate childNodeB = mgr.createNodeDefinitionTemplate();
+        childNodeB.setName(CHILD_NODE_B);
+        childNodeB.setDefaultPrimaryTypeName("nt:base");
+        childNodeB.setOnParentVersion(OnParentVersionAction.IGNORE);
+        mixinTypeB.getNodeDefinitionTemplates().add(childNodeB);
+
+        PropertyDefinitionTemplate propertyB = mgr.createPropertyDefinitionTemplate();
+        propertyB.setName(PROPERTY_B);
+        propertyB.setOnParentVersion(OnParentVersionAction.IGNORE);
+        propertyB.setRequiredType(PropertyType.BINARY);
+        mixinTypeB.getPropertyDefinitionTemplates().add(propertyB);
+
+        NodeDefinitionTemplate childNodeA = mgr.createNodeDefinitionTemplate();
+        childNodeA.setName(CHILD_NODE_A);
+        childNodeA.setOnParentVersion(OnParentVersionAction.IGNORE);
+        mixinTypeB.getNodeDefinitionTemplates().add(childNodeA);
+        return mixinTypeB;
+    }
+
+    @SuppressWarnings( {"unchecked"} )
+    private NodeTypeTemplate createMixinProtected( NodeTypeManager mgr, boolean makeItemsProtected ) throws RepositoryException {
+        NodeTypeTemplate mixinProtected = mgr.createNodeTypeTemplate();
+        mixinProtected.setName(MIXIN_PROTECTED);
+        mixinProtected.setMixin(true);
+
+        NodeDefinitionTemplate childProtected = mgr.createNodeDefinitionTemplate();
+        childProtected.setName(CHILD_PROTECTED);
+        childProtected.setProtected(makeItemsProtected);
+        childProtected.setDefaultPrimaryTypeName("nt:base");
+        childProtected.setOnParentVersion(OnParentVersionAction.IGNORE);
+        mixinProtected.getNodeDefinitionTemplates().add(childProtected);
+
+        PropertyDefinitionTemplate propertyProtected = mgr.createPropertyDefinitionTemplate();
+        propertyProtected.setProtected(makeItemsProtected);
+        propertyProtected.setName(PROPERTY_PROTECTED);
+        propertyProtected.setOnParentVersion(OnParentVersionAction.IGNORE);
+        propertyProtected.setRequiredType(PropertyType.STRING);
+        mixinProtected.getPropertyDefinitionTemplates().add(propertyProtected);
+
+        return mixinProtected;
+    }
+
+    @SuppressWarnings( {"unchecked"} )
+    private NodeTypeTemplate createMixinA( NodeTypeManager mgr ) throws RepositoryException {
+        NodeTypeTemplate mixinTypeA = mgr.createNodeTypeTemplate();
+        mixinTypeA.setName(MIXIN_TYPE_A);
+        mixinTypeA.setMixin(true);
+
+        NodeDefinitionTemplate childNodeA = mgr.createNodeDefinitionTemplate();
+        childNodeA.setName(CHILD_NODE_A);
+        childNodeA.setOnParentVersion(OnParentVersionAction.IGNORE);
+        mixinTypeA.getNodeDefinitionTemplates().add(childNodeA);
+
+        PropertyDefinitionTemplate propertyA = mgr.createPropertyDefinitionTemplate();
+        propertyA.setName(PROPERTY_A);
+        propertyA.setOnParentVersion(OnParentVersionAction.IGNORE);
+        propertyA.setRequiredType(PropertyType.STRING);
+        mixinTypeA.getPropertyDefinitionTemplates().add(propertyA);
+        return mixinTypeA;
     }
 
 }

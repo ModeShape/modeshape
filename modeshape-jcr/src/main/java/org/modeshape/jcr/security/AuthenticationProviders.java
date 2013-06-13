@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr.security;
 
-import java.security.PrivilegedActionException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -52,12 +51,6 @@ public class AuthenticationProviders implements AuthenticationProvider {
         this.providers = new CopyOnWriteArrayList<AuthenticationProvider>(providers);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.security.AuthenticationProvider#authenticate(javax.jcr.Credentials, java.lang.String,
-     *      java.lang.String, org.modeshape.jcr.ExecutionContext, java.util.Map)
-     */
     @Override
     public ExecutionContext authenticate( Credentials credentials,
                                           String repositoryName,
@@ -72,21 +65,11 @@ public class AuthenticationProviders implements AuthenticationProvider {
                 result = provider.authenticate(credentials, repositoryName, workspaceName, repositoryContext, sessionAttributes);
                 if (result != null) return result;
             } catch (Exception e) {
-                // This should not happen, so log it ...
-                if (e instanceof PrivilegedActionException) {
-                    e = ((PrivilegedActionException)e).getException();
-                    Logger.getLogger(AuthenticationProviders.class).error(e,
-                                                                          JcrI18n.mustBeInPrivilegedAction,
-                                                                          repositoryName,
-                                                                          workspaceName,
-                                                                          provider.getClass().getName());
-                } else {
-                    Logger.getLogger(AuthenticationProviders.class).error(e,
-                                                                          JcrI18n.errorInAuthenticationProvider,
-                                                                          provider.getClass().getName(),
-                                                                          repositoryName,
-                                                                          e.getMessage());
-                }
+                Logger.getLogger(AuthenticationProviders.class).error(e,
+                                                                      JcrI18n.errorInAuthenticationProvider,
+                                                                      provider.getClass().getName(),
+                                                                      repositoryName,
+                                                                      e.getMessage());
             }
         }
         return null;

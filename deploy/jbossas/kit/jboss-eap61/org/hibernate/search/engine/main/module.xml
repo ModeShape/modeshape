@@ -32,10 +32,6 @@
         <resource-root path="jackson-mapper-asl-1.9.2.jar" />
         <resource-root path="paranamer-2.3.jar" />
         <resource-root path="snappy-java-1.0.4.1.jar" />
-        <!--
-            //TODO author=Horia Chiorean date=3/1/13 description=https://issues.jboss.org/browse/MODE-1838
-        -->
-        <resource-root path="infinispan-lucene-directory-${infinispan.version}.jar" />
     </resources>
     <dependencies>
         <module name="javax.transaction.api" />
@@ -56,5 +52,10 @@
         -->
         <module name="org.hibernate.commons-annotations" />
 
+        <!--
+            For JMS
+            //TODO author=Horia Chiorean date=3/1/13 description=https://issues.jboss.org/browse/MODE-1933
+        -->
+        <module name="javax.jms.api"/>
     </dependencies>
 </module>

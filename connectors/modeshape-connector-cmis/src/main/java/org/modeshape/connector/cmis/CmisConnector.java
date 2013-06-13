@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -232,6 +233,25 @@ public class CmisConnector extends Connector {
     public String getDocumentId( String path ) {
         // establish relation between path and object identifier
         return session.getObjectByPath(path).getId();
+    }
+
+    @Override
+    public Collection<String> getDocumentPathsById( String id ) {
+        CmisObject obj = session.getObject(id);
+        // check that object exist
+        if (obj instanceof Folder) {
+            return Collections.singletonList(((Folder)obj).getPath());
+        }
+        if (obj instanceof org.apache.chemistry.opencmis.client.api.Document) {
+            org.apache.chemistry.opencmis.client.api.Document doc = (org.apache.chemistry.opencmis.client.api.Document)obj;
+            List<Folder> parents = doc.getParents();
+            List<String> paths = new ArrayList<String>(parents.size());
+            for (Folder parent : doc.getParents()) {
+                paths.add(parent.getPath() + "/" + doc.getName());
+            }
+            return paths;
+        }
+        return Collections.emptyList();
     }
 
     @Override
@@ -613,6 +633,8 @@ public class CmisConnector extends Connector {
                 return cmisDocument(cmisObject);
             case CMIS_POLICY:
             case CMIS_RELATIONSHIP:
+            case CMIS_SECONDARY:
+            case CMIS_ITEM:
         }
 
         // unexpected object type

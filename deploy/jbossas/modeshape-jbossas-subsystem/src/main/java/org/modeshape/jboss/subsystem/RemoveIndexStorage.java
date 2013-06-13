@@ -25,6 +25,8 @@ package org.modeshape.jboss.subsystem;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 
@@ -36,19 +38,21 @@ class RemoveIndexStorage extends AbstractModeShapeRemoveStepHandler {
     }
 
     @Override
-    List<ServiceName> servicesToRemove( ModelNode operation,
-                                        ModelNode model ) {
+    List<ServiceName> servicesToRemove( OperationContext context,
+                                        ModelNode operation,
+                                        ModelNode model ) throws OperationFailedException {
         String repositoryName = repositoryName(operation);
         List<ServiceName> servicesToRemove = new ArrayList<ServiceName>();
         servicesToRemove.add(ModeShapeServiceNames.indexStorageServiceName(repositoryName));
 
         // Now see if we need to remove the path service ...
-        if (model.has(ModelKeys.RELATIVE_TO)
-                && model.get(ModelKeys.RELATIVE_TO).asString().contains(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
+        String relativeTo = ModelAttributes.RELATIVE_TO.resolveModelAttribute(context, model).asString();
+        if (relativeTo.equalsIgnoreCase(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
             servicesToRemove.add(ModeShapeServiceNames.indexStorageDirectoryServiceName(repositoryName));
         }
-        if (model.has(ModelKeys.SOURCE_RELATIVE_TO)
-                && model.get(ModelKeys.SOURCE_RELATIVE_TO).asString().contains(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
+
+        String sourceRelativeTo = ModelAttributes.SOURCE_RELATIVE_TO.resolveModelAttribute(context, model).asString();
+        if (sourceRelativeTo.equalsIgnoreCase(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
             servicesToRemove.add(ModeShapeServiceNames.indexSourceStorageDirectoryServiceName(repositoryName));
         }
 

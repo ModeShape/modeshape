@@ -133,11 +133,6 @@ public class RepositoryConfigurationTest {
     }
 
     @Test
-    public void shouldSuccessfullyValidateSampleRepositoryConfigurationWithIndexStorageInInfinispan() {
-        assertValid("config/index-storage-config-infinispan.json");
-    }
-
-    @Test
     public void shouldSuccessfullyValidateThoroughRepositoryConfiguration() {
         assertValid("config/thorough-repo-config.json");
     }
@@ -156,6 +151,16 @@ public class RepositoryConfigurationTest {
     public void shouldSuccessfullyValidateDriverBasedBinaryStorageConfiguration() {
         assertValid("config/database-url-binary-storage.json");
     }
+
+	@Test
+	public void shouldSuccessfullyValidateCompositeBinaryStorageConfiguration() {
+		assertValid("config/composite-binary-storage.json");
+	}
+
+	@Test
+	public void shouldSuccessfullyValidateCompositeBinaryStorageWithoutDefaultNamedStoreConfiguration() {
+		assertNotValid(1, "config/composite-binary-storage-without-default.json");
+	}
 
     @Test
     public void shouldSuccessfullyValidateCustomBinaryStorageConfiguration() {

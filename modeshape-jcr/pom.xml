@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.modeshape</groupId>
         <artifactId>modeshape-parent</artifactId>
-        <version>3.3-SNAPSHOT</version>
+        <version>3.4-SNAPSHOT</version>
         <relativePath>../modeshape-parent/pom.xml</relativePath>
     </parent>
 
@@ -59,6 +59,10 @@
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-regex</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.jms</groupId>
+            <artifactId>jms-api</artifactId>
         </dependency>
 
         <!-- MIME-type detection. This can be excluded in applications and components that depend on ModeShape

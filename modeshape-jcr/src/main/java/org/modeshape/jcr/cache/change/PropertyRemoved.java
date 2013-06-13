@@ -28,37 +28,30 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
 
 /**
- * 
+ * Internal event fired when a property is removed from a node.
  */
-public class PropertyRemoved extends AbstractNodeChange {
+public class PropertyRemoved extends AbstractPropertyChange {
 
     private static final long serialVersionUID = 1L;
-
-    private final Property property;
 
     public PropertyRemoved( NodeKey key,
                             Path nodePath,
                             Property property ) {
-        super(key, nodePath);
-        this.property = property;
-    }
-
-    /**
-     * @return property
-     */
-    public Property getProperty() {
-        return property;
-    }
-
-    /**
-     * @return path
-     */
-    public Path getPathToNode() {
-        return path;
+        super(key, nodePath, property);
     }
 
     @Override
     public String toString() {
-        return "Removed property \"" + property.getName() + "\" from '" + this.getKey() + "' with values " + property;
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Added property ");
+        stringBuilder.append(property.getName());
+        stringBuilder.append(" from node '");
+        stringBuilder.append(this.getKey());
+        stringBuilder.append("' at path ");
+        stringBuilder.append(getPathToNode().getString());
+        stringBuilder.append(" with values:");
+        stringBuilder.append(property);
+
+        return stringBuilder.toString();
     }
 }

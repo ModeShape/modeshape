@@ -23,24 +23,27 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
 /**
- * 
+ * {@link SimpleResourceDefinition} which handles <db-binary-storage/> elements.
  */
 public class ModeShapeDatabaseBinaryStorageResource extends SimpleResourceDefinition {
-    protected final static ModeShapeDatabaseBinaryStorageResource INSTANCE = new ModeShapeDatabaseBinaryStorageResource();
+    protected final static ModeShapeDatabaseBinaryStorageResource DEFAULT = new ModeShapeDatabaseBinaryStorageResource(
+            PathElement.pathElement(ModelKeys.STORAGE_TYPE, ModelKeys.DB_BINARY_STORAGE));
+    protected final static ModeShapeDatabaseBinaryStorageResource NESTED = new ModeShapeDatabaseBinaryStorageResource(
+            PathElement.pathElement(ModelKeys.NESTED_STORAGE_TYPE_DB, PathElement.WILDCARD_VALUE));
 
-    private ModeShapeDatabaseBinaryStorageResource() {
-        super(ModeShapeExtension.DB_BINARY_STORAGE_PATH,
+    private ModeShapeDatabaseBinaryStorageResource(PathElement pathElement) {
+        super(pathElement,
               ModeShapeExtension.getResourceDescriptionResolver(ModelKeys.REPOSITORY, ModelKeys.DB_BINARY_STORAGE),
               AddDatabaseBinaryStorage.INSTANCE, RemoveBinaryStorage.INSTANCE);
     }
 
     @Override
     public void registerAttributes( ManagementResourceRegistration resourceRegistration ) {
-        super.registerAttributes(resourceRegistration);
         BinaryStorageWriteAttributeHandler.DATABASE_BINARY_STORAGE_INSTANCE.registerAttributes(resourceRegistration);
     }
 }

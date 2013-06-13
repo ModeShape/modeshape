@@ -65,7 +65,6 @@ import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
-import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -1095,19 +1094,6 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         assertThat(listener.changes, is(0));
     }
 
-
-    @FixFor( "MODE-1870")
-    @Test
-    public void shouldAllowInfinispanIndexStorageUsingClasspathConfiguration() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/index-storage-config-infinispan-classpath.json"));
-        session.getRootNode().addNode("node1");
-        session.save();
-
-        JcrQueryManager queryManager = session.getWorkspace().getQueryManager();
-        QueryResult result = queryManager.createQuery("select [jcr:path] from [nt:unstructured] as n where n.[jcr:path] = '/node1'", Query.JCR_SQL2).execute();
-        assertEquals(1, result.getNodes().getSize());
-    }
-
     @Test
     @FixFor( "MODE-1894" )
     public void shouldReplaceOldPropertyValuesInIndexesWhenUpdating() throws Exception {
@@ -1117,7 +1103,8 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         a.setProperty("stringProperty1", "value");
         session.save();
 
-        QueryResult queryResult = tools.printQuery(session, "select * from [nt:unstructured] as node where node.stringProperty='value'");
+        QueryResult queryResult = tools.printQuery(session,
+                                                   "select * from [nt:unstructured] as node where node.stringProperty='value'");
         assertEquals(2, queryResult.getNodes().getSize());
 
         queryResult = tools.printQuery(session, "select * from [nt:unstructured] as node where node.stringProperty1='value'");
@@ -1131,6 +1118,56 @@ public class JcrSessionTest extends SingleUseAbstractTest {
 
         queryResult = tools.printQuery(session, "select * from [nt:unstructured] as node where node.stringProperty1='value'");
         assertEquals(1, queryResult.getNodes().getSize());
+    }
+
+    @Test
+    @FixFor( "MODE-1940" )
+    public void shouldIndexRenamedNodes() throws Exception {
+        initializeData();
+
+        // create a/d
+        session.getNode("/a").addNode("d");
+        session.save();
+        // rename /a/b to /a/d
+        session.getWorkspace().move("/a/b", "/a/d");
+
+        queryForAbsent("b");
+        queryForExistingNode("d", "/a/d");
+        queryForExistingNode("c", "/a/d/c");
+    }
+
+    @Test
+    @FixFor( "MODE-1940" )
+    public void shouldIndexMovedNodes() throws Exception {
+        initializeData();
+
+        // create /w/q
+        session.getNode("/").addNode("w").addNode("q");
+        session.save();
+        // move /a to /w/q
+        session.getWorkspace().move("/a", "/w/x");
+
+        queryForAbsent("a");
+        queryForExistingNode("x", "/w/x");
+        queryForExistingNode("b", "/w/x/b");
+        queryForExistingNode("c", "/w/x/b/c");
+    }
+
+    private void queryForAbsent( String localNodeName ) throws RepositoryException {
+        QueryResult queryResult = tools.printQuery(session, "select n from [nt:unstructured] as n where localname(n)='"
+                                                            + localNodeName + "'");
+        assertEquals(0, queryResult.getNodes().getSize());
+    }
+
+    private void queryForExistingNode( String localNodeName,
+                                       String expectedPath ) throws RepositoryException {
+        QueryResult queryResult = tools.printQuery(session, "select n from [nt:unstructured] as n where localname(n)='"
+                                                            + localNodeName + "'");
+        NodeIterator nodeIterator = queryResult.getNodes();
+        assertEquals(1, nodeIterator.getSize());
+        Node node = nodeIterator.nextNode();
+        assertEquals(localNodeName, node.getName());
+        assertEquals(expectedPath, node.getPath());
     }
 
     protected static class PropertyListener implements EventListener {

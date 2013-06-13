@@ -50,17 +50,17 @@ class InclusionExclusionFilenameFilter implements java.io.FilenameFilter {
 
     @Override
     public boolean accept( File file,
-                           String string ) {
+                           String name ) {
         if (inclusionPattern == null) {
             // Include unless it matches an exclusion ...
-            if (exclusionPattern != null && exclusion.matcher(string).matches()) return false;
-            if (extraPropertiesExclusion != null && extraPropertiesExclusion.matcher(string).matches()) return false;
+            if (exclusionPattern != null && exclusion.matcher(name).matches()) return false;
+            if (extraPropertiesExclusion != null && extraPropertiesExclusion.matcher(name).matches()) return false;
             return true;
         }
         // Include ONLY if it matches the inclusion AND not matched by the exclusions ...
-        if (!inclusion.matcher(string).matches()) return false;
-        if (exclusionPattern != null && exclusion.matcher(string).matches()) return false;
-        if (extraPropertiesExclusion != null && extraPropertiesExclusion.matcher(string).matches()) return false;
+        if (!inclusion.matcher(name).matches()) return false;
+        if (exclusionPattern != null && exclusion.matcher(name).matches()) return false;
+        if (extraPropertiesExclusion != null && extraPropertiesExclusion.matcher(name).matches()) return false;
         return true;
     }
 }

@@ -143,6 +143,9 @@ public class DoPutTest extends AbstractWebDAVTest {
                 one(mockReq).getHeader("User-Agent");
                 will(returnValue("WebDAVFS/1.5.0 (01500000) ....."));
 
+                one(mockReq).getContentLength();
+                will(returnValue(2));
+
                 StoredObject parentSo = null;
 
                 one(mockStore).getStoredObject(mockTransaction, PARENT_PATH);
@@ -193,6 +196,9 @@ public class DoPutTest extends AbstractWebDAVTest {
 
                 one(mockReq).getHeader("User-Agent");
                 will(returnValue("WebDAVFS/1.5.0 (01500000) ....."));
+
+                one(mockReq).getContentLength();
+                will(returnValue(2));
 
                 StoredObject parentSo = initFileStoredObject(RESOURCE_CONTENT);
 

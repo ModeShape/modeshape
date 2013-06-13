@@ -24,16 +24,21 @@
 package org.modeshape.jboss.subsystem;
 
 import java.util.List;
+import org.infinispan.schematic.document.EditableDocument;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.services.path.RelativePathService;
+import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.modeshape.jboss.service.IndexStorage;
 import org.modeshape.jboss.service.IndexStorageService;
+import org.modeshape.jcr.RepositoryConfiguration;
 
 /**
- * 
+ *  Base class for parsing index storage configurations which use FS configurations.
  */
 public abstract class AbstractAddFileSystemIndexStorage extends AbstractAddIndexStorage {
 
@@ -77,4 +82,47 @@ public abstract class AbstractAddFileSystemIndexStorage extends AbstractAddIndex
             builder.addDependency(serviceName, String.class, service.getIndexStorageSourceBasePathInjector());
         }
     }
+
+    protected void processLocalIndexStorageLocation( OperationContext context,
+                                                     ModelNode modelNode,
+                                                     String repositoryName,
+                                                     EditableDocument indexStorage ) throws OperationFailedException {
+        ModelNode pathNode = ModelAttributes.PATH.resolveModelAttribute(context, modelNode);
+        String path = pathNode.isDefined() ? pathNode.asString() : "modeshape/" + repositoryName + "/indexes";
+
+        String relativeTo = ModelAttributes.RELATIVE_TO.resolveModelAttribute(context, modelNode).asString();
+        if (relativeTo.equalsIgnoreCase(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
+            //the relative-to path should be the default jboss-data-dir. Setting to an empty string will trigger path injection
+            setIndexStoragePathInDataDirectory(".");
+            //this only contains the path because the IndexStorageService will create the "end-path"
+            indexStorage.set(RepositoryConfiguration.FieldName.INDEX_STORAGE_LOCATION, path);
+        } else {
+            if (!relativeTo.endsWith("/")) {
+                relativeTo = relativeTo + "/";
+            }
+            indexStorage.set(RepositoryConfiguration.FieldName.INDEX_STORAGE_LOCATION, relativeTo + path);
+        }
+    }
+
+    protected void processSourceIndexStorageLocation( OperationContext context,
+                                                      ModelNode modelNode,
+                                                      String repositoryName,
+                                                      EditableDocument indexStorage ) throws OperationFailedException {
+        ModelNode sourcePathNode = ModelAttributes.SOURCE_PATH.resolveModelAttribute(context, modelNode);
+        String sourcePath = sourcePathNode.isDefined() ? sourcePathNode.asString() : "modeshape/" + repositoryName + "/indexes_master";
+
+        String sourceRelativeTo = ModelAttributes.SOURCE_RELATIVE_TO.resolveModelAttribute(context, modelNode).asString();
+        if (sourceRelativeTo.equalsIgnoreCase(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
+            //the relative-to path should be the default jboss-data-dir. Setting to an empty string will trigger path injection
+            setIndexSourcePathInDataDirectory(".");
+            //this only contains the path because the IndexStorageService will create the "end-path"
+            indexStorage.set(RepositoryConfiguration.FieldName.INDEX_STORAGE_SOURCE_LOCATION, sourcePath);
+        } else {
+            if (!sourceRelativeTo.endsWith("/")) {
+                sourceRelativeTo = sourceRelativeTo + "/";
+            }
+            indexStorage.set(RepositoryConfiguration.FieldName.INDEX_STORAGE_SOURCE_LOCATION, sourceRelativeTo + sourcePath);
+        }
+    }
+
 }

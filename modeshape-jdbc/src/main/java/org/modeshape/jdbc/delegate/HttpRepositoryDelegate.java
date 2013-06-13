@@ -113,6 +113,19 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
         }
     }
 
+    @Override
+    public String explain( String query,
+                           String language ) throws RepositoryException {
+        logger.trace("Explainin query: {0}", query);
+
+        try {
+            String plan = this.restClient.planForQuery(workspace, language, query, 0, -1, null);
+            return plan;
+        } catch (Exception e) {
+            throw new RepositoryException(e.getMessage(), e);
+        }
+    }
+
     /**
      * {@inheritDoc}
      * 

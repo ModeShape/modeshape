@@ -24,13 +24,11 @@
 package org.modeshape.jca;
 
 import java.io.PrintWriter;
-
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-
 import javax.resource.ResourceException;
 import javax.resource.spi.ConnectionEvent;
 import javax.resource.spi.ConnectionEventListener;
@@ -38,17 +36,20 @@ import javax.resource.spi.ConnectionRequestInfo;
 import javax.resource.spi.LocalTransaction;
 import javax.resource.spi.ManagedConnection;
 import javax.resource.spi.ManagedConnectionMetaData;
-
 import javax.security.auth.Subject;
 import javax.transaction.xa.XAResource;
 
+import org.modeshape.common.logging.Logger;
+
+
 /**
  * JcrManagedConnection
- *
+ * 
  * @author kulikov
  */
 public class JcrManagedConnection implements ManagedConnection {
 
+    private static final Logger LOGGER = Logger.getLogger(JcrManagedConnection.class);
     /**
      * The logwriter
      */
@@ -60,32 +61,34 @@ public class JcrManagedConnection implements ManagedConnection {
     /**
      * Listeners
      */
-    private final List<ConnectionEventListener> listeners = new CopyOnWriteArrayList();
+    private final List<ConnectionEventListener> listeners = new CopyOnWriteArrayList<ConnectionEventListener>();
 
     private final JcrConnectionRequestInfo cri;
     private Session session;
 
     // Handles.
-    private final List<JcrSessionHandle> handles = new CopyOnWriteArrayList();;
+    private final List<JcrSessionHandle> handles = new CopyOnWriteArrayList<JcrSessionHandle>();
 
     /**
      * Creates new instance of the managed connection.
-     *
+     * 
      * @param mcf Managed Connection Factory instance
      * @param cri Connection request info
+     * @throws ResourceException if there is an error opening the session
      */
-    public JcrManagedConnection(JcrManagedConnectionFactory mcf, JcrConnectionRequestInfo cri) throws ResourceException {
+    public JcrManagedConnection( JcrManagedConnectionFactory mcf,
+                                 JcrConnectionRequestInfo cri ) throws ResourceException {
         this.mcf = mcf;
         this.cri = cri;
         this.logwriter = null;
-        
-        //init repository and open session
+
+        // init repository and open session
         this.session = openSession();
     }
 
     /**
      * Gets the managed connection factory.
-     *
+     * 
      * @return Managed connection factory object.
      */
     public JcrManagedConnectionFactory getManagedConnectionFactory() {
@@ -94,7 +97,7 @@ public class JcrManagedConnection implements ManagedConnection {
 
     /**
      * Gets the connection request info.
-     *
+     * 
      * @return Connection request info object.
      */
     public JcrConnectionRequestInfo getConnectionRequestInfo() {
@@ -103,26 +106,27 @@ public class JcrManagedConnection implements ManagedConnection {
 
     /**
      * Add a session handle.
-     *
+     * 
      * @param handle the session handle object to add
      */
-    private void addHandle(JcrSessionHandle handle) {
+    private void addHandle( JcrSessionHandle handle ) {
         handles.add(handle);
     }
 
     /**
      * Remove a session handle.
-     *
+     * 
      * @param handle session handle to remove.
      */
-    private void removeHandle(JcrSessionHandle handle) {
+    private void removeHandle( JcrSessionHandle handle ) {
         handles.remove(handle);
     }
 
     /**
      * Create a new session.
-     *
+     * 
      * @return new JCR session handle object.
+     * @throws ResourceException if there is an error opening the session
      */
     private Session openSession() throws ResourceException {
         try {
@@ -135,30 +139,31 @@ public class JcrManagedConnection implements ManagedConnection {
     }
 
     /**
-     * Creates a new connection handle for the underlying physical connection
-     * represented by the ManagedConnection instance.
-     *
+     * Creates a new connection handle for the underlying physical connection represented by the ManagedConnection instance.
+     * 
      * @param subject Security context as JAAS subject
      * @param cxRequestInfo ConnectionRequestInfo instance
      * @return generic Object instance representing the connection handle.
      * @throws ResourceException generic exception if operation fails
      */
-    public Object getConnection(Subject subject,
-            ConnectionRequestInfo cxRequestInfo) throws ResourceException {
+    @Override
+    public Object getConnection( Subject subject,
+                                 ConnectionRequestInfo cxRequestInfo ) throws ResourceException {
         JcrSessionHandle handle = new JcrSessionHandle(this);
         addHandle(handle);
         return handle;
     }
 
     /**
-     * Used by the container to change the association of an application-level
-     * connection handle with a ManagedConneciton instance.
-     *
+     * Used by the container to change the association of an application-level connection handle with a ManagedConneciton
+     * instance.
+     * 
      * @param connection Application-level connection handle
      * @throws ResourceException generic exception if operation fails
      */
-    public void associateConnection(Object connection) throws ResourceException {
-        JcrSessionHandle handle = (JcrSessionHandle) connection;
+    @Override
+    public void associateConnection( Object connection ) throws ResourceException {
+        JcrSessionHandle handle = (JcrSessionHandle)connection;
         if (handle.getManagedConnection() != this) {
             handle.getManagedConnection().removeHandle(handle);
             handle.setManagedConnection(this);
@@ -167,11 +172,11 @@ public class JcrManagedConnection implements ManagedConnection {
     }
 
     /**
-     * Application server calls this method to force any cleanup on the
-     * ManagedConnection instance.
-     *
+     * Application server calls this method to force any cleanup on the ManagedConnection instance.
+     * 
      * @throws ResourceException generic exception if operation fails
      */
+    @Override
     public void cleanup() throws ResourceException {
         this.session.logout();
         this.session = openSession();
@@ -180,20 +185,23 @@ public class JcrManagedConnection implements ManagedConnection {
 
     /**
      * Destroys the physical connection to the underlying resource manager.
-     *
+     * 
      * @throws ResourceException generic exception if operation fails
      */
+    @Override
     public void destroy() throws ResourceException {
+        LOGGER.debug("Shutting down connection to repo '{0}'", mcf.getRepositoryURL());
         this.session.logout();
         this.handles.clear();
     }
 
     /**
      * Adds a connection event listener to the ManagedConnection instance.
-     *
+     * 
      * @param listener A new ConnectionEventListener to be registered
      */
-    public void addConnectionEventListener(ConnectionEventListener listener) {
+    @Override
+    public void addConnectionEventListener( ConnectionEventListener listener ) {
         if (listener == null) {
             throw new IllegalArgumentException("Listener is null");
         }
@@ -201,13 +209,12 @@ public class JcrManagedConnection implements ManagedConnection {
     }
 
     /**
-     * Removes an already registered connection event listener from the
-     * ManagedConnection instance.
-     *
-     * @param listener already registered connection event listener to be
-     * removed
+     * Removes an already registered connection event listener from the ManagedConnection instance.
+     * 
+     * @param listener already registered connection event listener to be removed
      */
-    public void removeConnectionEventListener(ConnectionEventListener listener) {
+    @Override
+    public void removeConnectionEventListener( ConnectionEventListener listener ) {
         if (listener == null) {
             throw new IllegalArgumentException("Listener is null");
         }
@@ -216,10 +223,10 @@ public class JcrManagedConnection implements ManagedConnection {
 
     /**
      * Close handle
-     *
+     * 
      * @param handle The handle
      */
-    protected void closeHandle(JcrSessionHandle handle) {
+    protected void closeHandle( JcrSessionHandle handle ) {
         ConnectionEvent event = new ConnectionEvent(this, ConnectionEvent.CONNECTION_CLOSED);
         event.setConnectionHandle(handle);
         for (ConnectionEventListener cel : listeners) {
@@ -229,54 +236,55 @@ public class JcrManagedConnection implements ManagedConnection {
 
     /**
      * Gets the log writer for this ManagedConnection instance.
-     *
-     * @return Character ourput stream associated with this Managed-Connection
-     * instance
+     * 
+     * @return Character ourput stream associated with this Managed-Connection instance
      * @throws ResourceException generic exception if operation fails
      */
+    @Override
     public PrintWriter getLogWriter() throws ResourceException {
         return logwriter;
     }
 
     /**
      * Sets the log writer for this ManagedConnection instance.
-     *
+     * 
      * @param out Character Output stream to be associated
      * @throws ResourceException generic exception if operation fails
      */
-    public void setLogWriter(PrintWriter out) throws ResourceException {
+    @Override
+    public void setLogWriter( PrintWriter out ) throws ResourceException {
         logwriter = out;
     }
 
     /**
-     * Returns an
-     * <code>javax.resource.spi.LocalTransaction</code> instance.
-     *
+     * Returns an <code>javax.resource.spi.LocalTransaction</code> instance.
+     * 
      * @return LocalTransaction instance
      * @throws ResourceException generic exception if operation fails
      */
+    @Override
     public LocalTransaction getLocalTransaction() throws ResourceException {
         return null;
     }
 
     /**
-     * Returns an
-     * <code>javax.transaction.xa.XAresource</code> instance.
-     *
+     * Returns an <code>javax.transaction.xa.XAresource</code> instance.
+     * 
      * @return XAResource instance
      * @throws ResourceException generic exception if operation fails
      */
+    @Override
     public XAResource getXAResource() throws ResourceException {
         return (XAResource)session;
     }
 
     /**
-     * Gets the metadata information for this connection's underlying EIS
-     * resource manager instance.
-     *
+     * Gets the metadata information for this connection's underlying EIS resource manager instance.
+     * 
      * @return ManagedConnectionMetaData instance
      * @throws ResourceException generic exception if operation fails
      */
+    @Override
     public ManagedConnectionMetaData getMetaData() throws ResourceException {
         try {
             return new JcrManagedConnectionMetaData(mcf.getRepository(), session);
@@ -287,15 +295,15 @@ public class JcrManagedConnection implements ManagedConnection {
 
     /**
      * Searches session object using handle.
-     *
+     * 
+     * @param handle the session handle
      * @return session related to specified handle.
      */
-    public Session getSession(JcrSessionHandle handle) {
+    public Session getSession( JcrSessionHandle handle ) {
         if ((handles.size() > 0) && (handles.get(0) == handle)) {
             return session;
-        } else {
-            throw new java.lang.IllegalStateException("Inactive logical session handle called");
         }
+        throw new java.lang.IllegalStateException("Inactive logical session handle called");
     }
 
 }

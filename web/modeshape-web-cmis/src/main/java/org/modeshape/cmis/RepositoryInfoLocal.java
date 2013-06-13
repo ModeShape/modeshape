@@ -22,27 +22,27 @@ import org.apache.chemistry.opencmis.commons.data.RepositoryInfo;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.RepositoryInfoImpl;
 
 /**
- * This class overrides identifier of the repository.
- * 
- * To be able to manipulate with multiple repositories this class changes the 
+ * This class overrides identifier of the repository. To be able to manipulate with multiple repositories this class changes the
  * repository identifier to follow composite naming rules.
  * 
  * @author kulikov
  */
 public class RepositoryInfoLocal extends RepositoryInfoImpl {
+    private static final long serialVersionUID = 1L;
     private String id;
-    
+
     /**
      * Creates new data object.
      * 
      * @param id the new repository identifier.
      * @param info the original repository info object
      */
-    public RepositoryInfoLocal(String id, RepositoryInfo info) {
+    public RepositoryInfoLocal( String id,
+                                RepositoryInfo info ) {
         super(info);
         this.id = id;
     }
-    
+
     @Override
     public String getId() {
         return id;

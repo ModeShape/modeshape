@@ -24,7 +24,12 @@
 package org.modeshape.web.jcr.rest.client.json;
 
 import java.net.URL;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.modeshape.web.jcr.rest.client.IJcrConstants;
+import static org.modeshape.web.jcr.rest.client.json.IJsonConstants.CHILDREN_KEY;
+import static org.modeshape.web.jcr.rest.client.json.IJsonConstants.PROPERTIES_KEY;
 
 /**
  * The <code>JsonNode</code> class defines the API for interacting with JSON objects. Every <code>JsonNode</code> knows how to
@@ -96,4 +101,48 @@ public abstract class JsonNode extends JSONObject {
         return txt.toString();
     }
 
+    protected JsonNode withPrimaryType(String primaryType) throws JSONException {
+        return withProperty(IJcrConstants.PRIMARY_TYPE_PROPERTY, primaryType);
+    }
+
+    protected JsonNode withMixin( String mixin ) throws JSONException {
+        JSONObject properties = properties();
+        if (!properties.has(IJcrConstants.MIXIN_TYPES_PROPERTY)) {
+            withProperty(IJcrConstants.MIXIN_TYPES_PROPERTY, new JSONArray());
+        }
+        return withProperty(IJcrConstants.MIXIN_TYPES_PROPERTY, mixin);
+    }
+
+    protected JsonNode withProperty(String key, Object value) throws JSONException {
+        JSONObject properties = properties();
+        if (properties.has(key)) {
+            Object existingValue = properties.get(key);
+            if (existingValue != null && existingValue instanceof JSONArray) {
+                ((JSONArray) existingValue).put(value);
+                return this;
+            }
+        }
+        properties.put(key, value);
+        return this;
+    }
+
+    protected JsonNode withChild(String name, JSONObject child) throws JSONException {
+        JSONObject children = children();
+        children.put(name, child);
+        return this;
+    }
+
+    protected JSONObject children() throws JSONException {
+        if (!has(CHILDREN_KEY)) {
+            put(CHILDREN_KEY, new JSONObject());
+        }
+        return getJSONObject(CHILDREN_KEY);
+    }
+
+    protected JSONObject properties() throws JSONException {
+        if (!has(PROPERTIES_KEY)) {
+            put(PROPERTIES_KEY, new JSONObject());
+        }
+        return getJSONObject(PROPERTIES_KEY);
+    }
 }

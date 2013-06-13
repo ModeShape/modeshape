@@ -55,7 +55,6 @@ import org.modeshape.web.jcr.rest.client.json.IJsonConstants.RequestMethod;
  * The <code>JsonRestClient</code> class is an implementation of <code>IRestClient</code> that works with the ModeShape REST
  * server that uses JSON as its interface protocol.
  */
-@SuppressWarnings( "deprecation" )
 public final class JsonRestClient implements IRestClient {
 
     // ===========================================================================================================================
@@ -176,21 +175,24 @@ public final class JsonRestClient implements IRestClient {
                                    String path ) throws Exception {
         LOGGER.trace("createFolderNode: workspace={0}, path={1}", workspace.getName(), path);
         FolderNode folderNode = new FolderNode(workspace, path);
+        createFolderNode(workspace, path, folderNode);
+    }
 
+    private void createFolderNode( Workspace workspace,
+                                   String path,
+                                   FolderNode folderNode ) throws Exception {
         HttpClientConnection connection = connect(workspace.getServer(), folderNode.getUrl(), RequestMethod.POST);
-
         try {
-            LOGGER.trace("createFolderNode: create node={0}", folderNode);
+            LOGGER.trace("createFolderNode={0}", folderNode);
             connection.write(folderNode.getContent());
 
-            // make sure node was created
+            // make sure the node was created
             int responseCode = connection.getResponseCode();
 
             if (responseCode != HttpURLConnection.HTTP_CREATED) {
-                // node was not created
+                // the node was not created
                 LOGGER.error(RestClientI18n.connectionErrorMsg, responseCode, "createFolderNode");
-                String msg = RestClientI18n.createFolderFailedMsg.text(path, workspace.getName(), responseCode);
-                throw new RuntimeException(msg);
+                throw new RuntimeException(RestClientI18n.createFolderFailedMsg.text(path, workspace.getName(), responseCode));
             }
         } finally {
             if (connection != null) {
@@ -300,7 +302,7 @@ public final class JsonRestClient implements IRestClient {
 
     private static enum Version {
         VERSION_1,
-        VERSION_2;
+        VERSION_2
     }
 
     @Override
@@ -571,6 +573,93 @@ public final class JsonRestClient implements IRestClient {
     }
 
     @Override
+    public Status markAsPublishArea( Workspace workspace,
+                                     String path,
+                                     String title,
+                                     String description ) {
+        assert workspace != null;
+        assert path != null;
+        LOGGER.trace("mark as publish area: workspace={0}, path={1}, title={2}, description={3}",
+                     workspace.getName(),
+                     path,
+                     title,
+                     description);
+
+        if (path.endsWith("/")) {
+            path = path.substring(0, path.lastIndexOf("/"));
+        }
+
+        int pathSeparatorIdx = path.lastIndexOf("/");
+
+        try {
+            if (pathSeparatorIdx != -1) {
+                String subPath = path.substring(0, pathSeparatorIdx);
+                if (subPath.length() > 0) {
+                    ensureFolderExists(workspace, subPath);
+                }
+            }
+
+            FolderNode publishArea = new FolderNode(workspace, path);
+            publishArea.markAsPublishArea(title, description);
+
+            if (pathExists(workspace.getServer(), publishArea.getUrl())) {
+                updateFolderNode(workspace, path, publishArea);
+            } else {
+                createFolderNode(workspace, path, publishArea);
+            }
+            return Status.OK_STATUS;
+        } catch (Exception e) {
+            String msg = RestClientI18n.markPublishAreaFailedMsg.text(workspace, path);
+            return new Status(Severity.ERROR, msg, e);
+        }
+    }
+
+    private void updateFolderNode( Workspace workspace,
+                                   String path,
+                                   FolderNode folderNode ) throws Exception {
+        LOGGER.trace("updateFolderNode: workspace={0}, path={1}", workspace.getName(), path);
+        HttpClientConnection connection = connect(workspace.getServer(), folderNode.getUrl(), RequestMethod.PUT);
+        try {
+            connection.write(folderNode.getContent());
+
+            // make sure the node was updated
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                // the node was not updated
+                LOGGER.error(RestClientI18n.connectionErrorMsg, responseCode, "updateFolderNode");
+                throw new RuntimeException(RestClientI18n.updateFolderFailedMsg.text(path, workspace.getName(), responseCode));
+            }
+        } finally {
+            if (connection != null) {
+                LOGGER.trace("updateFolderNode: leaving");
+                connection.disconnect();
+            }
+        }
+    }
+
+    @Override
+    public Status unmarkAsPublishArea( Workspace workspace,
+                                       String path ) {
+        assert workspace != null;
+        assert path != null;
+        LOGGER.trace("unmarking as publish area: workspace={0}, path={1}", workspace.getName(), path);
+
+        try {
+            FolderNode publishingArea = new FolderNode(workspace, path);
+            if (!pathExists(workspace.getServer(), publishingArea.getUrl())) {
+                return Status.OK_STATUS;
+            }
+            publishingArea.unmarkAsPublishArea();
+            updateFolderNode(workspace, path, publishingArea);
+            return Status.OK_STATUS;
+        } catch (Exception e) {
+            String msg = RestClientI18n.unmarkPublishAreaFailedMsg.text(workspace, path);
+            return new Status(Severity.ERROR, msg, e);
+        }
+    }
+
+    @Override
     public List<QueryRow> query( Workspace workspace,
                                  String language,
                                  String statement ) throws Exception {
@@ -701,6 +790,91 @@ public final class JsonRestClient implements IRestClient {
             }
 
             return queryRows;
+        } finally {
+            if (connection != null) {
+                LOGGER.trace("query: leaving");
+                connection.disconnect();
+            }
+        }
+    }
+
+    @Override
+    public String planForQuery( Workspace workspace,
+                                String language,
+                                String statement,
+                                int offset,
+                                int limit,
+                                Map<String, String> variables ) throws Exception {
+        assert workspace != null;
+        assert language != null;
+        assert statement != null;
+
+        LOGGER.trace("plan query: workspace={0}, language={1}, file={2}, offset={3}, limit={4}",
+                     workspace.getName(),
+                     language,
+                     statement,
+                     offset,
+                     limit);
+
+        HttpClientConnection connection = null;
+
+        try {
+            WorkspaceNode workspaceNode = new WorkspaceNode(workspace);
+            StringBuilder url = new StringBuilder(workspaceNode.getQueryPlanUrl().toString());
+
+            boolean hasOffset = offset > 0;
+            boolean firstQueryParam = true;
+            if (hasOffset) {
+                url.append("?offset=").append(offset);
+                firstQueryParam = false;
+            }
+
+            if (limit >= 0) {
+                if (hasOffset) {
+                    url.append("&");
+                } else {
+                    url.append("?");
+                }
+
+                url.append("limit=").append(limit);
+                firstQueryParam = false;
+            }
+
+            if (variables != null && !variables.isEmpty()) {
+                for (Map.Entry<String, String> varEntry : variables.entrySet()) {
+                    String varName = varEntry.getKey();
+                    String varValue = varEntry.getValue();
+                    if (varName == null || varName.trim().length() == 0) continue;
+                    if (varValue == null || varValue.trim().length() == 0) continue;
+                    if (firstQueryParam) {
+                        firstQueryParam = false;
+                        url.append("?");
+                    } else {
+                        url.append("&");
+                    }
+                    url.append(varName);
+                    url.append('=');
+                    url.append(varValue);
+                }
+            }
+
+            connection = connect(workspace.getServer(), new URL(url.toString()), RequestMethod.POST);
+            connection.setContentType(contentTypeFor(language));
+            connection.write(statement.getBytes());
+
+            // A query only succeeds if the response is 200 ...
+            int responseCode = connection.getResponseCode();
+            LOGGER.trace("responseCode={0}", responseCode);
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                // Something other than 200, so fail ...
+                String response = connection.read();
+                String msg = "Error while planning {0} query \"{1}\" with offset {2} and limit {3}: {4}";
+                LOGGER.debug(msg, language, statement, offset, limit, response);
+                throw new RuntimeException(RestClientI18n.invalidQueryMsg.text(response));
+            }
+
+            String response = connection.read();
+            return response;
         } finally {
             if (connection != null) {
                 LOGGER.trace("query: leaving");

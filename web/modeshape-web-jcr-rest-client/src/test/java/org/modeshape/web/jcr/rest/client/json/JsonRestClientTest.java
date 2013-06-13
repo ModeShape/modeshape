@@ -23,10 +23,12 @@
  */
 package org.modeshape.web.jcr.rest.client.json;
 
+import static junit.framework.Assert.assertNull;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -57,7 +59,6 @@ import org.modeshape.web.jcr.rest.client.domain.Workspace;
  * <p>
  * Two containers: mvn -P cargo-1,cargo-2 clean install assembly:assembly
  */
-@SuppressWarnings( "deprecation" )
 public final class JsonRestClientTest {
 
     // ===========================================================================================================================
@@ -447,4 +448,138 @@ public final class JsonRestClientTest {
 
         assertTrue(file.delete());
     }
+
+    @Test
+    @FixFor( "MODE-1919" )
+    public void shouldCreatePublishAreaBelowRoot() throws Exception {
+        String path = "/folderA_" + System.currentTimeMillis();
+        Status response = restClient.markAsPublishArea(workspace1, path, "title", "description");
+        assertEquals(Status.OK_STATUS, response);
+        assertFolderMarkedAsPublishArea(path, "title", "description");
+
+        path = "/folderB_" + System.currentTimeMillis() + "/";
+        response = restClient.markAsPublishArea(workspace1, path, "title", "description");
+        assertEquals(Status.OK_STATUS, response);
+        assertFolderMarkedAsPublishArea(path, "title", "description");
+    }
+
+    @Test
+    @FixFor( "MODE-1919" )
+    public void shouldAllowNullTitleAndDescription() throws Exception {
+        String path = "/folderA_" + System.currentTimeMillis();
+        Status response = restClient.markAsPublishArea(workspace1, path, null, null);
+        assertEquals(Status.OK_STATUS, response);
+        assertFolderMarkedAsPublishArea(path, null, null);
+    }
+
+    @Test
+    @FixFor( "MODE-1919" )
+    public void shouldCreateIntermediatePathElementsWhenCreatingPublishArea() throws Exception {
+        String path = "/folderA_" + System.currentTimeMillis() + "/b/c";
+        Status response = restClient.markAsPublishArea(workspace1, path, "title", "description");
+        assertEquals(Status.OK_STATUS, response);
+        assertFolderMarkedAsPublishArea(path, "title", "description");
+    }
+
+    @Test
+    @FixFor( "MODE-1919" )
+    public void markingPublishAreaShouldBeIdempotent() throws Exception {
+        String path = "/folderA_" + System.currentTimeMillis();
+        Status response = restClient.markAsPublishArea(workspace1, path, "title", "description");
+        assertEquals(Status.OK_STATUS, response);
+        assertFolderMarkedAsPublishArea(path, "title", "description");
+
+        restClient.markAsPublishArea(workspace1, path, "title1", "description1");
+        assertEquals(Status.OK_STATUS, response);
+        assertFolderMarkedAsPublishArea(path, "title1", "description1");
+    }
+
+    @Test
+    @FixFor( "MODE-1919" )
+    public void shouldAllowChangingPublishedFolderToPublishArea() throws Exception {
+        File file = new File("target", "restClient_testFile_" + UUID.randomUUID().toString());
+        file.createNewFile();
+
+        String path = "/folderA_" + System.currentTimeMillis() + "/";
+        Status status = restClient.publish(workspace1, path, file);
+        assertEquals(Status.OK_STATUS, status);
+
+        Status response = restClient.markAsPublishArea(workspace1, path, "title", "description");
+        assertEquals(Status.OK_STATUS, response);
+        assertFolderMarkedAsPublishArea(path, "title", "description");
+    }
+
+    @Test
+    @FixFor( "MODE-1919" )
+    public void shouldAllowToUnmarkAsPublishArea() throws Exception {
+        String path = "/folderA_" + System.currentTimeMillis();
+        Status response = restClient.markAsPublishArea(workspace1, path, "title", "description");
+        assertEquals(Status.OK_STATUS, response);
+        response = restClient.unmarkAsPublishArea(workspace1, path);
+        assertEquals(Status.OK_STATUS, response);
+        assertFolderUnmarkedAsPublishArea(path);
+    }
+
+    @Test
+    @FixFor( "MODE-1919" )
+    public void unmarkAsPublishAreaShouldBeIdempotent() throws Exception {
+        String path = "/folderA_" + System.currentTimeMillis();
+        Status response = restClient.markAsPublishArea(workspace1, path, "title", "description");
+        assertEquals(Status.OK_STATUS, response);
+
+        response = restClient.unmarkAsPublishArea(workspace1, path);
+        assertEquals(Status.OK_STATUS, response);
+        assertFolderUnmarkedAsPublishArea(path);
+
+        response = restClient.unmarkAsPublishArea(workspace1, path);
+        assertEquals(Status.OK_STATUS, response);
+        assertFolderUnmarkedAsPublishArea(path);
+    }
+
+    @Test
+    @FixFor( "MODE-1919" )
+    public void shouldAllowUnmarkingNonPublishArea() throws Exception {
+        File file = new File("target", "restClient_testFile_" + UUID.randomUUID().toString());
+        file.createNewFile();
+
+        String path = "/folderA_" + System.currentTimeMillis() + "/";
+        Status status = restClient.publish(workspace1, path, file);
+        assertEquals(Status.OK_STATUS, status);
+
+        Status response = restClient.unmarkAsPublishArea(workspace1, path);
+        assertEquals(Status.OK_STATUS, response);
+    }
+
+    private void assertFolderMarkedAsPublishArea( String path,
+                                                  String title,
+                                                  String description ) throws Exception {
+        String query = "SELECT [jcr:mixinTypes], [jcr:title], [jcr:description] FROM [nt:folder] WHERE [jcr:path] = '" + path
+                       + "'";
+        List<QueryRow> results = this.restClient.query(workspace1, IJcrConstants.JCR_SQL2, query);
+        assertThat(results.size(), is(1));
+
+        QueryRow row = results.get(0);
+        assertEquals(IJcrConstants.PUBLISH_AREA_TYPE, row.getValue(IJcrConstants.MIXIN_TYPES_PROPERTY).toString());
+        if (title != null) {
+            assertEquals(title, row.getValue(IJcrConstants.PUBLISH_AREA_TITLE).toString());
+        } else {
+            assertNull(row.getValue(IJcrConstants.PUBLISH_AREA_TITLE));
+        }
+
+        if (description != null) {
+            assertEquals(description, row.getValue(IJcrConstants.PUBLISH_AREA_DESCRIPTION).toString());
+        } else {
+            assertNull(row.getValue(IJcrConstants.PUBLISH_AREA_DESCRIPTION));
+        }
+    }
+
+    private void assertFolderUnmarkedAsPublishArea( String path ) throws Exception {
+        String query = "SELECT [jcr:mixinTypes] FROM [nt:folder] WHERE [jcr:path] = '" + path + "'";
+        List<QueryRow> results = this.restClient.query(workspace1, IJcrConstants.JCR_SQL2, query);
+        assertThat(results.size(), is(1));
+
+        QueryRow row = results.get(0);
+        assertNull(row.getValue(IJcrConstants.MIXIN_TYPES_PROPERTY));
+    }
+
 }

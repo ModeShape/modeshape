@@ -68,6 +68,7 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.ActivityViolationException;
 import javax.jcr.version.OnParentVersionAction;
 import javax.jcr.version.Version;
@@ -89,6 +90,7 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundInParentException;
 import org.modeshape.jcr.cache.PropertyTypeUtil;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.cache.document.SessionNode;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
@@ -287,12 +289,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public final JcrSession getSession() {
         return session();
     }
-    
+
     @Override
     public String getLocalName() throws RepositoryException {
         return name().getLocalName();
     }
-    
+
     @Override
     public String getNamespaceURI() throws RepositoryException {
         return name().getNamespaceUri();
@@ -981,7 +983,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 if (parent instanceof AbstractJcrNode) {
                     // delegate to the parent node ...
                     Name childName = path.getLastSegment().getName();
-                    session.checkPermission(path, ModeShapePermissions.ADD_NODE);
+                    session.checkPermission(absolutePathFor(parent.path(), path.getLastSegment()), ModeShapePermissions.ADD_NODE);
                     return ((AbstractJcrNode)parent).addChildNode(childName, childPrimaryTypeName, desiredKey, false);
                 } else if (parent instanceof AbstractJcrProperty) {
                     // Per the TCK, if relPath references a property, then we have to throw a ConstraintViolationException.
@@ -996,9 +998,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         }
 
         // Otherwise, the path has size == 1 and it specifies the child ...
-        session.checkPermission(path, ModeShapePermissions.ADD_NODE);
+        session.checkPermission(absolutePathFor(path(), path.getLastSegment()), ModeShapePermissions.ADD_NODE);
         Name childName = path.getLastSegment().getName();
         return addChildNode(childName, childPrimaryTypeName, desiredKey, false);
+    }
+
+    protected final Path absolutePathFor( Path parentPath,
+                                          Segment childSegment ) {
+        return context().getValueFactories().getPathFactory().create(parentPath, childSegment);
     }
 
     /**
@@ -1060,11 +1067,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new VersionException(msg.text(segment, readable(parentPathStr), childDefn.getName(), opv));
         }
 
-        //If there isn't a desired key, check if the document store doesn't require a certain key format (this is especially used by federation)
+        // If there isn't a desired key, check if the document store doesn't require a certain key format (this is especially used
+        // by federation)
         if (desiredKey == null) {
             String documentStoreKey = null;
             try {
-                documentStoreKey = session().repository().documentStore().newDocumentKey(key().toString(), childName, childPrimaryNodeTypeName);
+                documentStoreKey = session().repository()
+                                            .documentStore()
+                                            .newDocumentKey(key().toString(), childName, childPrimaryNodeTypeName);
             } catch (Exception e) {
                 throw new RepositoryException(e);
             }
@@ -1315,10 +1325,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
         Path srcPath = session.pathFactory().create(srcChildRelPath);
         if (srcPath.isAbsolute() || srcPath.size() != 1) {
-            throw new ItemNotFoundException(JcrI18n.invalidPathParameter.text(srcChildRelPath, "destChildRelPath"));
+            throw new ItemNotFoundException(JcrI18n.invalidPathParameter.text(srcChildRelPath, "srcChildRelPath"));
         }
 
-        session.checkPermission(srcPath.getParent(), ModeShapePermissions.ADD_NODE);
+        session.checkPermission(path(), ModeShapePermissions.ADD_NODE);
 
         SessionCache cache = session.cache();
         ChildReferences childRefs = node().getChildReferences(cache);
@@ -1625,7 +1635,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 String defnName = propertyDefinition.getName();
                 String nodeTypeName = propertyDefinition.getDeclaringNodeType().getName();
                 I18n msg = JcrI18n.valueViolatesConstraintsOnDefinition;
-                throw new ConstraintViolationException(msg.text(existing.getName(), value.getString(), location(), defnName, nodeTypeName));
+                throw new ConstraintViolationException(msg.text(existing.getName(),
+                                                                value.getString(),
+                                                                location(),
+                                                                defnName,
+                                                                nodeTypeName));
             }
 
             if (propertyDefinition.getRequiredType() == value.getType()) {
@@ -2471,8 +2485,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new ConstraintViolationException(JcrI18n.cannotRemoveFromProtectedNode.text(getPath()));
         }
 
-        // TODO: When removing the 'mix:versionable' mixin, should we automatically remove the 'mix:versionable' properties?
-
         NodeTypes nodeTypes = session.nodeTypes();
         Name removedMixinName = nameFrom(mixinName);
         if (!isNodeType(mixinName)) {
@@ -2512,18 +2524,32 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             return;
         }
 
+        JcrNodeType mixinType = nodeTypes.getNodeType(removedMixinName);
+
+        List<Name> protectedPropertiesToRemove = new ArrayList<Name>();
         // ------------------------------------------------------------------------------
         // Check that any remaining properties that use the mixin type to be removed
         // match the residual definition for the node.
         // ------------------------------------------------------------------------------
         for (PropertyIterator iter = getProperties(); iter.hasNext();) {
             javax.jcr.Property property = iter.nextProperty();
-            if (mixinName.equals(property.getDefinition().getDeclaringNodeType().getName())) {
+            PropertyDefinition propertyDefinition = property.getDefinition();
+            String propertyDeclaredNodeTypeName = propertyDefinition.getDeclaringNodeType().getName();
+
+            // if we have a protected property, check if it belongs to the mixin itself or any ancestor of the mixin.
+            // if yes, mark it for removal
+            if (propertyDefinition.isProtected() && mixinType.isNodeType(propertyDeclaredNodeTypeName)) {
+                protectedPropertiesToRemove.add(((AbstractJcrProperty)property).name());
+                continue;
+            }
+
+            if (mixinType.isNodeType(propertyDeclaredNodeTypeName)) {
+
                 JcrPropertyDefinition match;
 
                 // Only the residual definition would work - if there were any other definition for this name,
                 // the mixin type would not have been added due to the conflict
-                if (property.getDefinition().isMultiple()) {
+                if (propertyDefinition.isMultiple()) {
                     match = nodeTypes.findPropertyDefinition(session,
                                                              primaryTypeName,
                                                              newMixinNames,
@@ -2549,15 +2575,25 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             }
         }
 
+        List<AbstractJcrNode> protectedChildrenToRemove = new ArrayList<AbstractJcrNode>();
         // ------------------------------------------------------------------------------
         // Check that any remaining child nodes that use the mixin type to be removed
         // match the residual definition for the node.
         // ------------------------------------------------------------------------------
-        // TODO: Incorrect logic????
         for (NodeIterator iter = getNodes(); iter.hasNext();) {
             AbstractJcrNode child = (AbstractJcrNode)iter.nextNode();
             int snsCount = (int)childCount(child.name());
-            if (mixinName.equals(child.getDefinition().getDeclaringNodeType().getName())) {
+            NodeDefinition childDefinition = child.getDefinition();
+            String childDeclaredNodeType = childDefinition.getDeclaringNodeType().getName();
+
+            // if we have a protected child, check if it belongs to the mixin itself or any ancestor of the mixin
+            // if yes, mark it for removal
+            if (childDefinition.isProtected() && mixinType.isNodeType(childDeclaredNodeType)) {
+                protectedChildrenToRemove.add(child);
+                continue;
+            }
+
+            if (mixinType.isNodeType(childDeclaredNodeType)) {
                 // Only the residual definition would work - if there were any other definition for this name,
                 // the mixin type would not have been added due to the conflict
                 JcrNodeDefinition match = nodeTypes.findChildNodeDefinition(primaryTypeName,
@@ -2581,6 +2617,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         // Change the mixin types property (atomically, even if some other operation snuck in and added the mixin) ...
         MutableCachedNode mutable = mutable();
         mutable.removeMixin(cache, removedMixinName);
+
+        // If there were protected properties or children, remove them
+        for (Name protectedPropertyName : protectedPropertiesToRemove) {
+            mutable.removeProperty(cache, protectedPropertyName);
+        }
+        for (AbstractJcrNode protectedChild : protectedChildrenToRemove) {
+            protectedChild.remove();
+        }
 
         if (wasReferenceable && !isReferenceable()) {
             // Need to remove the 'jcr:uuid' reference ...

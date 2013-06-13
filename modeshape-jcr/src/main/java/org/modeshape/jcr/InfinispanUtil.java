@@ -67,47 +67,23 @@ public class InfinispanUtil {
     @SuppressWarnings("unchecked")
     public static <K, V> Sequence<K> getAllKeys( Cache<K, V> cache ) throws CacheLoaderException, InterruptedException, ExecutionException {
         LOGGER.debug("getAllKeys of {0}", cache.getName());
-        CacheLoader cacheLoader = null;
 
-        CacheLoaderManager cacheLoaderManager = cache.getAdvancedCache().getComponentRegistry().getComponent(CacheLoaderManager.class);
-        if(cacheLoaderManager != null){
-            cacheLoader = cacheLoaderManager.getCacheLoader();
-        }
         Set<K> cacheKeys;
-        if(cacheLoader == null){
-            if(cache.getCacheConfiguration().clustering().cacheMode().isDistributed()){
-                LOGGER.debug("Use distributed call to fetch all keys");
-                // Use a distributed executor to execute callables throughout the Infinispan cluster ...
-                DistributedExecutorService distributedExecutor = new DefaultExecutorService(cache);
-                @SuppressWarnings( "synthetic-access" )
-                List<Future<Set<K>>> futures = distributedExecutor.submitEverywhere(new GetAllMemoryKeys<K, V>());
-                cacheKeys = mergeResults(futures);
-            } else {
-                cacheKeys = cache.keySet();
-            }
+
+        DistributedExecutorService distributedExecutor = new DefaultExecutorService(cache);
+        final GetAllKeys<K, V> task = new GetAllKeys<K, V>();
+
+        boolean shared = cache.getCacheConfiguration().loaders().shared();
+        if(!shared){
+            // store is not shared so every node must return key list of the store
+            @SuppressWarnings( "synthetic-access" )
+            List<Future<Set<K>>> futures = distributedExecutor.submitEverywhere(task);
+            cacheKeys = mergeResults(futures);
         } else {
-            LOGGER.debug("Cache contains loader");
-            boolean shared = cache.getCacheConfiguration().loaders().shared();
-            if(cache.getCacheConfiguration().clustering().cacheMode().isDistributed()){
-                if(!shared){
-                    LOGGER.debug("Use distributed call to fetch all keys");
-                    // store is not shared so every node must return key list of the store
-                    DistributedExecutorService distributedExecutor = new DefaultExecutorService(cache);
-                    @SuppressWarnings( "synthetic-access" )
-                    List<Future<Set<K>>> futures = distributedExecutor.submitEverywhere(new GetAllKeys<K, V>());
-                    cacheKeys = mergeResults(futures);
-                } else {
-                    LOGGER.debug("Load keys from loader");
-                    // load only these keys, which are not in memory
-                    cacheKeys = new HashSet<K>(cache.keySet());
-                    cacheKeys.addAll((Set<K>)cacheLoader.loadAllKeys((Set<Object>)cacheKeys));
-                }
-            } else {
-                LOGGER.debug("Load keys from loader");
-                cacheKeys = new HashSet<K>(cache.keySet());
-                cacheKeys.addAll((Set<K>)cacheLoader.loadAllKeys((Set<Object>)cacheKeys));
-            }
+            // store is shared, so we can short-circuit some of the merging logic
+            cacheKeys = distributedExecutor.submit(task).get();
         }
+
         return new IteratorSequence<K>(cacheKeys.iterator());
     }
 
@@ -158,6 +134,8 @@ public class InfinispanUtil {
          * @throws InterruptedException if the operation finding the values has been interrupted
          */
         T next() throws ExecutionException, CancellationException, InterruptedException;
+
+        boolean hasNext();
     }
 
     private static final class IteratorSequence<T> implements Sequence<T> {
@@ -170,6 +148,11 @@ public class InfinispanUtil {
         @Override
         public T next() {
             return iterator.hasNext() ? iterator.next() : null;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return iterator.hasNext();
         }
     }
 

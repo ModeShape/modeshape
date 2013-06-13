@@ -26,11 +26,16 @@ package org.modeshape.web.jcr.rest;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
+import javax.jcr.ValueFormatException;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MediaType;
 import org.codehaus.jettison.json.JSONArray;
@@ -40,6 +45,7 @@ import org.modeshape.common.text.UrlEncoder;
 import org.modeshape.common.util.Base64;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.Logger;
+import org.modeshape.jcr.api.ValueFactory;
 import org.modeshape.web.jcr.WebLogger;
 
 /**
@@ -55,13 +61,18 @@ public final class RestHelper {
     public static final String ITEMS_METHOD_NAME = "items";
     public static final String NODES_METHOD_NAME = "nodes";
     public static final String QUERY_METHOD_NAME = "query";
+    public static final String QUERY_PLAN_METHOD_NAME = "queryPlan";
     public static final String NODE_TYPES_METHOD_NAME = "nodetypes";
 
     private static final List<String> ALL_METHODS = Arrays.asList(BINARY_METHOD_NAME,
                                                                   ITEMS_METHOD_NAME,
                                                                   NODES_METHOD_NAME,
                                                                   QUERY_METHOD_NAME,
+                                                                  QUERY_PLAN_METHOD_NAME,
                                                                   NODE_TYPES_METHOD_NAME);
+    //almost ISO8601, because in JDK 6 Z/z do not support timezones of the format hh:mm
+    private static final List<SimpleDateFormat> ISO8601_DATE_PARSERS = Arrays.asList(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss"),
+                                                                                     new SimpleDateFormat("yyyy-MM-dd"));
 
     private static final Logger LOGGER = WebLogger.getLogger(RestHelper.class);
 
@@ -200,6 +211,43 @@ public final class RestHelper {
             LOGGER.error(e.getMessage(), e);
             return null;
         }
+    }
+
+    /**
+     * Converts an object value coming from a JSON object, to a JCR value by attempting to convert it to a valid data type.
+     * @param value a generic value, may be {@code null}
+     * @param valueFactory a {@link ValueFactory} instance which is used to perform the conversion
+     * @return either a {@link Value} or {@code null} if the object value is {@code null}.
+     */
+    public static Value jsonValueToJCRValue(Object value, ValueFactory valueFactory) {
+        if (value == null) {
+            return null;
+        }
+
+        //try the datatypes that can be handled by Jettison
+        if (value instanceof Integer || value instanceof Long) {
+            return valueFactory.createValue(((Number) value).longValue());
+        } else if (value instanceof Double || value instanceof Float) {
+            return valueFactory.createValue(((Number) value).doubleValue());
+        } else if (value instanceof Boolean) {
+            return valueFactory.createValue((Boolean)value);
+        }
+
+        //try to convert to a date
+        String valueString = value.toString();
+        for (DateFormat dateFormat : ISO8601_DATE_PARSERS) {
+            try {
+                Date date = dateFormat.parse(valueString);
+                return valueFactory.createValue(date);
+            } catch (ParseException e) {
+                //ignore
+            } catch (ValueFormatException e) {
+                //ignore
+            }
+        }
+
+        //default to a string
+        return valueFactory.createValue(valueString);
     }
 
 }

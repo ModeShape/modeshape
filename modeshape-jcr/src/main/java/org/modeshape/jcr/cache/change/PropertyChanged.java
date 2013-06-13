@@ -28,21 +28,19 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
 
 /**
- * 
+ * Internal event fired when a property is changed on a node
  */
-public class PropertyChanged extends AbstractNodeChange {
+public class PropertyChanged extends AbstractPropertyChange {
 
     private static final long serialVersionUID = 1L;
 
-    private final Property newProperty;
     private final Property oldProperty;
 
     public PropertyChanged( NodeKey key,
                             Path nodePath,
                             Property newProperty,
                             Property oldProperty ) {
-        super(key, nodePath);
-        this.newProperty = newProperty;
+        super(key, nodePath, newProperty);
         this.oldProperty = oldProperty;
     }
 
@@ -50,7 +48,7 @@ public class PropertyChanged extends AbstractNodeChange {
      * @return newPath
      */
     public Property getNewProperty() {
-        return newProperty;
+        return property;
     }
 
     /**
@@ -60,16 +58,20 @@ public class PropertyChanged extends AbstractNodeChange {
         return oldProperty;
     }
 
-    /**
-     * @return path
-     */
-    public Path getPathToNode() {
-        return path;
-    }
-
     @Override
     public String toString() {
-        return "Changed property \"" + newProperty.getName() + "\" on '" + this.getKey() + "' from values " + oldProperty
-               + " to " + newProperty;
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Changed property ");
+        stringBuilder.append(property.getName());
+        stringBuilder.append(" on node '");
+        stringBuilder.append(this.getKey());
+        stringBuilder.append("' at path ");
+        stringBuilder.append(getPathToNode().getString());
+        stringBuilder.append(" from:");
+        stringBuilder.append(oldProperty);
+        stringBuilder.append(" to:");
+        stringBuilder.append(property);
+
+        return stringBuilder.toString();
     }
 }

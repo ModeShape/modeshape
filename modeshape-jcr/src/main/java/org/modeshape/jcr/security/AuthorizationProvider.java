@@ -40,7 +40,7 @@ public interface AuthorizationProvider {
      * @param repositoryName the name of the repository containing the workspace content
      * @param repositorySourceName <i>This is no longer used and will always be the same as the repositoryName</i>
      * @param workspaceName the name of the workspace in which the path exists
-     * @param path the path on which the actions are occurring
+     * @param absPath the absolute path on which the actions are occurring
      * @param actions the list of {@link ModeShapePermissions actions} to check
      * @return true if the subject has privilege to perform all of the named actions on the content at the supplied path in the
      *         given workspace within the repository, or false otherwise
@@ -49,6 +49,6 @@ public interface AuthorizationProvider {
                            String repositoryName,
                            String repositorySourceName,
                            String workspaceName,
-                           Path path,
+                           Path absPath,
                            String... actions );
 }

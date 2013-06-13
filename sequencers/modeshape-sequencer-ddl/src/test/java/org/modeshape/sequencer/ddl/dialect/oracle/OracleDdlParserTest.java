@@ -23,6 +23,11 @@
  */
 package org.modeshape.sequencer.ddl.dialect.oracle;
 
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.matchers.JUnitMatchers.hasItems;
+import java.util.List;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
@@ -31,6 +36,7 @@ import org.modeshape.common.FixFor;
 import org.modeshape.sequencer.ddl.DdlConstants;
 import org.modeshape.sequencer.ddl.DdlParserScorer;
 import org.modeshape.sequencer.ddl.DdlParserTestHelper;
+import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_STATEMENT;
 import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.*;
@@ -341,6 +347,258 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     @Test
     public void shouldSequenceCreateIndexStatements() throws Exception {
         String content = getFileContent(DDL_FILE_PATH + "mode_1326.ddl");
-        assertScoreAndParse(content, "mode_1326", 490);
+        assertScoreAndParse(content, "mode_1326", 477);
     }
+
+    @Test
+    public void shouldParseCreateTableIndexStatementOrderedWithVariations() {
+        final String content = "CREATE TABLE BB_TEST_GROUP\n" //$NON-NLS-1$
+                               + "(\n" //$NON-NLS-1$
+                               + "BB_TEST_GROUP_ID NUMBER DEFAULT 0 NOT NULL,\n" //$NON-NLS-1$
+                               + "TEST_GROUP_DISPLAY CHAR(15 BYTE) DEFAULT ' ' NOT NULL,\n" //$NON-NLS-1$
+                               + "TEST_GROUP_DESCRIPTION  VARCHAR2(50 BYTE),\n" //$NON-NLS-1$
+                               + "ACTIVE_IND NUMBER DEFAULT 0 NOT NULL,\n" //$NON-NLS-1$
+                               + "ACTIVE_STATUS_CD NUMBER DEFAULT 0 NOT NULL,\n" //$NON-NLS-1$
+// this includes PL/SQL and does not parse        + "ACTIVE_STATUS_DT_TM DATE DEFAULT TO_DATE ( '01/01/190000:00:00' , 'MM/DD/YYYYHH24:MI:SS' ) NOT NULL,\n" //$NON-NLS-1$
+                               + "ACTIVE_STATUS_PRSNL_ID NUMBER DEFAULT 0 NOT NULL,\n" //$NON-NLS-1$
+                               + "UPDT_CNT NUMBER DEFAULT 0 NOT NULL,\n" //$NON-NLS-1$
+                               + "UPDT_DT_TM DATE DEFAULT SYSDATE NOT NULL,\n" //$NON-NLS-1$
+                               + "UPDT_ID NUMBER DEFAULT 0 NOT NULL,\n" //$NON-NLS-1$
+                               + "UPDT_TASK NUMBER DEFAULT 0 NOT NULL,\n" //$NON-NLS-1$
+                               + "UPDT_APPLCTX NUMBER DEFAULT 0 NOT NULL\n" //$NON-NLS-1$
+                               + ")\n" //$NON-NLS-1$
+                               + "LOGGING \n" //$NON-NLS-1$
+                               + "NOCOMPRESS \n" //$NON-NLS-1$
+                               + "NOCACHE\n" //$NON-NLS-1$
+                               + "NOPARALLEL\n" //$NON-NLS-1$
+                               + "MONITORING;\n" //$NON-NLS-1$
+                               + "" //$NON-NLS-1$
+                               + "CREATE UNIQUE INDEX XAK1BB_TEST_GROUP ON BB_TEST_GROUP\n" //$NON-NLS-1$
+                               + "(TEST_GROUP_DISPLAY ASC, UPDT_CNT DESC)\n" //$NON-NLS-1$
+                               + "LOGGING\n" //$NON-NLS-1$
+                               + "COMPRESS 4\n" //$NON-NLS-1$
+                               + "NOPARALLEL\n" //$NON-NLS-1$
+                               + "UNUSABLE;"; //$NON-NLS-1$
+        this.parser.parse(content, this.rootNode, null);
+        assertThat(this.rootNode.getChildCount(), is(2)); // table & index
+
+        final List<AstNode> nodes = this.rootNode.childrenWithName("XAK1BB_TEST_GROUP");
+        assertThat(nodes.size(), is(1));
+
+        final AstNode indexNode = nodes.get(0);
+        assertMixinType(indexNode, OracleDdlLexicon.TYPE_CREATE_TABLE_INDEX_STATEMENT);
+        assertProperty(indexNode, OracleDdlLexicon.INDEX_TYPE, OracleDdlConstants.IndexTypes.TABLE);
+        assertProperty(indexNode, OracleDdlLexicon.TABLE_NAME, "BB_TEST_GROUP");
+        assertProperty(indexNode, OracleDdlLexicon.UNIQUE_INDEX, true);
+        assertProperty(indexNode, OracleDdlLexicon.BITMAP_INDEX, false);
+        assertProperty(indexNode, OracleDdlLexicon.UNUSABLE_INDEX, true);
+        assertThat(indexNode.getProperty(OracleDdlLexicon.TABLE_ALIAS), is(nullValue()));
+        assertThat(indexNode.getProperty(OracleDdlLexicon.OTHER_INDEX_REFS), is(nullValue()));
+        assertThat(indexNode.getProperty(OracleDdlLexicon.WHERE_CLAUSE), is(nullValue()));
+
+        // index attribute multi-value property
+        @SuppressWarnings( "unchecked" )
+        final List<String> indexAtributes = (List<String>)indexNode.getProperty(OracleDdlLexicon.INDEX_ATTRIBUTES);
+        assertThat(indexAtributes.size(), is(3));
+        assertThat(indexAtributes, hasItems("LOGGING", "COMPRESS 4", "NOPARALLEL"));
+
+        // column references
+        assertThat(indexNode.getChildCount(), is(2));
+
+        { // TEST_GROUP_DISPLAY column
+            final AstNode colRefNode = indexNode.getChild(0);
+            assertThat(colRefNode.getName(), is("TEST_GROUP_DISPLAY"));
+            assertProperty(colRefNode, OracleDdlLexicon.INDEX_ORDER, "ASC");
+            assertMixinType(colRefNode, StandardDdlLexicon.TYPE_COLUMN_REFERENCE);
+        }
+
+        { // UPDT_CNT column
+            final AstNode colRefNode = indexNode.getChild(1);
+            assertThat(colRefNode.getName(), is("UPDT_CNT"));
+            assertProperty(colRefNode, OracleDdlLexicon.INDEX_ORDER, "DESC");
+            assertMixinType(colRefNode, StandardDdlLexicon.TYPE_COLUMN_REFERENCE);
+        }
+    }
+
+    @Test
+    public void shouldParseCreateTableIndexStatement() throws Exception {
+        final String content = "CREATE TABLE CUST_MPAGE(\n" //$NON-NLS-1$
+                                   + "MPAGE_ID INTEGER,\n" //$NON-NLS-1$
+                                   + "NAME VARCHAR2(50 BYTE),\n" //$NON-NLS-1$
+                                   + "DESCRIPTION VARCHAR2(200 BYTE)\n" //$NON-NLS-1$
+                                   + ")\n" //$NON-NLS-1$
+                                   + "LOGGING\n" //$NON-NLS-1$
+                                   + "NOCOMPRESS\n" //$NON-NLS-1$
+                                   + "NOCACHE\n" //$NON-NLS-1$
+                                   + "NOPARALLEL\n" //$NON-NLS-1$
+                                   + "MONITORING;\n" //$NON-NLS-1$
+                                   + "" //$NON-NLS-1$
+                                   + "CREATE INDEX CUST_MPAGE_PK ON CUST_MPAGE (MPAGE_ID) LOGGING NOPARALLEL;";
+        this.parser.parse(content, this.rootNode, null);
+        assertThat(this.rootNode.getChildCount(), is(2)); // table & index
+
+        final List<AstNode> nodes = this.rootNode.childrenWithName("CUST_MPAGE_PK");
+        assertThat(nodes.size(), is(1));
+
+        final AstNode indexNode = nodes.get(0);
+        assertMixinType(indexNode, OracleDdlLexicon.TYPE_CREATE_TABLE_INDEX_STATEMENT);
+        assertProperty(indexNode, OracleDdlLexicon.INDEX_TYPE, OracleDdlConstants.IndexTypes.TABLE);
+        assertProperty(indexNode, OracleDdlLexicon.TABLE_NAME, "CUST_MPAGE");
+        assertProperty(indexNode, OracleDdlLexicon.UNIQUE_INDEX, false);
+        assertProperty(indexNode, OracleDdlLexicon.BITMAP_INDEX, false);
+        assertProperty(indexNode, OracleDdlLexicon.UNUSABLE_INDEX, false);
+        assertThat(indexNode.getProperty(OracleDdlLexicon.TABLE_ALIAS), is(nullValue()));
+        assertThat(indexNode.getProperty(OracleDdlLexicon.OTHER_INDEX_REFS), is(nullValue()));
+        assertThat(indexNode.getProperty(OracleDdlLexicon.WHERE_CLAUSE), is(nullValue()));
+
+        // index attribute multi-value property
+        @SuppressWarnings( "unchecked" )
+        final List<String> indexAtributes = (List<String>)indexNode.getProperty(OracleDdlLexicon.INDEX_ATTRIBUTES);
+        assertThat(indexAtributes.size(), is(2));
+        assertThat(indexAtributes, hasItems("LOGGING", "NOPARALLEL"));
+
+        // column reference
+        assertThat(indexNode.getChildCount(), is(1));
+        assertThat(indexNode.getFirstChild().getName(), is("MPAGE_ID"));
+        assertMixinType(indexNode.getFirstChild(), StandardDdlLexicon.TYPE_COLUMN_REFERENCE);
+    }
+
+    @Test
+    public void shouleParseCreateTableIndexWithFunctions() {
+        final String content = "CREATE TABLE Weatherdata_tab(\n" //$NON-NLS-1$
+                               + "Maxtemp INTEGER,\n" //$NON-NLS-1$
+                               + "Mintemp INTEGER\n" //$NON-NLS-1$
+                               + ");\n" //$NON-NLS-1$
+                               + "" //$NON-NLS-1$
+                               + "CREATE BITMAP INDEX Compare_index\n" //$NON-NLS-1$
+                               + "ON Weatherdata_tab ((Maxtemp - Mintemp) DESC, Maxtemp);";
+        this.parser.parse(content, this.rootNode, null);
+        assertThat(this.rootNode.getChildCount(), is(2)); // table & index
+
+        final List<AstNode> nodes = this.rootNode.childrenWithName("Compare_index");
+        assertThat(nodes.size(), is(1));
+
+        final AstNode indexNode = nodes.get(0);
+        assertMixinType(indexNode, OracleDdlLexicon.TYPE_CREATE_TABLE_INDEX_STATEMENT);
+        assertProperty(indexNode, OracleDdlLexicon.INDEX_TYPE, OracleDdlConstants.IndexTypes.TABLE);
+        assertProperty(indexNode, OracleDdlLexicon.TABLE_NAME, "Weatherdata_tab");
+        assertProperty(indexNode, OracleDdlLexicon.UNIQUE_INDEX, false);
+        assertProperty(indexNode, OracleDdlLexicon.BITMAP_INDEX, true);
+        assertProperty(indexNode, OracleDdlLexicon.UNUSABLE_INDEX, false);
+        assertThat(indexNode.getProperty(OracleDdlLexicon.TABLE_ALIAS), is(nullValue()));
+        assertThat(indexNode.getProperty(OracleDdlLexicon.WHERE_CLAUSE), is(nullValue()));
+
+        // functions
+        @SuppressWarnings( "unchecked" )
+        final List<String> functionRefs = (List<String>)indexNode.getProperty(OracleDdlLexicon.OTHER_INDEX_REFS);
+        assertThat(functionRefs.size(), is(1));
+        assertThat(functionRefs, hasItems("(Maxtemp-Mintemp) DESC")); // parsing takes out internal spaces in the function
+
+        // column reference
+        assertThat(indexNode.getChildCount(), is(1));
+        assertThat(indexNode.getFirstChild().getName(), is("Maxtemp"));
+        assertMixinType(indexNode.getFirstChild(), StandardDdlLexicon.TYPE_COLUMN_REFERENCE);
+    }
+
+    @Test
+    public void shouldParseCreateClusterIndexStatement() throws Exception {
+        final String content = "CREATE INDEX idx_personnel ON CLUSTER personnel;"; //$NON-NLS-1$
+        this.parser.parse(content, this.rootNode, null);
+        assertThat(this.rootNode.getChildCount(), is(1)); // index
+
+        final List<AstNode> nodes = this.rootNode.childrenWithName("idx_personnel");
+        assertThat(nodes.size(), is(1)); // table & index
+
+        final AstNode indexNode = nodes.get(0);
+        assertMixinType(indexNode, OracleDdlLexicon.TYPE_CREATE_CLUSTER_INDEX_STATEMENT);
+        assertProperty(indexNode, OracleDdlLexicon.INDEX_TYPE, OracleDdlConstants.IndexTypes.CLUSTER);
+        assertProperty(indexNode, OracleDdlLexicon.CLUSTER_NAME, "personnel");
+        assertThat(indexNode.getProperty(OracleDdlLexicon.TABLE_NAME), is(nullValue()));
+        assertProperty(indexNode, OracleDdlLexicon.UNIQUE_INDEX, false);
+        assertProperty(indexNode, OracleDdlLexicon.BITMAP_INDEX, false);
+        assertProperty(indexNode, OracleDdlLexicon.UNUSABLE_INDEX, false);
+        assertThat(indexNode.getProperty(OracleDdlLexicon.TABLE_ALIAS), is(nullValue()));
+        assertThat(indexNode.getProperty(OracleDdlLexicon.OTHER_INDEX_REFS), is(nullValue()));
+        assertThat(indexNode.getProperty(OracleDdlLexicon.INDEX_ATTRIBUTES), is(nullValue()));
+        assertThat(indexNode.getProperty(OracleDdlLexicon.WHERE_CLAUSE), is(nullValue()));
+    }
+
+    @Test
+    public void shouldParseCreateBitmapJoinIndexStatement() throws Exception {
+        final String content = "CREATE TABLE sales(\n" //$NON-NLS-1$
+                               + "cust_id INTEGER,\n" //$NON-NLS-1$
+                               + "cust_name VARCHAR2(50 BYTE)\n" //$NON-NLS-1$
+                               + ");\n" //$NON-NLS-1$
+                               + "" //$NON-NLS-1$
+                               + "CREATE TABLE customers(\n" //$NON-NLS-1$
+                               + "cust_id INTEGER,\n" //$NON-NLS-1$
+                               + "cust_name VARCHAR2(50 BYTE)\n" //$NON-NLS-1$
+                               + ");\n" //$NON-NLS-1$
+                               + "" //$NON-NLS-1$
+                               + "CREATE BITMAP INDEX sales_cust_gender_bjix\n" //$NON-NLS-1$
+                               + "ON sales(customers.cust_gender)\n" //$NON-NLS-1$
+                               + "FROM sales, customers\n" //$NON-NLS-1$
+                               + "WHERE sales.cust_id = customers.cust_id\n" //$NON-NLS-1$
+                               + "LOCAL;"; //$NON-NLS-1$
+        this.parser.parse(content, this.rootNode, null);
+        assertThat(this.rootNode.getChildCount(), is(3)); // 2 tables & index
+
+        final List<AstNode> nodes = this.rootNode.childrenWithName("sales_cust_gender_bjix");
+        assertThat(nodes.size(), is(1));
+
+        final AstNode indexNode = nodes.get(0);
+        assertMixinType(indexNode, OracleDdlLexicon.TYPE_CREATE_BITMAP_JOIN_INDEX_STATEMENT);
+        assertProperty(indexNode, OracleDdlLexicon.INDEX_TYPE, OracleDdlConstants.IndexTypes.BITMAP_JOIN);
+        assertProperty(indexNode, OracleDdlLexicon.TABLE_NAME, "sales");
+        assertProperty(indexNode, OracleDdlLexicon.UNIQUE_INDEX, false);
+        assertProperty(indexNode, OracleDdlLexicon.BITMAP_INDEX, true);
+        assertProperty(indexNode, OracleDdlLexicon.UNUSABLE_INDEX, false);
+        assertProperty(indexNode, OracleDdlLexicon.WHERE_CLAUSE, "sales.cust_id = customers.cust_id LOCAL"); // index attributes
+                                                                                                             // included
+        assertThat(indexNode.getProperty(OracleDdlLexicon.INDEX_ATTRIBUTES), is(nullValue()));
+        assertThat(indexNode.getProperty(OracleDdlLexicon.TABLE_ALIAS), is(nullValue()));
+        assertThat(indexNode.getChildCount(), is(3)); // 1 column references, 2 table references
+
+        { // 1 column reference
+            final List<AstNode> colRefs = indexNode.getChildren(OracleDdlLexicon.TYPE_COLUMN_REFERENCE);
+            assertThat(colRefs.size(), is(1));
+
+            final AstNode colRefNode = colRefs.get(0);
+            assertThat(colRefNode.getName(), is("customers.cust_gender"));
+        }
+
+        { // 2 table references
+            final List<AstNode> tableRefs = indexNode.getChildren(OracleDdlLexicon.TYPE_TABLE_REFERENCE);
+            assertThat(tableRefs.size(), is(2));
+
+            { // sales table
+                final AstNode tableRefNode = tableRefs.get(0);
+                assertThat(tableRefNode.getName(), is("sales"));
+            }
+
+            { // customers table
+                final AstNode tableRefNode = tableRefs.get(1);
+                assertThat(tableRefNode.getName(), is("customers"));
+            }
+        }
+    }
+    
+    @Test
+    public void shouldParseDbObjectNameWithValidSymbols() {
+        final String content = "CREATE TABLE EL$VIS (\n" //$NON-NLS-1$
+                               + "COL_A VARCHAR2(20) NOT NULL,\n" //$NON-NLS-1$
+                               + "COL@B VARCHAR2(10) NOT NULL,\n" //$NON-NLS-1$
+                               + "COL#C NUMBER(10));"; //$NON-NLS-1$
+        this.parser.parse(content, this.rootNode, null);
+        assertThat(this.rootNode.getChildCount(), is(1));
+
+        final AstNode tableNode = this.rootNode.getChildren().get(0);
+        assertThat(tableNode.getName(), is("EL$VIS"));
+        assertThat(tableNode.getChildCount(), is(3)); // 3 columns
+
+        assertThat(tableNode.childrenWithName("COL_A").size(), is(1));
+        assertThat(tableNode.childrenWithName("COL@B").size(), is(1));
+        assertThat(tableNode.childrenWithName("COL#C").size(), is(1));
+    }
+
 }

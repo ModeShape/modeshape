@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr.query.lucene.basic;
 
-import java.io.File;
 import java.util.Properties;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.hibernate.search.Environment;
@@ -56,6 +55,13 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
                                      Properties storage ) {
         super(NodeInfo.class, DynamicFieldBridge.class);
 
+        String storageType = initStorageProperties(repositoryName, storage);
+        initIndexingProperties(indexing);
+        initBackendProperties(storageType, backend);
+    }
+
+    private String initStorageProperties( String repositoryName,
+                                          Properties storage ) {
         // ------------------------------
         // Set the storage properties ...
         // ------------------------------
@@ -106,34 +112,6 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
             setProperty("hibernate.search.default.retry_initialize_period", retryInitializePeriod);
             setProperty("hibernate.search.default.locking_strategy", lockingStrategy);
             setProperty("hibernate.search.default.filesystem_access_type", accessType);
-        } else if (storageType.equals(FieldValue.INDEX_STORAGE_INFINISPAN)) {
-            // Filesystem-master directory provider ...
-            String lockCacheName = repositoryName + "-index-lock";
-            String dataCacheName = repositoryName + "-index-data";
-            String metaCacheName = repositoryName + "-index-meta";
-            String chunkSize = storage.getProperty(FieldName.INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES);
-            setProperty("hibernate.search.default.directory_provider", "infinispan");
-            setProperty("hibernate.search.default.locking_cachename", storage.getProperty(
-                    FieldName.INDEX_STORAGE_INFINISPAN_LOCK_CACHE), lockCacheName);
-            setProperty("hibernate.search.default.data_cachename", storage.getProperty(
-                    FieldName.INDEX_STORAGE_INFINISPAN_DATA_CACHE), dataCacheName);
-            setProperty("hibernate.search.default.metadata_cachename", storage.getProperty(
-                    FieldName.INDEX_STORAGE_INFINISPAN_META_CACHE), metaCacheName);
-            setProperty("hibernate.search.default.chunk_size", chunkSize);
-            String cacheConfigValue = storage.getProperty(FieldName.CACHE_CONFIGURATION);
-            if (cacheConfigValue != null && cacheConfigValue.trim().length() != 0) {
-                File configFile = new File(cacheConfigValue);
-                if (configFile.exists() && configFile.isFile() && configFile.canRead() && configFile.getName().endsWith(".xml")) {
-                    // Looks like a file and ends in ".xml", so we'll assume a file ...
-                    setProperty("hibernate.search.infinispan.configuration_resourcename", configFile.getAbsolutePath());
-                } else if (getClass().getClassLoader().getResourceAsStream(cacheConfigValue) != null) {
-                    // it's a resource accessible via this CL, so Hibernate Search should find it
-                    setProperty("hibernate.search.infinispan.configuration_resourcename", cacheConfigValue);
-                } else {
-                    // Must be a JNDI reference ??
-                    setProperty("hibernate.search.infinispan.cachemanager_jndiname", cacheConfigValue.trim());
-                }
-            }
         } else if (storageType.equals(FieldValue.INDEX_STORAGE_CUSTOM)) {
             storageType = storage.getProperty(FieldName.CLASSNAME);
             setProperty("hibernate.search.default.directory_provider", storageType);
@@ -144,31 +122,40 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
                 setProperty("hibernate.search.default." + key, storage.getProperty(key));
             }
         }
+        return storageType;
+    }
 
+    private void initIndexingProperties( Properties indexing ) {
         // ----------------------------------
         // Define the indexing properties ...
         // ----------------------------------
         String analyzer = indexing.getProperty(FieldName.INDEXING_ANALYZER);
-        String similarity = indexing.getProperty(FieldName.INDEXING_SIMILARITY);
-        String batchSize = indexing.getProperty(FieldName.INDEXING_BATCH_SIZE);
-        String indexFormat = indexing.getProperty(FieldName.INDEXING_INDEX_FORMAT);
-        String readerStrategy = indexing.getProperty(FieldName.INDEXING_READER_STRATEGY);
-        String mode = indexing.getProperty(FieldName.INDEXING_MODE);
-        String asyncThreadPoolSize = indexing.getProperty(FieldName.INDEXING_ASYNC_THREAD_POOL_SIZE);
-        String asyncMaxQueueSize = indexing.getProperty(FieldName.INDEXING_ASYNC_MAX_QUEUE_SIZE);
-
         if (!StandardAnalyzer.class.getName().equals(analyzer)) {
             // Hibernate Search defaults to StandardAnalyzer, which is also our default. But there's an issue loading
             // the class when running in AS7, because ConfigContext uses org.hibernate.annotations.common.util.ReflectHelper,
             // which apparently uses the Hibernate module's classpath (which does not contain the Lucene library).
             setProperty(Environment.ANALYZER_CLASS, analyzer);
         }
+
+        String similarity = indexing.getProperty(FieldName.INDEXING_SIMILARITY);
         setProperty(Environment.SIMILARITY_CLASS, similarity);
+
+        String batchSize = indexing.getProperty(FieldName.INDEXING_BATCH_SIZE);
         setProperty(Environment.QUEUEINGPROCESSOR_BATCHSIZE, batchSize);
+
+        String indexFormat = indexing.getProperty(FieldName.INDEXING_INDEX_FORMAT);
         setProperty(Environment.LUCENE_MATCH_VERSION, indexFormat);
+
+        String readerStrategy = indexing.getProperty(FieldName.INDEXING_READER_STRATEGY);
         setProperty("hibernate.search.reader.strategy", readerStrategy);
+
+        String mode = indexing.getProperty(FieldName.INDEXING_MODE);
         setProperty("hibernate.search.default.worker.execution", mode); // sync or async
+
+        String asyncThreadPoolSize = indexing.getProperty(FieldName.INDEXING_ASYNC_THREAD_POOL_SIZE);
         setProperty("hibernate.search.default.worker.thread_pool.size", asyncThreadPoolSize);
+
+        String asyncMaxQueueSize = indexing.getProperty(FieldName.INDEXING_ASYNC_MAX_QUEUE_SIZE);
         setProperty("hibernate.search.default.worker.buffer_queue.max", asyncMaxQueueSize);
 
         for (Object keyObj : indexing.keySet()) {
@@ -178,21 +165,20 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
                 setProperty(key, value);
             }
         }
+    }
 
+    private String initBackendProperties( String storageType,
+                                          Properties backend ) {
         // ---------------------------------
         // Define the backend properties ...
         // ---------------------------------
+
+        //jms master is ignored, because that should be standard lucene configuration
         String backendType = backend.getProperty(FieldName.TYPE);
         if (backendType.equals(FieldValue.INDEXING_BACKEND_TYPE_LUCENE)) {
             setProperty("hibernate.search.default.worker.backend", "lucene");
         } else if (backendType.equals(FieldValue.INDEXING_BACKEND_TYPE_BLACKHOLE)) {
             setProperty("hibernate.search.default.worker.backend", "blackhole");
-        } else if (backendType.equals(FieldValue.INDEXING_BACKEND_TYPE_JMS_MASTER)) {
-            String queueJndiName = backend.getProperty(FieldName.INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME);
-            String factoryJndiName = backend.getProperty(FieldName.INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME);
-            setProperty("hibernate.search.default.worker.backend", "jms");
-            setProperty("hibernate.search.default.worker.jms.connection_factory", factoryJndiName);
-            setProperty("hibernate.search.default.worker.jms.queue", queueJndiName);
         } else if (backendType.equals(FieldValue.INDEXING_BACKEND_TYPE_JMS_SLAVE)) {
             String queueJndiName = backend.getProperty(FieldName.INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME);
             String factoryJndiName = backend.getProperty(FieldName.INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME);
@@ -203,11 +189,11 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
             for (Object keyObj : backend.keySet()) {
                 String key = keyObj.toString();
                 if (key.equals(FieldName.TYPE) || key.equals(FieldName.INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME)
-                    || key.equals(FieldName.INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME)) continue;
-                setProperty("hibernate.search.default.worker.jndi." + key, backend.getProperty(key));
+                        || key.equals(FieldName.INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME)) continue;
+                setProperty("hibernate.search.default.worker." + key, backend.getProperty(key));
             }
         } else if (backendType.equals(FieldValue.INDEXING_BACKEND_TYPE_JGROUPS_MASTER)
-                   || backendType.equals(FieldValue.INDEXING_BACKEND_TYPE_JGROUPS_SLAVE)) {
+                || backendType.equals(FieldValue.INDEXING_BACKEND_TYPE_JGROUPS_SLAVE)) {
             String type = backendType.equals(FieldValue.INDEXING_BACKEND_TYPE_JGROUPS_MASTER) ? "jgroupsMaster" : "jgroupsSlave";
             String channel = backend.getProperty(FieldName.INDEXING_BACKEND_JGROUPS_CHANNEL_NAME);
             String config = backend.getProperty(FieldName.INDEXING_BACKEND_JGROUPS_CHANNEL_CONFIGURATION);
@@ -218,7 +204,7 @@ public class BasicLuceneConfiguration extends LuceneSearchConfiguration {
             String classname = backend.getProperty(FieldName.CLASSNAME);
             setProperty("hibernate.search.default.worker.backend", classname);
         }
-
+        return backendType;
     }
 
     @Override

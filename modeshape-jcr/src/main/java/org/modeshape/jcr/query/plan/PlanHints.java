@@ -73,6 +73,9 @@ public final class PlanHints implements Serializable, Cloneable {
     /** Flag indicates whether the query plan should be included in the {@link QueryResults} */
     public boolean showPlan = false;
 
+    /** Flag indicates whether the query execution can be stopped immediately after the plan is developed. */
+    public boolean planOnly = false;
+
     /** Flag indicates whether to check during validation for the existance of columns used in column selectors and criteria. */
     public boolean validateColumnExistance = true;
 
@@ -108,6 +111,7 @@ public final class PlanHints implements Serializable, Cloneable {
         sb.append(", hasSubqueries=").append(hasSubqueries);
         sb.append(", isExistsQuery=").append(isExistsQuery);
         sb.append(", showPlan=").append(showPlan);
+        sb.append(", planOnly=").append(planOnly);
         sb.append(", validateColumnExistance=").append(validateColumnExistance);
         sb.append(", includeSystemContent=").append(includeSystemContent);
         sb.append(", useSessionContent=").append(useSessionContent);
@@ -130,6 +134,7 @@ public final class PlanHints implements Serializable, Cloneable {
         clone.hasSubqueries = this.hasSubqueries;
         clone.isExistsQuery = this.isExistsQuery;
         clone.showPlan = this.showPlan;
+        clone.planOnly = this.planOnly;
         clone.validateColumnExistance = this.validateColumnExistance;
         clone.includeSystemContent = this.includeSystemContent;
         clone.useSessionContent = this.useSessionContent;

@@ -28,38 +28,30 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
 
 /**
- * 
+ * Internal event fired when a new property is added.
  */
-public class PropertyAdded extends AbstractNodeChange {
+public class PropertyAdded extends AbstractPropertyChange {
 
     private static final long serialVersionUID = 1L;
-
-    private final Property property;
 
     public PropertyAdded( NodeKey key,
                           Path nodePath,
                           Property property ) {
-        super(key, nodePath);
-        this.property = property;
-    }
-
-    /**
-     * @return property
-     */
-    public Property getProperty() {
-        return property;
-    }
-
-    /**
-     * @return path
-     */
-    public Path getPathToNode() {
-        return path;
+        super(key, nodePath, property);
     }
 
     @Override
     public String toString() {
-        return "Added property \"" + property.getName() + "\" to '" + this.getKey() + "' with values: " + property;
-    }
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Added property ");
+        stringBuilder.append(property.getName());
+        stringBuilder.append(" to node '");
+        stringBuilder.append(this.getKey());
+        stringBuilder.append("' at path ");
+        stringBuilder.append(getPathToNode().getString());
+        stringBuilder.append(" with values:");
+        stringBuilder.append(property);
 
+        return stringBuilder.toString();
+    }
 }

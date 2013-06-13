@@ -24,8 +24,11 @@
 
 package org.modeshape.web.jcr.rest;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -96,6 +99,16 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @Override
     protected String nodeWithoutPrimaryTypeResponse() {
         return "v2/post/node_without_primaryType_response.json";
+    }
+
+    @Override
+    protected String differentPropertyTypesRequest() {
+        return "v2/post/node_different_property_types_request.json";
+    }
+
+    @Override
+    protected String differentPropertyTypesResponse() {
+        return "v2/post/node_different_property_types_response.json";
     }
 
     @Override
@@ -211,6 +224,26 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
     @Override
     protected String propertiesEdit() {
         return "v2/put/properties_edit.json";
+    }
+
+    @Override
+    protected String publishArea() {
+        return "v2/put/publish_area.json";
+    }
+
+    @Override
+    protected String publishAreaInvalidUpdate() {
+        return "v2/put/publish_area_invalid_update.json";
+    }
+
+    @Override
+    protected String publishAreaResponse() {
+        return "v2/put/publish_area_response.json";
+    }
+
+    @Override
+    protected String publishAreaValidUpdate() {
+        return "v2/put/publish_area_valid_update.json";
     }
 
     @Override
@@ -433,4 +466,33 @@ public class ModeShapeRestServiceTest extends JcrResourcesTest {
                                                                      .isJSONObjectLikeFile(nodeWithMixinAfterPropsResponse());
         doGet(itemsUrl(TEST_NODE)).isOk().isJSONObjectLikeFile(nodeWithMixinAfterPropsResponse());
     }
+
+    @Test
+    @FixFor( "MODE-1901" )
+    public void shouldComputePlainTextPlanForJcrSql2Query() throws Exception {
+        // No need to create any data, since we are not executing the query ...
+        String query = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/" + TEST_NODE + "')";
+        Response response = jcrSQL2QueryPlanAsText(query, queryPlanUrl()).isOk();
+        assertThat(response.getContentTypeHeader().startsWith("text/plain;charset=utf-8"), is(true));
+        String plan = response.responseString();
+        assertThat(plan, is(notNullValue()));
+        // System.out.println("**** PLAN: \n" + plan);
+    }
+
+    @Test
+    @FixFor( "MODE-1901" )
+    public void shouldComputeJsonPlanForJcrSql2Query() throws Exception {
+        // No need to create any data, since we are not executing the query ...
+        String query = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/" + TEST_NODE + "')";
+        Response response = jcrSQL2QueryPlan(query, queryPlanUrl()).isOk();
+        assertThat(response.getContentTypeHeader().startsWith("application/json"), is(true));
+        String plan = response.responseString();
+        assertThat(plan, is(notNullValue()));
+        // System.out.println("**** PLAN: \n" + plan);
+    }
+
+    protected String queryPlanUrl( String... additionalPathSegments ) {
+        return RestHelper.urlFrom(REPOSITORY_NAME + "/default/" + RestHelper.QUERY_PLAN_METHOD_NAME, additionalPathSegments);
+    }
+
 }

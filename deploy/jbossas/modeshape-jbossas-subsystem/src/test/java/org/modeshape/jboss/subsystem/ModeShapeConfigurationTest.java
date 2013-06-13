@@ -1,13 +1,5 @@
 package org.modeshape.jboss.subsystem;
 
-import static junit.framework.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -16,12 +8,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import junit.framework.Assert;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
@@ -34,6 +26,15 @@ import org.junit.Test;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
+import junit.framework.Assert;
+import static junit.framework.Assert.assertEquals;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.junit.Assert.fail;
 
 @SuppressWarnings( "nls" )
 public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
@@ -49,10 +50,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml( String configId ) throws IOException {
-        if ("minimal".equals(configId)) {
-            return "<subsystem xmlns=\"urn:jboss:domain:modeshape:1.0\">\n" + " <repository name=\"repo1\" />\n</subsystem>";
-        }
-        return getSubsystemXml();
+        return configId != null ? readResource("modeshape-" + configId + "-config.xml") : getSubsystemXml();
     }
 
     @Test
@@ -66,11 +64,6 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithCacheIndexStorage() throws Exception {
-        parse(readResource("modeshape-cache-index-storage.xml"));
-    }
-
-    @Test
     public void testOutputPersistenceOfConfigurationWithFileBinaryStorage() throws Exception {
         parse(readResource("modeshape-file-binary-storage.xml"));
     }
@@ -78,6 +71,16 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     @Test
     public void testOutputPersistenceOfConfigurationWithCacheBinaryStorage() throws Exception {
         parse(readResource("modeshape-cache-binary-storage.xml"));
+    }
+
+    @Test
+    public void testOutputPersistenceOfConfigurationWithCompositeBinaryStores() throws Exception {
+        parse(readResource("modeshape-composite-binary-storage-config.xml"));
+    }
+
+    @Test(expected = XMLStreamException.class)
+    public void shouldRejectInvalidCompositeBinaryStoreConfiguration() throws Exception {
+        parse(readResource("modeshape-invalid-composite-binary-storage.xml"));
     }
 
     @Test
@@ -124,6 +127,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     public void testOutputPersistenceOfConfigurationWithWebapps() throws Exception {
         parse(readResource("modeshape-webapp-config.xml"));
     }
+
 
     /* // todo replace with dmr format not json
     @Test
@@ -176,11 +180,6 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         }
 
         @Test
-        public void testOutputPersistenceOfConfigurationWithCacheIndexStorage() throws Exception {
-        roundTrip("modeshape-cache-index-storage.xml", "modeshape-cache-index-storage.json");
-        }
-
-        @Test
         public void testOutputPersistenceOfConfigurationWithFileBinaryStorage() throws Exception {
         roundTrip("modeshape-file-binary-storage.xml", "modeshape-file-binary-storage.json");
         }
@@ -206,6 +205,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         roundTrip("modeshape-custom-authenticators-config.xml", "modeshape-custom-authenticators-config.json");
     }
 
+    @SuppressWarnings( "deprecation" )
     protected void roundTrip( String filenameOfInputXmlConfig,
                               String filenameOfExpectedJson ) throws Exception {
         String subsystemXml = readResource(filenameOfInputXmlConfig);
@@ -234,6 +234,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         // Assert.assertEquals(normalizeXML(subsystemXml), normalizeXML(marshalled));
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void testSchema() throws Exception {
         String subsystemXml = readResource("modeshape-sample-config.xml");
@@ -323,6 +324,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
 
     }
 
+    @SuppressWarnings( "deprecation" )
     private KernelServices buildSubsystem() throws IOException, FileNotFoundException, Exception {
         String subsystemXml = readResource("modeshape-sample-config.xml");
 

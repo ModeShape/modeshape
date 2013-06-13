@@ -24,8 +24,13 @@
 package org.modeshape.jca;
 
 import java.io.Serializable;
-import javax.jcr.*;
-import javax.naming.NamingException;
+import javax.jcr.Credentials;
+import javax.jcr.LoginException;
+import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import javax.jcr.Value;
 import javax.naming.Reference;
 import javax.resource.Referenceable;
 import javax.resource.ResourceException;
@@ -33,11 +38,11 @@ import javax.resource.spi.ConnectionManager;
 
 /**
  * CCI connection factory interface
- *
+ * 
  * @author kulikov
  */
 public class JcrRepositoryHandle implements Referenceable, Serializable, Repository {
-
+    private static final long serialVersionUID = 1L;
     private Reference reference;
     // Managed connection factory.
     private final JcrManagedConnectionFactory mcf;
@@ -47,28 +52,29 @@ public class JcrRepositoryHandle implements Referenceable, Serializable, Reposit
 
     /**
      * Construct the repository.
-     *
-     * @param ra Resource adapter interface
+     * 
      * @param mcf Managed connection factory interface
      * @param cm Connection manager.
+     * @throws ResourceException if there is an error getting the repository
      */
-    public JcrRepositoryHandle(JcrResourceAdapter ra, JcrManagedConnectionFactory mcf, ConnectionManager cm) throws ResourceException {
+    public JcrRepositoryHandle( JcrManagedConnectionFactory mcf,
+                                ConnectionManager cm ) throws ResourceException {
         this.mcf = mcf;
         this.cm = cm;
         try {
-            this.repository = ra.getRepository();
+            this.repository = mcf.getRepository();
         } catch (Exception e) {
             throw new ResourceException(e);
         }
     }
 
     @Override
-    public Reference getReference() throws NamingException {
+    public Reference getReference() {
         return reference;
     }
 
     @Override
-    public void setReference(Reference reference) {
+    public void setReference( Reference reference ) {
         this.reference = reference;
     }
 
@@ -78,37 +84,37 @@ public class JcrRepositoryHandle implements Referenceable, Serializable, Reposit
     }
 
     @Override
-    public boolean isStandardDescriptor(String key) {
+    public boolean isStandardDescriptor( String key ) {
         return repository.isStandardDescriptor(key);
     }
 
     @Override
-    public boolean isSingleValueDescriptor(String key) {
+    public boolean isSingleValueDescriptor( String key ) {
         return repository.isSingleValueDescriptor(key);
     }
 
     @Override
-    public Value getDescriptorValue(String key) {
+    public Value getDescriptorValue( String key ) {
         return repository.getDescriptorValue(key);
     }
 
     @Override
-    public Value[] getDescriptorValues(String key) {
+    public Value[] getDescriptorValues( String key ) {
         return repository.getDescriptorValues(key);
     }
 
     @Override
-    public String getDescriptor(String key) {
+    public String getDescriptor( String key ) {
         return repository.getDescriptor(key);
     }
 
     @Override
-    public Session login(Credentials c) throws LoginException, RepositoryException {
+    public Session login( Credentials c ) throws LoginException, RepositoryException {
         return login(c, null);
     }
 
     @Override
-    public Session login(String ws) throws LoginException, NoSuchWorkspaceException, RepositoryException {
+    public Session login( String ws ) throws LoginException, NoSuchWorkspaceException, RepositoryException {
         return login(null, ws);
     }
 
@@ -117,22 +123,23 @@ public class JcrRepositoryHandle implements Referenceable, Serializable, Reposit
         return login(null, null);
     }
 
+    @SuppressWarnings( "deprecation" )
     @Override
-    public Session login(Credentials c, String workspace) throws LoginException, NoSuchWorkspaceException, RepositoryException {
+    public Session login( Credentials c,
+                          String workspace ) throws LoginException, NoSuchWorkspaceException, RepositoryException {
         try {
-            return (Session) cm.allocateConnection(
-                    mcf, new JcrConnectionRequestInfo(c, workspace));
+            return (Session)cm.allocateConnection(mcf, new JcrConnectionRequestInfo(c, workspace));
         } catch (ResourceException e) {
             Throwable cause = e.getCause();
             if (cause == null) {
                 cause = e.getLinkedException();
             }
             if (cause instanceof LoginException) {
-                throw (LoginException) cause;
+                throw (LoginException)cause;
             } else if (cause instanceof NoSuchWorkspaceException) {
-                throw (NoSuchWorkspaceException) cause;
+                throw (NoSuchWorkspaceException)cause;
             } else if (cause instanceof RepositoryException) {
-                throw (RepositoryException) cause;
+                throw (RepositoryException)cause;
             } else if (cause != null) {
                 throw new RepositoryException(cause);
             } else {

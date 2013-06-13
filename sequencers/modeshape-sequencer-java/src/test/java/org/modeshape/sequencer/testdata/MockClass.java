@@ -40,11 +40,46 @@ public final class MockClass implements Serializable {
 
     protected Boolean booleanField;
 
+    // The order of these constructors and methods is important, because they reflect the same order as represented in the class
+    // file. While this has no bearing on the functionality of the sequencer (which just processes the methods in the same
+    // order as they appear), having the same order in the source and class files makes it easier for our tests
+    // to check expected results.
+
+    public MockClass() {
+        this.booleanField = Boolean.FALSE;
+    }
+
+    public MockClass( boolean booleanField ) {
+        this.booleanField = booleanField;
+    }
+
     public MockClass( Boolean booleanField ) {
+        this.booleanField = booleanField;
+    }
+
+    public void doSomething( double p1 ) {
+    }
+
+    public void doSomething( float p1 ) {
+    }
+
+    /**
+     * Sets the boolean field to the default value. (This is not idiomatic Java, but I'm doing this just to have overloaded
+     * methods.)
+     */
+    public void setField() {
+        this.booleanField = Boolean.FALSE;
+    }
+
+    /**
+     * @param booleanField Sets booleanField to the specified value.
+     */
+    public void setField( Boolean booleanField ) {
         this.booleanField = booleanField;
     }
 
     @Deprecated
     synchronized void voidMethod() {
     }
+
 }

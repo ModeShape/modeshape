@@ -26,6 +26,7 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -34,6 +35,7 @@ import static org.junit.Assert.fail;
 import java.net.URL;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
@@ -476,12 +478,14 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         session.save();
 
         Node child1 = parent1.addNode("child1", "Child");
+        assertThat(child1, is(notNullValue()));
         session.save();
 
         session.getWorkspace().createWorkspace("clone", "original");
         session = repository.login("clone");
 
         Node child2 = session.getNode("/parent1").addNode("child2", "Child");
+        assertThat(child2, is(notNullValue()));
         session.save();
 
         session = repository.login("original");
@@ -498,7 +502,89 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         }
         session.getNode("/parent1/child2");
     }
-    
+
+    @Test
+    @FixFor( "MODE-1912" )
+    public void shouldRemoveMixVersionablePropertiesWhenRemovingMixin() throws Exception {
+        Node node = session.getRootNode().addNode("testNode");
+        node.addMixin(JcrMixLexicon.VERSIONABLE.getString());
+        session.save();
+
+        // mix:referenceable
+        assertNotNull(node.getProperty(JcrLexicon.UUID.getString()));
+        // mix:simpleVersionable
+        assertTrue(node.getProperty(JcrLexicon.IS_CHECKED_OUT.getString()).getBoolean());
+        // mix:versionable
+        assertNotNull(node.getProperty(JcrLexicon.BASE_VERSION.getString()));
+        assertNotNull(node.getProperty(JcrLexicon.VERSION_HISTORY.getString()));
+        assertNotNull(node.getProperty(JcrLexicon.PREDECESSORS.getString()));
+
+        node.removeMixin(JcrMixLexicon.VERSIONABLE.getString());
+        session.save();
+
+        // mix:referenceable
+        assertPropertyIsAbsent(node, JcrLexicon.UUID.getString());
+        // mix:simpleVersionable
+        assertPropertyIsAbsent(node, JcrLexicon.IS_CHECKED_OUT.getString());
+        // mix:versionable
+        assertPropertyIsAbsent(node, JcrLexicon.VERSION_HISTORY.getString());
+        assertPropertyIsAbsent(node, JcrLexicon.BASE_VERSION.getString());
+        assertPropertyIsAbsent(node, JcrLexicon.PREDECESSORS.getString());
+    }
+
+    @Test
+    @FixFor( "MODE-1912" )
+    public void shouldRelinkVersionablePropertiesWhenRemovingAndReaddingMixVersionable() throws Exception {
+        JcrVersionManager jcrVersionManager = (JcrVersionManager)versionManager;
+
+        Node node = session.getRootNode().addNode("testNode");
+        node.addMixin(JcrMixLexicon.VERSIONABLE.getString());
+        session.save();
+        // create a new version
+        jcrVersionManager.checkin("/testNode");
+        jcrVersionManager.checkout("/testNode");
+        jcrVersionManager.checkin("/testNode");
+
+        JcrVersionHistoryNode originalVersionHistory = jcrVersionManager.getVersionHistory("/testNode");
+        Version originalBaseVersion = jcrVersionManager.getBaseVersion("/testNode");
+
+        // remove the mixin
+        jcrVersionManager.checkout("/testNode");
+        node.removeMixin(JcrMixLexicon.VERSIONABLE.getString());
+        session.save();
+
+        // re-create the mixin and check the previous version history & versionable properties have been relinked.
+        node.addMixin(JcrMixLexicon.VERSIONABLE.getString());
+        session.save();
+
+        // mix:referenceable
+        assertNotNull(node.getProperty(JcrLexicon.UUID.getString()));
+        // mix:simpleVersionable
+        assertTrue(node.getProperty(JcrLexicon.IS_CHECKED_OUT.getString()).getBoolean());
+        // mix:versionable
+        assertNotNull(node.getProperty(JcrLexicon.BASE_VERSION.getString()));
+        assertNotNull(node.getProperty(JcrLexicon.VERSION_HISTORY.getString()));
+        assertNotNull(node.getProperty(JcrLexicon.PREDECESSORS.getString()));
+
+        JcrVersionHistoryNode versionHistory = jcrVersionManager.getVersionHistory("/testNode");
+        Version baseVersion = jcrVersionManager.getBaseVersion("/testNode");
+
+        // check the actual
+        assertEquals(originalVersionHistory.key(), versionHistory.key());
+        assertEquals(originalBaseVersion.getCreated(), baseVersion.getCreated());
+        assertEquals(originalBaseVersion.getPath(), baseVersion.getPath());
+    }
+
+    private void assertPropertyIsAbsent( Node node,
+                                         String propertyName ) throws Exception {
+        try {
+            node.getProperty(propertyName);
+            fail("Property: " + propertyName + " was expected to be missing on node:" + node);
+        } catch (PathNotFoundException e) {
+            // expected
+        }
+    }
+
     private void registerNodeTypes( Session session,
                                     String resourcePathToCnd ) throws Exception {
         NodeTypeManager nodeTypes = (NodeTypeManager)session.getWorkspace().getNodeTypeManager();

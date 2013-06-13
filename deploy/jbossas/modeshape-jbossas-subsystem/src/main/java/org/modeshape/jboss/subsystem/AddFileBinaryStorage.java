@@ -56,15 +56,21 @@ public class AddFileBinaryStorage extends AbstractAddBinaryStorage {
                                                     ModelNode model,
                                                     EditableDocument binaries ) throws OperationFailedException {
         binaries.set(FieldName.TYPE, FieldValue.BINARY_STORAGE_TYPE_FILE);
-        String defaultPath = "modeshape/" + repositoryName + "/binaries";
+
         ModelNode pathNode = ModelAttributes.PATH.resolveModelAttribute(context, model);
-        String path = pathNode.isDefined() ? pathNode.asString() : defaultPath;
+        String path = pathNode.isDefined() ? pathNode.asString() : "modeshape/" + repositoryName + "/binaries";
+
         String relativeTo = ModelAttributes.RELATIVE_TO.resolveModelAttribute(context, model).asString();
-        if (model.has(ModelKeys.RELATIVE_TO) && model.get(ModelKeys.RELATIVE_TO).asString().contains(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
-            binaryStoragePathInDataDirectory = path;
+        if (relativeTo.equalsIgnoreCase(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
+            //the relative-to path should be the default jboss-data-dir.
+            binaryStoragePathInDataDirectory = ".";
+            binaries.set(FieldName.DIRECTORY, path);
+        } else {
+            if (!relativeTo.endsWith("/")) {
+                relativeTo = relativeTo + "/";
+            }
+            binaries.set(FieldName.DIRECTORY, relativeTo + path);
         }
-        path = relativeTo + path;
-        binaries.set(FieldName.DIRECTORY, path);
     }
 
     @Override
@@ -72,23 +78,28 @@ public class AddFileBinaryStorage extends AbstractAddBinaryStorage {
                                                   BinaryStorageService service,
                                                   ServiceBuilder<BinaryStorage> builder,
                                                   List<ServiceController<?>> newControllers,
-                                                  ServiceTarget target ) {
+                                                  ServiceTarget target,
+                                                  String binariesStoreName ) {
         if (binaryStoragePathInDataDirectory != null) {
             // Add a controller that creates the required directory ...
-            ServiceName serviceName = ModeShapeServiceNames.binaryStorageDirectoryServiceName(repositoryName);
-            newControllers.add(RelativePathService.addService(serviceName,
+            ServiceName storageDirectoryServiceName = binariesStoreName != null ?
+                                                      ModeShapeServiceNames.binaryStorageDirectoryServiceName(repositoryName,
+                                                                                                              binariesStoreName)
+                                                                                  :
+                                                      ModeShapeServiceNames.binaryStorageDirectoryServiceName(repositoryName);
+            newControllers.add(RelativePathService.addService(storageDirectoryServiceName,
                                                               binaryStoragePathInDataDirectory,
                                                               ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE,
                                                               target));
             // and add dependency on this path ...
-            builder.addDependency(serviceName, String.class, service.getBinaryStorageBasePathInjector());
+            builder.addDependency(storageDirectoryServiceName, String.class, service.getBinaryStorageBasePathInjector());
         }
     }
 
     @Override
     protected void populateModel( ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {
-        populate(operation, model, ModelKeys.FILE_BINARY_STORAGE, ModelAttributes.FILE_BINARY_STORAGE_ATTRIBUTES);
+        populate(operation, model, ModelAttributes.FILE_BINARY_STORAGE_ATTRIBUTES);
     }
 
 }

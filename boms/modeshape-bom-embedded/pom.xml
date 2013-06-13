@@ -4,14 +4,14 @@
     <parent>
         <groupId>org.modeshape.bom</groupId>
         <artifactId>modeshape-bom-parent</artifactId>
-        <version>3.3-SNAPSHOT</version>
+        <version>3.4-SNAPSHOT</version>
         <relativePath>../modeshape-bom-parent/pom.xml</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.modeshape.bom</groupId>
     <artifactId>modeshape-bom-embedded</artifactId>
-    <version>3.3-SNAPSHOT</version>
+    <version>3.4-SNAPSHOT</version>
     <name>ModeShape BOM for embedded usage</name>
 
     <url>http://www.modeshape.org</url>
@@ -80,11 +80,14 @@
                 <artifactId>modeshape-sequencer-mp3</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-sequencer-msoffice</artifactId>
-                <version>${project.version}</version>
-            </dependency>
+            <!--
+                See MODE-1934
+                <dependency>
+                    <groupId>org.modeshape</groupId>
+                    <artifactId>modeshape-sequencer-msoffice</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            -->
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-sramp</artifactId>
@@ -143,11 +146,6 @@
                         <artifactId>stax2-api</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-lucene-directory</artifactId>
-                <version>${infinispan.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
@@ -354,7 +352,7 @@
                 <artifactId>jaudiotagger</artifactId>
                 <version>${jaudiotagger.version}</version>
             </dependency>
-            <!--MsOffice sequencer-->
+            <!--MsOffice sequencer See MODE-1934
             <dependency>
                 <groupId>org.apache.poi</groupId>
                 <artifactId>poi</artifactId>
@@ -365,6 +363,7 @@
                 <artifactId>poi-scratchpad</artifactId>
                 <version>${poi.version}</version>
             </dependency>
+            -->
             <!--Teiid sequencer-->
             <dependency>
                 <groupId>com.beust</groupId>

@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.query.Query;
-import javax.jcr.query.QueryResult;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
@@ -97,6 +96,11 @@ public class JcrQuery extends JcrAbstractQuery {
         return query;
     }
 
+    @Override
+    public String getAbstractQueryModelRepresentation() {
+        return query.toString();
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -104,7 +108,7 @@ public class JcrQuery extends JcrAbstractQuery {
      */
     @SuppressWarnings( "deprecation" )
     @Override
-    public QueryResult execute() throws RepositoryException {
+    public org.modeshape.jcr.api.query.QueryResult execute() throws RepositoryException {
         context.isLive();
         final long start = System.nanoTime();
         Schemata schemata = context.getSchemata();
@@ -123,6 +127,29 @@ public class JcrQuery extends JcrAbstractQuery {
 
         checkForProblems(result.getProblems());
         context.recordDuration(Math.abs(System.nanoTime() - start), TimeUnit.NANOSECONDS, statement, language);
+        if (Query.XPATH.equals(language)) {
+            return new XPathQueryResult(context, statement, result, schemata);
+        } else if (Query.SQL.equals(language)) {
+            return new JcrSqlQueryResult(context, statement, result, schemata);
+        }
+        return new JcrQueryResult(context, statement, result, schemata);
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Override
+    public org.modeshape.jcr.api.query.QueryResult explain() throws RepositoryException {
+        context.isLive();
+
+        // Set to only compute the plan and then create an executable query ...
+        PlanHints hints = this.hints.clone();
+        hints.planOnly = true;
+        CancellableQuery planOnlyExecutable = context.createExecutableQuery(query, hints, variables);
+
+        // otherwise, some other thread called execute, so we can use it and just wait for the results ...
+        final QueryResults result = planOnlyExecutable.getResults(); // may be cancelled
+
+        checkForProblems(result.getProblems());
+        Schemata schemata = context.getSchemata();
         if (Query.XPATH.equals(language)) {
             return new XPathQueryResult(context, statement, result, schemata);
         } else if (Query.SQL.equals(language)) {

@@ -25,6 +25,7 @@ package org.modeshape.jcr.api;
 
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
+import java.io.InputStream;
 import java.util.Date;
 
 /**
@@ -51,6 +52,17 @@ public interface ValueFactory extends javax.jcr.ValueFactory {
      * @return a Binary implementation instance
      */
     public Binary createBinary( byte[] value );
+
+
+    /**
+     * Creates a JCR {@link org.modeshape.jcr.api.Binary} value from the given input stream
+     * with a hint to the factory (which is passed to the storage layer)
+     *
+     * @param value a non-null input stream
+     * @param hint a hint that the storage layer may use to make persistence decisions
+     * @return a Binary implementation instance
+     */
+    public Binary createBinary( InputStream value, String hint );
 
     /**
      * Creates a JCR compliant name string, from the given local name.

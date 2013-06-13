@@ -40,6 +40,15 @@ import org.modeshape.jcr.value.BinaryValue;
  */
 @ThreadSafe
 public interface BinaryStore {
+    /**
+     * Initialize the store and get ready for use.
+     */
+    public void start();
+
+    /**
+     * Shuts down the store.
+     */
+    public void shutdown();
 
     /**
      * Get the minimum number of bytes that a binary value must contain before it can be stored in the binary store.
@@ -79,6 +88,18 @@ public interface BinaryStore {
      */
     BinaryValue storeValue( InputStream stream ) throws BinaryStoreException;
 
+	/**
+	 * Store the binary value and return the JCR representation. Note that if the binary content in the supplied stream is already
+	 * persisted in the store, the store may simply return the binary value referencing the existing content.
+	 *
+	 * @param stream the stream containing the binary content to be stored; may not be null
+	 * @param hint a hint that the BinaryStore may use
+	 *                     to make storage decisions about this input stream
+	 * @return the binary value representing the stored binary value; never null
+	 * @throws BinaryStoreException if there any unexpected problem
+	 */
+    BinaryValue storeValue( InputStream stream, String hint ) throws BinaryStoreException;
+
     /**
      * Get an {@link InputStream} to the binary content with the supplied key.
      * 
@@ -88,6 +109,14 @@ public interface BinaryStore {
      *         {@link InputStream} cannot be returned for the given key.
      */
     InputStream getInputStream( BinaryKey key ) throws BinaryStoreException;
+
+    /**
+     * Searches for a binary which has the given key in this store.
+     *
+     * @param key a non-null {@link BinaryKey} instance
+     * @return {@code true} if a binary with this key exists in this store, {@code false} otherwise.
+     */
+	boolean hasBinary(BinaryKey key);
 
     /**
      * Mark the supplied binary keys as unused, but key them in quarantine until needed again (at which point they're removed from

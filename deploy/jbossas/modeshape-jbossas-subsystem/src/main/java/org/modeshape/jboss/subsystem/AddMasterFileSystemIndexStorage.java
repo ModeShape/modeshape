@@ -31,7 +31,7 @@ import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
 
 /**
- * 
+ *  Handler for master-file-index-storage
  */
 public class AddMasterFileSystemIndexStorage extends AbstractAddFileSystemIndexStorage {
 
@@ -60,30 +60,17 @@ public class AddMasterFileSystemIndexStorage extends AbstractAddFileSystemIndexS
         // Set the type of storage ...
         indexStorage.set(FieldName.TYPE, FieldValue.INDEX_STORAGE_FILESYSTEM_MASTER);
 
-        String relativeTo = ModelAttributes.RELATIVE_TO.resolveModelAttribute(context, storage).asString();
-        String path = ModelAttributes.PATH.resolveModelAttribute(context, storage).asString();
+        processLocalIndexStorageLocation(context, storage, repositoryName, indexStorage);
+        processSourceIndexStorageLocation(context, storage, repositoryName, indexStorage);
+
         String accessType = ModelAttributes.ACCESS_TYPE.resolveModelAttribute(context, storage).asString();
-        String locking = ModelAttributes.LOCKING_STRATEGY.resolveModelAttribute(context, storage).asString();
-        String refresh = ModelAttributes.REFRESH_PERIOD.resolveModelAttribute(context, storage).asString();
-        String sourceRelativeTo = ModelAttributes.SOURCE_RELATIVE_TO.resolveModelAttribute(context, storage).asString();
-        String sourcePath = ModelAttributes.SOURCE_PATH.resolveModelAttribute(context, storage).asString();
-        // Check the ModelNode values **without** resolving any symbols ...
-        if (storage.has(ModelKeys.RELATIVE_TO) && storage.get(ModelKeys.RELATIVE_TO).asString()
-                                                         .contains(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
-            setIndexStoragePathInDataDirectory(path);
-        }
-        if (storage.has(ModelKeys.SOURCE_RELATIVE_TO)
-            && storage.get(ModelKeys.SOURCE_RELATIVE_TO).asString().contains(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
-            setIndexSourcePathInDataDirectory(sourcePath);
-        }
-        path = relativeTo + path;
-        sourcePath = sourceRelativeTo + sourcePath;
-        indexStorage.set(FieldName.TYPE, FieldValue.INDEX_STORAGE_FILESYSTEM_MASTER);
-        indexStorage.set(FieldName.INDEX_STORAGE_LOCATION, path);
-        indexStorage.set(FieldName.INDEX_STORAGE_LOCKING_STRATEGY, locking.toLowerCase());
         indexStorage.set(FieldName.INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE, accessType.toLowerCase());
+
+        String locking = ModelAttributes.LOCKING_STRATEGY.resolveModelAttribute(context, storage).asString();
+        indexStorage.set(FieldName.INDEX_STORAGE_LOCKING_STRATEGY, locking.toLowerCase());
+
+        String refresh = ModelAttributes.REFRESH_PERIOD.resolveModelAttribute(context, storage).asString();
         indexStorage.set(FieldName.INDEX_STORAGE_REFRESH_IN_SECONDS, refresh);
-        indexStorage.set(FieldName.INDEX_STORAGE_SOURCE_LOCATION, sourcePath);
     }
     
     @Override

@@ -61,21 +61,6 @@ public class ModelAttributes {
             }
         }
     };
-    private static final ParameterValidator BINARY_STORAGE_TYPE_VALIDATOR = new ModelTypeValidator(ModelType.STRING,
-                                                                                                   false,
-                                                                                                   false,
-                                                                                                   true) {
-        @Override
-        public void validateParameter( String parameterName,
-                                       ModelNode value ) throws OperationFailedException {
-            super.validateParameter(parameterName, value); // checks null
-            String str = value.asString();
-            if (!ModelKeys.FILE_BINARY_STORAGE.equals(str) && !ModelKeys.DB_BINARY_STORAGE.equals(str)
-                && !ModelKeys.CACHE_BINARY_STORAGE.equals(str) && !ModelKeys.CUSTOM_BINARY_STORAGE.equals(str)) {
-                throw new OperationFailedException("Invalid binary storage type: '" + str + "'");
-            }
-        }
-    };
     private static final ParameterValidator INDEX_STORAGE_TYPE_VALIDATOR = new ModelTypeValidator(ModelType.STRING,
                                                                                                   false,
                                                                                                   false,
@@ -87,7 +72,7 @@ public class ModelAttributes {
             String str = value.asString();
             if (!ModelKeys.RAM_INDEX_STORAGE.equals(str) && !ModelKeys.LOCAL_FILE_INDEX_STORAGE.equals(str)
                 && !ModelKeys.MASTER_FILE_INDEX_STORAGE.equals(str) && !ModelKeys.SLAVE_FILE_INDEX_STORAGE.equals(str)
-                && !ModelKeys.CACHE_INDEX_STORAGE.equals(str) && !ModelKeys.CUSTOM_INDEX_STORAGE.equals(str)) {
+                && !ModelKeys.CUSTOM_INDEX_STORAGE.equals(str)) {
                 throw new OperationFailedException("Invalid index storage type: '" + str + "'");
             }
         }
@@ -230,15 +215,6 @@ public class ModelAttributes {
                                                                                                                   .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                   .build();
 
-    public static final SimpleAttributeDefinition BINARY_STORAGE_TYPE = new MappedAttributeDefinitionBuilder(
-                                                                                                             ModelKeys.BINARY_STORAGE_TYPE,
-                                                                                                             ModelType.STRING).setAllowExpression(false)
-                                                                                                                              .setAllowNull(false)
-                                                                                                                              .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                                                                                                                              .setDefaultValue(new ModelNode().set(ModelKeys.FILE_BINARY_STORAGE))
-                                                                                                                              .setValidator(BINARY_STORAGE_TYPE_VALIDATOR)
-                                                                                                                              .build();
-
     public static final SimpleAttributeDefinition CACHE_NAME = new MappedAttributeDefinitionBuilder(ModelKeys.CACHE_NAME,
                                                                                                     ModelType.STRING).setXmlName(Attribute.CACHE_NAME.getLocalName())
                                                                                                                      .setAllowExpression(false)
@@ -254,14 +230,6 @@ public class ModelAttributes {
                                                                                                                           .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                           .build();
 
-    public static final SimpleAttributeDefinition INDEX_STORAGE_CACHE_CONTAINER = new MappedAttributeDefinitionBuilder(
-                                                                                                                       ModelKeys.CACHE_CONTAINER,
-                                                                                                                       ModelType.STRING).setXmlName(Attribute.CACHE_CONTAINER.getLocalName())
-                                                                                                                                        .setAllowExpression(false)
-                                                                                                                                        .setAllowNull(false)
-                                                                                                                                        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                                                                                                                                        .build();
-
     public static final SimpleAttributeDefinition CLUSTER_NAME = new MappedAttributeDefinitionBuilder(ModelKeys.CLUSTER_NAME,
                                                                                                       ModelType.STRING).setXmlName(Attribute.CLUSTER_NAME.getLocalName())
                                                                                                                        .setAllowExpression(true)
@@ -275,18 +243,6 @@ public class ModelAttributes {
                                                                                                                         .setAllowNull(true)
                                                                                                                         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                         .build();
-
-    public static final SimpleAttributeDefinition CHUNK_SIZE = new MappedAttributeDefinitionBuilder(ModelKeys.CHUNK_SIZE,
-                                                                                                    ModelType.INT).setXmlName(Attribute.CHUNK_SIZE.getLocalName())
-                                                                                                                  .setAllowExpression(true)
-                                                                                                                  .setAllowNull(true)
-                                                                                                                  .setDefaultValue(new ModelNode().set(16834))
-                                                                                                                  .setMeasurementUnit(MeasurementUnit.BYTES)
-                                                                                                                  .setFlags(AttributeAccess.Flag.RESTART_NONE)
-                                                                                                                  .setFieldPathInRepositoryConfiguration(FieldName.QUERY,
-                                                                                                                                                         FieldName.INDEX_STORAGE,
-                                                                                                                                                         FieldName.INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES)
-                                                                                                                  .build();
 
     public static final SimpleAttributeDefinition CLASSNAME = new MappedAttributeDefinitionBuilder(ModelKeys.CLASSNAME,
                                                                                                    ModelType.STRING).setXmlName(Attribute.CLASSNAME.getLocalName())
@@ -452,7 +408,6 @@ public class ModelAttributes {
                                                                                                              ModelType.INT).setXmlName(Attribute.MIN_VALUE_SIZE.getLocalName())
                                                                                                                            .setAllowExpression(false)
                                                                                                                            .setAllowNull(true)
-                                                                                                                           .setDefaultValue(new ModelNode().set(4096))
                                                                                                                            .setMeasurementUnit(MeasurementUnit.BYTES)
                                                                                                                            .setFlags(AttributeAccess.Flag.RESTART_NONE)
                                                                                                                            .setFieldPathInRepositoryConfiguration(FieldName.STORAGE,
@@ -731,6 +686,27 @@ public class ModelAttributes {
                                                                                                                                                                      FieldName.SEQUENCERS,
                                                                                                                                                                      FieldName.CLASSNAME)
                                                                                                                               .build();
+    public static final SimpleAttributeDefinition STORE_NAME = new MappedAttributeDefinitionBuilder(ModelKeys.STORE_NAME,
+                                                                                                    ModelType.STRING)
+                                                                                .setXmlName(Attribute.STORE_NAME.getLocalName())
+                                                                                .setAllowExpression(false)
+                                                                                .setAllowNull(true)
+                                                                                .setFlags(
+                                                                                        AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                .build();
+
+
+    public static final ListAttributeDefinition NESTED_STORES =  MappedListAttributeDefinition.Builder.of(ModelKeys.NESTED_STORES,
+                                                                                                        new MappedAttributeDefinitionBuilder(
+                                                                                                                ModelKeys.STORE_NAME,
+                                                                                                                ModelType.STRING)
+                                                                                                                .setAllowExpression(false)
+                                                                                                                .setAllowNull(false)
+                                                                                                                .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                .build())
+                                                                                .setAllowNull(false)
+                                                                                .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                .build();
 
     public static final SimpleAttributeDefinition TEXT_EXTRACTOR_CLASSNAME = new MappedAttributeDefinitionBuilder(
                                                                                                                   ModelKeys.TEXT_EXTRACTOR_CLASSNAME,
@@ -796,18 +772,12 @@ public class ModelAttributes {
                                                                                                   .setXmlName(Attribute.EXPLODED.getLocalName())
                                                                                                   .setAllowExpression(false)
                                                                                                   .setAllowNull(true)
-                                                                                                  .setDefaultValue(new ModelNode().set(true))
+                                                                                                  .setDefaultValue(new ModelNode().set(false))
                                                                                                   .build();
 
-    public static final SimpleAttributeDefinition AUTO_DEPLOY = new MappedAttributeDefinitionBuilder(ModelKeys.AUTO_DEPLOY, ModelType.BOOLEAN)
-                                                                                                  .setXmlName(Attribute.AUTO_DEPLOY.getLocalName())
-                                                                                                  .setAllowExpression(false)
-                                                                                                  .setAllowNull(true)
-                                                                                                  .setDefaultValue(new ModelNode().set(true))
-                                                                                                  .build();
     public static final AttributeDefinition[] SUBSYSTEM_ATTRIBUTES = {};
 
-    public static final AttributeDefinition[] WEBAPP_ATTRIBUTES = {EXPLODED, AUTO_DEPLOY};
+    public static final AttributeDefinition[] WEBAPP_ATTRIBUTES = {EXPLODED};
 
     public static final AttributeDefinition[] REPOSITORY_ATTRIBUTES = {CACHE_NAME, CACHE_CONTAINER, JNDI_NAME, ENABLE_MONITORING,
         ENABLE_QUERIES, SECURITY_DOMAIN, ANONYMOUS_ROLES, ANONYMOUS_USERNAME, USE_ANONYMOUS_IF_AUTH_FAILED, NODE_TYPES,
@@ -815,7 +785,7 @@ public class ModelAttributes {
         DEFAULT_INITIAL_CONTENT, WORKSPACES_INITIAL_CONTENT, MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE, THREAD_POOL, BATCH_SIZE,
         READER_STRATEGY, MODE, SYSTEM_CONTENT_MODE, ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME,
         ANALYZER_MODULE, REBUILD_INDEXES_UPON_STARTUP, REBUILD_INDEXES_UPON_STARTUP_MODE, REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT,
-        CLUSTER_STACK, GARBAGE_COLLECTION_THREAD_POOL, GARBAGE_COLLECTION_INITIAL_TIME, GARBAGE_COLLECTION_INTERVAL};
+        CLUSTER_NAME, CLUSTER_STACK, GARBAGE_COLLECTION_THREAD_POOL, GARBAGE_COLLECTION_INITIAL_TIME, GARBAGE_COLLECTION_INTERVAL};
 
     public static final AttributeDefinition[] RAM_INDEX_STORAGE_ATTRIBUTES = {INDEX_STORAGE_TYPE,};
 
@@ -830,23 +800,23 @@ public class ModelAttributes {
         RELATIVE_TO, ACCESS_TYPE, LOCKING_STRATEGY, REFRESH_PERIOD, SOURCE_PATH, SOURCE_RELATIVE_TO,
         CONNECTION_FACTORY_JNDI_NAME, QUEUE_JNDI_NAME, COPY_BUFFER_SIZE, RETRY_MARKER_LOOKUP, RETRY_INITIALIZE_PERIOD};
 
-    public static final AttributeDefinition[] CACHE_INDEX_STORAGE_ATTRIBUTES = {INDEX_STORAGE_TYPE, INDEX_FORMAT,
-        DATA_CACHE_NAME, METADATA_CACHE_NAME, LOCK_CACHE_NAME, INDEX_STORAGE_CACHE_CONTAINER, CHUNK_SIZE,};
-
     public static final AttributeDefinition[] CUSTOM_INDEX_STORAGE_ATTRIBUTES = {INDEX_STORAGE_TYPE, INDEX_FORMAT, CLASSNAME,
         MODULE,};
 
-    public static final AttributeDefinition[] FILE_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
-        MINIMUM_STRING_SIZE, PATH, RELATIVE_TO,};
+    public static final AttributeDefinition[] FILE_BINARY_STORAGE_ATTRIBUTES = { MINIMUM_BINARY_SIZE,
+            MINIMUM_STRING_SIZE, PATH, RELATIVE_TO, STORE_NAME };
 
-    public static final AttributeDefinition[] CACHE_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
-        MINIMUM_STRING_SIZE, DATA_CACHE_NAME, METADATA_CACHE_NAME, CACHE_CONTAINER,};
+    public static final AttributeDefinition[] CACHE_BINARY_STORAGE_ATTRIBUTES = { MINIMUM_BINARY_SIZE,
+            MINIMUM_STRING_SIZE, DATA_CACHE_NAME, METADATA_CACHE_NAME, CACHE_CONTAINER, STORE_NAME };
 
-    public static final AttributeDefinition[] DATABASE_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
-        MINIMUM_STRING_SIZE, DATA_SOURCE_JNDI_NAME,};
+    public static final AttributeDefinition[] DATABASE_BINARY_STORAGE_ATTRIBUTES = { MINIMUM_BINARY_SIZE,
+            MINIMUM_STRING_SIZE, DATA_SOURCE_JNDI_NAME, STORE_NAME };
 
-    public static final AttributeDefinition[] CUSTOM_BINARY_STORAGE_ATTRIBUTES = {BINARY_STORAGE_TYPE, MINIMUM_BINARY_SIZE,
-        MINIMUM_STRING_SIZE, CLASSNAME, MODULE,};
+    public static final AttributeDefinition[] COMPOSITE_BINARY_STORAGE_ATTRIBUTES = { MINIMUM_BINARY_SIZE,
+            MINIMUM_STRING_SIZE, NESTED_STORES };
+
+    public static final AttributeDefinition[] CUSTOM_BINARY_STORAGE_ATTRIBUTES = { MINIMUM_BINARY_SIZE,
+            MINIMUM_STRING_SIZE, CLASSNAME, MODULE, STORE_NAME };
 
     public static final AttributeDefinition[] SEQUENCER_ATTRIBUTES = {PATH_EXPRESSIONS, SEQUENCER_CLASSNAME, MODULE, PROPERTIES};
     public static final AttributeDefinition[] SOURCE_ATTRIBUTES = {PROJECTIONS, CONNECTOR_CLASSNAME, READONLY, CACHE_TTL_SECONDS,

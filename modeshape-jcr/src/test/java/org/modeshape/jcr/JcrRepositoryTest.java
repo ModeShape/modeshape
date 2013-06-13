@@ -46,6 +46,7 @@ import javax.jcr.NamespaceException;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
 import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.ConstraintViolationException;
@@ -986,6 +987,17 @@ public class JcrRepositoryTest extends AbstractTransactionalTest {
             repository.shutdown().get(3L, TimeUnit.SECONDS);
             JTATestUtil.clearJBossJTADefaultStoreLocation();
         }
+    }
+
+    @FixFor( "MODE-1902" )
+    @Test(expected = RepositoryException.class)
+    public void shouldFailToStartWhenNoIndexesExistAndRebuildOptionFailIfMissing() throws Exception {
+        shutdownDefaultRepository();
+
+        RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader().getResourceAsStream(
+                "config/repo-config-fail-if-missing-indexes.json"), "Fail if missing indexes");
+        repository = new JcrRepository(config);
+        repository.start();
     }
 
     protected void nodeExists( Session session,

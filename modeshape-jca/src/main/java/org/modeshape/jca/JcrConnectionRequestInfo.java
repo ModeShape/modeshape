@@ -31,9 +31,8 @@ import javax.resource.spi.ConnectionRequestInfo;
 import org.modeshape.common.annotation.Immutable;
 
 /**
- * Provides implementation for the connection request to the Modeshape
- * repository via JCA connector.
- *
+ * Provides implementation for the connection request to the Modeshape repository via JCA connector.
+ * 
  * @author kulikov
  */
 @Immutable
@@ -48,16 +47,17 @@ public class JcrConnectionRequestInfo implements ConnectionRequestInfo {
      */
     private final String workspace;
 
-    //Hashcode
+    // Hashcode
     private final int hash;
 
     /**
      * Construct the request info.
-     *
-     * @param  creds user's credentials
+     * 
+     * @param creds user's credentials
      * @param workspace Repository workspace name.
      */
-    public JcrConnectionRequestInfo(Credentials creds, String workspace) {
+    public JcrConnectionRequestInfo( Credentials creds,
+                                     String workspace ) {
         this.creds = creds;
         this.workspace = workspace;
         this.hash = computeHash();
@@ -65,7 +65,7 @@ public class JcrConnectionRequestInfo implements ConnectionRequestInfo {
 
     /**
      * Gets the workspace.
-     *
+     * 
      * @return workspace name
      */
     public String getWorkspace() {
@@ -74,7 +74,7 @@ public class JcrConnectionRequestInfo implements ConnectionRequestInfo {
 
     /**
      * Gets the credentials.
-     *
+     * 
      * @return Credential object
      */
     public Credentials getCredentials() {
@@ -87,11 +87,11 @@ public class JcrConnectionRequestInfo implements ConnectionRequestInfo {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals( Object o ) {
         if (o == this) {
             return true;
         } else if (o instanceof JcrConnectionRequestInfo) {
-            return equals((JcrConnectionRequestInfo) o);
+            return equals((JcrConnectionRequestInfo)o);
         } else {
             return false;
         }
@@ -99,24 +99,23 @@ public class JcrConnectionRequestInfo implements ConnectionRequestInfo {
 
     /**
      * Compares specified request with this one.
-     *
+     * 
      * @param o the request object to compare.
      * @return true if specified object equals to this one.
      */
-    private boolean equals(JcrConnectionRequestInfo o) {
-        return equals(workspace, o.workspace)
-            && equals(creds, o.creds);
+    private boolean equals( JcrConnectionRequestInfo o ) {
+        return equals(workspace, o.workspace) && equals(creds, o.creds);
     }
 
     /**
      * Compares two objects.
-     *
+     * 
      * @param o1 first object
      * @param o2 second object.
-     * @return true if both objects are not null and both are equals in
-     * sense of object.equal(..) method.
+     * @return true if both objects are not null and both are equals in sense of object.equal(..) method.
      */
-    private boolean equals(Object o1, Object o2) {
+    private boolean equals( Object o1,
+                            Object o2 ) {
         if (o1 == o2) {
             return true;
         } else if ((o1 != null) && (o2 != null)) {
@@ -128,12 +127,13 @@ public class JcrConnectionRequestInfo implements ConnectionRequestInfo {
 
     /**
      * Compares two character sequences.
-     *
+     * 
      * @param o1 first character sequence
      * @param o2 second character sequence.
      * @return true if both sequences has same length and same respective characters
      */
-    private boolean equals(char[] o1, char[] o2) {
+    private boolean equals( char[] o1,
+                            char[] o2 ) {
         if (o1 == o2) {
             return true;
         } else if ((o1 != null) && (o2 != null)) {
@@ -145,29 +145,33 @@ public class JcrConnectionRequestInfo implements ConnectionRequestInfo {
 
     /**
      * Compares to arguments
-     *
+     * 
      * @param o1 argument 1
      * @param o2 argument 2
      * @return true if both arguments are equal.
      */
-    private boolean equals(Credentials o1, Credentials o2) {
+    private boolean equals( Credentials o1,
+                            Credentials o2 ) {
         if (o1 == o2) {
             return true;
         } else if ((o1 != null) && (o2 != null)) {
             if ((o1 instanceof SimpleCredentials) && (o2 instanceof SimpleCredentials)) {
-                return equals((SimpleCredentials) o1, (SimpleCredentials) o2);
-            } else {
-                return o1.equals(o2);
+                return equals((SimpleCredentials)o1, (SimpleCredentials)o2);
             }
-        } else {
-            return false;
+            return o1.equals(o2);
         }
+        return false;
     }
 
     /**
      * This method compares two simple credentials.
+     * 
+     * @param o1 the first credentials
+     * @param o2 the second credentials
+     * @return true if the credentials are equivalent, or false otherwise
      */
-    private boolean equals(SimpleCredentials o1, SimpleCredentials o2) {
+    private boolean equals( SimpleCredentials o1,
+                            SimpleCredentials o2 ) {
         if (!equals(o1.getUserID(), o2.getUserID())) {
             return false;
         }
@@ -176,16 +180,13 @@ public class JcrConnectionRequestInfo implements ConnectionRequestInfo {
             return false;
         }
 
-        Map m1 = getAttributeMap(o1);
-        Map m2 = getAttributeMap(o2);
+        Map<String, Object> m1 = getAttributeMap(o1);
+        Map<String, Object> m2 = getAttributeMap(o2);
         return m1.equals(m2);
     }
 
-    /**
-     * Return the credentials attributes.
-     */
-    private Map getAttributeMap(SimpleCredentials creds) {
-        HashMap map = new HashMap();
+    private Map<String, Object> getAttributeMap( SimpleCredentials creds ) {
+        HashMap<String, Object> map = new HashMap<String, Object>();
         String[] keys = creds.getAttributeNames();
 
         for (int i = 0; i < keys.length; i++) {
@@ -196,24 +197,29 @@ public class JcrConnectionRequestInfo implements ConnectionRequestInfo {
     }
 
     /**
-     * Returns Credentials instance hash code. Handles instances of
-     * SimpleCredentials in a special way.
+     * Returns Credentials instance hash code. Handles instances of SimpleCredentials in a special way.
+     * 
+     * @param c the credentials
+     * @return the hash code
      */
-    private int computeCredsHashCode(Credentials c) {
+    private int computeCredsHashCode( Credentials c ) {
         if (c instanceof SimpleCredentials) {
-            return computeSimpleCredsHashCode((SimpleCredentials) c);
+            return computeSimpleCredsHashCode((SimpleCredentials)c);
         }
         return c.hashCode();
     }
 
     /**
-     * Computes hash code of a SimpleCredentials instance. Ignores its own
-     * hashCode() method because it's not overridden in SimpleCredentials.
+     * Computes hash code of a SimpleCredentials instance. Ignores its own hashCode() method because it's not overridden in
+     * SimpleCredentials.
+     * 
+     * @param c the credentials
+     * @return the hash code
      */
-    private int computeSimpleCredsHashCode(SimpleCredentials c) {
+    private int computeSimpleCredsHashCode( SimpleCredentials c ) {
         String userID = c.getUserID();
         char[] password = c.getPassword();
-        Map m = getAttributeMap(c);
+        Map<String, Object> m = getAttributeMap(c);
         final int prime = 31;
         int result = 1;
         result = prime * result + ((userID == null) ? 0 : userID.hashCode());

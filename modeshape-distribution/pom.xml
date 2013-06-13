@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.modeshape</groupId>
         <artifactId>modeshape-parent</artifactId>
-        <version>3.3-SNAPSHOT</version>
+        <version>3.4-SNAPSHOT</version>
         <relativePath>../modeshape-parent/pom.xml</relativePath>
     </parent>
 
@@ -65,10 +65,14 @@
             <artifactId>modeshape-sequencer-java</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-sequencer-msoffice</artifactId>
-        </dependency>
+        <!--
+            See MODE-1934
+
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-msoffice</artifactId>
+            </dependency>
+       -->
 
         <dependency>
             <groupId>org.modeshape</groupId>
@@ -232,6 +236,9 @@
                     <type>zip</type>
                 </dependency>
 
+                <!--
+                See MODE-1934
+
                 <dependency>
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-msoffice</artifactId>
@@ -239,7 +246,7 @@
                     <version>${project.version}</version>
                     <type>zip</type>
                 </dependency>
-
+                -->
                 <dependency>
                     <groupId>org.modeshape</groupId>
                     <artifactId>modeshape-sequencer-teiid</artifactId>
@@ -426,7 +433,7 @@
                 <dependency>
                     <groupId>org.jboss.as</groupId>
                     <artifactId>jboss-as-controller</artifactId>
-                    <version>${jbossas-version}</version>
+                    <version>${jbossas.version}</version>
                     <scope>compile</scope>
                 </dependency>
             </dependencies>

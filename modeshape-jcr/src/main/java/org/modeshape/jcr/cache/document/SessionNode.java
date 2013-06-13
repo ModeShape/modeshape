@@ -700,13 +700,14 @@ public class SessionNode implements MutableCachedNode {
     public Iterator<Property> getProperties( final NodeCache cache ) {
         final AbstractSessionCache session = session(cache);
         final CachedNode raw = nodeInWorkspace(session);
+        final ConcurrentMap<Name, Property> changedProperties = this.changedProperties;
         Iterable<Property> rawProps = raw == null ? null : new Iterable<Property>() {
             @Override
             public Iterator<Property> iterator() {
                 List<Property> values = new LinkedList<Property>();
                 for (Iterator<Property> iter = raw.getProperties(workspace(cache)); iter.hasNext();) {
                     Property prop = iter.next();
-                    //we need to reflect transient state, so ignore removed and changed properties from the raw values
+                    // we need to reflect transient state, so ignore removed and changed properties from the raw values
                     if (isPropertyRemoved(prop.getName()) || changedProperties.containsKey(prop.getName())) {
                         continue;
                     }

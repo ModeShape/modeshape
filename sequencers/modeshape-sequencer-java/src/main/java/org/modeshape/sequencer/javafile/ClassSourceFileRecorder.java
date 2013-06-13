@@ -23,16 +23,52 @@
  */
 package org.modeshape.sequencer.javafile;
 
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.ABSTRACT;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.ANNOTATION;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.ANNOTATIONS;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.ANNOTATION_MEMBER;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.CLASS;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.CONSTRUCTORS;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.ENUM;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.ENUM_VALUES;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.FIELD;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.FIELDS;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.FINAL;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.INTERFACE;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.INTERFACES;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHOD;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHODS;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.METHOD_PARAMETERS;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.NAME;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.NATIVE;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.PARAMETER;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.PARAMETERS;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.RETURN_TYPE_CLASS_NAME;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.SEQUENCED_DATE;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.STATIC;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.STRICT_FP;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.SUPER_CLASS_NAME;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.SYNCHRONIZED;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.TRANSIENT;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.TYPE_CLASS_NAME;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.VALUE;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.VISIBILITY;
+import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.VOLATILE;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import static org.modeshape.sequencer.classfile.ClassFileSequencerLexicon.*;
 import org.modeshape.sequencer.classfile.metadata.Visibility;
-import org.modeshape.sequencer.javafile.metadata.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import org.modeshape.sequencer.javafile.metadata.AbstractMetadata;
+import org.modeshape.sequencer.javafile.metadata.AnnotationMetadata;
+import org.modeshape.sequencer.javafile.metadata.EnumMetadata;
+import org.modeshape.sequencer.javafile.metadata.FieldMetadata;
+import org.modeshape.sequencer.javafile.metadata.JavaMetadata;
+import org.modeshape.sequencer.javafile.metadata.MethodMetadata;
+import org.modeshape.sequencer.javafile.metadata.TypeMetadata;
 
 /**
  * A source file recorder that writes the Java metadata from the source file to the repository, using the same structure as the
@@ -87,18 +123,18 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
 
     private void setTypeMetaInformation( Sequencer.Context context, Node typeNode, TypeMetadata typeMetadata ) throws RepositoryException {
         /*
-       - class:name (string) mandatory 
-       - class:superTypeName (string) 
-       - class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
-       - class:abstract (boolean) mandatory
-       - class:interface (boolean) mandatory
-       - class:final (boolean) mandatory
-       - class:strictFp (boolean) mandatory
-       - class:interfaces (string) multiple
-       + class:annotations (class:annotations) = class:annotations
-       + class:constructors (class:constructors) = class:constructors
-       + class:methods (class:methods) = class:methods
-       + class:fields (class:fields) = class:fields
+        - class:name (string) mandatory 
+        - class:superTypeName (string) 
+        - class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
+        - class:abstract (boolean) mandatory
+        - class:interface (boolean) mandatory
+        - class:final (boolean) mandatory
+        - class:strictFp (boolean) mandatory
+        - class:interfaces (string) multiple
+        + class:annotations (class:annotations) = class:annotations
+        + class:constructors (class:constructors) = class:constructors
+        + class:methods (class:methods) = class:methods
+        + class:fields (class:fields) = class:fields
         */
         typeNode.setProperty(NAME, typeMetadata.getName());
         typeNode.setProperty(SEQUENCED_DATE, context.getTimestamp());
@@ -213,8 +249,9 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
             - class:strictFp (boolean) mandatory
             - class:native (boolean) mandatory
             - class:synchronized (boolean) mandatory
-            - class:parameters (string) multiple
+            - class:parameters (string) multiple // NO LONGER USED!
             + class:annotations (class:annotations) = class:annotations
+            + class:methodParameters (class:parameters) = class:parameters
          */
 
         for (MethodMetadata methodMetadata : methods) {
@@ -229,11 +266,35 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
             method.setProperty(STRICT_FP, methodMetadata.hasStrictFPModifier());
             method.setProperty(NATIVE, methodMetadata.hasNativeModifier());
             method.setProperty(SYNCHRONIZED, methodMetadata.hasSynchronizedModifier());
-            method.setProperty(PARAMETERS, methodMetadata.getParameterTypes().toArray(new String[0]));
-
+            writeParameters(method, methodMetadata.getParameters());
             writeAnnotationsNode(method, methodMetadata.getAnnotations());
         }
 
+    }
+
+    private void writeParameters( Node method,
+                                  List<FieldMetadata> fieldsMetadata ) throws RepositoryException {
+        // Always create the container node ...
+        Node parametersContainer = method.addNode(METHOD_PARAMETERS, PARAMETERS);
+        if (!fieldsMetadata.isEmpty()) {
+            /*
+                [class:parameters]
+                + * (class:parameter) = class:parameter
+
+                [class:parameter]
+                - class:name (string) mandatory 
+                - class:typeClassName (string) mandatory 
+                - class:final (boolean) mandatory
+                + class:annotations (class:annotations) = class:annotations
+             */
+            for (FieldMetadata fieldMetadata : fieldsMetadata) {
+                Node field = parametersContainer.addNode(fieldMetadata.getName(), PARAMETER);
+                field.setProperty(NAME, fieldMetadata.getName());
+                field.setProperty(TYPE_CLASS_NAME, fieldMetadata.getType());
+                field.setProperty(FINAL, fieldMetadata.hasFinalModifier());
+                writeAnnotationsNode(field, fieldMetadata.getAnnotations());
+            }
+        }
     }
 
 }

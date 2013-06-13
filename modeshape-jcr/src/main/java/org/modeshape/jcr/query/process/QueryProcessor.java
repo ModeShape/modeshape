@@ -81,28 +81,32 @@ public abstract class QueryProcessor<ProcessingContextType> implements Processor
             assert columnTypes.size() == projectedColumns.size();
             columns = new QueryResultColumns(projectedColumns, columnTypes, context.getHints().hasFullTextSearch);
 
-            // Create the processing context ...
-            final ProcessingContextType processingContext = createProcessingContext(context);
-            try {
+            if (context.getHints().planOnly) {
+                tuples = Collections.emptyList();
+            } else {
+                // Create the processing context ...
+                final ProcessingContextType processingContext = createProcessingContext(context);
+                try {
 
-                // Go through the plan and create the corresponding ProcessingComponents ...
-                ProcessingComponent component = createComponent(command, context, plan, columns, processingContext);
-                long nanos2 = System.nanoTime();
-                statistics = statistics.withResultsFormulationTime(Math.abs(nanos2 - nanos));
-                nanos = nanos2;
+                    // Go through the plan and create the corresponding ProcessingComponents ...
+                    ProcessingComponent component = createComponent(command, context, plan, columns, processingContext);
+                    long nanos2 = System.nanoTime();
+                    statistics = statistics.withResultsFormulationTime(Math.abs(nanos2 - nanos));
+                    nanos = nanos2;
 
-                if (component != null) {
-                    // Now execute the component ...
-                    columns = component.getColumns();
-                    tuples = component.execute();
-                } else {
-                    // There must have been an error or was cancelled ...
-                    assert context.getProblems().hasErrors() || context.isCancelled();
-                    tuples = Collections.emptyList();
+                    if (component != null) {
+                        // Now execute the component ...
+                        columns = component.getColumns();
+                        tuples = component.execute();
+                    } else {
+                        // There must have been an error or was cancelled ...
+                        assert context.getProblems().hasErrors() || context.isCancelled();
+                        tuples = Collections.emptyList();
+                    }
+                } finally {
+                    // Always close the processing context !!!
+                    closeProcessingContext(processingContext);
                 }
-            } finally {
-                // Always close the processing context !!!
-                closeProcessingContext(processingContext);
             }
 
         } finally {

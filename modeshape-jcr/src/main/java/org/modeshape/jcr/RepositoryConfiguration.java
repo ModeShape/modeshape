@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -79,7 +80,9 @@ import org.modeshape.jcr.clustering.DefaultChannelProvider;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.value.binary.AbstractBinaryStore;
+import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
+import org.modeshape.jcr.value.binary.CompositeBinaryStore;
 import org.modeshape.jcr.value.binary.DatabaseBinaryStore;
 import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
@@ -291,6 +294,11 @@ public class RepositoryConfiguration {
         public static final String MINIMUM_STRING_SIZE = "minimumStringSize";
 
         /**
+         * The name attribute which can be set on a binary store. It's only used when a {@link CompositeBinaryStore} is configured.
+         */
+        public static final String BINARY_STORE_NAME = "storeName";
+
+        /**
          * The name for the field whose value is a document containing workspace information.
          */
         public static final String WORKSPACES = "workspaces";
@@ -341,6 +349,12 @@ public class RepositoryConfiguration {
          * The name for the field whose value is a document containing binary storage information.
          */
         public static final String BINARY_STORAGE = "binaryStorage";
+
+
+        /**
+         * The name for the field whose value is a document containing binary storage information.
+         */
+        public static final String COMPOSITE_STORE_NAMED_BINARY_STORES = "namedStores";
 
         /**
          * The name for the field whose value is a document containing security information.
@@ -446,11 +460,6 @@ public class RepositoryConfiguration {
         public static final String INDEX_STORAGE_COPY_BUFFER_SIZE_IN_MEGABYTES = "copyBufferSizeInMegabytes";
         public static final String INDEX_STORAGE_RETRY_MARKER_LOOKUP = "retryMarkerLookup";
         public static final String INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS = "retryInitializePeriodInSeconds";
-        public static final String INDEX_STORAGE_INFINISPAN_LOCK_CACHE = "lockCacheName";
-        public static final String INDEX_STORAGE_INFINISPAN_DATA_CACHE = "dataCacheName";
-        public static final String INDEX_STORAGE_INFINISPAN_META_CACHE = "metadataCacheName";
-        public static final String INDEX_STORAGE_INFINISPAN_CONTAINER = "cacheConfiguration";
-        public static final String INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES = "chunkSizeInBytes";
 
         public static final String INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME = "connectionFactoryJndiName";
         public static final String INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME = "queueJndiName";
@@ -568,7 +577,6 @@ public class RepositoryConfiguration {
         public static final String INDEX_STORAGE_COPY_BUFFER_SIZE_IN_MEGABYTES = "16";
         public static final String INDEX_STORAGE_RETRY_MARKER_LOOKUP = "0";
         public static final String INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS = "0";
-        public static final String INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES = "16834";
 
         public static final String INDEXING_BACKEND_TYPE = "lucene";
 
@@ -584,7 +592,6 @@ public class RepositoryConfiguration {
         public static final String INDEX_STORAGE_FILESYSTEM = "filesystem";
         public static final String INDEX_STORAGE_FILESYSTEM_MASTER = "filesystem-master";
         public static final String INDEX_STORAGE_FILESYSTEM_SLAVE = "filesystem-slave";
-        public static final String INDEX_STORAGE_INFINISPAN = "infinispan";
         public static final String INDEX_STORAGE_CUSTOM = "custom";
 
         public static final String INDEXING_BACKEND_TYPE_LUCENE = "lucene";
@@ -598,6 +605,7 @@ public class RepositoryConfiguration {
         public static final String BINARY_STORAGE_TYPE_FILE = "file";
         public static final String BINARY_STORAGE_TYPE_CACHE = "cache";
         public static final String BINARY_STORAGE_TYPE_DATABASE = "database";
+        public static final String BINARY_STORAGE_TYPE_COMPOSITE = "composite";
         public static final String BINARY_STORAGE_TYPE_CUSTOM = "custom";
 
     }
@@ -692,8 +700,13 @@ public class RepositoryConfiguration {
         aliases.put("modelsequencer", modelSequencer);
         aliases.put("vdb", vdbSequencer);
         aliases.put("vdbsequencer", vdbSequencer);
-        aliases.put("msoffice", msofficeSequencer);
-        aliases.put("msofficesequencer", msofficeSequencer);
+        /**
+         * See MODE-1934
+         *
+         * aliases.put("msoffice", msofficeSequencer);
+         * aliases.put("msofficesequencer", msofficeSequencer);
+         *
+         **/
         aliases.put("wsdl", wsdlSequencer);
         aliases.put("wsdlsequencer", wsdlSequencer);
         aliases.put("xsd", xsdSequencer);
@@ -1149,9 +1162,9 @@ public class RepositoryConfiguration {
             return binaryStorage.getLong(FieldName.MINIMUM_STRING_SIZE, getMinimumBinarySizeInBytes());
         }
 
-        public AbstractBinaryStore getBinaryStore() throws Exception {
-            String type = binaryStorage.getString(FieldName.TYPE, "transient");
-            AbstractBinaryStore store = null;
+        public BinaryStore getBinaryStore() throws Exception {
+            String type = getType();
+            BinaryStore store = null;
             if (type.equalsIgnoreCase("transient")) {
                 store = TransientBinaryStore.get();
             } else if (type.equalsIgnoreCase("file")) {
@@ -1187,6 +1200,24 @@ public class RepositoryConfiguration {
                 // String cacheTransactionManagerLookupClass = binaryStorage.getString(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP,
                 // Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
                 store = new InfinispanBinaryStore(cacheContainer, dedicatedCacheContainer, metadataCacheName, blobCacheName);
+            } else if (type.equalsIgnoreCase("composite")) {
+
+                Map<String, BinaryStore> binaryStores = new LinkedHashMap<String, BinaryStore>();
+
+                Document binaryStoresConfiguration = binaryStorage.getDocument(FieldName.COMPOSITE_STORE_NAMED_BINARY_STORES);
+
+                for (String sourceName : binaryStoresConfiguration.keySet()) {
+                    Document binaryStoreConfig = binaryStoresConfiguration.getDocument(sourceName);
+                    binaryStores.put(sourceName, new BinaryStorage(binaryStoreConfig).getBinaryStore());
+                }
+
+                // must have at least one named store
+                if (binaryStores.isEmpty()) {
+                    throw new BinaryStoreException(JcrI18n.missingVariableValue.text("namedStores"));
+                }
+
+                store = new CompositeBinaryStore(binaryStores);
+
             } else if (type.equalsIgnoreCase("custom")) {
                 classname = binaryStorage.getString(FieldName.CLASSNAME);
                 classPath = binaryStorage.getString(FieldName.CLASSLOADER);
@@ -1202,6 +1233,15 @@ public class RepositoryConfiguration {
             if (store == null) store = TransientBinaryStore.get();
             store.setMinimumBinarySizeInBytes(getMinimumBinarySizeInBytes());
             return store;
+        }
+
+        /**
+         * Returns the type of the configured binary store.
+         *
+         * @return the type of the configured binary store, never {@code null}
+         */
+        public String getType() {
+            return binaryStorage.getString(FieldName.TYPE, "transient");
         }
 
         /*
@@ -1641,7 +1681,8 @@ public class RepositoryConfiguration {
     public enum QueryRebuild {
         ALWAYS,
         NEVER,
-        IF_MISSING;
+        IF_MISSING,
+        FAIL_IF_MISSING
     }
 
     /**
@@ -1649,7 +1690,7 @@ public class RepositoryConfiguration {
      */
     public enum TransactionMode {
         AUTO,
-        NONE;
+        NONE
     }
 
     /**
@@ -1701,6 +1742,21 @@ public class RepositoryConfiguration {
          */
         public String getThreadPoolName() {
             return query.getString(FieldName.THREAD_POOL, Default.QUERY_THREAD_POOL);
+        }
+
+        /**
+         * Reads the indexing configuration, checking if the indexing is configured in clustered mode or not.
+         *
+         * @return {@code true} if the indexing is configured in clustered mode, {@code false} otherwise
+         */
+        public boolean indexingClustered() {
+            Document indexStorage = query.getDocument(FieldName.INDEX_STORAGE);
+            if (indexStorage == null) {
+                return false;
+            }
+            String indexStorageType = indexStorage.getString(FieldName.TYPE);
+            return indexStorageType.equalsIgnoreCase(FieldValue.INDEX_STORAGE_FILESYSTEM_MASTER) ||
+                    indexStorageType.equalsIgnoreCase(FieldValue.INDEX_STORAGE_FILESYSTEM_SLAVE);
         }
 
         /**
@@ -1759,13 +1815,6 @@ public class RepositoryConfiguration {
                 setDefProp(props,
                            FieldName.INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS,
                            Default.INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS);
-            } else if (FieldValue.INDEX_STORAGE_INFINISPAN.equalsIgnoreCase(type)) {
-                setDefProp(props,
-                           FieldName.INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES,
-                           Default.INDEX_STORAGE_INFINISPAN_CHUNK_SIZE_IN_BYTES);
-                setDefProp(props, FieldName.CACHE_CONFIGURATION, getCacheConfiguration());
-                // The cache names will be set when the Hibernate Search configuration is created; that way we don't have
-                // the repository name hard-coded in the properties ...
             }
             return props;
         }

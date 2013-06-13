@@ -35,6 +35,7 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import org.junit.Assert;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.ArrayListMultimap;
 import org.modeshape.common.collection.ListMultimap;
 import org.modeshape.common.util.StringUtil;
@@ -84,6 +85,14 @@ public class JcrInitialContentTest extends SingleUseAbstractTest {
         String ws6 = "ws6";
         session.getWorkspace().createWorkspace(ws6);
         assertCarsWithMixins(ws6);
+    }
+
+    @Test
+    @FixFor( "MODE-1959" )
+    public void shouldImportInitialContentWhenTransactionModeNone() throws  Exception {
+        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream(
+                "config/repo-config-initial-content-transaction-mode-none.json"));
+        assertCars("default");
     }
 
     @Override

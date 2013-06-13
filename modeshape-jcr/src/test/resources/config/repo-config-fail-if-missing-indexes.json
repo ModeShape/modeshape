@@ -1,0 +1,15 @@
+{
+    "name" : "Fail if missing indexes",
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "query":{
+        "enabled": true,
+        "indexing" : {
+            "rebuildOnStartup": {
+                "when": "fail_if_missing"
+            }
+        }
+    }
+}

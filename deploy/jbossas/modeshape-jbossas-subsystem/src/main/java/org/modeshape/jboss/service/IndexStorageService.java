@@ -126,9 +126,9 @@ public class IndexStorageService implements Service<IndexStorage> {
             if (indexStorageSourceBasePath != null) {
                 // Set the index source storage directory ...
                 EditableDocument indexStorage = this.indexStorage.getQueryConfiguration().getDocument(FieldName.INDEX_STORAGE);
-                String relativePath = indexStorage.getString(FieldName.INDEX_STORAGE_LOCATION);
+                String relativePath = indexStorage.getString(FieldName.INDEX_STORAGE_SOURCE_LOCATION);
                 if (relativePath != null) {
-                    indexStorage.set(FieldName.INDEX_STORAGE_LOCATION, indexStorageSourceBasePath + relativePath);
+                    indexStorage.set(FieldName.INDEX_STORAGE_SOURCE_LOCATION, indexStorageSourceBasePath + relativePath);
                 }
             }
         } else {
