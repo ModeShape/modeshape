@@ -31,15 +31,43 @@ import java.util.concurrent.TimeUnit;
 import javax.jcr.RepositoryException;
 
 /**
- * Interfaces which defines components acting as containers for one or more {@link Repository} instances.
+ * Interface which defines components acting as containers for one or more {@link Repository} instances.
+ * A repository container is an entity that can manage a number of repositories, each repository being identified by a name.
+ * It is also able to start/{@link #shutdown()}/return the names of all the repositories it manages.
  * <p/>
- * This is semantically different from a {@link RepositoryFactory} in that a repository factory should only be concerned with
- * creating/obtaining a new repository instance. A {@link RepositoryFactory} does not expose any contract around handling "multiple repositories".
+ * This is meant to replace the "container aspect" of the current {@link RepositoryFactory} interface.
+ * {@link RepositoryFactory} should only be used for creating/obtaining a new repository instance, as defined in the
+ * {@link javax.jcr.RepositoryFactory} contract.
  * <p/>
- * When looking for specific repositories however, this will use a similar {@link java.util.Map} of named parameters as
- * {@link RepositoryFactory} instance, but in a more "specific" manner.
+ * When looking for and initializing specific repositories, this will use a similar {@link java.util.Map} of named parameters as
+ * {@link RepositoryFactory} but with a more "loose semantic":
+ * <ul>
+ *     <li>
+ *         when a repository should be initialized for the first time, the {@link #getRepository(String, java.util.Map)} should
+ *         be called, where the map of parameters contains a parameter named <b>{@code org.modeshape.jcr.URL}</b> which has
+ *         a {@code String} value representing either the path to a JSON configuration file or, if it uses the {@code jndi}
+ *         protocol, the name under which the repository is bound in JNDI.
+ *     </li>
+ *     <li>
+ *         if a repository has already been initialized & started up as described above, the {@link #getRepository(String, java.util.Map)}
+ *         method can be called with a {@code null} or empty map, as the container already holds a reference to the repository.
+ *     </li>
+ * </ul>
+ * <p/>
+ * <h2>Getting a RepositoriesContainer instance</h2>
+ * In order to use this service, clients will need to use the ModeShape API via the standard {@link java.util.ServiceLoader} mechanism,
+ *
+ * <pre>
+ *   Iterator containersIterator = ServiceLoader.load(RepositoriesContainer.class).iterator();
+ *   if (!containersIterator.hasNext()) {
+ *    // no implementations are found on the classpath, meaning the modeshape-jcr.jar has not been correctly loaded.
+ *   }
+ *   //there shouldn't be more than 1 container
+ *   RepositoriesContainer repositoriesContainer = containersIterator.next();
+ * </pre>
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
+ * @since 3.4
  */
 public interface RepositoriesContainer {
 
