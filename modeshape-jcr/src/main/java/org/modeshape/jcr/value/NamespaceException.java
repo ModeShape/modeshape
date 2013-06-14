@@ -31,45 +31,26 @@ import org.modeshape.common.annotation.Immutable;
 @Immutable
 public class NamespaceException extends RuntimeException {
 
-    /**
-     */
     private static final long serialVersionUID = 1300642242538881207L;
 
-    /**
-     * 
-     */
     public NamespaceException() {
     }
 
-    /**
-     * @param message
-     */
     public NamespaceException( String message ) {
         super(message);
 
     }
 
-    /**
-     * @param cause
-     */
     public NamespaceException( Throwable cause ) {
         super(cause);
 
     }
 
-    /**
-     * @param message
-     * @param cause
-     */
     public NamespaceException( String message,
                                Throwable cause ) {
         super(message, cause);
-
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return super.toString();

@@ -54,6 +54,7 @@ import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.cache.PropertyTypeUtil;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
+import org.modeshape.jcr.value.NamespaceException;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyType;
@@ -750,7 +751,11 @@ public class CndImporter {
         try {
             return nameFactory.create(removeQuotes(value));
         } catch (ValueFormatException e) {
-            throw new ParsingException(tokens.previousPosition(), CndI18n.expectedValidNameLiteral.text(value));
+            if (e.getCause() instanceof NamespaceException) {
+                throw (NamespaceException) e.getCause();
+            } else {
+                throw new ParsingException(tokens.previousPosition(), CndI18n.expectedValidNameLiteral.text(value));
+            }
         }
     }
 
