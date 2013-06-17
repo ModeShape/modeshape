@@ -30,12 +30,14 @@ import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.Query;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.federation.FederationManager;
@@ -490,6 +492,23 @@ public class MockConnectorTest extends SingleUseAbstractTest {
         externalNode1.addNode("federated1_1_1", null);
 
         session.save();
+    }
+
+    @Test
+    @FixFor( "MODE-1964")
+    public void shouldSendRemovedPropertiesToConnector() throws Exception {
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC1_LOCATION, "federated1");
+        Node doc1Federated = session.getNode("/testRoot/federated1");
+        Property doc1FederatedProperty = doc1Federated.getProperty("federated1_prop2");
+        doc1FederatedProperty.remove();
+        session.save();
+
+        try {
+            ((Node) session.getNode("/testRoot/federated1")).getProperty("federated1_prop2");
+            fail("Property was not removed by connector");
+        } catch (PathNotFoundException e) {
+            //exception
+        }
     }
 
     private void assertExternalNodeHasChildren( String externalNodePath,
