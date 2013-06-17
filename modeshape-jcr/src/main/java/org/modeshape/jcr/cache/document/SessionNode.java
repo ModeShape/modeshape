@@ -1378,9 +1378,7 @@ public class SessionNode implements MutableCachedNode {
 
         @Override
         public Set<Name> removedPropertyNames() {
-            Set<Name> result = new HashSet<Name>();
-            result.addAll(changedProperties().keySet());
-            return result;
+            return new HashSet<Name>(removedProperties());
         }
 
         @Override
