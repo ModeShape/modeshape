@@ -258,6 +258,7 @@ public final class JcrI18n {
     public static I18n noSuchNodeType;
     public static I18n nodeTypeAlreadyExists;
     public static I18n invalidPrimaryTypeName;
+    public static I18n invalidMixinSupertype;
     public static I18n invalidSupertypeName;
     public static I18n supertypesConflict;
     public static I18n ambiguousPrimaryItemName;

@@ -546,6 +546,15 @@ class RepositoryNodeTypeManager implements ChangeSetListener {
                     }
                 }
             }
+
+            if (nodeType.isMixin()) {
+                for (NodeType superType : nodeType.getSupertypes()) {
+                    if (!superType.isMixin()) {
+                        String msg = JcrI18n.invalidMixinSupertype.text(nodeType.getName(), superType.getName());
+                        throw new RepositoryException(msg);
+                    }
+                }
+            }
         }
     }
 

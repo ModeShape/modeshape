@@ -34,39 +34,39 @@
 // =============================================================================
 // OPERANDS
 // =============================================================================
-[oracleddl:clusterOperand]      > ddl:operand abstract
-[oracleddl:commentOperand]      > ddl:operand abstract
-[oracleddl:contextOperand]      > ddl:operand abstract
-[oracleddl:controlfileOperand]  > ddl:operand abstract
-[oracleddl:databaseOperand]     > ddl:operand abstract
-[oracleddl:dimensionOperand]    > ddl:operand abstract
-[oracleddl:directoryOperand]    > ddl:operand abstract
-[oracleddl:diskgroupOperand]    > ddl:operand abstract
-[oracleddl:functionOperand]     > ddl:operand abstract
-[oracleddl:indexOperand]        > ddl:operand abstract
-[oracleddl:indextypeOperand]    > ddl:operand abstract
-[oracleddl:javaOperand]         > ddl:operand abstract
-[oracleddl:libraryOperand]      > ddl:operand abstract
-[oracleddl:materializedOperand] > ddl:operand abstract
-[oracleddl:operatorOperand]     > ddl:operand abstract
-[oracleddl:outlineOperand]      > ddl:operand abstract
-[oracleddl:packageOperand]      > ddl:operand abstract
-[oracleddl:parameterOperand]    > ddl:operand abstract
-[oracleddl:pfileOperand]        > ddl:operand abstract
-[oracleddl:procedureOperand]    > ddl:operand abstract
-[oracleddl:profileOperand]      > ddl:operand abstract
-[oracleddl:resourceOperand]     > ddl:operand abstract
-[oracleddl:roleOperand]         > ddl:operand abstract
-[oracleddl:rollbackOperand]     > ddl:operand abstract
-[oracleddl:sequenceOperand]     > ddl:operand abstract
-[oracleddl:sessionOperand]      > ddl:operand abstract
-[oracleddl:spfileOperand]       > ddl:operand abstract
-[oracleddl:systemOperand]       > ddl:operand abstract
-[oracleddl:synonymOperand]      > ddl:operand abstract
-[oracleddl:tablespaceOperand]   > ddl:operand abstract
-[oracleddl:triggerOperand]      > ddl:operand abstract
-[oracleddl:typeOperand]         > ddl:operand abstract
-[oracleddl:userOperand]         > ddl:operand abstract
+[oracleddl:clusterOperand]      > ddl:operand mixin abstract
+[oracleddl:commentOperand]      > ddl:operand mixin abstract
+[oracleddl:contextOperand]      > ddl:operand mixin abstract
+[oracleddl:controlfileOperand]  > ddl:operand mixin abstract
+[oracleddl:databaseOperand]     > ddl:operand mixin abstract
+[oracleddl:dimensionOperand]    > ddl:operand mixin abstract
+[oracleddl:directoryOperand]    > ddl:operand mixin abstract
+[oracleddl:diskgroupOperand]    > ddl:operand mixin abstract
+[oracleddl:functionOperand]     > ddl:operand mixin abstract
+[oracleddl:indexOperand]        > ddl:operand mixin abstract
+[oracleddl:indextypeOperand]    > ddl:operand mixin abstract
+[oracleddl:javaOperand]         > ddl:operand mixin abstract
+[oracleddl:libraryOperand]      > ddl:operand mixin abstract
+[oracleddl:materializedOperand] > ddl:operand mixin abstract
+[oracleddl:operatorOperand]     > ddl:operand mixin abstract
+[oracleddl:outlineOperand]      > ddl:operand mixin abstract
+[oracleddl:packageOperand]      > ddl:operand mixin abstract
+[oracleddl:parameterOperand]    > ddl:operand mixin abstract
+[oracleddl:pfileOperand]        > ddl:operand mixin abstract
+[oracleddl:procedureOperand]    > ddl:operand mixin abstract
+[oracleddl:profileOperand]      > ddl:operand mixin abstract
+[oracleddl:resourceOperand]     > ddl:operand mixin abstract
+[oracleddl:roleOperand]         > ddl:operand mixin abstract
+[oracleddl:rollbackOperand]     > ddl:operand mixin abstract
+[oracleddl:sequenceOperand]     > ddl:operand mixin abstract
+[oracleddl:sessionOperand]      > ddl:operand mixin abstract
+[oracleddl:spfileOperand]       > ddl:operand mixin abstract
+[oracleddl:systemOperand]       > ddl:operand mixin abstract
+[oracleddl:synonymOperand]      > ddl:operand mixin abstract
+[oracleddl:tablespaceOperand]   > ddl:operand mixin abstract
+[oracleddl:triggerOperand]      > ddl:operand mixin abstract
+[oracleddl:typeOperand]         > ddl:operand mixin abstract
+[oracleddl:userOperand]         > ddl:operand mixin abstract
 
 // =============================================================================
 // COLUMN
