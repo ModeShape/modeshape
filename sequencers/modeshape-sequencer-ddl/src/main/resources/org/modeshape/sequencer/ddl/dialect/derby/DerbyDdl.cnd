@@ -34,12 +34,12 @@
 // =============================================================================
 // OPERANDS
 // =============================================================================
-[derbyddl:functionOperand]  > ddl:operand abstract
-[derbyddl:indexOperand]     > ddl:operand abstract
-[derbyddl:procedureOperand] > ddl:operand abstract
-[derbyddl:roleOperand]      > ddl:operand abstract
-[derbyddl:synonymOperand]   > ddl:operand abstract
-[derbyddl:triggerOperand]   > ddl:operand abstract
+[derbyddl:functionOperand]  > ddl:operand mixin abstract
+[derbyddl:indexOperand]     > ddl:operand mixin abstract
+[derbyddl:procedureOperand] > ddl:operand mixin abstract
+[derbyddl:roleOperand]      > ddl:operand mixin abstract
+[derbyddl:synonymOperand]   > ddl:operand mixin abstract
+[derbyddl:triggerOperand]   > ddl:operand mixin abstract
 
 [derbyddl:roleName]         > derbyddl:roleOperand mixin
 

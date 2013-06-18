@@ -34,7 +34,7 @@
 // N O D E T Y P E S
 //------------------------------------------------------------------------------
 
-[relational:relationalEntity] > xmi:referenceable abstract mixin
+[relational:relationalEntity] > xmi:referenceable  mixin abstract
  - relational:nameInSource (string) 
 
 [relational:relationship] > nt:unstructured, relational:relationalEntity abstract

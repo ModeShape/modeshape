@@ -37,6 +37,9 @@
 [xmi:referenceable] mixin
  - xmi:uuid (string) mandatory
 
-[xmi:model] > nt:unstructured, xmi:referenceable, mix:referenceable orderable
+[xmi:model] > xmi:referenceable, mix:referenceable orderable mixin
  - xmi:version (double) = '2.0' autocreated
+   - * (undefined) multiple
+   - * (undefined)
+   + * (nt:base) = nt:unstructured sns version
 
