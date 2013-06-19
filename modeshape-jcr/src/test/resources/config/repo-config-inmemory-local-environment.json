@@ -1,0 +1,16 @@
+{
+    "name" : "Repository",
+    "storage" : {
+        "cacheName" : "inmemoryRepository",
+    },
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    },
+}
