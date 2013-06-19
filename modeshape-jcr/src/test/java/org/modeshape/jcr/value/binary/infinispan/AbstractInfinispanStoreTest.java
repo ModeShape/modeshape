@@ -26,7 +26,6 @@ package org.modeshape.jcr.value.binary.infinispan;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.manager.DefaultCacheManager;
 import org.junit.AfterClass;
-import org.junit.Ignore;
 import org.modeshape.jcr.value.binary.AbstractBinaryStoreTest;
 import org.modeshape.jcr.value.binary.BinaryStore;
 

@@ -125,7 +125,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * @see RepositoryFactory#getRepository(Map)
      */
     @Override
-    @SuppressWarnings( {"unchecked", "rawtypes"} )
+    @SuppressWarnings( "rawtypes" )
     public Repository getRepository( Map parameters ) throws RepositoryException {
         LOG.debug("Trying to load ModeShape JCR Repository with parameters: " + parameters);
         return CONTAINER.getRepository(null, parameters);
@@ -152,7 +152,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
 
     @Override
     @Deprecated
-    public Set<String> getRepositoryNames()  {
+    public Set<String> getRepositoryNames() {
         try {
             return CONTAINER.getRepositoryNames(null);
         } catch (RepositoryException e) {

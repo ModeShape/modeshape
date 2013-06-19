@@ -25,7 +25,7 @@ public class AddCompositeBinaryStorage extends AbstractAddBinaryStorage {
     protected void writeBinaryStorageConfiguration( String repositoryName,
                                                     OperationContext context,
                                                     ModelNode model,
-                                                    EditableDocument binaries ) throws OperationFailedException {
+                                                    EditableDocument binaries ) /*throws OperationFailedException*/ {
         binaries.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.BINARY_STORAGE_TYPE_COMPOSITE);
     }
 

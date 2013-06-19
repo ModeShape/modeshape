@@ -23,6 +23,10 @@
  */
 package org.modeshape.jcr.value.binary;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,10 +47,6 @@ import org.modeshape.jcr.api.text.TextExtractor;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
 
 /**
  * Use this abstract class to realize test cases which can easily executed on different BinaryStores
@@ -54,8 +54,8 @@ import static junit.framework.Assert.fail;
 public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest {
 
     /**
-     * We need to generate the test byte arrays based on the minimum binary size, because that controls the distinction
-     * between Stored/In Memory binary values.
+     * We need to generate the test byte arrays based on the minimum binary size, because that controls the distinction between
+     * Stored/In Memory binary values.
      */
     public static final byte[] STORED_LARGE_BINARY = new byte[(int)(AbstractBinaryStore.DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES * 4)];
     public static final BinaryKey STORED_LARGE_KEY;
@@ -97,7 +97,7 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         binaryStore.setMinimumBinarySizeInBytes(originalSize);
     }
 
-    @Test(expected = BinaryStoreException.class)
+    @Test( expected = BinaryStoreException.class )
     public void shouldFailWhenGettingInvalidBinary() throws BinaryStoreException {
         getBinaryStore().getInputStream(invalidBinaryKey());
     }
@@ -129,7 +129,7 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
     }
 
     @Test
-    public void shouldNotHaveKey() throws BinaryStoreException, IOException {
+    public void shouldNotHaveKey() {
         assertTrue("Did not expect BinaryStore to contain the key", !getBinaryStore().hasBinary(invalidBinaryKey()));
     }
 
@@ -169,12 +169,12 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         assertTrue(getBinaryStore().hasBinary(res.getKey()));
     }
 
-    @Test(expected = BinaryStoreException.class)
+    @Test( expected = BinaryStoreException.class )
     public void shouldFailWhenGettingTheMimeTypeOfBinaryWhichIsntStored() throws IOException, RepositoryException {
         getBinaryStore().getMimeType(new StoredBinaryValue(getBinaryStore(), invalidBinaryKey(), 0), "foobar.txt");
     }
 
-    @Test(expected = BinaryStoreException.class)
+    @Test( expected = BinaryStoreException.class )
     public void shouldFailWhenGettingTheTextOfBinaryWhichIsntStored() throws RepositoryException {
         getBinaryStore().getText(new StoredBinaryValue(getBinaryStore(), invalidBinaryKey(), 0));
     }
@@ -213,7 +213,8 @@ public abstract class AbstractBinaryStoreTest extends AbstractTransactionalTest 
         BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(STORED_LARGE_BINARY));
         String extractedText = binaryStore.getText(binaryValue);
         if (extractedText == null) {
-            //if nothing is found the first time, sleep and try again - Mongo on Windows seems to exibit this problem for some reason
+            // if nothing is found the first time, sleep and try again - Mongo on Windows seems to exibit this problem for some
+            // reason
             Thread.sleep(TimeUnit.SECONDS.toMillis(2));
             extractedText = binaryStore.getText(binaryValue);
         }

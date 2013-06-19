@@ -74,7 +74,7 @@ public interface RepositoriesContainer {
     /**
      * The name of the key for the ModeShape JCR URL in the parameter map.
      *
-     * @see {@link RepositoryFactory#URL}
+     * @see RepositoryFactory#URL
      */
     public static final String URL = RepositoryFactory.URL;
 
@@ -82,7 +82,7 @@ public interface RepositoriesContainer {
      * The name of the key for the ModeShape JCR repository name in the parameter map. This can be used as an alternative to
      * specifying the repository name as a URL parameter within the {@link #URL URL}.
      *
-     * @see {@link RepositoryFactory#REPOSITORY_NAME}
+     * @see RepositoryFactory#REPOSITORY_NAME
      */
     public static final String REPOSITORY_NAME = RepositoryFactory.REPOSITORY_NAME;
 
@@ -139,7 +139,7 @@ public interface RepositoriesContainer {
      * Returns the names of all the available repositories, using an optional map of parameters which may be used to initialize
      * additional repositories, which will also be returned.
      *
-     * @param parameters map of string key/value pairs as repository arguments or {@link null} if none are provided
+     * @param parameters map of string key/value pairs as repository arguments or {@code null} if none are provided
      * @return the immutable set of repository names provided by this container; never {@code null}
      * @throws javax.jcr.RepositoryException if there is an error performing the lookup.
      *

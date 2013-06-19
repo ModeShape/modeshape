@@ -752,10 +752,9 @@ public class CndImporter {
             return nameFactory.create(removeQuotes(value));
         } catch (ValueFormatException e) {
             if (e.getCause() instanceof NamespaceException) {
-                throw (NamespaceException) e.getCause();
-            } else {
-                throw new ParsingException(tokens.previousPosition(), CndI18n.expectedValidNameLiteral.text(value));
+                throw (NamespaceException)e.getCause();
             }
+            throw new ParsingException(tokens.previousPosition(), CndI18n.expectedValidNameLiteral.text(value));
         }
     }
 

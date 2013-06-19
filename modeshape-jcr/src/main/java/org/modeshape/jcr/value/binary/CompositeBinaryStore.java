@@ -19,15 +19,10 @@ import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 
 /**
- * A {@link BinaryStore} implementation that stores files in other BinaryStores.
- *
- * This store is initialized with a map of number of BinaryStores. On retrieval,
- * the CompositeBinaryStore will look in all the other BinaryStores for the value.
- *
- * When storing a value, the CompositeBinaryStore may receive a StorageHint that
- * MAY be used when determining which named BinaryStore to write to. If a storage
- * hint is not provided (or doesn't match a store), the value will be stored in
- * the default store.
+ * A {@link BinaryStore} implementation that stores files in other BinaryStores. This store is initialized with a map of number of
+ * BinaryStores. On retrieval, the CompositeBinaryStore will look in all the other BinaryStores for the value. When storing a
+ * value, the CompositeBinaryStore may receive a StorageHint that MAY be used when determining which named BinaryStore to write
+ * to. If a storage hint is not provided (or doesn't match a store), the value will be stored in the default store.
  */
 public class CompositeBinaryStore implements BinaryStore {
 
@@ -41,10 +36,9 @@ public class CompositeBinaryStore implements BinaryStore {
     private BinaryStore defaultBinaryStore;
 
     /**
-     * Initialize a new CompositeBinaryStore using a Map of other BinaryKeys that
-     * are keyed by an implementer-provided key. The named stores must include a
-     * default BinaryStore that will be used in the absence of storage hints.
-     *
+     * Initialize a new CompositeBinaryStore using a Map of other BinaryKeys that are keyed by an implementer-provided key. The
+     * named stores must include a default BinaryStore that will be used in the absence of storage hints.
+     * 
      * @param namedStores a {@code Map} of inner stores, grouped by the hint.
      */
     public CompositeBinaryStore( Map<String, BinaryStore> namedStores ) {
@@ -55,6 +49,7 @@ public class CompositeBinaryStore implements BinaryStore {
     /**
      * Initialize the store, and initialize all the named stores.
      */
+    @Override
     public void start() {
         Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
 
@@ -68,6 +63,7 @@ public class CompositeBinaryStore implements BinaryStore {
     /**
      * Shut down all the named stores
      */
+    @Override
     public void shutdown() {
         Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
 
@@ -144,7 +140,7 @@ public class CompositeBinaryStore implements BinaryStore {
 
     /**
      * Move a value from one named store to another store
-     *
+     * 
      * @param key Binary key to transfer from the source store to the destination store
      * @param source a hint for discovering the source repository; may be null
      * @param destination a hint for discovering the destination repository
@@ -182,7 +178,7 @@ public class CompositeBinaryStore implements BinaryStore {
 
     /**
      * Move a BinaryKey to a named store
-     *
+     * 
      * @param key Binary key to transfer from the source store to the destination store
      * @param destination a hint for discovering the destination repository
      * @throws BinaryStoreException if anything unexpected fails
@@ -228,6 +224,7 @@ public class CompositeBinaryStore implements BinaryStore {
         return false;
     }
 
+    @SuppressWarnings( "unused" )
     @Override
     public void markAsUnused( Iterable<BinaryKey> keys ) throws BinaryStoreException {
         Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
@@ -246,6 +243,7 @@ public class CompositeBinaryStore implements BinaryStore {
         }
     }
 
+    @SuppressWarnings( "unused" )
     @Override
     public void removeValuesUnusedLongerThan( long minimumAge,
                                               TimeUnit unit ) throws BinaryStoreException {
@@ -351,7 +349,7 @@ public class CompositeBinaryStore implements BinaryStore {
 
     /**
      * Get an iterator over all the named stores
-     *
+     * 
      * @return an iterator over the map of binary stores and their given names
      */
     public Iterator<Map.Entry<String, BinaryStore>> getNamedStoreIterator() {
@@ -360,7 +358,7 @@ public class CompositeBinaryStore implements BinaryStore {
 
     /**
      * Get the named binary store that contains the key
-     *
+     * 
      * @param key the key to the binary content; never null
      * @return the BinaryStore that contains the given key
      */
@@ -379,7 +377,7 @@ public class CompositeBinaryStore implements BinaryStore {
 
     /**
      * Select a named binary store for the given hint
-     *
+     * 
      * @param hint a hint to a binary store; possibly null
      * @return a named BinaryStore from the hint, or the default store
      */
@@ -401,14 +399,12 @@ public class CompositeBinaryStore implements BinaryStore {
         return namedBinaryStore;
     }
 
-
     private BinaryStore getDefaultBinaryStore() {
         if (defaultBinaryStore == null) {
             if (namedStores.containsKey(DEFAULT_STRATEGY_HINT)) {
                 defaultBinaryStore = namedStores.get(DEFAULT_STRATEGY_HINT);
             } else {
-                logger.trace(
-                        "Did not find a named binary store with the key 'default', picking the first binary store in the list");
+                logger.trace("Did not find a named binary store with the key 'default', picking the first binary store in the list");
                 final Iterator<BinaryStore> iterator = namedStores.values().iterator();
 
                 if (iterator.hasNext()) {

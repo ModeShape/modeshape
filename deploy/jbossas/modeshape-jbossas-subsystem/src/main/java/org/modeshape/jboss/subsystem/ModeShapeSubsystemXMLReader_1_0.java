@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
@@ -949,9 +948,8 @@ public class ModeShapeSubsystemXMLReader_1_0 implements XMLStreamConstants, XMLE
             String storeName = nestedBinaryStore.get(ModelKeys.STORE_NAME).asString();
             if (storeNames.contains(storeName)) {
                 throw ParseUtils.duplicateAttribute(reader, ModelKeys.STORE_NAME + "=" + storeName);
-            } else {
-                storeNames.add(storeName);
             }
+            storeNames.add(storeName);
             stores.add(nestedBinaryStore);
             ModelAttributes.NESTED_STORES.parseAndAddParameterElement(storeName, compositeBinaryStorage, reader);
         }

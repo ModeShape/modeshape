@@ -44,6 +44,7 @@ import static org.junit.Assert.fail;
 /**
  * Unit test for {@link JcrRepositoryFactory}
  */
+@SuppressWarnings( "deprecation" )
 public class JcrRepositoryFactoryTest extends AbstractTransactionalTest {
 
     private String url;

@@ -672,7 +672,7 @@ public class RepositoryConfiguration {
         String javaSequencer = "org.modeshape.sequencer.javafile.JavaFileSequencer";
         String modelSequencer = "org.modeshape.sequencer.teiid.model.ModelSequencer";
         String vdbSequencer = "org.modeshape.sequencer.teiid.VdbSequencer";
-        String msofficeSequencer = "org.modeshape.sequencer.msoffice.MSOfficeMetadataSequencer";
+        // String msofficeSequencer = "org.modeshape.sequencer.msoffice.MSOfficeMetadataSequencer";
         String wsdlSequencer = "org.modeshape.sequencer.wsdl.WsdlSequencer";
         String xsdSequencer = "org.modeshape.sequencer.xsd.XsdSequencer";
         String xmlSequencer = "org.modeshape.sequencer.xml.XmlSequencer";
