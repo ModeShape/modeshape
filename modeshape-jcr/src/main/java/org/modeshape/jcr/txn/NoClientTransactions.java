@@ -38,14 +38,14 @@ import org.modeshape.jcr.cache.SessionEnvironment.MonitorFactory;
  * attempts to create a transaction within the {@link SessionCache#save()} calls. This is more efficient when the repository can
  * be set up to never use container-managed or user-managed transactions.
  */
-public class NoClientTransactions extends Transactions {
+public final class NoClientTransactions extends Transactions {
 
     /**
      * During ws cache initialization (either when the repo starts up of a new ws is created), there can be a case of semantically
      * nested simple transactions, so we need effective make sure that only 1 instance of an active transaction can exist at any
      * given time. We cannot use multiple instance because completion functions are instance-dependent
      */
-    private NoClientTransaction activeTransaction;
+    protected NoClientTransaction activeTransaction;
 
     public NoClientTransactions( MonitorFactory monitorFactory,
                                  TransactionManager txnMgr ) {
@@ -87,7 +87,7 @@ public class NoClientTransactions extends Transactions {
             super.rollback();
         }
 
-        private NoClientTransaction transactionBegin() {
+        protected NoClientTransaction transactionBegin() {
             nestedLevel.incrementAndGet();
             return this;
         }

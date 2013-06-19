@@ -23,6 +23,9 @@
  */
 package org.modeshape.jcr;
 
+import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -38,9 +41,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.api.RepositoriesContainer;
 import org.modeshape.jcr.api.RepositoryFactory;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * Unit test for {@link JcrRepositoriesContainer}
@@ -49,6 +49,7 @@ public class JcrRepositoriesContainerTest extends JcrRepositoryFactoryTest {
 
     private RepositoriesContainer repositoriesContainer;
 
+    @Override
     @Before
     public void beforeEach() throws Exception {
         Iterator<RepositoriesContainer> containerIterator = ServiceLoader.load(RepositoriesContainer.class).iterator();
@@ -71,7 +72,7 @@ public class JcrRepositoriesContainerTest extends JcrRepositoryFactoryTest {
         Map<String, String> params = Collections.singletonMap(RepositoryFactory.URL, url);
         Repository repository = repositoryFor("Another Test Repository", params);
         assertNotNull(repository);
-        //execute the call one more time
+        // execute the call one more time
         repository = repositoryFor("Another Test Repository", params);
         assertNotNull(repository);
     }
@@ -113,11 +114,13 @@ public class JcrRepositoriesContainerTest extends JcrRepositoryFactoryTest {
         Assert.assertTrue(repositoryNames.contains("CND Sequencer Test Repository"));
     }
 
+    @Override
     protected Repository repositoryFor( Map<String, String> parameters ) throws RepositoryException {
         return repositoriesContainer.getRepository(null, parameters);
     }
 
-    protected Repository repositoryFor( String name, Map<String, String> parameters ) throws RepositoryException {
+    protected Repository repositoryFor( String name,
+                                        Map<String, String> parameters ) throws RepositoryException {
         return repositoriesContainer.getRepository(name, parameters);
     }
 }

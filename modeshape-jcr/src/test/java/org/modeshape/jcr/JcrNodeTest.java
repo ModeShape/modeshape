@@ -23,6 +23,13 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import java.util.HashSet;
 import java.util.Set;
 import javax.jcr.ImportUUIDBehavior;
@@ -36,12 +43,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 
 public class JcrNodeTest extends MultiUseAbstractTest {
 
@@ -126,7 +127,7 @@ public class JcrNodeTest extends MultiUseAbstractTest {
 
         session.save();
 
-        //check all strong references
+        // check all strong references
         PropertyIterator propertyIterator = referenceableNode.getReferences();
         assertEquals(2, propertyIterator.getSize());
         Set<String> propertyNames = new HashSet<String>(2);
@@ -142,7 +143,7 @@ public class JcrNodeTest extends MultiUseAbstractTest {
         propertyIterator = referenceableNode.getReferences("unknown");
         assertEquals(0, propertyIterator.getSize());
 
-        //check all weak references
+        // check all weak references
         propertyIterator = referenceableNode.getWeakReferences();
         assertEquals(2, propertyIterator.getSize());
         propertyNames = new HashSet<String>(2);
@@ -160,7 +161,7 @@ public class JcrNodeTest extends MultiUseAbstractTest {
     }
 
     @Test
-    @FixFor("MODE-1489")
+    @FixFor( "MODE-1489" )
     public void shouldAllowMultipleOrderBeforeWithoutSave() throws Exception {
         int childCount = 2;
 
@@ -227,13 +228,14 @@ public class JcrNodeTest extends MultiUseAbstractTest {
         nodeA.remove();
         session.save();
     }
-    
+
     @Test
     public void shouldReturnEmptyIterator() throws RepositoryException {
         Node jcrRootNode = session.getRootNode();
         Node rootNode = jcrRootNode.addNode("mapSuperclassTest");
-//        session.save();
+        // session.save();
         Node newNode = rootNode.addNode("newNode");
+        assertNotNull(newNode);
         NodeIterator nodeIterator = rootNode.getNodes("myMap");
         assertFalse(nodeIterator.hasNext());
         session.save();

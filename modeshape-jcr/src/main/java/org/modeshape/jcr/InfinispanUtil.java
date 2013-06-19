@@ -64,7 +64,6 @@ public class InfinispanUtil {
      * @throws InterruptedException if the process is interrupted
      * @throws ExecutionException if there is an error while getting all keys
      */
-    @SuppressWarnings("unchecked")
     public static <K, V> Sequence<K> getAllKeys( Cache<K, V> cache ) throws CacheLoaderException, InterruptedException, ExecutionException {
         LOGGER.debug("getAllKeys of {0}", cache.getName());
 
@@ -76,7 +75,6 @@ public class InfinispanUtil {
         boolean shared = cache.getCacheConfiguration().loaders().shared();
         if(!shared){
             // store is not shared so every node must return key list of the store
-            @SuppressWarnings( "synthetic-access" )
             List<Future<Set<K>>> futures = distributedExecutor.submitEverywhere(task);
             cacheKeys = mergeResults(futures);
         } else {
@@ -163,7 +161,7 @@ public class InfinispanUtil {
      * @param <K> the type of key
      * @param <V> the type of value
      */
-    private static final class GetAllMemoryKeys<K, V> implements DistributedCallable<K, V, Set<K>>, Serializable {
+    protected static final class GetAllMemoryKeys<K, V> implements DistributedCallable<K, V, Set<K>>, Serializable {
         private static final long serialVersionUID = 1L;
 
         private Cache<K, V> cache;
@@ -186,7 +184,7 @@ public class InfinispanUtil {
      * @param <K> the type of key
      * @param <V> the type of value
      */
-    private static final class GetAllKeys<K, V> implements DistributedCallable<K, V, Set<K>>, Serializable {
+    protected static final class GetAllKeys<K, V> implements DistributedCallable<K, V, Set<K>>, Serializable {
         private static final long serialVersionUID = 1L;
 
         private Cache<K, V> cache;

@@ -94,7 +94,7 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
     }
 
     @Test
-    public void shouldAggregateBinaryKeysFromAllStores() throws BinaryStoreException, IOException {
+    public void shouldAggregateBinaryKeysFromAllStores() throws BinaryStoreException {
         byte[] content = randomContent();
         defaultStore.storeValue(new ByteArrayInputStream(content));
 
@@ -147,7 +147,7 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
     }
 
     @Test
-    public void shouldStoreThingsInTheDefaultStoreWhenTheStrategyFails() throws BinaryStoreException, IOException {
+    public void shouldStoreThingsInTheDefaultStoreWhenTheStrategyFails() throws BinaryStoreException {
         BinaryValue v = store.storeValue(new ByteArrayInputStream(randomContent()), "this-hint-doesnt-reference-a-store");
         assertTrue(defaultStore.hasBinary(v.getKey()));
     }
@@ -185,7 +185,7 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
     }
 
     @Test
-    public void shouldStoreThingsInTheFirstStoreWhenTheStrategyFailsAndNoDefaultStoreProvided() throws BinaryStoreException, IOException {
+    public void shouldStoreThingsInTheFirstStoreWhenTheStrategyFailsAndNoDefaultStoreProvided() throws BinaryStoreException {
         BinaryStore localStoreWithoutADefaultStore;
         Map<String, BinaryStore> stores = new LinkedHashMap<String, BinaryStore>();
         stores.put("alt", alternativeStore);
