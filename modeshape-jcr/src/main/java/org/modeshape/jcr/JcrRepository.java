@@ -64,6 +64,7 @@ import javax.jcr.Session;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.NoInitialContextException;
+import javax.naming.OperationNotSupportedException;
 import javax.security.auth.login.LoginContext;
 import javax.transaction.Status;
 import javax.transaction.Synchronization;
@@ -1602,6 +1603,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 } catch (NoInitialContextException e) {
                     // No JNDI here ...
                     logger.debug("No JNDI found, so not registering '{0}' repository", getName());
+                } catch (OperationNotSupportedException e) {
+                    logger.warn(JcrI18n.jndiReadOnly, config.getName(), jndiName);
                 } catch (NamingException e) {
                     logger.error(e, JcrI18n.unableToBindToJndi, config.getName(), jndiName, e.getMessage());
                 }
