@@ -57,14 +57,16 @@ public final class NoClientTransactions extends Transactions {
         if (activeTransaction == null) {
             // Start a transaction ...
             txnMgr.begin();
-            logger.trace("Begin transaction");
+            if (logger.isTraceEnabled()) {
+                logger.trace("Begin transaction {0}", currentTransactionId());
+            }
             // and return immediately ...
-            activeTransaction =  new NoClientTransaction(txnMgr);
+            activeTransaction = new NoClientTransaction(txnMgr);
         }
         return activeTransaction.transactionBegin();
     }
 
-    protected class NoClientTransaction extends SimpleTransaction {
+    protected class NoClientTransaction extends TraceableSimpleTransaction {
         private final AtomicInteger nestedLevel = new AtomicInteger(0);
 
         public NoClientTransaction( TransactionManager txnMgr ) {
@@ -72,7 +74,9 @@ public final class NoClientTransactions extends Transactions {
         }
 
         @Override
-        public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException, IllegalStateException, SystemException {
+        public void commit()
+            throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
+            IllegalStateException, SystemException {
             if (nestedLevel.getAndDecrement() == 1) {
                 NoClientTransactions.this.activeTransaction = null;
                 super.commit();

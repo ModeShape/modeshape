@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.txn;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -59,21 +60,44 @@ public final class SynchronizedTransactions extends Transactions {
     public Transaction begin() throws NotSupportedException, SystemException {
         // Get the transaction currently associated with this thread (if there is one) ...
         javax.transaction.Transaction txn = txnMgr.getTransaction();
+        Transaction result = null;
         if (txn == null) {
             // There is no transaction, so start one ...
-            logger.trace("Begin transaction");
             txnMgr.begin();
-            // and return immediately ...
-            return new SimpleTransaction(txnMgr);
+            // and return our wrapper ...
+            result = new SimpleTransaction(txnMgr);
+        } else {
+            // Otherwise, there's already a transaction, so wrap it ...
+            try {
+                result = new SynchronizedTransaction(txnMgr); // may throw RollbackException ...
+            } catch (RollbackException e) {
+                // This transaction has been marked for rollback only ...
+                return new RollbackOnlyTransaction();
+            }
         }
-
-        // Otherwise, there's already a transaction, so wrap it ...
-        try {
-            return new SynchronizedTransaction(txnMgr);
-        } catch (RollbackException e) {
-            // This transaction has been marked for rollback only ...
-            return new RollbackOnlyTransaction();
+        if (logger.isTraceEnabled()) {
+            if (txn == null) txn = txnMgr.getTransaction();
+            assert txn != null;
+            final String id = txn.toString();
+            // Register a synchronization for this transaction ...
+            if (!ACTIVE_TRACE_SYNCHRONIZATIONS.contains(id)) {
+                if (result instanceof SynchronizedTransaction) {
+                    logger.trace("Found user transaction {0}", txn);
+                } else if (result instanceof SimpleTransaction) {
+                    logger.trace("Begin transaction {0}", id);
+                }
+                // Only if we don't already have one ...
+                try {
+                    txn.registerSynchronization(new TransactionTracer(id));
+                } catch (RollbackException e) {
+                    // This transaction has been marked for rollback only ...
+                    return new RollbackOnlyTransaction();
+                }
+            } else {
+                logger.trace("Tracer already registered for transaction {0}", id);
+            }
         }
+        return result;
     }
 
     @Override
@@ -113,6 +137,7 @@ public final class SynchronizedTransactions extends Transactions {
         protected SynchronizedTransaction( TransactionManager txnMgr ) throws SystemException, RollbackException {
             super(txnMgr);
             this.synchronization = new Synchronization() {
+
                 @Override
                 public void beforeCompletion() {
                     // do nothing ...
@@ -122,11 +147,9 @@ public final class SynchronizedTransactions extends Transactions {
                 public void afterCompletion( int status ) {
                     switch (status) {
                         case Status.STATUS_COMMITTED:
-                            logger.trace("Committed transaction");
                             afterCommit();
                             break;
                         case Status.STATUS_ROLLEDBACK:
-                            logger.trace("Rolled back transaction");
                             break;
                         default:
                             // Don't do anything ...
@@ -162,7 +185,7 @@ public final class SynchronizedTransactions extends Transactions {
             // Execute the functions
             executeFunctions();
 
-            //Update the statistics about the changed number of nodes
+            // Update the statistics about the changed number of nodes
             monitor.dispatchRecordedChanges();
 
             // Apply the updates, and do AFTER the monitor is updated ...
@@ -174,7 +197,7 @@ public final class SynchronizedTransactions extends Transactions {
 
         @Override
         public Monitor createMonitor() {
-           return this.monitor;
+            return this.monitor;
         }
     }
 
@@ -261,6 +284,38 @@ public final class SynchronizedTransactions extends Transactions {
 
         protected void dispatchRecordedChanges() {
             delegate.recordChanged(changesCount.get());
+        }
+    }
+
+    protected static final Set<String> ACTIVE_TRACE_SYNCHRONIZATIONS = new HashSet<String>();
+
+    protected final class TransactionTracer implements Synchronization {
+        private String txnId;
+
+        protected TransactionTracer( String id ) {
+            txnId = id;
+            ACTIVE_TRACE_SYNCHRONIZATIONS.add(id);
+        }
+
+        @Override
+        public void beforeCompletion() {
+            // do nothing else ...
+        }
+
+        @Override
+        public void afterCompletion( int status ) {
+            ACTIVE_TRACE_SYNCHRONIZATIONS.remove(txnId);
+            switch (status) {
+                case Status.STATUS_COMMITTED:
+                    logger.trace("Commit transaction '{0}'", txnId);
+                    break;
+                case Status.STATUS_ROLLEDBACK:
+                    logger.trace("Roll back transaction '{0}'", txnId);
+                    break;
+                default:
+                    // Don't do anything ...
+                    break;
+            }
         }
     }
 }

@@ -1288,13 +1288,18 @@ public class SessionNode implements MutableCachedNode {
 
     public String getString( NamespaceRegistry registry ) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Node ").append(key).append(": ");
-        if (isNew) {
-            sb.append(" created; ");
-        }
+        sb.append("Node '").append(key).append("' ->");
         NodeKey newParent = this.newParent;
-        if (newParent != null) {
-            sb.append(" moved to ").append(newParent).append("; ");
+        if (isNew) {
+            if (newParent != null) {
+                sb.append(" created under '").append(newParent).append('\'');
+            } else {
+                sb.append(" created; ");
+            }
+        } else {
+            if (newParent != null) {
+                sb.append(" moved to '").append(newParent).append('\'');
+            }
         }
         ChangedAdditionalParents additionalParents = this.additionalParents();
         if (additionalParents != null) {
@@ -1307,30 +1312,32 @@ public class SessionNode implements MutableCachedNode {
             }
             sb.append(']');
         }
-        if (!changedProperties.isEmpty()) {
+        boolean changedProps = !changedProperties.isEmpty();
+        boolean removedProps = !removedProperties.isEmpty();
+        if (changedProps || removedProps) {
             sb.append(" props: {");
-            boolean first = true;
-            for (Map.Entry<Name, Property> entry : changedProperties.entrySet()) {
-                if (first) {
-                    first = false;
-                } else {
-                    sb.append(',');
+            if (changedProps) {
+                boolean first = true;
+                for (Map.Entry<Name, Property> entry : changedProperties.entrySet()) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        sb.append(',');
+                    }
+                    Property property = entry.getValue();
+                    sb.append(" +").append(property.getString(registry));
                 }
-                Property property = entry.getValue();
-                sb.append(" +").append(property.getString(registry));
             }
-            sb.append('}');
-        }
-        if (!removedProperties.isEmpty()) {
-            sb.append(" props: {");
-            boolean first = true;
-            for (Name name : removedProperties.keySet()) {
-                if (first) {
-                    first = false;
-                } else {
-                    sb.append(',');
+            if (removedProps) {
+                boolean first = true;
+                for (Name name : removedProperties.keySet()) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        sb.append(',');
+                    }
+                    sb.append(" -").append(name.getString(registry));
                 }
-                sb.append(" -").append(name.getString(registry));
             }
             sb.append('}');
         }
@@ -1338,16 +1345,17 @@ public class SessionNode implements MutableCachedNode {
         if (!changedChildren.isEmpty() || (appended != null && !appended.isEmpty())) {
             sb.append(" children: ");
             if (!changedChildren.isEmpty()) {
-                sb.append(changedChildren);
+                changedChildren.getString(sb);
+                sb.append(' ');
             }
             if (appended != null && !appended.isEmpty()) {
-                sb.append(" appended: [");
+                sb.append("appended [");
                 Iterator<ChildReference> iter = appended.iterator();
                 if (iter.hasNext()) {
-                    sb.append(iter.next().getString(registry));
+                    sb.append(iter.next().toString(registry));
                     while (iter.hasNext()) {
                         sb.append(',');
-                        sb.append(iter.next().getString(registry));
+                        sb.append(iter.next().toString(registry));
                     }
                 }
                 sb.append(']');
@@ -1355,7 +1363,8 @@ public class SessionNode implements MutableCachedNode {
         }
         ReferrerChanges referrerChg = getReferrerChanges();
         if (referrerChg != null && !referrerChg.isEmpty()) {
-            sb.append(" ").append(referrerChg.toString());
+            sb.append(' ');
+            referrerChg.getString(sb);
         }
         return sb.toString();
     }
@@ -2096,7 +2105,10 @@ public class SessionNode implements MutableCachedNode {
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder();
+            return getString(new StringBuilder());
+        }
+
+        public String getString( StringBuilder sb ) {
             sb.append("ReferrerChanges: ");
             if (!addedStrong.isEmpty()) {
                 sb.append(" addedStrong=").append(addedStrong);
