@@ -26,6 +26,10 @@ package org.modeshape.jboss.metric;
 import javax.jcr.RepositoryException;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
+<<<<<<< HEAD
+=======
+import org.jboss.msc.service.StartException;
+>>>>>>> MODE-1719 AS7 subsystem should expose monitoring information via management layer
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.modeshape.jcr.JcrRepository;
@@ -57,13 +61,21 @@ public final class MonitorService implements Service<RepositoryStatistics> {
      * @see org.jboss.msc.service.Service#start(org.jboss.msc.service.StartContext)
      */
     @Override
+<<<<<<< HEAD
     public void start( final StartContext context ) {
+=======
+    public void start( final StartContext context ) throws StartException {
+>>>>>>> MODE-1719 AS7 subsystem should expose monitoring information via management layer
         final JcrRepository repo = this.repoInjector.getValue();
 
         try {
             repo.login();
         } catch (final RepositoryException e) {
+<<<<<<< HEAD
             // TODO handle this
+=======
+            throw new StartException(e);
+>>>>>>> MODE-1719 AS7 subsystem should expose monitoring information via management layer
         }
     }
 
