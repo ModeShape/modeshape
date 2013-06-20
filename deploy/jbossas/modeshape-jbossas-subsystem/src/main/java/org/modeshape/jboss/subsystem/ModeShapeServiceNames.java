@@ -24,6 +24,7 @@
 package org.modeshape.jboss.subsystem;
 
 import org.jboss.msc.service.ServiceName;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.jboss.service.IndexStorage;
 
 public class ModeShapeServiceNames {
@@ -94,5 +95,14 @@ public class ModeShapeServiceNames {
 
     public static ServiceName referenceFactoryServiceName( String repositoryName ) {
         return repositoryServiceName(repositoryName).append("reference-factory");
+    }
+
+    /**
+     * @param repositoryName the repository name (cannot be <code>null</code>)
+     * @return the service name (never <code>null</code> or empty)
+     */
+    public static ServiceName monitorServiceName( String repositoryName ) {
+        CheckArg.isNotNull(repositoryName, "repositoryName");
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "monitor");
     }
 }

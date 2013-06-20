@@ -23,11 +23,17 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.modeshape.jboss.metric.GetDurationMetric;
+import org.modeshape.jboss.metric.GetValueMetric;
+import org.modeshape.jboss.metric.ModelMetrics;
+import org.modeshape.jcr.api.monitor.DurationMetric;
+import org.modeshape.jcr.api.monitor.ValueMetric;
 
 /**
- * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
+ * 
  */
 public class ModeShapeRepositoryResource extends SimpleResourceDefinition {
     protected final static ModeShapeRepositoryResource INSTANCE = new ModeShapeRepositoryResource();
@@ -37,9 +43,32 @@ public class ModeShapeRepositoryResource extends SimpleResourceDefinition {
               AddRepository.INSTANCE, RemoveRepository.INSTANCE);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.as.controller.SimpleResourceDefinition#registerAttributes(org.jboss.as.controller.registry.ManagementResourceRegistration)
+     */
     @Override
     public void registerAttributes( ManagementResourceRegistration resourceRegistration ) {
         super.registerAttributes(resourceRegistration);
         RepositoryWriteAttributeHandler.INSTANCE.registerAttributes(resourceRegistration);
+        registerMetrics(resourceRegistration);
     }
+
+    private void registerMetrics( final ManagementResourceRegistration registration ) {
+        // register value metrics
+        for (final AttributeDefinition attrDefn : ModelMetrics.REPOSITORY_VALUE_METRICS) {
+            final String name = attrDefn.getName();
+            final ValueMetric metric = ValueMetric.fromLiteral(name);
+            registration.registerMetric(attrDefn, new GetValueMetric(metric));
+        }
+
+        // register duration metrics
+        for (final AttributeDefinition attrDefn : ModelMetrics.REPOSITORY_DURATION_METRICS) {
+            final String name = attrDefn.getName();
+            final DurationMetric metric = DurationMetric.fromLiteral(name);
+            registration.registerMetric(attrDefn, new GetDurationMetric(metric));
+        }
+    }
+
 }
