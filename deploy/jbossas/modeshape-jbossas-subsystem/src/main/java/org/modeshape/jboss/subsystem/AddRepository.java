@@ -50,6 +50,8 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.jboss.metric.ModelMetrics;
+import org.modeshape.jboss.metric.MonitorService;
 import org.modeshape.jboss.service.BinaryStorage;
 import org.modeshape.jboss.service.BinaryStorageService;
 import org.modeshape.jboss.service.IndexStorage;
@@ -60,6 +62,7 @@ import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import org.modeshape.jcr.RepositoryStatistics;
 
 public class AddRepository extends AbstractAddStepHandler {
 
@@ -74,6 +77,16 @@ public class AddRepository extends AbstractAddStepHandler {
     protected void populateModel( ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {
         for (AttributeDefinition attribute : ModelAttributes.REPOSITORY_ATTRIBUTES) {
+            attribute.validateAndSet(operation, model);
+        }
+
+        // value metrics
+        for (final AttributeDefinition attribute : ModelMetrics.REPOSITORY_VALUE_METRICS) {
+            attribute.validateAndSet(operation, model);
+        }
+
+        // duration metrics
+        for (final AttributeDefinition attribute : ModelMetrics.REPOSITORY_DURATION_METRICS) {
             attribute.validateAndSet(operation, model);
         }
     }
@@ -266,6 +279,15 @@ public class AddRepository extends AbstractAddStepHandler {
         binaryStorageBuilder.addDependency(dataDirServiceName, String.class, defaultBinaryService.getDataDirectoryPathInjector());
         binaryStorageBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
+        // Add monitor service
+        final MonitorService monitorService = new MonitorService();
+        final ServiceBuilder<RepositoryStatistics> monitorBuilder = target.addService(ModeShapeServiceNames.monitorServiceName(repositoryName),
+                                                                                      monitorService);
+        monitorBuilder.addDependency(ModeShapeServiceNames.repositoryServiceName(repositoryName),
+                                     JcrRepository.class,
+                                     monitorService.getJcrRepositoryInjector());
+        monitorBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
+        
         // Now add the controller for the RepositoryService ...
         builder.setInitialMode(ServiceController.Mode.ACTIVE);
         newControllers.add(builder.install());
@@ -273,6 +295,7 @@ public class AddRepository extends AbstractAddStepHandler {
         newControllers.add(binderBuilder.install());
         newControllers.add(indexBuilder.install());
         newControllers.add(binaryStorageBuilder.install());
+        newControllers.add(monitorBuilder.install());
     }
 
     private void parseClustering( String clusterChannelName,

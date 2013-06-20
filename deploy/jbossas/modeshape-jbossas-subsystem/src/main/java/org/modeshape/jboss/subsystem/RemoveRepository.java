@@ -53,6 +53,7 @@ class RemoveRepository extends AbstractModeShapeRemoveStepHandler {
                              ModeShapeServiceNames.indexStorageServiceName(repositoryName),
                              ModeShapeServiceNames.binaryStorageDefaultServiceName(repositoryName),
                              ModeShapeServiceNames.repositoryServiceName(repositoryName),
-                             ModeShapeServiceNames.dataDirectoryServiceName(repositoryName));
+                             ModeShapeServiceNames.dataDirectoryServiceName(repositoryName),
+                             ModeShapeServiceNames.monitorServiceName(repositoryName));
     }
 }

@@ -56,6 +56,7 @@ import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
+import org.modeshape.jcr.RepositoryStatistics;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
 /**
@@ -78,6 +79,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     private final InjectedValue<BinaryStorage> binaryStorageInjector = new InjectedValue<BinaryStorage>();
     private final InjectedValue<String> dataDirectoryPathInjector = new InjectedValue<String>();
     private final InjectedValue<ModuleLoader> moduleLoaderInjector = new InjectedValue<ModuleLoader>();
+    private final InjectedValue<RepositoryStatistics> monitorInjector = new InjectedValue<RepositoryStatistics>();
 
     private RepositoryConfiguration repositoryConfiguration;
 
@@ -482,6 +484,13 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
      */
     public InjectedValue<BinaryStorage> getBinaryStorageInjector() {
         return binaryStorageInjector;
+    }
+
+    /**
+     * @return the injector used to get the repository statistics (never <code>null</code>)
+     */
+    public InjectedValue<RepositoryStatistics> getMonitorInjector() {
+        return this.monitorInjector;
     }
 
     /**
