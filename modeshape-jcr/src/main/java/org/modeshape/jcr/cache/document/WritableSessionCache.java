@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -97,6 +98,19 @@ import org.modeshape.jcr.value.Property;
  */
 @ThreadSafe
 public class WritableSessionCache extends AbstractSessionCache {
+
+    /** An atomic counter used in each thread when issuing TRACE log messages to the #SAVE_LOGGER */
+    private static final AtomicInteger SAVE_NUMBER = new AtomicInteger(1);
+    /**
+     * The (approximate) largest save number used. This needs to be large enough for concurrent writes, but since this is only
+     * used in TRACE messages (not used in production), it is doubtful that it needs to be very large.
+     */
+    private static final int MAX_SAVE_NUMBER = 100;
+    /**
+     * The TRACE-level logger used to record the changes that are saved. Note that this log context is the same as the
+     * transaction-related classes, so that simply enabling this log context will provide very useful TRACE logging.
+     */
+    private static final Logger SAVE_LOGGER = Logger.getLogger("org.modeshape.jcr.txn");
 
     private static final Logger LOGGER = Logger.getLogger(WritableSessionCache.class);
     private static final NodeKey REMOVED_KEY = new NodeKey("REMOVED_NODE_SHOULD_NEVER_BE_PERSISTED");
@@ -335,6 +349,56 @@ public class WritableSessionCache extends AbstractSessionCache {
         }
     }
 
+    protected final void logChangesBeingSaved( Iterable<NodeKey> firstNodesInOrder,
+                                               Map<NodeKey, SessionNode> firstNodes,
+                                               Iterable<NodeKey> secondNodesInOrder,
+                                               Map<NodeKey, SessionNode> secondNodes ) {
+        if (SAVE_LOGGER.isTraceEnabled()) {
+            String txn = txns.currentTransactionId();
+
+            // // Determine if there are any changes to be made. Note that this number is generally between 1 and 100,
+            // // though for high concurrency some numbers may go above 100. However, the 100th save will always reset
+            // // the counter back down to 1. (Any thread that got a save number above 100 will simply use it.)
+            final int s = SAVE_NUMBER.getAndIncrement();
+            if (s == MAX_SAVE_NUMBER) SAVE_NUMBER.set(1); // only the 100th
+            int changes = 0;
+
+            // There are at least some changes ...
+            ExecutionContext context = getContext();
+            String id = context.getId();
+            String username = context.getSecurityContext().getUserName();
+            NamespaceRegistry registry = context.getNamespaceRegistry();
+            if (username == null) username = "<anonymous>";
+            SAVE_LOGGER.trace("Save #{0} (part of transaction '{1}') by session {2}({3}) is persisting the following changes:",
+                              s,
+                              txn,
+                              username,
+                              id);
+            for (NodeKey key : firstNodesInOrder) {
+                SessionNode node = changedNodes.get(key);
+                if (node != null && node.hasChanges()) {
+                    SAVE_LOGGER.trace(" #{0} {1}", s, node.getString(registry));
+                    ++changes;
+                }
+            }
+            if (secondNodesInOrder != null) {
+                for (NodeKey key : secondNodesInOrder) {
+                    SessionNode node = changedNodes.get(key);
+                    if (node != null && node.hasChanges()) {
+                        SAVE_LOGGER.trace(" #{0} {1}", s, node.getString(registry));
+                        ++changes;
+                    }
+                }
+            }
+            SAVE_LOGGER.trace("Save #{0} (part of transaction '{1}') by session {2}({3}) completed persisting changes to {4} nodes",
+                              s,
+                              txn,
+                              username,
+                              id,
+                              changes);
+        }
+    }
+
     /**
      * Persist the changes within a transaction.
      * 
@@ -380,6 +444,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     runPreSaveAfterLocking(preSaveOperation);
 
                     // Now persist the changes ...
+                    logChangesBeingSaved(this.changedNodesInOrder, this.changedNodes, null, null);
                     events = persistChanges(this.changedNodesInOrder, monitor);
 
                     // Register a handler that will execute upon successful commit of the transaction (whenever that happens) ...
@@ -412,7 +477,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     continue;
                 } catch (NotSupportedException err) {
                     // No nested transactions are supported ...
-                    return;
+                    throw new SystemFailureException(err);
                 } catch (SecurityException err) {
                     // No privilege to commit ...
                     throw new SystemFailureException(err);
@@ -541,6 +606,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                         runPreSaveAfterLocking(preSaveOperation);
 
                         // Now persist the changes ...
+                        logChangesBeingSaved(this.changedNodesInOrder,
+                                             this.changedNodes,
+                                             that.changedNodesInOrder,
+                                             that.changedNodes);
                         events1 = persistChanges(this.changedNodesInOrder, monitor);
                         events2 = that.persistChanges(that.changedNodesInOrder, monitor);
                     } catch (org.infinispan.util.concurrent.TimeoutException e) {
@@ -707,6 +776,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         }
 
                         // Now persist the changes ...
+                        logChangesBeingSaved(savedNodesInOrder, this.changedNodes, that.changedNodesInOrder, that.changedNodes);
                         events1 = persistChanges(savedNodesInOrder, monitor);
                         events2 = that.persistChanges(that.changedNodesInOrder, monitor);
 
@@ -1093,7 +1163,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // should be there and shouldn't require a looking in the cache...
                         Name primaryType = node.getPrimaryType(this);
                         Set<Name> mixinTypes = node.getMixinTypes(this);
-                        monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties().values().iterator());
+                        monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties()
+                                                                                                    .values()
+                                                                                                    .iterator());
                     }
                 } else {
                     boolean externalNodeChanged = isExternal && (hasPropertyChanges || node.hasNonPropertyChanges());
@@ -1124,11 +1196,15 @@ public class WritableSessionCache extends AbstractSessionCache {
                         monitor.recordUpdate(workspaceName, key, newNodePath, primaryType, mixinTypes, node.getProperties(this));
 
                         if (pathChanged) {
-                            //we're dealing with a path change, so in case there is a persisted node at "new path" we need to remove
-                            //it from the indexes, because the current node will take its place
+                            // we're dealing with a path change, so in case there is a persisted node at "new path" we need to
+                            // remove
+                            // it from the indexes, because the current node will take its place
                             CachedNode persistedParent = workspaceCache.getNode(node.getParentKey(this));
-                            ChildReference persistedNodeAtNewPath = persistedParent.getChildReferences(workspaceCache).getChild(
-                                    newNodePath.getLastSegment().getName(), newNodePath.getLastSegment().getIndex());
+                            ChildReference persistedNodeAtNewPath = persistedParent.getChildReferences(workspaceCache)
+                                                                                   .getChild(newNodePath.getLastSegment()
+                                                                                                        .getName(),
+                                                                                             newNodePath.getLastSegment()
+                                                                                                        .getIndex());
                             if (persistedNodeAtNewPath != null) {
                                 monitor.recordRemove(workspaceName, Arrays.asList(persistedNodeAtNewPath.getKey()));
                             }

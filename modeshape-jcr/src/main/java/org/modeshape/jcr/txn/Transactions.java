@@ -101,6 +101,20 @@ public abstract class Transactions {
     }
 
     /**
+     * Get a string representation of the current transaction if there already is an existing transaction.
+     * 
+     * @return a string representation of the transaction if there is an existing transaction, or null if there is none
+     */
+    public String currentTransactionId() {
+        try {
+            javax.transaction.Transaction txn = txnMgr.getTransaction();
+            return txn != null ? txn.toString() : null;
+        } catch (SystemException e) {
+            return null;
+        }
+    }
+
+    /**
      * Get the transaction manager.
      * 
      * @return the transaction manager
@@ -272,7 +286,6 @@ public abstract class Transactions {
 
         @Override
         public void rollback() throws IllegalStateException, SecurityException, SystemException {
-            logger.trace("Rolling back transaction");
             txnMgr.rollback();
         }
 
@@ -281,10 +294,37 @@ public abstract class Transactions {
             throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
             IllegalStateException, SystemException {
             txnMgr.commit();
-            logger.trace("Committed transaction");
 
             // Execute the functions immediately ...
             executeFunctions();
+        }
+    }
+
+    protected class TraceableSimpleTransaction extends SimpleTransaction {
+
+        protected TraceableSimpleTransaction( TransactionManager txnMgr ) {
+            super(txnMgr);
+        }
+
+        @Override
+        public void rollback() throws IllegalStateException, SecurityException, SystemException {
+            if (logger.isTraceEnabled()) {
+                logger.trace("Rolling back transaction '{0}'", currentTransactionId());
+            }
+            super.rollback();
+        }
+
+        @Override
+        public void commit()
+            throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
+            IllegalStateException, SystemException {
+            if (logger.isTraceEnabled()) {
+                String id = currentTransactionId();
+                super.commit();
+                logger.trace("Committed transaction '{0}'", id);
+            } else {
+                super.commit();
+            }
         }
     }
 
