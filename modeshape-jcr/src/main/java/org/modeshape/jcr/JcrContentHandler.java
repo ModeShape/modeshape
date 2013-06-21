@@ -656,6 +656,7 @@ class JcrContentHandler extends DefaultHandler {
             }
         }
 
+        @SuppressWarnings( "unchecked" )
         protected void create() throws SAXException {
             try {
                 AbstractJcrNode parent = parentHandler.node();
@@ -678,9 +679,10 @@ class JcrContentHandler extends DefaultHandler {
                         switch (uuidBehavior) {
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING:
                                 parent = existingNode.getParent();
-                                // Destroy the existing node, but do so via the cache so that we don't record
-                                // the removal by UUID, since the new node has the same UUID and the import
-                                // may create references to the new node)
+                                //Attention: this *does not* remove the entry from the DB (ISPN). Therefore, it's always accessible
+                                //to the workspace cache and thus to the current session !!!.
+                                //Therefore, *old properties, mixins etc* will be accessible on the new child created later on
+                                //until a session.save() is performed.
                                 existingNode.remove();
                                 break;
                             case ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW:
@@ -693,9 +695,10 @@ class JcrContentHandler extends DefaultHandler {
                                                                                               parent.getPath());
                                     throw new ConstraintViolationException(text);
                                 }
-                                // Destroy the existing node, but do so via the cache so that we don't record
-                                // the removal by UUID, since the new node has the same UUID and the import
-                                // may create references to the new node)
+                                //Attention: this *does not* remove the entry from the DB (ISPN). Therefore, it's always accessible
+                                //to the workspace cache and thus to the current session !!!.
+                                //Therefore, *old properties, mixins etc* will be accessible on the new child created later on
+                                //until a session.save() is performed.
                                 existingNode.remove();
                                 break;
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW:
@@ -770,7 +773,16 @@ class JcrContentHandler extends DefaultHandler {
                 List<Value> mixinTypeValueList = properties.get(JcrLexicon.MIXIN_TYPES);
                 if (mixinTypeValueList != null) {
                     for (Value value : mixinTypeValueList) {
-                        child.addMixin(value.getString());
+                        String mixinName = value.getString();
+                        //in the case when keys are being reused, the old node at that key is visible (with all its properties)
+                        //via the WS cache -> ISPN db. Therefore, there might be the case when even though the child was created
+                        //via addChild(), the old node with all the old properties and mixins is still visible at the key() and
+                        //so the "new child" reports the mixin as already present (even though it's not)
+                        if (child.isNodeType(mixinName) && !nodeAlreadyExists) {
+                            child.mutable().addMixin(child.sessionCache(), nameFor(mixinName));
+                        } else {
+                            child.addMixin(mixinName);
+                        }
                     }
                 }
 
