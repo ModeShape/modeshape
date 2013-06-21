@@ -35,6 +35,7 @@ import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
+import org.modeshape.jcr.api.Repository;
 import org.modeshape.transaction.lookup.AtomikosStandaloneJTAManagerLookup;
 
 public class LocalEnvironmentTest extends AbstractTransactionalTest {
@@ -96,28 +97,28 @@ public class LocalEnvironmentTest extends AbstractTransactionalTest {
             environment.shutdown(); // make sure all of the cache containers are shut down
         }
 
-        // // Redefine the LocalEnvironment, since we want to replicate the case where a new process is started,
-        // // and the previously used CacheContainer tends to stick around and not get cleaned up entirely within
-        // // the same process...
-        // environment = new LocalEnvironment();
-        // newConfig = environment.defineCache(repositoryConfiguration.getCacheName(), cacheConfig);
-        // print(newConfig);
-        // repositoryConfiguration = repositoryConfiguration.with(environment);
-        //
-        // // Start the engine and repository again to verify the content is being persisted ...
-        // engine = new ModeShapeEngine();
-        // engine.start();
-        // try {
-        // Repository repository = engine.deploy(repositoryConfiguration);
-        // Session session = repository.login();
-        // Node library = session.getNode("/Library");
-        // assertThat(library, is(notNullValue()));
-        // assertThat(library.getPrimaryNodeType().getName(), is("nt:folder"));
-        // session.logout();
-        // } finally {
-        // engine.shutdown().get();
-        // environment.shutdown(); // make sure all of the cache containers are shut down
-        // }
+        // Redefine the LocalEnvironment, since we want to replicate the case where a new process is started,
+        // and the previously used CacheContainer tends to stick around and not get cleaned up entirely within
+        // the same process...
+        environment = new LocalEnvironment();
+        newConfig = environment.defineCache(repositoryConfiguration.getCacheName(), cacheConfig);
+        print(newConfig);
+        repositoryConfiguration = repositoryConfiguration.with(environment);
+
+        // Start the engine and repository again to verify the content is being persisted ...
+        engine = new ModeShapeEngine();
+        engine.start();
+        try {
+            Repository repository = engine.deploy(repositoryConfiguration);
+            Session session = repository.login();
+            Node library = session.getNode("/Library");
+            assertThat(library, is(notNullValue()));
+            assertThat(library.getPrimaryNodeType().getName(), is("nt:folder"));
+            session.logout();
+        } finally {
+            engine.shutdown().get();
+            environment.shutdown(); // make sure all of the cache containers are shut down
+        }
     }
 
     protected void print( Object msg ) {
