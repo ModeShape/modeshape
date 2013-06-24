@@ -24,10 +24,6 @@
 
 package org.modeshape.connector.filesystem;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,6 +32,7 @@ import java.io.InputStream;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
+import javax.jcr.Workspace;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -47,6 +44,11 @@ import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.Session;
 import org.modeshape.jcr.api.federation.FederationManager;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 public class FileSystemConnectorTest extends SingleUseAbstractTest {
 
@@ -174,6 +176,34 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         assertNoSidecarFile(storeProjection, "dir3/simple.json.modeshape");
         Node file2 = session.getNode("/testRoot/store/dir3/simple.json");
         assertThat(file2.getProperty("extraProp").getString(), is("extraValue"));
+    }
+
+    @Test
+    @FixFor( "MODE-1971" )
+    public void shouldBeAbleToCopyExternalNodes() throws Exception {
+        ((Workspace)session.getWorkspace()).copy("/testRoot/store/dir3/simple.json", "/testRoot/store/dir3/simple2.json");
+        Node file = session.getNode("/testRoot/store/dir3/simple2.json");
+        assertNotNull(file);
+        assertEquals("nt:file", file.getPrimaryNodeType().getName());
+
+        ((Workspace)session.getWorkspace()).copy("/testRoot/store/dir3", "/testRoot/store/dir4");
+        Node folder = session.getNode("/testRoot/store/dir4");
+        assertNotNull(folder);
+        assertEquals("nt:folder", folder.getPrimaryNodeType().getName());
+    }
+
+    @Test
+    @FixFor( "MODE-1971" )
+    public void shouldBeAbleToMoveExternalNodes() throws Exception {
+        ((Workspace)session.getWorkspace()).move("/testRoot/store/dir3/simple.json", "/testRoot/store/dir3/simple2.json");
+        Node file = session.getNode("/testRoot/store/dir3/simple2.json");
+        assertNotNull(file);
+        assertEquals("nt:file", file.getPrimaryNodeType().getName());
+
+        ((Workspace)session.getWorkspace()).move("/testRoot/store/dir3", "/testRoot/store/dir4");
+        Node folder = session.getNode("/testRoot/store/dir4");
+        assertNotNull(folder);
+        assertEquals("nt:folder", folder.getPrimaryNodeType().getName());
     }
 
     @Test

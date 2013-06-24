@@ -631,6 +631,19 @@ public class FileSystemConnector extends WritableConnector {
             }
         }
 
+        //children renames have to be processed in the parent
+        DocumentChanges.ChildrenChanges childrenChanges = documentChanges.getChildrenChanges();
+        Map<String, Name> renamedChildren = childrenChanges.getRenamed();
+        for (String renamedChildId : renamedChildren.keySet()) {
+            File child = fileFor(renamedChildId);
+            Name newName = renamedChildren.get(renamedChildId);
+            String newNameStr = getContext().getValueFactories().getStringFactory().create(newName);
+            File renamedChild = new File(file, newNameStr);
+            if (!child.renameTo(renamedChild)) {
+                getLogger().debug("Cannot rename {0} to {1}", child, renamedChild);
+            }
+        }
+
         String primaryType = reader.getPrimaryTypeName();
         Map<Name, Property> properties = reader.getProperties();
         ExtraProperties extraProperties = extraPropertiesFor(id, true);

@@ -47,6 +47,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.infinispan.util.concurrent.ConcurrentHashSet;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.text.Inflector;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.cache.CachedNode;
@@ -2124,6 +2125,7 @@ public class SessionNode implements MutableCachedNode {
         protected final String targetWorkspaceKey;
         protected final Map<NodeKey, NodeKey> linkedPlaceholdersToOriginal = new HashMap<NodeKey, NodeKey>();
         protected final Map<NodeKey, NodeKey> sourceToTargetKeys = new HashMap<NodeKey, NodeKey>();
+        protected final DocumentStore documentStore;
 
         protected DeepCopy( SessionNode targetNode,
                             WritableSessionCache cache,
@@ -2136,6 +2138,7 @@ public class SessionNode implements MutableCachedNode {
             this.startingPathInSource = sourceNode.getPath(sourceCache);
             this.propertyFactory = this.targetCache.getContext().getPropertyFactory();
             this.targetWorkspaceKey = targetNode.getKey().getWorkspaceKey();
+            this.documentStore = ((WorkspaceCache) sourceCache.getWorkspace()).documentStore();
         }
 
         public Map<NodeKey, NodeKey> getSourceToTargetKeys() {
@@ -2176,7 +2179,9 @@ public class SessionNode implements MutableCachedNode {
                 NodeKey parentSourceKey = sourceChild.getParentKeyInAnyWorkspace(sourceCache);
                 if (sourceKey.equals(parentSourceKey)) {
                     // The child is a normal child of this node ...
-                    NodeKey newKey = createTargetKeyFor(childKey, targetKey);
+                    String childCopyPreferredKey = documentStore.newDocumentKey(targetKey.toString(), childReference.getName(),
+                                                                       sourceChild.getPrimaryType(sourceCache));
+                    NodeKey newKey = createTargetKeyFor(childKey, targetKey, childCopyPreferredKey);
                     MutableCachedNode childCopy = targetNode.createChild(targetCache, newKey, childReference.getName(), null);
                     doPhase1(childCopy, sourceChild);
                 } else {
@@ -2196,8 +2201,12 @@ public class SessionNode implements MutableCachedNode {
                                 // The node that we're supposed to link to doesn't yet exist (b/c it will be created
                                 // later on in phase 1), so we can't simply create a link but instead need
                                 // to create a placeholder (with a new key) ...
-                                NodeKey placeholderKey = createTargetKeyFor(childKey, targetKey);
-                                newKey = createTargetKeyFor(childKey, targetKey);
+                                NodeKey placeholderKey = createTargetKeyFor(childKey, targetKey, null);
+                                String childCopyPreferredKey = documentStore.newDocumentKey(targetKey.toString(),
+                                                                                            childReference.getName(),
+                                                                                            sourceChild.getPrimaryType(
+                                                                                                    sourceCache));
+                                newKey = createTargetKeyFor(childKey, targetKey, childCopyPreferredKey);
                                 sourceToTargetKeys.put(childKey, newKey);
                                 targetNode.createChild(targetCache, placeholderKey, childReference.getName(), null);
                                 linkedPlaceholdersToOriginal.put(placeholderKey, newKey);
@@ -2215,9 +2224,16 @@ public class SessionNode implements MutableCachedNode {
         }
 
         protected NodeKey createTargetKeyFor( NodeKey sourceKey,
-                                              NodeKey parentKeyInTarget ) {
+                                              NodeKey parentKeyInTarget,
+                                              String preferredKey ) {
             NodeKey newKey = sourceToTargetKeys.get(sourceKey);
-            return newKey != null ? newKey : parentKeyInTarget.withRandomId();
+            if (newKey != null) {
+                return newKey;
+            } else if (!StringUtil.isBlank(preferredKey)) {
+                return new NodeKey(preferredKey);
+            } else {
+                return parentKeyInTarget.withRandomId();
+            }
         }
 
         /**
@@ -2298,9 +2314,11 @@ public class SessionNode implements MutableCachedNode {
 
         @Override
         protected NodeKey createTargetKeyFor( NodeKey sourceKey,
-                                              NodeKey parentKeyInTarget ) {
+                                              NodeKey parentKeyInTarget,
+                                              String preferredKey ) {
             // Reuse the same source and identifier, but a different workspace ...
-            return parentKeyInTarget.withId(sourceKey.getIdentifier());
+            return !StringUtil.isBlank(preferredKey) ? new NodeKey(preferredKey) : parentKeyInTarget.withId(
+                    sourceKey.getIdentifier());
         }
 
         @Override
