@@ -238,6 +238,12 @@
             <groupId>com.atomikos</groupId>
             <artifactId>transactions-jta</artifactId>
         </dependency>
+        
+        <!-- Cassandra binary storage -->
+        <dependency>
+            <groupId>org.apache-extras.cassandra-jdbc</groupId>
+            <artifactId>cassandra-jdbc</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <resources>

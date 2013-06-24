@@ -383,6 +383,7 @@
 
         <!--Skip long running tests by default-->
         <skipLongRunningTests>true</skipLongRunningTests>
+        <cassandra-jdbc-driver>1.2.5</cassandra-jdbc-driver>
     </properties>
 
     <profiles>
@@ -1836,6 +1837,12 @@
                 <scope>test</scope>
             </dependency>
 
+            <!-- Cassandra JDBC driver -->
+            <dependency>
+                <groupId>org.apache-extras.cassandra-jdbc</groupId>
+                <artifactId>cassandra-jdbc</artifactId>
+                <version>${cassandra-jdbc-driver}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

@@ -107,6 +107,7 @@ public class Database {
         ACCESS,
         ORACLE,
         SYBASE,
+        CASSANDRA,
         UNKNOWN;
     }
 
@@ -278,6 +279,8 @@ public class Database {
                 return Type.ORACLE;
             } else if (name.contains("adaptive")) {
                 return Type.SYBASE;
+            } else if (name.contains("Cassandra")) {
+                return Type.CASSANDRA;
             }
             return Type.UNKNOWN;
         } catch (SQLException e) {
