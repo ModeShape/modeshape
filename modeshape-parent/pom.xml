@@ -383,6 +383,8 @@
 
         <!--Skip long running tests by default-->
         <skipLongRunningTests>true</skipLongRunningTests>
+        <cassandra-jdbc-driver>1.2.5</cassandra-jdbc-driver>
+        <cassandra-cql-driver>1.0.0</cassandra-cql-driver>
     </properties>
 
     <profiles>
@@ -1836,6 +1838,31 @@
                 <scope>test</scope>
             </dependency>
 
+            <!-- Cassandra JDBC driver -->
+            <dependency>
+                <groupId>org.apache-extras.cassandra-jdbc</groupId>
+                <artifactId>cassandra-jdbc</artifactId>
+                <version>${cassandra-jdbc-driver}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.datastax.cassandra</groupId>
+                <artifactId>cassandra-driver-core</artifactId>
+                <version>${cassandra-cql-driver}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.cassandra</groupId>
+                <artifactId>cassandra-all</artifactId>
+                <version>1.2.0</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>1.4.0</version>
+                <scope>test</scope>
+            </dependency>    
         </dependencies>
     </dependencyManagement>
 
