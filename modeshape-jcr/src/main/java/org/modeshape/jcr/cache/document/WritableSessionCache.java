@@ -823,9 +823,11 @@ public class WritableSessionCache extends AbstractSessionCache {
 
         Set<NodeKey> removedNodes = null;
         Set<BinaryKey> unusedBinaryKeys = new HashSet<BinaryKey>();
+        Set<NodeKey> renamedExternalNodes = new HashSet<NodeKey>();
         for (NodeKey key : changedNodesInOrder) {
             SessionNode node = changedNodes.get(key);
             String keyStr = key.toString();
+            boolean isExternal = !node.getKey().getSourceKey().equalsIgnoreCase(workspaceCache().getRootKey().getSourceKey());
             if (node == REMOVED) {
                 // We need to read some information from the node before we remove it ...
                 CachedNode persisted = workspaceCache.getNode(key);
@@ -864,6 +866,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                 } else {
                     SchematicEntry nodeEntry = documentStore.get(keyStr);
                     if (nodeEntry == null) {
+                        if (isExternal && renamedExternalNodes.contains(key)) {
+                            //this is a renamed external node which has been processed in the parent, so we can skip it
+                            continue;
+                        }
                         // Could not find the entry in the documentStore, which means it was deleted by someone else
                         // just moments before we got our transaction to save ...
                         throw new DocumentNotFoundException(keyStr);
@@ -1012,10 +1018,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                                 // The node was created in this session, so we can ignore this ...
                                 continue;
                             }
-                            CachedNode renamedNode = getNode(renamedKey);
                             Path renamedFromPath = workspacePaths.getPath(oldRenamedNode);
-                            Path renamedToPath = sessionPaths.getPath(renamedNode);
+                            Path renamedToPath = pathFactory().create(renamedFromPath.getParent(), renameEntry.getValue());
                             changes.nodeRenamed(renamedKey, renamedToPath, renamedFromPath.getLastSegment());
+                            if (isExternal) {
+                                renamedExternalNodes.add(renamedKey);
+                            }
                         }
                     }
 
@@ -1088,9 +1096,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                         monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties().values().iterator());
                     }
                 } else {
-                    boolean isExternal = !workspaceCache().getRootKey()
-                                                          .getSourceKey()
-                                                          .equalsIgnoreCase(node.getKey().getSourceKey());
                     boolean externalNodeChanged = isExternal && (hasPropertyChanges || node.hasNonPropertyChanges());
                     if (externalNodeChanged) {
                         // in the case of external nodes, only if there are changes should the update be called
