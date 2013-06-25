@@ -265,7 +265,7 @@ public class Duration extends Number implements Comparable<Duration> {
      * <dd>is the number of hours written in at least 2 digits (e.g., "03")</dd>
      * <dt>mmm,mmm</dt>
      * <dd>is the fractional part of seconds, written in at least millisecond precision and up to microsecond precision. The comma
-     * appears if more than 3 digits are used.
+     * appears if more than 3 digits are used.</dd>
      * </dl>
      * 
      * @return a string representation of the duration
@@ -274,6 +274,25 @@ public class Duration extends Number implements Comparable<Duration> {
     public String toString() {
         // Insert a comma after the milliseconds, if there are enough digits ..
         return this.getComponents().toString().replaceAll("(\\d{2}).(\\d{3})(\\d{1,3})", "$1.$2,$3");
+    }
+
+    /**
+     * Writes the duration in a form containing hours, minutes, and seconds, excluding the fractional part of the seconds. The
+     * format is essentially <code>HHH:MM:SS</code>, where
+     * <dl>
+     * <dt>HHH</dt>
+     * <dd>is the number of hours written in at least 2 digits (e.g., "03")</dd>
+     * <dt>MM</dt>
+     * <dd>is the number of hours written in at least 2 digits (e.g., "03")</dd>
+     * <dt>SS</dt>
+     * <dd>is the number of hours written in at least 2 digits (e.g., "03")</dd>
+     * </dl>
+     * 
+     * @return a string representation of the duration
+     */
+    public String toSimpleString() {
+        // Insert a comma after the milliseconds, if there are enough digits ..
+        return this.getComponents().toSimpleString();
     }
 
     /**
@@ -331,7 +350,7 @@ public class Duration extends Number implements Comparable<Duration> {
          * <dt>SS</dt>
          * <dd>is the number of hours written in at least 2 digits (e.g., "03")</dd>
          * <dt>mmm</dt>
-         * <dd>is the fractional part of seconds, written with 3-6 digits (any trailing zeros are dropped)
+         * <dd>is the fractional part of seconds, written with 3-6 digits (any trailing zeros are dropped)</dd>
          * </dl>
          * 
          * @return a string representation of the duration components
@@ -342,6 +361,27 @@ public class Duration extends Number implements Comparable<Duration> {
             // and between 3 and 6 digits for the fractional part of the seconds...
             String result = new DecimalFormat("######00").format(hours) + ':' + new DecimalFormat("00").format(minutes) + ':'
                             + new DecimalFormat("00.000###").format(seconds);
+            return result;
+        }
+
+        /**
+         * Return the duration as a string in a form containing hours, minutes, and seconds, excluding the fractional part of the
+         * seconds. The format is essentially <code>HHH:MM:SS.mmm</code>, where
+         * <dl>
+         * <dt>HHH</dt>
+         * <dd>is the number of hours written in at least 2 digits (e.g., "03")</dd>
+         * <dt>MM</dt>
+         * <dd>is the number of hours written in at least 2 digits (e.g., "03")</dd>
+         * <dt>SS</dt>
+         * <dd>is the number of hours written in at least 2 digits (e.g., "03")</dd>
+         * </dl>
+         * 
+         * @return a simple string representation of the duration components
+         */
+        public String toSimpleString() {
+            // Format the string, and have at least 2 digits for the hours, minutes and whole seconds ...
+            String result = new DecimalFormat("######00").format(hours) + ':' + new DecimalFormat("00").format(minutes) + ':'
+                            + new DecimalFormat("00").format(seconds);
             return result;
         }
     }

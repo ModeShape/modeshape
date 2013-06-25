@@ -656,7 +656,6 @@ class JcrContentHandler extends DefaultHandler {
             }
         }
 
-        @SuppressWarnings( "unchecked" )
         protected void create() throws SAXException {
             try {
                 AbstractJcrNode parent = parentHandler.node();
