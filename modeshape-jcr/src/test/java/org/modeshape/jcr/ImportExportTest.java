@@ -24,7 +24,6 @@
 package org.modeshape.jcr;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
@@ -43,14 +42,12 @@ import java.util.Set;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.ItemExistsException;
 import javax.jcr.Node;
-import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
-import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
