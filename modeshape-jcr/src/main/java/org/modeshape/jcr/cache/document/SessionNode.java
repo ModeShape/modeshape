@@ -748,7 +748,7 @@ public class SessionNode implements MutableCachedNode {
     public void setReference( SessionCache cache,
                               Property property,
                               SessionCache systemCache ) {
-        assert property.isReference();
+        assert property.isEmpty() || property.isReference();
 
         writableSession(cache).assertInSession(this);
         Name name = property.getName();
@@ -2154,7 +2154,7 @@ public class SessionNode implements MutableCachedNode {
             this.startingPathInSource = sourceNode.getPath(sourceCache);
             this.propertyFactory = this.targetCache.getContext().getPropertyFactory();
             this.targetWorkspaceKey = targetNode.getKey().getWorkspaceKey();
-            this.documentStore = ((WorkspaceCache) sourceCache.getWorkspace()).documentStore();
+            this.documentStore = ((WorkspaceCache)sourceCache.getWorkspace()).documentStore();
             this.systemWorkspaceKey = systemWorkspaceKey;
         }
 
@@ -2202,8 +2202,9 @@ public class SessionNode implements MutableCachedNode {
                 NodeKey parentSourceKey = sourceChild.getParentKeyInAnyWorkspace(sourceCache);
                 if (sourceKey.equals(parentSourceKey)) {
                     // The child is a normal child of this node ...
-                    String childCopyPreferredKey = documentStore.newDocumentKey(targetKey.toString(), childReference.getName(),
-                                                                       sourceChild.getPrimaryType(sourceCache));
+                    String childCopyPreferredKey = documentStore.newDocumentKey(targetKey.toString(),
+                                                                                childReference.getName(),
+                                                                                sourceChild.getPrimaryType(sourceCache));
                     NodeKey newKey = createTargetKeyFor(childKey, targetKey, childCopyPreferredKey);
                     MutableCachedNode childCopy = targetNode.createChild(targetCache, newKey, childReference.getName(), null);
                     doPhase1(childCopy, sourceChild);
@@ -2227,8 +2228,7 @@ public class SessionNode implements MutableCachedNode {
                                 NodeKey placeholderKey = createTargetKeyFor(childKey, targetKey, null);
                                 String childCopyPreferredKey = documentStore.newDocumentKey(targetKey.toString(),
                                                                                             childReference.getName(),
-                                                                                            sourceChild.getPrimaryType(
-                                                                                                    sourceCache));
+                                                                                            sourceChild.getPrimaryType(sourceCache));
                                 newKey = createTargetKeyFor(childKey, targetKey, childCopyPreferredKey);
                                 sourceToTargetKeys.put(childKey, newKey);
                                 targetNode.createChild(targetCache, placeholderKey, childReference.getName(), null);
@@ -2315,9 +2315,9 @@ public class SessionNode implements MutableCachedNode {
             return "Copy";
         }
 
-        protected boolean shouldProcessSourceKey(NodeKey sourceKey) {
-            return !sourceKey.equals(sourceCache.getRootKey()) &&
-                   !sourceKey.getWorkspaceKey().equalsIgnoreCase(systemWorkspaceKey);
+        protected boolean shouldProcessSourceKey( NodeKey sourceKey ) {
+            return !sourceKey.equals(sourceCache.getRootKey())
+                   && !sourceKey.getWorkspaceKey().equalsIgnoreCase(systemWorkspaceKey);
         }
     }
 
@@ -2346,8 +2346,7 @@ public class SessionNode implements MutableCachedNode {
                                               NodeKey parentKeyInTarget,
                                               String preferredKey ) {
             // Reuse the same source and identifier, but a different workspace ...
-            return !StringUtil.isBlank(preferredKey) ? new NodeKey(preferredKey) : parentKeyInTarget.withId(
-                    sourceKey.getIdentifier());
+            return !StringUtil.isBlank(preferredKey) ? new NodeKey(preferredKey) : parentKeyInTarget.withId(sourceKey.getIdentifier());
         }
 
         @Override

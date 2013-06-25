@@ -937,7 +937,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     SchematicEntry nodeEntry = documentStore.get(keyStr);
                     if (nodeEntry == null) {
                         if (isExternal && renamedExternalNodes.contains(key)) {
-                            //this is a renamed external node which has been processed in the parent, so we can skip it
+                            // this is a renamed external node which has been processed in the parent, so we can skip it
                             continue;
                         }
                         // Could not find the entry in the documentStore, which means it was deleted by someone else
@@ -1163,7 +1163,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // should be there and shouldn't require a looking in the cache...
                         Name primaryType = node.getPrimaryType(this);
                         Set<Name> mixinTypes = node.getMixinTypes(this);
-                        monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties().values().iterator());
+                        monitor.recordAdd(workspaceName, key, newPath, primaryType, mixinTypes, node.changedProperties()
+                                                                                                    .values()
+                                                                                                    .iterator());
                     }
                 } else {
                     boolean externalNodeChanged = isExternal && (hasPropertyChanges || node.hasNonPropertyChanges());
@@ -1194,17 +1196,20 @@ public class WritableSessionCache extends AbstractSessionCache {
                         monitor.recordUpdate(workspaceName, key, newNodePath, primaryType, mixinTypes, node.getProperties(this));
 
                         if (pathChanged) {
-                            //we're dealing with a path change, so in case there is a persisted node at "new path" we need to remove
-                            //it from the indexes, because the current node will take its place
+                            // we're dealing with a path change, so in case there is a PERSISTED node at "new path" we need to
+                            // remove it from the indexes, because the current node will take its place
                             CachedNode persistedParent = workspaceCache.getNode(node.getParentKey(this));
-                            ChildReference persistedNodeAtNewPath = persistedParent.getChildReferences(workspaceCache)
-                                                                                   .getChild(newNodePath.getLastSegment()
-                                                                                                        .getName(),
-                                                                                             newNodePath.getLastSegment()
-                                                                                                        .getIndex());
-                            if (persistedNodeAtNewPath != null) {
-                                monitor.recordRemove(workspaceName, Arrays.asList(persistedNodeAtNewPath.getKey()));
-                            }
+                            if (persistedParent != null) {
+                                // The parent is found in the workspace cache ...
+                                ChildReference persistedNodeAtNewPath = persistedParent.getChildReferences(workspaceCache)
+                                                                                       .getChild(newNodePath.getLastSegment()
+                                                                                                            .getName(),
+                                                                                                 newNodePath.getLastSegment()
+                                                                                                            .getIndex());
+                                if (persistedNodeAtNewPath != null) {
+                                    monitor.recordRemove(workspaceName, Arrays.asList(persistedNodeAtNewPath.getKey()));
+                                }
+                            } // otherwise the parent was not PERSISTED and there's nothing to do
                         }
                     }
                 }
