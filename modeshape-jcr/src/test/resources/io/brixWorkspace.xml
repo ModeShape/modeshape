@@ -1,0 +1,1467 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sv:node xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:rep="internal"
+         xmlns:brix="http://brix-cms.googlecode.com" xmlns:fn_old="http://www.w3.org/2004/10/xpath-functions"
+         xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:sv="http://www.jcp.org/jcr/sv/1.0"
+         xmlns:mix="http://www.jcp.org/jcr/mix/1.0" xmlns:fn="http://www.w3.org/2005/xpath-functions" sv:name="brix:root">
+    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>nt:folder</sv:value>
+    </sv:property>
+    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+        <sv:value>brix:node</sv:value>
+    </sv:property>
+    <sv:property sv:name="jcr:uuid" sv:type="String">
+        <sv:value>f11cf9b6-485b-434d-959e-1897554abdc0</sv:value>
+    </sv:property>
+    <sv:property sv:name="jcr:created" sv:type="Date">
+        <sv:value>2008-07-07T23:57:28.345+02:00</sv:value>
+    </sv:property>
+    <sv:node sv:name="brix:web">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>nt:folder</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+            <sv:value>brix:node</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:uuid" sv:type="String">
+            <sv:value>bb591592-83fe-46bc-895b-5110a9f870a8</sv:value>
+        </sv:property>
+        <sv:property sv:name="brix:created" sv:type="Date">
+            <sv:value>2008-06-19T17:07:48.451-07:00</sv:value>
+        </sv:property>
+        <sv:property sv:name="brix:createdBy" sv:type="String">
+            <sv:value>demo</sv:value>
+        </sv:property>
+        <sv:property sv:name="brix:lastModified" sv:type="Date">
+            <sv:value>2008-06-19T17:20:28.701-07:00</sv:value>
+        </sv:property>
+        <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+            <sv:value>demo</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:created" sv:type="Date">
+            <sv:value>2008-07-07T23:57:28.349+02:00</sv:value>
+        </sv:property>
+        <sv:node sv:name="brix:globalContainer">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>nt:file</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                <sv:value>brix:node</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>9aa3c3ef-0926-41b8-bd27-5afdd5770526</sv:value>
+            </sv:property>
+            <sv:property sv:name="brix:nodeType" sv:type="String">
+                <sv:value>brix:globalContainer</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2008-07-07T23:57:28.366+02:00</sv:value>
+            </sv:property>
+            <sv:node sv:name="jcr:content">
+                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                    <sv:value>nt:resource</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:uuid" sv:type="String">
+                    <sv:value>8b143b50-9011-444c-9cff-a28d68f5c36e</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:data" sv:type="Binary">
+                    <sv:value/>
+                </sv:property>
+                <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                    <sv:value>2008-06-27T18:27:03.096+02:00</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:mimeType" sv:type="String">
+                    <sv:value>text/html</sv:value>
+                </sv:property>
+            </sv:node>
+        </sv:node>
+        <sv:node sv:name="brix:site">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>nt:folder</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                <sv:value>brix:node</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>c9fa1c2e-f169-4d5d-aa15-22721caf1f8e</sv:value>
+            </sv:property>
+            <sv:property sv:name="brix:created" sv:type="Date">
+                <sv:value>2008-07-06T17:03:05.649+02:00</sv:value>
+            </sv:property>
+            <sv:property sv:name="brix:createdBy" sv:type="String">
+                <sv:value>demo</sv:value>
+            </sv:property>
+            <sv:property sv:name="brix:lastModified" sv:type="Date">
+                <sv:value>2008-07-07T14:43:58.733-07:00</sv:value>
+            </sv:property>
+            <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                <sv:value>demo</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:created" sv:type="Date">
+                <sv:value>2008-07-07T23:57:28.382+02:00</sv:value>
+            </sv:property>
+            <sv:node sv:name="index.html">
+                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                    <sv:value>nt:file</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                    <sv:value>brix:node</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:uuid" sv:type="String">
+                    <sv:value>1e1d60f2-403b-4014-9dfe-e81a3f03f9e9</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:created" sv:type="Date">
+                    <sv:value>2008-06-19T17:14:32.982-07:00</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:createdBy" sv:type="String">
+                    <sv:value>demo</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:lastModified" sv:type="Date">
+                    <sv:value>2008-07-07T14:48:00.186-07:00</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                    <sv:value>demo</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:nodeType" sv:type="String">
+                    <sv:value>brix:tilePage</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:template" sv:type="Reference">
+                    <sv:value>080b93f9-a879-4433-ba91-c93ae8083c3d</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:title" sv:type="String">
+                    <sv:value>Home</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:created" sv:type="Date">
+                    <sv:value>2008-07-07T23:57:28.387+02:00</sv:value>
+                </sv:property>
+                <sv:node sv:name="jcr:content">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:unstructured</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:data" sv:type="String">
+                        <sv:value>&lt;h2&gt;Welcome to BrixCMS Demo Site&lt;/h2&gt;&lt;br/&gt;&lt;br/&gt;&#13;
+                            &#13;
+                            You can access the Admin Console at the &lt;a href="admin"&gt;/admin&lt;/a&gt; URL.&lt;br/&gt;&lt;br/&gt;&#13;
+                            &#13;
+                            Visit &lt;a href="http://brix-cms.googlecode.com"&gt;Brix project site&lt;/a&gt; for more
+                            information about Brix CMS.
+                        </sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:encoding" sv:type="String">
+                        <sv:value>UTF-8</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                        <sv:value>2008-07-06T22:40:06.482+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mimeType" sv:type="String">
+                        <sv:value>text/html</sv:value>
+                    </sv:property>
+                </sv:node>
+            </sv:node>
+            <sv:node sv:name="brix:folderRedirectReference">
+                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                    <sv:value>nt:unstructured</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                    <sv:value>brix:hidden</sv:value>
+                </sv:property>
+                <sv:property sv:name="node" sv:type="Reference">
+                    <sv:value>1e1d60f2-403b-4014-9dfe-e81a3f03f9e9</sv:value>
+                </sv:property>
+                <sv:property sv:name="type" sv:type="String">
+                    <sv:value>NODE</sv:value>
+                </sv:property>
+            </sv:node>
+            <sv:node sv:name="css">
+                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                    <sv:value>nt:folder</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                    <sv:value>brix:node</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:uuid" sv:type="String">
+                    <sv:value>8ba96bbd-1d3a-410e-8518-42a3db89c4c4</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:created" sv:type="Date">
+                    <sv:value>2008-06-19T17:08:14.638-07:00</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:createdBy" sv:type="String">
+                    <sv:value>demo</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:lastModified" sv:type="Date">
+                    <sv:value>2008-07-08T01:25:06.023+02:00</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                    <sv:value>a</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:created" sv:type="Date">
+                    <sv:value>2008-07-07T23:57:28.405+02:00</sv:value>
+                </sv:property>
+                <sv:node sv:name="style1.css">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>b9760400-876c-41a5-af90-ca9c20c4efa0</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-07-06T16:19:17.305+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-08T01:25:06.023+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.411+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="Binary">
+                            <sv:value>
+                                LyoNCiAqIEBhdXRob3IgTWF0ZWogS25vcHANCiAqLw0KDQovKiBZVUkgQ1NTIFJlc2V0ICovDQpodG1se2NvbG9yOiMwMDA7YmFja2dyb3VuZDojRkZGO31ib2R5LGRpdixkbCxkdCxkZCx1bCxvbCxsaSxoMSxoMixoMyxoNCxoNSxoNixwcmUsY29kZSxmb3JtLGZpZWxkc2V0LGxlZ2VuZCxpbnB1dCx0ZXh0YXJlYSxwLGJsb2NrcXVvdGUsdGgsdGR7bWFyZ2luOjA7cGFkZGluZzowO310YWJsZXtib3JkZXItY29sbGFwc2U6Y29sbGFwc2U7Ym9yZGVyLXNwYWNpbmc6MDt9ZmllbGRzZXQsaW1ne2JvcmRlcjowO31hZGRyZXNzLGNhcHRpb24sY2l0ZSxjb2RlLGRmbixlbSxzdHJvbmcsdGgsdmFye2ZvbnQtc3R5bGU6bm9ybWFsO2ZvbnQtd2VpZ2h0Om5vcm1hbDt9bGl7bGlzdC1zdHlsZTpub25lO31jYXB0aW9uLHRoe3RleHQtYWxpZ246bGVmdDt9aDEsaDIsaDMsaDQsaDUsaDZ7Zm9udC1zaXplOjEwMCU7Zm9udC13ZWlnaHQ6bm9ybWFsO31xOmJlZm9yZSxxOmFmdGVye2NvbnRlbnQ6Jyc7fWFiYnIsYWNyb255bSB7Ym9yZGVyOjA7Zm9udC12YXJpYW50Om5vcm1hbDt9c3VwIHt2ZXJ0aWNhbC1hbGlnbjp0ZXh0LXRvcDt9c3ViIHt2ZXJ0aWNhbC1hbGlnbjp0ZXh0LWJvdHRvbTt9aW5wdXQsdGV4dGFyZWEsc2VsZWN0e2ZvbnQtZmFtaWx5OmluaGVyaXQ7Zm9udC1zaXplOmluaGVyaXQ7Zm9udC13ZWlnaHQ6aW5oZXJpdDt9aW5wdXQsdGV4dGFyZWEsc2VsZWN0eypmb250LXNpemU6MTAwJTt9bGVnZW5ke2NvbG9yOiMwMDA7fQ0KDQphIHsNCgljb2xvcjogYmx1ZTsNCgl0ZXh0LWRlY29yYXRpb246IG5vbmU7DQp9DQoNCmE6aG92ZXIgew0KCXRleHQtZGVjb3JhdGlvbjogdW5kZXJsaW5lOw0KfQ0KDQpib2R5IHsNCglmb250LWZhbWlseTogVmVyZGFuYTsNCglmb250LXNpemU6IDc5JTsNCgliYWNrZ3JvdW5kLWltYWdlOiB1cmwoIi4uL2ltYWdlcy9iZzEuanBnIik7DQoJYmFja2dyb3VuZC1yZXBlYXQ6IHJlcGVhdC14Ow0KfQ0KDQpkaXYudG9wLWJhciB7DQoJaGVpZ2h0OiAyN3B4Ow0KCXRleHQtYWxpZ246IHJpZ2h0Ow0KCXBhZGRpbmctcmlnaHQ6IDFlbTsJDQp9DQoNCmRpdi50b3AtYmFyIGRpdiB7DQoJcGFkZGluZy10b3A6IDRweDsNCglmb250LXNpemU6IHNtYWxsOw0KfQ0KDQpkaXYubWFpbi1jb250ZW50IHsNCgl3aWR0aDogOTYycHg7DQoJbWFyZ2luLWxlZnQ6IGF1dG87DQoJbWFyZ2luLXJpZ2h0OiBhdXRvOwkJDQoJYmFja2dyb3VuZC1jb2xvcjogd2hpdGU7DQp9DQoNCmRpdi5oZWFkZXIgew0KCWJhY2tncm91bmQtaW1hZ2U6IHVybCgiLi4vaW1hZ2VzL2hlYWRlci5wbmciKTsJDQoJd2lkdGg6IDEwMCU7DQoJaGVpZ2h0OiAxMDNweDsNCn0NCg0KDQpkaXYuYmVsb3ctaGVhZGVyIHsNCgltaW4taGVpZ2h0OiAzMGVtOw0KCWJvcmRlci1sZWZ0OiAxcHggc29saWQgI0RBREFEQTsNCglib3JkZXItcmlnaHQ6IDFweCBzb2xpZCAjREFEQURBOw0KDQp9DQoNCmRpdi5jb250ZW50IHsNCgkvKiB3b3JrYXJvdW5kIGZvciBJRTYgKi8NCglfaGVpZ2h0OiAyNWVtOw0KfQ0KDQovKg0KICogVG9wIE1lbnUNCiAqLw0KDQp1bC50b3AtbWVudSB7DQoJYmFja2dyb3VuZC1pbWFnZTogdXJsKCIuLi9pbWFnZXMvbWFpbi1tZW51LWJnLnBuZyIpOw0KCWJhY2tncm91bmQtcmVwZWF0OiByZXBlYXQteDsNCglvdmVyZmxvdzogaGlkZGVuOw0KCV9oZWlnaHQ6IDElOw0KCXBhZGRpbmctbGVmdDogMWVtOw0KfQ0KDQp1bC50b3AtbWVudSBsaSB7DQoJZmxvYXQ6IGxlZnQ7DQoJbWFyZ2luLXJpZ2h0OiAxZW07DQp9DQoNCnVsLnRvcC1tZW51IGxpIGEgew0KCXBhZGRpbmctbGVmdDogMWVtOwkNCglwYWRkaW5nLXJpZ2h0OiAxZW07DQoJZGlzcGxheTogaW5saW5lLWJsb2NrOw0KCXBhZGRpbmctdG9wOiA1cHg7DQoJaGVpZ2h0OiAyMnB4Ow0KCWZvbnQtd2VpZ2h0OiBib2xkOw0KCWNvbG9yOiBibGFjazsNCgktbW96LW91dGxpbmU6IG5vbmU7DQp9DQoNCnVsLnRvcC1tZW51IGxpIGE6aG92ZXIgew0KCXRleHQtZGVjb3JhdGlvbjogbm9uZTsNCgljb2xvcjogYmx1ZTsNCn0NCg0KdWwudG9wLW1lbnUgbGkuc2VsZWN0ZWQgew0KCWJhY2tncm91bmQtaW1hZ2U6IHVybCgiLi4vaW1hZ2VzL21haW4tbWVudS1zbGlkZTEucG5nIik7DQoJYmFja2dyb3VuZC1yZXBlYXQ6IG5vLXJlcGVhdDsNCgliYWNrZ3JvdW5kLXBvc2l0aW9uOiBsZWZ0Ow0KfQ0KDQp1bC50b3AtbWVudSBsaS5zZWxlY3RlZCBhIHsNCgliYWNrZ3JvdW5kLWltYWdlOiB1cmwoIi4uL2ltYWdlcy9tYWluLW1lbnUtc2xpZGUyLnBuZyIpOw0KCWJhY2tncm91bmQtcmVwZWF0OiBuby1yZXBlYXQ7DQoJYmFja2dyb3VuZC1wb3NpdGlvbjogcmlnaHQ7DQp9DQoNCi8qDQogKiBSb3VuZGVkIEJveCAxDQogKi8NCg0KZGl2LnIxLWJveC10b3Agew0KCWJhY2tncm91bmQtaW1hZ2U6IHVybCgiLi4vaW1hZ2VzL3IxLWJveC10b3Atc2xpZGUxLnBuZyIpOw0KCWJhY2tncm91bmQtcmVwZWF0OiBuby1yZXBlYXQ7DQoJYmFja2dyb3VuZC1wb3NpdGlvbjogbGVmdDsNCn0NCg0KZGl2LnIxLWJveC10b3AgZGl2IHsNCgliYWNrZ3JvdW5kLWltYWdlOiB1cmwoIi4uL2ltYWdlcy9yMS1ib3gtdG9wLXNsaWRlMi5wbmciKTsNCgliYWNrZ3JvdW5kLXJlcGVhdDogbm8tcmVwZWF0Ow0KCWJhY2tncm91bmQtcG9zaXRpb246IHJpZ2h0Ow0KCWhlaWdodDogMTVweDsNCn0NCg0KZGl2LnIxLWJveC1ib3R0b20gew0KCWJhY2tncm91bmQtaW1hZ2U6IHVybCgiLi4vaW1hZ2VzL3IxLWJveC1ib3R0b20tc2xpZGUxLnBuZyIpOw0KCWJhY2tncm91bmQtcmVwZWF0OiBuby1yZXBlYXQ7DQoJYmFja2dyb3VuZC1wb3NpdGlvbjogbGVmdDsNCn0NCg0KZGl2LnIxLWJveC1ib3R0b20gZGl2IHsNCgliYWNrZ3JvdW5kLWltYWdlOiB1cmwoIi4uL2ltYWdlcy9yMS1ib3gtYm90dG9tLXNsaWRlMi5wbmciKTsNCgliYWNrZ3JvdW5kLXJlcGVhdDogbm8tcmVwZWF0Ow0KCWJhY2tncm91bmQtcG9zaXRpb246IHJpZ2h0Ow0KCWhlaWdodDogMTVweDsNCn0NCg0KZGl2LnIxLWJveC1ib2R5IHsNCglib3JkZXItbGVmdDogMXB4IHNvbGlkICNCNUI1QjU7DQoJYm9yZGVyLXJpZ2h0OiAxcHggc29saWQgI0I1QjVCNTsNCn0NCg0KLyoNCiAqIFJpZ2h0IE1lbnUNCiAqLw0KdWwucmlnaHQtbWVudSBsaSBhIHsNCglkaXNwbGF5OiBibG9jazsNCglwYWRkaW5nOiAwLjVlbTsNCgljb2xvcjogYmxhY2s7DQp9DQoNCg0KdWwucmlnaHQtbWVudSBsaS5zZWxlY3RlZCBhIHsNCgliYWNrZ3JvdW5kLWNvbG9yOiAjZWVlOw0KCWZvbnQtd2VpZ2h0OiBib2xkOw0KfQ0KDQp1bC5yaWdodC1tZW51IGxpLnNlbGVjdGVkLWNoaWxkIGEgew0KCWZvbnQtd2VpZ2h0OiBib2xkOw0KfQ0KDQp1bC5yaWdodC1tZW51IGxpIGE6aG92ZXIgew0KCWJhY2tncm91bmQtY29sb3I6ICNmOWY5Zjk7DQoJdGV4dC1kZWNvcmF0aW9uOiBub25lOwkNCn0NCg0KdWwucmlnaHQtbWVudSBsaS5zZWxlY3RlZCBhOmhvdmVyIHsNCgliYWNrZ3JvdW5kLWNvbG9yOiAjZWVlOw0KfQ0KDQp1bC5yaWdodC1tZW51IHsNCglib3JkZXItdG9wOiAxcHggZG90dGVkICNjY2M7DQp9DQoNCnVsLnJpZ2h0LW1lbnUgbGkgew0KCWJvcmRlci1ib3R0b206IDFweCBkb3R0ZWQgI2NjYzsNCn0NCg0KLyoqDQogKiBTZWNvbmQgTGV2ZWwgDQogKi8NCg0KdWwucmlnaHQtbWVudSBsaS5zZWxlY3RlZC1jaGlsZCB1bCBsaSBhLA0KdWwucmlnaHQtbWVudSBsaS5zZWxlY3RlZCB1bCBsaSBhIHsNCgliYWNrZ3JvdW5kLWNvbG9yOiB3aGl0ZTsNCglmb250LXdlaWdodDogbm9ybWFsOw0KCWJvcmRlci1sZWZ0OiAyMHB4IHNvbGlkICNmOWY5Zjk7DQoJcGFkZGluZy1sZWZ0OiA1cHg7DQp9DQoNCnVsLnJpZ2h0LW1lbnUgbGkgdWwgbGkuc2VsZWN0ZWQgYSB7DQoJZm9udC13ZWlnaHQ6IGJvbGQ7DQoJYm9yZGVyLWxlZnQ6IDIwcHggc29saWQgI2UwZTBlMDsNCgliYWNrZ3JvdW5kLWNvbG9yOiAjZjlmOWY5Ow0KCWJhY2tncm91bmQtY29sb3I6ICNlZWU7DQp9DQoNCnVsLnJpZ2h0LW1lbnUgbGkgdWwgbGkgYTpob3ZlciB7DQoJYmFja2dyb3VuZC1jb2xvcjogI2Y5ZjlmOTsNCn0NCg0KdWwucmlnaHQtbWVudSBsaSB1bCBsaSB7DQoJYm9yZGVyLXRvcDogMXB4IGRvdHRlZCAjY2NjOw0KCWJvcmRlci1ib3R0b206IG5vbmU7DQp9DQoNCg0KLyogDQogKiBDb250ZW50IA0KICovDQpkaXYuY29udGVudC13aXRoLXJpZ2h0LW1lbnUgew0KCW92ZXJmbG93OiBoaWRkZW47DQoJX2hlaWdodDogMSU7DQoJcGFkZGluZy1sZWZ0OiAxMnB4Ow0KCXBhZGRpbmctcmlnaHQ6IDEycHg7DQp9DQoNCmRpdi5yaWdodC1tZW51LWNvbnRhaW5lciB7DQoJd2lkdGg6IDIwMHB4Ow0KCWZsb2F0OiByaWdodDsNCn0NCg0KZGl2LmNvbnRlbnQgew0KCW1hcmdpbjogMTJweDsNCgltYXJnaW4tdG9wOiAyMHB4Ow0KfQ0KDQpkaXYuY29udGVudC13aXRoLXJpZ2h0LW1lbnUgZGl2LmNvbnRlbnQgew0KCW1hcmdpbjogMGVtOw0KCW1hcmdpbi10b3A6IDIwcHg7DQoJd2lkdGg6IDcyMHB4Ow0KfQ0KDQovKg0KICogRm9vdGVyDQogKi8NCmRpdi5mb290ZXIgew0KCWJvcmRlcjogMXB4IHNvbGlkICNEQURBREE7DQoJYm9yZGVyLXRvcDogMXB4IHNvbGlkICNlZWU7DQoJcGFkZGluZzogMC4zZW07DQoJZm9udC1zaXplOiA4MCU7DQoJdGV4dC1hbGlnbjogcmlnaHQ7DQp9DQoNCi8qDQogKiBNaXNjDQogKi8NCi5sYWJlbCB7DQoJY29sb3I6ICM3Nzc7DQp9DQoJCQ0KLnRpbGUgew0KCXdpZHRoOiAyMGVtOw0KCWJhY2tncm91bmQtY29sb3I6ICNGM0YyOTc7DQoJYm9yZGVyOiAxcHggZG90dGVkICNkZGQ7DQoJcGFkZGluZzogMC41ZW07DQoJbWFyZ2luLWJvdHRvbTogMS41ZW07DQoJbWFyZ2luLXRvcDogMC4zZW07DQoJZm9udC13ZWlnaHQ6IGJvbGQ7DQp9DQo=
+                            </sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:encoding" sv:type="String">
+                            <sv:value>UTF-8</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-08T01:25:06.023+02:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>application/octet-stream</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+            </sv:node>
+            <sv:node sv:name="images">
+                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                    <sv:value>nt:folder</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                    <sv:value>brix:node</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:uuid" sv:type="String">
+                    <sv:value>260e68b6-27e2-4acc-8b94-dfc27438b4ed</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:created" sv:type="Date">
+                    <sv:value>2008-06-19T17:13:01.435-07:00</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:createdBy" sv:type="String">
+                    <sv:value>demo</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:lastModified" sv:type="Date">
+                    <sv:value>2008-07-06T18:50:42.588+02:00</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                    <sv:value>a</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:created" sv:type="Date">
+                    <sv:value>2008-07-07T23:57:28.427+02:00</sv:value>
+                </sv:property>
+                <sv:node sv:name="bg1.jpg">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>f90e9b1b-1366-4fd0-82ff-d008e9892973</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-07-06T16:51:00.795+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-06T16:51:00.795+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.430+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="Binary">
+                            <sv:value>
+                                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
+                            </sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-06T16:51:00.792+02:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>image/jpeg</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+                <sv:node sv:name="header.png">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>00e184a3-8872-43e9-81bf-29b0ee816a8c</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-07-06T16:53:22.423+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-06T16:53:22.423+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.445+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="Binary">
+                            <sv:value>
+                                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
+                            </sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-06T16:53:22.422+02:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>image/png</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+                <sv:node sv:name="main-menu-bg.png">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>970a76d9-1208-4b88-93c5-81c515076b51</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-07-06T17:17:25.974+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-06T17:17:25.974+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.459+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="Binary">
+                            <sv:value>
+                                iVBORw0KGgoAAAANSUhEUgAAABMAAAARCAMAAAAIRmf1AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAC1QTFRF////9fX1/v7+wMDA4uLi6Ojo7e3t+fn529vbxcXFvr6+/Pz809PT8fHxy8vLU6GOugAAAC9JREFUeNqkwTcBACAAwLCyN/7lIqAnCdNIxjCusY1uZKMY1ThGMJqxjGh8eAIMAHUMB8zlDcXqAAAAAElFTkSuQmCC
+                            </sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-06T17:17:25.972+02:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>image/png</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+                <sv:node sv:name="main-menu-slide1.png">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>84bb62b4-dfbe-4a8f-889e-4c9ce599e2c8</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-07-06T17:24:10.365+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-06T17:24:10.365+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.464+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="Binary">
+                            <sv:value>
+                                iVBORw0KGgoAAAANSUhEUgAAAfQAAAAbCAMAAAC9bY1bAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAHtQTFRFttLuwNr1ss7rl7XTkrDOp8PhiqjHiKfFor/djqvKnbrYq8jlv9n1xN34u9fzvtj0w933r8voudXxwdv2xd/4xuD5yOD6yOH6yeL7yuL7y+P8////z+X89Pn+0eb7yeH52Or84+/89fn+0+f8zOP76vT95fH96fP91Oj6KtgTnAAAAHZJREFUeNrs0YUBwkAABMHDg0NwPrj2XyH0sTstTAbCSV84GQonXeGkI5yMhJNKOOkJJ2PhZCmctIUTAdXCyUw4mQsnE+GkJZyshJOFcDIVTi5r0eS7EU1uW9HkdN4JJuXz3IslpbweB6H808v9fW2aozB+AgwA8i6uOiJcVrcAAAAASUVORK5CYII=
+                            </sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-06T17:24:10.364+02:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>image/png</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+                <sv:node sv:name="main-menu-slide2.png">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>45ef9cc2-d06e-43f7-bddc-9c2198572af0</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-07-06T17:27:13.254+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-06T17:27:13.254+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.474+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="Binary">
+                            <sv:value>
+                                iVBORw0KGgoAAAANSUhEUgAAAAgAAAAbCAMAAAB2kz6MAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAHtQTFRFkrDOr8vowdv2jqvKv9n1w933iKfFvtj0wNr1ss7riqjHudXxu9fzttLul7XTnbrYor/dp8Phq8jlxN34yOD6xuD5xd/4////yOH6yeL7yuL74+/85fH90+f82Or89Pn+6fP91Oj69fn+z+X8yeH56vT9zOP7y+P80eb7/K6ggwAAAFlJREFUeNo8wQcWwVAUQMGri14iTwiixv5XiPx7zDAUE9ETfwuxFCuxFhvREZmYi6mYiZHoi7HoioHYiiJ5sEuu5MmRfet9ofx51cHh6/SMoLmfq1tEfAQYADJiC348d+FAAAAAAElFTkSuQmCC
+                            </sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-06T17:27:13.253+02:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>image/png</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+                <sv:node sv:name="r1-box-top-slide2.png">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>afb76c2b-98ff-40be-8a43-5255a008a251</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-07-06T18:50:42.357+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-06T18:50:42.357+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.479+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="Binary">
+                            <sv:value>
+                                iVBORw0KGgoAAAANSUhEUgAAAAsAAAAPCAMAAAAF48UCAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAG9QTFRF////+fn5/f39/Pz8+/v79PT0+Pj49vb28/Pz8fHx7u7u8PDw7Ozs6+vrtbW1x8fH3t7ewMDAzMzM5ubm0NDQwcHB4eHh4+Pj1dXV7+/v09PT6enp/v7+3d3d2dnZxcXFubm5vb29w8PDtra21NTUYxXyZgAAAFVJREFUeNo8xlUCgCAQBcBn9yqK3XH/MwriMl+Dc99S/PpKtmVjXiiVGL7nWlFP+qlRP+qZMV4dkPyae0HMyhkBWyUilguELDjgWATfIngWwbXoFWAATOQFlIBJ5nEAAAAASUVORK5CYII=
+                            </sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-06T18:50:42.355+02:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>image/png</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+                <sv:node sv:name="r1-box-bottom-slide2.png">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>2c129d66-e7b2-43c7-8957-c77c4c84371f</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-07-06T18:50:42.449+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-06T18:50:42.449+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.483+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="Binary">
+                            <sv:value>
+                                iVBORw0KGgoAAAANSUhEUgAAAAsAAAAPCAMAAAAF48UCAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAG9QTFRF////+fn5/f39/Pz8+/v79PT0+Pj49vb28/Pz8fHx7u7u8PDw7Ozs6+vrtbW1x8fH3t7ewMDAzMzM5ubm0NDQwcHB4eHh4+Pj1dXV7+/v09PT6enp/v7+3d3d2dnZxcXFubm5vb29w8PDtra21NTUYxXyZgAAAFVJREFUeNo8xsUBgDAAALHDvbi77D8jUtq8gqkJLE1gawJDE7iKs+EpcY6jzBW+ko4Ev/KciKT+aCCUiguIX0kxPCV5ZHn3ljar6rT8yr4uoRy3AAMAn5UFlIBAWqkAAAAASUVORK5CYII=
+                            </sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-06T18:50:42.446+02:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>image/png</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+                <sv:node sv:name="r1-box-bottom-slide1.png">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>7605d7a5-4a98-4b28-b616-e4969659ba75</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-07-06T18:50:42.480+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-06T18:50:42.480+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.496+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="Binary">
+                            <sv:value>
+                                iVBORw0KGgoAAAANSUhEUgAAA+gAAAAPCAMAAABA1BVxAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAG9QTFRF9PT0/f39+fn5+/v7/Pz8+Pj48/Pz9vb27u7u8fHx8PDw7Ozs6+vrtbW16enp////wMDAzMzM5ubm3t7ex8fH0NDQ4+Pj1dXVvb291NTU3d3dtra2w8PDubm52dnZ4eHh7+/v/v7+wcHBxcXF09PTxIoUAAAAAHxJREFUeNrs04cVglAURME1o/B5RLNi6r9GULvYc6eHUZoBcKe0BOBOaQHAndIcgDvdtAJgTlW+AWBO/VkA3JXdGoA5PS/NFoA3xXB97ABYU8SpzgBYm6LHpy5yAMa+0eNQtQUAX7/o0XSvvt2XADz9o0dk9/cxAfA0CjAAjiqcJFbh0sYAAAAASUVORK5CYII=
+                            </sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-06T18:50:42.479+02:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>image/png</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+                <sv:node sv:name="r1-box-top-slide1.png">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>3cba4cd3-85a1-472f-a022-39a12aae79ac</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-07-06T18:50:42.592+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-06T18:50:42.592+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.501+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="Binary">
+                            <sv:value>
+                                iVBORw0KGgoAAAANSUhEUgAAA+gAAAAPCAMAAABA1BVxAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAG9QTFRF9PT0/f39+fn5+/v7/Pz8+Pj48/Pz9vb27u7u8fHx8PDw7Ozs6+vrtbW16enp////wMDAzMzM5ubm3t7ex8fH0NDQ4+Pj1dXVvb291NTU3d3dtra2w8PDubm52dnZ4eHh7+/v/v7+wcHBxcXF09PTxIoUAAAAAHpJREFUeNrs04cVggAQRMFVURA4MuaI9l+jil3s+9PDqP7Lbq9DAPCkuXk3TGO/qwB4mqPvm74E4OsX/d2WBQBj3+jHNgNgTfX98sgBWNPz3G0BeFM1bACY03gSAHdNkQIwp6vWAMwplgDcKVYA3CkSAO4UCwDuPgIMAD6OnCSWrdaiAAAAAElFTkSuQmCC
+                            </sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-06T18:50:42.587+02:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>image/png</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+            </sv:node>
+            <sv:node sv:name="includes">
+                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                    <sv:value>nt:folder</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                    <sv:value>brix:node</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:uuid" sv:type="String">
+                    <sv:value>b4b22312-e05b-4ace-ba3b-79641915ac28</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:created" sv:type="Date">
+                    <sv:value>2008-06-19T17:20:28.701-07:00</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:createdBy" sv:type="String">
+                    <sv:value>demo</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:lastModified" sv:type="Date">
+                    <sv:value>2008-07-06T23:31:13.346+02:00</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                    <sv:value>a</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:created" sv:type="Date">
+                    <sv:value>2008-07-07T23:57:28.504+02:00</sv:value>
+                </sv:property>
+                <sv:node sv:name="template-base.html">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>b6242ff0-2561-48e1-ad54-dba7622eea02</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-06-19T17:22:15.201-07:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>demo</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-06T23:31:13.346+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:nodeType" sv:type="String">
+                        <sv:value>brix:tileTemplate</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.511+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="Binary">
+                            <sv:value>
+                                PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjwhRE9DVFlQRSBodG1sIFBVQkxJQyAiLS8vVzNDLy9EVEQgWEhUTUwgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL1RSL3hodG1sMTEvRFREL3hodG1sMTEuZHRkIj4NCjxodG1sIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hodG1sIiB4bWw6bGFuZz0iZW4iID4NCgk8aGVhZD4NCiAgICAJPGxpbmsgcmVsPSJzdHlsZXNoZWV0IiB0eXBlPSJ0ZXh0L2NzcyIgaHJlZj0iY3NzL3N0eWxlMS5jc3MiLz4NCgkJPGxpbmsgcmVsPSJzaG9ydGN1dCBpY29uIiBocmVmPSIvZmF2aWNvbi5pY28iIC8+DQoJCTx0aXRsZT48YnJpeDp0aXRsZS8+PC90aXRsZT4NCgk8L2hlYWQ+DQo8Ym9keT4NCgk8ZGl2IGNsYXNzPSJ0b3AtYmFyIj48ZGl2Pg0KCQk8YSBocmVmPSJodHRwOi8vYnJpeC1jbXMuZ29vZ2xlY29kZS5jb20vIj5icml4IHByb2plY3QgaG9tZTwvYT4NCgkJfA0KCQk8YSBocmVmPWh0dHA6Ly93aWNrZXQuYXBhY2hlLm9yZyI+d2lja2V0IGZyYW1ld29yayBob21lPC9hPg0KCTwvZGl2PjwvZGl2Pg0KDQoJPGRpdiBjbGFzcz0ibWFpbi1jb250ZW50Ij4NCgkNCgkJPGRpdiBjbGFzcz0iaGVhZGVyIj4NCgkJCQ0KCQk8L2Rpdj4NCgkJDQoJCTxkaXYgY2xhc3M9ImJlbG93LWhlYWRlciI+DQoJCQ0KCQkJPGJyaXg6dGlsZSBpZD0idG9wLW1lbnUiLz4NCgkJCQkNCgkJCTxicml4OmNvbnRlbnQvPg0KCQ0KCQk8L2Rpdj4NCgkNCgkJPGRpdiBjbGFzcz0iZm9vdGVyIj4NCgkJCUdlbmVyYXRlZCBieSA8YSBocmVmPSJodHRwOi8vYnJpeC1jbXMuZ29vZ2xlY29kZS5jb20iPkJyaXg8L2E+DQoJCTwvZGl2Pg0KCQ0KCTwvZGl2Pg0KCQkNCjwvYm9keT4NCjwvaHRtbD4=
+                            </sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-06T23:31:13.346+02:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>text/html</sv:value>
+                        </sv:property>
+                    </sv:node>
+                    <sv:node sv:name="brix:tile">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>brix:tile</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="brix:tileClass" sv:type="String">
+                            <sv:value>org.brixcms.web.tile.menu.MenuTile</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="brix:tileId" sv:type="String">
+                            <sv:value>top-menu</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="maxLevels" sv:type="Long">
+                            <sv:value>1</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="menu" sv:type="Reference">
+                            <sv:value>dad1812f-47b4-4ebc-9178-baa8b1f66005</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="outerContainerStyleClass" sv:type="String">
+                            <sv:value>top-menu</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="renderLevels" sv:type="Long">
+                            <sv:value>1</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="selectedItemStyleClass" sv:type="String">
+                            <sv:value>selected</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+                <sv:node sv:name="template-with-right-menu.html">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>40ec235e-cad2-4188-ba63-6d2c0fa0b139</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-07-06T22:14:33.245+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>demo</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-08T01:24:28.058+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>demo</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:nodeType" sv:type="String">
+                        <sv:value>brix:tileTemplate</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:template" sv:type="Reference">
+                        <sv:value>b6242ff0-2561-48e1-ad54-dba7622eea02</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.525+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="Binary">
+                            <sv:value>
+                                PGRpdiBjbGFzcz0iY29udGVudC13aXRoLXJpZ2h0LW1lbnUiPgoKCTxkaXYgY2xhc3M9InJpZ2h0LW1lbnUtY29udGFpbmVyIj4KCQkJCQoJCTxkaXYgY2xhc3M9InIxLWJveC10b3AiPjxkaXY+PC9kaXY+PC9kaXY+CgkJCQkJCgkJPGRpdiBjbGFzcz0icjEtYm94LWJvZHkiPgoJCgkJPGJyaXg6dGlsZSBpZD0icmlnaHQtbWVudSIvPgkJCgkJCQkKCQk8L2Rpdj4KCQkKCQk8ZGl2IGNsYXNzPSJyMS1ib3gtYm90dG9tIj48ZGl2PjwvZGl2PjwvZGl2PgoJCQkKCTwvZGl2PgoKCTxkaXYgY2xhc3M9ImNvbnRlbnQiPgoJCgkJPGJyaXg6Y29udGVudC8+CgkKCTwvZGl2PgoKPC9kaXY+
+                            </sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-06T22:30:49.907+02:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>text/html</sv:value>
+                        </sv:property>
+                    </sv:node>
+                    <sv:node sv:name="brix:tile">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>brix:tile</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="brix:tileClass" sv:type="String">
+                            <sv:value>org.brixcms.web.tile.menu.MenuTile</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="brix:tileId" sv:type="String">
+                            <sv:value>right-menu</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="itemWithSelectedChildStyleClass" sv:type="String">
+                            <sv:value>selected-child</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="menu" sv:type="Reference">
+                            <sv:value>dad1812f-47b4-4ebc-9178-baa8b1f66005</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="outerContainerStyleClass" sv:type="String">
+                            <sv:value>right-menu</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="renderLevels" sv:type="Long">
+                            <sv:value>2</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="selectedItemStyleClass" sv:type="String">
+                            <sv:value>selected</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="selectedItemWithChildrenStyleClass" sv:type="String">
+                            <sv:value>selected-with-children</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="startAtLevel" sv:type="Long">
+                            <sv:value>1</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+                <sv:node sv:name="template-without-right-menu.html">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>080b93f9-a879-4433-ba91-c93ae8083c3d</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-07-06T22:17:07.307+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>demo</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-06T22:32:03.531+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:nodeType" sv:type="String">
+                        <sv:value>brix:tileTemplate</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:template" sv:type="Reference">
+                        <sv:value>b6242ff0-2561-48e1-ad54-dba7622eea02</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.544+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="Binary">
+                            <sv:value>PGRpdiBjbGFzcz0iY29udGVudCI+Cgk8YnJpeDpjb250ZW50Lz4KPC9kaXY+</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-06T22:32:03.530+02:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>text/html</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+            </sv:node>
+            <sv:node sv:name="demos">
+                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                    <sv:value>nt:folder</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                    <sv:value>brix:node</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:uuid" sv:type="String">
+                    <sv:value>fe903659-714f-4a0a-9c53-048a30644f80</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:created" sv:type="Date">
+                    <sv:value>2008-07-06T23:23:57.241+02:00</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:createdBy" sv:type="String">
+                    <sv:value>a</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:lastModified" sv:type="Date">
+                    <sv:value>2008-07-07T11:08:31.389-07:00</sv:value>
+                </sv:property>
+                <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                    <sv:value>demo</sv:value>
+                </sv:property>
+                <sv:property sv:name="jcr:created" sv:type="Date">
+                    <sv:value>2008-07-07T23:57:28.548+02:00</sv:value>
+                </sv:property>
+                <sv:node sv:name="header-contribution.html">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>5996bed8-ecd3-40f1-97c5-0d3314f0777e</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-07-06T23:01:52.570+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-07T11:36:36.077-07:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>demo</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:nodeType" sv:type="String">
+                        <sv:value>brix:tilePage</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:template" sv:type="Reference">
+                        <sv:value>40ec235e-cad2-4188-ba63-6d2c0fa0b139</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:title" sv:type="String">
+                        <sv:value>Header Contribution</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.551+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="String">
+                            <sv:value>&lt;head&gt;&#13;
+                                &lt;style type="text/css"&gt;&#13;
+                                div.styled {&#13;
+                                width: 20em;&#13;
+                                border: 2px dotted red;&#13;
+                                margin: 1em;&#13;
+                                padding: 1em;&#13;
+                                }&#13;
+                                &lt;/style&gt;&#13;
+                                &lt;/head&gt;&#13;
+                                &#13;
+                                Pages in Brix can easily contribute to the &amp;lt;head&amp;gt; section even though a template
+                                that the page uses also defines the &amp;lt;head&amp;gt; section. Even contributions from
+                                template hierarchies are properly merged.&lt;br/&gt;&lt;br/&gt;This page contributes a style
+                                definition for a div by simply specifying a &amp;lt;head&amp;gt; section as part of its markup.&#13;
+                                &#13;
+                                &lt;div class="styled"&gt;&#13;
+                                This is a div with custom style.&#13;
+                                &lt;/div&gt;</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:encoding" sv:type="String">
+                            <sv:value>UTF-8</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-06T23:07:32.637+02:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>application/octet-stream</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+                <sv:node sv:name="requires-ssl.html">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>d7c67795-66eb-4ef8-91bb-949d2f2aa00e</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-07-06T22:20:25.502+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>demo</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-07T11:32:55.436-07:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>demo</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:nodeType" sv:type="String">
+                        <sv:value>brix:tilePage</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:requiresSSL" sv:type="Boolean">
+                        <sv:value>true</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:template" sv:type="Reference">
+                        <sv:value>40ec235e-cad2-4188-ba63-6d2c0fa0b139</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:title" sv:type="String">
+                        <sv:value>Page that requires SSL</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.562+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="String">
+                            <sv:value>Brix includes Secure/Non-Secure URL switching.&lt;br/&gt;&lt;br/&gt;&#13;
+                                Pages and templates in Brix can be marked as "requires SSL". When such a page is accessed, Brix
+                                automatically redirects to a secure URL. (Notice the current URL is secure because this page is
+                                marked as requiring SSL) Individual tiles can also require SSL.&#13;
+                                &lt;br/&gt;&lt;br/&gt;&#13;
+                                The URL will revert back to a non-secure one once the user navigates to a page that does not
+                                require SSL.
+                            </sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:encoding" sv:type="String">
+                            <sv:value>UTF-8</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-06T22:59:34.390+02:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>text/html</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+                <sv:node sv:name="stockquote.html">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>f7a1de41-f0ac-4d04-9132-461030774cf8</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-07-06T22:19:47.288+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>demo</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-07T11:29:06.905-07:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>demo</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:nodeType" sv:type="String">
+                        <sv:value>brix:tilePage</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:template" sv:type="Reference">
+                        <sv:value>40ec235e-cad2-4188-ba63-6d2c0fa0b139</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:title" sv:type="String">
+                        <sv:value>Stock quote page</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.568+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="String">
+                            <sv:value>&lt;p&gt;This page demonstrates Tiles that keep state. The tile on the top is a stateful
+                                tile and keeps its state in session, while the tile on the bottom is a stateless tile and keeps
+                                its state in the URL. Play with both tiles to see how they affect the URL of this page.&lt;/p&gt;&lt;br/&gt;&lt;br/&gt;&#13;
+                                &#13;
+                                &lt;div class="note"&gt;Some symbols to try: GOOG, MSFT, JAVA&lt;/div&gt;&lt;br/&gt;&lt;br/&gt;&#13;
+                                &#13;
+                                &lt;div class="label"&gt;&#13;
+                                Stateless stock ticker tile tile that uses Wicket StatelessForm and keeps the entered symbol in
+                                URL&#13;
+                                &lt;/div&gt;&#13;
+                                &#13;
+                                &lt;div class="tile"&gt;&#13;
+                                &lt;brix:tile id="statelessquote"/&gt;&#13;
+                                &lt;/div&gt;&#13;
+                                &#13;
+                                &lt;div class="label"&gt;&#13;
+                                Stateful stock ticker tile that uses regular Wicket Form component and keeps the entered symbol
+                                in HTTP session&#13;
+                                &lt;/div&gt;&#13;
+                                &lt;div class="tile"&gt;&#13;
+                                &lt;brix:tile id="statefulquote"/&gt;&#13;
+                                &lt;/div&gt;&#13;
+                                &#13;
+                                &lt;div class="note"&gt;&#13;
+                                Note that this page is stateful because it contains a stateful tile.&#13;
+                                &lt;/div&gt;</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:encoding" sv:type="String">
+                            <sv:value>UTF-8</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-06T23:01:34.667+02:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>text/html</sv:value>
+                        </sv:property>
+                    </sv:node>
+                    <sv:node sv:name="brix:tile">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>brix:tile</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="brix:tileClass" sv:type="String">
+                            <sv:value>org.brixcms.demo.StatefulStockQuoteTile</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="brix:tileId" sv:type="String">
+                            <sv:value>statefulquote</sv:value>
+                        </sv:property>
+                    </sv:node>
+                    <sv:node sv:name="brix:tile">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>brix:tile</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="brix:tileClass" sv:type="String">
+                            <sv:value>org.brixcms.demo.StatelessStockQuoteTile</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="brix:tileId" sv:type="String">
+                            <sv:value>statelessquote</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+                <sv:node sv:name="variables.html">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>788fa268-f909-404f-a1f2-e011c2171f4a</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-07-06T23:13:07.120+02:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>demo</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-07T11:35:06.889-07:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>demo</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:nodeType" sv:type="String">
+                        <sv:value>brix:tilePage</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:template" sv:type="Reference">
+                        <sv:value>40ec235e-cad2-4188-ba63-6d2c0fa0b139</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:title" sv:type="String">
+                        <sv:value>Brix Variables</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.580+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="String">
+                            <sv:value>&lt;head&gt;&#13;
+                                &lt;style type="text/css"&gt;&#13;
+                                div.example {&#13;
+                                width: 20em;&#13;
+                                margin: 0.5em;&#13;
+                                padding: 0.5em;&#13;
+                                border: 1px dotted #ddd;&#13;
+                                }&#13;
+                                &lt;/style&gt;&#13;
+                                &lt;/head&gt;&#13;
+                                &#13;
+                                Variables in Brix provide simple functionality for defining and replacing a placeholders in
+                                page. Variables are defined via the admin console and inserted in the markup using special
+                                placeholder syntax. Variable and their values can cascade from template to page or be overridden
+                                in the page.&#13;
+                                &#13;
+                                &lt;br/&gt;&lt;br/&gt;&#13;
+                                &#13;
+                                Variables can either replace tag body with syntax: &amp;lt;brix:var key="variable1"/&amp;gt;&#13;
+                                &#13;
+                                &lt;div class="example"&gt;&#13;
+                                &lt;brix:var key="variable1"/&gt;&#13;
+                                &lt;/div&gt;&#13;
+                                &#13;
+                                or tag attribute with syntax: &amp;lt;div style="brix:var:variable2"&amp;gt;&#13;
+                                &#13;
+                                &lt;div class="example"&gt;&#13;
+                                &lt;div style="brix:var:variable2"&gt;&#13;
+                                Div with custom style defined as variable.&#13;
+                                &lt;/div&gt;&#13;
+                                &lt;/div&gt;</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:encoding" sv:type="String">
+                            <sv:value>UTF-8</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-06T23:22:50.985+02:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>text/html</sv:value>
+                        </sv:property>
+                    </sv:node>
+                    <sv:node sv:name="brix:variables">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="variable1" sv:type="String">
+                            <sv:value>Value for Variable 1</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="variable2" sv:type="String">
+                            <sv:value>font-weight: bold; color: red;</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+                <sv:node sv:name="time.html">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:file</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                        <sv:value>brix:node</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:uuid" sv:type="String">
+                        <sv:value>b6b2c552-feed-4d9e-a8d7-280ff845c944</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:created" sv:type="Date">
+                        <sv:value>2008-07-07T11:08:31.405-07:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:createdBy" sv:type="String">
+                        <sv:value>demo</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModified" sv:type="Date">
+                        <sv:value>2008-07-07T11:23:45.795-07:00</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:lastModifiedBy" sv:type="String">
+                        <sv:value>demo</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:nodeType" sv:type="String">
+                        <sv:value>brix:tilePage</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:template" sv:type="Reference">
+                        <sv:value>40ec235e-cad2-4188-ba63-6d2c0fa0b139</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="brix:title" sv:type="String">
+                        <sv:value>Time Tile Demo</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="jcr:created" sv:type="Date">
+                        <sv:value>2008-07-07T23:57:28.585+02:00</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="jcr:content">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:resource</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:uuid" sv:type="String">
+                            <sv:value>fa34d2cd-3930-4581-aab2-a7a140ad2e91</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:data" sv:type="Binary">
+                            <sv:value>
+                                PHAgY2xhc3M9ImxhYmVsIj4NClRoaXMgcGFnZSBkZW1vbnN0cmF0ZXMgYSBiYXNpYyB0aWxlIGNhbGxlZCBDdXJyZW50IFRpbWUgVGlsZS4gVGhlIHRpbGUgaXMgaW5jbHVkZWQgaW4gbWFya3VwIHVzaW5nPGJyLz48YnIvPg0KJmx0O2JyaXg6dGlsZSBpZD0mcXVvdDt0aW1lJnF1b3Q7LyZndDs8YnIvPjxici8+bWFya3VwIGFuZCBpcyBjb25maWd1cmVkIHVzaW5nIEJyaXgncyBhZG1pbiBjb25zb2xlLiBSZWZyZXNoIHRoZSBwYWdlIGluIHRoZSBicm93c2VyIHRvIHNlZSB0aGUgdGltZSB1cGRhdGUuPGJyLz48YnIvPg0KPC9wPg0KPHAgY2xhc3M9InRpbGUiPg0KPGJyaXg6dGlsZSBpZD0idGltZSIvPg0KPC9wPg==
+                            </sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:encoding" sv:type="String">
+                            <sv:value>UTF-8</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+                            <sv:value>2008-07-07T11:08:31.358-07:00</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mimeType" sv:type="String">
+                            <sv:value>text/html</sv:value>
+                        </sv:property>
+                    </sv:node>
+                    <sv:node sv:name="brix:tile">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>brix:tile</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="brix:tileClass" sv:type="String">
+                            <sv:value>org.brixcms.web.TimeTile</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="brix:tileId" sv:type="String">
+                            <sv:value>time</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="format" sv:type="String">
+                            <sv:value>HH:mm:ss</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+            </sv:node>
+        </sv:node>
+    </sv:node>
+    <sv:node sv:name="brix:menu">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+            <sv:value>nt:unstructured</sv:value>
+        </sv:property>
+        <sv:node sv:name="menu">
+            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                <sv:value>nt:unstructured</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                <sv:value>mix:referenceable</sv:value>
+            </sv:property>
+            <sv:property sv:name="jcr:uuid" sv:type="String">
+                <sv:value>dad1812f-47b4-4ebc-9178-baa8b1f66005</sv:value>
+            </sv:property>
+            <sv:property sv:name="name" sv:type="String">
+                <sv:value>Main Menu</sv:value>
+            </sv:property>
+            <sv:node sv:name="menu">
+                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                    <sv:value>nt:unstructured</sv:value>
+                </sv:property>
+                <sv:node sv:name="child">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:unstructured</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="title" sv:type="String">
+                        <sv:value>Home</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="reference">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                            <sv:value>brix:hidden</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="node" sv:type="Reference">
+                            <sv:value>1e1d60f2-403b-4014-9dfe-e81a3f03f9e9</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="type" sv:type="String">
+                            <sv:value>NODE</sv:value>
+                        </sv:property>
+                    </sv:node>
+                </sv:node>
+                <sv:node sv:name="child">
+                    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                        <sv:value>nt:unstructured</sv:value>
+                    </sv:property>
+                    <sv:property sv:name="title" sv:type="String">
+                        <sv:value>Demos</sv:value>
+                    </sv:property>
+                    <sv:node sv:name="child">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="title" sv:type="String">
+                            <sv:value>Tiles</sv:value>
+                        </sv:property>
+                        <sv:node sv:name="child">
+                            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                                <sv:value>nt:unstructured</sv:value>
+                            </sv:property>
+                            <sv:property sv:name="title" sv:type="String">
+                                <sv:value>Time Tile</sv:value>
+                            </sv:property>
+                            <sv:node sv:name="reference">
+                                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                                    <sv:value>nt:unstructured</sv:value>
+                                </sv:property>
+                                <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                                    <sv:value>brix:hidden</sv:value>
+                                </sv:property>
+                                <sv:property sv:name="node" sv:type="Reference">
+                                    <sv:value>b6b2c552-feed-4d9e-a8d7-280ff845c944</sv:value>
+                                </sv:property>
+                                <sv:property sv:name="type" sv:type="String">
+                                    <sv:value>NODE</sv:value>
+                                </sv:property>
+                            </sv:node>
+                        </sv:node>
+                        <sv:node sv:name="child">
+                            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                                <sv:value>nt:unstructured</sv:value>
+                            </sv:property>
+                            <sv:property sv:name="title" sv:type="String">
+                                <sv:value>Stockquote Tiles</sv:value>
+                            </sv:property>
+                            <sv:node sv:name="reference">
+                                <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                                    <sv:value>nt:unstructured</sv:value>
+                                </sv:property>
+                                <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                                    <sv:value>brix:hidden</sv:value>
+                                </sv:property>
+                                <sv:property sv:name="node" sv:type="Reference">
+                                    <sv:value>f7a1de41-f0ac-4d04-9132-461030774cf8</sv:value>
+                                </sv:property>
+                                <sv:property sv:name="type" sv:type="String">
+                                    <sv:value>NODE</sv:value>
+                                </sv:property>
+                            </sv:node>
+                        </sv:node>
+                    </sv:node>
+                    <sv:node sv:name="child">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="title" sv:type="String">
+                            <sv:value>SSL Page</sv:value>
+                        </sv:property>
+                        <sv:node sv:name="reference">
+                            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                                <sv:value>nt:unstructured</sv:value>
+                            </sv:property>
+                            <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                                <sv:value>brix:hidden</sv:value>
+                            </sv:property>
+                            <sv:property sv:name="node" sv:type="Reference">
+                                <sv:value>d7c67795-66eb-4ef8-91bb-949d2f2aa00e</sv:value>
+                            </sv:property>
+                            <sv:property sv:name="type" sv:type="String">
+                                <sv:value>NODE</sv:value>
+                            </sv:property>
+                        </sv:node>
+                    </sv:node>
+                    <sv:node sv:name="child">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="title" sv:type="String">
+                            <sv:value>Variables</sv:value>
+                        </sv:property>
+                        <sv:node sv:name="reference">
+                            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                                <sv:value>nt:unstructured</sv:value>
+                            </sv:property>
+                            <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                                <sv:value>brix:hidden</sv:value>
+                            </sv:property>
+                            <sv:property sv:name="node" sv:type="Reference">
+                                <sv:value>788fa268-f909-404f-a1f2-e011c2171f4a</sv:value>
+                            </sv:property>
+                            <sv:property sv:name="type" sv:type="String">
+                                <sv:value>NODE</sv:value>
+                            </sv:property>
+                        </sv:node>
+                    </sv:node>
+                    <sv:node sv:name="child">
+                        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                            <sv:value>nt:unstructured</sv:value>
+                        </sv:property>
+                        <sv:property sv:name="title" sv:type="String">
+                            <sv:value>Header Contribution</sv:value>
+                        </sv:property>
+                        <sv:node sv:name="reference">
+                            <sv:property sv:name="jcr:primaryType" sv:type="Name">
+                                <sv:value>nt:unstructured</sv:value>
+                            </sv:property>
+                            <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+                                <sv:value>brix:hidden</sv:value>
+                            </sv:property>
+                            <sv:property sv:name="node" sv:type="Reference">
+                                <sv:value>5996bed8-ecd3-40f1-97c5-0d3314f0777e</sv:value>
+                            </sv:property>
+                            <sv:property sv:name="type" sv:type="String">
+                                <sv:value>NODE</sv:value>
+                            </sv:property>
+                        </sv:node>
+                    </sv:node>
+                </sv:node>
+            </sv:node>
+        </sv:node>
+    </sv:node>
+</sv:node>
