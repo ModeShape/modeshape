@@ -178,6 +178,16 @@ public class RepositoryStatistics implements RepositoryMonitor {
             values.put(metric, new ValueHistory(resetUponRollup));
         }
 
+        // Initialize the start times in a threadsafe manner ...
+        DateTime now = timeFactory.create();
+        this.weeksStartTime.compareAndSet(null, now);
+        this.daysStartTime.compareAndSet(null, now);
+        this.hoursStartTime.compareAndSet(null, now);
+        this.minutesStartTime.compareAndSet(null, now);
+        this.secondsStartTime.compareAndSet(null, now);
+        rollup();
+
+        // Then schedule the rollup to be done at a fixed rate ...
         this.rollupFuture.set(service.scheduleAtFixedRate(new Runnable() {
             @SuppressWarnings( "synthetic-access" )
             @Override
@@ -390,14 +400,14 @@ public class RepositoryStatistics implements RepositoryMonitor {
     @ThreadSafe
     protected static abstract class MetricHistory {
 
-        private static final int MAX_SECONDS = 60 / (int)CAPTURE_INTERVAL_IN_SECONDS;
-        private static final int MAX_MINUTES = 60;
-        private static final int MAX_HOURS = 24;
-        private static final int MAX_DAYS = 7;
-        private static final int MAX_WEEKS = 52;
+        protected static final int MAX_SECONDS = 60 / (int)CAPTURE_INTERVAL_IN_SECONDS;
+        protected static final int MAX_MINUTES = 60;
+        protected static final int MAX_HOURS = 24;
+        protected static final int MAX_DAYS = 7;
+        protected static final int MAX_WEEKS = 52;
 
         private final Statistics[] seconds = new Statistics[MAX_SECONDS];
-        private final Statistics[] minutes = new Statistics[MAX_HOURS];
+        private final Statistics[] minutes = new Statistics[MAX_MINUTES];
         private final Statistics[] hours = new Statistics[MAX_HOURS];
         private final Statistics[] days = new Statistics[MAX_DAYS];
         private final Statistics[] weeks = new Statistics[MAX_WEEKS];
@@ -510,8 +520,8 @@ public class RepositoryStatistics implements RepositoryMonitor {
                 // Copy the array in two parts ...
                 final int numAfterStartingIndex = size - startingIndex;
                 final int numBeforeStartingIndex = size - numAfterStartingIndex;
-                System.arraycopy(stats, startingIndex, results, 0, numAfterStartingIndex);
-                System.arraycopy(stats, 0, results, numAfterStartingIndex, numBeforeStartingIndex);
+                if (numAfterStartingIndex > 0) System.arraycopy(stats, startingIndex, results, 0, numAfterStartingIndex);
+                if (numBeforeStartingIndex > 0) System.arraycopy(stats, 0, results, numAfterStartingIndex, numBeforeStartingIndex);
             }
             return results;
         }
@@ -748,8 +758,8 @@ public class RepositoryStatistics implements RepositoryMonitor {
         private final double variance; // just the square of the standard deviation
 
         protected Statistics( int count,
-                              long max,
                               long min,
+                              long max,
                               double mean,
                               double variance ) {
             this.count = count;

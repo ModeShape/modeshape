@@ -85,6 +85,21 @@ public class Stopwatch implements Comparable<Stopwatch> {
     }
 
     /**
+     * Record the statistics for the latest run, but keep the stopwatch going. This method does nothing if the stopwatch is not
+     * currently {@link #isRunning() running}
+     * 
+     * @see #isRunning()
+     */
+    public void lap() {
+        if (this.isRunning()) {
+            long now = System.nanoTime();
+            long duration = now - this.lastStarted;
+            this.lastStarted = now;
+            this.stats.add(new Duration(duration));
+        }
+    }
+
+    /**
      * Return the number of runs (complete starts and stops) this stopwatch has undergone.
      * 
      * @return the number of runs.
