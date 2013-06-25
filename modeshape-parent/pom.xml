@@ -384,6 +384,7 @@
         <!--Skip long running tests by default-->
         <skipLongRunningTests>true</skipLongRunningTests>
         <cassandra-jdbc-driver>1.2.5</cassandra-jdbc-driver>
+        <cassandra-cql-driver>1.0.0</cassandra-cql-driver>
     </properties>
 
     <profiles>
@@ -1843,6 +1844,12 @@
                 <artifactId>cassandra-jdbc</artifactId>
                 <version>${cassandra-jdbc-driver}</version>
             </dependency>
+            <dependency>
+                <groupId>com.datastax.cassandra</groupId>
+                <artifactId>cassandra-driver-core</artifactId>
+                <version>${cassandra-cql-driver}</version>
+            </dependency>
+            
         </dependencies>
     </dependencyManagement>
 
