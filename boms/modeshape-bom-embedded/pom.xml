@@ -9,7 +9,6 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.modeshape.bom</groupId>
     <artifactId>modeshape-bom-embedded</artifactId>
     <version>3.4-SNAPSHOT</version>
     <name>ModeShape BOM for embedded usage</name>
@@ -420,6 +419,23 @@
                 <artifactId>tika-parsers</artifactId>
                 <version>${tika.version}</version>
                 <exclusions>
+                    <!--See MODE-1934-->
+                    <exclusion>
+                        <groupId>org.apache.poi</groupId>
+                        <artifactId>poi</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.poi</groupId>
+                        <artifactId>poi-scratchpad</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.poi</groupId>
+                        <artifactId>poi-ooxml</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.poi</groupId>
+                        <artifactId>poi-ooxml-schemas</artifactId>
+                    </exclusion>
                     <!--
                     The NetCDF and HDF files are often used in the scientific community, so we exclude this
                     library (and the Commons HTTP Client library) by default.

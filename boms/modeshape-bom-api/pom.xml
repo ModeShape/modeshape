@@ -9,7 +9,6 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.modeshape.bom</groupId>
     <artifactId>modeshape-bom-api</artifactId>
     <version>3.4-SNAPSHOT</version>
     <name>ModeShape BOM for public APIs</name>
