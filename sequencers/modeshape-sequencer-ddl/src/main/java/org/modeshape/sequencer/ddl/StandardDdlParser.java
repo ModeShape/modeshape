@@ -215,6 +215,8 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             }
             // testPrint("== >> Found Statement" + "(" + (++count) + "):\n" + stmtNode);
         }
+        
+        postProcess(rootNode);
 
         rewrite(tokens, rootNode);
 
@@ -2832,8 +2834,20 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         testPrint("== >> SOURCE:\n" + source + "\n");
     }
+    
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.sequencer.ddl.DdlParser#postProcess(org.modeshape.sequencer.ddl.node.AstNode)
+     */
+    @Override
+	public void postProcess(AstNode rootNode) {
+		// Default behavior is no post processing
+    	// Subclasses will need to override this method
+	}
 
-    protected void testPrint( String str ) {
+	protected void testPrint( String str ) {
         if (isTestMode()) {
             System.out.println(str);
         }

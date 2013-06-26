@@ -281,5 +281,27 @@ public class TeiidDdlParserTest extends DdlParserTestHelper implements TeiidDdlC
             assertMixinType(kids.get(0), TeiidDdlLexicon.CreateProcedure.PROCEDURE_STATEMENT);
         }
     }
+    
+    @Test
+	public void shouldParseAndResolveTableReference() {
+		final String content = "CREATE FOREIGN TABLE G2(g2e1 integer, g2e2 varchar, PRIMARY KEY(g2e1, g2e2), FOREIGN KEY (g2e1, g2e2) REFERENCES G1)"
+				+ "CREATE FOREIGN TABLE G1(g1e1 integer, g1e2 varchar, PRIMARY KEY(g1e1, g1e2));";
+
+		assertScoreAndParse(content, null, 2);
+
+		{
+			final List<AstNode> kids = this.rootNode.childrenWithName("G1");
+			assertThat(kids.size(), is(1));
+			assertMixinType(kids.get(0),
+					TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
+		}
+
+		{
+			final List<AstNode> kids = this.rootNode.childrenWithName("G2");
+			assertThat(kids.size(), is(1));
+			assertMixinType(kids.get(0),
+					TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
+		}
+	}
 
 }

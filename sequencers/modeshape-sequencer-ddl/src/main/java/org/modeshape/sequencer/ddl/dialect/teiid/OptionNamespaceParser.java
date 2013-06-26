@@ -75,5 +75,9 @@ final class OptionNamespaceParser extends StatementParser {
 
         throw new TeiidDdlParsingException(tokens, "Unparsable option namespace statement");
     }
-
+    
+	@Override
+	protected void postProcess(AstNode rootNode) {
+		
+	}
 }

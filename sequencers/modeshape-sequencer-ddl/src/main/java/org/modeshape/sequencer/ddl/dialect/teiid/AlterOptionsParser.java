@@ -340,5 +340,10 @@ final class AlterOptionsParser extends StatementParser {
 
         return false; // not an <alter options list> clause
     }
+    
+	@Override
+	protected void postProcess(AstNode rootNode) {
+		
+	}
 
 }
