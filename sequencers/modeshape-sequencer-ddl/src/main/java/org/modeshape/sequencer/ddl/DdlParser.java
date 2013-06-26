@@ -66,5 +66,14 @@ public interface DdlParser {
      * @return the parser's identifier; never null
      */
     public String getId();
+    
+    /**
+     * Allows parsers to post process the {@link AstNode} tree given the supplied root.
+     * Initial use-case would be to allow a second pass through the tree to resolve any table references (FK's) that were defined out of order
+     * in the DDL
+     * 
+     * @param rootNode the top level {@link AstNode}; may not be null
+     */
+    public void postProcess(AstNode rootNode);
 
 }

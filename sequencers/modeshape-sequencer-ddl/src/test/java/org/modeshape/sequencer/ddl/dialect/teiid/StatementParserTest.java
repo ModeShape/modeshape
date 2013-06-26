@@ -252,6 +252,11 @@ public class StatementParserTest extends TeiidDdlTest {
                        AstNode parentNode ) throws ParsingException {
             return null;
         }
+        
+    	@Override
+    	protected void postProcess(AstNode rootNode) {
+    		
+    	}
 
     }
 }
