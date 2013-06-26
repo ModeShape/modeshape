@@ -32,14 +32,16 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.AlreadyExistsException;
-import java.io.ByteArrayInputStream;
+import com.datastax.driver.core.exceptions.InvalidQueryException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
+import org.apache.commons.compress.utils.IOUtils;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
@@ -67,11 +69,12 @@ public class CassandraBinaryStore extends AbstractBinaryStore {
     @Override
     protected String getStoredMimeType(BinaryValue source) throws BinaryStoreException {
         checkContentExists(source);
-        ResultSet rs = session.execute("SELECT mime_type FROM modeshape.binary WHERE cid = " + source.getKey() + ";");
-        if (rs.one() == null) {
+        ResultSet rs = session.execute("SELECT mime_type FROM modeshape.binary WHERE cid = '" + source.getKey() + "';");
+        Row row = rs.one();
+        if (row == null) {
             throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(source.getKey(), session));
         }
-        return rs.one().getString("mime_type");
+        return row.getString("mime_type");
     }
 
     private void checkContentExists( BinaryValue source ) throws BinaryStoreException {
@@ -82,24 +85,25 @@ public class CassandraBinaryStore extends AbstractBinaryStore {
     
     @Override
     protected void storeMimeType(BinaryValue source, String mimeType) throws BinaryStoreException {
-        session.execute("UPDATE modeshape.binary SET mime_type=" + mimeType +" where cid=" 
-                + source.getKey() + ";");
+        session.execute("UPDATE modeshape.binary SET mime_type='" + mimeType +"' where cid='" 
+                + source.getKey() + "';");
     }
 
     @Override
     public void storeExtractedText(BinaryValue source, String extractedText) throws BinaryStoreException {
-        session.execute("UPDATE modeshape.binary SET extracted_text=" + extractedText +" where cid=" 
-                + source.getKey() + ";");
+        session.execute("UPDATE modeshape.binary SET ext_text='" + extractedText +"' where cid='" 
+                + source.getKey() + "';");
     }
 
     @Override
     public String getExtractedText(BinaryValue source) throws BinaryStoreException {
         checkContentExists(source);
-        ResultSet rs = session.execute("SELECT extracted_text FROM modeshape.binary WHERE cid = " + source.getKey() + ";");
-        if (rs.one() == null) {
+        ResultSet rs = session.execute("SELECT ext_text FROM modeshape.binary WHERE cid = '" + source.getKey() + "';");
+        Row row = rs.one();
+        if (row == null) {
             throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(source.getKey(), session));
         }
-        return rs.one().getString("extracted_text");
+        return row.getString("ext_text");
     }
 
     @Override
@@ -117,7 +121,7 @@ public class CassandraBinaryStore extends AbstractBinaryStore {
 
             // check unused content
             if (this.contentExists(key, UNUSED)) {
-                session.execute("UPDATE modeshape.binary SET usage=1 WHERE cid=" + key + ";");
+                session.execute("UPDATE modeshape.binary SET usage=1 WHERE cid='" + key + "';");
                 return new StoredBinaryValue(this, key, temp.getSize());
             }
 
@@ -125,7 +129,7 @@ public class CassandraBinaryStore extends AbstractBinaryStore {
             try {
                 PreparedStatement query = session.prepare("INSERT INTO modeshape.binary (cid, usage_time, payload, usage) VALUES ( ?,?,?,1 );");
                 BoundStatement statement = new BoundStatement(query);
-                session.execute(statement.bind(key.toString(), new Date().getTime(), stream, 1));
+                session.execute(statement.bind(key.toString(), new Date(), buffer(stream)));
                 return new StoredBinaryValue(this, key, temp.getSize());
             } catch (Exception e) {
                 throw new BinaryStoreException(e);
@@ -138,25 +142,42 @@ public class CassandraBinaryStore extends AbstractBinaryStore {
 
     @Override
     public InputStream getInputStream(BinaryKey key) throws BinaryStoreException {
-        ResultSet rs = session.execute("SELECT payload FROM modeshape.binary WHERE cid=" + key.toString() + " and usage=1;");
-        if (rs.one() == null) {
+        ResultSet rs = session.execute("SELECT payload FROM modeshape.binary WHERE cid='" + key.toString() + "' and usage=1;");
+        Row row = rs.one();
+        if (row == null) {
             throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, session));
         }
-        ByteBuffer buffer = rs.one().getBytes("payload");        
-        return new ByteArrayInputStream(buffer.array());
+        
+        ByteBuffer buffer = row.getBytes("payload"); 
+        return new BufferedInputStream(buffer);
     }
 
     @Override
     public void markAsUnused(Iterable<BinaryKey> keys) throws BinaryStoreException {
         for (BinaryKey key : keys) {
-            session.execute("UPDATE modeshape.binary SET usage=0 where cid=" + key + ";");
+            session.execute("UPDATE modeshape.binary SET usage=0 where cid='" + key + "';");
         }
     }
 
     @Override
     public void removeValuesUnusedLongerThan(long minimumAge, TimeUnit unit) throws BinaryStoreException {
-        long deadline = new Date().getTime() - unit.toMillis(minimumAge);
-        session.execute("DELETE from modeshape.binary where usage_time < " + deadline + ";");
+        Date deadline = new Date(new Date().getTime() - unit.toMillis(minimumAge));
+        //When querying using 2nd indexes, Cassandra
+        //(it's not CQL specific) requires that you use an '=' for at least one of
+        //the indexed column in the where clause. This is a limitation of Cassandra.
+        //So we have to do some tricks here
+        ResultSet rs = session.execute("SELECT cid from modeshape.binary where usage=0 and usage_time < " + deadline.getTime() + " allow filtering;");
+
+        Iterator<Row> rows = rs.iterator();
+        while (rows.hasNext()) {
+            session.execute("DELETE from modeshape.binary where cid = '" + rows.next().getString("cid") + "';");
+        }
+
+        rs = session.execute("SELECT cid from modeshape.binary where usage=1 and usage_time < " + deadline.getTime() + " allow filtering;");
+        rows = rs.iterator();
+        while (rows.hasNext()) {
+            session.execute("DELETE from modeshape.binary where cid = '" + rows.next().getString("cid") + "';");
+        }
     }
 
     @Override
@@ -193,11 +214,23 @@ public class CassandraBinaryStore extends AbstractBinaryStore {
         session.execute("CREATE TABLE modeshape.binary("
                 + "cid text PRIMARY KEY,"
                 + "mime_type text,"
-                + "ext_type text,"
+                + "ext_text text,"
                 + "usage int,"
                 + "usage_time timestamp,"
                 + "payload blob)");
         } catch (AlreadyExistsException e) {
+        }
+        
+        try {
+            session.execute("CREATE INDEX USAGE_IDX ON modeshape.binary (usage);");
+        } catch (InvalidQueryException e) {
+            //exists
+        }
+        
+        try {
+            session.execute("CREATE INDEX EXPIRE_IDX ON modeshape.binary (usage_time);");
+        } catch (InvalidQueryException e) {
+            //exists
         }
     }
 
@@ -210,10 +243,37 @@ public class CassandraBinaryStore extends AbstractBinaryStore {
      * @throws BinaryStoreException
      */
     private boolean contentExists( BinaryKey key, boolean alive ) throws BinaryStoreException {
-        String query = "SELECT payload from modeshape.binary where cid=" + key.toString();
+        String query = "SELECT payload from modeshape.binary where cid='" + key.toString() +"'";
         query = alive? query + " and usage=1;" : query + " and usage = 0;";
         ResultSet rs = session.execute(query);
         return rs.iterator().hasNext();
     }
+ 
+    /**
+     * Converts input stream into ByteBuffer.
+     * 
+     * @param stream
+     * @return
+     * @throws IOException 
+     */
+    private ByteBuffer buffer(InputStream stream) throws IOException {
+        stream.reset();
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        IOUtils.copy(stream, bout);
+        return ByteBuffer.wrap(bout.toByteArray());
+    }
     
+    private class BufferedInputStream extends InputStream {
+        private ByteBuffer buffer;
+        
+        private BufferedInputStream(ByteBuffer buffer) {
+            this.buffer = buffer;
+        }
+        
+        @Override
+        public int read() throws IOException {
+            return buffer.position() < buffer.limit() ? buffer.get() & 0xff : -1;
+        }
+        
+    }
 }
