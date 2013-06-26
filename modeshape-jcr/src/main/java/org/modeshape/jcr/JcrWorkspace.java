@@ -160,6 +160,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(destAbsPath));
         }
 
+        //Do not allow to copy a subgraph into root
         if (destPath.isRoot() && !srcPath.isRoot()) {
             throw new RepositoryException(JcrI18n.cannotCopySubgraphIntoRoot.text(srcAbsPath, srcWorkspace, getName()));
         }
@@ -208,7 +209,8 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                                                                                               null, false);
             Map<NodeKey, NodeKey> nodeKeyCorrespondence = copy.mutable().deepCopy(copySession.cache(),
                                                                                   sourceNode.node(),
-                                                                                  sourceSession.cache());
+                                                                                  sourceSession.cache(),
+                                                                                  repository().systemWorkspaceKey());
             /**
              * Do some extra processing for each copied node
              */
@@ -294,6 +296,11 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(destAbsPath));
         }
 
+        //Do not allow to clone a subgraph into root
+        if (destPath.isRoot() && !srcPath.isRoot()) {
+            throw new RepositoryException(JcrI18n.cannotCloneSubgraphIntoRoot.text(srcAbsPath, srcWorkspace, getName()));
+        }
+
         try {
             // create an inner session for cloning
             JcrSession cloneSession = session.spawnSession(false);
@@ -304,11 +311,19 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             Name newNodeName = null;
             if (destPath.isIdentifier()) {
                 AbstractJcrNode existingDestNode = cloneSession.node(destPath);
-                parentNode = existingDestNode.getParent();
-                newNodeName = existingDestNode.segment().getName();
+                if (!existingDestNode.isRoot()) {
+                    parentNode = existingDestNode.getParent();
+                    newNodeName = existingDestNode.segment().getName();
+                } else {
+                    parentNode = existingDestNode;
+                }
             } else {
-                parentNode = cloneSession.node(destPath.getParent());
-                newNodeName = destPath.getLastSegment().getName();
+                if (!destPath.isRoot()) {
+                    parentNode = cloneSession.node(destPath.getParent());
+                    newNodeName = destPath.getLastSegment().getName();
+                } else {
+                    parentNode = cloneSession.getRootNode();
+                }
             }
 
             /*
@@ -354,6 +369,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 // use the source session to load all the keys from the source subgraph
                 SessionCache sourceCache = sourceSession.cache();
                 Set<NodeKey> sourceKeys = sourceCache.getNodeKeysAtAndBelow(sourceNode.key());
+                sourceKeys = filterNodeKeysForClone(sourceKeys, sourceCache);
 
                 for (NodeKey srcKey : sourceKeys) {
                     try {
@@ -396,10 +412,14 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                     }
                 }
 
-                // Use the JCR add child here to perform the parent validations
-                NodeKey cloneKey = parentNode.key().withId(sourceNode.key().getIdentifier());
-                parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), cloneKey, false);
-
+                NodeKey cloneKey = null;
+                if (!parentNode.isRoot()) {
+                    // Use the JCR add child here to perform the parent validations
+                    cloneKey = parentNode.key().withId(sourceNode.key().getIdentifier());
+                    parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), cloneKey, false);
+                } else {
+                    cloneKey = parentNode.key();
+                }
                 deepClone(sourceSession, sourceNode.key(), cloneSession, cloneKey);
             }
         } catch (ItemNotFoundException e) {
@@ -410,6 +430,18 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         } catch (InvalidPathException e) {
             throw new RepositoryException(e.getLocalizedMessage(), e);
         }
+    }
+
+    private Set<NodeKey> filterNodeKeysForClone(Set<NodeKey> sourceKeys, SessionCache sourceCache ) {
+        Set<NodeKey> filteredSet = new HashSet<NodeKey>();
+        for (NodeKey sourceKey : sourceKeys) {
+            if (sourceKey.equals(sourceCache.getRootKey()) ||
+                sourceKey.getWorkspaceKey().equalsIgnoreCase(repository().systemWorkspaceKey())) {
+                continue;
+            }
+            filteredSet.add(sourceKey);
+        }
+        return filteredSet;
     }
 
     protected void validateCrossWorkspaceAction( String srcWorkspace ) throws RepositoryException {
@@ -714,7 +746,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         /**
          * Perform the clone at the cache level - clone all properties & children
          */
-        mutableCloneNode.deepClone(cloneCache, sourceNode, sourceCache);
+        mutableCloneNode.deepClone(cloneCache, sourceNode, sourceCache, repository().systemWorkspaceKey());
 
         /**
          * Make sure the version history is preserved

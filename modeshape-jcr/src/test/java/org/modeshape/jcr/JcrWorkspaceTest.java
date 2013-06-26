@@ -25,6 +25,7 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -81,6 +82,23 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         workspace.clone(null, "/src", "/dest", false);
     }
 
+    @Test
+    @FixFor( "MODE-1972" )
+    public void shouldCloneEntireWorkspaces() throws Exception {
+        otherWorkspace.clone(workspaceName, "/", "/", true);
+
+        assertEquals(session.getNode("/a").getIdentifier(), otherSession.getNode("/a").getIdentifier());
+        assertEquals(session.getNode("/a/b").getIdentifier(), otherSession.getNode("/a/b").getIdentifier());
+        assertEquals(session.getNode("/a/b/c").getIdentifier(), otherSession.getNode("/a/b/c").getIdentifier());
+        assertEquals(session.getNode("/b").getIdentifier(), otherSession.getNode("/b").getIdentifier());
+    }
+
+    @Test(expected = RepositoryException.class)
+    @FixFor( "MODE-1972" )
+    public void shouldNotClonePartialWorkspaceIntoWorkspaceRoot() throws Exception {
+        otherWorkspace.clone(workspaceName, "/a/b", "/", false);
+    }
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCopyFromNullPathToNullPath() throws Exception {
         workspace.copy(null, null);
@@ -100,7 +118,6 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         assertNotNull(otherSession.getNode("/a/b"));
         assertNotNull(otherSession.getNode("/a/b/c"));
         assertNotNull(otherSession.getNode("/b"));
-        assertNotNull(otherSession.getNode("/jcr:system"));
     }
 
     @Test(expected = RepositoryException.class)
