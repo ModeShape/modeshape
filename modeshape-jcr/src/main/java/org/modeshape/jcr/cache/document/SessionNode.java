@@ -1212,10 +1212,11 @@ public class SessionNode implements MutableCachedNode {
     @Override
     public Map<NodeKey, NodeKey> deepCopy( SessionCache cache,
                                            CachedNode sourceNode,
-                                           SessionCache sourceCache ) {
+                                           SessionCache sourceCache,
+                                           String systemWorkspaceKey ) {
         final WritableSessionCache writableSessionCache = writableSession(cache);
         writableSessionCache.assertInSession(this);
-        DeepCopy copier = new DeepCopy(this, writableSessionCache, sourceNode, sourceCache);
+        DeepCopy copier = new DeepCopy(this, writableSessionCache, sourceNode, sourceCache, systemWorkspaceKey);
         copier.execute();
         return copier.getSourceToTargetKeys();
     }
@@ -1223,10 +1224,11 @@ public class SessionNode implements MutableCachedNode {
     @Override
     public void deepClone( SessionCache cache,
                            CachedNode sourceNode,
-                           SessionCache sourceCache ) {
+                           SessionCache sourceCache,
+                           String systemWorkspaceKey ) {
         final WritableSessionCache writableSessionCache = writableSession(cache);
         writableSessionCache.assertInSession(this);
-        DeepClone cloner = new DeepClone(this, writableSessionCache, sourceNode, sourceCache);
+        DeepClone cloner = new DeepClone(this, writableSessionCache, sourceNode, sourceCache, systemWorkspaceKey);
         cloner.execute();
     }
 
@@ -2138,11 +2140,13 @@ public class SessionNode implements MutableCachedNode {
         protected final Map<NodeKey, NodeKey> linkedPlaceholdersToOriginal = new HashMap<NodeKey, NodeKey>();
         protected final Map<NodeKey, NodeKey> sourceToTargetKeys = new HashMap<NodeKey, NodeKey>();
         protected final DocumentStore documentStore;
+        protected final String systemWorkspaceKey;
 
         protected DeepCopy( SessionNode targetNode,
                             WritableSessionCache cache,
                             CachedNode sourceNode,
-                            SessionCache sourceCache ) {
+                            SessionCache sourceCache,
+                            String systemWorkspaceKey ) {
             this.targetCache = cache;
             this.targetNode = targetNode;
             this.sourceCache = sourceCache;
@@ -2151,6 +2155,7 @@ public class SessionNode implements MutableCachedNode {
             this.propertyFactory = this.targetCache.getContext().getPropertyFactory();
             this.targetWorkspaceKey = targetNode.getKey().getWorkspaceKey();
             this.documentStore = ((WorkspaceCache) sourceCache.getWorkspace()).documentStore();
+            this.systemWorkspaceKey = systemWorkspaceKey;
         }
 
         public Map<NodeKey, NodeKey> getSourceToTargetKeys() {
@@ -2182,10 +2187,16 @@ public class SessionNode implements MutableCachedNode {
             final NodeKey sourceKey = sourceNode.getKey();
             final NodeKey targetKey = targetNode.getKey();
             sourceToTargetKeys.put(sourceKey, targetKey);
-            copyProperties(targetNode, sourceNode);
+
+            if (shouldProcessSourceKey(sourceKey)) {
+                copyProperties(targetNode, sourceNode);
+            }
 
             for (ChildReference childReference : sourceNode.getChildReferences(sourceCache)) {
                 NodeKey childKey = childReference.getKey();
+                if (!shouldProcessSourceKey(childKey)) {
+                    continue;
+                }
                 // We'll need the parent key in the source ...
                 CachedNode sourceChild = sourceCache.getNode(childReference.getKey());
                 NodeKey parentSourceKey = sourceChild.getParentKeyInAnyWorkspace(sourceCache);
@@ -2303,6 +2314,11 @@ public class SessionNode implements MutableCachedNode {
         protected String getOperationName() {
             return "Copy";
         }
+
+        protected boolean shouldProcessSourceKey(NodeKey sourceKey) {
+            return !sourceKey.equals(sourceCache.getRootKey()) &&
+                   !sourceKey.getWorkspaceKey().equalsIgnoreCase(systemWorkspaceKey);
+        }
     }
 
     protected class DeepClone extends DeepCopy {
@@ -2310,8 +2326,9 @@ public class SessionNode implements MutableCachedNode {
         protected DeepClone( SessionNode targetNode,
                              WritableSessionCache cache,
                              CachedNode sourceNode,
-                             SessionCache sourceCache ) {
-            super(targetNode, cache, sourceNode, sourceCache);
+                             SessionCache sourceCache,
+                             String systemWorkspaceKey ) {
+            super(targetNode, cache, sourceNode, sourceCache, systemWorkspaceKey);
         }
 
         @Override
