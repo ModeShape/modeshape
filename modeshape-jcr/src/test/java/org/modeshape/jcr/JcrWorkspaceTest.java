@@ -25,14 +25,21 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
+import java.util.Arrays;
+import java.util.List;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
+import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 
 /**
  * @author jverhaeg
@@ -41,6 +48,10 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
 
     private JcrWorkspace workspace;
     private String workspaceName;
+
+    private JcrSession otherSession;
+    private JcrWorkspace otherWorkspace;
+    private String otherWorkspaceName;
 
     @Override
     @Before
@@ -58,6 +69,11 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
 
         workspace = session.getWorkspace();
         workspaceName = workspace.getName();
+
+        otherWorkspaceName = "anotherWs";
+        workspace.createWorkspace(otherWorkspaceName);
+        otherSession = repository.login(otherWorkspaceName);
+        otherWorkspace = otherSession.getWorkspace();
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -75,16 +91,35 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         workspace.copy("/a/b", "/b/b-copy");
     }
 
+    @Test
+    @FixFor( "MODE-1972" )
+    public void shouldCopyEntireWorkspaces() throws Exception {
+        otherWorkspace.copy(workspaceName, "/", "/");
+
+        assertNotNull(otherSession.getNode("/a"));
+        assertNotNull(otherSession.getNode("/a/b"));
+        assertNotNull(otherSession.getNode("/a/b/c"));
+        assertNotNull(otherSession.getNode("/b"));
+        assertNotNull(otherSession.getNode("/jcr:system"));
+    }
+
+    @Test(expected = RepositoryException.class)
+    @FixFor( "MODE-1972" )
+    public void shouldNotCopyPartialWorkspaceIntoWorkspaceRoot() throws Exception {
+        otherWorkspace.copy(workspaceName, "/a/b", "/");
+    }
+
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowCopyFromOtherWorkspaceWithNullWorkspace() throws Exception {
         workspace.copy(null, null, null);
     }
 
     @Test
-    public void shouldNotAllowGetAccessibleWorkspaceNames() throws Exception {
-        String[] names = workspace.getAccessibleWorkspaceNames();
-        assertThat(names.length, is(1));
-        assertThat(names[0], is(workspaceName));
+    public void shouldAllowGetAccessibleWorkspaceNames() throws Exception {
+        List<String> names = Arrays.asList(workspace.getAccessibleWorkspaceNames());
+        assertThat(names.size(), is(2));
+        assertThat(names.contains(workspaceName), is(true));
+        assertThat(names.contains(otherWorkspaceName), is(true));
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -195,5 +230,14 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
     @Test
     public void shouldAllowMoveFromPathToAnotherPathInSameWorkspace() throws Exception {
         workspace.move("/a/b", "/b/b-copy");
+    }
+
+    private void assertNotFound(String absPath, JcrSession jcrSession) throws RepositoryException {
+        try {
+            jcrSession.getNode(absPath);
+            fail("Node " + absPath + " should not have been found in the session " + session);
+        } catch (PathNotFoundException e) {
+            //expected
+        }
     }
 }

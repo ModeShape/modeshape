@@ -160,6 +160,10 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(destAbsPath));
         }
 
+        if (destPath.isRoot() && !srcPath.isRoot()) {
+            throw new RepositoryException(JcrI18n.cannotCopySubgraphIntoRoot.text(srcAbsPath, srcWorkspace, getName()));
+        }
+
         try {
             // create an inner session for copying
             JcrSession copySession = session.spawnSession(false);
@@ -168,13 +172,22 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             // This also performs the check permission for reading the parent ...
             AbstractJcrNode parentNode = null;
             Name newNodeName = null;
+
             if (destPath.isIdentifier()) {
                 AbstractJcrNode existingDestNode = copySession.node(destPath);
-                parentNode = existingDestNode.getParent();
-                newNodeName = existingDestNode.segment().getName();
+                if (!existingDestNode.isRoot()) {
+                    parentNode = existingDestNode.getParent();
+                    newNodeName = existingDestNode.segment().getName();
+                } else {
+                    parentNode = existingDestNode;
+                }
             } else {
-                parentNode = copySession.node(destPath.getParent());
-                newNodeName = destPath.getLastSegment().getName();
+                if (!destPath.isRoot()) {
+                    parentNode = copySession.node(destPath.getParent());
+                    newNodeName = destPath.getLastSegment().getName();
+                } else {
+                    parentNode = copySession.getRootNode();
+                }
             }
 
             /*
@@ -190,11 +203,12 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             /*
             * Use the JCR add child here to perform the parent validations
             */
-            AbstractJcrNode copy = parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), null, false);
+            AbstractJcrNode copy = parentNode.isRoot() ? parentNode : parentNode.addChildNode(newNodeName,
+                                                                                              sourceNode.getPrimaryTypeName(),
+                                                                                              null, false);
             Map<NodeKey, NodeKey> nodeKeyCorrespondence = copy.mutable().deepCopy(copySession.cache(),
                                                                                   sourceNode.node(),
                                                                                   sourceSession.cache());
-
             /**
              * Do some extra processing for each copied node
              */
