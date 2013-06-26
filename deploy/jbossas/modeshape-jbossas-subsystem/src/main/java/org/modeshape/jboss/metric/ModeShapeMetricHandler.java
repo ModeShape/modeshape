@@ -60,13 +60,18 @@ public abstract class ModeShapeMetricHandler extends AbstractRuntimeOnlyHandler 
         final String repositoryName = pathAddress.getLastElement().getValue();
         final ServiceController<?> sc = context.getServiceRegistry(false).getRequiredService(ModeShapeServiceNames.monitorServiceName(repositoryName));
         final RepositoryStatistics repoStats = (RepositoryStatistics)sc.getValue();
-        final History history = history(repoStats, Window.PREVIOUS_60_SECONDS);
+        final History history = history(repoStats, Window.PREVIOUS_60_MINUTES);
         final Statistics[] stats = history.getStats();
 
         if ((stats.length != 0) && (stats[stats.length - 1] != null)) {
-            final Statistics value = stats[stats.length - 1];
             final ModelNode result = context.getResult();
-            result.add(value.getMean());
+
+            for (final Statistics sample : stats) {
+                // sample can be null if the window is larger than the repository uptime
+                if (sample != null) {
+                    result.add(sample.getMaximum());
+                }
+            }
         }
 
         context.stepCompleted();
