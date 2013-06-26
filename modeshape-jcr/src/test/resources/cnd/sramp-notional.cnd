@@ -43,3 +43,8 @@
 - * (string) multiple
 + * (sramp:relationship)
 
+// Not really representative of the actual S-RAMP types ...
+[sramp:testArtifactType] > mix:created, mix:lastModified, mix:referenceable, mix:versionable mixin
+
+// Not really representative of the actual S-RAMP types ...
+[sramp:removedArtifactType] > mix:created, mix:lastModified, mix:referenceable, mix:versionable mixin
