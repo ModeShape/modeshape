@@ -1843,11 +1843,13 @@
                 <groupId>org.apache-extras.cassandra-jdbc</groupId>
                 <artifactId>cassandra-jdbc</artifactId>
                 <version>${cassandra-jdbc-driver}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>com.datastax.cassandra</groupId>
                 <artifactId>cassandra-driver-core</artifactId>
                 <version>${cassandra-cql-driver}</version>
+                <scope>provided</scope>
             </dependency>
             
         </dependencies>
