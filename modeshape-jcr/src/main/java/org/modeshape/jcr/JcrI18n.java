@@ -195,6 +195,10 @@ public final class JcrI18n {
     public static I18n unableToShareNodeWithinSameParent;
     public static I18n shareAlreadyExistsWithinParent;
     public static I18n unableToMoveNodeDueToCycle;
+    public static I18n unableToMoveSourceContainExternalNodes;
+    public static I18n unableToMoveTargetContainExternalNodes;
+    public static I18n unableToMoveSourceTargetMismatch;
+    public static I18n unableToMoveProjection;
 
     public static I18n typeNotFound;
     public static I18n supertypeNotFound;

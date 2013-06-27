@@ -193,7 +193,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor( "MODE-1971" )
+    @FixFor( { "MODE-1971", "MODE-1977" } )
     public void shouldBeAbleToMoveExternalNodes() throws Exception {
         ((Workspace)session.getWorkspace()).move("/testRoot/store/dir3/simple.json", "/testRoot/store/dir3/simple2.json");
         Node file = session.getNode("/testRoot/store/dir3/simple2.json");

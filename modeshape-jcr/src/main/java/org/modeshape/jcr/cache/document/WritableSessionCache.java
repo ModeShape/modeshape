@@ -1168,7 +1168,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                                                                                                     .iterator());
                     }
                 } else {
-                    boolean externalNodeChanged = isExternal && (hasPropertyChanges || node.hasNonPropertyChanges());
+                    boolean externalNodeChanged = isExternal && (hasPropertyChanges || node.hasNonPropertyChanges()
+                                                                 || node.changedChildren().renameCount() > 0);
                     if (externalNodeChanged) {
                         // in the case of external nodes, only if there are changes should the update be called
                         documentStore.updateDocument(keyStr, doc, node);
