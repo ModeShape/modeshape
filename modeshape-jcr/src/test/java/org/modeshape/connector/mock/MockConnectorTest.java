@@ -511,6 +511,122 @@ public class MockConnectorTest extends SingleUseAbstractTest {
         }
     }
 
+    @Test
+    @FixFor( "MODE-1977")
+    public void shouldNotAllowMoveIfSourceIsFederatedAndTargetIsNot() throws Exception {
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC1_LOCATION, "fed1");
+        ((Node) session.getRootNode()).addNode("testRoot2");
+        session.save();
+        try {
+            session.move("/testRoot", "/testRoot2");
+            fail("Should not allow move is source is federated is target is not.");
+        } catch (RepositoryException e) {
+            //expected
+            if (print) {
+                e.printStackTrace();
+            }
+        }
+        try {
+            session.move("/testRoot/fed1", "/testRoot2");
+            fail("Should not allow move is source is federated is target is not.");
+        } catch (RepositoryException e) {
+            //expected
+            if (print) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-1977")
+    public void shouldNotAllowMoveIfSourceIsNotFederatedAndTargetIs() throws Exception {
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC1_LOCATION, "fed1");
+        ((Node) session.getRootNode()).addNode("testRoot2");
+        session.save();
+        try {
+            session.move("/testRoot2", "/testRoot/fed1");
+            fail("Should not allow move is source is not federated and target is");
+        } catch (RepositoryException e) {
+            //expected
+            if (print) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-1977")
+    public void shouldAllowMoveIfSourceIsNotFederatedAndTargetIsNotFederated() throws Exception {
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC1_LOCATION, "fed1");
+        ((Node) session.getRootNode()).addNode("testRoot2").addNode("a");
+        session.save();
+        session.move("/testRoot2", "/testRoot");
+        session.save();
+        assertNodeFound("/testRoot[1]/fed1");
+        assertNodeFound("/testRoot[2]/a");
+    }
+
+    @Test
+    @FixFor( "MODE-1977")
+    public void shouldNotAllowMoveIfSourceAndTargetBelongToDifferentSources() throws Exception {
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC1_LOCATION, "fed1");
+        federationManager.createProjection("/testRoot", "mock-source-non-queryable", MockConnector.DOC2_LOCATION, "fed2");
+        try {
+            session.move("/testRoot/fed1", "/testRoot/fed2");
+            fail("Should not allow move is source and target don't belong to the same source");
+        } catch (RepositoryException e) {
+            //expected
+            if (print) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-1977")
+    public void shouldNotAllowMoveIfSourceOrTargetIsProjection() throws Exception {
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC1_LOCATION, "fed1");
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC2_LOCATION, "fed2");
+        try {
+            session.move("/testRoot/fed2/federated3", "/testRoot/fed1");
+            fail("Should not allow move if target is projection");
+        } catch (RepositoryException e) {
+            //expected
+            if (print) {
+                e.printStackTrace();
+            }
+        }
+
+        try {
+            session.move("/testRoot/fed2", "/testRoot/fed1");
+            fail("Should not allow move if source is projection");
+        } catch (RepositoryException e) {
+            //expected
+            if (print) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-1977")
+    public void shouldAllowMoveWithSameSource() throws Exception {
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC1_LOCATION, "fed1");
+        ((Node) session.getNode("/testRoot/fed1")).addNode("federated1");
+        session.save();
+        assertNodeFound("/testRoot/fed1/federated1");
+
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC2_LOCATION, "fed2");
+        assertNodeFound("/testRoot/fed2/federated3");
+
+        session.move("/testRoot/fed1/federated1", "/testRoot/fed2/federated3");
+        session.save();
+
+        assertNodeFound("/testRoot/fed2/federated3[1]");
+        assertNodeFound("/testRoot/fed2/federated3[2]");
+        assertNodeNotFound("/testRoot/fed1/federated1");
+    }
+
     private void assertExternalNodeHasChildren( String externalNodePath,
                                                 String... children ) throws Exception {
         Node externalNode = session.getNode(externalNodePath);
