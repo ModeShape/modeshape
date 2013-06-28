@@ -653,7 +653,7 @@
                             <value>${skipLongRunningTests}</value>
                         </property>
                     </systemProperties>
-                    <argLine>-Xmx1524M ${debug.argline} -XX:MaxPermSize=256M</argLine>
+                    <argLine>-Xmx1524M ${debug.argline} -XX:MaxPermSize=256M -Djava.awt.headless=true</argLine>
                     <runOrder>alphabetical</runOrder>
                 </configuration>
             </plugin>
