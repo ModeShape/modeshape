@@ -179,8 +179,8 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor( "MODE-1971" )
-    public void shouldBeAbleToCopyExternalNodes() throws Exception {
+    @FixFor( { "MODE-1971", "MODE-1976" } )
+    public void shouldBeAbleToCopyExternalNodesInTheSameSource() throws Exception {
         ((Workspace)session.getWorkspace()).copy("/testRoot/store/dir3/simple.json", "/testRoot/store/dir3/simple2.json");
         Node file = session.getNode("/testRoot/store/dir3/simple2.json");
         assertNotNull(file);
@@ -190,6 +190,28 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         Node folder = session.getNode("/testRoot/store/dir4");
         assertNotNull(folder);
         assertEquals("nt:folder", folder.getPrimaryNodeType().getName());
+    }
+
+    @Test
+    @FixFor( "MODE-1976" )
+    public void shouldBeAbleToCopyExternalNodesIntoTheRepository() throws Exception {
+        jcrSession().getRootNode().addNode("files");
+        jcrSession().save();
+        jcrSession().getWorkspace().copy("/testRoot/store/dir3/simple.json", "/files/simple.json");
+        Node file = session.getNode("/files/simple.json");
+        assertNotNull(file);
+        assertEquals("nt:file", file.getPrimaryNodeType().getName());
+    }
+
+    @Test
+    @FixFor( "MODE-1976" )
+    public void shouldBeAbleToCopyFromRepositoryToExternalSource() throws Exception {
+        jcrSession().getRootNode().addNode("files").addNode("dir", "nt:folder");
+        jcrSession().save();
+        jcrSession().getWorkspace().copy("/files/dir", "/testRoot/store/dir");
+        Node dir = session.getNode("/testRoot/store/dir");
+        assertNotNull(dir);
+        assertEquals("nt:folder", dir.getPrimaryNodeType().getName());
     }
 
     @Test
