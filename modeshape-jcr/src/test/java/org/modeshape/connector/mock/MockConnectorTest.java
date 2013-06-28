@@ -573,7 +573,7 @@ public class MockConnectorTest extends SingleUseAbstractTest {
         federationManager.createProjection("/testRoot", "mock-source-non-queryable", MockConnector.DOC2_LOCATION, "fed2");
         try {
             session.move("/testRoot/fed1", "/testRoot/fed2");
-            fail("Should not allow move is source and target don't belong to the same source");
+            fail("Should not allow move if source and target don't belong to the same source");
         } catch (RepositoryException e) {
             //expected
             if (print) {
@@ -625,6 +625,90 @@ public class MockConnectorTest extends SingleUseAbstractTest {
         assertNodeFound("/testRoot/fed2/federated3[1]");
         assertNodeFound("/testRoot/fed2/federated3[2]");
         assertNodeNotFound("/testRoot/fed1/federated1");
+    }
+
+    @Test
+    @FixFor( "MODE-1976")
+    public void shouldCopyFromFederatedSourceToNonFederatedTargetSameWs() throws Exception {
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC1_LOCATION, "fed1");
+        Node federated1 = jcrSession().getNode("/testRoot/fed1").addNode("federated1");
+        federated1.setProperty("prop", "value");
+        jcrSession().getRootNode().addNode("testRoot2");
+        jcrSession().save();
+
+        jcrSession().getWorkspace().copy("/testRoot/fed1", "/testRoot2/fed1");
+        assertNodeFound("/testRoot2/fed1");
+        Node federated1Copy = assertNodeFound("/testRoot2/fed1/federated1");
+        federated1Copy.remove();
+        jcrSession().save();
+
+        assertNodeFound("/testRoot/fed1/federated1");
+
+        jcrSession().getRootNode().addNode("testRoot3");
+        jcrSession().save();
+        jcrSession().getWorkspace().copy("/testRoot/fed1/federated1", "/testRoot3");
+
+        federated1Copy = assertNodeFound("/testRoot3[2]");
+        assertNotNull(federated1Copy.getProperty("prop"));
+    }
+
+    @Test
+    @FixFor( "MODE-1976")
+    public void shouldCopyFromNonFederatedSourceToFederatedTargetSameWs() throws Exception {
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC1_LOCATION, "fed1");
+        jcrSession().getNode("/testRoot/fed1").addNode("federated1");
+        jcrSession().getRootNode().addNode("testRoot2").addNode("nonFederated2");
+        jcrSession().save();
+
+        jcrSession().getWorkspace().copy("/testRoot2", "/testRoot/fed1/federated2");
+
+        assertNodeFound("/testRoot/fed1/federated2");
+        assertNodeFound("/testRoot/fed1/federated2/nonFederated2");
+        assertEquals(2, jcrSession().getNode("/testRoot/fed1").getNodes().getSize());
+    }
+
+    @Test
+    @FixFor( "MODE-1976")
+    public void shouldNotCopyIfSourceAndTargetSourcesDoNotMatch() throws Exception {
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC1_LOCATION, "fed1");
+        federationManager.createProjection("/testRoot", "mock-source-non-queryable", MockConnector.DOC2_LOCATION, "fed2");
+        try {
+            jcrSession().getWorkspace().copy("/testRoot/fed1", "/testRoot/fed2/fed1");
+            fail("Should not allow copy if source and target don't belong to the same source");
+        } catch (RepositoryException e) {
+            //expected
+            if (print) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-1976")
+    public void shouldNotCopyIfSourceSubgraphContainsExternalNodesWhichDoNotMatchTargetSource() throws Exception {
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC1_LOCATION, "fed1");
+        federationManager.createProjection("/testRoot", "mock-source-non-queryable", MockConnector.DOC1_LOCATION, "fed_nq1");
+        federationManager.createProjection("/testRoot", "mock-source-non-queryable", MockConnector.DOC2_LOCATION, "fed2");
+        try {
+            jcrSession().getWorkspace().copy("/testRoot", "/testRoot/fed2/fed_mixed");
+            fail("Should not allow copy if source subgraph contains nodes which don't belong to the same source as the target");
+        } catch (RepositoryException e) {
+            //expected
+            if (print) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-1976")
+    public void shouldAllowCopyWithinSameSource() throws Exception {
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC1_LOCATION, "fed1");
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC2_LOCATION, "fed2");
+
+        jcrSession().getWorkspace().copy("/testRoot/fed1", "/testRoot/fed2/fed1");
+        assertNodeFound("/testRoot/fed2/fed1");
+        assertNodeFound("/testRoot/fed2/federated3");
     }
 
     private void assertExternalNodeHasChildren( String externalNodePath,

@@ -201,10 +201,15 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 throw new LockException(srcAbsPath);
             }
 
+            /**
+             * Perform validations if external nodes are present.
+             */
+            validateCopyForExternalNode(sourceNode, parentNode);
+
             /*
             * Use the JCR add child here to perform the parent validations
             */
-            AbstractJcrNode copy = parentNode.isRoot() ? parentNode : parentNode.addChildNode(newNodeName,
+            AbstractJcrNode copy = newNodeName == null ? parentNode : parentNode.addChildNode(newNodeName,
                                                                                               sourceNode.getPrimaryTypeName(),
                                                                                               null, false);
             Map<NodeKey, NodeKey> nodeKeyCorrespondence = copy.mutable().deepCopy(copySession.cache(),
@@ -253,6 +258,37 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             throw new AccessDeniedException(ace);
         } catch (InvalidPathException e) {
             throw new RepositoryException(e.getLocalizedMessage(), e);
+        }
+    }
+
+    private void validateCopyForExternalNode(AbstractJcrNode sourceNode,  AbstractJcrNode destParentNode) throws RepositoryException {
+        String rootSourceKey = session.getRootNode().key().getSourceKey();
+
+        NodeKey parentKey = destParentNode.key();
+        if (parentKey.getSourceKey().equalsIgnoreCase(rootSourceKey)) {
+            return;
+        }
+        String destExternalKey = parentKey.getSourceKey();
+        Connectors connectors = repository().runningState().connectors();
+        String destSourceName = connectors.getSourceNameAtKey(destExternalKey);
+
+        Set<NodeKey> sourceKeys = session.cache().getNodeKeysAtAndBelow(sourceNode.key());
+        boolean sourceContainsExternalNodes = false;
+        for (NodeKey sourceKey : sourceKeys) {
+            String sourceNodeSourceKey = sourceKey.getSourceKey();
+            if (!rootSourceKey.equalsIgnoreCase(sourceNodeSourceKey)) {
+                sourceContainsExternalNodes = true;
+                if (!sourceNodeSourceKey.equalsIgnoreCase(destExternalKey)) {
+                    String sourceExternalSourceName = connectors.getSourceNameAtKey(sourceNodeSourceKey);
+                    throw new RepositoryException(JcrI18n.unableToCopySourceTargetMismatch.text(sourceExternalSourceName, destSourceName));
+                }
+            }
+        }
+
+        String sourceNodeSourceKey = sourceNode.key().getSourceKey();
+        if (sourceContainsExternalNodes && !sourceNodeSourceKey.equalsIgnoreCase(destExternalKey)) {
+            //the source graph contains external nodes, but the source itself is not an external node
+            throw new RepositoryException(JcrI18n.unableToCopySourceNotExternal.text(sourceNode.path()));
         }
     }
 
