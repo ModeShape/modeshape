@@ -1851,7 +1851,14 @@
                 <version>${cassandra-cql-driver}</version>
                 <scope>provided</scope>
             </dependency>
-            
+            <dependency>
+                <groupId>org.apache.cassandra</groupId>
+                <artifactId>cassandra-all</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+            </dependency>    
         </dependencies>
     </dependencyManagement>
 

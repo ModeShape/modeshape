@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import org.apache.cassandra.service.EmbeddedCassandraService;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -42,47 +43,47 @@ import org.modeshape.jcr.value.BinaryValue;
 
 /**
  * Test class for binary store using cassandra as backend.
- * 
+ *
  * Before running this test start cassandra instance and uncomment test cases.
- * 
+ *
  * @author kulikov
  */
 public class CassandraBinaryStoreTest {
-    
+
     private CassandraBinaryStore store;
     private BinaryValue aliveValue, unusedValue;
-    
+    private static EmbeddedCassandraService cassandra;
+
     public CassandraBinaryStoreTest() {
     }
-    
+
     @BeforeClass
-    public static void setUpClass() {
+    public static void setUpClass() throws Exception {
+        System.setProperty("cassandra.config", "cassandra/cassandra.yaml");
+        cassandra = new EmbeddedCassandraService();
+        cassandra.start();
     }
-    
+
     @AfterClass
     public static void tearDownClass() {
     }
-    
+
     @Before
-    public void setUp() throws BinaryStoreException {
-        store = new CassandraBinaryStore("localhost");
+    public void setUp() throws Exception {
+        store = new CassandraBinaryStore("127.0.0.1");
         store.start();
-        
+
         ByteArrayInputStream stream = new ByteArrayInputStream("Binary value".getBytes());
         aliveValue = store.storeValue(stream);
 
         ByteArrayInputStream stream2 = new ByteArrayInputStream("Binary value".getBytes());
         unusedValue = store.storeValue(stream2);
     }
-    
+
     @After
     public void tearDown() {
     }
 
-    @Test
-    public void testNothing() {
-    }
-    
     @Test
     public void shouldReadWriteMimeType() throws BinaryStoreException {
         store.storeMimeType(aliveValue, "text/plain");
@@ -94,36 +95,35 @@ public class CassandraBinaryStoreTest {
         store.storeExtractedText(aliveValue, "extracted text");
         assertEquals("extracted text", store.getExtractedText(aliveValue));
     }
-    
+
     @Test
     public void shouldMarkUnused() throws BinaryStoreException {
         Set<BinaryKey> unused = new HashSet();
         unused.add(unusedValue.getKey());
         store.markAsUnused(unused);
-        
+
         boolean res = true;
         try {
             store.getInputStream(unusedValue.getKey());
             res = false;
         } catch (BinaryStoreException e) {
-            
         }
-        
+
         assertTrue(res);
     }
-    
+
     @Test
     public void shouldAccessStream() throws BinaryStoreException, IOException {
         InputStream stream = store.getInputStream(aliveValue.getKey());
         assertTrue(stream != null);
-        
+
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         IOUtils.copy(stream, bout);
-        
+
         String s = new String(bout.toByteArray());
         assertEquals("Binary value", s);
     }
-    
+
     @Test
     public void shoudlRemoveExpiredContent() throws Exception {
         Set<BinaryKey> unused = new HashSet();
@@ -131,17 +131,16 @@ public class CassandraBinaryStoreTest {
         store.markAsUnused(unused);
 
         Thread.currentThread().sleep(500);
-        
+
         store.removeValuesUnusedLongerThan(100, TimeUnit.MILLISECONDS);
-        
+
         boolean res = true;
         try {
             store.getInputStream(unusedValue.getKey());
             res = false;
         } catch (BinaryStoreException e) {
-            
         }
-        
+
         assertTrue(res);
     }
 }

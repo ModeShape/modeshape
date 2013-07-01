@@ -248,6 +248,18 @@
             <groupId>com.datastax.cassandra</groupId>
             <artifactId>cassandra-driver-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.cassandra</groupId>
+            <artifactId>cassandra-all</artifactId>
+            <version>1.2.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>1.4.0</version>
+            <scope>test</scope>
+        </dependency>    
     </dependencies>
     <build>
         <resources>
@@ -286,7 +298,7 @@
                     <include>datasource.properties</include>
                 </includes>
             </testResource>
-        </testResources>
+        </testResources>        
     </build>
     <profiles>
         <profile>
