@@ -26,7 +26,6 @@ package org.modeshape.jcr.cache.document;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1707,8 +1706,10 @@ public class DocumentTranslator {
 
     protected void removeFederatedSegments( EditableDocument federatedDocument,
                                             Set<String> externalNodeKeys ) {
+        if (!federatedDocument.containsField(FEDERATED_SEGMENTS)) {
+            return;
+        }
         EditableArray federatedSegments = federatedDocument.getArray(FEDERATED_SEGMENTS);
-        assert federatedSegments != null;
         for (int i = 0; i < federatedSegments.size(); i++) {
             Object federatedSegment = federatedSegments.get(i);
             assert federatedSegment instanceof Document;
@@ -1720,11 +1721,6 @@ public class DocumentTranslator {
         if (federatedSegments.isEmpty()) {
             federatedDocument.remove(FEDERATED_SEGMENTS);
         }
-    }
-
-    protected void removeFederatedSegments( EditableDocument federatedDocument,
-                                            String... externalNodeKeys ) {
-        removeFederatedSegments(federatedDocument, new HashSet<String>(Arrays.asList(externalNodeKeys)));
     }
 
     protected boolean isQueryable( Document document ) {
@@ -1743,48 +1739,15 @@ public class DocumentTranslator {
         document.set(QUERYABLE_FIELD, queryable);
     }
 
-    /**
-     * Given an existing document adds a new federated segment with the given alias pointing to the external document located at
-     * {@code externalPath}
-     * 
-     * @param document a {@code non-null} {@link EditableDocument} representing the document of a local node to which the
-     *        federated segment should be appended.
-     * @param documentKey a {@code non-null} {@link String} representing the key of the document. This is passed from the outside
-     *        as the document may not have a {@link DocumentTranslator#KEY} property (e.g. root node)
-     * @param sourceName a {@code non-null} string, the name of the source where {@code externalPath} will be resolved
-     * @param externalPath a {@code non-null} string the location in the external source which points to an external node
-     * @param alias an optional string representing the name under which the federated segment will be linked. In effect, this
-     *        represents the name of a child reference. If not present, the {@code externalPath} will be used. Note that the name
-     *        of the federated segment (either coming from {@code externalPath} or {@code alias}) should not contain the "/"
-     *        character. If it does, this will be removed.
-     */
-    protected void addFederatedSegment( EditableDocument document,
-                                        String documentKey,
-                                        String sourceName,
-                                        String externalPath,
-                                        String alias ) {
+    protected void addFederatedSegment(EditableDocument document, String externalNodeKey, String name) {
         EditableArray federatedSegmentsArray = document.getArray(FEDERATED_SEGMENTS);
         if (federatedSegmentsArray == null) {
             federatedSegmentsArray = Schematic.newArray();
             document.set(FEDERATED_SEGMENTS, federatedSegmentsArray);
         }
 
-        String projectionAlias = !StringUtil.isBlank(alias) ? alias : externalPath;
-        if (projectionAlias.endsWith("/")) {
-            projectionAlias = projectionAlias.substring(0, projectionAlias.length() - 1);
-        }
-        if (projectionAlias.contains("/")) {
-            projectionAlias = projectionAlias.substring(projectionAlias.lastIndexOf("/") + 1);
-        }
-
-        if (StringUtil.isBlank(projectionAlias)) {
-            // we cannot create an external projection without a valid alias
-            return;
-        }
-
-        String externalNodeKey = documentStore.createExternalProjection(documentKey, sourceName, externalPath, projectionAlias);
         if (!StringUtil.isBlank(externalNodeKey)) {
-            EditableDocument federatedSegment = DocumentFactory.newDocument(KEY, externalNodeKey, NAME, projectionAlias);
+            EditableDocument federatedSegment = DocumentFactory.newDocument(KEY, externalNodeKey, NAME, name);
             federatedSegmentsArray.add(federatedSegment);
         }
     }

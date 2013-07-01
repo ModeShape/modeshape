@@ -27,11 +27,13 @@ package org.modeshape.connector.mock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import javax.jcr.ItemExistsException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.Query;
@@ -711,6 +713,98 @@ public class MockConnectorTest extends SingleUseAbstractTest {
         assertNodeFound("/testRoot/fed2/federated3");
     }
 
+    @Test
+    @FixFor( "MODE-1975" )
+    public void shouldNotAllowCloneWithinTheSameWs() throws Exception {
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC1_LOCATION, "fed1");
+        try {
+            jcrSession().getWorkspace().clone(jcrSession().getWorkspace().getName(), "/testRoot", "/testRoot1", false);
+            fail("Should not be able to clone in the same ws if external nodes are involved");
+        } catch (RepositoryException e) {
+            //expected
+            if (print) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-1975" )
+    public void shouldNotAllowMoveWithinTheSameWsViaClone() throws Exception {
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC1_LOCATION, "fed1");
+        try {
+            //clone with removeExisting = true in the same ws is a move
+            jcrSession().getWorkspace().clone(jcrSession().getWorkspace().getName(), "/testRoot", "/testRoot1", true);
+            fail("Should not be able to clone in the same ws if external nodes are involved");
+        } catch (RepositoryException e) {
+            //expected
+            if (print) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-1975" )
+    public void shouldAllowCloneOnlyIfEntireWsAreUsed() throws Exception {
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC1_LOCATION, "fed1");
+        Session ws1Session = jcrSessionTo("ws1");
+        try {
+            ws1Session.getWorkspace().clone("default", "/testRoot", "/testRoot", true);
+            fail("Should only be able to clone between workspaces if the entire workspace is used");
+        } catch (RepositoryException e) {
+            //expected
+            if (print) {
+                e.printStackTrace();
+            }
+        } finally {
+            ws1Session.logout();
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-1975" )
+    public void shouldCloneEntireWorkspaces() throws Exception {
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC2_LOCATION, "fed2");
+        Session ws1Session = jcrSessionTo("ws1");
+        try {
+            ws1Session.getWorkspace().clone("default", "/", "/", true);
+            assertNodeFound("/testRoot", ws1Session);
+            Node fed2 = assertNodeFound("/testRoot/fed2", ws1Session);
+            assertNodeFound("/testRoot/fed2/federated3", ws1Session);
+
+            //add an external node in the 2nd workspace and check that it was added via the connector (i.e. the projection was correctly cloned)
+            fed2.addNode("federated2_1");
+            ws1Session.save();
+            assertNodeFound("/testRoot/fed2/federated2_1");
+        } finally {
+            ws1Session.logout();
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-1975" )
+    public void shouldNotCloneEntireWorkspacesIfExternalNodesExist() throws Exception {
+        federationManager.createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC2_LOCATION, "fed2");
+        Session ws1Session = jcrSessionTo("ws1");
+        ws1Session.getRootNode().addNode("testRoot");
+        ws1Session.save();
+        ((Workspace) ws1Session.getWorkspace()).getFederationManager().createProjection("/testRoot", SOURCE_NAME, MockConnector.DOC2_LOCATION,
+                                                                                        "ws1Fed2");
+        try {
+            ws1Session.getWorkspace().clone("default", "/", "/", false);
+            fail("Expected an ItemExistsException because the target workspace already contains an external node");
+        } catch (ItemExistsException e) {
+            //expected
+            if (print) {
+                e.printStackTrace();
+            }
+        }
+        finally {
+            ws1Session.logout();
+        }
+    }
+
     private void assertExternalNodeHasChildren( String externalNodePath,
                                                 String... children ) throws Exception {
         Node externalNode = session.getNode(externalNodePath);
@@ -738,9 +832,17 @@ public class MockConnectorTest extends SingleUseAbstractTest {
     }
 
     private Node assertNodeFound( String absPath ) throws RepositoryException {
+        return assertNodeFound(absPath, session);
+    }
+
+     private Node assertNodeFound( String absPath, Session session ) throws RepositoryException {
         Node node = session.getNode(absPath);
         assertNotNull(node);
         return node;
+    }
+
+    private Session jcrSessionTo(String wsName) throws RepositoryException {
+        return repository.login(wsName);
     }
 
 }

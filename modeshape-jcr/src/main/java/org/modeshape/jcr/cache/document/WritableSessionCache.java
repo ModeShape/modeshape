@@ -1134,6 +1134,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                     changes.nodeChanged(key, newPath);
                 }
 
+                //write the federated segments
+                for (Map.Entry<String, String> federatedSegment : node.getAddedFederatedSegments().entrySet()) {
+                    translator.addFederatedSegment(doc, federatedSegment.getKey(), federatedSegment.getValue());
+                }
+                translator.removeFederatedSegments(doc, node.getRemovedFederatedSegments());
+
                 // write additional node "metadata", meaning various flags which have internal meaning
                 boolean queryable = node.isQueryable(this);
                 if (!queryable) {
@@ -1468,62 +1474,5 @@ public class WritableSessionCache extends AbstractSessionCache {
             sb.append(changes.getString(reg));
         }
         return sb.toString();
-    }
-
-    /**
-     * Creates a projection for the given source and node, by specifying the external path and an optional alias.
-     * 
-     * @param nodeKey a {@code non-null} {@link NodeKey} instance which represents the key of the node on which the projection
-     *        should be created.
-     * @param sourceName a {@code non-null} String the name of external source.
-     * @param externalPath a {@code non-null} String the path from the external source to an external node.
-     * @param alias an optional String representing the name under which the projection will be linked to the node.
-     */
-    public void createProjection( NodeKey nodeKey,
-                                  String sourceName,
-                                  String externalPath,
-                                  String alias ) {
-        MutableCachedNode node = mutable(nodeKey);
-        try {
-            Transaction txn = txns.begin();
-            // register the node in the changes, so it can be saved later
-            DocumentStore documentStore = workspaceCache().documentStore();
-            EditableDocument document = documentStore.get(nodeKey.toString()).editDocumentContent();
-            DocumentTranslator translator = workspaceCache().translator();
-            translator.addFederatedSegment(document, nodeKey.toString(), sourceName, externalPath, alias);
-            txn.commit();
-        } catch (Exception err) {
-            throw new SystemFailureException(JcrI18n.errorStoringProjection.text(workspaceName(),
-                                                                                 node.getPath(this),
-                                                                                 sourceName,
-                                                                                 externalPath,
-                                                                                 alias,
-                                                                                 err.getMessage()), err);
-        }
-    }
-
-    /**
-     * Removes from the given federated node a projection pointing towards an external node.
-     * 
-     * @param federatedNodeKey a {@code non-null} {@link NodeKey}, the key of the federated node
-     * @param externalNodeKey a {@code non-null} {@link NodeKey}, the key of the external node
-     */
-    public void removeProjection( NodeKey federatedNodeKey,
-                                  NodeKey externalNodeKey ) {
-        MutableCachedNode node = mutable(federatedNodeKey);
-        try {
-            Transaction txn = txns.begin();
-            // register the node in the changes, so it can be saved later
-            DocumentStore documentStore = workspaceCache().documentStore();
-            EditableDocument federatedDocument = documentStore.get(federatedNodeKey.toString()).editDocumentContent();
-            DocumentTranslator translator = workspaceCache().translator();
-            translator.removeFederatedSegments(federatedDocument, externalNodeKey.toString());
-            txn.commit();
-        } catch (Exception err) {
-            throw new SystemFailureException(JcrI18n.errorRemovingProjection.text(workspaceName(),
-                                                                                  node.getPath(this),
-                                                                                  externalNodeKey,
-                                                                                  err.getMessage()), err);
-        }
     }
 }
