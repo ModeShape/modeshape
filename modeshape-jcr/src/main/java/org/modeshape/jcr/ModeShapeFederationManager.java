@@ -26,10 +26,12 @@ package org.modeshape.jcr;
 
 import javax.jcr.RepositoryException;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.federation.FederationManager;
+import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.cache.document.WritableSessionCache;
+import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.value.Path;
 
 /**
@@ -40,9 +42,12 @@ import org.modeshape.jcr.value.Path;
 public class ModeShapeFederationManager implements FederationManager {
 
     private final JcrSession session;
+    private final DocumentStore documentStore;
 
-    protected ModeShapeFederationManager( JcrSession session ) {
+    protected ModeShapeFederationManager( JcrSession session,
+                                          DocumentStore documentStore ) {
         this.session = session;
+        this.documentStore = documentStore;
     }
 
     @Override
@@ -50,11 +55,28 @@ public class ModeShapeFederationManager implements FederationManager {
                                   String sourceName,
                                   String externalPath,
                                   String alias ) throws RepositoryException {
-        NodeKey key = session.getNode(absNodePath).key();
+        NodeKey parentNodeToBecomeFederatedKey = session.getNode(absNodePath).key();
 
-        SessionCache writer = session.spawnSessionCache(false);
-        ((WritableSessionCache)writer.unwrap()).createProjection(key, sourceName, externalPath, alias);
-        writer.save();
+        String projectionAlias = !StringUtil.isBlank(alias) ? alias : externalPath;
+        if (projectionAlias.endsWith("/")) {
+            projectionAlias = projectionAlias.substring(0, projectionAlias.length() - 1);
+        }
+        if (projectionAlias.contains("/")) {
+            projectionAlias = projectionAlias.substring(projectionAlias.lastIndexOf("/") + 1);
+        }
+
+        if (StringUtil.isBlank(projectionAlias)) {
+            // we cannot create an external projection without a valid alias
+            return;
+        }
+
+
+        SessionCache sessionCache = this.session.spawnSessionCache(false);
+        String externalNodeKey = documentStore.createExternalProjection(parentNodeToBecomeFederatedKey.toString(), sourceName,
+                                                                        externalPath, projectionAlias);
+        MutableCachedNode node = sessionCache.mutable(parentNodeToBecomeFederatedKey);
+        node.addFederatedSegment(externalNodeKey, projectionAlias);
+        sessionCache.save();
     }
 
     @Override
@@ -69,8 +91,9 @@ public class ModeShapeFederationManager implements FederationManager {
         NodeKey federatedNodeKey = session.getNode(path.getParent().getString()).key();
         NodeKey externalNodeKey = session.getNode(path.getString()).key();
 
-        SessionCache writer = session.spawnSessionCache(false);
-        ((WritableSessionCache)writer.unwrap()).removeProjection(federatedNodeKey, externalNodeKey);
-        writer.save();
+        SessionCache sessionCache = session.spawnSessionCache(false);
+        MutableCachedNode federatedNode = sessionCache.mutable(federatedNodeKey);
+        federatedNode.removeFederatedSegment(externalNodeKey.toString());
+        sessionCache.save();
     }
 }

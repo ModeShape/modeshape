@@ -528,12 +528,12 @@ public final class Connectors {
      * Determine there is a projection with the given alias and projected (internal) node key
      *
      * @param alias the alias
-     * @param projectedNodeKey the node key of the projected (internal) node
+     * @param externalNodeKey the node key of the projected (internal) node
      * @return true if there is such a projection, or false otherwise
      */
     public boolean hasExternalProjection( String alias,
-                                          String projectedNodeKey ) {
-        return this.snapshot.get().hasExternalProjection(alias, projectedNodeKey);
+                                          String externalNodeKey ) {
+        return this.snapshot.get().hasExternalProjection(alias, externalNodeKey);
     }
 
     /**

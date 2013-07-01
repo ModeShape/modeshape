@@ -201,6 +201,8 @@ public final class JcrI18n {
     public static I18n unableToMoveProjection;
     public static I18n unableToCopySourceTargetMismatch;
     public static I18n unableToCopySourceNotExternal;
+    public static I18n unableToCloneSameWsContainsExternalNode;
+    public static I18n unableToCloneExternalNodesRequireRoot;
 
     public static I18n typeNotFound;
     public static I18n supertypeNotFound;
