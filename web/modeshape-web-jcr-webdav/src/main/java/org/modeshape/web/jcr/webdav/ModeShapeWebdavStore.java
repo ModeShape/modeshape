@@ -431,6 +431,20 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         }
     }
 
+    @Override
+    public Map<String, String> setCustomProperties( ITransaction transaction,
+                                                    String resourceUri,
+                                                    Map<String, Object> propertiesToSet,
+                                                    List<String> propertiesToRemove ) {
+        return null;
+    }
+
+    @Override
+    public Map<String, Object> getCustomProperties( ITransaction transaction,
+                                                    String resourceUri ) {
+        return null;
+    }
+
     /**
      * @param node the node to check; may not be null
      * @return true if {@code node} represents a file (as opposed to a folder or file content)

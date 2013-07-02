@@ -155,6 +155,14 @@ public class WebdavStatus {
      */
     public static final int SC_UNSUPPORTED_MEDIA_TYPE = 415;
 
+   /**
+    * The 424 (Failed Dependency) status code means that the method could not be performed on the resource
+    * because the requested action depended on another action and that action failed.
+    * For example, if a command in a PROPPATCH method fails then, at minimum
+    * the rest of the commands will also fail with 424 (Failed Dependency).
+    */
+    public static final int SC_FAILED_DEPENDENCY = 424;
+
     // -------------------------------------------- Extended WebDav status code
 
     /**
@@ -230,6 +238,7 @@ public class WebdavStatus {
         addStatusCodeMap(SC_INSUFFICIENT_SPACE_ON_RESOURCE, "Insufficient Space On Resource");
         addStatusCodeMap(SC_METHOD_FAILURE, "Method Failure");
         addStatusCodeMap(SC_LOCKED, "Locked");
+        addStatusCodeMap(SC_FAILED_DEPENDENCY, "Failed Dependency");
     }
 
     // --------------------------------------------------------- Public Methods

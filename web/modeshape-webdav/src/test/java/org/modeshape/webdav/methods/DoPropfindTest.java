@@ -1,5 +1,6 @@
 package org.modeshape.webdav.methods;
 
+import java.util.Collections;
 import org.jmock.Expectations;
 import org.junit.Test;
 import org.modeshape.webdav.AbstractWebDAVTest;
@@ -59,6 +60,12 @@ public class DoPropfindTest extends AbstractWebDAVTest {
                 one(mockReq).getServletPath();
                 will(returnValue(path));
 
+                one(mockStore).getCustomProperties(mockTransaction, path);
+                will(returnValue(Collections.emptyMap()));
+
+                one(mockStore).getCustomProperties(mockTransaction, path + "file1");
+                will(returnValue(Collections.emptyMap()));
+
                 one(mockStore).getChildrenNames(mockTransaction, path);
                 will(returnValue(new String[] {"file1", "file2"}));
 
@@ -89,6 +96,9 @@ public class DoPropfindTest extends AbstractWebDAVTest {
 
                 one(mockStore).getChildrenNames(mockTransaction, path + "file2");
                 will(returnValue(new String[] {}));
+
+                one(mockStore).getCustomProperties(mockTransaction, path + "file2");
+                will(returnValue(Collections.emptyMap()));
             }
         });
 
@@ -146,6 +156,9 @@ public class DoPropfindTest extends AbstractWebDAVTest {
 
                 one(mockReq).getServletPath();
                 will(returnValue("/"));
+
+                one(mockStore).getCustomProperties(mockTransaction, path);
+                will(returnValue(Collections.emptyMap()));
             }
         });
 
