@@ -34,6 +34,11 @@ import java.util.concurrent.TimeUnit;
 public interface DurationActivity extends Comparable<DurationActivity> {
 
     /**
+     * An empty array.
+     */
+    DurationActivity[] NO_DURATION_RECORDS = new DurationActivity[0];
+
+    /**
      * Get the duration of this activity.
      * 
      * @param unit the desired time unit for the duration

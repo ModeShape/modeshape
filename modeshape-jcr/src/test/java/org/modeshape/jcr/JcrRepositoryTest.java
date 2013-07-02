@@ -64,11 +64,11 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
-import org.modeshape.jcr.RepositoryStatistics.DurationActivity;
-import org.modeshape.jcr.RepositoryStatistics.History;
 import org.modeshape.jcr.RepositoryStatistics.MetricHistory;
-import org.modeshape.jcr.RepositoryStatistics.Statistics;
+import org.modeshape.jcr.api.monitor.DurationActivity;
 import org.modeshape.jcr.api.monitor.DurationMetric;
+import org.modeshape.jcr.api.monitor.History;
+import org.modeshape.jcr.api.monitor.Statistics;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.monitor.Window;
 
