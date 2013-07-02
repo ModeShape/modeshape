@@ -24,15 +24,15 @@
 package org.modeshape.jboss.metric;
 
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.RepositoryStatistics;
 import org.modeshape.jcr.api.monitor.History;
+import org.modeshape.jcr.api.monitor.RepositoryMonitor;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.monitor.Window;
 
 /**
  * Represents a ModeShape value metric operation.
  */
-public final class GetValueMetric extends ModeShapeMetricHandler {
+final class GetValueMetric extends ModeShapeMetricHandler {
 
     /**
      * The ModeShape metric (never <code>null</code>)
@@ -41,35 +41,25 @@ public final class GetValueMetric extends ModeShapeMetricHandler {
 
     /**
      * @param metric the value metric whose operation is being constructed (cannot be <code>null</code>)
+     * @param window the metric window (cannot be <code>null</code>)
      */
-    public GetValueMetric( final ValueMetric metric ) {
+    public GetValueMetric( final ValueMetric metric,
+                           final Window window ) {
+        super(window);
+
         CheckArg.isNotNull(metric, "metric");
         this.metric = metric;
     }
 
     /**
      * {@inheritDoc}
-     * 
-     * @see org.modeshape.jboss.metric.ModeShapeMetricHandler#history(org.modeshape.jcr.RepositoryStatistics,
-     *      org.modeshape.jcr.api.monitor.Window)
+     *
+     * @see org.modeshape.jboss.metric.ModeShapeMetricHandler#history(org.modeshape.jcr.api.monitor.RepositoryMonitor)
      */
     @Override
-    protected History history( final RepositoryStatistics repoStats,
-                               final Window window ) {
+    protected History history( final RepositoryMonitor repoStats ) throws Exception {
         CheckArg.isNotNull(repoStats, "repoStats");
-        CheckArg.isNotNull(window, "window");
-
-        return repoStats.getHistory(this.metric, window);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jboss.metric.ModeShapeMetricHandler#metricName()
-     */
-    @Override
-    public String metricName() {
-        return this.metric.getLiteral();
+        return repoStats.getHistory(this.metric, window());
     }
 
 }

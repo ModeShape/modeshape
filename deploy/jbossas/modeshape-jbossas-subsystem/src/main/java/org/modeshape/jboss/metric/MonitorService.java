@@ -23,19 +23,17 @@
  */
 package org.modeshape.jboss.metric;
 
-import javax.jcr.RepositoryException;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.modeshape.jcr.JcrRepository;
-import org.modeshape.jcr.RepositoryStatistics;
+import org.modeshape.jcr.api.monitor.RepositoryMonitor;
 
 /**
  * A service for obtaining the ModeShape monitoring repository statistics.
  */
-public final class MonitorService implements Service<RepositoryStatistics> {
+public final class MonitorService implements Service<RepositoryMonitor> {
 
     /**
      * The injected repository instance associated with this service.
@@ -48,8 +46,14 @@ public final class MonitorService implements Service<RepositoryStatistics> {
      * @see org.jboss.msc.value.Value#getValue()
      */
     @Override
-    public RepositoryStatistics getValue() throws IllegalStateException, IllegalArgumentException {
-        return this.repoInjector.getValue().getRepositoryStatistics();
+    public RepositoryMonitor getValue() throws IllegalStateException, IllegalArgumentException {
+        try {
+            return this.repoInjector.getValue().getRepositoryStatistics();
+        } catch (Exception e) {
+            // nothing to do
+        }
+
+        return RepositoryMonitor.EMPTY_MONITOR;
     }
 
     /**
@@ -58,14 +62,8 @@ public final class MonitorService implements Service<RepositoryStatistics> {
      * @see org.jboss.msc.service.Service#start(org.jboss.msc.service.StartContext)
      */
     @Override
-    public void start( final StartContext context ) throws StartException {
-        final JcrRepository repo = this.repoInjector.getValue();
-
-        try {
-            repo.login();
-        } catch (final RepositoryException e) {
-            throw new StartException(e);
-        }
+    public void start( final StartContext context ) {
+        // nothing to do
     }
 
     /**
