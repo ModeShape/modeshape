@@ -62,7 +62,7 @@ import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
-import org.modeshape.jcr.RepositoryStatistics;
+import org.modeshape.jcr.api.monitor.RepositoryMonitor;
 
 public class AddRepository extends AbstractAddStepHandler {
 
@@ -76,18 +76,14 @@ public class AddRepository extends AbstractAddStepHandler {
     @Override
     protected void populateModel( ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {
+        // attributes
         for (AttributeDefinition attribute : ModelAttributes.REPOSITORY_ATTRIBUTES) {
             attribute.validateAndSet(operation, model);
         }
 
-        // value metrics
-        for (final AttributeDefinition attribute : ModelMetrics.REPOSITORY_VALUE_METRICS) {
-            attribute.validateAndSet(operation, model);
-        }
-
-        // duration metrics
-        for (final AttributeDefinition attribute : ModelMetrics.REPOSITORY_DURATION_METRICS) {
-            attribute.validateAndSet(operation, model);
+        // metrics
+        for (final AttributeDefinition metric : ModelMetrics.ALL_METRICS) {
+            metric.validateAndSet(operation, model);
         }
     }
 
@@ -281,13 +277,13 @@ public class AddRepository extends AbstractAddStepHandler {
 
         // Add monitor service
         final MonitorService monitorService = new MonitorService();
-        final ServiceBuilder<RepositoryStatistics> monitorBuilder = target.addService(ModeShapeServiceNames.monitorServiceName(repositoryName),
-                                                                                      monitorService);
+        final ServiceBuilder<RepositoryMonitor> monitorBuilder = target.addService(ModeShapeServiceNames.monitorServiceName(repositoryName),
+                                                                                   monitorService);
         monitorBuilder.addDependency(ModeShapeServiceNames.repositoryServiceName(repositoryName),
                                      JcrRepository.class,
                                      monitorService.getJcrRepositoryInjector());
         monitorBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
-        
+
         // Now add the controller for the RepositoryService ...
         builder.setInitialMode(ServiceController.Mode.ACTIVE);
         newControllers.add(builder.install());

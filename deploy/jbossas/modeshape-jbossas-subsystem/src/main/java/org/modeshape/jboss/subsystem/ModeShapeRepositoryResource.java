@@ -23,14 +23,10 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.modeshape.jboss.metric.GetDurationMetric;
-import org.modeshape.jboss.metric.GetValueMetric;
 import org.modeshape.jboss.metric.ModelMetrics;
-import org.modeshape.jcr.api.monitor.DurationMetric;
-import org.modeshape.jcr.api.monitor.ValueMetric;
+import org.modeshape.jboss.metric.ModelMetrics.MetricAttributeDefinition;
 
 /**
  * 
@@ -56,18 +52,8 @@ public class ModeShapeRepositoryResource extends SimpleResourceDefinition {
     }
 
     private void registerMetrics( final ManagementResourceRegistration registration ) {
-        // register value metrics
-        for (final AttributeDefinition attrDefn : ModelMetrics.REPOSITORY_VALUE_METRICS) {
-            final String name = attrDefn.getName();
-            final ValueMetric metric = ValueMetric.fromLiteral(name);
-            registration.registerMetric(attrDefn, new GetValueMetric(metric));
-        }
-
-        // register duration metrics
-        for (final AttributeDefinition attrDefn : ModelMetrics.REPOSITORY_DURATION_METRICS) {
-            final String name = attrDefn.getName();
-            final DurationMetric metric = DurationMetric.fromLiteral(name);
-            registration.registerMetric(attrDefn, new GetDurationMetric(metric));
+        for (final MetricAttributeDefinition attrDefn : ModelMetrics.ALL_METRICS) {
+            registration.registerMetric(attrDefn, attrDefn.metricHandler());
         }
     }
 
