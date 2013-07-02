@@ -29,7 +29,7 @@ public enum Window {
     /**
      * The window for accessing a metric's history and statistics for each week during the last year (52 weeks).
      */
-    PREVIOUS_52_WEEKS("previous-52-wees");
+    PREVIOUS_52_WEEKS("previous-52-weeks");
 
     private static final Map<String, Window> BY_LITERAL;
     private static final Map<String, Window> BY_NAME;

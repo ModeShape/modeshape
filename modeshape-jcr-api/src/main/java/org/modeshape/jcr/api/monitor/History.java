@@ -32,6 +32,73 @@ import org.modeshape.jcr.api.value.DateTime;
  * @since 3.0
  */
 public interface History {
+    
+    /**
+     * A history with no statistics, no window, no start or end time, and no duration.
+     */
+    public History NO_HISTORY = new History() {
+
+        /**
+         * {@inheritDoc}
+         * <p>
+         * <strong>Always returns <code>null</code>.</strong>
+         * 
+         * @see org.modeshape.jcr.api.monitor.History#getWindow()
+         */
+        @Override
+        public Window getWindow() {
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>
+         * <strong>Always returns <code>0</code> (zero).</strong>
+         * 
+         * @see org.modeshape.jcr.api.monitor.History#getTotalDuration(java.util.concurrent.TimeUnit)
+         */
+        @Override
+        public long getTotalDuration( final TimeUnit unit ) {
+            return 0;
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>
+         * <strong>Always returns <code>null</code>.</strong>
+         * 
+         * @see org.modeshape.jcr.api.monitor.History#getStartTime()
+         */
+        @Override
+        public DateTime getStartTime() {
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>
+         * <strong>Always returns <code>null</code>.</strong>
+         * 
+         * @see org.modeshape.jcr.api.monitor.History#getEndTime()
+         */
+        @Override
+        public DateTime getEndTime() {
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>
+         * <strong>Always returns an empty statistics array.</strong>
+         * 
+         * @see org.modeshape.jcr.api.monitor.History#getStats()
+         */
+        @Override
+        public Statistics[] getStats() {
+            return Statistics.NO_STATISTICS;
+        }
+
+    };
 
     /**
      * Get the kind of window.

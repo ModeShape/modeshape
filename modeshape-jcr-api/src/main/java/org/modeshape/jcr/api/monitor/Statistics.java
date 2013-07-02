@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.api.monitor;
 
+
 /**
  * The immutable statistics for a sample of values. The statistics include the {@link #getMinimum() minimum},
  * {@link #getMaximum() maximum}, {@link #getMean() mean (average)}, {@link #getVariance() variance} and
@@ -36,6 +37,11 @@ package org.modeshape.jcr.api.monitor;
  * @since 3.0
  */
 public interface Statistics {
+
+    /**
+     * An empty statistics array.
+     */
+    Statistics[] NO_STATISTICS = new Statistics[0];
 
     /**
      * Get the number of samples to which these statistics apply.

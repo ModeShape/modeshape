@@ -25,9 +25,11 @@ package org.modeshape.jboss.subsystem;
 
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.modeshape.jboss.metric.ModelMetrics;
+import org.modeshape.jboss.metric.ModelMetrics.MetricAttributeDefinition;
 
 /**
- * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
+ * 
  */
 public class ModeShapeRepositoryResource extends SimpleResourceDefinition {
     protected final static ModeShapeRepositoryResource INSTANCE = new ModeShapeRepositoryResource();
@@ -37,9 +39,22 @@ public class ModeShapeRepositoryResource extends SimpleResourceDefinition {
               AddRepository.INSTANCE, RemoveRepository.INSTANCE);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.jboss.as.controller.SimpleResourceDefinition#registerAttributes(org.jboss.as.controller.registry.ManagementResourceRegistration)
+     */
     @Override
     public void registerAttributes( ManagementResourceRegistration resourceRegistration ) {
         super.registerAttributes(resourceRegistration);
         RepositoryWriteAttributeHandler.INSTANCE.registerAttributes(resourceRegistration);
+        registerMetrics(resourceRegistration);
     }
+
+    private void registerMetrics( final ManagementResourceRegistration registration ) {
+        for (final MetricAttributeDefinition attrDefn : ModelMetrics.ALL_METRICS) {
+            registration.registerMetric(attrDefn, attrDefn.metricHandler());
+        }
+    }
+
 }
