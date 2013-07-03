@@ -29,14 +29,19 @@ import com.googlecode.sardine.Sardine;
 import com.googlecode.sardine.SardineFactory;
 import com.googlecode.sardine.util.SardineException;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.StringUtil;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -80,12 +85,16 @@ public class WebdavStoreClientTest {
 
     @Test
     public void shouldCreateFolder() throws Exception {
-        String folderName = "testFolder" + UUID.randomUUID().toString();
+        String folderName = testFolder();
         String uri = resourceUri(folderName);
         sardine.createDirectory(uri);
         assertTrue(sardine.exists(uri));
         DavResource folder = getResourceAtURI(uri);
         assertEquals(0l, folder.getContentLength().longValue());
+    }
+
+    private String testFolder() {
+        return "testFolder" + UUID.randomUUID().toString();
     }
 
     protected DavResource getResourceAtURI( String uri ) throws SardineException {
@@ -96,7 +105,7 @@ public class WebdavStoreClientTest {
 
     @Test
     public void shouldCreateFile() throws Exception {
-        String folderUri = resourceUri("testDirectory" + UUID.randomUUID().toString());
+        String folderUri = resourceUri(testFolder());
         sardine.createDirectory(folderUri);
         InputStream fileStream = getClass().getClassLoader().getResourceAsStream("textfile.txt");
         assertNotNull(fileStream);
@@ -116,5 +125,51 @@ public class WebdavStoreClientTest {
 
     protected String getServerContext() {
         return SERVER_CONTEXT;
+    }
+
+    @Test
+    public void shouldSetCustomPropertiesOnFolder() throws Exception {
+        String folderUri = resourceUri(testFolder());
+        sardine.createDirectory(folderUri);
+
+        assertCustomPropertiesOnResource(folderUri);
+    }
+
+    @Test
+    public void shouldIgnoreCustomPropertiesOnFolderIfNotPresent() throws Exception {
+        String folderUri = resourceUri(testFolder());
+        sardine.createDirectory(folderUri);
+
+        sardine.setCustomProps(folderUri, null, null);
+        sardine.setCustomProps(folderUri, null, Arrays.asList("missing_prop"));
+    }
+
+    @Test
+    public void shouldSetCustomPropertiesOnFile() throws Exception {
+        String folderUri = resourceUri(testFolder());
+        sardine.createDirectory(folderUri);
+        InputStream fileStream = getClass().getClassLoader().getResourceAsStream("textfile.txt");
+        String fileUri = folderUri + "/testFile" + UUID.randomUUID().toString();
+        sardine.put(fileUri, fileStream);
+
+        assertCustomPropertiesOnResource(fileUri);
+    }
+
+    private void assertCustomPropertiesOnResource( String resourceUri ) throws SardineException {
+        Map<String, String> propertiesToAdd = new HashMap<String, String>();
+        propertiesToAdd.put("prop1", "value1");
+        propertiesToAdd.put("prop2", "value2");
+        sardine.setCustomProps(resourceUri, propertiesToAdd, null);
+
+        DavResource resource = sardine.getResources(resourceUri).get(0);
+        Map<String, String> customProps = resource.getCustomProps();
+        assertEquals("value1", customProps.get("prop1"));
+        assertEquals("value2", customProps.get("prop2"));
+
+        sardine.setCustomProps(resourceUri, null, Arrays.asList("prop2", "prop3"));
+        resource = sardine.getResources(resourceUri).get(0);
+        customProps = resource.getCustomProps();
+        assertEquals("value1", customProps.get("prop1"));
+        assertFalse(customProps.containsKey("prop2"));
     }
 }

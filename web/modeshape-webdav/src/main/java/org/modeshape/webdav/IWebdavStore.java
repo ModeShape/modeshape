@@ -17,9 +17,11 @@
 
 package org.modeshape.webdav;
 
-import org.modeshape.webdav.exceptions.WebdavException;
 import java.io.InputStream;
 import java.security.Principal;
+import java.util.List;
+import java.util.Map;
+import org.modeshape.webdav.exceptions.WebdavException;
 
 /**
  * Interface for simple implementation of any store for the WebdavServlet
@@ -184,5 +186,43 @@ public interface IWebdavStore {
      */
     StoredObject getStoredObject( ITransaction transaction,
                                   String uri );
+
+    /**
+     * Updates the custom properties on the given resource. NOTE: Nested properties are <b>not</b> supported
+
+     * @param transaction the {@link org.modeshape.webdav.ITransaction} within which the operation takes place; may not be null
+     * @param resourceUri the URI of the object on which the properties should be updated; may not be null
+     * @param propertiesToSet a map of (propertyName, propertyValue) pairs which should be set on the object; may not be null;
+     * If the name of a property contains a namespace, it is expected to be in the [namespaceUri]:[localPropertyName] format.
+     * @param propertiesToRemove a set of property name representing the properties which should be removed
+     * @return a Map of (property name, error message) for the properties which could not changed (either set or removed). If
+     * the operation was successful, this may be null.
+     */
+    Map<String, String> setCustomProperties( ITransaction transaction,
+                                             String resourceUri,
+                                             Map<String, Object> propertiesToSet,
+                                             List<String> propertiesToRemove );
+
+    /**
+     * Returns the map of (propertyName, propertyValue) of custom properties of the given resource. NOTE: Nested properties are <b>not</b> supported
+     *
+     * @param transaction the {@link ITransaction} within which the operation takes place; may not be null
+     * @param resourceUri the URI of the object on which the properties should be updated; may not be null
+     * @return a Map of (property name, property value) pair; may not be null; if the property name is namespace-aware it is
+     * expected to have the [namespaceUri]:[localPropertyName] format
+     */
+    Map<String, Object> getCustomProperties( ITransaction transaction,
+                                             String resourceUri );
+
+
+    /**
+     * Returns a map of custom namespaces that are specific to the store.
+     *
+     * @param transaction the {@link ITransaction} within which the operation takes place; may not be null
+     * @param resourceUri resourceUri the URI of the object on which the properties should be updated; may not be null
+     * @return a Map of (namespaceUri, namespacePrefix) pairs;may not be null;
+     */
+    Map<String, String> getCustomNamespaces(ITransaction transaction,
+                                            String resourceUri);
 
 }

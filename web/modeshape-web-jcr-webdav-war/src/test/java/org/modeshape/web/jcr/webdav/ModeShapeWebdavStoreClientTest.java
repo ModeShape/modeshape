@@ -13,6 +13,8 @@ import com.googlecode.sardine.Sardine;
 import com.googlecode.sardine.SardineFactory;
 import com.googlecode.sardine.util.SardineException;
 import java.io.ByteArrayInputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
@@ -71,9 +73,9 @@ public class ModeShapeWebdavStoreClientTest extends WebdavStoreClientTest {
         byte[] binaryData = new byte[binarySize];
         new Random().nextBytes(binaryData);
 
-        String folderUri = resourceUri("testDirectory" + UUID.randomUUID().toString());
+        String folderUri = resourceUri(testFolder());
         sardine.createDirectory(folderUri);
-        String fileUri = folderUri + "/testFile" + UUID.randomUUID().toString();
+        String fileUri = testFile(folderUri);
 
         sardine.put(fileUri, new ByteArrayInputStream(binaryData), "application/octet-stream");
         assertTrue(sardine.exists(fileUri));
@@ -82,6 +84,83 @@ public class ModeShapeWebdavStoreClientTest extends WebdavStoreClientTest {
         assertEquals(binarySize, file.getContentLength().intValue());
     }
 
+    private String testFile( String folderUri ) {
+        return folderUri + "/testFile" + UUID.randomUUID().toString();
+    }
+
+    @Test
+    @FixFor( "MODE-984" )
+    public void shouldRetrieveFolderCustomProperties() throws Exception {
+        String folderUri = resourceUri(testFolder());
+        sardine.createDirectory(folderUri);
+
+        DavResource resource = sardine.getResources(folderUri).get(0);
+        Map<String, String> customProperties = resource.getCustomProps();
+        assertTrue(!customProperties.isEmpty());
+        assertEquals("nt:folder", customProperties.get("primaryType"));
+        assertNotNull(customProperties.get("created"));
+        assertNotNull(customProperties.get("createdBy"));
+    }
+
+    @Test
+    @FixFor( "MODE-984" )
+    public void shouldRetrieveFileCustomProperties() throws Exception {
+
+        String folderUri = resourceUri(testFolder());
+        sardine.createDirectory(folderUri);
+
+        byte[] binaryData = new byte[1024];
+        new Random().nextBytes(binaryData);
+        String fileUri = testFile(folderUri);
+        sardine.put(fileUri, new ByteArrayInputStream(binaryData), "application/octet-stream");
+
+        DavResource resource = sardine.getResources(fileUri).get(0);
+        Map<String, String> customProperties = resource.getCustomProps();
+        assertTrue(!customProperties.isEmpty());
+        assertEquals("nt:file", customProperties.get("primaryType"));
+        assertNotNull(customProperties.get("created"));
+        assertNotNull(customProperties.get("createdBy"));
+    }
+
+    @Override
+    @FixFor( "MODE-984" )
+    public void shouldSetCustomPropertiesOnFile() throws Exception {
+        String folderUri = resourceUri(testFolder());
+        sardine.createDirectory(folderUri);
+
+        byte[] binaryData = new byte[1024];
+        new Random().nextBytes(binaryData);
+        String fileUri = testFile(folderUri);
+        sardine.put(fileUri, new ByteArrayInputStream(binaryData), "application/octet-stream");
+
+        Map<String, String> customProps = new HashMap<String, String>();
+        customProps.put("myProp", "myValue");
+        sardine.setCustomProps(fileUri, customProps, null);
+
+        DavResource resource = sardine.getResources(fileUri).get(0);
+        Map<String, String> customProperties = resource.getCustomProps();
+        assertTrue(!customProperties.isEmpty());
+        assertFalse(customProperties.containsKey("myProp"));
+    }
+
+    @Override
+    public void shouldSetCustomPropertiesOnFolder() throws Exception {
+        //custom properties cannot be set on nt:folder
+        String folderUri = resourceUri(testFolder());
+        sardine.createDirectory(folderUri);
+
+        Map<String, String> customProps = new HashMap<String, String>();
+        customProps.put("myProp", "myValue");
+        sardine.setCustomProps(folderUri, customProps, null);
+        DavResource resource = sardine.getResources(folderUri).get(0);
+        Map<String, String> customProperties = resource.getCustomProps();
+        assertTrue(!customProperties.isEmpty());
+        assertFalse(customProperties.containsKey("myProp"));
+    }
+
+    private String testFolder() {
+        return "testDirectory" + UUID.randomUUID().toString();
+    }
 
     protected String getDefaultWorkspaceName() {
         return "default";
