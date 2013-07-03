@@ -56,12 +56,19 @@ public class CassandraBinaryStoreTest {
     private BinaryValue aliveValue, unusedValue;
     private static EmbeddedCassandraService cassandra;
 
+    private static Boolean isIpV4;
+    
     public CassandraBinaryStoreTest() {
     }
 
     @BeforeClass
     public static void setUpClass() throws Exception {
-        System.setProperty("cassandra.config", "cassandra/cassandra.yaml");
+        isIpV4 = Boolean.parseBoolean(System.getProperty("java.net.preferIPv4Stack"));
+        if (isIpV4) {
+            System.setProperty("cassandra.config", "cassandra/cassandra.yaml");
+        } else {
+            System.setProperty("cassandra.config", "cassandra/cassandra_ipv6.yaml");            
+        }   
         cassandra = new EmbeddedCassandraService();
         cassandra.start();
     }
@@ -72,7 +79,11 @@ public class CassandraBinaryStoreTest {
 
     @Before
     public void setUp() throws Exception {
-        store = new CassandraBinaryStore("127.0.0.1");
+        if (isIpV4) {
+            store = new CassandraBinaryStore("127.0.0.1");
+        } else {
+            store = new CassandraBinaryStore("0:0:0:0:0:0:0:1");
+        }
         store.start();
 
         ByteArrayInputStream stream = new ByteArrayInputStream("Binary value".getBytes());
