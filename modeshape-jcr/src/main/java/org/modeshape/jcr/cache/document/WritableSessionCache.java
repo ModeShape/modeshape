@@ -1134,7 +1134,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     changes.nodeChanged(key, newPath);
                 }
 
-                //write the federated segments
+                // write the federated segments
                 for (Map.Entry<String, String> federatedSegment : node.getAddedFederatedSegments().entrySet()) {
                     translator.addFederatedSegment(doc, federatedSegment.getKey(), federatedSegment.getValue());
                 }
@@ -1174,8 +1174,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                                                                                                     .iterator());
                     }
                 } else {
-                    boolean externalNodeChanged = isExternal && (hasPropertyChanges || node.hasNonPropertyChanges()
-                                                                 || node.changedChildren().renameCount() > 0);
+                    boolean externalNodeChanged = isExternal
+                                                  && (hasPropertyChanges || node.hasNonPropertyChanges() || node.changedChildren()
+                                                                                                                .renameCount() > 0);
                     if (externalNodeChanged) {
                         // in the case of external nodes, only if there are changes should the update be called
                         documentStore.updateDocument(keyStr, doc, node);

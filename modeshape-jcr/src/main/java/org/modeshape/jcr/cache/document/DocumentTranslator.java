@@ -670,12 +670,16 @@ public class DocumentTranslator {
             if (parent != null && !parent.equals(oldParent)) {
                 parents.addStringIfAbsent(parent.toString());
                 if (oldParent != null) {
-                    parents.remove(oldParent.toString());
+                    parents.remove((Object)oldParent.toString());
                 }
             }
             if (additionalParents != null) {
-                for (NodeKey removed : additionalParents.getRemovals()) {
-                    parents.remove((Object)removed.toString()); // remove by value (not by name)
+                for (NodeKey removedParent : additionalParents.getRemovals()) {
+                    // When the primary parent is removed and changed to one of the additional parents, then the additional
+                    // parent is removed. Therefore, we only want to remove it if it does not equal the new parent ...
+                    if (!removedParent.equals(parent)) {
+                        parents.remove((Object)removedParent.toString()); // remove by value (not by name)
+                    }
                 }
                 for (NodeKey added : additionalParents.getAdditions()) {
                     parents.addStringIfAbsent(added.toString());
@@ -706,7 +710,7 @@ public class DocumentTranslator {
                     parents.add(existingParent);
                 }
                 for (NodeKey removed : additionalParents.getRemovals()) {
-                    parents.remove(removed.toString());
+                    parents.remove((Object)removed.toString());
                 }
                 for (NodeKey added : additionalParents.getAdditions()) {
                     parents.add(added.toString());
@@ -1739,7 +1743,9 @@ public class DocumentTranslator {
         document.set(QUERYABLE_FIELD, queryable);
     }
 
-    protected void addFederatedSegment(EditableDocument document, String externalNodeKey, String name) {
+    protected void addFederatedSegment( EditableDocument document,
+                                        String externalNodeKey,
+                                        String name ) {
         EditableArray federatedSegmentsArray = document.getArray(FEDERATED_SEGMENTS);
         if (federatedSegmentsArray == null) {
             federatedSegmentsArray = Schematic.newArray();

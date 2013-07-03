@@ -88,6 +88,38 @@ final class JcrSharedNodeCache {
     }
 
     /**
+     * Signal that the supplied shareable node was destroyed. This method will remove the corresponding {@link SharedSet}.
+     * 
+     * @param shareableNodeKey the key shareable node that was destroyed
+     */
+    public void destroyed( NodeKey shareableNodeKey ) {
+        sharedSets.remove(shareableNodeKey);
+    }
+
+    /**
+     * Signal that the supplied node was removed from it's parent. This method will adjust the corresponding {@link SharedSet}
+     * even if the removed node was the original shareable node.
+     * 
+     * @param shareableNode the shareable node that was removed from its shared set
+     * @throws RepositoryException if there is a problem
+     */
+    public void removed( AbstractJcrNode shareableNode ) throws RepositoryException {
+        NodeKey shareableNodeKey = shareableNode.key();
+        SharedSet sharedSet = getSharedSet(shareableNode);
+        if (sharedSet.shareableNode == shareableNode) {
+            // We're removing the original shareable node, so we need to recreate the SharedSet after
+            // we figure out the new parent ...
+            session().releaseCachedNode(shareableNode);
+            AbstractJcrNode newShared = session().node(shareableNodeKey, null);
+            SharedSet newSharedSet = new SharedSet(newShared);
+            sharedSets.put(shareableNodeKey, newSharedSet);
+        } else {
+            assert shareableNode instanceof JcrSharedNode;
+            sharedSet.remove((JcrSharedNode)shareableNode);
+        }
+    }
+
+    /**
      * The set of shared nodes for a single shareable node.
      */
     final class SharedSet {
@@ -130,18 +162,24 @@ final class JcrSharedNodeCache {
         public AbstractJcrNode getSharedNode( CachedNode cachedNode,
                                               NodeKey parentKey ) {
             assert parentKey != null;
-            if (!key().equals(parentKey)) {
+            try {
+                NodeKey actualParentKey = shareableNode.parentKey();
+                assert actualParentKey != null;
+                if (!actualParentKey.equals(parentKey)) {
 
-                // Obtain the set of keys for all parents ...
-                final SessionCache cache = session.cache();
-                Set<NodeKey> additionalParents = cachedNode.getAdditionalParentKeys(cache);
+                    // Obtain the set of keys for all parents ...
+                    final SessionCache cache = session.cache();
+                    Set<NodeKey> additionalParents = cachedNode.getAdditionalParentKeys(cache);
 
-                // And get the shared node for the parent key, first making sure the parent exists ...
-                if (additionalParents.contains(parentKey) && session.nodeExists(parentKey)) {
-                    return getOrCreateSharedNode(parentKey);
+                    // And get the shared node for the parent key, first making sure the parent exists ...
+                    if (additionalParents.contains(parentKey) && session.nodeExists(parentKey)) {
+                        return getOrCreateSharedNode(parentKey);
+                    }
                 }
+                return shareableNode;
+            } catch (RepositoryException e) {
+                throw new RuntimeException(e);
             }
-            return shareableNode;
         }
 
         /**

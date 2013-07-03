@@ -103,6 +103,98 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
     }
 
     @Test
+    @FixFor( "MODE-1984" )
+    public void shouldRemoveShareableNode() throws RepositoryException {
+        String originalPath = "/Cars/Utility";
+        String sharedPath = "/NewArea/SharedUtility";
+        // Make the original a shareable node ...
+        Node original = makeShareable(originalPath);
+        session.save();
+        // Now create the share ...
+        Node sharedNode = makeShare(originalPath, sharedPath);
+        assertSharedSetIs(original, originalPath, sharedPath);
+        assertSharedSetIs(sharedNode, originalPath, sharedPath);
+        // Make sure the shared node can be found in both parents ...
+        Node parent1 = session.getNode("/Cars");
+        Node parent2 = session.getNode("/NewArea");
+        assertChildrenContain(parent1, sharedNode, "Utility");
+        assertChildrenContain(parent2, sharedNode, "SharedUtility");
+
+        // Now remove the share by ID ...
+        String id = sharedNode.getIdentifier();
+        AbstractJcrNode node = session.getNodeByIdentifier(id);
+        assertThat(node.isShared(), is(true));
+        node.remove();
+
+        // Verify that the shareable node is not consider a child of the original parent,
+        // but is still considered a child of the second (ModeShape implements 'Node.remove()' as 'Node.removeShare()') ...
+        assertChildrenDoNotContain(parent1, sharedNode, "Utility");
+        assertChildrenContain(parent2, sharedNode, "SharedUtility");
+        AbstractJcrNode node2 = session.getNodeByIdentifier(id);
+        assertThat(node2.isShared(), is(false));
+
+        // Save, then try again ...
+        session.save();
+
+        // Verify that the shareable node is not consider a child of either parent ...
+        assertChildrenDoNotContain(parent1, sharedNode, "Utility");
+        assertChildrenContain(parent2, sharedNode, "SharedUtility");
+        node2 = session.getNodeByIdentifier(id);
+        assertThat(node2.isShared(), is(false));
+
+        // Now remove the other share ...
+        parent2.remove();
+        session.save();
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    @FixFor( "MODE-1984" )
+    public void shouldRemoveShareableNodeUsingDeprecatedNodeSave() throws RepositoryException {
+        String originalPath = "/Cars/Utility";
+        String sharedPath = "/NewArea/SharedUtility";
+        // Make the original a shareable node ...
+        Node original = makeShareable(originalPath);
+        session.save();
+        // Now create the share ...
+        Node sharedNode = makeShare(originalPath, sharedPath);
+        assertSharedSetIs(original, originalPath, sharedPath);
+        assertSharedSetIs(sharedNode, originalPath, sharedPath);
+        // Make sure the shared node can be found in both parents ...
+        Node parent1 = session.getNode("/Cars");
+        Node parent2 = session.getNode("/NewArea");
+        assertChildrenContain(parent1, sharedNode, "Utility");
+        assertChildrenContain(parent2, sharedNode, "SharedUtility");
+
+        // Now remove the share by ID ...
+        String id = sharedNode.getIdentifier();
+        AbstractJcrNode node = session.getNodeByIdentifier(id);
+        assertThat(node.isShared(), is(true));
+        node.remove();
+
+        // Verify that the shareable node is not consider a child of the original parent,
+        // but is still considered a child of the second (ModeShape implements 'Node.remove()' as 'Node.removeShare()') ...
+        assertChildrenDoNotContain(parent1, sharedNode, "Utility");
+        assertChildrenContain(parent2, sharedNode, "SharedUtility");
+        AbstractJcrNode node2 = session.getNodeByIdentifier(id);
+        assertThat(node2.isShared(), is(false));
+
+        // Save the parent of the share that was just removed. This should still work, even though the shared node
+        // is no longer under the node being saved...
+        parent1.save();
+
+        // Verify that the shareable node is not consider a child of either parent ...
+        assertChildrenDoNotContain(parent1, sharedNode, "Utility");
+        assertChildrenContain(parent2, sharedNode, "SharedUtility");
+        node2 = session.getNodeByIdentifier(id);
+        assertThat(node2.isShared(), is(false));
+
+        // Now remove the other share ...
+        parent2.remove();
+        session.save();
+    }
+
+    @Test
     public void shouldNotAllowMultipleSharesUnderTheSameParent() throws Exception {
         String originalPath = "/Cars/Utility";
         String sharedPath = "/NewArea/SharedUtility";
@@ -522,6 +614,54 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
             assertThat(child.isSame(originalChild), is(true)); // Should be the exact same child nodes
         }
         assertThat("Extra children in original: " + originalChildNames, originalChildNames.isEmpty(), is(true));
+    }
+
+    protected void assertChildrenContain( Node parent,
+                                          Node expectedChild,
+                                          String actualName ) throws RepositoryException {
+        if (actualName == null) actualName = expectedChild.getName();
+        NodeIterator iter = parent.getNodes();
+        boolean found = false;
+        while (iter.hasNext()) {
+            Node child = iter.nextNode();
+            if (child.isSame(expectedChild)) found = true;
+        }
+        assertThat("Did not find the child named '" + actualName + "' as a child of the '" + parent.getPath() + "' parent node",
+                   found,
+                   is(true));
+
+        iter = parent.getNodes(actualName);
+        found = false;
+        while (iter.hasNext()) {
+            Node child = iter.nextNode();
+            if (child.isSame(expectedChild)) found = true;
+        }
+        assertThat("Did not find the '" + actualName + "' as a child of the '" + parent.getPath() + "' parent node",
+                   found,
+                   is(true));
+    }
+
+    protected void assertChildrenDoNotContain( Node parent,
+                                               Node expectedNonChild,
+                                               String actualName ) throws RepositoryException {
+        if (actualName == null) actualName = expectedNonChild.getName();
+        NodeIterator iter = parent.getNodes();
+        while (iter.hasNext()) {
+            Node child = iter.nextNode();
+            boolean found = child.isSame(expectedNonChild);
+            assertThat("Unexpectedly found the '" + actualName + "' as a child of the '" + parent.getPath() + "' node",
+                       found,
+                       is(false));
+        }
+
+        iter = parent.getNodes(actualName);
+        while (iter.hasNext()) {
+            Node child = iter.nextNode();
+            boolean found = child.isSame(expectedNonChild);
+            assertThat("Unexpectedly found the '" + actualName + "' as a child of the '" + parent.getPath() + "' node",
+                       found,
+                       is(false));
+        }
     }
 
     @SuppressWarnings( "unchecked" )

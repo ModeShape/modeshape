@@ -418,6 +418,10 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return stringFactory().create(path);
     }
 
+    protected void releaseCachedNode( AbstractJcrNode node ) {
+        jcrNodes.remove(node.key(), node);
+    }
+
     /**
      * Obtain the {@link Node JCR Node} object for the node with the supplied key.
      * 
@@ -967,7 +971,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             throw new VersionException(JcrI18n.nodeIsCheckedIn.text(destParentNode.getPath()));
         }
 
-        //Check whether external nodes are involved
+        // Check whether external nodes are involved
         validateMoveForExternalNodes(srcPath, destPath);
 
         // check whether the parent definition allows children which match the source
@@ -1030,7 +1034,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         try {
             destNode = node(destPath);
         } catch (PathNotFoundException e) {
-            //the destPath does not point to an existing node, so we'll use the parent
+            // the destPath does not point to an existing node, so we'll use the parent
             destNode = node(destPath.getParent());
         }
         String externalTargetKey = null;
@@ -1048,7 +1052,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             String sourceName = connectors.getSourceNameAtKey(externalTargetKey);
             throw new RepositoryException(JcrI18n.unableToMoveTargetContainExternalNodes.text(srcPath, sourceName));
         } else if (targetIsExternal) {
-            //both source and target are external nodes, but belonging to different sources
+            // both source and target are external nodes, but belonging to different sources
             if (!externalTargetKey.equalsIgnoreCase(srcNode.key().getSourceKey())) {
                 String sourceNodeSourceName = connectors.getSourceNameAtKey(srcNode.key().getSourceKey());
                 String targetNodeSourceName = connectors.getSourceNameAtKey(externalTargetKey);
@@ -1056,7 +1060,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                                                                                             targetNodeSourceName));
             }
 
-            //both source and target belong to the same source, but one of them is a projection root
+            // both source and target belong to the same source, but one of them is a projection root
             if (connectors.hasExternalProjection(srcPath.getLastSegment().getString(), srcNode.key().toString())) {
                 throw new RepositoryException(JcrI18n.unableToMoveProjection.text(srcPath));
             }
