@@ -160,6 +160,11 @@ public class TeiidDataTypeParserTest {
     }
 
     @Test
+    public void shouldParseObjectWithLength() {
+        assertLength(TeiidDataType.OBJECT, 49);
+    }
+
+    @Test
     public void shouldParseReal() {
         assertNameAndDefaults(TeiidDataType.REAL);
     }

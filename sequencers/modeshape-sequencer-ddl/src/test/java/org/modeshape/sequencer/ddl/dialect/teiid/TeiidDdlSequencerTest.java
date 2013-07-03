@@ -30,7 +30,11 @@ import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PARSER_ID;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
+import org.modeshape.junit.SkipLongRunning;
+import org.modeshape.junit.SkipLongRunningRule;
 import org.modeshape.sequencer.ddl.AbstractDdlSequencerTest;
 import org.modeshape.sequencer.ddl.DdlConstants;
 import org.modeshape.sequencer.ddl.StandardDdlLexicon;
@@ -42,6 +46,9 @@ import org.modeshape.sequencer.ddl.node.AstNode;
  * Unit test for the {@link org.modeshape.sequencer.ddl.DdlSequencer} when Teiid dialects are parsed.
  */
 public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
+
+    @Rule
+    public TestRule skipLongRunningRule = new SkipLongRunningRule();
 
     private Node statementsNode;
 
@@ -634,6 +641,20 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
             verifyMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
             verifyProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
         }
+    }
+
+    @Test
+    @SkipLongRunning
+    public void shouldSequenceGreenPlumDdl() throws Exception {
+        // this DDL has column with type of OBJECT with a length
+        this.statementsNode = sequenceDdl("ddl/dialect/teiid/GreenPlum.ddl");
+        assertThat(this.statementsNode.getNodes().getSize(), is(410L));
+
+        // make sure column with type of object has a length
+        final Node tableNode = this.statementsNode.getNode("gp_toolkit.gp_log_command_timings");
+        final Node columnNode = tableNode.getNode("logduration");
+        verifyProperty(columnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.OBJECT.toDdl());
+        verifyProperty(columnNode, StandardDdlLexicon.DATATYPE_LENGTH, 49L);
     }
 
     @Test

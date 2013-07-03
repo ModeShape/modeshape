@@ -85,6 +85,9 @@ class TeiidDataTypeParser extends DataTypeParser {
                 } else if (teiidDataType == TeiidDataType.VARCHAR) {
                     // ( VARCHAR ( <lparen> <unsigned integer> <rparen> )? )
                     length = parseLength(tokens);
+                } else if (teiidDataType == TeiidDataType.OBJECT) {
+                    // ( OBJECT ( <lparen> <unsigned integer> <rparen> )? )
+                    length = parseLength(tokens);
                 }
 
                 break;
