@@ -32,7 +32,18 @@ import javax.jcr.security.AccessControlList;
 import javax.jcr.security.Privilege;
 
 /**
- * Principal based implementation of the Access List.
+ * Resources based Access Control List implementation.
+ * 
+ * ACLs are stored per node in a special child node called 
+ * <bold>mode:acl</bold>. This node has a list of <bold> mode:{$principal_name}</bold> 
+ * child  nodes which has multi-value property permissions. 
+ * Permissions are defined by JCR specifications.
+ * 
+ * {node} {mix:AccessControllable}
+ *	+mode:acl{mode:Acl}
+ *		+user-name{mode:permission}
+ *			-permissions {String}
+ * 
  * 
  * @author kulikov
  */

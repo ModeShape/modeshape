@@ -30,6 +30,9 @@ import javax.jcr.security.Privilege;
 /**
  * Implementation for the Access Control entry record.
  * 
+ * An AccessControlEntry represents the association of one or more 
+ * <code>Privilege</code> objects with a specific <code>Principal</code>. 
+ * 
  * @author kulikov
  */
 public class AccessControlEntryImpl implements AccessControlEntry {
@@ -37,6 +40,12 @@ public class AccessControlEntryImpl implements AccessControlEntry {
     private Principal principal;
     private Privilege[] privileges;
     
+    /**
+     * Creates new ACL entry.
+     * 
+     * @param principal principal associated with this entry.
+     * @param privileges one or more privilege in association with given principal.
+     */
     public AccessControlEntryImpl(Principal principal, Privilege[] privileges) {
         this.principal = principal;
         this.privileges = privileges;

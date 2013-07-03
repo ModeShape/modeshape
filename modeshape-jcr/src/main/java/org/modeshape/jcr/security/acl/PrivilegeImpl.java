@@ -30,6 +30,8 @@ import org.modeshape.common.annotation.Immutable;
 /**
  * Implements JCR privilege object.  
  * 
+ * Privilege object represents one or more permission.
+ * 
  * @author kulikov
  */
 @Immutable

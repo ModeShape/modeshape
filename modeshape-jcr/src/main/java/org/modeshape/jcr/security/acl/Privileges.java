@@ -30,7 +30,7 @@ import org.modeshape.jcr.ModeShapePermissions;
 /**
  * Collection of supported privileges.
  * 
- * This class groups privileges objects declared by JCR 2.0 spec and provides 
+ * Internal helper class that groups privileges objects declared by JCR 2.0 spec and provides 
  * several utility methods.
  * 
  * @author kulikov
