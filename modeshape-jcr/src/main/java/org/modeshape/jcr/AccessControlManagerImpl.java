@@ -49,7 +49,39 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
 
 /**
- *
+ * AccessControlManager implementation.
+ * 
+ * AccessControlManager has been implemented suppose that node is associated 
+ * with access control list which defines deny/allow actions for the given 
+ * principal. Current implementation supports only users as principals however 
+ * principals can be extended to groups as well.
+ * 
+ * ACLs are stored per node in a special child node called 
+ * <bold>mode:acl</bold>. This node has a list of <bold> mode:{$principal_name}</bold> 
+ * child  nodes which has multi-value property permissions. 
+ * Permissions are defined by JCR specifications.
+ * 
+ * {node} {mix:AccessControllable}
+ *	+mode:acl{mode:Acl}
+ *		+user-name{mode:permission}
+ *			-permissions {String}
+ * 
+ * To make node access controllable AccessManager adds mix:AccessControllable 
+ * type to mixin types of the node. With accordance to p. 16.3.11 repository 
+ * can expose ACLs as content however ACL nodes are defined as protected do 
+ * disallow normal add/remove/save item methods.
+ * 
+ * Access list defined for the node also has affect on old child nodes 
+ * unless child node defines its own Access list. 
+ * Empty ACL means all permissions. 
+ * 
+ * Initially no access list are defined so everyone has all permissions.
+ * Access Control Manager implementation does not break any existing 
+ * mechanism of authentications.  It acts as secondary resource control feature.  
+ * On the first stage one of the existing security acts and if it grants 
+ * permission the ACL is asked to check permissions. 
+ * 
+ * 
  * @author kulikov
  */
 public class AccessControlManagerImpl extends AbstractSecurityContext 

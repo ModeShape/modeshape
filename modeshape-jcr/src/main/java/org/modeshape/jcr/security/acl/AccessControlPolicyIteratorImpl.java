@@ -28,7 +28,7 @@ import javax.jcr.security.AccessControlPolicy;
 import javax.jcr.security.AccessControlPolicyIterator;
 
 /**
- * Implements AccessControlPolicyIterator interface.
+ * Provides iteration over series of the ACLs.
  * 
  * @author kulikov
  */
@@ -38,10 +38,11 @@ public class AccessControlPolicyIteratorImpl implements AccessControlPolicyItera
     private int index;
     
     public final static AccessControlPolicyIteratorImpl EMPTY = new AccessControlPolicyIteratorImpl();
+    
     /**
      * Creates new instance of this iterator.
      * 
-     * @param list 
+     * @param list series of the ACLs
      */
     public AccessControlPolicyIteratorImpl(AccessControlPolicy... policy) {
         for (int i = 0; i < policy.length; i++) {

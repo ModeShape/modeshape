@@ -26,7 +26,8 @@ package org.modeshape.jcr.security.acl;
 import java.security.Principal;
 
 /**
- *
+ * User name based principal.
+ * 
  * @author kulikov
  */
 public class PrincipalImpl implements Principal {
