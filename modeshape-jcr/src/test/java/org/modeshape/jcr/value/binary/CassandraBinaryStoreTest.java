@@ -49,7 +49,6 @@ import org.modeshape.jcr.value.BinaryValue;
  *
  * @author kulikov
  */
-@Ignore("Does not seem to work using IPV6")
 public class CassandraBinaryStoreTest {
 
     private CassandraBinaryStore store;
