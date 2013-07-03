@@ -131,6 +131,7 @@ public class DoPropfind extends AbstractMethod {
 
                 HashMap<String, String> namespaces = new HashMap<String, String>();
                 namespaces.put("DAV:", "D");
+                namespaces.putAll(store.getCustomNamespaces(transaction, path));
 
                 if (propertyFindType == FIND_BY_PROPERTY) {
                     propertyFindType = 0;

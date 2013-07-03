@@ -191,8 +191,11 @@ public class DoProppatch extends AbstractMethod {
                     generatedXML.writeElement("DAV::propstat", XMLWriter.CLOSING);
                 }
 
+                if (response != null && !response.isEmpty()) {
+                    String firstErrorMessage = response.entrySet().iterator().next().getValue();
+                    generatedXML.writeProperty("DAV::responsedescription", firstErrorMessage);
+                }
                 generatedXML.writeElement("DAV::response", XMLWriter.CLOSING);
-
                 generatedXML.writeElement("DAV::multistatus", XMLWriter.CLOSING);
 
                 generatedXML.sendData();
@@ -214,7 +217,7 @@ public class DoProppatch extends AbstractMethod {
         if (response == null || response.isEmpty()){
             return "HTTP/1.1 " + WebdavStatus.SC_OK + " " + WebdavStatus.getStatusText(WebdavStatus.SC_OK);
         } else if (response.containsKey(propertyName)) {
-            return "HTTP/1.1 " + WebdavStatus.SC_CONFLICT + " " + WebdavStatus.getStatusText(WebdavStatus.SC_CONFLICT);
+            return "HTTP/1.1 " + WebdavStatus.SC_BAD_REQUEST + " " + WebdavStatus.getStatusText(WebdavStatus.SC_BAD_REQUEST);
         } else {
             return "HTTP/1.1 " + WebdavStatus.SC_FAILED_DEPENDENCY + " " + WebdavStatus.getStatusText(WebdavStatus.SC_FAILED_DEPENDENCY);
         }

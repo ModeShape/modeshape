@@ -214,4 +214,15 @@ public interface IWebdavStore {
     Map<String, Object> getCustomProperties( ITransaction transaction,
                                              String resourceUri );
 
+
+    /**
+     * Returns a map of custom namespaces that are specific to the store.
+     *
+     * @param transaction the {@link ITransaction} within which the operation takes place; may not be null
+     * @param resourceUri resourceUri the URI of the object on which the properties should be updated; may not be null
+     * @return a Map of (namespaceUri, namespacePrefix) pairs;may not be null;
+     */
+    Map<String, String> getCustomNamespaces(ITransaction transaction,
+                                            String resourceUri);
+
 }

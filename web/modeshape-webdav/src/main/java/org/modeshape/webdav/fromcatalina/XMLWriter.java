@@ -137,6 +137,10 @@ public class XMLWriter {
             // lookup prefix for namespace
             String fullns = name.substring(0, pos);
             String prefix = namespaces.get(fullns);
+            //check if instead of a full URI, the prefix is used
+            if (prefix == null && namespaces.containsValue(fullns)) {
+                prefix = fullns;
+            }
             if (prefix == null) {
                 // there is no prefix for this namespace
                 name = name.substring(pos + 1);

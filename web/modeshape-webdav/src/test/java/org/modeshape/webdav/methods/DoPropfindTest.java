@@ -28,6 +28,9 @@ public class DoPropfindTest extends AbstractWebDAVTest {
 
                 StoredObject rootSo = initFolderStoredObject();
 
+                one(mockStore).getCustomNamespaces(mockTransaction, path);
+                will(returnValue(Collections.emptyMap()));
+
                 one(mockStore).getStoredObject(mockTransaction, path);
                 will(returnValue(rootSo));
 
@@ -124,6 +127,9 @@ public class DoPropfindTest extends AbstractWebDAVTest {
                 will(returnValue("0"));
 
                 StoredObject fileSo = initFolderStoredObject();
+
+                one(mockStore).getCustomNamespaces(mockTransaction, path);
+                will(returnValue(Collections.emptyMap()));
 
                 one(mockStore).getStoredObject(mockTransaction, path);
                 will(returnValue(fileSo));

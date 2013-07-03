@@ -351,4 +351,11 @@ public class LocalFileSystemStore implements IWebdavStore {
             throw new WebdavException(e);
         }
     }
+
+    @Override
+    public Map<String, String> getCustomNamespaces( ITransaction transaction,
+                                                    String resourceUri ) {
+        //the default FS based implementation does not use custom namespaces
+        return Collections.emptyMap();
+    }
 }
