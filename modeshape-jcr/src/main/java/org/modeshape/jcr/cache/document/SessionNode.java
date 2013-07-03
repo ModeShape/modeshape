@@ -228,10 +228,24 @@ public class SessionNode implements MutableCachedNode {
 
     private boolean removeAdditionalParent( NodeCache cache,
                                             NodeKey oldParent ) {
-        if (newParent != null && newParent.equals(getParentKey(cache))) {
-            // This child is already the primary child of the new parent ...
-            return false;
+        if (getAdditionalParentKeys(cache).contains(oldParent)) {
+            ChangedAdditionalParents additionalParents = this.additionalParents.get();
+            if (additionalParents == null) {
+                additionalParents = new ChangedAdditionalParents();
+                if (!this.additionalParents.compareAndSet(null, additionalParents)) {
+                    additionalParents = this.additionalParents.get();
+                }
+            }
+            return additionalParents.remove(oldParent);
         }
+        return false;
+    }
+
+    protected void replaceParentWithAdditionalParent( NodeCache cache,
+                                                      NodeKey oldParent,
+                                                      NodeKey existingAdditionalParent ) {
+        assert getAdditionalParentKeys(cache).contains(existingAdditionalParent);
+        newParent = existingAdditionalParent;
         ChangedAdditionalParents additionalParents = this.additionalParents.get();
         if (additionalParents == null) {
             additionalParents = new ChangedAdditionalParents();
@@ -239,7 +253,8 @@ public class SessionNode implements MutableCachedNode {
                 additionalParents = this.additionalParents.get();
             }
         }
-        return additionalParents.remove(oldParent);
+        additionalParents.remove(existingAdditionalParent);
+        additionalParents.remove(oldParent); // also record that we're removing primary parent
     }
 
     protected MutableChildReferences appended( boolean createIfMissing ) {
@@ -1062,45 +1077,50 @@ public class SessionNode implements MutableCachedNode {
         node.newParent = newParent.getKey();
     }
 
+    /**
+     * Remove the child from this parent node. This method works whether or not the child is a shared node (e.g., a shareable node
+     * that has 2+ nodes in the shared set).
+     * 
+     * @param session the session
+     * @param childKey the child key; may not be null
+     * @return the child node; never null
+     */
     protected SessionNode removeChildFromNode( AbstractSessionCache session,
-                                               NodeKey key ) {
-        // See if the node has this node as a parent or additional parent ...
-        SessionNode child = session.mutable(key);
-        boolean additional = false;
-        if (!child.getParentKey(session).equals(this.key)) {
-            // Try to remove it from the additional parents ...
-            if (child.removeAdditionalParent(session, this.key)) {
-                additional = true;
+                                               NodeKey childKey ) {
+        // First, manipulate the child node. But we have to see whether this node is a primary parent or an additional parent ...
+        SessionNode child = session.mutable(childKey);
+        if (child.getParentKey(session).equals(this.key)) {
+            // The child's parent is this node. If there are additional parents, then we should pick the first additional parent
+            // and use it as the new primary parent ...
+            Set<NodeKey> additionalParentKeys = child.getAdditionalParentKeys(session);
+            if (additionalParentKeys.isEmpty()) {
+                child.newParent = null;
             } else {
+                // There are additional parents, and we're removing the primary parent
+                NodeKey newParentKey = additionalParentKeys.iterator().next();
+                child.replaceParentWithAdditionalParent(session, this.key, newParentKey);
+            }
+        } else {
+            // The child's parent is NOT this node, so this node must be an additional parent...
+            boolean removed = child.removeAdditionalParent(session, this.key);
+            if (!removed) {
                 // Not a primary or additional parent ...
-                if (!getChildReferences(session).hasChild(key)) {
-                    throw new NodeNotFoundException(key);
+                if (!getChildReferences(session).hasChild(childKey)) {
+                    throw new NodeNotFoundException(childKey);
                 }
             }
         }
 
-        SessionNode node = session.mutable(key);
-        assert node != null;
-        if (!additional) {
-            // If there are additional parents, then we should pick the first one and use it as the new parent ...
-            Set<NodeKey> additionalParentKeys = child.getAdditionalParentKeys(session);
-            if (additionalParentKeys.isEmpty()) {
-                node.newParent = null;
-            } else {
-                NodeKey newParentKey = additionalParentKeys.iterator().next();
-                node.newParent = newParentKey;
-                removeAdditionalParent(session, newParentKey);
-            }
-        }
+        // Now, update this node (the parent) ...
         MutableChildReferences appended = this.appended.get();
         ChildReference removed = null;
         if (appended != null) {
-            removed = appended.remove(key); // The node was appended to this node but not yet persisted ...
+            removed = appended.remove(childKey); // The node may have been appended to this node but not yet persisted ...
         }
         if (removed == null) {
-            changedChildren.remove(key);
+            changedChildren.remove(childKey);
         }
-        return node;
+        return child;
     }
 
     @Override
@@ -1261,8 +1281,7 @@ public class SessionNode implements MutableCachedNode {
     }
 
     protected Map<String, String> getAddedFederatedSegments() {
-        return this.federatedSegments.get() != null ? this.federatedSegments.get().getAdditions() :
-               Collections.<String, String>emptyMap();
+        return this.federatedSegments.get() != null ? this.federatedSegments.get().getAdditions() : Collections.<String, String>emptyMap();
     }
 
     @Override
@@ -1274,8 +1293,7 @@ public class SessionNode implements MutableCachedNode {
     }
 
     protected Set<String> getRemovedFederatedSegments() {
-        return this.federatedSegments.get() != null ? this.federatedSegments.get().getRemovals() :
-               Collections.<String>emptySet();
+        return this.federatedSegments.get() != null ? this.federatedSegments.get().getRemovals() : Collections.<String>emptySet();
     }
 
     @SuppressWarnings( "synthetic-access" )
@@ -1795,11 +1813,12 @@ public class SessionNode implements MutableCachedNode {
         private final ConcurrentHashMap<String, String> additions = new ConcurrentHashMap<String, String>();
         private final Set<String> removals = Collections.synchronizedSet(new HashSet<String>());
 
-        protected void addSegment(String externalNodeKey, String name) {
+        protected void addSegment( String externalNodeKey,
+                                   String name ) {
             additions.putIfAbsent(externalNodeKey, name);
         }
 
-        protected void removeSegment(String externalNodeKey) {
+        protected void removeSegment( String externalNodeKey ) {
             removals.add(externalNodeKey);
         }
 
@@ -2261,9 +2280,10 @@ public class SessionNode implements MutableCachedNode {
                     MutableCachedNode childCopy = null;
                     String projectionAlias = childReference.getName().getString();
                     if (isExternal && connectors.hasExternalProjection(projectionAlias, childKey.toString())) {
-                        //the child is a projection, so we need to create the projection in the parent
+                        // the child is a projection, so we need to create the projection in the parent
                         targetNode.addFederatedSegment(childKey.toString(), projectionAlias);
-                        //since the child is a projection, use the external node key to retrieve the node/document from the connectors
+                        // since the child is a projection, use the external node key to retrieve the node/document from the
+                        // connectors
                         childCopy = targetCache.mutable(childKey);
                     } else {
                         // The child is a normal child of this node ...

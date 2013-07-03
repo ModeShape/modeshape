@@ -31,6 +31,7 @@ import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.jcr.JcrSharedNodeCache.SharedSet;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
@@ -82,13 +83,47 @@ class JcrNode extends AbstractJcrNode {
     }
 
     @Override
+    boolean isShared() {
+        // Sometimes, a shareable and shared node is represented by a JcrNode rather than a JcrSharedNode. Therefore,
+        // the share-related logic needs to be done here ...
+        try {
+            return isShareable() && sharedSet().getSize() > 1;
+        } catch (RepositoryException e) {
+            // Shouldn't really happen, but just in case ...
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     protected void doRemove()
         throws VersionException, LockException, ConstraintViolationException, AccessDeniedException, RepositoryException {
+        // Sometimes, a shareable and shared node is represented by a JcrNode rather than a JcrSharedNode. Therefore,
+        // the share-related logic needs to be done here ...
 
         SessionCache cache = sessionCache();
         NodeKey key = key();
         MutableCachedNode parent = mutableParent();
+        if (!isShareable()) {
+            // It's not shareable, so we will always destroy the node immediately ...
+            parent.removeChild(cache, key);
+            cache.destroy(key);
+            return;
+        }
+
+        // It is shareable, so we need to check how many shares there are before we remove this node from its parent ...
+        JcrSharedNodeCache shareableNodeCache = session().shareableNodeCache();
+        SharedSet sharedSet = shareableNodeCache.getSharedSet(this);
+        if (sharedSet.getSize() <= 1) {
+            // There are no shares, so destroy the node and the shared set ...
+            parent.removeChild(cache, key);
+            cache.destroy(key);
+            shareableNodeCache.destroyed(key);
+            return;
+        }
+
+        // The node being removed is shared to at least two places, so we should remove it from the primary parent,
+        // NOT destroy the node, and adjust the SharedSet ...
         parent.removeChild(cache, key);
-        cache.destroy(key);
+        shareableNodeCache.removed(this);
     }
 }

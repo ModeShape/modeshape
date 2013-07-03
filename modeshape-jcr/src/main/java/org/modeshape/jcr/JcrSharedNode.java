@@ -23,18 +23,13 @@
  */
 package org.modeshape.jcr;
 
-import javax.jcr.AccessDeniedException;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
-import javax.jcr.lock.LockException;
-import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.version.VersionException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.JcrSharedNodeCache.SharedSet;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
-import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.value.Name;
@@ -78,19 +73,6 @@ final class JcrSharedNode extends JcrNode {
     @Override
     protected NodeKey parentKey() {
         return parentKey;
-    }
-
-    @Override
-    protected void doRemove()
-        throws VersionException, LockException, ConstraintViolationException, AccessDeniedException, RepositoryException {
-        // Remove this from the shared set ...
-        sharedSet.remove(this);
-
-        // Then remove the child from the parent but do not destroy the node ...
-        SessionCache cache = sessionCache();
-        NodeKey key = key();
-        MutableCachedNode parent = mutableParent();
-        parent.removeChild(cache, key);
     }
 
     @Override

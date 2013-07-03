@@ -1350,7 +1350,8 @@ final class JcrVersionManager implements VersionManager {
                 NodeKey targetKey = target.getKey();
                 MutableCachedNode shareable = cache.mutable(desiredKey);
                 Set<NodeKey> allParents = new HashSet<NodeKey>(shareable.getAdditionalParentKeys(cache));
-                allParents.add(shareable.getParentKey(cache));
+                NodeKey primaryParentKey = shareable.getParentKey(cache);
+                if (primaryParentKey != null) allParents.add(primaryParentKey);
                 for (NodeKey parentKey : allParents) {
                     if (parentKey.equals(targetKey)) continue; // skip the new target ...
                     MutableCachedNode parent = cache.mutable(parentKey);
@@ -1706,7 +1707,7 @@ final class JcrVersionManager implements VersionManager {
                 doUpdate(targetNode, sourceNode);
                 return;
             }
-            
+
             if (targetVersion.isSuccessorOf(sourceVersion)) {
                 doLeave(targetNode);
                 return;
