@@ -54,6 +54,8 @@ import org.modeshape.jcr.federation.spi.Connector;
 import org.modeshape.jcr.federation.spi.DocumentChanges;
 import org.modeshape.jcr.federation.spi.DocumentReader;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
+import org.modeshape.jcr.federation.spi.PageKey;
+import org.modeshape.jcr.federation.spi.Pageable;
 import org.modeshape.jcr.federation.spi.WritableConnector;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
@@ -110,7 +112,7 @@ import org.modeshape.jcr.value.binary.UrlBinaryValue;
  * </tr>
  * </table>
  */
-public class FileSystemConnector extends WritableConnector {
+public class FileSystemConnector extends WritableConnector implements Pageable {
 
     private static final String FILE_SEPARATOR = System.getProperty("file.separator");
     private static final String DELIMITER = "/";
@@ -164,6 +166,11 @@ public class FileSystemConnector extends WritableConnector {
      * The regular expression that, if matched by a file or folder, indicates that the file or folder should be ignored.
      */
     private String exclusionPattern;
+
+    /**
+     * The maximum number of children a folder will expose at any given time.
+     */
+    private int pageSize = 20;
 
     /**
      * The {@link FilenameFilter} implementation that is instantiated in the
@@ -410,9 +417,10 @@ public class FileSystemConnector extends WritableConnector {
         if (isExcluded(file) || !file.exists()) return null;
         boolean isRoot = isRoot(id);
         boolean isResource = isContentNode(id);
-        DocumentWriter writer = newDocument(id);
+        DocumentWriter writer = null;
         File parentFile = file.getParentFile();
         if (isResource) {
+            writer = newDocument(id);
             BinaryValue binaryValue = binaryFor(file);
             writer.setPrimaryType(NT_RESOURCE);
             writer.addProperty(JCR_DATA, binaryValue);
@@ -434,25 +442,14 @@ public class FileSystemConnector extends WritableConnector {
             writer.setNotQueryable();
             parentFile = file;
         } else if (file.isFile()) {
+            writer = newDocument(id);
             writer.setPrimaryType(NT_FILE);
             writer.addProperty(JCR_CREATED, factories().getDateFactory().create(file.lastModified()));
             writer.addProperty(JCR_CREATED_BY, null); // ignored
             String childId = isRoot ? JCR_CONTENT_SUFFIX : id + JCR_CONTENT_SUFFIX;
             writer.addChild(childId, JCR_CONTENT);
         } else {
-            writer.setPrimaryType(NT_FOLDER);
-            writer.addProperty(JCR_CREATED, factories().getDateFactory().create(file.lastModified()));
-            writer.addProperty(JCR_CREATED_BY, null); // ignored
-            for (File child : file.listFiles(filenameFilter)) {
-                // Only include as a child if we can access and read the file. Permissions might prevent us from
-                // reading the file, and the file might not exist if it is a broken symlink (see MODE-1768 for details).
-                if (child.exists() && child.canRead() && (child.isFile() || child.isDirectory())) {
-                    // We use identifiers that contain the file/directory name ...
-                    String childName = child.getName();
-                    String childId = isRoot ? DELIMITER + childName : id + DELIMITER + childName;
-                    writer.addChild(childId, childName);
-                }
-            }
+            writer = newFolderWriter(id, file, 0);
         }
 
         if (!isRoot) {
@@ -472,6 +469,41 @@ public class FileSystemConnector extends WritableConnector {
 
         // Return the document ...
         return writer.document();
+    }
+
+    private DocumentWriter newFolderWriter( String id,
+                                            File file,
+                                            int offset) {
+        boolean root = isRoot(id);
+        DocumentWriter writer = newDocument(id);
+        writer.setPrimaryType(NT_FOLDER);
+        writer.addProperty(JCR_CREATED, factories().getDateFactory().create(file.lastModified()));
+        writer.addProperty(JCR_CREATED_BY, null); // ignored
+        File[] children = file.listFiles(filenameFilter);
+        long totalChildren = 0;
+        int nextOffset = 0;
+        for (int i = 0; i < children.length; i++) {
+            File child = children[i];
+            // Only include as a child if we can access and read the file. Permissions might prevent us from
+            // reading the file, and the file might not exist if it is a broken symlink (see MODE-1768 for details).
+            if (child.exists() && child.canRead() && (child.isFile() || child.isDirectory())) {
+                //we need to count the total accessible children
+                totalChildren++;
+                //only add a child if it's in the current page
+                if (i >= offset && i < offset + pageSize) {
+                    // We use identifiers that contain the file/directory name ...
+                    String childName = child.getName();
+                    String childId = root ? DELIMITER + childName : id + DELIMITER + childName;
+                    writer.addChild(childId, childName);
+                    nextOffset = i + 1;
+                }
+            }
+        }
+        //if there are still accessible children add the next page
+        if (nextOffset < totalChildren) {
+            writer.addPage(id, nextOffset, pageSize, totalChildren);
+        }
+        return writer;
     }
 
     @Override
@@ -669,5 +701,17 @@ public class FileSystemConnector extends WritableConnector {
         } catch (IOException e) {
             throw new DocumentStoreException(id, e);
         }
+    }
+
+    @Override
+    public Document getChildren( PageKey pageKey ) {
+        String parentId = pageKey.getParentId();
+        File folder = fileFor(parentId);
+        assert folder.isDirectory();
+        if (!folder.canRead()) {
+            getLogger().debug("Cannot read the {0} folder", folder.getAbsolutePath());
+            return null;
+        }
+        return newFolderWriter(parentId, folder, pageKey.getOffsetInt()).document();
     }
 }

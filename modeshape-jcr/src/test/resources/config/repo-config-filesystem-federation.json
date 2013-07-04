@@ -42,6 +42,12 @@
             "directoryPath" : "target/federation/files-none",
             "extraPropertiesStorage" : "none"
         } ,
+        "paged-files" : {
+            "classname" : "filesystem",
+            "directoryPath" : "target/federation/paged-files",
+            "extraPropertiesStorage" : "none",
+            "pageSize" : 2
+        } ,
         "targetDirectory" : {
             "classname" : "filesystem",
             "directoryPath" : "target/classes",
