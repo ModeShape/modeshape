@@ -23,32 +23,26 @@
  */
 package org.modeshape.sequencer.ddl.dialect.teiid;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
-import static org.modeshape.jcr.api.JcrConstants.NT_UNSTRUCTURED;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PARSER_ID;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestRule;
-import org.modeshape.junit.SkipLongRunning;
-import org.modeshape.junit.SkipLongRunningRule;
+import org.modeshape.common.junit.SkipLongRunning;
 import org.modeshape.sequencer.ddl.AbstractDdlSequencerTest;
 import org.modeshape.sequencer.ddl.DdlConstants;
 import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.SchemaElementType;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.TeiidDataType;
 import org.modeshape.sequencer.ddl.node.AstNode;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+import static org.modeshape.jcr.api.JcrConstants.NT_UNSTRUCTURED;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PARSER_ID;
 
 /**
  * Unit test for the {@link org.modeshape.sequencer.ddl.DdlSequencer} when Teiid dialects are parsed.
  */
 public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
-
-    @Rule
-    public TestRule skipLongRunningRule = new SkipLongRunningRule();
 
     private Node statementsNode;
 

@@ -33,15 +33,18 @@ import java.util.concurrent.TimeUnit;
 import org.apache.cassandra.service.EmbeddedCassandraService;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.rules.TestRule;
+import org.modeshape.common.junit.SkipOnOS;
+import org.modeshape.common.junit.SkipTestRule;
 import org.modeshape.jcr.ClusteringHelper;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test class for binary store using cassandra as backend.
@@ -50,35 +53,39 @@ import org.modeshape.jcr.value.BinaryValue;
  *
  * @author kulikov
  */
+@SkipOnOS(value = SkipOnOS.WINDOWS, description = "java.nio does not support IPV6 in JDK6 on Windows")
 public class CassandraBinaryStoreTest {
+
+    @Rule
+    public TestRule skipTestRule = new SkipTestRule();
+
+    private static Exception exceptionDuringCassandraStart;
 
     private CassandraBinaryStore store;
     private BinaryValue aliveValue, unusedValue;
-    private static EmbeddedCassandraService cassandra;
-
-    private static Boolean isIpV4;
-    
-    public CassandraBinaryStoreTest() {
-    }
 
     @BeforeClass
     public static void setUpClass() throws Exception {
-        isIpV4 = Boolean.parseBoolean(System.getProperty("java.net.preferIPv4Stack"));
-        if (isIpV4) {
-            System.setProperty("cassandra.config", "cassandra/cassandra.yaml");
-        } else {
-            System.setProperty("cassandra.config", "cassandra/cassandra_ipv6.yaml");            
-        }   
-        cassandra = new EmbeddedCassandraService();
-        cassandra.start();
-    }
-
-    @AfterClass
-    public static void tearDownClass() {
+        try {
+            Boolean ipV4 = Boolean.parseBoolean(System.getProperty("java.net.preferIPv4Stack"));
+            if (ipV4) {
+                System.setProperty("cassandra.config", "cassandra/cassandra.yaml");
+            } else {
+                System.setProperty("cassandra.config", "cassandra/cassandra_ipv6.yaml");
+            }
+            EmbeddedCassandraService cassandra = new EmbeddedCassandraService();
+            cassandra.start();
+        } catch (Exception e) {
+            //catch any exception here, because otherwise the test rule would not get a chance to execute
+            exceptionDuringCassandraStart = e;
+        }
     }
 
     @Before
     public void setUp() throws Exception {
+        if (exceptionDuringCassandraStart != null) {
+            throw exceptionDuringCassandraStart;
+        }
         store = new CassandraBinaryStore(ClusteringHelper.getLocalHost().getHostAddress());
         store.start();
 
@@ -87,10 +94,6 @@ public class CassandraBinaryStoreTest {
 
         ByteArrayInputStream stream2 = new ByteArrayInputStream("Binary value".getBytes());
         unusedValue = store.storeValue(stream2);
-    }
-
-    @After
-    public void tearDown() {
     }
 
     @Test

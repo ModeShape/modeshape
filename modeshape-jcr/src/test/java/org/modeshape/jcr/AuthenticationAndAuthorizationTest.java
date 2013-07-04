@@ -23,10 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
@@ -48,15 +44,19 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.junit.SkipLongRunning;
+import org.modeshape.common.junit.SkipTestRule;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.security.JaasSecurityContext.UserPasswordCallbackHandler;
-import org.modeshape.junit.SkipLongRunning;
-import org.modeshape.junit.SkipLongRunningRule;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 public class AuthenticationAndAuthorizationTest {
 
     @Rule
-    public TestRule skipLongRunningRule = new SkipLongRunningRule();
+    public TestRule skipTestRule = new SkipTestRule();
 
     private static final String REPO_NAME = "testRepo";
 

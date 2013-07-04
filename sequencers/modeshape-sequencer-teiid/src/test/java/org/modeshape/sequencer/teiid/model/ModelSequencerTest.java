@@ -23,13 +23,6 @@
  */
 package org.modeshape.sequencer.teiid.model;
 
-import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
@@ -39,10 +32,10 @@ import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.RowIterator;
 import org.junit.Test;
+import org.modeshape.common.junit.SkipLongRunning;
 import org.modeshape.jcr.JcrMixLexicon;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
-import org.modeshape.junit.SkipLongRunning;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
 import org.modeshape.sequencer.teiid.lexicon.JdbcLexicon;
 import org.modeshape.sequencer.teiid.lexicon.ModelExtensionDefinitionLexicon;
@@ -50,6 +43,13 @@ import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon;
 import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon.JcrId;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
 import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
+import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ModelSequencerTest extends AbstractSequencerTest {
 
