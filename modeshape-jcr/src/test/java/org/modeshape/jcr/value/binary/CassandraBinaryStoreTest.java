@@ -39,6 +39,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.modeshape.jcr.ClusteringHelper;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 
@@ -78,11 +79,7 @@ public class CassandraBinaryStoreTest {
 
     @Before
     public void setUp() throws Exception {
-        if (isIpV4) {
-            store = new CassandraBinaryStore("127.0.0.1");
-        } else {
-            store = new CassandraBinaryStore("0:0:0:0:0:0:0:1");
-        }
+        store = new CassandraBinaryStore(ClusteringHelper.getLocalHost().getHostAddress());
         store.start();
 
         ByteArrayInputStream stream = new ByteArrayInputStream("Binary value".getBytes());
