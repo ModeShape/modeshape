@@ -46,7 +46,7 @@ public class MySqlDdlParser extends StandardDdlParser implements MySqlDdlConstan
     /**
      * The MySQL parser identifier.
      */
-    private static final String ID = "MYSQL";
+    public static final String ID = "MYSQL";
 
     static List<String[]> mysqlDataTypeStrings = new ArrayList<String[]>();
     /*
