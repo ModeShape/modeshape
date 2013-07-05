@@ -47,7 +47,7 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
     /**
      * The Derby parser identifier.
      */
-    private static final String ID = "DERBY";
+    public static final String ID = "DERBY";
 
     protected static final List<String[]> derbyDataTypeStrings = new ArrayList<String[]>(
                                                                                          DerbyDataTypes.CUSTOM_DATATYPE_START_PHRASES);

@@ -26,15 +26,20 @@ package org.modeshape.sequencer.ddl;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.matchers.JUnitMatchers.hasItems;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_SCHEMA_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.text.ParsingException;
+import org.modeshape.sequencer.ddl.DdlParsers.ParsingResult;
+import org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlParser;
+import org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlParser;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlParser;
 import org.modeshape.sequencer.ddl.node.AstNode;
 import org.modeshape.sequencer.ddl.node.AstNodeFactory;
@@ -185,4 +190,67 @@ public class DdlParsersTest extends DdlParserTestHelper {
 
         assertThat("ORACLE", is((String)this.rootNode.getProperty(StandardDdlLexicon.PARSER_ID)));
     }
+
+    @Test
+    public void shouldReturnBuiltInParsers() {
+        printTest("shouldReturnBuiltInParsers()");
+
+        assertThat(this.parsers.getParsers(),
+                   hasItems(DdlParsers.BUILTIN_PARSERS.toArray(new DdlParser[DdlParsers.BUILTIN_PARSERS.size()])));
+    }
+
+    @Test
+    public void shouldReturnParsersConstructedWith() {
+        printTest("shouldReturnParsersConstructedWith()");
+
+        final List<DdlParser> myParsers = new ArrayList<DdlParser>();
+        myParsers.add(new TeiidDdlParser());
+
+        final DdlParsers ddlParsers = new DdlParsers(myParsers);
+        assertThat(ddlParsers.getParsers(), hasItems(myParsers.toArray(new DdlParser[myParsers.size()])));
+    }
+
+    @Test
+    public void shouldReturnResultsInOrder() {
+        printTest("shouldReturnResultsInOrder()");
+
+        { // oracle
+            final String ddl = getFileContent(DDL_TEST_FILE_PATH + "dialect/oracle/oracle_test_statements_3.ddl");
+            final List<ParsingResult> results = this.parsers.parseUsingAll(ddl);
+
+            assertThat(results.size(), is(DdlParsers.BUILTIN_PARSERS.size()));
+            assertThat(results.get(0).getParserId(), is(OracleDdlParser.ID)); // first element should be Oracle result
+        }
+
+        { // teiid
+            final String ddl = getFileContent(DDL_TEST_FILE_PATH + "dialect/teiid/mySqlBqt.ddl");
+            final List<ParsingResult> results = this.parsers.parseUsingAll(ddl);
+
+            assertThat(results.size(), is(DdlParsers.BUILTIN_PARSERS.size()));
+            assertThat(results.get(0).getParserId(), is(TeiidDdlParser.ID)); // first element should be Teiid result
+        }
+    }
+
+    @Test
+    public void shouldReturnCorrectNumberOfResults() {
+        printTest("shouldReturnCorrectNumberOfResults()");
+
+        final List<DdlParser> myParsers = new ArrayList<DdlParser>(2);
+        myParsers.add(new PostgresDdlParser());
+        myParsers.add(new OracleDdlParser());
+        final DdlParsers ddlParsers = new DdlParsers(myParsers);
+
+        final String ddl = getFileContent(DDL_TEST_FILE_PATH + "dialect/oracle/oracle_test_statements_3.ddl");
+        final List<ParsingResult> results = ddlParsers.parseUsing(ddl, myParsers.get(0).getId(), myParsers.get(1).getId(), (String[])null);
+        assertThat(results.size(), is(myParsers.size()));
+    }
+
+    @Test(expected = ParsingException.class)
+    public void shouldNotAllowInvalidParserId() {
+        printTest("shouldNotAllowInvalidParserId()");
+
+        final String ddl = getFileContent(DDL_TEST_FILE_PATH + "dialect/oracle/oracle_test_statements_3.ddl");
+        this.parsers.parseUsing(ddl, this.parsers.getParsers().iterator().next().getId(), "bogusId", (String[])null);
+    }
+
 }

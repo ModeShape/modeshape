@@ -51,7 +51,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     /**
      * The Standard DDL parser identifier.
      */
-    public static final String PARSE_ID = "SQL92";
+    public static final String ID = "SQL92";
 
     private boolean testMode = false;
     private final List<DdlParserProblem> problems;
@@ -2874,7 +2874,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      */
     @Override
     public String getId() {
-        return PARSE_ID;
+        return ID;
     }
 
     /**
