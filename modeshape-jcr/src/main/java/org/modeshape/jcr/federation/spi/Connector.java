@@ -323,12 +323,13 @@ public abstract class Connector {
     public abstract Document getDocumentById( String id );
 
     /**
-     * Returns the id of an external node located at the given path.
+     * Returns the id of an external node located at the given external path within the connector's exposed tree of content.
      * 
-     * @param path a {@code non-null} string representing an exeternal path.
+     * @param externalPath a {@code non-null} string representing an external path, or "/" for the top-level node exposed by the
+     *        connector
      * @return either the id of the document or {@code null}
      */
-    public abstract String getDocumentId( String path );
+    public abstract String getDocumentId( String externalPath );
 
     /**
      * Return the path(s) of the external node with the given identifier. The resulting paths are from the point of view of the
