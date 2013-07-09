@@ -983,7 +983,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                     // delegate to the parent node ...
                     Name childName = path.getLastSegment().getName();
                         //MODE-1920: check add_child_node permission on parent node
-                        session.checkPermission(parent.path(), ModeShapePermissions.ADD_NODE);
+                        session.checkPermission(absolutePathFor(parent.path(), path.getLastSegment()), ModeShapePermissions.ADD_NODE);
                     return ((AbstractJcrNode)parent).addChildNode(childName, childPrimaryTypeName, desiredKey, false);
                 } else if (parent instanceof AbstractJcrProperty) {
                     // Per the TCK, if relPath references a property, then we have to throw a ConstraintViolationException.

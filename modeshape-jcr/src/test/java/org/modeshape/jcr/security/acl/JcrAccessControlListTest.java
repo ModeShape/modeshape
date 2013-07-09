@@ -34,6 +34,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.modeshape.jcr.security.User;
 
 /**
  *
@@ -49,7 +50,7 @@ public class JcrAccessControlListTest {
     
     @Before
     public void setUp() throws AccessControlException, RepositoryException {
-        acl.addAccessControlEntry(new User("kulikov"), rw);
+        acl.addAccessControlEntry(User.newInstance("kulikov"), rw);
     }
     
     @After
@@ -77,18 +78,4 @@ public class JcrAccessControlListTest {
     }
 
     
-    private class User implements Principal {
-        
-        private String username;
-        
-        public User(String username) {
-            this.username = username;
-        }
-        
-        @Override
-        public String getName() {
-            return username;
-        }
-        
-    }
 }

@@ -6,8 +6,8 @@
  * See the AUTHORS.txt file in the distribution for a full listing of 
  * individual contributors.
  *
- * Unless otherwise indicated, all code in ModeShape is licensed
- * to you under the terms of the GNU Lesser General Public License as
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
  * 
@@ -21,26 +21,42 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.security.acl;
+package org.modeshape.jcr.security;
 
-import javax.jcr.security.Privilege;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import java.security.Principal;
 
 /**
- *
+ * Represents group as principal.
+ * 
  * @author kulikov
  */
-public class PrivilegesTest {
+public class Group implements Principal {
+
+    //The name of the group
+    private String name;
     
-    public PrivilegesTest() {
+    /**
+     * Creates new instance of the principal.
+     * 
+     * @param name the name of the group.
+     * @return new user group principal.
+     */
+    public static Group newInstance(String name) {
+        return new Group(name);
     }
     
     /**
-     * Test of forName method, of class Privileges.
+     * Constructs new instance.
+     * 
+     * @param name the name of the user
      */
-    @Test
-    public void testForName() {
-        assertEquals(Privileges.ADD_CHILD_NODES, Privileges.forName(Privilege.JCR_ADD_CHILD_NODES));
+    private Group(String name) {
+        this.name = name;
     }
+    
+    @Override
+    public String getName() {
+        return name;
+    }
+    
 }
