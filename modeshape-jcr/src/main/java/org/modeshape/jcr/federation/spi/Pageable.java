@@ -27,9 +27,9 @@ package org.modeshape.jcr.federation.spi;
 import org.infinispan.schematic.document.Document;
 
 /**
- * Marker interface that should be implemented by {@link org.modeshape.jcr.federation.spi.Connector}(s) that want to expose
- * children of nodes in a "page by page" fashion. For effectively creating blocks of children for each page, connector
- * implementations should use the {@link PageWriter} extension.
+ * Interface that should be implemented by {@link org.modeshape.jcr.federation.spi.Connector}(s) that want to expose children of
+ * nodes in a "page by page" fashion. For effectively creating blocks of children for each page, connector implementations should
+ * use the {@link PageWriter} extension.
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
