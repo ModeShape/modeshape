@@ -276,7 +276,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         } else {
             acl = (AccessControlList) acm.getPolicies(path)[0];
         }
-        acl.addAccessControlEntry(new MyPrincipal(session.getUserID()), permissions);
+        acl.addAccessControlEntry(User.newInstance(session.getUserID()), permissions);
 
         acm.setPolicy(path, acl);
         session.save();
@@ -289,21 +289,6 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
             }
         }        
         return false;
-    }
-    
-    private static class MyPrincipal implements Principal {
-        
-        private String name;
-        
-        public MyPrincipal(String name) {
-            this.name = name;
-        }
-        
-        @Override
-        public String getName() {
-            return name;
-        }
-        
     }
     
 }
