@@ -93,7 +93,7 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         assertEquals(session.getNode("/b").getIdentifier(), otherSession.getNode("/b").getIdentifier());
     }
 
-    @Test(expected = RepositoryException.class)
+    @Test( expected = RepositoryException.class )
     @FixFor( "MODE-1972" )
     public void shouldNotClonePartialWorkspaceIntoWorkspaceRoot() throws Exception {
         otherWorkspace.clone(workspaceName, "/a/b", "/", false);
@@ -120,7 +120,7 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         assertNotNull(otherSession.getNode("/b"));
     }
 
-    @Test(expected = RepositoryException.class)
+    @Test( expected = RepositoryException.class )
     @FixFor( "MODE-1972" )
     public void shouldNotCopyPartialWorkspaceIntoWorkspaceRoot() throws Exception {
         otherWorkspace.copy(workspaceName, "/a/b", "/");
@@ -249,12 +249,13 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         workspace.move("/a/b", "/b/b-copy");
     }
 
-    private void assertNotFound(String absPath, JcrSession jcrSession) throws RepositoryException {
+    protected void assertNotFound( String absPath,
+                                   JcrSession jcrSession ) throws RepositoryException {
         try {
             jcrSession.getNode(absPath);
             fail("Node " + absPath + " should not have been found in the session " + session);
         } catch (PathNotFoundException e) {
-            //expected
+            // expected
         }
     }
 }

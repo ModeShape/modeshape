@@ -23,6 +23,8 @@
  */
 package org.modeshape.jcr.value.binary;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -32,7 +34,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.cassandra.service.EmbeddedCassandraService;
 import org.apache.commons.io.IOUtils;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -43,17 +44,14 @@ import org.modeshape.common.junit.SkipTestRule;
 import org.modeshape.jcr.ClusteringHelper;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
- * Test class for binary store using cassandra as backend.
- *
- * Before running this test start cassandra instance and uncomment test cases.
- *
+ * Test class for binary store using cassandra as backend. Before running this test start cassandra instance and uncomment test
+ * cases.
+ * 
  * @author kulikov
  */
-@SkipOnOS(value = SkipOnOS.WINDOWS, description = "java.nio does not support IPV6 in JDK6 on Windows")
+@SkipOnOS( value = SkipOnOS.WINDOWS, description = "java.nio does not support IPV6 in JDK6 on Windows" )
 public class CassandraBinaryStoreTest {
 
     @Rule
@@ -76,7 +74,7 @@ public class CassandraBinaryStoreTest {
             EmbeddedCassandraService cassandra = new EmbeddedCassandraService();
             cassandra.start();
         } catch (Exception e) {
-            //catch any exception here, because otherwise the test rule would not get a chance to execute
+            // catch any exception here, because otherwise the test rule would not get a chance to execute
             exceptionDuringCassandraStart = e;
         }
     }
@@ -110,7 +108,7 @@ public class CassandraBinaryStoreTest {
 
     @Test
     public void shouldMarkUnused() throws BinaryStoreException {
-        Set<BinaryKey> unused = new HashSet();
+        Set<BinaryKey> unused = new HashSet<BinaryKey>();
         unused.add(unusedValue.getKey());
         store.markAsUnused(unused);
 
@@ -138,11 +136,11 @@ public class CassandraBinaryStoreTest {
 
     @Test
     public void shoudlRemoveExpiredContent() throws Exception {
-        Set<BinaryKey> unused = new HashSet();
+        Set<BinaryKey> unused = new HashSet<BinaryKey>();
         unused.add(unusedValue.getKey());
         store.markAsUnused(unused);
 
-        Thread.currentThread().sleep(500);
+        Thread.sleep(500);
 
         store.removeValuesUnusedLongerThan(100, TimeUnit.MILLISECONDS);
 
