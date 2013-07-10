@@ -31,10 +31,16 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import org.infinispan.schematic.Schematic;
+import org.infinispan.schematic.document.Document;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.jcr.RepositoryConfiguration.AnonymousSecurity;
+import org.modeshape.jcr.RepositoryConfiguration.Default;
+import org.modeshape.jcr.RepositoryConfiguration.DocumentOptimization;
+import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
 import org.modeshape.jcr.RepositoryConfiguration.TransactionMode;
@@ -152,15 +158,15 @@ public class RepositoryConfigurationTest {
         assertValid("config/database-url-binary-storage.json");
     }
 
-	@Test
-	public void shouldSuccessfullyValidateCompositeBinaryStorageConfiguration() {
-		assertValid("config/composite-binary-storage.json");
-	}
+    @Test
+    public void shouldSuccessfullyValidateCompositeBinaryStorageConfiguration() {
+        assertValid("config/composite-binary-storage.json");
+    }
 
-	@Test
-	public void shouldSuccessfullyValidateCompositeBinaryStorageWithoutDefaultNamedStoreConfiguration() {
-		assertNotValid(1, "config/composite-binary-storage-without-default.json");
-	}
+    @Test
+    public void shouldSuccessfullyValidateCompositeBinaryStorageWithoutDefaultNamedStoreConfiguration() {
+        assertNotValid(1, "config/composite-binary-storage-without-default.json");
+    }
 
     @Test
     public void shouldSuccessfullyValidateCustomBinaryStorageConfiguration() {
@@ -320,13 +326,13 @@ public class RepositoryConfigurationTest {
 
         RepositoryConfiguration config = RepositoryConfiguration.read("{ \"name\" : \"foo\", \"workspaces\" : {\"cacheConfiguration\":\""
                                                                       + cacheContainer + "\"} }");
-        System.out.println(config.validate());
+        print(config.validate());
         assertThat(config.validate().hasProblems(), is(false));
         assertEquals(cacheContainer, config.getWorkspaceCacheConfiguration());
 
         config = RepositoryConfiguration.read("{ 'name' : 'foo', 'workspaces' : { 'cacheConfiguration' : '" + cacheContainer
                                               + "' } }");
-        System.out.println(config.validate());
+        print(config.validate());
         assertThat(config.validate().hasProblems(), is(false));
         assertEquals(cacheContainer, config.getWorkspaceCacheConfiguration());
     }
@@ -344,6 +350,61 @@ public class RepositoryConfigurationTest {
     @Test
     public void shouldAllowJdbcBinaryStorage() throws Exception {
         assertValid("config/repo-config-jdbc-binary-storage.json");
+    }
+
+    @FixFor( "MODE-1988" )
+    @Test
+    public void shouldNotEnableDocumentOptimizationByDefault() {
+        RepositoryConfiguration config = new RepositoryConfiguration("repoName");
+        assertThat(config.getDocumentOptimization(), is(notNullValue()));
+        assertThat(config.getDocumentOptimization().isEnabled(), is(false));
+    }
+
+    @FixFor( "MODE-1988" )
+    @Test
+    public void shouldEnableDocumentOptimizationWithEmptyDocumentOptimizationField() {
+        Document doc = Schematic.newDocument(FieldName.NAME,
+                                             "repoName",
+                                             FieldName.STORAGE,
+                                             Schematic.newDocument(FieldName.DOCUMENT_OPTIMIZATION, Schematic.newDocument()));
+        RepositoryConfiguration config = new RepositoryConfiguration(doc, "repoName");
+        DocumentOptimization opt = config.getDocumentOptimization();
+        assertThat(opt, is(notNullValue()));
+        assertThat(opt.isEnabled(), is(false));
+    }
+
+    @FixFor( "MODE-1988" )
+    @Test
+    public void shouldEnableDocumentOptimizationWithValidChildCountTargetAndToleranceValues() {
+        Document docOpt = Schematic.newDocument(FieldName.OPTIMIZATION_CHILD_COUNT_TARGET,
+                                                500,
+                                                FieldName.OPTIMIZATION_CHILD_COUNT_TOLERANCE,
+                                                10);
+        Document doc = Schematic.newDocument(FieldName.NAME,
+                                             "repoName",
+                                             FieldName.STORAGE,
+                                             Schematic.newDocument(FieldName.DOCUMENT_OPTIMIZATION, docOpt));
+        RepositoryConfiguration config = new RepositoryConfiguration(doc, "repoName");
+        DocumentOptimization opt = config.getDocumentOptimization();
+        assertThat(opt, is(notNullValue()));
+        assertThat(opt.isEnabled(), is(true));
+        assertThat(opt.getIntervalInHours(), is(Default.OPTIMIZATION_INTERVAL_IN_HOURS));
+        assertThat(opt.getInitialTimeExpression(), is(Default.OPTIMIZATION_INITIAL_TIME));
+        assertThat(opt.getThreadPoolName(), is(Default.OPTIMIZATION_POOL));
+    }
+
+    @FixFor( "MODE-1988" )
+    @Test
+    public void shouldDisableDocumentOptimizationWithoutValidChildCountTargetValue() {
+        Document docOpt = Schematic.newDocument(FieldName.OPTIMIZATION_CHILD_COUNT_TOLERANCE, 10);
+        Document doc = Schematic.newDocument(FieldName.NAME,
+                                             "repoName",
+                                             FieldName.STORAGE,
+                                             Schematic.newDocument(FieldName.DOCUMENT_OPTIMIZATION, docOpt));
+        RepositoryConfiguration config = new RepositoryConfiguration(doc, "repoName");
+        DocumentOptimization opt = config.getDocumentOptimization();
+        assertThat(opt, is(notNullValue()));
+        assertThat(opt.isEnabled(), is(false));
     }
 
     protected RepositoryConfiguration assertValid( RepositoryConfiguration config ) {
@@ -364,6 +425,12 @@ public class RepositoryConfigurationTest {
         assertThat(results.toString(), results.errorCount(), is(numberOfErrors));
         if (print) {
             System.out.println(results);
+        }
+    }
+
+    protected void print( Object obj ) {
+        if (print) {
+            System.out.println(obj);
         }
     }
 

@@ -285,6 +285,62 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="document-optimization-thread-pool" type="xs:string" use="optional" default="modeshape-opt">
+            <xs:annotation>
+                <xs:documentation>Name of the thread pool that should be used to asynchronously optimize persisted 
+                    node representations. This process is only required when nodes have large numbers of children,
+                    as defined by the child count target. Thread pools are named globally within a single ModeShape 
+                    engine, and by default all repositories use the same thread pool for document optimization.
+                    DOCUMENT OPTIMIZATION IS A TECHNOLOGY PREVIEW AND SHOULD NOT YET BE USED IN PRODUCTION.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="document-optimization-initial-time" type="document-optimization-initial-time-type" use="optional"
+                      default="02:00">
+            <xs:annotation>
+                <xs:documentation>The local time that the first document optimization process should be run.
+                    Document optimization may be relatively expensive, as it involves scanning all persisted content,
+                    so it's recommended that this be done during off hours if possible. The format is "hh:mm", or
+                    two-digit hours and two-digit minutes. By default, the value is "02:00" garbage
+                    collection is run at 2AM (local time) after the repository is started.
+                    DOCUMENT OPTIMIZATION IS A TECHNOLOGY PREVIEW AND SHOULD NOT YET BE USED IN PRODUCTION.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="document-optimization-interval" type="xs:int" use="optional" default="24">
+            <xs:annotation>
+                <xs:documentation>The number of hours between document optimization runs.
+                    By default the interval is 24 hours (meaning it runs once per day).
+                    DOCUMENT OPTIMIZATION IS A TECHNOLOGY PREVIEW AND SHOULD NOT YET BE USED IN PRODUCTION.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="document-optimization-child-count-target" type="xs:positiveInteger" use="optional">
+            <xs:annotation>
+                <xs:documentation>The maximum number of children that are ideally stored within a single document 
+                    (e.g., node document or separate page of children). A lower number might result in more pages
+                    but faster load times for nodes when accessing a subset of the children, but getting particular
+                    children or all children of a node will require reading multiple documents/pages. A larger 
+                    number may increase the time required to read each document/page, but may reduce the total number 
+                    of document/page reads necessary to load a particular child or all children of a node. 
+                    There is no default because the performance is highly dependent upon application usage and access 
+                    patterns. Therefore, we strongly recommend testing with various values. 
+                    Optimization is only enabled with a valid value.
+                    DOCUMENT OPTIMIZATION IS A TECHNOLOGY PREVIEW AND SHOULD NOT YET BE USED IN PRODUCTION.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="document-optimization-child-count-tolerance" type="xs:positiveInteger" use="optional">
+            <xs:annotation>
+                <xs:documentation>The range that the actual number of children in a document can vary above the 
+                    target before the documents/pages are split, or below the target before documents/pages are merged. 
+                    There is no default because the performance is highly dependent upon application usage and access 
+                    patterns. Therefore, we strongly recommend testing with various values.
+                    Optimization is only enabled with a valid value.
+                    DOCUMENT OPTIMIZATION IS A TECHNOLOGY PREVIEW AND SHOULD NOT YET BE USED IN PRODUCTION.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="workspaces">
@@ -971,6 +1027,11 @@
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="garbage-collection-initial-time-type">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(([0-1]\d)|([2][0-3])):[0-5]\d"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="document-optimization-initial-time-type">
         <xs:restriction base="xs:string">
             <xs:pattern value="(([0-1]\d)|([2][0-3])):[0-5]\d"/>
         </xs:restriction>

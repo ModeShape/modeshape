@@ -57,6 +57,11 @@ public class ModelKeys {
     static final String DATA_CACHE_NAME = "data-cache-name";
     static final String DATA_SOURCE_JNDI_NAME = "data-source-jndi-name";
     static final String DEFAULT_WORKSPACE = "default-workspace";
+    static final String DOCUMENT_OPTIMIZATION_THREAD_POOL = "document-optimization-thread-pool";
+    static final String DOCUMENT_OPTIMIZATION_INITIAL_TIME = "document-optimization-initial-time";
+    static final String DOCUMENT_OPTIMIZATION_INTERVAL = "document-optimization-interval";
+    static final String DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET = "document-optimization-child-count-target";
+    static final String DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE = "document-optimization-child-count-tolerance";
     static final String ENABLE_MONITORING = "enable-monitoring";
     static final String ENABLE_QUERIES = "enable-queries";
     static final String GARBAGE_COLLECTION_THREAD_POOL = "garbage-collection-thread-pool";

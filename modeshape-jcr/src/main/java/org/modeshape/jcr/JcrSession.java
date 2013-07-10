@@ -1053,6 +1053,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             throw new RepositoryException(JcrI18n.unableToMoveTargetContainExternalNodes.text(srcPath, sourceName));
         } else if (targetIsExternal) {
             // both source and target are external nodes, but belonging to different sources
+            assert externalTargetKey != null;
             if (!externalTargetKey.equalsIgnoreCase(srcNode.key().getSourceKey())) {
                 String sourceNodeSourceName = connectors.getSourceNameAtKey(srcNode.key().getSourceKey());
                 String targetNodeSourceName = connectors.getSourceNameAtKey(externalTargetKey);

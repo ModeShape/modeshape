@@ -24,13 +24,27 @@
 
 package org.modeshape.jcr.cache.document;
 
+import java.io.Serializable;
 import java.util.Collection;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import javax.transaction.HeuristicMixedException;
+import javax.transaction.HeuristicRollbackException;
+import javax.transaction.NotSupportedException;
+import javax.transaction.RollbackException;
+import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 import org.infinispan.Cache;
+import org.infinispan.distexec.DistributedCallable;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.common.SystemFailureException;
+import org.modeshape.jcr.InfinispanUtil;
+import org.modeshape.jcr.InfinispanUtil.Combiner;
+import org.modeshape.jcr.InfinispanUtil.Location;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 
@@ -81,7 +95,7 @@ public class LocalDocumentStore implements DocumentStore {
     public String newDocumentKey( String parentKey,
                                   Name documentName,
                                   Name documentPrimaryType ) {
-        //the local store doesn't generate explicit keys for new nodes
+        // the local store doesn't generate explicit keys for new nodes
         return null;
     }
 
@@ -210,5 +224,215 @@ public class LocalDocumentStore implements DocumentStore {
     public ExternalBinaryValue getExternalBinary( String sourceName,
                                                   String id ) {
         throw new UnsupportedOperationException("External binaries are only supported by the federated document store");
+    }
+
+    /**
+     * Perform the supplied operation on each stored document that is accessible within this process. Each document will be
+     * operated upon in a separate transaction, which will be committed if the operation is successful or rolledback if the
+     * operation cannot be complete successfully.
+     * <p>
+     * Generally, this method executes the operation upon all documents. If there is an error processing a single document, that
+     * document is skipped and the execution will continue with the next document(s). However, if there is an exception with the
+     * transactions or another system failure, this method will terminate with an exception.
+     * 
+     * @param operation the operation to be performed
+     * @return the summary of the number of documents that were affected
+     * @throws InterruptedException if the process is interrupted
+     * @throws ExecutionException if there is an error while getting executing the operation
+     */
+    public DocumentOperationResults performOnEachDocument( DocumentOperation operation )
+        throws InterruptedException, ExecutionException {
+        DistributedOperation distOp = new DistributedOperation(operation);
+        return InfinispanUtil.execute(database.getCache(), Location.LOCALLY, distOp, distOp);
+    }
+
+    /**
+     * An operation upon a persisted document.
+     */
+    public static abstract class DocumentOperation implements Serializable {
+        private static final long serialVersionUID = 1L;
+        protected Cache<String, SchematicEntry> cache;
+
+        /**
+         * Invoked by execution environment after the operation has been migrated for execution to a specific Infinispan node.
+         * 
+         * @param cache cache whose keys are used as input data for this DistributedCallable task
+         */
+        public void setEnvironment( Cache<String, SchematicEntry> cache ) {
+            this.cache = cache;
+        }
+
+        /**
+         * Execute the operation upon the given {@link EditableDocument}.
+         * 
+         * @param key the document's key; never null
+         * @param document the editable document; never null
+         * @return true if the operation modified the document, or false otherwise
+         */
+        public abstract boolean execute( String key,
+                                         EditableDocument document );
+    }
+
+    public static class DocumentOperationResults implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private long modifiedCount;
+        private long unmodifiedCount;
+        private long skipCount;
+        private long failureCount;
+
+        /**
+         * Return the number of documents that were successfully updated/modified by the operation.
+         * 
+         * @return the number of modified documents
+         */
+        public long getModifiedCount() {
+            return modifiedCount;
+        }
+
+        /**
+         * Return the number of documents that were not updated/modified by the operation.
+         * 
+         * @return the number of unmodified documents
+         */
+        public long getUnmodifiedCount() {
+            return unmodifiedCount;
+        }
+
+        /**
+         * Return the number of documents that caused some failure.
+         * 
+         * @return the number of failed documents
+         */
+        public long getFailureCount() {
+            return failureCount;
+        }
+
+        /**
+         * Return the number of documents that were skipped by the operation because the document could not be obtained in an
+         * timely fashion.
+         * 
+         * @return the number of skipped documents
+         */
+        public long getSkipCount() {
+            return skipCount;
+        }
+
+        protected void recordModified() {
+            ++modifiedCount;
+        }
+
+        protected void recordUnmodified() {
+            ++unmodifiedCount;
+        }
+
+        protected void recordFailure() {
+            ++failureCount;
+        }
+
+        protected void recordSkipped() {
+            ++skipCount;
+        }
+
+        protected DocumentOperationResults combine( DocumentOperationResults other ) {
+            if (other != null) {
+                this.modifiedCount += other.modifiedCount;
+                this.unmodifiedCount += other.unmodifiedCount;
+                this.skipCount += other.skipCount;
+                this.failureCount += other.failureCount;
+            }
+            return this;
+        }
+
+        @Override
+        public String toString() {
+            return "" + modifiedCount + " documents changed, " + unmodifiedCount + " unchanged, " + skipCount + " skipped, and "
+                   + failureCount + " resulted in errors or failures";
+        }
+    }
+
+    protected static class DistributedOperation
+        implements DistributedCallable<String, SchematicEntry, DocumentOperationResults>, Serializable,
+        Combiner<DocumentOperationResults> {
+        private static final long serialVersionUID = 1L;
+
+        private transient Cache<String, SchematicEntry> cache;
+        private transient Set<String> inputKeys;
+        private transient TransactionManager txnMgr;
+        private transient DocumentOperation operation;
+
+        protected DistributedOperation( DocumentOperation operation ) {
+            this.operation = operation;
+        }
+
+        @Override
+        public void setEnvironment( Cache<String, SchematicEntry> cache,
+                                    Set<String> inputKeys ) {
+            assert this.cache != null;
+            assert this.inputKeys != null;
+            this.cache = cache;
+            this.inputKeys = inputKeys;
+            this.txnMgr = this.cache.getAdvancedCache().getTransactionManager();
+            this.operation.setEnvironment(this.cache);
+        }
+
+        @Override
+        public DocumentOperationResults call() throws Exception {
+            DocumentOperationResults results = new DocumentOperationResults();
+            for (String key : inputKeys) {
+                // We operate upon each document within a transaction ...
+                try {
+                    txnMgr.begin();
+                    SchematicEntry entry = cache.get(key);
+                    EditableDocument doc = entry.editDocumentContent();
+                    if (operation.execute(key, doc)) {
+                        results.recordModified();
+                    } else {
+                        results.recordUnmodified();
+                    }
+                    txnMgr.commit();
+                } catch (org.infinispan.util.concurrent.TimeoutException e) {
+                    // Couldn't wait long enough for the lock, so skip this for now ...
+                    results.recordSkipped();
+                } catch (NotSupportedException err) {
+                    // No nested transactions are supported ...
+                    results.recordFailure();
+                    throw new SystemFailureException(err);
+                } catch (SecurityException err) {
+                    // No privilege to commit ...
+                    results.recordFailure();
+                    throw new SystemFailureException(err);
+                } catch (IllegalStateException err) {
+                    // Not associated with a txn??
+                    results.recordFailure();
+                    throw new SystemFailureException(err);
+                } catch (RollbackException err) {
+                    // Couldn't be committed, but the txn is already rolled back ...
+                    results.recordFailure();
+                } catch (HeuristicMixedException err) {
+                    // Rollback has occurred ...
+                    results.recordFailure();
+                } catch (HeuristicRollbackException err) {
+                    // Rollback has occurred ...
+                    results.recordFailure();
+                } catch (SystemException err) {
+                    // System failed unexpectedly ...
+                    results.recordFailure();
+                    throw new SystemFailureException(err);
+                } catch (Throwable t) {
+                    // any other exception/error we should rollback and just continue (skipping this key for now) ...
+                    txnMgr.rollback();
+                    results.recordFailure();
+                    continue;
+                }
+            }
+            return results;
+        }
+
+        @Override
+        public DocumentOperationResults combine( DocumentOperationResults priorResult,
+                                                 DocumentOperationResults newResult ) {
+            return priorResult.combine(newResult);
+        }
     }
 }

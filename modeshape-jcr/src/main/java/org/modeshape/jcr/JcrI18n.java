@@ -500,6 +500,11 @@ public final class JcrI18n {
     public static I18n errorWhileShuttingDownListener;
     public static I18n errorWhileStartingUpListener;
 
+    public static I18n enablingDocumentOptimization;
+    public static I18n beginChildrenOptimization;
+    public static I18n completeChildrenOptimization;
+    public static I18n errorDuringChildrenOptimization;
+
     static {
         try {
             I18n.initialize(JcrI18n.class);
