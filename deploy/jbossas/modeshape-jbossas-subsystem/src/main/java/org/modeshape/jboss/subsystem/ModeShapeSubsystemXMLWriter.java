@@ -60,7 +60,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                 for (Property entry : model.get(ModelKeys.WEBAPP).asPropertyList()) {
                     String webappName = entry.getName();
                     ModelNode webapp = entry.getValue();
-                    writeWebAppConfiguration(writer,  webapp, webappName);
+                    writeWebAppConfiguration(writer, webapp, webappName);
                 }
             }
         }
@@ -68,8 +68,8 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
     }
 
     private void writeWebAppConfiguration( XMLExtendedStreamWriter writer,
-                                               ModelNode webapp,
-                                               String repositoryName ) throws XMLStreamException {
+                                           ModelNode webapp,
+                                           String repositoryName ) throws XMLStreamException {
         writer.writeStartElement(Element.WEBAPP.getLocalName());
         writer.writeAttribute(Attribute.NAME.getLocalName(), repositoryName);
         ModelAttributes.EXPLODED.marshallAsAttribute(webapp, false, writer);
@@ -99,6 +99,11 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         ModelAttributes.GARBAGE_COLLECTION_THREAD_POOL.marshallAsAttribute(repository, false, writer);
         ModelAttributes.GARBAGE_COLLECTION_INITIAL_TIME.marshallAsAttribute(repository, false, writer);
         ModelAttributes.GARBAGE_COLLECTION_INTERVAL.marshallAsAttribute(repository, false, writer);
+        ModelAttributes.DOCUMENT_OPTIMIZATION_THREAD_POOL.marshallAsAttribute(repository, false, writer);
+        ModelAttributes.DOCUMENT_OPTIMIZATION_INITIAL_TIME.marshallAsAttribute(repository, false, writer);
+        ModelAttributes.DOCUMENT_OPTIMIZATION_INTERVAL.marshallAsAttribute(repository, false, writer);
+        ModelAttributes.DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET.marshallAsAttribute(repository, false, writer);
+        ModelAttributes.DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE.marshallAsAttribute(repository, false, writer);
 
         // Nested elements ...
         writeNodeTypes(writer, repository);
@@ -357,8 +362,8 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             ModelNode binaryStorage = configuration.get(ModelKeys.BINARY_STORAGE);
 
             ModelNode binaryStorageType = binaryStorage.get(ModelKeys.STORAGE_TYPE);
-            String storageType = binaryStorageType.isDefined() && binaryStorageType.keys().size() == 1 ?
-                                 (String)binaryStorageType.keys().toArray()[0] : null;
+            String storageType = binaryStorageType.isDefined() && binaryStorageType.keys().size() == 1 ? (String)binaryStorageType.keys()
+                                                                                                                                  .toArray()[0] : null;
             ModelNode storage = storageType != null ? binaryStorageType.get((String)binaryStorageType.keys().toArray()[0]) : new ModelNode();
             writeBinaryStorageModel(writer, storageType, storage);
         }
@@ -366,8 +371,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
 
     private void writeBinaryStorageModel( XMLExtendedStreamWriter writer,
                                           String storageType,
-                                          ModelNode storage
-                                         ) throws XMLStreamException {
+                                          ModelNode storage ) throws XMLStreamException {
         if (ModelKeys.FILE_BINARY_STORAGE.equals(storageType)) {
             // This is the default, but there is no default value for the ModelAttributes.PATH (which is required),
             // which means we always have to write this out. If it is the default binary storage, then there
@@ -425,7 +429,10 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         }
     }
 
-    private void writeNestedStoresOfType(ModelNode storage, String nestedStorageType, String storeType, XMLExtendedStreamWriter writer) throws XMLStreamException {
+    private void writeNestedStoresOfType( ModelNode storage,
+                                          String nestedStorageType,
+                                          String storeType,
+                                          XMLExtendedStreamWriter writer ) throws XMLStreamException {
         if (has(storage, nestedStorageType)) {
             List<ModelNode> nestedCacheStores = storage.get(nestedStorageType).asList();
 

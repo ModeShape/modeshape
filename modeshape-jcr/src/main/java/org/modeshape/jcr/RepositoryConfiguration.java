@@ -294,7 +294,8 @@ public class RepositoryConfiguration {
         public static final String MINIMUM_STRING_SIZE = "minimumStringSize";
 
         /**
-         * The name attribute which can be set on a binary store. It's only used when a {@link CompositeBinaryStore} is configured.
+         * The name attribute which can be set on a binary store. It's only used when a {@link CompositeBinaryStore} is
+         * configured.
          */
         public static final String BINARY_STORE_NAME = "storeName";
 
@@ -349,7 +350,6 @@ public class RepositoryConfiguration {
          * The name for the field whose value is a document containing binary storage information.
          */
         public static final String BINARY_STORAGE = "binaryStorage";
-
 
         /**
          * The name for the field whose value is a document containing binary storage information.
@@ -434,6 +434,11 @@ public class RepositoryConfiguration {
         public static final String GARBAGE_COLLECTION = "garbageCollection";
         public static final String INITIAL_TIME = "initialTime";
         public static final String INTERVAL_IN_HOURS = "intervalInHours";
+
+        public static final String DOCUMENT_OPTIMIZATION = "optimization";
+        public static final String OPTIMIZATION_CHILD_COUNT_TARGET = "childCountTarget";
+        public static final String OPTIMIZATION_CHILD_COUNT_TOLERANCE = "childCountTolerance";
+
         /**
          * The name for the field (under "sequencing" and "query") specifying the thread pool that should be used for sequencing.
          * By default, all repository instances will use the same thread pool within the engine. To use a dedicated thread pool
@@ -559,6 +564,7 @@ public class RepositoryConfiguration {
         public static final String SEQUENCING_POOL = "modeshape-sequencer";
         public static final String QUERY_THREAD_POOL = "modeshape-indexer";
         public static final String GARBAGE_COLLECTION_POOL = "modeshape-gc";
+        public static final String OPTIMIZATION_POOL = "modeshape-opt";
 
         public static final String INDEXING_ANALYZER = StandardAnalyzer.class.getName();
         public static final String INDEXING_SIMILARITY = DefaultSimilarity.class.getName();
@@ -583,8 +589,11 @@ public class RepositoryConfiguration {
         public static final String CLUSTER_NAME = "ModeShape-JCR";
         public static final String CHANNEL_PROVIDER = DefaultChannelProvider.class.getName();
 
-        public static final String INITIAL_TIME = "00:00";
-        public static final int INTERVAL_IN_HOURS = 24;
+        public static final String GARBAGE_COLLECTION_INITIAL_TIME = "00:00";
+        public static final int GARBAGE_COLLECTION_INTERVAL_IN_HOURS = 24;
+
+        public static final String OPTIMIZATION_INITIAL_TIME = "02:00";
+        public static final int OPTIMIZATION_INTERVAL_IN_HOURS = 24;
     }
 
     public static final class FieldValue {
@@ -701,11 +710,7 @@ public class RepositoryConfiguration {
         aliases.put("vdb", vdbSequencer);
         aliases.put("vdbsequencer", vdbSequencer);
         /**
-         * See MODE-1934
-         *
-         * aliases.put("msoffice", msofficeSequencer);
-         * aliases.put("msofficesequencer", msofficeSequencer);
-         *
+         * See MODE-1934 aliases.put("msoffice", msofficeSequencer); aliases.put("msofficesequencer", msofficeSequencer);
          **/
         aliases.put("wsdl", wsdlSequencer);
         aliases.put("wsdlsequencer", wsdlSequencer);
@@ -1237,7 +1242,7 @@ public class RepositoryConfiguration {
 
         /**
          * Returns the type of the configured binary store.
-         *
+         * 
          * @return the type of the configured binary store, never {@code null}
          */
         public String getType() {
@@ -1746,7 +1751,7 @@ public class RepositoryConfiguration {
 
         /**
          * Reads the indexing configuration, checking if the indexing is configured in clustered mode or not.
-         *
+         * 
          * @return {@code true} if the indexing is configured in clustered mode, {@code false} otherwise
          */
         public boolean indexingClustered() {
@@ -1755,8 +1760,8 @@ public class RepositoryConfiguration {
                 return false;
             }
             String indexStorageType = indexStorage.getString(FieldName.TYPE);
-            return indexStorageType.equalsIgnoreCase(FieldValue.INDEX_STORAGE_FILESYSTEM_MASTER) ||
-                    indexStorageType.equalsIgnoreCase(FieldValue.INDEX_STORAGE_FILESYSTEM_SLAVE);
+            return indexStorageType.equalsIgnoreCase(FieldValue.INDEX_STORAGE_FILESYSTEM_MASTER)
+                   || indexStorageType.equalsIgnoreCase(FieldValue.INDEX_STORAGE_FILESYSTEM_SLAVE);
         }
 
         /**
@@ -2022,18 +2027,18 @@ public class RepositoryConfiguration {
     }
 
     /**
-     * Get the configuration for the sequencing-related aspects of this repository.
+     * Get the configuration for the federation-related aspects of this repository.
      * 
-     * @return the sequencing configuration; never null
+     * @return the federation configuration; never null
      */
     public Federation getFederation() {
         return new Federation(doc);
     }
 
     /**
-     * Get the configuration for the security-related aspects of this repository.
+     * Get the configuration for the garbage collection aspects of this repository.
      * 
-     * @return the security configuration; never null
+     * @return the garbage collection configuration; never null
      */
     public GarbageCollection getGarbageCollection() {
         return new GarbageCollection(doc.getDocument(FieldName.GARBAGE_COLLECTION));
@@ -2062,7 +2067,7 @@ public class RepositoryConfiguration {
          * @return the initial time; never null
          */
         public String getInitialTimeExpression() {
-            return gc.getString(FieldName.INITIAL_TIME, Default.INITIAL_TIME);
+            return gc.getString(FieldName.INITIAL_TIME, Default.GARBAGE_COLLECTION_INITIAL_TIME);
         }
 
         /**
@@ -2071,7 +2076,7 @@ public class RepositoryConfiguration {
          * @return the interval; never null
          */
         public int getIntervalInHours() {
-            return gc.getInteger(FieldName.INTERVAL_IN_HOURS, Default.INTERVAL_IN_HOURS);
+            return gc.getInteger(FieldName.INTERVAL_IN_HOURS, Default.GARBAGE_COLLECTION_INTERVAL_IN_HOURS);
         }
 
         /**
@@ -2090,6 +2095,87 @@ public class RepositoryConfiguration {
          */
         public int getLockSweepIntervalInMinutes() {
             return LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD;
+        }
+    }
+
+    /**
+     * Get the configuration for the document optimization for this repository.
+     * 
+     * @return the document optimization configuration; never null
+     */
+    public DocumentOptimization getDocumentOptimization() {
+        Document storage = doc.getDocument(FieldName.STORAGE);
+        if (storage == null) {
+            storage = Schematic.newDocument();
+        }
+        return new DocumentOptimization(storage.getDocument(FieldName.DOCUMENT_OPTIMIZATION));
+    }
+
+    @Immutable
+    public class DocumentOptimization {
+        private final Document optimization;
+
+        protected DocumentOptimization( Document optimization ) {
+            this.optimization = optimization != null ? optimization : EMPTY;
+        }
+
+        /**
+         * Determine if document optimization is enabled. At this time, optimization is DISABLED by default and must be enabled by
+         * defining the "{@value FieldName#OPTIMIZATION_CHILD_COUNT_TARGET}" and "
+         * {@value FieldName#OPTIMIZATION_CHILD_COUNT_TOLERANCE}" fields.
+         * 
+         * @return true if enabled, or false otherwise
+         */
+        public boolean isEnabled() {
+            return !this.optimization.isEmpty() && getChildCountTarget() != Integer.MAX_VALUE;
+        }
+
+        /**
+         * Get the name of the thread pool that should be used for optimization work.
+         * 
+         * @return the thread pool name; never null
+         */
+        public String getThreadPoolName() {
+            return optimization.getString(FieldName.THREAD_POOL, Default.OPTIMIZATION_POOL);
+        }
+
+        /**
+         * Get the time that the first optimization process should be run.
+         * 
+         * @return the initial time; never null
+         */
+        public String getInitialTimeExpression() {
+            return optimization.getString(FieldName.INITIAL_TIME, Default.OPTIMIZATION_INITIAL_TIME);
+        }
+
+        /**
+         * Get the optimization interval in hours.
+         * 
+         * @return the interval; never null
+         */
+        public int getIntervalInHours() {
+            return optimization.getInteger(FieldName.INTERVAL_IN_HOURS, Default.OPTIMIZATION_INTERVAL_IN_HOURS);
+        }
+
+        /**
+         * Get the target for the number of children in a single persisted node document.
+         * 
+         * @return the child count target
+         */
+        public int getChildCountTarget() {
+            Integer result = optimization.getInteger(FieldName.OPTIMIZATION_CHILD_COUNT_TARGET);
+            return result == null ? Integer.MAX_VALUE : result.intValue();
+        }
+
+        /**
+         * Get the tolerance for the number of children in a single persisted node document. Generally, the documents are
+         * optimized only when the actual number of children differs from the target by the tolerance.
+         * 
+         * @return the child count tolerance
+         */
+        public int getChildCountTolerance() {
+            Integer result = optimization.getInteger(FieldName.OPTIMIZATION_CHILD_COUNT_TOLERANCE);
+            return result == null ? 0 : result.intValue();
         }
     }
 

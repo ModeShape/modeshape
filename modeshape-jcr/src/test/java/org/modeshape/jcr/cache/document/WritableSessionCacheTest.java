@@ -29,6 +29,7 @@ import static org.junit.Assert.assertThat;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
@@ -43,6 +44,15 @@ import org.modeshape.jcr.cache.SessionEnvironment;
  * Tests that operate against a {@link WritableSessionCache}. Each test method starts with a clean slate of content, which is
  */
 public class WritableSessionCacheTest extends AbstractSessionCacheTest {
+
+    private DocumentOptimizer optimizer;
+
+    @Before
+    @Override
+    public void beforeEach() {
+        super.beforeEach();
+        this.optimizer = new DocumentOptimizer(workspaceCache.documentStore());
+    }
 
     @Override
     protected SessionCache createSessionCache( ExecutionContext context,
@@ -173,7 +183,7 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
         Stopwatch total = new Stopwatch();
         Stopwatch save = new Stopwatch();
         Stopwatch opt = new Stopwatch();
-        workspaceCache.translator().optimizeChildrenBlocks(key, null, 1000, 500); // will merge two into a single block ...
+        optimizer.optimizeChildrenBlocks(key, null, 1000, 500); // will merge two into a single block ...
         print(true);
         print("Creating nodes ...");
         total.start();
@@ -194,7 +204,7 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
                 print("Optimizing...");
                 print(false);
                 opt.start();
-                workspaceCache.translator().optimizeChildrenBlocks(key, null, 1000, 500); // will split into blocks ...
+                optimizer.optimizeChildrenBlocks(key, null, 1000, 500); // will split into blocks ...
                 opt.stop();
                 // Find node B again after the save ...
                 nodeB = check(session1).mutableNode("/childB");
@@ -240,7 +250,7 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
         Stopwatch total = new Stopwatch();
         Stopwatch save = new Stopwatch();
         Stopwatch opt = new Stopwatch();
-        workspaceCache.translator().optimizeChildrenBlocks(key, null, 1000, 500); // will merge two into a single block ...
+        optimizer.optimizeChildrenBlocks(key, null, 1000, 500); // will merge two into a single block ...
         print(true);
         print("Creating nodes ...");
         total.start();
@@ -261,7 +271,7 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
                 print("Optimizing...");
                 print(false);
                 opt.start();
-                workspaceCache.translator().optimizeChildrenBlocks(key, null, 1000, 500); // will split into blocks ...
+                optimizer.optimizeChildrenBlocks(key, null, 1000, 500); // will split into blocks ...
                 opt.stop();
                 // Find node B again after the save ...
                 nodeB = check(session1).mutableNode("/childB");

@@ -352,6 +352,62 @@ public class ModelAttributes {
                                                                                                                                    .setFieldPathInRepositoryConfiguration(FieldName.GARBAGE_COLLECTION,
                                                                                                                                                                           FieldName.INTERVAL_IN_HOURS)
                                                                                                                                    .build();
+    public static final SimpleAttributeDefinition DOCUMENT_OPTIMIZATION_THREAD_POOL = new MappedAttributeDefinitionBuilder(
+                                                                                                                           ModelKeys.DOCUMENT_OPTIMIZATION_THREAD_POOL,
+                                                                                                                           ModelType.STRING).setXmlName(Attribute.DOCUMENT_OPTIMIZATION_THREAD_POOL.getLocalName())
+                                                                                                                                            .setAllowExpression(true)
+                                                                                                                                            .setAllowNull(true)
+                                                                                                                                            .setDefaultValue(new ModelNode().set("modeshape-opt"))
+                                                                                                                                            .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                            .setFieldPathInRepositoryConfiguration(FieldName.STORAGE,
+                                                                                                                                                                                   FieldName.DOCUMENT_OPTIMIZATION,
+                                                                                                                                                                                   FieldName.THREAD_POOL)
+                                                                                                                                            .build();
+    public static final SimpleAttributeDefinition DOCUMENT_OPTIMIZATION_INITIAL_TIME = new MappedAttributeDefinitionBuilder(
+                                                                                                                            ModelKeys.DOCUMENT_OPTIMIZATION_INITIAL_TIME,
+                                                                                                                            ModelType.STRING).setXmlName(Attribute.DOCUMENT_OPTIMIZATION_INITIAL_TIME.getLocalName())
+                                                                                                                                             .setAllowExpression(true)
+                                                                                                                                             .setAllowNull(true)
+                                                                                                                                             .setDefaultValue(new ModelNode().set("00:00"))
+                                                                                                                                             .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                             .setFieldPathInRepositoryConfiguration(FieldName.STORAGE,
+                                                                                                                                                                                    FieldName.DOCUMENT_OPTIMIZATION,
+                                                                                                                                                                                    FieldName.INITIAL_TIME)
+                                                                                                                                             .build();
+    public static final SimpleAttributeDefinition DOCUMENT_OPTIMIZATION_INTERVAL = new MappedAttributeDefinitionBuilder(
+                                                                                                                        ModelKeys.DOCUMENT_OPTIMIZATION_INTERVAL,
+                                                                                                                        ModelType.INT).setXmlName(Attribute.DOCUMENT_OPTIMIZATION_INTERVAL.getLocalName())
+                                                                                                                                      .setAllowExpression(true)
+                                                                                                                                      .setAllowNull(true)
+                                                                                                                                      .setDefaultValue(new ModelNode().set(24))
+                                                                                                                                      .setMeasurementUnit(MeasurementUnit.HOURS)
+                                                                                                                                      .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                      .setFieldPathInRepositoryConfiguration(FieldName.STORAGE,
+                                                                                                                                                                             FieldName.DOCUMENT_OPTIMIZATION,
+                                                                                                                                                                             FieldName.INTERVAL_IN_HOURS)
+                                                                                                                                      .build();
+    public static final SimpleAttributeDefinition DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET = new MappedAttributeDefinitionBuilder(
+                                                                                                                                  ModelKeys.DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET,
+                                                                                                                                  ModelType.INT).setXmlName(Attribute.DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET.getLocalName())
+                                                                                                                                                .setAllowExpression(true)
+                                                                                                                                                .setAllowNull(true)
+                                                                                                                                                .setMeasurementUnit(MeasurementUnit.NONE)
+                                                                                                                                                .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                                .setFieldPathInRepositoryConfiguration(FieldName.STORAGE,
+                                                                                                                                                                                       FieldName.DOCUMENT_OPTIMIZATION,
+                                                                                                                                                                                       FieldName.OPTIMIZATION_CHILD_COUNT_TARGET)
+                                                                                                                                                .build();
+    public static final SimpleAttributeDefinition DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE = new MappedAttributeDefinitionBuilder(
+                                                                                                                                     ModelKeys.DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE,
+                                                                                                                                     ModelType.INT).setXmlName(Attribute.DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE.getLocalName())
+                                                                                                                                                   .setAllowExpression(true)
+                                                                                                                                                   .setAllowNull(true)
+                                                                                                                                                   .setMeasurementUnit(MeasurementUnit.NONE)
+                                                                                                                                                   .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                                   .setFieldPathInRepositoryConfiguration(FieldName.STORAGE,
+                                                                                                                                                                                          FieldName.DOCUMENT_OPTIMIZATION,
+                                                                                                                                                                                          FieldName.OPTIMIZATION_CHILD_COUNT_TOLERANCE)
+                                                                                                                                                   .build();
     public static final SimpleAttributeDefinition INDEX_FORMAT = new MappedAttributeDefinitionBuilder(ModelKeys.INDEX_FORMAT,
                                                                                                       ModelType.STRING).setXmlName(Attribute.FORMAT.getLocalName())
                                                                                                                        .setAllowExpression(true)
@@ -612,17 +668,17 @@ public class ModelAttributes {
                                                                                                                                        .build();
 
     public static final SimpleAttributeDefinition REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT = new MappedAttributeDefinitionBuilder(
-                                                                                                                                     ModelKeys.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT,
-                                                                                                                                     ModelType.BOOLEAN).setXmlName(Attribute.REBUILD_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT.getLocalName())
-                                                                                                                                                       .setAllowExpression(false)
-                                                                                                                                                       .setAllowNull(true)
-                                                                                                                                                       .setDefaultValue(new ModelNode().set(false))
-                                                                                                                                                       .setFlags(AttributeAccess.Flag.RESTART_NONE)
-                                                                                                                                                       .setFieldPathInRepositoryConfiguration(FieldName.QUERY,
-                                                                                                                                                                                              FieldName.INDEXING,
-                                                                                                                                                                                              FieldName.REBUILD_ON_STARTUP,
-                                                                                                                                                                                              FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT)
-                                                                                                                                                       .build();
+                                                                                                                                             ModelKeys.REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT,
+                                                                                                                                             ModelType.BOOLEAN).setXmlName(Attribute.REBUILD_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT.getLocalName())
+                                                                                                                                                               .setAllowExpression(false)
+                                                                                                                                                               .setAllowNull(true)
+                                                                                                                                                               .setDefaultValue(new ModelNode().set(false))
+                                                                                                                                                               .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                                               .setFieldPathInRepositoryConfiguration(FieldName.QUERY,
+                                                                                                                                                                                                      FieldName.INDEXING,
+                                                                                                                                                                                                      FieldName.REBUILD_ON_STARTUP,
+                                                                                                                                                                                                      FieldName.REBUILD_INCLUDE_SYSTEM_CONTENT)
+                                                                                                                                                               .build();
 
     public static final SimpleAttributeDefinition REBUILD_INDEXES_UPON_STARTUP_MODE = new MappedAttributeDefinitionBuilder(
                                                                                                                            ModelKeys.REBUILD_INDEXES_UPON_STARTUP_MODE,
@@ -687,26 +743,22 @@ public class ModelAttributes {
                                                                                                                                                                      FieldName.CLASSNAME)
                                                                                                                               .build();
     public static final SimpleAttributeDefinition STORE_NAME = new MappedAttributeDefinitionBuilder(ModelKeys.STORE_NAME,
-                                                                                                    ModelType.STRING)
-                                                                                .setXmlName(Attribute.STORE_NAME.getLocalName())
-                                                                                .setAllowExpression(false)
-                                                                                .setAllowNull(true)
-                                                                                .setFlags(
-                                                                                        AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                                                                                .build();
+                                                                                                    ModelType.STRING).setXmlName(Attribute.STORE_NAME.getLocalName())
+                                                                                                                     .setAllowExpression(false)
+                                                                                                                     .setAllowNull(true)
+                                                                                                                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                     .build();
 
-
-    public static final ListAttributeDefinition NESTED_STORES =  MappedListAttributeDefinition.Builder.of(ModelKeys.NESTED_STORES,
-                                                                                                        new MappedAttributeDefinitionBuilder(
-                                                                                                                ModelKeys.STORE_NAME,
-                                                                                                                ModelType.STRING)
-                                                                                                                .setAllowExpression(false)
-                                                                                                                .setAllowNull(false)
-                                                                                                                .setFlags(AttributeAccess.Flag.RESTART_NONE)
-                                                                                                                .build())
-                                                                                .setAllowNull(false)
-                                                                                .setFlags(AttributeAccess.Flag.RESTART_NONE)
-                                                                                .build();
+    public static final ListAttributeDefinition NESTED_STORES = MappedListAttributeDefinition.Builder.of(ModelKeys.NESTED_STORES,
+                                                                                                         new MappedAttributeDefinitionBuilder(
+                                                                                                                                              ModelKeys.STORE_NAME,
+                                                                                                                                              ModelType.STRING).setAllowExpression(false)
+                                                                                                                                                               .setAllowNull(false)
+                                                                                                                                                               .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                                               .build())
+                                                                                                     .setAllowNull(false)
+                                                                                                     .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                     .build();
 
     public static final SimpleAttributeDefinition TEXT_EXTRACTOR_CLASSNAME = new MappedAttributeDefinitionBuilder(
                                                                                                                   ModelKeys.TEXT_EXTRACTOR_CLASSNAME,
@@ -768,12 +820,12 @@ public class ModelAttributes {
                                                                                                                                                                                FieldName.USE_ANONYMOUS_ON_FAILED_LOGINS)
                                                                                                                                         .build();
 
-    public static final SimpleAttributeDefinition EXPLODED = new MappedAttributeDefinitionBuilder(ModelKeys.EXPLODED, ModelType.BOOLEAN)
-                                                                                                  .setXmlName(Attribute.EXPLODED.getLocalName())
-                                                                                                  .setAllowExpression(false)
-                                                                                                  .setAllowNull(true)
-                                                                                                  .setDefaultValue(new ModelNode().set(false))
-                                                                                                  .build();
+    public static final SimpleAttributeDefinition EXPLODED = new MappedAttributeDefinitionBuilder(ModelKeys.EXPLODED,
+                                                                                                  ModelType.BOOLEAN).setXmlName(Attribute.EXPLODED.getLocalName())
+                                                                                                                    .setAllowExpression(false)
+                                                                                                                    .setAllowNull(true)
+                                                                                                                    .setDefaultValue(new ModelNode().set(false))
+                                                                                                                    .build();
 
     public static final AttributeDefinition[] SUBSYSTEM_ATTRIBUTES = {};
 
@@ -784,8 +836,11 @@ public class ModelAttributes {
         DEFAULT_WORKSPACE, PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, WORKSPACES_CACHE_CONTAINER,
         DEFAULT_INITIAL_CONTENT, WORKSPACES_INITIAL_CONTENT, MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE, THREAD_POOL, BATCH_SIZE,
         READER_STRATEGY, MODE, SYSTEM_CONTENT_MODE, ASYNC_THREAD_POOL_SIZE, ASYNC_MAX_QUEUE_SIZE, ANALYZER_CLASSNAME,
-        ANALYZER_MODULE, REBUILD_INDEXES_UPON_STARTUP, REBUILD_INDEXES_UPON_STARTUP_MODE, REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT,
-        CLUSTER_NAME, CLUSTER_STACK, GARBAGE_COLLECTION_THREAD_POOL, GARBAGE_COLLECTION_INITIAL_TIME, GARBAGE_COLLECTION_INTERVAL};
+        ANALYZER_MODULE, REBUILD_INDEXES_UPON_STARTUP, REBUILD_INDEXES_UPON_STARTUP_MODE,
+        REBUILD_INDEXES_UPON_STARTUP_INCLUDE_SYSTEM_CONTENT, CLUSTER_NAME, CLUSTER_STACK, GARBAGE_COLLECTION_THREAD_POOL,
+        GARBAGE_COLLECTION_INITIAL_TIME, GARBAGE_COLLECTION_INTERVAL, DOCUMENT_OPTIMIZATION_THREAD_POOL,
+        DOCUMENT_OPTIMIZATION_INITIAL_TIME, DOCUMENT_OPTIMIZATION_INTERVAL, DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET,
+        DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE};
 
     public static final AttributeDefinition[] RAM_INDEX_STORAGE_ATTRIBUTES = {INDEX_STORAGE_TYPE,};
 
@@ -803,20 +858,20 @@ public class ModelAttributes {
     public static final AttributeDefinition[] CUSTOM_INDEX_STORAGE_ATTRIBUTES = {INDEX_STORAGE_TYPE, INDEX_FORMAT, CLASSNAME,
         MODULE,};
 
-    public static final AttributeDefinition[] FILE_BINARY_STORAGE_ATTRIBUTES = { MINIMUM_BINARY_SIZE,
-            MINIMUM_STRING_SIZE, PATH, RELATIVE_TO, STORE_NAME };
+    public static final AttributeDefinition[] FILE_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE, PATH,
+        RELATIVE_TO, STORE_NAME};
 
-    public static final AttributeDefinition[] CACHE_BINARY_STORAGE_ATTRIBUTES = { MINIMUM_BINARY_SIZE,
-            MINIMUM_STRING_SIZE, DATA_CACHE_NAME, METADATA_CACHE_NAME, CACHE_CONTAINER, STORE_NAME };
+    public static final AttributeDefinition[] CACHE_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
+        DATA_CACHE_NAME, METADATA_CACHE_NAME, CACHE_CONTAINER, STORE_NAME};
 
-    public static final AttributeDefinition[] DATABASE_BINARY_STORAGE_ATTRIBUTES = { MINIMUM_BINARY_SIZE,
-            MINIMUM_STRING_SIZE, DATA_SOURCE_JNDI_NAME, STORE_NAME };
+    public static final AttributeDefinition[] DATABASE_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
+        DATA_SOURCE_JNDI_NAME, STORE_NAME};
 
-    public static final AttributeDefinition[] COMPOSITE_BINARY_STORAGE_ATTRIBUTES = { MINIMUM_BINARY_SIZE,
-            MINIMUM_STRING_SIZE, NESTED_STORES };
+    public static final AttributeDefinition[] COMPOSITE_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
+        NESTED_STORES};
 
-    public static final AttributeDefinition[] CUSTOM_BINARY_STORAGE_ATTRIBUTES = { MINIMUM_BINARY_SIZE,
-            MINIMUM_STRING_SIZE, CLASSNAME, MODULE, STORE_NAME };
+    public static final AttributeDefinition[] CUSTOM_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
+        CLASSNAME, MODULE, STORE_NAME};
 
     public static final AttributeDefinition[] SEQUENCER_ATTRIBUTES = {PATH_EXPRESSIONS, SEQUENCER_CLASSNAME, MODULE, PROPERTIES};
     public static final AttributeDefinition[] SOURCE_ATTRIBUTES = {PROJECTIONS, CONNECTOR_CLASSNAME, READONLY, CACHE_TTL_SECONDS,
