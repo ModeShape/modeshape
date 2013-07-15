@@ -86,7 +86,6 @@ public class TikaTextExtractorIntegrationTest {
     }
 
     @Test
-    @Ignore("MODE-1934")
     public void shouldExtractAndIndexContentFromDocFile() throws Exception {
         String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')";
         uploadFileAndCheckExtraction("text-extractor/modeshape.doc", queryString);
@@ -94,7 +93,6 @@ public class TikaTextExtractorIntegrationTest {
 
     @Test
     @FixFor( "MODE-1810" )
-    @Ignore("MODE-1934")
     public void shouldExtractAndIndexContentFromXlsxFile() throws Exception {
         String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'Operations')";
         uploadFileAndCheckExtraction("text-extractor/sample-file.xlsx", queryString);

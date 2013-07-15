@@ -97,7 +97,6 @@ public class TikaTextExtractorTest {
     }
 
     @Test
-    @Ignore("MODE-1934")
     public void shouldSupportExtractingFromDocWordFiles() throws Exception {
         assertThat(extractor.supportsMimeType("application/msword"), is(true));
     }
@@ -123,7 +122,6 @@ public class TikaTextExtractorTest {
     }
 
     @Test
-    @Ignore("MODE-1934")
     public void shouldExtractTextFromDocFile() throws Exception {
         extractTermsFrom("modeshape.doc");
         loadExpectedFrom("modeshape.txt");
@@ -131,7 +129,6 @@ public class TikaTextExtractorTest {
     }
 
     @Test
-    @Ignore("MODE-1934")
     public void shouldExtractTextFromDocxFile() throws Exception {
         extractTermsFrom("modeshape.docx");
         loadExpectedFrom("modeshape.txt");
@@ -172,7 +169,6 @@ public class TikaTextExtractorTest {
 
     @Test
     @FixFor( "MODE-1810" )
-    @Ignore("MODE-1934")
     public void shouldExtractTextFromXlsxFile() throws Exception {
         extractTermsFrom("sample-file.xlsx");
         assertTrue(!extracted.isEmpty());
