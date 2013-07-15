@@ -132,7 +132,6 @@ public class SequencersIntegrationTest {
     }
 
     @Test
-    @Ignore( "MODE-1934" )
     public void shouldSequenceMsOfficeFile() throws Exception {
         uploadFileAndAssertSequenced("/msoffice_file.xls",
                                      "/derived/msoffice",

@@ -38,15 +38,12 @@
         <resource-root path="jempbox-1.7.1.jar" />
         <resource-root path="juniversalchardet-1.0.3.jar" />
         <resource-root path="pdfbox-1.7.1.jar" />
-        <!--
-          See MODE-1934
-        <resource-root path="poi-3.8.jar" />
-        <resource-root path="poi-ooxml-3.8.jar" />
-        <resource-root path="poi-ooxml-schemas-3.8.jar" />
-        <resource-root path="poi-scratchpad-3.8.jar" />
+        <resource-root path="poi-${poi.version}.jar" />
+        <resource-root path="poi-ooxml-${poi.version}.jar" />
+        <resource-root path="poi-ooxml-schemas-${poi.version}.jar" />
+        <resource-root path="poi-scratchpad-${poi.version}.jar" />
         <resource-root path="dom4j-1.6.1.jar" />
         <resource-root path="xmlbeans-2.3.0.jar" />
-        -->
         <resource-root path="tagsoup-1.2.1.jar" />
         <resource-root path="vorbis-java-core-0.1.jar" />
         <resource-root path="vorbis-java-core-0.1-tests.jar" />

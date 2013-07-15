@@ -57,7 +57,6 @@ public class TikaTextExtractorRepositoryTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @Ignore ("MODE-1934")
     public void shouldExtractAndIndexContentFromDocFile() throws Exception {
         startRepositoryWithConfiguration(getResource("repo-config.json"));
         uploadFile("modeshape.doc");
