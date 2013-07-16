@@ -206,9 +206,7 @@ public class SecureHash {
             int bufSize = 1024;
             byte[] buffer = new byte[bufSize];
             int n = in.read(buffer, 0, bufSize);
-            int count = 0;
             while (n != -1) {
-                count += n;
                 digest.update(buffer, 0, n);
                 n = in.read(buffer, 0, bufSize);
             }
@@ -243,9 +241,7 @@ public class SecureHash {
         int bufSize = 1024;
         byte[] buffer = new byte[bufSize];
         int n = stream.read(buffer, 0, bufSize);
-        int count = 0;
         while (n != -1) {
-            count += n;
             digest.update(buffer, 0, n);
             n = stream.read(buffer, 0, bufSize);
         }

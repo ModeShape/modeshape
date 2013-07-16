@@ -105,16 +105,12 @@ public class ResultsComparator {
             System.out.println("ResultSet is null"); //$NON-NLS-1$
             return;
         }
-        int row;
         try {
-            row = -1;
             BufferedReader in = new BufferedReader(new ResultSetReader(results, DELIMITER, compareColumns));
             String line = in.readLine();
             String nextline = null;
             System.out.println("String[] expected = {");
             while (line != null) {
-                row++;
-
                 nextline = in.readLine();
                 if (nextline != null) {
                     System.out.println("\"" + line + "\",");
@@ -126,6 +122,7 @@ public class ResultsComparator {
 
             }
             System.out.println("};");
+            in.close();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -24,33 +24,32 @@
 
 package org.modeshape.webdav;
 
-import com.googlecode.sardine.DavResource;
-import com.googlecode.sardine.Sardine;
-import com.googlecode.sardine.SardineFactory;
-import com.googlecode.sardine.util.SardineException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
-import org.modeshape.common.util.IoUtil;
-import org.modeshape.common.util.StringUtil;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.junit.Before;
+import org.junit.Test;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.StringUtil;
+import com.googlecode.sardine.DavResource;
+import com.googlecode.sardine.Sardine;
+import com.googlecode.sardine.SardineFactory;
+import com.googlecode.sardine.util.SardineException;
 
 /**
- * Integration test for the {@link org.modeshape.webdav.IWebdavStore} default implementation, tested using a real web-dav compliant client.
- * This should be updated whenever the default webdav support is updated (e.g. when fixing compliance bugs).
+ * Integration test for the {@link org.modeshape.webdav.IWebdavStore} default implementation, tested using a real web-dav
+ * compliant client. This should be updated whenever the default webdav support is updated (e.g. when fixing compliance bugs).
  * <p>
  * Ideally this would contain at least the test cases that <a href="http://www.webdav.org/neon/litmus">Litmus</a> has.
  * </p>
- *
+ * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class WebdavStoreClientTest {
@@ -78,7 +77,7 @@ public class WebdavStoreClientTest {
         try {
             assertNotNull(sardine.getResources(uri));
         } catch (SardineException e) {
-            //there seems to be a bug in Sardine146 (which is the only one available via Maven atm)
+            // there seems to be a bug in Sardine146 (which is the only one available via Maven atm)
             assertEquals(302, e.getStatusCode());
         }
     }

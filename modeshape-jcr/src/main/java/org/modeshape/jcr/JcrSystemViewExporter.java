@@ -275,8 +275,12 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
                 Binary binary = value.getBinary();
                 try {
                     InputStream stream = new Base64.InputStream(binary.getStream(), Base64.ENCODE);
-                    while (-1 != (len = stream.read(bytes))) {
-                        contentHandler.characters(new String(bytes, 0, len).toCharArray(), 0, len);
+                    try {
+                        while (-1 != (len = stream.read(bytes))) {
+                            contentHandler.characters(new String(bytes, 0, len).toCharArray(), 0, len);
+                        }
+                    } finally {
+                        stream.close();
                     }
                 } catch (IOException ioe) {
                     throw new RepositoryException(ioe);

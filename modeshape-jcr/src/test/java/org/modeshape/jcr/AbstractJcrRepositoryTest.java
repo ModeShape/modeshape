@@ -23,6 +23,11 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,12 +55,6 @@ import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTest {
 
@@ -104,14 +103,12 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
         if (print && !session().getRootNode().hasNode(path)) {
             // We won't find the node, so print out the information ...
             Node parent = session().getRootNode();
-            int depth = 0;
             for (Segment segment : path(path)) {
                 if (!parent.hasNode(asString(segment))) {
                     System.out.println("Unable to find '" + path + "'; lowest node is '" + parent.getPath() + "'");
                     break;
                 }
                 parent = parent.getNode(asString(segment));
-                ++depth;
             }
         }
 

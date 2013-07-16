@@ -25,6 +25,7 @@ package org.modeshape.common.collection;
 
 import java.util.Map;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.ObjectUtil;
 
 /**
@@ -35,7 +36,6 @@ import org.modeshape.common.util.ObjectUtil;
  */
 @Immutable
 public class ImmutableMapEntry<K, V> implements Map.Entry<K, V> {
-    private static final long serialVersionUID = 1L;
     private final K key;
     private final V value;
 
@@ -50,41 +50,26 @@ public class ImmutableMapEntry<K, V> implements Map.Entry<K, V> {
         this.value = entry.getValue();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Map.Entry#getKey()
-     */
     @Override
     public K getKey() {
         return key;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Map.Entry#getValue()
-     */
     @Override
     public V getValue() {
         return value;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.util.Map.Entry#setValue(java.lang.Object)
-     */
     @Override
     public V setValue( V newValue ) {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
+    @Override
+    public int hashCode() {
+        return HashCode.compute(key, value);
+    }
+
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
@@ -97,11 +82,6 @@ public class ImmutableMapEntry<K, V> implements Map.Entry<K, V> {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         return "" + this.key + " = " + this.getValue();
