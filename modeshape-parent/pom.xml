@@ -459,10 +459,34 @@
             </dependencies>
             <properties>
                 <dataSource.driverClassName>org.h2.Driver</dataSource.driverClassName>
-                <dataSource.driverClassName>org.h2.Driver</dataSource.driverClassName>
                 <dataSource.url>jdbc:h2:mem:${project.build.directory}/db/h2/modeshape</dataSource.url>
                 <dataSource.username>sa</dataSource.username>
                 <dataSource.password/>
+            </properties>
+        </profile>
+
+        <!-- The Oracle11g test environment -->
+        <profile>
+            <id>oracle11g</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>oracle11g</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.oracle</groupId>
+                    <artifactId>ojdbc6</artifactId>
+                    <version>${jdbc.oracle11g.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <dataSource.driverClassName>oracle.jdbc.driver.OracleDriver</dataSource.driverClassName>
+                <dataSource.url>jdbc:oracle:thin:@dev04.mw.lab.eng.bos.redhat.com:1521:qaora11</dataSource.url>
+                <dataSource.username>modeshape</dataSource.username>
+                <dataSource.password>modeshape</dataSource.password>
             </properties>
         </profile>
 

@@ -85,6 +85,10 @@ import org.modeshape.jcr.value.BinaryValue;
  * Note that this mechanism can also be used to override the statements that ModeShape does provide out-of-the-box. In such cases,
  * be sure to place the file on the classpath before the ModeShape JARs so that your file will be discovered first.
  * </p>
+ * <p>
+ * The JDBC driver used needs to be at least JDBC 1.4 (JDK 6) compliant,
+ * because {@link PreparedStatement#setBinaryStream(int parameterIndex, java.io.InputStream x)} is being used.
+ * </p>
  */
 @ThreadSafe
 public class DatabaseBinaryStore extends AbstractBinaryStore {
