@@ -89,7 +89,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
 
     /**
      * Creates a new store instance
-     *
+     * 
      * @param requestResolver a {@link RequestResolver} instance, never null
      * @param contentMapper a {@link ContentMapper} instance, never null
      */
@@ -103,7 +103,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
 
     /**
      * Updates thread-local storage for the current thread to reference the given request.
-     *
+     * 
      * @param request the request to store in thread-local storage; null to clear the storage
      */
     static void setRequest( HttpServletRequest request ) {
@@ -255,7 +255,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
 
     protected static List<String> namesOfChildren( Node node ) throws RepositoryException {
         List<String> children = new LinkedList<String>();
-        for (NodeIterator iter = node.getNodes(); iter.hasNext(); ) {
+        for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
             Node child = iter.nextNode();
             String name = child.getIndex() == 1 ? child.getName() : child.getName() + "[" + child.getIndex() + "]";
             children.add(name);
@@ -471,7 +471,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
 
             Map<String, String> response = new LinkedHashMap<String, String>();
 
-            //update properties
+            // update properties
             for (String propertyName : propertiesToSet.keySet()) {
                 String jcrPropertyName = jcrPropertyName(transaction, resolvedRequest, propertyName);
                 Object value = propertiesToSet.get(propertyName);
@@ -500,7 +500,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                 }
             }
 
-            //remove properties
+            // remove properties
             for (String propertyName : propertiesToRemove) {
                 String jcrPropertyName = jcrPropertyName(transaction, resolvedRequest, propertyName);
                 try {
@@ -533,21 +533,20 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         }
         if (parsedParts.isEmpty()) {
             return webdavPropertyName;
-        } else {
-            //use the last part as the local name of the jcr property
-            String localName = parsedParts.remove(parsedParts.size() - 1);
-            //try to take each part from the webdav property name to see if it matches a session prefix (e.g. jcr:)
-            Session session = sessionFor(transaction, resolvedRequest);
-            List<String> namespacePrefixes = Arrays.asList(session.getNamespacePrefixes());
-            for (int i = parsedParts.size() - 1; i >= 0; i--) {
-                String prefix = parsedParts.get(i);
-                if (namespacePrefixes.contains(prefix)) {
-                    return prefix + ":" + localName;
-                }
-            }
-            //we don't have a jcr-recognized prefix, so we'll just send the plain property
-            return localName;
         }
+        // use the last part as the local name of the jcr property
+        String localName = parsedParts.remove(parsedParts.size() - 1);
+        // try to take each part from the webdav property name to see if it matches a session prefix (e.g. jcr:)
+        Session session = sessionFor(transaction, resolvedRequest);
+        List<String> namespacePrefixes = Arrays.asList(session.getNamespacePrefixes());
+        for (int i = parsedParts.size() - 1; i >= 0; i--) {
+            String prefix = parsedParts.get(i);
+            if (namespacePrefixes.contains(prefix)) {
+                return prefix + ":" + localName;
+            }
+        }
+        // we don't have a jcr-recognized prefix, so we'll just send the plain property
+        return localName;
     }
 
     @Override
@@ -622,7 +621,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
     /**
      * Resolve the URI into a repository name, workspace name, and node path. Note that some URIs might not resolve to a
      * repository (but no workspace or path), a workspace (but no path), or even a repository.
-     *
+     * 
      * @param uri the URI from the request
      * @return the resolved information; never null
      * @throws WebdavException if the URI is invalid or otherwise not acceptable
@@ -634,7 +633,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
 
     /**
      * Get the node that corresponds to the resolved request, using the supplied active transaction.
-     *
+     * 
      * @param transaction the active transaction; may not be null
      * @param request the resolved request; may not be null and must contain a repository name and workspace name
      * @return the node; never null
@@ -647,7 +646,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
 
     /**
      * Determine if the repository and/or workspace named in the supplied request do exist.
-     *
+     * 
      * @param transaction the active transaction; may not be null
      * @param request the resolved request; may not be null and must contain a repository name and workspace name
      * @return true if the repository and/or workspace do exist, or false otherwise
@@ -660,7 +659,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
 
     /**
      * Determine the names of the children given the supplied request
-     *
+     * 
      * @param transaction the active transaction; may not be null
      * @param request the resolved request; may not be null and must contain a repository name and workspace name
      * @return the children names, or null if there are no children
@@ -745,8 +744,8 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             Map<String, String> namespaces = new HashMap<String, String>();
             for (String namespacePrefix : session.getNamespacePrefixes()) {
                 String namespaceURI = session.getNamespaceURI(namespacePrefix);
-                if (!StringUtil.isBlank(namespacePrefix) && !StringUtil.isBlank(namespaceURI) && !namespacePrefix
-                        .equalsIgnoreCase("xmlns")) {
+                if (!StringUtil.isBlank(namespacePrefix) && !StringUtil.isBlank(namespaceURI)
+                    && !namespacePrefix.equalsIgnoreCase("xmlns")) {
                     namespaces.put(namespaceURI, namespacePrefix);
                 }
             }
@@ -807,8 +806,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                         session = RepositoryManager.getSession(request.getRequest(), repositoryName, null);
                         return session.getWorkspace().getAccessibleWorkspaceNames();
                     } catch (RepositoryException e) {
-                        logger().debug(e, "Cannot obtain a session for the repository '{0}': {1}", repositoryName,
-                                       e.getMessage());
+                        logger().debug(e, "Cannot obtain a session for the repository '{0}': {1}", repositoryName, e.getMessage());
                         throw e;
                     } finally {
                         if (session != null) {
@@ -856,7 +854,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
 
     /**
      * Converts the JCR Exceptions to WebDAV ones.
-     *
+     * 
      * @param exception the repository exception
      * @return the WebDAV exception
      */

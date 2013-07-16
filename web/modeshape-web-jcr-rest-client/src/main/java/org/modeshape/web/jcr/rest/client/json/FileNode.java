@@ -109,6 +109,7 @@ public final class FileNode extends JsonNode {
         withChild(IJcrConstants.CONTENT_PROPERTY, content);
     }
 
+    @SuppressWarnings( "deprecation" )
     private JSONObject createContent( File file ) throws JSONException {
         JSONObject content = new JSONObject();
 

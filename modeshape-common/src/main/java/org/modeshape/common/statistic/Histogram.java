@@ -33,6 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.math.MathOperations;
+import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.StringUtil;
 
 /**
@@ -445,6 +446,12 @@ public class Histogram<T extends Number> {
 
         protected Class<T> getNumberClass() {
             return Histogram.this.math.getOperandClass();
+        }
+
+        @Override
+        public int hashCode() {
+            // Equals asserts that two buckets are equal when all values are equal ...
+            return HashCode.compute(lowerBound, upperBound, width);
         }
 
         @SuppressWarnings( "unchecked" )

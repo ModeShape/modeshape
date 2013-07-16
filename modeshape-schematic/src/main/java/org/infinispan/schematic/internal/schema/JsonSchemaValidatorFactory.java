@@ -1188,14 +1188,14 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                 }
                 if (success) problems.recordSuccess();
             } else if (parent instanceof List) {
-                //we are dealing with an optional array of items
+                // we are dealing with an optional array of items
                 List<?> items = (List<?>)parent;
                 int i = 1;
                 boolean success = true;
                 for (Object item : items) {
                     itemProblems.clear();
                     if (item instanceof Document) {
-                        itemValidator.validate(null, null, (Document) item, pathToParent, itemProblems, resolver);
+                        itemValidator.validate(null, null, (Document)item, pathToParent, itemProblems, resolver);
                         if (itemProblems.hasProblem()) {
                             success = false;
                         }
@@ -1205,8 +1205,8 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                         itemValidator.validate(item, fieldName, parent, pathToParent, itemProblems, resolver);
                         if (itemProblems.hasProblem()) {
                             problems.recordError(path, "The '" + fieldName + "' field on '" + pathToParent
-                                    + "' is an array, but the " + i + th(i)
-                                    + " item does not satisfy the schema for the " + i + th(i) + " item");
+                                                       + "' is an array, but the " + i + th(i)
+                                                       + " item does not satisfy the schema for the " + i + th(i) + " item");
                             success = false;
                         }
                     }
@@ -1456,7 +1456,12 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
                 // we need to validate each defined additional property which has a schema
                 for (Field field : parent.fields()) {
                     if (field.getValue() instanceof Document) {
-                        validator.validate(null, null, (Document)field.getValue(), pathToParent.with(field.getName()), problems, resolver);
+                        validator.validate(null,
+                                           null,
+                                           (Document)field.getValue(),
+                                           pathToParent.with(field.getName()),
+                                           problems,
+                                           resolver);
                     } else {
                         validator.validate(field.getValue(), field.getName(), parent, pathToParent, problems, resolver);
                     }
@@ -1563,7 +1568,6 @@ public class JsonSchemaValidatorFactory implements Validator.Factory {
     }
 
     protected static class SingleProblem implements Problems {
-        private static final long serialVersionUID = 1L;
         private ProblemType type;
         private Path path;
         private String message;

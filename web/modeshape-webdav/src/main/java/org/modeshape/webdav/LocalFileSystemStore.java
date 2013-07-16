@@ -40,7 +40,7 @@ import org.modeshape.webdav.exceptions.WebdavException;
 
 /**
  * Reference Implementation of WebdavStore
- *
+ * 
  * @author joa
  * @author re
  * @author hchiorea@redhat.com
@@ -272,13 +272,14 @@ public class LocalFileSystemStore implements IWebdavStore {
         }
         File propertiesFileParent = file.isFile() ? file.getParentFile() : file;
         if (!propertiesFileParent.canWrite()) {
-            throw new WebdavException("Cannot write into the " + propertiesFileParent.getAbsolutePath() + " folder. Make sure that the FS permissions are correct");
+            throw new WebdavException("Cannot write into the " + propertiesFileParent.getAbsolutePath()
+                                      + " folder. Make sure that the FS permissions are correct");
         }
         String propertiesFileName = file.getName() + "_webdav.properties";
         return new File(propertiesFileParent, propertiesFileName);
     }
 
-    private Map<String, Object> readExistingProperties(File propertiesFile) throws IOException {
+    private Map<String, Object> readExistingProperties( File propertiesFile ) throws IOException {
         Map<String, Object> properties = new HashMap<String, Object>();
         String fileContent = IoUtil.read(propertiesFile);
         if (StringUtil.isBlank(fileContent)) {
@@ -303,12 +304,12 @@ public class LocalFileSystemStore implements IWebdavStore {
                 array.add(valueFromString(element));
             }
             return array;
-        } else {
-            return value;
         }
+        return value;
     }
 
-    private void writeProperties(File propertiesFile, Map<String, Object> properties) throws IOException {
+    private void writeProperties( File propertiesFile,
+                                  Map<String, Object> properties ) throws IOException {
         StringBuilder content = new StringBuilder();
         for (Iterator<Map.Entry<String, Object>> it = properties.entrySet().iterator(); it.hasNext();) {
             Map.Entry<String, Object> entry = it.next();
@@ -321,10 +322,10 @@ public class LocalFileSystemStore implements IWebdavStore {
         IoUtil.write(content.toString(), propertiesFile);
     }
 
-    private String valueToString(Object value) {
+    private String valueToString( Object value ) {
         if (value instanceof List) {
             StringBuilder builder = new StringBuilder("[");
-            for (Iterator<?> it = ((List<?>) value).iterator(); it.hasNext(); ) {
+            for (Iterator<?> it = ((List<?>)value).iterator(); it.hasNext();) {
                 builder.append(valueToString(it.next()));
                 if (it.hasNext()) {
                     builder.append(",");
@@ -332,9 +333,8 @@ public class LocalFileSystemStore implements IWebdavStore {
             }
             builder.append("]");
             return builder.toString();
-        } else {
-            return value.toString();
         }
+        return value.toString();
     }
 
     @Override
@@ -355,7 +355,7 @@ public class LocalFileSystemStore implements IWebdavStore {
     @Override
     public Map<String, String> getCustomNamespaces( ITransaction transaction,
                                                     String resourceUri ) {
-        //the default FS based implementation does not use custom namespaces
+        // the default FS based implementation does not use custom namespaces
         return Collections.emptyMap();
     }
 }

@@ -52,6 +52,11 @@ public class XPathQueryParser implements QueryParser {
     }
 
     @Override
+    public int hashCode() {
+        return LANGUAGE.hashCode();
+    }
+
+    @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
         if (obj instanceof QueryParser) {

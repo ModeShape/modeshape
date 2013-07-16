@@ -81,6 +81,11 @@ public class XPath {
         }
 
         @Override
+        public int hashCode() {
+            return wrapped.hashCode();
+        }
+
+        @Override
         public boolean equals( Object obj ) {
             if (obj == this) return true;
             if (obj instanceof Negation) {
@@ -101,16 +106,10 @@ public class XPath {
             this.right = right;
         }
 
-        /**
-         * @return left
-         */
         public Component getLeft() {
             return left;
         }
 
-        /**
-         * @return right
-         */
         public Component getRight() {
             return right;
         }
@@ -126,9 +125,6 @@ public class XPath {
             this.operator = operator;
         }
 
-        /**
-         * @return operator
-         */
         public Operator getOperator() {
             return operator;
         }
@@ -141,6 +137,11 @@ public class XPath {
         @Override
         public String toString() {
             return getLeft() + " " + operator + " " + getRight();
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(operator, getLeft(), getRight());
         }
 
         @Override
@@ -176,6 +177,11 @@ public class XPath {
         }
 
         @Override
+        public int hashCode() {
+            return HashCode.compute(operator, getLeft(), getRight());
+        }
+
+        @Override
         public boolean equals( Object obj ) {
             if (obj == this) return true;
             if (obj instanceof NodeComparison) {
@@ -201,6 +207,11 @@ public class XPath {
         @Override
         public String toString() {
             return getLeft() + " + " + getRight();
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(getLeft(), getRight());
         }
 
         @Override
@@ -231,6 +242,11 @@ public class XPath {
         }
 
         @Override
+        public int hashCode() {
+            return HashCode.compute(getLeft(), getRight());
+        }
+
+        @Override
         public boolean equals( Object obj ) {
             if (obj == this) return true;
             if (obj instanceof Subtract) {
@@ -258,6 +274,11 @@ public class XPath {
         }
 
         @Override
+        public int hashCode() {
+            return HashCode.compute(getLeft(), getRight());
+        }
+
+        @Override
         public boolean equals( Object obj ) {
             if (obj == this) return true;
             if (obj instanceof And) {
@@ -277,6 +298,11 @@ public class XPath {
         @Override
         public String toString() {
             return getLeft() + " union " + getRight();
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(getLeft(), getRight());
         }
 
         @Override
@@ -302,6 +328,11 @@ public class XPath {
         }
 
         @Override
+        public int hashCode() {
+            return HashCode.compute(getLeft(), getRight());
+        }
+
+        @Override
         public boolean equals( Object obj ) {
             if (obj == this) return true;
             if (obj instanceof Intersect) {
@@ -321,6 +352,11 @@ public class XPath {
         @Override
         public String toString() {
             return getLeft() + " except " + getRight();
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(getLeft(), getRight());
         }
 
         @Override
@@ -351,6 +387,11 @@ public class XPath {
         }
 
         @Override
+        public int hashCode() {
+            return HashCode.compute(getLeft(), getRight());
+        }
+
+        @Override
         public boolean equals( Object obj ) {
             if (obj == this) return true;
             if (obj instanceof Or) {
@@ -362,6 +403,11 @@ public class XPath {
     }
 
     public static class ContextItem extends Component {
+        @Override
+        public int hashCode() {
+            return 1;
+        }
+
         @Override
         public boolean equals( Object obj ) {
             return obj == this || obj instanceof ContextItem;
@@ -380,9 +426,6 @@ public class XPath {
             this.value = value;
         }
 
-        /**
-         * @return value
-         */
         public String getValue() {
             return value;
         }
@@ -398,6 +441,11 @@ public class XPath {
 
         public int getValueAsInteger() {
             return Integer.parseInt(value);
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(value);
         }
 
         @Override
@@ -427,16 +475,10 @@ public class XPath {
             this.arguments = arguments;
         }
 
-        /**
-         * @return name
-         */
         public NameTest getName() {
             return name;
         }
 
-        /**
-         * @return arguments
-         */
         public List<Component> getParameters() {
             return arguments;
         }
@@ -448,6 +490,11 @@ public class XPath {
                 args.add(arg.collapse());
             }
             return new FunctionCall(name, args);
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(name, arguments);
         }
 
         @Override
@@ -489,9 +536,6 @@ public class XPath {
             this.orderBy = orderBy;
         }
 
-        /**
-         * @return relative
-         */
         public boolean isRelative() {
             return relative;
         }
@@ -505,9 +549,6 @@ public class XPath {
             return orderBy;
         }
 
-        /**
-         * @return steps
-         */
         public List<StepExpression> getSteps() {
             return steps;
         }
@@ -537,14 +578,17 @@ public class XPath {
         }
 
         @Override
+        public int hashCode() {
+            return HashCode.compute(relative, orderBy, steps);
+        }
+
+        @Override
         public boolean equals( Object obj ) {
             if (obj == this) return true;
             if (obj instanceof PathExpression) {
                 PathExpression that = (PathExpression)obj;
-                if (this.relative != that.relative) return false;
-                if (this.orderBy != null && !this.orderBy.equals(that.orderBy)) return false;
-                if (this.orderBy == null && that.orderBy != null) return false;
-                return this.steps.equals(that.steps);
+                return this.relative == that.relative && ObjectUtil.isEqualWithNulls(this.orderBy, that.orderBy)
+                       && this.steps.equals(that.steps);
             }
             return false;
         }
@@ -570,16 +614,10 @@ public class XPath {
             this.predicates = predicates;
         }
 
-        /**
-         * @return nodeTest
-         */
         public Component getPrimaryExpression() {
             return primaryExpression;
         }
 
-        /**
-         * @return predicates
-         */
         public List<Component> getPredicates() {
             return predicates;
         }
@@ -587,6 +625,11 @@ public class XPath {
         @Override
         public Component collapse() {
             return predicates.isEmpty() ? primaryExpression.collapse() : this;
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(primaryExpression, predicates);
         }
 
         @Override
@@ -606,6 +649,11 @@ public class XPath {
     }
 
     public static class DescendantOrSelf extends StepExpression {
+        @Override
+        public int hashCode() {
+            return 1;
+        }
+
         @Override
         public boolean equals( Object obj ) {
             return obj == this || obj instanceof DescendantOrSelf;
@@ -629,16 +677,10 @@ public class XPath {
             this.predicates = predicates;
         }
 
-        /**
-         * @return nodeTest
-         */
         public NodeTest getNodeTest() {
             return nodeTest;
         }
 
-        /**
-         * @return predicates
-         */
         public List<Component> getPredicates() {
             return predicates;
         }
@@ -646,6 +688,11 @@ public class XPath {
         @Override
         public Component collapse() {
             return predicates.isEmpty() ? nodeTest.collapse() : this;
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(nodeTest, predicates);
         }
 
         @Override
@@ -675,9 +722,6 @@ public class XPath {
             this.wrapped = wrapped; // may be null
         }
 
-        /**
-         * @return wrapped
-         */
         public Component getWrapped() {
             return wrapped;
         }
@@ -685,6 +729,11 @@ public class XPath {
         @Override
         public Component collapse() {
             return wrapped instanceof BinaryComponent ? this : wrapped;
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(wrapped);
         }
 
         @Override
@@ -786,9 +835,6 @@ public class XPath {
             this.nameTest = nameTest;
         }
 
-        /**
-         * @return nodeTest
-         */
         public NameTest getNameTest() {
             return nameTest;
         }
@@ -796,6 +842,11 @@ public class XPath {
         @Override
         public String toString() {
             return "@" + nameTest;
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(nameTest);
         }
 
         @Override
@@ -812,6 +863,11 @@ public class XPath {
 
     public static class AnyKindTest extends KindTest {
         @Override
+        public int hashCode() {
+            return 1;
+        }
+
+        @Override
         public boolean equals( Object obj ) {
             return obj == this || obj instanceof AnyKindTest;
         }
@@ -824,6 +880,11 @@ public class XPath {
 
     public static class TextTest extends KindTest {
         @Override
+        public int hashCode() {
+            return 1;
+        }
+
+        @Override
         public boolean equals( Object obj ) {
             return obj == this || obj instanceof TextTest;
         }
@@ -835,6 +896,11 @@ public class XPath {
     }
 
     public static class CommentTest extends KindTest {
+        @Override
+        public int hashCode() {
+            return 1;
+        }
+
         @Override
         public boolean equals( Object obj ) {
             return obj == this || obj instanceof CommentTest;
@@ -853,11 +919,13 @@ public class XPath {
             this.nameOrStringLiteral = nameOrStringLiteral;
         }
 
-        /**
-         * @return nameOrStringLiteral
-         */
         public String getNameOrStringLiteral() {
             return nameOrStringLiteral;
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(nameOrStringLiteral);
         }
 
         @Override
@@ -889,18 +957,17 @@ public class XPath {
             this.elementOrSchemaElementTest = schemaElementTest;
         }
 
-        /**
-         * @return elementOrSchemaElementTest
-         */
         public ElementTest getElementTest() {
             return elementOrSchemaElementTest instanceof ElementTest ? (ElementTest)elementOrSchemaElementTest : null;
         }
 
-        /**
-         * @return elementOrSchemaElementTest
-         */
         public SchemaElementTest getSchemaElementTest() {
             return elementOrSchemaElementTest instanceof SchemaElementTest ? (SchemaElementTest)elementOrSchemaElementTest : null;
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(elementOrSchemaElementTest);
         }
 
         @Override
@@ -936,11 +1003,13 @@ public class XPath {
             return attributeNameOrWildcard;
         }
 
-        /**
-         * @return typeName
-         */
         public NameTest getTypeName() {
             return typeName;
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(typeName, attributeNameOrWildcard);
         }
 
         @Override
@@ -977,11 +1046,13 @@ public class XPath {
             return elementNameOrWildcard;
         }
 
-        /**
-         * @return typeName
-         */
         public NameTest getTypeName() {
             return typeName;
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(typeName, elementNameOrWildcard);
         }
 
         @Override
@@ -1016,6 +1087,11 @@ public class XPath {
         }
 
         @Override
+        public int hashCode() {
+            return HashCode.compute(elementDeclarationName);
+        }
+
+        @Override
         public boolean equals( Object obj ) {
             if (obj == this) return true;
             if (obj instanceof SchemaElementTest) {
@@ -1043,6 +1119,11 @@ public class XPath {
          */
         public NameTest getAttributeDeclarationName() {
             return attributeDeclarationName;
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(attributeDeclarationName);
         }
 
         @Override
@@ -1083,6 +1164,11 @@ public class XPath {
         @Override
         public Iterator<OrderBySpec> iterator() {
             return new ReadOnlyIterator<OrderBySpec>(orderBySpecifications.iterator());
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(orderBySpecifications);
         }
 
         @Override
@@ -1136,7 +1222,8 @@ public class XPath {
             this.path = null;
         }
 
-        public OrderBySpec(Order order, PathExpression path) {
+        public OrderBySpec( Order order,
+                            PathExpression path ) {
             this.order = order;
             this.scoreFunction = null;
             this.attributeName = null;
@@ -1145,7 +1232,7 @@ public class XPath {
 
         /**
          * Gets child axis for this order specification.
-         *
+         * 
          * @return child axis node or null if order is defined by an attribute or score function.
          */
         public PathExpression getPath() {
@@ -1178,6 +1265,11 @@ public class XPath {
          */
         public Order getOrder() {
             return order;
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCode.compute(order);
         }
 
         @Override

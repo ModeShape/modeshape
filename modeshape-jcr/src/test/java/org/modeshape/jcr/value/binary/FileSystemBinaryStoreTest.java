@@ -26,21 +26,8 @@ package org.modeshape.jcr.value.binary;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
-import org.junit.After;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import org.junit.Before;
-import org.junit.Test;
-import org.modeshape.common.FixFor;
-import org.modeshape.common.statistic.Stopwatch;
-import org.modeshape.common.util.FileUtil;
-import org.modeshape.common.util.IoUtil;
-import org.modeshape.common.util.SecureHash;
-import org.modeshape.common.util.SecureHash.Algorithm;
-import org.modeshape.jcr.api.Binary;
-import org.modeshape.jcr.value.BinaryKey;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -67,6 +54,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.modeshape.common.FixFor;
+import org.modeshape.common.statistic.Stopwatch;
+import org.modeshape.common.util.FileUtil;
+import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.SecureHash;
+import org.modeshape.common.util.SecureHash.Algorithm;
+import org.modeshape.jcr.api.Binary;
+import org.modeshape.jcr.value.BinaryKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
 
@@ -75,10 +75,14 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
     public static final String[] CONTENT = new String[] {
         "Lorem ipsum" + UUID.randomUUID().toString(),
         "Lorem ipsum pulvinar" + UUID.randomUUID().toString(),
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel felis tellus, at pellentesque sem. " + UUID.randomUUID().toString(),
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec tortor nunc, blandit in tempor ut, venenatis ac magna. Vestibulum gravida." + UUID.randomUUID().toString(),
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam volutpat tortor non eros bibendum vitae consectetur lacus eleifend. Mauris tempus." + UUID.randomUUID().toString(),
-        "Morbi pulvinar volutpat sem id sagittis. Vestibulum ornare urna at massa iaculis vitae tincidunt nisi volutpat. Suspendisse auctor gravida viverra." + UUID.randomUUID().toString()};
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel felis tellus, at pellentesque sem. "
+        + UUID.randomUUID().toString(),
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec tortor nunc, blandit in tempor ut, venenatis ac magna. Vestibulum gravida."
+        + UUID.randomUUID().toString(),
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam volutpat tortor non eros bibendum vitae consectetur lacus eleifend. Mauris tempus."
+        + UUID.randomUUID().toString(),
+        "Morbi pulvinar volutpat sem id sagittis. Vestibulum ornare urna at massa iaculis vitae tincidunt nisi volutpat. Suspendisse auctor gravida viverra."
+        + UUID.randomUUID().toString()};
 
     public static final String[] CONTENT_HASHES;
 
@@ -131,9 +135,9 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
     }
 
     @Override
-    @Test(expected = BinaryStoreException.class)
+    @Test( expected = BinaryStoreException.class )
     public void shouldStoreZeroLengthBinary() throws BinaryStoreException, IOException {
-        //the file system binary store will not store a 0 byte size content
+        // the file system binary store will not store a 0 byte size content
         super.shouldStoreZeroLengthBinary();
     }
 
@@ -262,6 +266,8 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
     public void shouldCopyFilesUsingStreams() throws Exception {
         // Copy a large file into a temporary file ...
         File tempFile = File.createTempFile("copytest", "pdf");
+        RandomAccessFile destinationRaf = null;
+        RandomAccessFile originalRaf = null;
         try {
             URL sourceUrl = getClass().getResource("/docs/postgresql-8.4.1-US.pdf");
             assertThat(sourceUrl, is(notNullValue()));
@@ -273,8 +279,8 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
             boolean useBufferedStream = true;
             final int bufferSize = AbstractBinaryStore.bestBufferSize(sourceFile.length());
 
-            RandomAccessFile destinationRaf = new RandomAccessFile(tempFile, "rw");
-            RandomAccessFile originalRaf = new RandomAccessFile(sourceFile, "r");
+            destinationRaf = new RandomAccessFile(tempFile, "rw");
+            originalRaf = new RandomAccessFile(sourceFile, "r");
 
             FileChannel destinationChannel = destinationRaf.getChannel();
             OutputStream output = Channels.newOutputStream(destinationChannel);
@@ -294,6 +300,8 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
                                + sw.getTotalDuration());
         } finally {
             tempFile.delete();
+            if (destinationRaf != null) destinationRaf.close();
+            if (originalRaf != null) originalRaf.close();
         }
 
     }
@@ -321,6 +329,7 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
                     while ((available = is.read(buff)) != -1) {
                         fos.write(buff, 0, available);
                     }
+                    fos.close();
 
                     return IoUtil.read(tempFile);
                 } finally {

@@ -23,14 +23,18 @@
  */
 package org.modeshape.sequencer.mp3;
 
-import org.jaudiotagger.audio.AudioFile;
-import org.jaudiotagger.audio.AudioFileIO;
-import static org.jaudiotagger.tag.FieldKey.*;
-import org.jaudiotagger.tag.Tag;
+import static org.jaudiotagger.tag.FieldKey.ALBUM;
+import static org.jaudiotagger.tag.FieldKey.ARTIST;
+import static org.jaudiotagger.tag.FieldKey.COMMENT;
+import static org.jaudiotagger.tag.FieldKey.TITLE;
+import static org.jaudiotagger.tag.FieldKey.YEAR;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.logging.Level;
+import org.jaudiotagger.audio.AudioFile;
+import org.jaudiotagger.audio.AudioFileIO;
+import org.jaudiotagger.tag.Tag;
 
 /**
  * Utility for extracting metadata from MP3 files.
@@ -58,6 +62,7 @@ public class Mp3Metadata {
             while (stream.read(b) != -1) {
                 fileOutputStream.write(b);
             }
+            fileOutputStream.close();
             AudioFileIO.logger.getParent().setLevel(Level.OFF);
             AudioFile f = AudioFileIO.read(tmpFile);
             Tag tag = f.getTag();
