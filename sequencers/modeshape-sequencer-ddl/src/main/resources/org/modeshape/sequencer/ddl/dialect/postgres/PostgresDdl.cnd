@@ -169,7 +169,6 @@
 [postgresddl:copyStatement]             > ddl:statement mixin
 [postgresddl:deallocateStatement]       > ddl:statement mixin
 [postgresddl:declareStatement]          > ddl:statement mixin
-[postgresddl:discardStatement]          > ddl:statement mixin
 [postgresddl:explainStatement]          > ddl:statement mixin
 [postgresddl:fetchStatement]            > ddl:statement mixin
 [postgresddl:listenStatement]           > ddl:statement mixin
