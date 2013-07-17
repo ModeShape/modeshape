@@ -301,7 +301,7 @@ public class DoPropfind extends AbstractMethod {
                 generatedXML.writeElement("DAV::propstat", XMLWriter.OPENING);
 
                 generatedXML.writeElement("DAV::prop", XMLWriter.OPENING);
-                writeCustomProperties(transaction, generatedXML, path, true);
+                writeCustomProperties(transaction, generatedXML, path, true, propertiesVector);
 
                 generatedXML.writeProperty("DAV::creationdate", creationdate);
                 generatedXML.writeElement("DAV::displayname", XMLWriter.OPENING);
@@ -338,7 +338,7 @@ public class DoPropfind extends AbstractMethod {
                 generatedXML.writeElement("DAV::propstat", XMLWriter.OPENING);
                 generatedXML.writeElement("DAV::prop", XMLWriter.OPENING);
 
-                writeCustomProperties(transaction, generatedXML, path, false);
+                writeCustomProperties(transaction, generatedXML, path, false, propertiesVector);
                 generatedXML.writeElement("DAV::creationdate", XMLWriter.NO_CONTENT);
                 generatedXML.writeElement("DAV::displayname", XMLWriter.NO_CONTENT);
                 if (!isFolder) {
@@ -369,7 +369,7 @@ public class DoPropfind extends AbstractMethod {
                 generatedXML.writeElement("DAV::propstat", XMLWriter.OPENING);
                 generatedXML.writeElement("DAV::prop", XMLWriter.OPENING);
 
-                writeCustomProperties(transaction, generatedXML, path, true);
+                writeCustomProperties(transaction, generatedXML, path, true, propertiesVector);
 
                 Enumeration<String> properties = propertiesVector.elements();
 
@@ -602,12 +602,16 @@ public class DoPropfind extends AbstractMethod {
     private void writeCustomProperties( ITransaction transaction,
                                         XMLWriter generatedXML,
                                         String path,
-                                        boolean includeValue) {
+                                        boolean includeValue,
+                                        Vector<String> propertiesFilter ) {
         Map<String, Object> customProperties = store.getCustomProperties(transaction, path);
         if (customProperties.isEmpty()) {
             return;
         }
         for (String propertyName : customProperties.keySet()) {
+            if (propertiesFilter != null && !propertiesFilter.contains(propertyName)) {
+                continue;
+            }
             if (includeValue) {
                 generatedXML.writeProperty(propertyName, customProperties.get(propertyName).toString());
             } else {
