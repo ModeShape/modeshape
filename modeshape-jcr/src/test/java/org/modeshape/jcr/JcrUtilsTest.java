@@ -21,22 +21,40 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.api;
+package org.modeshape.jcr;
+
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+import org.junit.Before;
+import org.junit.Test;
+import org.modeshape.common.FixFor;
 
 /**
- * A specialization of the standard JCR {@link javax.jcr.Session} interface that returns the ModeShape-specific extension
- * interfaces from {@link #getWorkspace()} and {@link #getRepository()}.
+ * A test class for {@link JcrUtils}.
  */
-public interface Session extends javax.jcr.Session {
+public final class JcrUtilsTest {
 
-    /**
-     * @return a collection of JCR-related utilities (never <code>null</code>)
-     */
-    JcrUtils getUtils();
+    private static final String PUBLIC_NAME = "a|b]c[d:e/f*g";
+    private static final String JCR_NAME = "a" + '\uF07C' + 'b' + '\uF05D' + 'c' + '\uF05B' + 'd' + '\uF03A' + 'e' + '\uF02F'
+                                           + 'f' + '\uF02A' + 'g';
 
-    @Override
-    public Workspace getWorkspace();
+    private JcrUtils utils;
 
-    @Override
-    public Repository getRepository();
+    @Before
+    public void createUtils() {
+        this.utils = new JcrUtils();
+    }
+
+    @Test
+    @FixFor( "MODE-1956" )
+    public void shouldDecodeNameWithUnicodeSubstitutionCharacters() {
+        assertThat(this.utils.decode(JCR_NAME), is(PUBLIC_NAME));
+    }
+
+    @Test
+    @FixFor( "MODE-1956" )
+    public void shouldEncodeNameWithIllegalCharacters() {
+        assertThat(this.utils.encode(PUBLIC_NAME), is(JCR_NAME));
+    }
+
 }
