@@ -21,22 +21,33 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.api;
+package org.modeshape.jcr;
+
+import org.modeshape.jcr.value.Path;
 
 /**
- * A specialization of the standard JCR {@link javax.jcr.Session} interface that returns the ModeShape-specific extension
- * interfaces from {@link #getWorkspace()} and {@link #getRepository()}.
+ * A collection of JCR-related utilities
  */
-public interface Session extends javax.jcr.Session {
+public final class JcrUtils implements org.modeshape.jcr.api.JcrUtils {
 
     /**
-     * @return a collection of JCR-related utilities (never <code>null</code>)
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.jcr.api.JcrUtils#decode(java.lang.String)
      */
-    JcrUtils getUtils();
-
     @Override
-    public Workspace getWorkspace();
+    public String decode( final String jcrNodeName ) {
+        return Path.DEFAULT_DECODER.decode(jcrNodeName);
+    }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.jcr.api.JcrUtils#encode(java.lang.String)
+     */
     @Override
-    public Repository getRepository();
+    public String encode( final String publicName ) {
+        return Path.DEFAULT_ENCODER.encode(publicName);
+    }
+
 }
