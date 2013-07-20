@@ -79,7 +79,7 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
 
         try {
             int eventTypes = Event.NODE_ADDED | Event.PROPERTY_ADDED;
-            ClusteringEventListener listener = new ClusteringEventListener(2);
+            ClusteringEventListener listener = new ClusteringEventListener(3);
             session2.getWorkspace().getObservationManager().addEventListener(listener, eventTypes, null, true, null, null, true);
 
             Node testNode = session1.getRootNode().addNode("testNode");
@@ -287,13 +287,13 @@ public class ClusteredRepositoryTest extends AbstractTransactionalTest {
         @Override
         public void onEvent( EventIterator events ) {
             while (events.hasNext()) {
-                eventsLatch.countDown();
                 Event event = (Event)events.nextEvent();
                 try {
                     paths.add(event.getPath());
                 } catch (RepositoryException e) {
                     throw new RuntimeException(e);
                 }
+                eventsLatch.countDown();
             }
         }
 
