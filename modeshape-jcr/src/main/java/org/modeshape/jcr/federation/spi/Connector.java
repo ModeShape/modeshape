@@ -36,6 +36,7 @@ import org.infinispan.schematic.document.Document;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
@@ -153,6 +154,15 @@ public abstract class Connector {
     private ConnectorChangeSetFactory connectorChangedSetFactory;
 
     /**
+     * The {@link Environment} instance in which the repository operates. This should be used by connectors which need
+     * to perform class-path related operations.
+     * <p>
+     * The field is assigned via reflection before ModeShape calls {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
+     * </p>     *
+     */
+    private Environment environment;
+
+    /**
      * Ever connector is expected to have a no-argument constructor, although the class should never initialize any of the data at
      * this time. Instead, all initialization should be performed in the {@link #initialize} method.
      */
@@ -262,6 +272,15 @@ public abstract class Connector {
      */
     protected TransactionManager getTransactionManager() {
         return transactionManager;
+    }
+
+    /**
+     * Returns the repository environment that was set during connector initialization
+     *
+     * @return a {@code non-null} {@link Environment} instace.
+     */
+    protected Environment getEnvironment() {
+        return environment;
     }
 
     /**

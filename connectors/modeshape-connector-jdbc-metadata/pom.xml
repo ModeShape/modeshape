@@ -1,0 +1,42 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-connectors</artifactId>
+        <version>3.4-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <!-- The groupId and version values are inherited from parent -->
+    <artifactId>modeshape-connector-jdbc-metadata</artifactId>
+    <packaging>jar</packaging>
+    <name>ModeShape Connector to JDBC Schemas</name>
+    <description>ModeShape Connector that processes JDBC metadata</description>
+    <url>http://www.modeshape.org</url>
+
+    <!--
+        Define the dependencies.  Note that all version and scopes default to those
+        defined in the dependencyManagement section of the parent pom.
+    -->
+    <dependencies>
+        <!--This needs to be overwritten, because the default scope is test -->
+        <dependency>
+            <groupId>c3p0</groupId>
+            <artifactId>c3p0</artifactId>
+        </dependency>
+        <!-- Test dependencies (defined in parent) -->
+        <dependency>
+            <groupId>commons-naming</groupId>
+            <artifactId>commons-naming-core</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <testResources>
+            <testResource>
+                <directory>${project.basedir}/src/test/resources</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
+    </build>
+</project>

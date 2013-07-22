@@ -1,0 +1,19 @@
+{
+    "name" : "Federated repository which uses a JDBC Metadata External Source",
+    "jndiName" : "java:/testRepo",
+    "workspaces" : {
+        "predefined" : ["ws1", "ws2"]
+    },
+    "externalSources" : {
+        "jdbc-meta" : {
+            "classname" : "org.modeshape.connector.meta.jdbc.JdbcMetadataConnector",
+            "dataSourceJndiName" : "java:/testDS",
+            "maximumConnectionsInPool" : "${dataSource.maximumConnectionsInPool}",
+            "minimumConnectionsInPool" : "${dataSource.minimumConnectionsInPool}",
+            "maximumConnectionIdleTimeInSeconds" : "${dataSource.maximumConnectionIdleTimeInSeconds}",
+            "maximumSizeOfStatementCache" : "${dataSource.maximumSizeOfStatementCache}",
+            "numberOfConnectionsToAcquireAsNeeded" : "${dataSource.numberOfConnectionsToAcquireAsNeeded}",
+            "retryLimit" : "${dataSource.retryLimit}"
+        }
+    }
+}
