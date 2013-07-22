@@ -681,6 +681,7 @@
                     </systemProperties>
                     <argLine>-Xmx1524M ${debug.argline} -XX:MaxPermSize=256M -Djava.awt.headless=true</argLine>
                     <runOrder>alphabetical</runOrder>
+                    <useFile>false</useFile>
                 </configuration>
             </plugin>
 
