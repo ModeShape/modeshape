@@ -164,6 +164,15 @@
             </includes>
         </dependencySet>
 
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>${jboss.eap.modules.location}/org/modeshape/connector/jdbc/metadata/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-connector-jdbc-metadata:jar</include>
+                <include>c3p0:c3p0:jar</include>
+            </includes>
+        </dependencySet>
+
         <!--Sequencers-->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
