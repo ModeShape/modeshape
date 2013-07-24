@@ -254,11 +254,11 @@
         <jboss.logging.version>3.1.2.GA</jboss.logging.version>
 
         <sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
-        <jdbc.mysql.version>5.0.7</jdbc.mysql.version>
         <jdbc.derby.version>10.8.1.2</jdbc.derby.version>
         <jdbc.hsqldb.version>2.2.9</jdbc.hsqldb.version>
         <jdbc.h2.version>1.3.172</jdbc.h2.version>
-        <jdbc.postgresql.version>9.2-1003-jdbc4</jdbc.postgresql.version>
+        <jdbc.postgresql9.version>9.2-1002.jdbc4</jdbc.postgresql9.version>
+        <jdbc.postgresql8.version>8.2-504.jdbc3</jdbc.postgresql8.version>
         <jdbc.mysql5.version>5.1.25</jdbc.mysql5.version>
         <jdbc.db2v9.version>3.58.82</jdbc.db2v9.version>
         <jdbc.db2v9.license.version>3.57.86</jdbc.db2v9.license.version>
@@ -498,6 +498,32 @@
             </properties>
         </profile>
 
+        <profile>
+            <id>mysql5_local</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>mysql5</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>mysql</groupId>
+                    <artifactId>mysql-connector-java</artifactId>
+                    <version>${jdbc.mysql5.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>mysql5</database>
+                <dataSource.dialect>org.hibernate.dialect.MySQL5InnoDBDialect</dataSource.dialect>
+                <dataSource.driverClassName>com.mysql.jdbc.Driver</dataSource.driverClassName>
+                <dataSource.url>jdbc:mysql://localhost:3306/modeshape</dataSource.url>
+                <dataSource.username>root</dataSource.username>
+                <dataSource.password></dataSource.password>
+            </properties>
+        </profile>
+
         <!-- The PostgreSQL test environment -->
         <profile>
             <id>postgresql8</id>
@@ -509,19 +535,44 @@
             </activation>
             <dependencies>
                 <dependency>
-                    <groupId>org.postgresql</groupId>
+                    <groupId>postgresql</groupId>
                     <artifactId>postgresql</artifactId>
-                    <version>${jdbc.postgresql.version}</version>
+                    <version>${jdbc.postgresql8.version}</version>
                     <scope>test</scope>
                 </dependency>
             </dependencies>
             <properties>
                 <database>postgresql8</database>
+                <dataSource.driverClassName>org.postgresql.Driver</dataSource.driverClassName>
+                <dataSource.url>jdbc:postgresql://localhost:5432/modeshape</dataSource.url>
+                <dataSource.username>postgres</dataSource.username>
+                <dataSource.password>postgres</dataSource.password>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>postgresql9_local</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>postgresql9</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <version>${jdbc.postgresql9.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <properties>
+                <database>postgresql9</database>
                 <dataSource.dialect>org.hibernate.dialect.PostgreSQLDialect</dataSource.dialect>
                 <dataSource.driverClassName>org.postgresql.Driver</dataSource.driverClassName>
-                <dataSource.url>jdbc:postgresql://vmg03.mw.lab.eng.bos.redhat.com:5432:modeshape</dataSource.url>
-                <dataSource.username>modeshape</dataSource.username>
-                <dataSource.password>modeshape</dataSource.password>
+                <dataSource.url>jdbc:postgresql://localhost:5432/modeshape</dataSource.url>
+                <dataSource.username>postgres</dataSource.username>
+                <dataSource.password>postgres</dataSource.password>
             </properties>
         </profile>
 

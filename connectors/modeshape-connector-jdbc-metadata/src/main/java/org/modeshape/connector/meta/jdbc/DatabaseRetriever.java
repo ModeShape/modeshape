@@ -35,7 +35,7 @@ public final class DatabaseRetriever extends AbstractMetadataRetriever {
         writer.addProperty(JdbcMetadataLexicon.DATABASE_MAJOR_VERSION, dbMetadata.getDatabaseMajorVersion());
         writer.addProperty(JdbcMetadataLexicon.DATABASE_MINOR_VERSION, dbMetadata.getDatabaseMinorVersion());
 
-        List<String> catalogs = metadataCollector.getCatalogNames(connection);
+        List<String> catalogs = removeEmptyOrNullElements(metadataCollector.getCatalogNames(connection));
         if (catalogs.isEmpty()) {
             catalogs.add(connector.getDefaultCatalogName());
         }

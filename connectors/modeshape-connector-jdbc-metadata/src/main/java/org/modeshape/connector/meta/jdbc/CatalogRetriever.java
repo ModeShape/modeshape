@@ -34,6 +34,7 @@ public class CatalogRetriever extends AbstractMetadataRetriever {
         List<String> schemaNames = catalogId.equalsIgnoreCase(connector.getDefaultCatalogName()) ?
                                    metadataCollector.getSchemaNames(connection, catalogId) :
                                    metadataCollector.getSchemaNames(connection, null);
+        schemaNames = removeEmptyOrNullElements(schemaNames);
         if (schemaNames.isEmpty()) {
             schemaNames.add(connector.getDefaultSchemaName());
         }
