@@ -1,7 +1,10 @@
 package org.modeshape.connector.meta.jdbc;
 
 import java.sql.Connection;
+import java.util.Iterator;
+import java.util.List;
 import org.infinispan.schematic.document.Document;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.federation.spi.DocumentWriter;
 
 /**
@@ -23,6 +26,15 @@ public abstract class AbstractMetadataRetriever {
             builder.append("@").append(segment);
         }
         return builder.toString();
+    }
+
+    protected List<String> removeEmptyOrNullElements(List<String> list) {
+        for (Iterator<String> it = list.iterator(); it.hasNext(); ) {
+            if (StringUtil.isBlank(it.next())) {
+                it.remove();
+            }
+        }
+        return list;
     }
 
     protected abstract Document getDocumentById( String id,

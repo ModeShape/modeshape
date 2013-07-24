@@ -3,12 +3,15 @@ package org.modeshape.connector.meta.jdbc;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.sql.DataSource;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.MultiUseAbstractTest;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.Session;
@@ -66,12 +69,23 @@ public class JdbcMetadataConnectorTest extends MultiUseAbstractTest {
 
             catalogName = rs.getString("TABLE_CAT");
             if (rs.wasNull()) {
-                catalogName = JdbcMetadataConnector.DEFAULT_NAME_OF_DEFAULT_CATALOG;
+                //try to check if there's 1 catalog in the db and if so, use that
+                //Postgres seems to behave in this way
+                ResultSet catalogsRs = dmd.getCatalogs();
+                List<String> catalogs = new ArrayList<String>();
+                while (catalogsRs.next()) {
+                    String catalog = catalogsRs.getString("TABLE_CAT");
+                    if (!StringUtil.isBlank(catalog)) {
+                        catalogs.add(catalog);
+                    }
+                }
+
+                catalogName = catalogs.size() == 1 ? catalogs.get(0) : JdbcMetadataConnector.DEFAULT_NAME_OF_DEFAULT_CATALOG;
             }
 
             schemaName = rs.getString("TABLE_SCHEM");
             if (rs.wasNull()) {
-                schemaName = null;
+                schemaName = JdbcMetadataConnector.DEFAULT_NAME_OF_DEFAULT_SCHEMA;
             }
 
             if (rs.next()) {
@@ -121,23 +135,23 @@ public class JdbcMetadataConnectorTest extends MultiUseAbstractTest {
         assertHasMixins(tables, "mj:tables");
 
         Node chain = tables.getNode(dbString("chain"));
-        assertTable(chain, dbString("id"), dbString("name"), FOREIGN_KEYS);
+        assertTable(chain, dbString("ID"), dbString("NAME"), FOREIGN_KEYS);
         assertFKs(chain);
 
         Node area = tables.getNode(dbString("area"));
-        assertTable(area, dbString("id"), dbString("name"), dbString("chain_id"), FOREIGN_KEYS);
-        assertFKs(area, dbString("chain_id"));
+        assertTable(area, dbString("ID"), dbString("NAME"), dbString("CHAIN_ID"), FOREIGN_KEYS);
+        assertFKs(area, dbString("CHAIN_ID"));
 
         Node region = tables.getNode(dbString("region"));
-        assertTable(region, dbString("id"), dbString("name"), dbString("area_id"), FOREIGN_KEYS);
-        assertFKs(region, dbString("area_id"));
+        assertTable(region, dbString("ID"), dbString("NAME"), dbString("AREA_ID"), FOREIGN_KEYS);
+        assertFKs(region, dbString("AREA_ID"));
 
         Node district = tables.getNode(dbString("district"));
-        assertTable(district, dbString("id"), dbString("name"), dbString("region_id"), FOREIGN_KEYS);
-        assertFKs(district, dbString("region_id"));
+        assertTable(district, dbString("ID"), dbString("NAME"), dbString("REGION_ID"), FOREIGN_KEYS);
+        assertFKs(district, dbString("REGION_ID"));
 
         Node sales = tables.getNode(dbString("sales"));
-        assertTable(sales, dbString("id"), dbString("sales_date"), dbString("district_id"), dbString("amount"), FOREIGN_KEYS);
+        assertTable(sales, dbString("ID"), dbString("SALES_DATE"), dbString("DISTRICT_ID"), dbString("AMOUNT"), FOREIGN_KEYS);
         assertFKs(sales);
     }
 
@@ -172,7 +186,6 @@ public class JdbcMetadataConnectorTest extends MultiUseAbstractTest {
         assertHasMixins(table, "mj:table");
         //only assert the mandatory properties
         assertNotNull(table.getProperty(JdbcMetadataLexicon.TABLE_TYPE.toString()));
-        assertNotNull(table.getProperty(JdbcMetadataLexicon.DESCRIPTION.toString()));
 
         assertChildrenInclude(table, expectedChildren);
         for (String child : expectedChildren) {
