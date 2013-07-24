@@ -248,7 +248,7 @@
                                     <version>${project.version}</version>
                                     <classifier>${jboss.eap.distribution.id}</classifier>
                                     <type>zip</type>
-                                    <overWrite>false</overWrite>
+                                    <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/${jboss.eap.root.folder}</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
