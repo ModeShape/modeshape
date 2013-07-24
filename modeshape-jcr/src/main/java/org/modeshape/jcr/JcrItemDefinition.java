@@ -23,8 +23,10 @@
  */
 package org.modeshape.jcr;
 
+import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.ItemDefinition;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.jcr.api.Namespaced;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Name;
 
@@ -33,7 +35,7 @@ import org.modeshape.jcr.value.Name;
  * initialized through its constructor.
  */
 @Immutable
-abstract class JcrItemDefinition implements ItemDefinition {
+abstract class JcrItemDefinition implements ItemDefinition, Namespaced {
 
     protected final ExecutionContext context;
 
@@ -65,6 +67,16 @@ abstract class JcrItemDefinition implements ItemDefinition {
 
     final Name getInternalName() {
         return name;
+    }
+
+    @Override
+    public String getLocalName() throws RepositoryException {
+        return name.getLocalName();
+    }
+
+    @Override
+    public String getNamespaceURI() throws RepositoryException {
+        return name.getNamespaceUri();
     }
 
     /**
