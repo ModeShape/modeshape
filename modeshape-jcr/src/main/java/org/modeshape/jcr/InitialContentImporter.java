@@ -147,7 +147,8 @@ public final class InitialContentImporter {
 
                 // create the new node
                 AbstractJcrNode newNode = null;
-                String newNodeRelativePath = nodePath.getLastSegment().getName().getString();
+                //make sure the path is not encoded, because that's how the node xml handler generates it
+                String newNodeRelativePath = nodePath.getLastSegment().getName().toString();
                 if (StringUtil.isBlank(element.getType())) {
                     newNode = parentNode.addNode(newNodeRelativePath);
                 } else {

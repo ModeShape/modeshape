@@ -315,27 +315,29 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
             }
             if (typePropertyValue == null && attributeName.equalsIgnoreCase(typeAttribute)) {
                 typePropertyValue = createName(null, attributes.getValue(i)); // don't use a decoder
+                element.setType(typePropertyValue);
                 continue;
             }
             // Create a property for this attribute ...
             element.addProperty(attributeName, attributes.getValue(i));
         }
 
-        // Create the node name if required ...
+        // Create the default node name if no explicit name has been configured
         if (nodeName == null) {
             // No attribute defines the node name ...
             nodeName = createName(uri, localName);
             element.setName(nodeName);
-        } else if (typePropertyValue == null) {
-            typePropertyValue = createName(uri, localName);
         }
 
-        if (typeAttribute != null) {
-            // A attribute defines the node type. Set the type property, if required
-            if (typePropertyValue == null) {
-                typePropertyValue = typeAttributeValue;
+        //Create the default node type if no explicit type has been configured
+        if (typePropertyValue == null) {
+            if (typeAttributeValue != null) {
+                //there is a preconfigured type to use, so use that
+                element.setType(typeAttributeValue);
+            } else {
+                //there is no default value for the type, so use nt:unstructured
+                element.setType(JcrConstants.NT_UNSTRUCTURED);
             }
-            element.setType(typePropertyValue);
         }
     }
 
