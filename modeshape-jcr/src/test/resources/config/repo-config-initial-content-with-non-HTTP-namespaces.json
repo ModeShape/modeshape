@@ -1,0 +1,12 @@
+{
+    "name" : "Repository with initial content",
+    "workspaces" : {
+        "predefined" : ["ws1", "ws2"],
+        "default" : "default",
+        "allowCreation" : true,
+        "initialContent" : {
+            "default" : "xmlImport/docWithNonHTTPNamespaces.xml",
+            "*" : "xmlImport/docWithNonHTTPNamespaces.xml"
+        }
+    }
+}
