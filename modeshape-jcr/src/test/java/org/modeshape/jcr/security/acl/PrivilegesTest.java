@@ -23,24 +23,52 @@
  */
 package org.modeshape.jcr.security.acl;
 
+import javax.jcr.ImportUUIDBehavior;
+import javax.jcr.RepositoryException;
 import javax.jcr.security.Privilege;
+import org.junit.AfterClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.modeshape.jcr.MultiUseAbstractTest;
 
 /**
  *
  * @author kulikov
  */
-public class PrivilegesTest {
+public class PrivilegesTest extends MultiUseAbstractTest {
+    
+    private Privileges privileges;
     
     public PrivilegesTest() {
+    }
+    
+    @BeforeClass
+    public static final void beforeAll() throws Exception {
+        MultiUseAbstractTest.beforeAll();
+
+        // Import the node types and the data ...
+        registerNodeTypes("cars.cnd");
+        importContent("/", "io/cars-system-view-with-uuids.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);        
+        
+    }
+
+    @AfterClass
+    public static final void afterAll() throws Exception {
+        MultiUseAbstractTest.afterAll();
+    }
+    
+    @Before
+    public void setUp() throws RepositoryException {
+        privileges = new Privileges(session);
     }
     
     /**
      * Test of forName method, of class Privileges.
      */
     @Test
-    public void testForName() {
-        assertEquals(Privileges.ADD_CHILD_NODES, Privileges.forName(Privilege.JCR_ADD_CHILD_NODES));
+    public void testForName() throws RepositoryException {
+        assertEquals(privileges.ADD_CHILD_NODES, privileges.forName(Privilege.JCR_ADD_CHILD_NODES));
     }
 }

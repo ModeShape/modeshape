@@ -29,9 +29,11 @@ import javax.jcr.AccessDeniedException;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.security.AccessControlList;
 import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.AccessControlPolicy;
 import javax.jcr.security.AccessControlPolicyIterator;
 import javax.jcr.security.Privilege;
 import org.hamcrest.Matcher;
@@ -47,6 +49,7 @@ import org.modeshape.jcr.security.acl.Privileges;
 public class AccessControlManagerTest extends MultiUseAbstractTest {
 
     private AccessControlManager acm;
+    private Privileges privileges;
     
     @BeforeClass
     public static final void beforeAll() throws Exception {
@@ -61,6 +64,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         setPolicy("/Cars/Sports/", Privilege.JCR_READ, Privilege.JCR_WRITE, Privilege.JCR_MODIFY_ACCESS_CONTROL);
         setPolicy("/Cars/Utility/Ford F-150/", Privilege.JCR_MODIFY_ACCESS_CONTROL, Privilege.JCR_READ_ACCESS_CONTROL);
         setPolicy("/Cars/Utility/", Privilege.JCR_READ_ACCESS_CONTROL);
+        
     }
 
     @AfterClass
@@ -73,8 +77,14 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
     public void beforeEach() throws Exception {
         super.beforeEach();
         acm = session.getAccessControlManager();
+        privileges = new Privileges(session);
     }
 
+    @Test
+    public void testSecondSession() throws Exception {
+        Session session2 = session.getRepository().login();
+    }
+    
     @Test
     public void shouldObtainAccessControlManager() throws Exception {
         assertTrue(acm != null);
@@ -84,44 +94,40 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
     
     @Test
     public void testGetSupportedPrivileges() throws Exception {
-        Privilege[] privileges = acm.getSupportedPrivileges("/");
-        assertEquals(Privileges.listOfSupported().length, privileges.length);
+        Privilege[] permissions = acm.getSupportedPrivileges("/");
+        assertEquals(privileges.listOfSupported().length, permissions.length);
     }
     
     @Test
     public void testPrivilegeForName() throws Exception  {
         Privilege p = acm.privilegeFromName(Privilege.JCR_ALL);
-        assertEquals(Privilege.JCR_ALL, p.getName());
+        assertEquals("jcr:all", p.getName());
     }
     
     //--------------- Testing access list -------------------------------------/
     @Test
     public void shouldHaveReadPrivilege() throws Exception {
         Privilege[] privileges = acm.getPrivileges("/Cars/Luxury");
-        assertEquals(2, privileges.length);
-        assertEquals(Privilege.JCR_READ, privileges[0].getName());
+        assertEquals("jcr:read", privileges[0].getName());
     }
     
     @Test
     public void shoudlHaveReadWritePrivilege() throws Exception {
         Privilege[] privileges = acm.getPrivileges("/Cars/Luxury/Cadillac DTS");
-        assertEquals(3, privileges.length);
-        assertTrue(contains(Privilege.JCR_READ, privileges));
-        assertTrue(contains(Privilege.JCR_WRITE, privileges));
+        assertTrue(contains("jcr:read", privileges));
+        assertTrue(contains("jcr:write", privileges));
     }
     
     @Test
     public void shoudlDeriveAccessList() throws Exception {
         Privilege[] privileges = acm.getPrivileges("/Cars/Luxury/Lexus IS350");
-        assertEquals(2, privileges.length);
-        assertEquals(Privilege.JCR_READ, privileges[0].getName());
+        assertEquals("jcr:read", privileges[0].getName());
     }
     
     @Test
     public void shoudlGrantAllPermissions() throws Exception {
         Privilege[] privileges = acm.getPrivileges("/Cars/Hybrid");
-        assertEquals(1, privileges.length);
-        assertEquals(Privilege.JCR_ALL, privileges[0].getName());
+        assertTrue(contains("jcr:all", privileges));
     }
    
     @Test
@@ -221,7 +227,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         Privilege[] privileges = acm.getPrivileges("/Cars/Utility/Ford F-150");
         assertEquals(Privilege.JCR_ALL, privileges[0].getName());
     }
-    
+
     //-------------------- Testing access control api ---
     @Test
     public void onlyAccessControlAPIAllowsRemoveACL() throws Exception {
@@ -276,7 +282,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         } else {
             acl = (AccessControlList) acm.getPolicies(path)[0];
         }
-        acl.addAccessControlEntry(User.newInstance(session.getUserID()), permissions);
+        acl.addAccessControlEntry(SimplePrincipal.newInstance(session.getUserID()), permissions);
 
         acm.setPolicy(path, acl);
         session.save();

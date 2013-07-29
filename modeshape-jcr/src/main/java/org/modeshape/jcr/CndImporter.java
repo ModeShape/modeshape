@@ -82,8 +82,7 @@ public class CndImporter {
     
     protected final List<String> BUILT_INS = Collections.unmodifiableList(Arrays.asList(new String[] {
         "org/modeshape/jcr/jsr_283_builtins.cnd", 
-        "org/modeshape/jcr/modeshape_builtins.cnd",
-        "org/modeshape/jcr/access-manager.cnd" //MODE-1920: access manager related definitions
+        "org/modeshape/jcr/modeshape_builtins.cnd"
     }));
 
     /**

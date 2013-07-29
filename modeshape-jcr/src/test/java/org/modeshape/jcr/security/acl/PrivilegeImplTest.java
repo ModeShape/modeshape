@@ -23,27 +23,64 @@
  */
 package org.modeshape.jcr.security.acl;
 
+import javax.jcr.ImportUUIDBehavior;
+import javax.jcr.RepositoryException;
+import javax.jcr.security.AccessControlException;
 import javax.jcr.security.Privilege;
+import org.junit.AfterClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.modeshape.jcr.MultiUseAbstractTest;
+import org.modeshape.jcr.security.SimplePrincipal;
 
 /**
  *
  * @author kulikov
  */
-public class PrivilegeImplTest {
+public class PrivilegeImplTest extends MultiUseAbstractTest{
     //non aggregate privileges
-    private PrivilegeImpl p1 = new PrivilegeImpl("p1", new Privilege[]{});
-    private PrivilegeImpl p2 = new PrivilegeImpl("p2", new Privilege[]{});
+    private PrivilegeImpl p1;
+    private PrivilegeImpl p2;
 
     //aggegate privileges
-    private PrivilegeImpl p3 = new PrivilegeImpl("p3", new Privilege[]{p1, p2});
-    private PrivilegeImpl p4 = new PrivilegeImpl("p4", new Privilege[]{p3});
+    private PrivilegeImpl p3;
+    private PrivilegeImpl p4;
     
     //abstract
-    private PrivilegeImpl p5 = new PrivilegeImpl("p5", new Privilege[]{}, true);
+    private PrivilegeImpl p5;
     
     public PrivilegeImplTest() {
+    }
+    
+    @BeforeClass
+    public static final void beforeAll() throws Exception {
+        MultiUseAbstractTest.beforeAll();
+
+        // Import the node types and the data ...
+        registerNodeTypes("cars.cnd");
+        importContent("/", "io/cars-system-view-with-uuids.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);        
+        
+    }
+
+    @AfterClass
+    public static final void afterAll() throws Exception {
+        MultiUseAbstractTest.afterAll();
+    }
+    
+
+    @Before
+    public void setUp() throws AccessControlException, RepositoryException {
+        p1 = new PrivilegeImpl(session, "{}p1", new Privilege[]{});
+        p2 = new PrivilegeImpl(session, "{}p2", new Privilege[]{});
+
+        //aggegate privileges
+        p3 = new PrivilegeImpl(session,"{}p3", new Privilege[]{p1, p2});
+        p4 = new PrivilegeImpl(session,"{}p4", new Privilege[]{p3});
+
+        //abstract
+        p5 = new PrivilegeImpl(session, "{}p5", new Privilege[]{}, true);
     }
     
     /**
@@ -51,7 +88,7 @@ public class PrivilegeImplTest {
      */
     @Test
     public void testGetName() {
-        assertEquals("p1", p1.getName());
+        assertEquals("jcr:p1", p1.getName());
     }
 
     /**

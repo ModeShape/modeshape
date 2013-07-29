@@ -24,6 +24,7 @@
 package org.modeshape.jcr.security.acl;
 
 import java.util.ArrayList;
+import java.util.NoSuchElementException;
 import javax.jcr.security.AccessControlPolicy;
 import javax.jcr.security.AccessControlPolicyIterator;
 
@@ -52,7 +53,10 @@ public class AccessControlPolicyIteratorImpl implements AccessControlPolicyItera
     
     @Override
     public AccessControlPolicy nextAccessControlPolicy() {
-        return index == list.size() ? null : list.get(index++);
+        if (index < list.size()) {
+            return list.get(index++);
+        }
+        throw new NoSuchElementException();
     }
 
     @Override

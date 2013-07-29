@@ -1,9 +1,0 @@
-
-
-[mix:accessControllable] mixin 
-    + mode:acl (mode:Acl) protected 
-[mode:Acl] 
-    + * (mode:Permission) protected
-[mode:Permission] 
-    - name (string) protected
-    - privileges (string) multiple protected
