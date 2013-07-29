@@ -24,8 +24,10 @@
 package org.modeshape.jcr;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
@@ -52,6 +54,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTest {
@@ -510,6 +513,17 @@ public abstract class AbstractJcrRepositoryTest extends AbstractTransactionalTes
     protected void assertChildrenInclude( Node parentNode,
                                           String... minimalChildNamesWithSns ) throws RepositoryException {
         assertChildrenInclude(null, parentNode, minimalChildNamesWithSns);
+    }
+
+    protected void assertHasMixins(Node node, String...mixinNodeTypes) throws RepositoryException {
+        List<String> mixins = new ArrayList<String>();
+        for (NodeType nodeType : node.getMixinNodeTypes()) {
+            mixins.add(nodeType.getName());
+        }
+
+        for (String expectedMixin : mixinNodeTypes) {
+            assertThat(expectedMixin + "mixin not found", mixins.contains(expectedMixin), is(true));
+        }
     }
 
     protected void assertChildrenInclude( String errorMessage,

@@ -177,6 +177,13 @@
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
+        <!--Needed by the federation tests-->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-connector-jdbc-metadata</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>com.googlecode.sardine</groupId>
             <artifactId>sardine</artifactId>
