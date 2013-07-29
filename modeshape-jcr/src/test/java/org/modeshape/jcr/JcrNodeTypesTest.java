@@ -36,6 +36,7 @@ import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.PropertyDefinition;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.api.Namespaced;
 
 /**
  * Unit test for the node-types feature, which allows initial cnd files to be pre-configured in a repository
@@ -78,6 +79,7 @@ public class JcrNodeTypesTest extends SingleUseAbstractTest {
         NodeTypeManager ntmgr = session.getWorkspace().getNodeTypeManager();
         NodeType nt = ntmgr.getNodeType("ex:myNodeType");
         PropertyDefinition uriPropDefn = nt.getDeclaredPropertyDefinitions()[0];
+        assertLocalNameAndNamespace(nt, "myNodeType", "ex");
         assertThat(uriPropDefn.getName(), is("ex:path"));
         assertThat(uriPropDefn.getRequiredType(), is(PropertyType.URI));
     }
@@ -189,4 +191,13 @@ public class JcrNodeTypesTest extends SingleUseAbstractTest {
         assertEquals("car:Car", session.getNode("/car").getPrimaryNodeType().getName());
         assertEquals("air:Aircraft", session.getNode("/aircraft").getPrimaryNodeType().getName());
     }
+
+    private void assertLocalNameAndNamespace( NodeType nodeType,
+                                                String expectedLocalName,
+                                                String namespacePrefix ) throws RepositoryException {
+        Namespaced nsed = (Namespaced)nodeType;
+        assertThat(nsed.getLocalName(), is(expectedLocalName));
+        assertThat(nsed.getNamespaceURI(), is(session.getNamespaceURI(namespacePrefix)));
+    }
+
 }
