@@ -79,6 +79,9 @@ import org.modeshape.jcr.value.Path;
 public class JcrSessionTest extends SingleUseAbstractTest {
 
     private static final String MULTI_LINE_VALUE = "Line\t1\nLine 2\rLine 3\r\nLine 4";
+    private static final String PUBLIC_DECODED_NAME = "a|b]c[d:e/f*g";
+    private static final String PUBLIC_ENCODED_NAME = "a" + '\uF07C' + 'b' + '\uF05D' + 'c' + '\uF05B' + 'd' + '\uF03A' + 'e'
+                                                      + '\uF02F' + 'f' + '\uF02A' + 'g';
 
     protected void initializeData() throws Exception {
         Node root = session.getRootNode();
@@ -94,6 +97,18 @@ public class JcrSessionTest extends SingleUseAbstractTest {
         c.setProperty("stringProperty", "value");
         c.setProperty("multiLineProperty", MULTI_LINE_VALUE);
         session.save();
+    }
+
+    @Test
+    @FixFor( "MODE-1956" )
+    public void shouldDecodeNameWithUnicodeSubstitutionCharacters() {
+        assertThat(session.decode(PUBLIC_ENCODED_NAME), is(PUBLIC_DECODED_NAME));
+    }
+
+    @Test
+    @FixFor( "MODE-1956" )
+    public void shouldEncodeNameWithIllegalCharacters() {
+        assertThat(session.encode(PUBLIC_DECODED_NAME), is(PUBLIC_ENCODED_NAME));
     }
 
     @Test

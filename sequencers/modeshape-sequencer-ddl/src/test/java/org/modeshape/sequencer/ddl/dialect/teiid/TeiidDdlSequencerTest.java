@@ -657,12 +657,12 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
         assertThat(this.statementsNode.getNodes().getSize(), is(6L));
 
         // table
-        final Node tableNode = statementsNode.getNode(this.session.getUtils().encode("Products.product:info"));
+        final Node tableNode = statementsNode.getNode(this.session.encode("Products.product:info"));
         verifyMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         verifyProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
 
         { // column
-            final NodeIterator itr = tableNode.getNodes(this.session.getUtils().encode("PRODUCT:ID"));
+            final NodeIterator itr = tableNode.getNodes(this.session.encode("PRODUCT:ID"));
             assertThat(itr.getSize(), is(1L));
             final Node columnNode = itr.nextNode();
             verifyProperty(columnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.BIGDECIMAL.toDdl());

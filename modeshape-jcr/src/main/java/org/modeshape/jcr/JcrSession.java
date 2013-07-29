@@ -75,7 +75,6 @@ import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.JcrSharedNodeCache.SharedSet;
 import org.modeshape.jcr.RepositoryNodeTypeManager.NodeTypes;
 import org.modeshape.jcr.api.Binary;
-import org.modeshape.jcr.api.JcrUtils;
 import org.modeshape.jcr.api.monitor.DurationMetric;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.cache.CachedNode;
@@ -138,7 +137,6 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     private volatile JcrValueFactory valueFactory;
     private volatile boolean isLive = true;
     private final long nanosCreated;
-    private JcrUtils utils;
 
     private ExecutionContext context;
     private final AdvancedAuthorizationProvider.Context authorizerContext = new AdvancedAuthorizationProvider.Context() {
@@ -1706,20 +1704,16 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return cache.toString();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @see org.modeshape.jcr.api.Session#getUtils()
-     */
     @Override
-    public JcrUtils getUtils() {
-        if (this.utils == null) {
-            this.utils = new org.modeshape.jcr.JcrUtils();
-        }
-
-        return this.utils;
+    public String decode( final String localName ) {
+        return Path.JSR283_DECODER.decode(localName);
     }
-    
+
+    @Override
+    public String encode( final String localName ) {
+        return Path.JSR283_ENCODER.encode(localName);
+    }
+
     /**
      * Define the operations that are to be performed on all the nodes that were created or modified within this session. This
      * class was designed to be as efficient as possible for most nodes, since most nodes do not need any additional processing.

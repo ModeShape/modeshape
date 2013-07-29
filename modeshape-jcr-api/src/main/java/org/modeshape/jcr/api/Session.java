@@ -29,14 +29,35 @@ package org.modeshape.jcr.api;
  */
 public interface Session extends javax.jcr.Session {
 
-    /**
-     * @return a collection of JCR-related utilities (never <code>null</code>)
-     */
-    JcrUtils getUtils();
-
     @Override
     public Workspace getWorkspace();
 
     @Override
     public Repository getRepository();
+
+    /**
+     * Evaluate a local name and replace any characters that are not allowed within the local names of nodes and properties. Such
+     * characters include '/', ':', '[', ']', '*', and '|', since these are all important to the rules for qualified names and
+     * paths. When such characters are to be used within a <i>local name</i>, the application must escape them using this method
+     * before the local name is used.
+     * 
+     * @param localName the local name to be encoded; can be <code>null</code> or empty
+     * @return the supplied local name if it contains no illegal characters, or the encoded form of the supplied local name with
+     *         all illegal characters replaced, or <code>null</code> if the input was <code>null</code>
+     * @see #move(String, String)
+     * @see javax.jcr.Node#addNode(String)
+     * @see javax.jcr.Node#addNode(String, String)
+     */
+    String encode( final String localName );
+
+    /**
+     * Evaluate a local name and replace any characters that were previously {@link #encode(String) encoded}.
+     * 
+     * @param localName the local name to be decoded; can be <code>null</code> or empty
+     * @return the supplied local name if it contains no encoded characters, or the decoded form of the supplied local name with
+     *         all encoded characters replaced, or <code>null</code> if the input was <code>null</code>
+     * @see #encode(String)
+     */
+    String decode( final String localName );
+
 }
