@@ -23,6 +23,10 @@
  */
 package org.modeshape.sequencer.ddl.dialect.teiid;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+import static org.modeshape.jcr.api.JcrConstants.NT_UNSTRUCTURED;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PARSER_ID;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import org.junit.After;
@@ -33,11 +37,6 @@ import org.modeshape.sequencer.ddl.DdlConstants;
 import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.SchemaElementType;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.TeiidDataType;
-import org.modeshape.sequencer.ddl.node.AstNode;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
-import static org.modeshape.jcr.api.JcrConstants.NT_UNSTRUCTURED;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PARSER_ID;
 
 /**
  * Unit test for the {@link org.modeshape.sequencer.ddl.DdlSequencer} when Teiid dialects are parsed.
@@ -658,12 +657,12 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
         assertThat(this.statementsNode.getNodes().getSize(), is(6L));
 
         // table
-        final Node tableNode = statementsNode.getNode(AstNode.replaceJcrIllegalCharacters("Products.product:info"));
+        final Node tableNode = statementsNode.getNode(this.session.getUtils().encode("Products.product:info"));
         verifyMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
         verifyProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
 
         { // column
-            final NodeIterator itr = tableNode.getNodes(AstNode.replaceJcrIllegalCharacters("PRODUCT:ID"));
+            final NodeIterator itr = tableNode.getNodes(this.session.getUtils().encode("PRODUCT:ID"));
             assertThat(itr.getSize(), is(1L));
             final Node columnNode = itr.nextNode();
             verifyProperty(columnNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.BIGDECIMAL.toDdl());

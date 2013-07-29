@@ -24,19 +24,25 @@
 package org.modeshape.jcr.api;
 
 /**
- * A specialization of the standard JCR {@link javax.jcr.Session} interface that returns the ModeShape-specific extension
- * interfaces from {@link #getWorkspace()} and {@link #getRepository()}.
+ * Common utilities related to the JCR.
  */
-public interface Session extends javax.jcr.Session {
+public interface JcrUtils {
 
     /**
-     * @return a collection of JCR-related utilities (never <code>null</code>)
+     * Decodes JCR Unicode characters of a name that are associated with the JCR-illegal characters.
+     * 
+     * @param jcrNodeName the name being encoded (can be <code>null</code> or empty)
+     * @return the encoded name or <code>null</code> if the input was <code>null</code>
      */
-    JcrUtils getUtils();
 
-    @Override
-    public Workspace getWorkspace();
+    String decode(final String jcrNodeName);
 
-    @Override
-    public Repository getRepository();
+    /**
+     * Encodes the JCR-illegal characters of a name by using the appropriate JCR Unicode characters.
+     * 
+     * @param publicName the name being encoded (can be <code>null</code> or empty)
+     * @return the encoded name or <code>null</code> if the input was <code>null</code>
+     */
+    String encode( final String publicName );
+
 }
