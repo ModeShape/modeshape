@@ -30,11 +30,10 @@ import javax.jcr.security.AccessControlException;
 import javax.jcr.security.AccessControlList;
 import javax.jcr.security.Privilege;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.modeshape.jcr.security.SimplePrincipal;
 
 /**
  * Tests for the AccessControlPolicyIterator implementation.
@@ -53,12 +52,12 @@ public class AccessControlPolicyIteratorImplTest {
         ArrayList<JcrAccessControlList> list = new ArrayList();
         
         //acl-1
-        JcrAccessControlList alice = new JcrAccessControlList();
-        alice.addAccessControlEntry(new PrincipalImpl("alice"), new Privilege[]{});
+        JcrAccessControlList alice = new JcrAccessControlList(null, "alice");
+        alice.addAccessControlEntry(SimplePrincipal.newInstance("alice"), new Privilege[]{new PrivilegeImpl()});
         
         
-        JcrAccessControlList bob = new JcrAccessControlList();
-        bob.addAccessControlEntry(new PrincipalImpl("bob"), new Privilege[]{});
+        JcrAccessControlList bob = new JcrAccessControlList(null, "bob");
+        bob.addAccessControlEntry(SimplePrincipal.newInstance("bob"), new Privilege[]{new PrivilegeImpl()});
      
         
         it = new AccessControlPolicyIteratorImpl(alice, bob);
@@ -149,5 +148,34 @@ public class AccessControlPolicyIteratorImplTest {
         assertEquals(2, it.getSize());
         it.remove();
         assertEquals(1, it.getSize());
+    }
+    
+    private class PrivilegeImpl implements Privilege {
+
+        @Override
+        public String getName() {
+            return "jcr:all";
+        }
+
+        @Override
+        public boolean isAbstract() {
+            return false;
+        }
+
+        @Override
+        public boolean isAggregate() {
+            return false;
+        }
+
+        @Override
+        public Privilege[] getDeclaredAggregatePrivileges() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public Privilege[] getAggregatePrivileges() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+    
     }
 }

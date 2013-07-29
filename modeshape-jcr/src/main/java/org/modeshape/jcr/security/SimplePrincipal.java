@@ -26,14 +26,17 @@ package org.modeshape.jcr.security;
 import java.security.Principal;
 
 /**
- * Represents user principal.
+ * Default local implementation of the principal.
  * 
  * @author kulikov
  */
-public class User implements Principal {
+public class SimplePrincipal implements Principal {
 
     //The name of the user
     private String name;
+    
+    //Principal that equals to any other principal
+    public static final SimplePrincipal EVERYONE = SimplePrincipal.newInstance("everyone");
     
     /**
      * Creates new instance of the principal.
@@ -41,8 +44,8 @@ public class User implements Principal {
      * @param name the name of the user.
      * @return new user name principal.
      */
-    public static User newInstance(String name) {
-        return new User(name);
+    public static SimplePrincipal newInstance(String name) {
+        return new SimplePrincipal(name);
     }
     
     /**
@@ -50,7 +53,7 @@ public class User implements Principal {
      * 
      * @param name the name of the user
      */
-    private User(String name) {
+    private SimplePrincipal(String name) {
         this.name = name;
     }
     
@@ -59,4 +62,27 @@ public class User implements Principal {
         return name;
     }
     
+    @Override
+    public boolean equals(Object other) {
+        if (other == null) {
+            return false;
+        }
+        
+        if (!(other instanceof Principal)) {
+            return false;
+        }
+        
+        if (this.name.equals("everyone") || ((Principal) other).getName().equals("everyone")) {
+            return true;
+        }
+        
+        return ((Principal) other).getName().equals(name);
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 89 * hash + (this.name != null ? this.name.hashCode() : 0);
+        return hash;
+    }
 }

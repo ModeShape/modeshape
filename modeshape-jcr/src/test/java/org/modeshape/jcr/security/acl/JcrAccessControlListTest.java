@@ -23,7 +23,7 @@
  */
 package org.modeshape.jcr.security.acl;
 
-import java.security.Principal;
+import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.RepositoryException;
 import javax.jcr.security.AccessControlEntry;
 import javax.jcr.security.AccessControlException;
@@ -34,23 +34,42 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import org.modeshape.jcr.security.User;
+import org.modeshape.jcr.MultiUseAbstractTest;
+import org.modeshape.jcr.security.SimplePrincipal;
 
 /**
  *
  * @author kulikov
  */
-public class JcrAccessControlListTest {
+public class JcrAccessControlListTest extends MultiUseAbstractTest {
     
-    private JcrAccessControlList acl = new JcrAccessControlList();
-    private Privilege[] rw = new Privilege[]{Privileges.READ, Privileges.WRITE};        
+    private JcrAccessControlList acl = new JcrAccessControlList(null,  "root");
+    private Privilege[] rw;        
+    private Privileges privileges;
     
     public JcrAccessControlListTest() {
     }
     
+    @BeforeClass
+    public static final void beforeAll() throws Exception {
+        MultiUseAbstractTest.beforeAll();
+
+        // Import the node types and the data ...
+        registerNodeTypes("cars.cnd");
+        importContent("/", "io/cars-system-view-with-uuids.xml", ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);        
+        
+    }
+
+    @AfterClass
+    public static final void afterAll() throws Exception {
+        MultiUseAbstractTest.afterAll();
+    }
+    
     @Before
     public void setUp() throws AccessControlException, RepositoryException {
-        acl.addAccessControlEntry(User.newInstance("kulikov"), rw);
+        privileges = new Privileges(session);
+        rw = new Privilege[]{privileges.READ, privileges.WRITE};        
+        acl.addAccessControlEntry(SimplePrincipal.newInstance("kulikov"), rw);
     }
     
     @After
@@ -74,8 +93,7 @@ public class JcrAccessControlListTest {
     public void testHasPermission() throws Exception {
         AccessControlEntryImpl entry = (AccessControlEntryImpl) acl.getAccessControlEntries()[0];
         assertTrue(entry.hasPrivileges(rw));
-        assertTrue(entry.hasPrivileges(new Privilege[]{Privileges.ADD_CHILD_NODES}));
+        assertTrue(entry.hasPrivileges(new Privilege[]{privileges.ADD_CHILD_NODES}));
     }
 
-    
 }

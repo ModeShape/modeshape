@@ -24,7 +24,11 @@
 package org.modeshape.jcr.security.acl;
 
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import javax.jcr.security.AccessControlEntry;
+import javax.jcr.security.AccessControlException;
 import javax.jcr.security.Privilege;
 
 /**
@@ -46,7 +50,11 @@ public class AccessControlEntryImpl implements AccessControlEntry {
      * @param principal principal associated with this entry.
      * @param privileges one or more privilege in association with given principal.
      */
-    public AccessControlEntryImpl(Principal principal, Privilege[] privileges) {
+    public AccessControlEntryImpl(Principal principal, Privilege[] privileges) throws AccessControlException {
+        for (Privilege p : privileges) {
+            if (p.getName() == null) 
+                throw new AccessControlException("Invalid privilege");
+        }
         this.principal = principal;
         this.privileges = privileges;
     }
@@ -90,5 +98,88 @@ public class AccessControlEntryImpl implements AccessControlEntry {
             }
         }
         return false;
+    }
+
+    private boolean contains(List<Privilege>privileges, Privilege p) {
+        for (int i = 0; i < privileges.size(); i++) {
+            if (((PrivilegeImpl)privileges.get(i)).contains(p)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Adds specified privileges to this entry.
+     * 
+     * @param privileges privileges to add.
+     * @return true if at least one of privileges was added.
+     */
+    protected boolean addIfNotPresent(Privilege[] privileges) {
+        ArrayList<Privilege> list = new ArrayList();
+        list.addAll(Arrays.asList(this.privileges));
+        
+        boolean res = combineRecursively(list, privileges);
+
+        this.privileges = new Privilege[list.size()];
+        list.toArray(this.privileges);
+        
+        return res;
+    }
+
+    /**
+     * Adds specified privileges to this entry.
+     * 
+     * @param privileges privileges to add.
+     * @return true if at least one of privileges was added.
+     */
+    protected boolean combineRecursively(List<Privilege>list, Privilege[] privileges) {
+        boolean res = false;
+        
+        for (Privilege p : privileges) {
+            if (p.isAggregate()) {
+                res = combineRecursively(list, p.getAggregatePrivileges());
+            } else if (!contains(list, p)) {
+                list.add(p);
+                res = true;
+            }
+        }
+        return res;
+    }
+    
+    @Override
+    public boolean equals(Object other) {
+        if (other == null) {
+            return false;
+        }
+        
+        if (!(other instanceof AccessControlEntryImpl)) {
+            return false;
+        }
+        
+        AccessControlEntryImpl entry = (AccessControlEntryImpl) other;
+        
+        if (!entry.principal.equals(principal)) {
+            return false;
+        }
+        
+        if (this.privileges.length != entry.privileges.length) {
+            return false;
+        }
+        
+        for (int i = 0; i < privileges.length; i++) {
+            if (!contains(entry.privileges, privileges[i])) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 11 * hash + (this.principal != null ? this.principal.hashCode() : 0);
+        return hash;
     }
 }

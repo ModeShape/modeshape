@@ -24,6 +24,7 @@
 package org.modeshape.jcr.security.acl;
 
 import java.util.ArrayList;
+import javax.jcr.Session;
 import javax.jcr.security.Privilege;
 import org.modeshape.common.annotation.Immutable;
 
@@ -36,6 +37,7 @@ import org.modeshape.common.annotation.Immutable;
  */
 @Immutable
 public class PrivilegeImpl implements Privilege {
+    private final static String URI = "http://www.jcp.org/jcr/1.0";
 
     //The name of this privilege.    
     private String name;
@@ -46,15 +48,18 @@ public class PrivilegeImpl implements Privilege {
     //abstract flag
     private boolean isAbstract = false;
     
+    private Session session;
+    
     /**
      * Creates new instance of the privilege object.
      * 
      * @param name the name of privilege.
      * @param declaredPrivileges list of privileges aggregated by this object.
      */
-    public PrivilegeImpl(String name, Privilege[] declaredPrivileges) {
-        this.name = name;
+    public PrivilegeImpl(Session session, String name, Privilege[] declaredPrivileges) {
+        this.name = name.substring(name.indexOf('}') + 1);
         this.declaredPrivileges = declaredPrivileges;
+        this.session = session;
     }
 
     /**
@@ -64,15 +69,30 @@ public class PrivilegeImpl implements Privilege {
      * @param declaredPrivileges list of privileges aggregated by this object.
      * @boolean isAbstract true if this is abstract privilege.
      */
-    public PrivilegeImpl(String name, Privilege[] declaredPrivileges, boolean isAbstract) {
-        this.name = name;
+    public PrivilegeImpl(Session session, String name, Privilege[] declaredPrivileges, boolean isAbstract) {
+        this.session = session;
+        this.name = name.substring(name.indexOf('}') + 1);
         this.declaredPrivileges = declaredPrivileges;
         this.isAbstract = isAbstract;
     }
     
+    /**
+     * The name without prefix.
+     * 
+     * @return 
+     */
+    public String localName() {
+        return name;
+    }
+    
     @Override
     public String getName() {
-        return name;
+        try {
+            return session.getNamespacePrefix(URI) + ":" + name;
+        } catch (Exception e) {
+            //will never happen
+            return null;
+        }
     }
 
     @Override
@@ -142,5 +162,25 @@ public class PrivilegeImpl implements Privilege {
     @Override
     public String toString() {
         return getName();
+    }
+    
+    @Override
+    public boolean equals(Object other) {
+        if (other == null) {
+            return false;
+        }
+        
+        if (!(other instanceof Privilege)) {
+            return false;
+        }
+        
+        return ((Privilege)other).getName().equals(this.getName());
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 71 * hash + (this.name != null ? this.name.hashCode() : 0);
+        return hash;
     }
 }
