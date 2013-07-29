@@ -260,6 +260,8 @@ final class JcrValue implements javax.jcr.Value {
                     case PropertyType.REFERENCE:
                     case PropertyType.WEAKREFERENCE:
                         return this.getString().equals(that.getString());
+                    case PropertyType.URI:
+                        return this.getString().equals(that.getString());
                     default:
                         throw new SystemFailureException(JcrI18n.invalidPropertyType.text(this.type));
                 }
@@ -292,6 +294,8 @@ final class JcrValue implements javax.jcr.Value {
                     case PropertyType.NAME:
                         return this.getString().equals(that.getString());
                     case PropertyType.REFERENCE:
+                        return this.getString().equals(that.getString());
+                    case PropertyType.URI:
                         return this.getString().equals(that.getString());
                     default:
                         throw new SystemFailureException(JcrI18n.invalidPropertyType.text(this.type));
