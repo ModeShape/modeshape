@@ -36,6 +36,7 @@ import org.eclipse.jgit.api.ListTagCommand;
 import org.eclipse.jgit.api.LogCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -305,6 +306,16 @@ public abstract class GitFunction {
     protected boolean isQueryable( CallSpecification callSpec ) {
         // by default, a git function does not return queryable content
         return false;
+    }
+
+    protected String authorName( RevCommit commit ) {
+        PersonIdent authorIdent = commit.getAuthorIdent();
+        return authorIdent != null ? authorIdent.getName() : "<unknown>";
+    }
+
+    protected String commiterName( RevCommit commit ) {
+        PersonIdent committerIdent = commit.getCommitterIdent();
+        return committerIdent != null ? committerIdent.getName() : "<unknown>";
     }
 
     @Override
