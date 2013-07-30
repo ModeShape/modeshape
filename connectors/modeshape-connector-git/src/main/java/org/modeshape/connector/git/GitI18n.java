@@ -34,6 +34,7 @@ public final class GitI18n {
     public static I18n directoryCannotBeRead;
     public static I18n remoteDoesNotExist;
     public static I18n commitWithMultipleParents;
+    public static I18n cannotReadCommit;
 
     static {
         try {
