@@ -25,6 +25,7 @@ package org.modeshape.connector.git;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -166,6 +167,11 @@ public class GitCommitDetails extends GitFunction implements PageableGitFunction
                 connector.getLogger().warn(GitI18n.commitWithMultipleParents, commit.getName(), parentCommit.getName());
                 break;
             }
+        }
+
+        if (tw.getTreeCount() == 1) {
+            connector.getLogger().warn(GitI18n.commitWithSingleParent, commit.getName(), tw.getObjectId(0).name());
+            return Collections.emptyList();
         }
 
         // Now process the diff of each file ...
