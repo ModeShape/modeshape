@@ -92,9 +92,19 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
     private static final AttributeScoping DEFAULT_ATTRIBUTE_SCOPING = AttributeScoping.USE_DEFAULT_NAMESPACE;
 
     /**
+     * The default multi-valued delimiter string.
+     */
+    private static final String DEFAULT_MULTI_VALUE_SEPARATOR = ",";
+
+    /**
      * The mandatory name of the xml root element
      */
     private static final String ROOT_ELEMENT_NAME = JcrConstants.JCR_ROOT;
+
+    /**
+     * The name of the XML attribute which defines a custom multi value separator.
+     */
+    private static final String MULTI_VALUE_SEPARATOR_ATTRIBUTE = "multi-value-separator";
 
     /**
      * The name of the XML attribute whose value should be used for the name of the node. For example, "jcr:name".
@@ -147,6 +157,11 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
      */
     private final StringBuilder characterDataBuffer = new StringBuilder();
 
+    /**
+     * The separator string used for determining multi-valued properties
+     */
+    private String multiValueSeparator;
+
     private final Stack<ImportElement> elementsStack = new Stack<ImportElement>();
     private final List<ImportElement> parsedElements = new ArrayList<ImportElement>();
     private boolean validateRootElement;
@@ -158,13 +173,13 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
      */
     public NodeImportXmlHandler( NodeImportDestination destination ) {
         this(destination, JcrConstants.JCR_NAME, JcrConstants.JCR_PRIMARY_TYPE, JcrConstants.NT_UNSTRUCTURED,
-             DEFAULT_ATTRIBUTE_SCOPING);
+             DEFAULT_MULTI_VALUE_SEPARATOR, DEFAULT_ATTRIBUTE_SCOPING);
     }
 
     /**
      * Create a handler that parses an xml file.
      * 
-     * @param destination a non-null {@link NodeImportDestination} which is expected to provide a valid context and to handle the
+     * @param destination a non-null {@link org.modeshape.jcr.xml.NodeImportDestination} which is expected to provide a valid context and to handle the
      *        results of the import process.
      * @param nameAttribute the name of the property whose value should be used for the names of the nodes (typically, this is
      *        "jcr:name" or something equivalent); or null if the XML element name should always be used as the node name
@@ -172,20 +187,22 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
      *        such property
      * @param typeAttributeValue the value of the type property that should be used if the node has no <code>nameAttribute</code>,
      *        or null if the value should be set to the type of the XML element
+     * @param multiValueSeparator the string that should be used a separator for creating multi-valued properties.
      * @param scoping defines how to choose the namespace of attributes that do not have a namespace prefix; if null, the
-     *        {@link #DEFAULT_ATTRIBUTE_SCOPING} value is used
-     * @throws IllegalArgumentException if the destination reference is null
+     *        {@link #DEFAULT_ATTRIBUTE_SCOPING} value is used  @throws IllegalArgumentException if the destination reference is null
      */
     public NodeImportXmlHandler( NodeImportDestination destination,
                                  String nameAttribute,
                                  String typeAttribute,
                                  String typeAttributeValue,
+                                 String multiValueSeparator,
                                  AttributeScoping scoping ) {
         this.nameAttribute = nameAttribute;
         this.typeAttribute = typeAttribute;
         this.typeAttributeValue = typeAttributeValue;
         this.attributeScoping = scoping != null ? scoping : DEFAULT_ATTRIBUTE_SCOPING;
         this.destination = destination;
+        this.multiValueSeparator = !StringUtil.isBlank(multiValueSeparator) ? multiValueSeparator : DEFAULT_MULTI_VALUE_SEPARATOR;
 
         // Set up a local namespace registry that is kept in sync with the namespaces found in this XML document ...
         ExecutionContext context = destination.getExecutionContext();
@@ -277,6 +294,8 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
             if (!name.equalsIgnoreCase(ROOT_ELEMENT_NAME)) {
                 throw new SAXException(JcrI18n.errorDuringInitialImport.text("Root xml element must be " + ROOT_ELEMENT_NAME));
             }
+            parseCustomSettings(attributes);
+
             validateRootElement = false;
             return;
         }
@@ -337,6 +356,16 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
             } else {
                 //there is no default value for the type, so use nt:unstructured
                 element.setType(JcrConstants.NT_UNSTRUCTURED);
+            }
+        }
+    }
+
+    private void parseCustomSettings( Attributes attributes ) {
+        //parse any custom attributes of the root element, which would indicate some custom settings
+        for (int i = 0; i < attributes.getLength(); i++) {
+            String attributeLocalName = attributes.getLocalName(i);
+            if (attributeLocalName.equalsIgnoreCase(MULTI_VALUE_SEPARATOR_ATTRIBUTE)) {
+                this.multiValueSeparator = attributes.getValue(i);
             }
         }
     }
@@ -470,7 +499,7 @@ public class NodeImportXmlHandler extends DefaultHandler2 {
 
         protected void addProperty( String propertyName,
                                     String propertyValue ) {
-            String[] values = propertyValue.split(",");
+            String[] values = propertyValue.split(multiValueSeparator);
             for (String value : values) {
                 if (propertyName.equals(JcrConstants.JCR_MIXIN_TYPES)) {
                     mixins.add(createName(null, value.trim()));
