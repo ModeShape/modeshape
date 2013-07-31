@@ -23,10 +23,14 @@
  */
 package org.modeshape.jcr.security;
 
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import javax.jcr.Credentials;
 import javax.servlet.http.HttpServletRequest;
 import org.modeshape.jcr.ExecutionContext;
+import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.api.ServletCredentials;
 
 /**
@@ -107,6 +111,15 @@ public class ServletProvider implements AuthenticationProvider {
         @Override
         public void logout() {
             request = null;
+        }
+
+        @Override
+        public List<Principal> getPrincipals() {
+            return new ArrayList();
+        }
+
+        @Override
+        public void with(JcrSession session) {
         }
     }
 }

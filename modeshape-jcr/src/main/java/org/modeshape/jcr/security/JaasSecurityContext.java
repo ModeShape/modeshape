@@ -3,8 +3,10 @@ package org.modeshape.jcr.security;
 import java.io.IOException;
 import java.security.Principal;
 import java.security.acl.Group;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
@@ -20,13 +22,14 @@ import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.Reflection;
+import org.modeshape.jcr.JcrSession;
 
 /**
  * JAAS-based {@link SecurityContext security context} that provides authentication and authorization through the JAAS
  * {@link LoginContext login context}.
  */
 @NotThreadSafe
-public class JaasSecurityContext implements SecurityContext {
+public class JaasSecurityContext extends AccessControlManagerImpl {
 
     private static final Logger LOGGER = Logger.getLogger(JaasSecurityContext.class);
 
@@ -34,7 +37,8 @@ public class JaasSecurityContext implements SecurityContext {
     private final String userName;
     private final Set<String> entitlements;
     private boolean loggedIn;
-
+    private ArrayList<Principal> principals = new ArrayList();
+    
     /**
      * Create a {@link JaasSecurityContext} with the supplied {@link Configuration#getAppConfigurationEntry(String) application
      * configuration name}.
@@ -46,7 +50,7 @@ public class JaasSecurityContext implements SecurityContext {
      *         default callback handler JAAS property was not set or could not be loaded
      */
     public JaasSecurityContext( String realmName ) throws LoginException {
-        this(new LoginContext(realmName));
+        this( new LoginContext(realmName));
     }
 
     /**
@@ -93,7 +97,7 @@ public class JaasSecurityContext implements SecurityContext {
      *         <code>callbackHandler</code> is null
      */
 
-    public JaasSecurityContext( String realmName,
+    public JaasSecurityContext(JcrSession session,  String realmName,
                                 CallbackHandler callbackHandler ) throws LoginException {
         this(new LoginContext(realmName, callbackHandler));
     }
@@ -107,7 +111,7 @@ public class JaasSecurityContext implements SecurityContext {
      *         error occurs attempting to invoke the login method.
      * @see LoginContext
      */
-    public JaasSecurityContext( LoginContext loginContext ) throws LoginException {
+    public JaasSecurityContext(LoginContext loginContext ) throws LoginException {
         CheckArg.isNotNull(loginContext, "loginContext");
         this.entitlements = new HashSet<String>();
         this.loginContext = loginContext;
@@ -123,7 +127,7 @@ public class JaasSecurityContext implements SecurityContext {
      * 
      * @param subject the subject to use as the provider of the user name and roles for this security context; may not be null
      */
-    public JaasSecurityContext( Subject subject ) {
+    public JaasSecurityContext(Subject subject ) {
         CheckArg.isNotNull(subject, "subject");
         this.loginContext = null;
         this.entitlements = new HashSet<String>();
@@ -135,6 +139,8 @@ public class JaasSecurityContext implements SecurityContext {
         String userName = null;
 
         if (subject != null) {
+            principals.clear();
+            principals.addAll(subject.getPrincipals());
             for (Principal principal : subject.getPrincipals()) {
                 if (principal instanceof Group) {
                     Group group = (Group)principal;
@@ -179,6 +185,10 @@ public class JaasSecurityContext implements SecurityContext {
         }
     }
 
+    @Override
+    public List<Principal> getPrincipals() {
+        return principals;
+    }
     /**
      * A simple {@link CallbackHandler callback handler} implementation that attempts to provide a user ID and password to any
      * callbacks that it handles.

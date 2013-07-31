@@ -81,6 +81,14 @@ public interface ModeShapePermissions {
      * @see Session#checkPermission(String, String)
      */
     public static final String REMOVE = "remove";
+    
+    /**
+     * The permission that allows to remove child nodes.
+     * 
+     * @see Session#checkPermission(String, String)
+     */
+    public static final String REMOVE_CHILD_NODES = "remove_child_nodes";
+    
     /**
      * A standard JCR-defined permission to grant the user the ability to read nodes and/or properties.
      * 
@@ -122,6 +130,18 @@ public interface ModeShapePermissions {
      */
     public static final String RESTORE = "restore";
 
+    /**
+     * The permission that allows the user ability to read nodes 
+     * related to access control.
+     */
+    public static final String READ_ACCESS_CONTROL = "read_access_control";
+    
+    /**
+     * The permission that allows the user ability to modify nodes 
+     * related to access control.
+     */
+    public static final String MODIFY_ACCESS_CONTROL = "modify_access_control";
+    
     static final String[] ALL_CHANGE_PERMISSIONS = new String[] {REGISTER_NAMESPACE, REGISTER_TYPE, UNLOCK_ANY, ADD_NODE,
         SET_PROPERTY, REMOVE, CREATE_WORKSPACE, DELETE_WORKSPACE, INDEX_WORKSPACE, BACKUP, RESTORE};
 

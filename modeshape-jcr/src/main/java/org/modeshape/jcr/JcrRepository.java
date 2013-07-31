@@ -28,6 +28,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.security.AccessControlContext;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -136,6 +137,7 @@ import org.modeshape.jcr.security.AuthenticationProvider;
 import org.modeshape.jcr.security.AuthenticationProviders;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.security.SecurityContext;
+import org.modeshape.jcr.security.SimplePrincipal;
 import org.modeshape.jcr.txn.NoClientTransactions;
 import org.modeshape.jcr.txn.SynchronizedTransactions;
 import org.modeshape.jcr.txn.Transactions;
@@ -651,9 +653,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 session = new JcrSession(this, workspaceName, sessionContext, attributes, !writable);
             }
 
+            //associate security context with the session through session context
+            sessionContext.with(session);
+            
             // Need to make sure that the user has access to this session
             session.checkPermission(workspaceName, null, ModeShapePermissions.READ);
-
             running.addSession(session, false);
             return session;
         } catch (AccessDeniedException ace) {
@@ -787,7 +791,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         descriptors.put(Repository.OPTION_SIMPLE_VERSIONING_SUPPORTED, valueFor(factories, false));
         descriptors.put(Repository.OPTION_ACTIVITIES_SUPPORTED, valueFor(factories, false));
         descriptors.put(Repository.OPTION_BASELINES_SUPPORTED, valueFor(factories, false));
-        descriptors.put(Repository.OPTION_ACCESS_CONTROL_SUPPORTED, valueFor(factories, false));
+        descriptors.put(Repository.OPTION_ACCESS_CONTROL_SUPPORTED, valueFor(factories, true));
         descriptors.put(Repository.OPTION_JOURNALED_OBSERVATION_SUPPORTED, valueFor(factories, false));
         descriptors.put(Repository.OPTION_RETENTION_SUPPORTED, valueFor(factories, false));
         descriptors.put(Repository.OPTION_LIFECYCLE_SUPPORTED, valueFor(factories, false));
@@ -1957,9 +1961,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     private final class InternalSecurityContext implements SecurityContext {
         private final String username;
-
+        private final ArrayList<Principal> principals = new ArrayList();
+        
         protected InternalSecurityContext( String username ) {
             this.username = username;
+            //given user is only known principal for this context
+            principals.add(SimplePrincipal.newInstance(username));
         }
 
         @Override
@@ -1980,6 +1987,15 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         @Override
         public void logout() {
             // do nothing
+        }
+
+        @Override
+        public List<Principal> getPrincipals() {
+            return principals;
+        }
+
+        @Override
+        public void with(JcrSession session) {
         }
     }
 

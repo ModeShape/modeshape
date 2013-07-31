@@ -26,9 +26,12 @@ package org.modeshape.jcr;
 import java.math.BigDecimal;
 import java.security.AccessController;
 import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -105,6 +108,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
         }
     }
 
+    private final JcrSession session;
     private final ThreadPoolFactory threadPools;
     private final PropertyFactory propertyFactory;
     private final ValueFactories valueFactories;
@@ -142,14 +146,14 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
      */
     @SuppressWarnings( "synthetic-access" )
     public ExecutionContext() {
-        this(new NullSecurityContext(), null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+        this(null, new NullSecurityContext(), null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
              null, null, null, null, null, null, null);
         initializeDefaultNamespaces(this.getNamespaceRegistry());
         assert securityContext != null;
     }
 
     protected ExecutionContext( ExecutionContext context ) {
-        this(context.securityContext, context.namespaceRegistry, context.propertyFactory, context.threadPools,
+        this(context.session, context.securityContext, context.namespaceRegistry, context.propertyFactory, context.threadPools,
              context.binaryStore, context.data, context.processId, context.decoder, context.encoder, context.stringFactory,
              context.binaryFactory, context.booleanFactory, context.dateFactory, context.decimalFactory, context.doubleFactory,
              context.longFactory, context.nameFactory, context.pathFactory, context.referenceFactory,
@@ -186,7 +190,8 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
      * @param uuidFactory the UUID factory that should be used; if null, a default implementation will be used
      * @param objectFactory the object factory that should be used; if null, a default implementation will be used
      */
-    protected ExecutionContext( SecurityContext securityContext,
+    protected ExecutionContext( JcrSession session,
+                                SecurityContext securityContext,
                                 NamespaceRegistry namespaceRegistry,
                                 PropertyFactory propertyFactory,
                                 ThreadPoolFactory threadPoolFactory,
@@ -210,6 +215,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
                                 UuidFactory uuidFactory,
                                 ValueFactory<Object> objectFactory ) {
         assert securityContext != null;
+        this.session = session;
         this.securityContext = securityContext;
 
         if (binaryStore == null) binaryStore = TransientBinaryStore.get();
@@ -474,7 +480,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
      *         never null
      */
     public ExecutionContext with( BinaryStore binaryStore ) {
-        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
+        return new ExecutionContext(session, securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
                                     weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
@@ -490,7 +496,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
      *         null
      */
     public ExecutionContext with( NamespaceRegistry namespaceRegistry ) {
-        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
+        return new ExecutionContext(session, securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
                                     weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
@@ -505,7 +511,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
      *         factory implementation; never null
      */
     public ExecutionContext with( ThreadPoolFactory threadPoolFactory ) {
-        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPoolFactory, binaryStore, data,
+        return new ExecutionContext(session, securityContext, namespaceRegistry, propertyFactory, threadPoolFactory, binaryStore, data,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
                                     weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
@@ -519,7 +525,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
      *         implementation; never null
      */
     public ExecutionContext with( PropertyFactory propertyFactory ) {
-        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
+        return new ExecutionContext(session, securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
                                     weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
@@ -535,7 +541,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
      * @throws IllegalArgumentException if the <code>name</code> is null
      */
     public ExecutionContext with( SecurityContext securityContext ) {
-        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
+        return new ExecutionContext(session, securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
                                     weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
@@ -558,7 +564,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
             // Copy the data in the map ...
             newData = Collections.unmodifiableMap(new HashMap<String, String>(data));
         }
-        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, newData,
+        return new ExecutionContext(session, securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, newData,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
                                     weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
@@ -572,7 +578,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
         } else {
             weakFactory = referenceFactory;
         }
-        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
+        return new ExecutionContext(session, securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, strongFactory,
                                     weakFactory, uriFactory, uuidFactory, objectFactory);
@@ -606,7 +612,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
             newData.put(key, value);
             newData = Collections.unmodifiableMap(newData);
         }
-        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, newData,
+        return new ExecutionContext(session, securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, newData,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
                                     weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
@@ -621,12 +627,28 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
      * @since 2.1
      */
     public ExecutionContext with( String processId ) {
-        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
+        return new ExecutionContext(session, securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
                                     weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
     }
 
+    /**
+     * Create a new execution context that mirrors this context but that 
+     * contains the supplied session.
+     * 
+     * @param session the session to which this context belongs
+     * @return the execution context that is identical with this execution 
+     * context, but which uses the supplied session instance; never null
+     */
+    public ExecutionContext with(JcrSession session) {
+        securityContext.with(session);
+        return new ExecutionContext(session, securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
+                                    processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
+                                    decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
+                                    weakReferenceFactory, uriFactory, uuidFactory, objectFactory);
+    }
+    
     @Override
     public ExecutionContext clone() {
         return new ExecutionContext(this);
@@ -658,7 +680,8 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
      * Default security context that confers no roles.
      */
     private static class NullSecurityContext implements SecurityContext {
-
+        private JcrSession session;
+        
         @Override
         public boolean isAnonymous() {
             return true;
@@ -676,6 +699,16 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
 
         @Override
         public void logout() {
+        }
+
+        @Override
+        public void with(JcrSession session) {
+            this.session = session;
+        }
+
+        @Override
+        public List<Principal> getPrincipals() {
+            return new ArrayList();
         }
 
     }

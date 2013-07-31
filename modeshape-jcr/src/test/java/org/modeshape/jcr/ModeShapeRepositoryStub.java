@@ -34,6 +34,7 @@ import javax.jcr.Session;
 import org.apache.jackrabbit.test.RepositoryStub;
 import org.infinispan.manager.CacheContainer;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
+import org.modeshape.jcr.security.SimplePrincipal;
 
 /**
  * Concrete implementation of {@link RepositoryStub} based on ModeShape-specific configuration.
@@ -205,7 +206,7 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
      */
     @Override
     public Principal getKnownPrincipal( Session session ) {
-        return null;
+        return SimplePrincipal.newInstance(session.getUserID());
     }
 
     /**
@@ -215,7 +216,7 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
      */
     @Override
     public Principal getUnknownPrincipal( Session session ) {
-        return null;
+        return SimplePrincipal.newInstance("unknown");
     }
 
 }

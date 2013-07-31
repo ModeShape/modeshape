@@ -79,9 +79,11 @@ public class CndImporter {
                                                                                                         Arrays.asList(new String[] {
                                                                                                             "=", "<>", "<", "<=",
                                                                                                             ">", ">=", "LIKE"})));
-
+    
     protected final List<String> BUILT_INS = Collections.unmodifiableList(Arrays.asList(new String[] {
-        "org/modeshape/jcr/jsr_283_builtins.cnd", "org/modeshape/jcr/modeshape_builtins.cnd"}));
+        "org/modeshape/jcr/jsr_283_builtins.cnd", 
+        "org/modeshape/jcr/modeshape_builtins.cnd"
+    }));
 
     /**
      * The default flag for using vendor extensions is {@value} .
