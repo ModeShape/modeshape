@@ -259,6 +259,7 @@ public abstract class AbstractJdbcDriverIntegrationTest extends AbstractJdbcDriv
                 "cars    NULL    mix:simpleVersionable    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
                 "cars    NULL    mix:title    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
                 "cars    NULL    mix:versionable    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+                "cars    NULL    mode:accessControllable    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
                 "cars    NULL    mode:derived    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
                 "cars    NULL    mode:federation    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
                 "cars    NULL    mode:hashed    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
