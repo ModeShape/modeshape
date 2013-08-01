@@ -57,7 +57,10 @@
                 "mode:share",
                 "mode:hashed",
                 "mode:publishArea",
-                "mode:derived"
+                "mode:derived",
+                "mode:accessControllable",
+                "mode:Acl",
+                "mode:Permission",
             ]
         },
         "jcr:versionStorage":{
