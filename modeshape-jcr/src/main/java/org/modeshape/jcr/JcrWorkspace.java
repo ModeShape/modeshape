@@ -211,7 +211,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             */
             AbstractJcrNode copy = newNodeName == null ? parentNode : parentNode.addChildNode(newNodeName,
                                                                                               sourceNode.getPrimaryTypeName(),
-                                                                                              null, false);
+                                                                                              null, false, false);
             Map<NodeKey, NodeKey> nodeKeyCorrespondence = copy.mutable().deepCopy(copySession.cache(),
                                                                                   sourceNode.node(),
                                                                                   sourceSession.cache(),
@@ -235,7 +235,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 if (dstNode.isNodeType(JcrMixLexicon.REFERENCEABLE) && dstNode.hasProperty(JcrLexicon.UUID)) {
                     // for referenceable nodes, update the UUID to be be same as the new identifier
                     JcrValue identifierValue = dstNode.valueFactory().createValue(dstNode.getIdentifier());
-                    dstNode.setProperty(JcrLexicon.UUID, identifierValue, true, true, false);
+                    dstNode.setProperty(JcrLexicon.UUID, identifierValue, true, true, false, false);
 
                     // if there are any incoming references within the copied subgraph, they need to point to the new nodes
                     for (PropertyIterator incomingReferencesIterator = dstNode.getAllReferences(); incomingReferencesIterator.hasNext();) {
@@ -461,7 +461,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 if (!parentNode.isRoot()) {
                     // Use the JCR add child here to perform the parent validations
                     cloneKey = parentNode.key().withId(sourceNode.key().getIdentifier());
-                    parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), cloneKey, false);
+                    parentNode.addChildNode(newNodeName, sourceNode.getPrimaryTypeName(), cloneKey, false, false);
                 } else {
                     cloneKey = parentNode.key();
                 }
