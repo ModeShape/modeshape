@@ -1,9 +1,6 @@
 package org.modeshape.jcr.security;
 
-import java.security.Principal;
-import java.util.List;
 import org.modeshape.common.annotation.NotThreadSafe;
-import org.modeshape.jcr.JcrSession;
 
 /**
  * A security context provides a pluggable means to support disparate authentication and authorization mechanisms that specify the
@@ -45,25 +42,4 @@ public interface SecurityContext {
      */
     void logout();
 
-    /**
-     * Discovers principals known to authentication provider.
-     * 
-     * TCK related to the access control manager prohibits creation of access list
-     * with unknown principals. So security context must exposes known principals.
-     * 
-     * From the other hand this method allows to keep principals transparent 
-     * without explicit definition of principal's type: user or group.
-     * 
-     * @return list of known principals. 
-     */
-    public List<Principal> getPrincipals();    
-    
-    /**
-     * Associate given session with this context.
-     * 
-     * This method allows to utilize content for security purposes.
-     * 
-     * @param session 
-     */
-    public void with(JcrSession session);
 }

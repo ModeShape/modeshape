@@ -41,20 +41,20 @@ public class Privileges {
     /**
      * Privilege objects defined by JCR spec.
      */ 
-    public PrivilegeImpl ADD_CHILD_NODES;
-    public PrivilegeImpl LIFECYCLE_MANAGEMENT;
-    public PrivilegeImpl LOCK_MANAGEMENT;
-    public PrivilegeImpl MODIFY_ACCESS_CONTROL;
-    public PrivilegeImpl MODIFY_PROPERTIES;
-    public PrivilegeImpl NODE_TYPE_MANAGEMENT;
-    public PrivilegeImpl READ;
-    public PrivilegeImpl READ_ACCESS_CONTROL;
-    public PrivilegeImpl REMOVE_CHILD_NODES;
-    public PrivilegeImpl REMOVE_NODE;
-    public PrivilegeImpl RETENTION_MANAGEMENT;
-    public PrivilegeImpl VERSION_MANAGEMENT;
-    public PrivilegeImpl WRITE;
-    public PrivilegeImpl ALL;
+    private PrivilegeImpl addChildNodes;
+    private PrivilegeImpl lifeCycleManagement;
+    private PrivilegeImpl lockManagement;
+    private PrivilegeImpl modifyAccessControl;
+    private PrivilegeImpl modifyProperties;
+    private PrivilegeImpl nodeTypeManagement;
+    private PrivilegeImpl read;
+    private PrivilegeImpl readAccessControl;
+    private PrivilegeImpl removeChildNodes;
+    private PrivilegeImpl removeNode;
+    private PrivilegeImpl retentionManagement;
+    private PrivilegeImpl versionManagement;
+    private PrivilegeImpl write;
+    private PrivilegeImpl all;
 
     /**
      * Map between privilege's JCR names and privilege objects.
@@ -81,36 +81,36 @@ public class Privileges {
      * @param session the jcr session.
      */
     public Privileges(JcrSession session) {
-        ADD_CHILD_NODES = new PrivilegeImpl(session, Privilege.JCR_ADD_CHILD_NODES, new Privilege[]{});
-        LIFECYCLE_MANAGEMENT = new PrivilegeImpl(session, Privilege.JCR_LIFECYCLE_MANAGEMENT, new Privilege[]{});
-        LOCK_MANAGEMENT = new PrivilegeImpl(session, Privilege.JCR_LOCK_MANAGEMENT, new Privilege[]{});
-        MODIFY_ACCESS_CONTROL = new PrivilegeImpl(session, Privilege.JCR_MODIFY_ACCESS_CONTROL, new Privilege[]{});
-        MODIFY_PROPERTIES = new PrivilegeImpl(session, Privilege.JCR_MODIFY_PROPERTIES, new Privilege[]{});
-        NODE_TYPE_MANAGEMENT = new PrivilegeImpl(session, Privilege.JCR_NODE_TYPE_MANAGEMENT, new Privilege[]{});
-        READ = new PrivilegeImpl(session, Privilege.JCR_READ, new Privilege[]{});
-        READ_ACCESS_CONTROL = new PrivilegeImpl(session, Privilege.JCR_READ_ACCESS_CONTROL, new Privilege[]{});
-        REMOVE_CHILD_NODES = new PrivilegeImpl(session, Privilege.JCR_REMOVE_CHILD_NODES, new Privilege[]{});
-        REMOVE_NODE = new PrivilegeImpl(session, Privilege.JCR_REMOVE_NODE, new Privilege[]{});
-        RETENTION_MANAGEMENT = new PrivilegeImpl(session, Privilege.JCR_RETENTION_MANAGEMENT, new Privilege[]{});
-        VERSION_MANAGEMENT = new PrivilegeImpl(session, Privilege.JCR_VERSION_MANAGEMENT, new Privilege[]{});
-        WRITE = new PrivilegeImpl(session, Privilege.JCR_WRITE,
+        addChildNodes = new PrivilegeImpl(session, Privilege.JCR_ADD_CHILD_NODES, new Privilege[]{});
+        lifeCycleManagement = new PrivilegeImpl(session, Privilege.JCR_LIFECYCLE_MANAGEMENT, new Privilege[]{});
+        lockManagement = new PrivilegeImpl(session, Privilege.JCR_LOCK_MANAGEMENT, new Privilege[]{});
+        modifyAccessControl = new PrivilegeImpl(session, Privilege.JCR_MODIFY_ACCESS_CONTROL, new Privilege[]{});
+        modifyProperties = new PrivilegeImpl(session, Privilege.JCR_MODIFY_PROPERTIES, new Privilege[]{});
+        nodeTypeManagement = new PrivilegeImpl(session, Privilege.JCR_NODE_TYPE_MANAGEMENT, new Privilege[]{});
+        read = new PrivilegeImpl(session, Privilege.JCR_READ, new Privilege[]{});
+        readAccessControl = new PrivilegeImpl(session, Privilege.JCR_READ_ACCESS_CONTROL, new Privilege[]{});
+        removeChildNodes = new PrivilegeImpl(session, Privilege.JCR_REMOVE_CHILD_NODES, new Privilege[]{});
+        removeNode = new PrivilegeImpl(session, Privilege.JCR_REMOVE_NODE, new Privilege[]{});
+        retentionManagement = new PrivilegeImpl(session, Privilege.JCR_RETENTION_MANAGEMENT, new Privilege[]{});
+        versionManagement = new PrivilegeImpl(session, Privilege.JCR_VERSION_MANAGEMENT, new Privilege[]{});
+        write = new PrivilegeImpl(session, Privilege.JCR_WRITE,
                 new Privilege[]{
-            MODIFY_PROPERTIES,
-            ADD_CHILD_NODES,
-            REMOVE_NODE,
-            REMOVE_CHILD_NODES
+            modifyProperties,
+            addChildNodes,
+            removeNode,
+            removeChildNodes
         });
-        ALL = new PrivilegeImpl(session, Privilege.JCR_ALL,
+        all = new PrivilegeImpl(session, Privilege.JCR_ALL,
                 new Privilege[]{
-            READ,
-            WRITE,
-            READ_ACCESS_CONTROL,
-            MODIFY_ACCESS_CONTROL,
-            LOCK_MANAGEMENT,
-            LIFECYCLE_MANAGEMENT,
-            VERSION_MANAGEMENT,
-            NODE_TYPE_MANAGEMENT,
-            RETENTION_MANAGEMENT
+            read,
+            write,
+            readAccessControl,
+            modifyAccessControl,
+            lockManagement,
+            lifeCycleManagement,
+            versionManagement,
+            nodeTypeManagement,
+            retentionManagement
         });
 
 
@@ -118,51 +118,51 @@ public class Privileges {
         
         if (session.isReadOnly()) {
             applicablePrivileges = new PrivilegeImpl[] {
-                READ, READ_ACCESS_CONTROL
+                read, readAccessControl
             };
         } else {
             applicablePrivileges = new PrivilegeImpl[] {
-                ALL, 
-                ADD_CHILD_NODES, 
-                LIFECYCLE_MANAGEMENT,
-                LOCK_MANAGEMENT,
-                MODIFY_ACCESS_CONTROL,
-                MODIFY_PROPERTIES, 
-                NODE_TYPE_MANAGEMENT, 
-                REMOVE_CHILD_NODES,
-                REMOVE_NODE, 
-                RETENTION_MANAGEMENT, 
-                VERSION_MANAGEMENT, 
-                WRITE,
-                READ, 
-                READ_ACCESS_CONTROL
+                all, 
+                addChildNodes, 
+                lifeCycleManagement,
+                lockManagement,
+                modifyAccessControl,
+                modifyProperties, 
+                nodeTypeManagement, 
+                removeChildNodes,
+                removeNode, 
+                retentionManagement, 
+                versionManagement, 
+                write,
+                read, 
+                readAccessControl
             };
         }
         
-        privileges.put(ADD_CHILD_NODES.localName(), ADD_CHILD_NODES);
-        privileges.put(ALL.localName(), ALL);
-        privileges.put(LIFECYCLE_MANAGEMENT.localName(), LIFECYCLE_MANAGEMENT);
-        privileges.put(LOCK_MANAGEMENT.localName(), LOCK_MANAGEMENT);
-        privileges.put(MODIFY_ACCESS_CONTROL.localName(), MODIFY_ACCESS_CONTROL);
-        privileges.put(MODIFY_PROPERTIES.localName(), MODIFY_PROPERTIES);
-        privileges.put(NODE_TYPE_MANAGEMENT.localName(), NODE_TYPE_MANAGEMENT);
-        privileges.put(REMOVE_CHILD_NODES.localName(), REMOVE_CHILD_NODES);
-        privileges.put(REMOVE_NODE.localName(), REMOVE_NODE);
-        privileges.put(RETENTION_MANAGEMENT.localName(), RETENTION_MANAGEMENT);
-        privileges.put(VERSION_MANAGEMENT.localName(), VERSION_MANAGEMENT);
-        privileges.put(WRITE.localName(), WRITE);
-        privileges.put(READ.localName(), READ);
-        privileges.put(READ_ACCESS_CONTROL.localName(), READ_ACCESS_CONTROL);
+        privileges.put(addChildNodes.localName(), addChildNodes);
+        privileges.put(all.localName(), all);
+        privileges.put(lifeCycleManagement.localName(), lifeCycleManagement);
+        privileges.put(lockManagement.localName(), lockManagement);
+        privileges.put(modifyAccessControl.localName(), modifyAccessControl);
+        privileges.put(modifyProperties.localName(), modifyProperties);
+        privileges.put(nodeTypeManagement.localName(), nodeTypeManagement);
+        privileges.put(removeChildNodes.localName(), removeChildNodes);
+        privileges.put(removeNode.localName(), removeNode);
+        privileges.put(retentionManagement.localName(), retentionManagement);
+        privileges.put(versionManagement.localName(), versionManagement);
+        privileges.put(write.localName(), write);
+        privileges.put(read.localName(), read);
+        privileges.put(readAccessControl.localName(), readAccessControl);
         
         actions.clear();
-        actions.put(ModeShapePermissions.ADD_NODE, ADD_CHILD_NODES);
-        actions.put(ModeShapePermissions.MODIFY_ACCESS_CONTROL, MODIFY_ACCESS_CONTROL);
-        actions.put(ModeShapePermissions.SET_PROPERTY, MODIFY_PROPERTIES);
-        actions.put(ModeShapePermissions.REGISTER_TYPE, NODE_TYPE_MANAGEMENT);
-        actions.put(ModeShapePermissions.READ, READ);
-        actions.put(ModeShapePermissions.READ_ACCESS_CONTROL, READ_ACCESS_CONTROL);
-        actions.put(ModeShapePermissions.REMOVE_CHILD_NODES, REMOVE_CHILD_NODES);
-        actions.put(ModeShapePermissions.REMOVE, REMOVE_NODE);
+        actions.put(ModeShapePermissions.ADD_NODE, addChildNodes);
+        actions.put(ModeShapePermissions.MODIFY_ACCESS_CONTROL, modifyAccessControl);
+        actions.put(ModeShapePermissions.SET_PROPERTY, modifyProperties);
+        actions.put(ModeShapePermissions.REGISTER_TYPE, nodeTypeManagement);
+        actions.put(ModeShapePermissions.READ, read);
+        actions.put(ModeShapePermissions.READ_ACCESS_CONTROL, readAccessControl);
+        actions.put(ModeShapePermissions.REMOVE_CHILD_NODES, removeChildNodes);
+        actions.put(ModeShapePermissions.REMOVE, removeNode);
     }
     
     /**

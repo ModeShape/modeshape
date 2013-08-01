@@ -141,6 +141,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     private ExecutionContext context;
     private boolean isReadOnly;
     
+    private final AccessControlManagerImpl acm;
+    
     private final AdvancedAuthorizationProvider.Context authorizerContext = new AdvancedAuthorizationProvider.Context() {
         @Override
         public ExecutionContext getExecutionContext() {
@@ -203,7 +205,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
         // Increment the statistics ...
         this.nanosCreated = System.nanoTime();
-        repository.statistics().increment(ValueMetric.SESSION_COUNT);        
+        repository.statistics().increment(ValueMetric.SESSION_COUNT);  
+        
+        acm = new AccessControlManagerImpl(this);
     }
 
     protected JcrSession( JcrSession original,
@@ -225,6 +229,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         // Increment the statistics ...
         this.nanosCreated = System.nanoTime();
         repository.statistics().increment(ValueMetric.SESSION_COUNT);        
+        acm = new AccessControlManagerImpl(this);
     }
 
     final JcrWorkspace workspace() {
@@ -775,11 +780,17 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     @Override
     public AbstractJcrNode getNode( String absPath ) throws PathNotFoundException, RepositoryException {
+        return getNode(absPath, false);
+    }
+
+    protected AbstractJcrNode getNode( String absPath, boolean accessControlScope ) throws PathNotFoundException, RepositoryException {
         checkLive();
         CheckArg.isNotEmpty(absPath, "absolutePath");
         Path path = absolutePathFor(absPath);
 
-        checkPermission(path, ModeShapePermissions.READ);
+        if (!accessControlScope) {
+            checkPermission(path, ModeShapePermissions.READ);
+        }
         // Return root node if path is "/" ...
         if (path.isRoot()) {
             return getRootNode();
@@ -787,7 +798,20 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
         return node(path);
     }
+    
+/*    protected Node getAclNode( String absPath ) throws PathNotFoundException, RepositoryException {
+        checkLive();
+        CheckArg.isNotEmpty(absPath, "absolutePath");
+        Path path = absolutePathFor(absPath);
 
+        // Return root node if path is "/" ...
+        if (path.isRoot()) {
+            return getRootNode();
+        }
+
+        return node(path);
+    }
+*/    
     @Override
     public AbstractJcrItem getItem( String absPath ) throws PathNotFoundException, RepositoryException {
         checkLive();
@@ -1244,10 +1268,12 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             // Delegate to the security context ...
             AdvancedAuthorizationProvider authorizer = (AdvancedAuthorizationProvider)sec;
             hasPermission = authorizer.hasPermission(authorizerContext, path, actions);
-        }
-        
-        if (!hasPermission) {
-            return false;
+            
+            if (hasPermission) {
+                hasPermission = acm.hasPermission(path, actions);
+            }
+            
+            return hasPermission; 
         }
         
         // It is a role-based security context, so apply role-based authorization ...
@@ -1268,6 +1294,11 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                                  || hasRole(sec, ModeShapeRoles.READWRITE, repositoryName, workspaceName);
             }
         }
+        
+        if (hasPermission) {
+            hasPermission = acm.hasPermission(path, actions);
+        }
+        
         return hasPermission;
     }
 
@@ -1336,10 +1367,6 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                           Path path,
                           String... actions ) throws AccessDeniedException {
         CheckArg.isNotEmpty(actions, "actions");
-        
-        if (callInContextOfAccessManager()) {
-            return;
-        }
         
         if (hasPermission(workspaceName, path, actions)) return;
 
@@ -1585,21 +1612,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     @Override
     public AccessControlManager getAccessControlManager() throws UnsupportedRepositoryOperationException, RepositoryException {
-        SecurityContext sec = context.getSecurityContext();
-        if (sec instanceof AccessControlManager) {
-            return (AccessControlManager) sec;
-        }
-        throw new UnsupportedRepositoryOperationException();
-/*        SecurityContext sec = context.getSecurityContext();
-        while (sec != null) {
-            if (sec instanceof AccessControlManager) {
-                return (AccessControlManager)sec;
-            }
-            sec = sec.subordinated();
-        }
-        throw new UnsupportedRepositoryOperationException();
-        */
-//        return acm;
+        return acm;
     }
 
     @Override
@@ -1751,16 +1764,6 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return Path.JSR283_ENCODER.encode(localName);
     }
 
-    /**
-     * Tests session context.
-     * 
-     * @return true if this session executes call of the access manager.
-     */
-    protected boolean callInContextOfAccessManager() {
-        String role = context.getData().get("role");
-        return (role != null && role.equals("ACCESS_CONTROL"));
-    }
-    
     /**
      * Define the operations that are to be performed on all the nodes that were created or modified within this session. This
      * class was designed to be as efficient as possible for most nodes, since most nodes do not need any additional processing.
@@ -1992,7 +1995,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                                 jcrNode.setProperty(propName, defaultValues, defn.getRequiredType(), false);
                             } else {
                                 // don't skip constraint checks or protected checks
-                                jcrNode.setProperty(propName, defaultValues[0], false, false, false);
+                                jcrNode.setProperty(propName, defaultValues[0], false, false, false, false);
                             }
                         } else {
                             // There is no default for this mandatory property, so this is a constraint violation ...
