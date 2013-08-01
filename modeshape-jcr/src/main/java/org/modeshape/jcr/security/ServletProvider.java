@@ -113,13 +113,5 @@ public class ServletProvider implements AuthenticationProvider {
             request = null;
         }
 
-        @Override
-        public List<Principal> getPrincipals() {
-            return new ArrayList();
-        }
-
-        @Override
-        public void with(JcrSession session) {
-        }
     }
 }

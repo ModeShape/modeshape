@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.security;
 
+import org.modeshape.jcr.AccessControlManagerImpl;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,7 +83,7 @@ public class AnonymousProvider implements AuthenticationProvider {
         return null;
     }
 
-    protected final class AnonymousSecurityContext extends AccessControlManagerImpl {
+    protected final class AnonymousSecurityContext implements SecurityContext {
         private final Set<String> userRoles;
         private final String anonymousUsername;
         private final ArrayList<Principal> principals = new ArrayList();
@@ -114,9 +115,5 @@ public class AnonymousProvider implements AuthenticationProvider {
             // do nothing
         }
 
-        @Override
-        public List<Principal> getPrincipals() {
-            return principals;
-        }
     }
 }
