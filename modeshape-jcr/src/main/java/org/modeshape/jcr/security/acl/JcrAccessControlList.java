@@ -27,13 +27,12 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import javax.jcr.RepositoryException;
 import javax.jcr.security.AccessControlEntry;
 import javax.jcr.security.AccessControlException;
 import javax.jcr.security.AccessControlList;
 import javax.jcr.security.Privilege;
-import org.modeshape.jcr.security.AccessControlManagerImpl;
+import org.modeshape.jcr.AccessControlManagerImpl;
 import org.modeshape.jcr.security.SimplePrincipal;
 
 /**
@@ -55,11 +54,11 @@ import org.modeshape.jcr.security.SimplePrincipal;
 public class JcrAccessControlList implements AccessControlList {
    
     //ACL entries
-    private HashMap<Principal, AccessControlEntryImpl> principals = new HashMap();
+    private HashMap<Principal, AccessControlEntryImpl> principals = 
+            new HashMap<Principal, AccessControlEntryImpl>();
     
     //path to the node to which this ACL belongs
-    private String path;    
-    private AccessControlManagerImpl acm;
+    private final String path;    
     
     /**
      * Creates default Access Control List.
@@ -85,7 +84,6 @@ public class JcrAccessControlList implements AccessControlList {
      * @param path the path to which this access list is applied.
      */
     public JcrAccessControlList(AccessControlManagerImpl acm, String path) {
-        this.acm = acm;
         this.path = path;
     }
     
@@ -111,10 +109,9 @@ public class JcrAccessControlList implements AccessControlList {
             throw new AccessControlException("Invalid privilege array");
         }
         
-        if (!validatePrincipal(principal)) {
+        if (principal.getName().equals("unknown")) {
             throw new AccessControlException("Unknown principal");
         }
-        
         //Jast new entry
         if (!principals.containsKey(principal)) {
             principals.put(principal, new AccessControlEntryImpl(principal, privileges));
@@ -211,22 +208,7 @@ public class JcrAccessControlList implements AccessControlList {
 
     @Override
     public int hashCode() {
-        int hash = 5;
-        hash = 79 * hash + (this.path != null ? this.path.hashCode() : 0);
-        return hash;
-    }
-    
-    private boolean validatePrincipal(Principal principal) throws RepositoryException {        
-        if (acm == null) {
-            return true;
-        }
-        List<Principal> list = acm.getPrincipals();
-        for (Principal p : list) {
-            if (p.getName().equals(principal.getName())) {
-                return true;
-            }
-        }
-        return false;
+        return this.path.hashCode();
     }
     
 }

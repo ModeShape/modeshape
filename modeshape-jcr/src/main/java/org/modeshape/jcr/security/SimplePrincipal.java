@@ -32,11 +32,13 @@ import java.security.Principal;
  */
 public class SimplePrincipal implements Principal {
 
+    private static final String everyone = "everyone";
+    
     //The name of the user
-    private String name;
+    private final String name;
     
     //Principal that equals to any other principal
-    public static final SimplePrincipal EVERYONE = SimplePrincipal.newInstance("everyone");
+    public static final SimplePrincipal EVERYONE = SimplePrincipal.newInstance(everyone);
     
     /**
      * Creates new instance of the principal.
@@ -54,6 +56,7 @@ public class SimplePrincipal implements Principal {
      * @param name the name of the user
      */
     private SimplePrincipal(String name) {
+        assert(name != null);
         this.name = name;
     }
     
@@ -72,7 +75,7 @@ public class SimplePrincipal implements Principal {
             return false;
         }
         
-        if (this.name.equals("everyone") || ((Principal) other).getName().equals("everyone")) {
+        if (this.name.equals(everyone) || ((Principal) other).getName().equals(everyone)) {
             return true;
         }
         
@@ -81,8 +84,6 @@ public class SimplePrincipal implements Principal {
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 89 * hash + (this.name != null ? this.name.hashCode() : 0);
-        return hash;
+        return name.hashCode();
     }
 }

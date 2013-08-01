@@ -25,7 +25,6 @@ package org.modeshape.jcr.security.acl;
 
 import java.security.Principal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import javax.jcr.security.AccessControlEntry;
 import javax.jcr.security.AccessControlException;
@@ -42,7 +41,7 @@ import javax.jcr.security.Privilege;
 public class AccessControlEntryImpl implements AccessControlEntry {
 
     private Principal principal;
-    private Privilege[] privileges;
+    private ArrayList<Privilege>privileges = new ArrayList<Privilege>();
     
     /**
      * Creates new ACL entry.
@@ -56,7 +55,10 @@ public class AccessControlEntryImpl implements AccessControlEntry {
                 throw new AccessControlException("Invalid privilege");
         }
         this.principal = principal;
-        this.privileges = privileges;
+        this.privileges.clear();
+        for (Privilege privilege : privileges) {
+            this.privileges.add(privilege);
+        }
     }
     
     @Override
@@ -66,14 +68,14 @@ public class AccessControlEntryImpl implements AccessControlEntry {
 
     @Override
     public Privilege[] getPrivileges() {
-        return privileges;
+        return privileges.toArray(new Privilege[privileges.size()]);
     }
     
     /**
      * Tests given privileges.
-     * 
+     *      
      * @param privileges privileges for testing.
-     * @return true this entry contains all given privileges
+     * @return true if this entry contains all given privileges
      */
     protected boolean hasPrivileges(Privilege[] privileges) {
         for (Privilege p : privileges) {
@@ -84,22 +86,6 @@ public class AccessControlEntryImpl implements AccessControlEntry {
         return true;
     }
     
-    /**
-     * Tests given privilege.
-     * 
-     * @param privileges set of privileges.
-     * @param p given privilege for testing
-     * @return true privilege set contains given privilege.
-     */
-    private boolean contains(Privilege[] privileges, Privilege p) {
-        for (int i = 0; i < privileges.length; i++) {
-            if (((PrivilegeImpl)privileges[i]).contains(p)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private boolean contains(List<Privilege>privileges, Privilege p) {
         for (int i = 0; i < privileges.size(); i++) {
             if (((PrivilegeImpl)privileges.get(i)).contains(p)) {
@@ -117,13 +103,13 @@ public class AccessControlEntryImpl implements AccessControlEntry {
      */
     protected boolean addIfNotPresent(Privilege[] privileges) {
         ArrayList<Privilege> list = new ArrayList();
-        list.addAll(Arrays.asList(this.privileges));
+        for (Privilege privilege : privileges) {
+            list.add(privilege);
+        }
         
         boolean res = combineRecursively(list, privileges);
 
-        this.privileges = new Privilege[list.size()];
-        list.toArray(this.privileges);
-        
+        this.privileges.addAll(list);        
         return res;
     }
 
@@ -163,12 +149,12 @@ public class AccessControlEntryImpl implements AccessControlEntry {
             return false;
         }
         
-        if (this.privileges.length != entry.privileges.length) {
+        if (this.privileges.size() != entry.privileges.size()) {
             return false;
         }
         
-        for (int i = 0; i < privileges.length; i++) {
-            if (!contains(entry.privileges, privileges[i])) {
+        for (int i = 0; i < privileges.size(); i++) {
+            if (!contains(entry.privileges, privileges.get(i))) {
                 return false;
             }
         }
@@ -178,8 +164,6 @@ public class AccessControlEntryImpl implements AccessControlEntry {
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 11 * hash + (this.principal != null ? this.principal.hashCode() : 0);
-        return hash;
+        return this.principal.hashCode();
     }
 }

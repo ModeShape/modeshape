@@ -179,8 +179,6 @@ public class PrivilegeImpl implements Privilege {
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 71 * hash + (this.name != null ? this.name.hashCode() : 0);
-        return hash;
+        return name.hashCode();
     }
 }
