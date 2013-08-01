@@ -27,7 +27,7 @@
                 "node.type.management.same.name.siblings.supported":"true",
                 "node.type.management.update.in.use.suported":"true",
                 "node.type.management.value.constraints.supported":"true",
-                "option.access.control.supported":"false",
+                "option.access.control.supported":"true",
                 "option.activities.supported":"false",
                 "option.baselines.supported":"false",
                 "option.journaled.observation.supported":"false",
