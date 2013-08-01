@@ -609,7 +609,7 @@ class JcrContentHandler extends DefaultHandler {
                     if (JcrLexicon.UUID.equals(name)) return;
 
                     // The node was already created, so set the property using the editor ...
-                    node.setProperty(name, (JcrValue)valueFor(value, propertyType), true, true, true);
+                    node.setProperty(name, (JcrValue)valueFor(value, propertyType), true, true, true, false);
                 } else {
                     // The node hasn't been created yet, so just enqueue the property value into the map ...
                     List<Value> values = properties.get(name);
@@ -763,7 +763,7 @@ class JcrContentHandler extends DefaultHandler {
                     }
 
                     // Otherwise, it's just a regular node...
-                    child = parent.addChildNode(nodeName, primaryTypeName, key, true);
+                    child = parent.addChildNode(nodeName, primaryTypeName, key, true, false);
                 } else {
                     child = existingNode;
                 }
@@ -807,13 +807,14 @@ class JcrContentHandler extends DefaultHandler {
 
                     if (values.size() == 1 && !this.multiValuedPropertyNames.contains(propertyName)) {
                         // Don't check references or the protected status ...
-                        prop = child.setProperty(propertyName, (JcrValue)values.get(0), true, true, true);
+                        prop = child.setProperty(propertyName, (JcrValue)values.get(0), true, true, true, false);
                     } else {
                         prop = child.setProperty(propertyName,
                                                  values.toArray(new JcrValue[values.size()]),
                                                  PropertyType.UNDEFINED,
                                                  true,
-                                                 true);
+                                                 true,
+                                                 false);
                     }
 
                     if (prop.getType() == PropertyType.REFERENCE && prop.getDefinition().getValueConstraints().length != 0
