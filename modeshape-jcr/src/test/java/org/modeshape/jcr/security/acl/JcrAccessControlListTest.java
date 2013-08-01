@@ -68,7 +68,7 @@ public class JcrAccessControlListTest extends MultiUseAbstractTest {
     @Before
     public void setUp() throws AccessControlException, RepositoryException {
         privileges = new Privileges(session);
-        rw = new Privilege[]{privileges.READ, privileges.WRITE};        
+        rw = new Privilege[]{privileges.forName(Privilege.JCR_READ), privileges.forName(Privilege.JCR_WRITE)};        
         acl.addAccessControlEntry(SimplePrincipal.newInstance("kulikov"), rw);
     }
     
@@ -93,7 +93,7 @@ public class JcrAccessControlListTest extends MultiUseAbstractTest {
     public void testHasPermission() throws Exception {
         AccessControlEntryImpl entry = (AccessControlEntryImpl) acl.getAccessControlEntries()[0];
         assertTrue(entry.hasPrivileges(rw));
-        assertTrue(entry.hasPrivileges(new Privilege[]{privileges.ADD_CHILD_NODES}));
+        assertTrue(entry.hasPrivileges(new Privilege[]{privileges.forName(Privilege.JCR_ADD_CHILD_NODES)}));
     }
 
 }

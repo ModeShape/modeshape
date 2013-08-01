@@ -653,9 +653,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 session = new JcrSession(this, workspaceName, sessionContext, attributes, !writable);
             }
 
-            //associate security context with the session through session context
-            sessionContext.with(session);
-            
             // Need to make sure that the user has access to this session
             session.checkPermission(workspaceName, null, ModeShapePermissions.READ);
             running.addSession(session, false);
@@ -1989,14 +1986,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             // do nothing
         }
 
-        @Override
-        public List<Principal> getPrincipals() {
-            return principals;
-        }
-
-        @Override
-        public void with(JcrSession session) {
-        }
     }
 
     /**

@@ -1,5 +1,6 @@
 package org.modeshape.jcr.security;
 
+import org.modeshape.jcr.AccessControlManagerImpl;
 import java.io.IOException;
 import java.security.Principal;
 import java.security.acl.Group;
@@ -29,7 +30,7 @@ import org.modeshape.jcr.JcrSession;
  * {@link LoginContext login context}.
  */
 @NotThreadSafe
-public class JaasSecurityContext extends AccessControlManagerImpl {
+public class JaasSecurityContext implements SecurityContext {
 
     private static final Logger LOGGER = Logger.getLogger(JaasSecurityContext.class);
 
@@ -37,7 +38,6 @@ public class JaasSecurityContext extends AccessControlManagerImpl {
     private final String userName;
     private final Set<String> entitlements;
     private boolean loggedIn;
-    private ArrayList<Principal> principals = new ArrayList();
     
     /**
      * Create a {@link JaasSecurityContext} with the supplied {@link Configuration#getAppConfigurationEntry(String) application
@@ -139,8 +139,6 @@ public class JaasSecurityContext extends AccessControlManagerImpl {
         String userName = null;
 
         if (subject != null) {
-            principals.clear();
-            principals.addAll(subject.getPrincipals());
             for (Principal principal : subject.getPrincipals()) {
                 if (principal instanceof Group) {
                     Group group = (Group)principal;
@@ -185,10 +183,6 @@ public class JaasSecurityContext extends AccessControlManagerImpl {
         }
     }
 
-    @Override
-    public List<Principal> getPrincipals() {
-        return principals;
-    }
     /**
      * A simple {@link CallbackHandler callback handler} implementation that attempts to provide a user ID and password to any
      * callbacks that it handles.
